@@ -31,8 +31,6 @@ import javax.persistence.TableGenerator;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.ClusterVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.DataCenterVO;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -40,21 +38,17 @@ import org.springframework.stereotype.Component;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostTagVO;
-
 import com.cloud.host.Status;
-import com.cloud.host.Status.Event;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.org.Managed;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -104,7 +98,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> ManagedRoutingServersSearch;
     protected final SearchBuilder<HostVO> SecondaryStorageVMSearch;
     protected SearchBuilder<HostVO> StateChangeSearch;
-    
+
     protected SearchBuilder<HostVO> UUIDSearch;
 
     protected final GenericSearchBuilder<HostVO, Long> HostsInStatusSearch;
@@ -119,7 +113,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     @Inject protected HostDetailsDao _detailsDao;
     @Inject protected HostTagsDao _hostTagsDao;
     @Inject protected ClusterDao _clusterDao;
-    
+
 
     public HostDaoImpl() {
 
@@ -148,7 +142,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         TypeDcSearch.and("type", TypeDcSearch.entity().getType(), SearchCriteria.Op.EQ);
         TypeDcSearch.and("dc", TypeDcSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         TypeDcSearch.done();
-        
+
         SecondaryStorageVMSearch = createSearchBuilder();
         SecondaryStorageVMSearch.and("type", SecondaryStorageVMSearch.entity().getType(), SearchCriteria.Op.EQ);
         SecondaryStorageVMSearch.and("dc", SecondaryStorageVMSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -161,14 +155,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         TypeDcStatusSearch.and("status", TypeDcStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.and("resourceState", TypeDcStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.done();
-        
+
         TypeClusterStatusSearch = createSearchBuilder();
         TypeClusterStatusSearch.and("type", TypeClusterStatusSearch.entity().getType(), SearchCriteria.Op.EQ);
         TypeClusterStatusSearch.and("cluster", TypeClusterStatusSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         TypeClusterStatusSearch.and("status", TypeClusterStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         TypeClusterStatusSearch.and("resourceState", TypeClusterStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
         TypeClusterStatusSearch.done();
-        
+
         IdStatusSearch = createSearchBuilder();
         IdStatusSearch.and("id", IdStatusSearch.entity().getId(), SearchCriteria.Op.EQ);
         IdStatusSearch.and("states", IdStatusSearch.entity().getStatus(), SearchCriteria.Op.IN);
@@ -214,7 +208,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         StatusSearch = createSearchBuilder();
         StatusSearch.and("status", StatusSearch.entity().getStatus(), SearchCriteria.Op.IN);
         StatusSearch.done();
-        
+
         ResourceStateSearch = createSearchBuilder();
         ResourceStateSearch.and("resourceState", ResourceStateSearch.entity().getResourceState(), SearchCriteria.Op.IN);
         ResourceStateSearch.done();
@@ -299,7 +293,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         ManagedRoutingServersSearch.and("server", ManagedRoutingServersSearch.entity().getManagementServerId(), SearchCriteria.Op.NNULL);
         ManagedRoutingServersSearch.and("type", ManagedRoutingServersSearch.entity().getType(), SearchCriteria.Op.EQ);
         ManagedRoutingServersSearch.done();
-        
+
         RoutingSearch = createSearchBuilder();
         RoutingSearch.and("type", RoutingSearch.entity().getType(), SearchCriteria.Op.EQ);
         RoutingSearch.done();
@@ -310,11 +304,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         _resourceStateAttr = _allAttributes.get("resourceState");
 
         assert (_statusAttr != null && _msIdAttr != null && _pingTimeAttr != null) : "Couldn't find one of these attributes";
-        
-	    UUIDSearch = createSearchBuilder();
-	    UUIDSearch.and("uuid", UUIDSearch.entity().getUuid(), SearchCriteria.Op.EQ);
-	    UUIDSearch.done();
-	    
+
+        UUIDSearch = createSearchBuilder();
+        UUIDSearch.and("uuid", UUIDSearch.entity().getUuid(), SearchCriteria.Op.EQ);
+        UUIDSearch.done();
+
         StateChangeSearch = createSearchBuilder();
         StateChangeSearch.and("id", StateChangeSearch.entity().getId(), SearchCriteria.Op.EQ);
         StateChangeSearch.and("state", StateChangeSearch.entity().getState(), SearchCriteria.Op.EQ);
@@ -331,52 +325,52 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         List<HostVO> hosts = listBy(sc);
         return hosts.size();
     }
-    
+
 
     @Override
     public HostVO findByGuid(String guid) {
         SearchCriteria<HostVO> sc = GuidSearch.create("guid", guid);
         return findOneBy(sc);
     }
-    
+
     @Override @DB
     public List<HostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId) {
         Transaction txn = Transaction.currentTxn();
         txn.start();       
-    	SearchCriteria<HostVO> sc = UnmanagedDirectConnectSearch.create();
-    	sc.setParameters("lastPinged", lastPingSecondsAfter);
+        SearchCriteria<HostVO> sc = UnmanagedDirectConnectSearch.create();
+        sc.setParameters("lastPinged", lastPingSecondsAfter);
         //sc.setParameters("resourceStates", ResourceState.ErrorInMaintenance, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.Disabled);
         sc.setJoinParameters("ClusterManagedSearch", "managed", Managed.ManagedState.Managed);
         List<HostVO> hosts = lockRows(sc, new Filter(HostVO.class, "clusterId", true, 0L, limit), true);
-        
+
         for (HostVO host : hosts) {
             host.setManagementServerId(managementServerId);
             update(host.getId(), host);
         }
-        
+
         txn.commit();
-        
+
         return hosts;
     }
-    
+
     @Override @DB
     public List<HostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId) {
-    	Transaction txn = Transaction.currentTxn();
-    	
-    	txn.start();
-    	SearchCriteria<HostVO> sc = UnmanagedApplianceSearch.create();
-    	sc.setParameters("lastPinged", lastPingSecondsAfter);
+        Transaction txn = Transaction.currentTxn();
+
+        txn.start();
+        SearchCriteria<HostVO> sc = UnmanagedApplianceSearch.create();
+        sc.setParameters("lastPinged", lastPingSecondsAfter);
         sc.setParameters("types", Type.ExternalDhcp, Type.ExternalFirewall, Type.ExternalLoadBalancer, Type.PxeServer, Type.TrafficMonitor, Type.L2Networking);
-    	List<HostVO> hosts = lockRows(sc, null, true);
-    	
-    	for (HostVO host : hosts) {
-    		host.setManagementServerId(managementServerId);
-    		update(host.getId(), host);
-    	}
-    	
-    	txn.commit();
-    	
-    	return hosts;
+        List<HostVO> hosts = lockRows(sc, null, true);
+
+        for (HostVO host : hosts) {
+            host.setManagementServerId(managementServerId);
+            update(host.getId(), host);
+        }
+
+        txn.commit();
+
+        return hosts;
     }
 
     @Override
@@ -402,7 +396,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         ub = getUpdateBuilder(host);
         update(ub, sc, null);
     }
- 
+
     @Override
     public List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag) {
 
@@ -435,8 +429,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         return listBy(sc);
     }
-    
-    
+
+
     @Override
     public List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag) {
         SearchBuilder<HostTagVO> hostTagSearch = null;
@@ -446,42 +440,42 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             hostTagSearch.or("tagNull", hostTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
             hostTagSearch.cp();
         }
-        
+
         SearchBuilder<HostVO> hostSearch = createSearchBuilder();
-     
+
         hostSearch.and("type", hostSearch.entity().getType(), SearchCriteria.Op.EQ);
         hostSearch.and("clusterId", hostSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         hostSearch.and("podId", hostSearch.entity().getPodId(), SearchCriteria.Op.EQ);
         hostSearch.and("zoneId", hostSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         hostSearch.and("status", hostSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         hostSearch.and("resourceState", hostSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
-        
+
         if (haTag != null && !haTag.isEmpty()) {
             hostSearch.join("hostTagSearch", hostTagSearch, hostSearch.entity().getId(), hostTagSearch.entity().getHostId(), JoinBuilder.JoinType.LEFTOUTER);
         }
 
         SearchCriteria<HostVO> sc = hostSearch.create();
-        
+
         if (haTag != null && !haTag.isEmpty()) {
             sc.setJoinParameters("hostTagSearch", "tag", haTag);
         }
-        
+
         if (type != null) {
             sc.setParameters("type", type);
         }
-        
+
         if (clusterId != null) {
             sc.setParameters("clusterId", clusterId);
         }
-        
+
         if (podId != null) {
             sc.setParameters("podId", podId);
         }
-        
+
         sc.setParameters("zoneId", dcId);
         sc.setParameters("status", Status.Up);
         sc.setParameters("resourceState", ResourceState.Enabled);
-        
+
         return listBy(sc);
     }
 
@@ -528,7 +522,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
         return result;
     }
-   
+
     @Override
     public void saveDetails(HostVO host) {
         Map<String, String> details = host.getDetails();
@@ -650,12 +644,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
 
-	@Override
-	public boolean updateState(State currentState, DataCenterResourceEntity.State.Event event, State nextState, DataCenterResourceEntity hostEntity, Object data) {
-		HostVO vo = findById(hostEntity.getId());
-		Date oldUpdatedTime = vo.getLastUpdated();
+    @Override
+    public boolean updateState(State currentState, DataCenterResourceEntity.State.Event event, State nextState, DataCenterResourceEntity hostEntity, Object data) {
+        HostVO vo = findById(hostEntity.getId());
+        Date oldUpdatedTime = vo.getLastUpdated();
 
-		SearchCriteria<HostVO> sc = StateChangeSearch.create();
+        SearchCriteria<HostVO> sc = StateChangeSearch.create();
         sc.setParameters("id", hostEntity.getId());
         sc.setParameters("state", currentState);
 
@@ -663,14 +657,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         builder.set(vo, "state", nextState);
         builder.set(vo, "lastUpdated", new Date());
 
-        int rows = update((HostVO) vo, sc);
-        
+        int rows = update(vo, sc);
+
         if (rows == 0 && s_logger.isDebugEnabled()) {
-        	HostVO dbHost = findByIdIncludingRemoved(vo.getId());
+            HostVO dbHost = findByIdIncludingRemoved(vo.getId());
             if (dbHost != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
                 str.append(": DB Data={id=").append(dbHost.getId()).append("; state=").append(dbHost.getState()).append(";updatedTime=")
-                        .append(dbHost.getLastUpdated());
+                .append(dbHost.getLastUpdated());
                 str.append(": New Data={id=").append(vo.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatedTime=").append(vo.getLastUpdated());
                 str.append(": stale Data={id=").append(vo.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatedTime=").append(oldUpdatedTime);
             } else {
@@ -678,8 +672,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             }
         }
         return rows > 0;
-	}
-	
+    }
+
     @Override
     public boolean updateResourceState(ResourceState oldState, ResourceState.Event event, ResourceState newState, Host vo) {
         HostVO host = (HostVO)vo;
@@ -687,41 +681,41 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sb.and("resource_state", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.done();
-        
+
         SearchCriteria<HostVO> sc = sb.create();
 
         sc.setParameters("resource_state", oldState);
         sc.setParameters("id", host.getId());
-        
+
         UpdateBuilder ub = getUpdateBuilder(host);
         ub.set(host, _resourceStateAttr, newState);
         int result = update(ub, sc, null);
         assert result <= 1 : "How can this update " + result + " rows? ";
-        
+
         if (state_logger.isDebugEnabled() && result == 0) {
             HostVO ho = findById(host.getId());
             assert ho != null : "How how how? : " + host.getId();
 
             StringBuilder str = new StringBuilder("Unable to update resource state: [");
-			str.append("m = " + host.getId());
-			str.append("; name = " + host.getName());
-			str.append("; old state = " + oldState);
-			str.append("; event = " + event);
-			str.append("; new state = " + newState + "]");
-			state_logger.debug(str.toString());
+            str.append("m = " + host.getId());
+            str.append("; name = " + host.getName());
+            str.append("; old state = " + oldState);
+            str.append("; event = " + event);
+            str.append("; new state = " + newState + "]");
+            state_logger.debug(str.toString());
         } else {
-			StringBuilder msg = new StringBuilder("Resource state update: [");
-			msg.append("id = " + host.getId());
-			msg.append("; name = " + host.getName());
-			msg.append("; old state = " + oldState);
-			msg.append("; event = " + event);
-			msg.append("; new state = " + newState + "]");
-			state_logger.debug(msg.toString());
+            StringBuilder msg = new StringBuilder("Resource state update: [");
+            msg.append("id = " + host.getId());
+            msg.append("; name = " + host.getName());
+            msg.append("; old state = " + oldState);
+            msg.append("; event = " + event);
+            msg.append("; new state = " + newState + "]");
+            state_logger.debug(msg.toString());
         }
-		
+
         return result > 0;
     }
-    
+
     @Override
     public HostVO findByTypeNameAndZoneId(long zoneId, String name, Host.Type type) {
         SearchCriteria<HostVO> sc = TypeNameZoneSearch.create();
@@ -731,94 +725,94 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return findOneBy(sc);
     }
 
-	@Override
-	public List<HostVO> findHypervisorHostInCluster(long clusterId) {
-		 SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
-		 sc.setParameters("type", Host.Type.Routing);
-		 sc.setParameters("cluster", clusterId);
-		 sc.setParameters("status", Status.Up);
-		 sc.setParameters("resourceState", ResourceState.Enabled);
-		
-		return listBy(sc);
-	}
+    @Override
+    public List<HostVO> findHypervisorHostInCluster(long clusterId) {
+        SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("cluster", clusterId);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", ResourceState.Enabled);
 
-	@Override
-	public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> lockRows(
-			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
-			Filter filter, boolean exclusive) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        return listBy(sc);
+    }
 
-	@Override
-	public org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO lockOneRandomRow(
-			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
-			boolean exclusive) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> lockRows(
+            SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
+            Filter filter, boolean exclusive) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-
-	@Override
-	public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> search(
-			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
-			Filter filter) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> search(
-			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
-			Filter filter, boolean enable_query_cache) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> searchIncludingRemoved(
-			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
-			Filter filter, Boolean lock, boolean cache) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<HostVO> searchIncludingRemoved(
-			SearchCriteria<HostVO> sc,
-			Filter filter, Boolean lock, boolean cache,
-			boolean enable_query_cache) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO lockOneRandomRow(
+            SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
+            boolean exclusive) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 
-	@Override
-	public int remove(
-			SearchCriteria<HostVO> sc) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> search(
+            SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
+            Filter filter) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public int expunge(SearchCriteria<HostVO> sc) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> search(
+            SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
+            Filter filter, boolean enable_query_cache) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public HostVO findOneBy(SearchCriteria<HostVO> sc) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> searchIncludingRemoved(
+            SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
+            Filter filter, Boolean lock, boolean cache) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<HostVO> searchIncludingRemoved(
+            SearchCriteria<HostVO> sc,
+            Filter filter, Boolean lock, boolean cache,
+            boolean enable_query_cache) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+    @Override
+    public int remove(
+            SearchCriteria<HostVO> sc) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public int expunge(SearchCriteria<HostVO> sc) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public HostVO findOneBy(SearchCriteria<HostVO> sc) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 
 
-	@Override
-	public HostVO findByUUID(String uuid) {
-    	SearchCriteria<HostVO> sc = UUIDSearch.create();
-    	sc.setParameters("uuid", uuid);
+    @Override
+    public HostVO findByUUID(String uuid) {
+        SearchCriteria<HostVO> sc = UUIDSearch.create();
+        sc.setParameters("uuid", uuid);
         return findOneBy(sc);
-	}
+    }
 
 }

@@ -25,10 +25,10 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.utils.PropertiesUtil;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -89,7 +89,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
 
-@Component
 @Local(value = NetworkElement.class)
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, 
     UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
@@ -682,8 +681,9 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public String[] getPropertiesFiles() {
-        return new String[] { "virtualrouter_commands.properties" };
+    public Map<String, String> getProperties() {
+        return PropertiesUtil.processConfigFile(new String[]
+                { "virtualrouter_commands.properties" });
     }
 
     @Override

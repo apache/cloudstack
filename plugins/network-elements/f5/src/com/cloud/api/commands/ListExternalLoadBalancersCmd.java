@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.host.Host;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
@@ -40,7 +41,7 @@ public class ListExternalLoadBalancersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneRespones.class,
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
             description="zone Id")
     private long zoneId;
 

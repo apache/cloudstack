@@ -19,7 +19,6 @@ package com.cloud.consoleproxy;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -32,6 +31,9 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.ServerApiException;
+import com.cloud.offering.DiskOffering;
+import com.cloud.storage.dao.DiskOfferingDao;
 import org.apache.log4j.Logger;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
@@ -55,7 +57,6 @@ import com.cloud.agent.api.proxy.StartConsoleProxyAgentHttpHandlerCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
-import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.commands.DestroyConsoleProxyCmd;
 import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.cluster.ClusterManager;
@@ -110,7 +111,6 @@ import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
@@ -128,8 +128,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -140,7 +138,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -221,6 +218,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     @Inject
     ServiceOfferingDao _offeringDao;
     @Inject
+    DiskOfferingDao _diskOfferingDao;
+    @Inject
     NetworkOfferingDao _networkOfferingDao;
     @Inject
     StoragePoolDao _storagePoolDao;
@@ -229,14 +228,12 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     @Inject
     ResourceManager _resourceMgr;
     @Inject
-    IdentityDao _identityDao;
-    @Inject
     NetworkDao _networkDao;
     @Inject
     RulesManager _rulesMgr;
     @Inject
     IPAddressDao _ipAddressDao;
-    
+
     private ConsoleProxyListener _listener;
 
     private ServiceOfferingVO _serviceOffering;
@@ -269,7 +266,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private Map<Long, ZoneHostInfo> _zoneHostInfoMap; // map <zone id, info about running host in zone>
     private Map<Long, ConsoleProxyLoadInfo> _zoneProxyCountMap; // map <zone id, info about proxy VMs count in zone>
     private Map<Long, ConsoleProxyLoadInfo> _zoneVmCountMap; // map <zone id, info about running VMs count in zone>
-    
+
     private String _hashKey;
     private String _staticPublicIp;
     private int _staticPort;
@@ -478,9 +475,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         assert (ksVo != null);
 
         if (_staticPublicIp == null) {
-        return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), ksVo.getDomainSuffix());
+            return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), ksVo.getDomainSuffix());
         } else {
-        	return new ConsoleProxyInfo(proxy.isSslEnabled(), _staticPublicIp, _consoleProxyPort, _staticPort, ksVo.getDomainSuffix());
+            return new ConsoleProxyInfo(proxy.isSslEnabled(), _staticPublicIp, _consoleProxyPort, _staticPort, ksVo.getDomainSuffix());
         }
     }
 
@@ -809,10 +806,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     private ConsoleProxyAllocator getCurrentAllocator() {
         // for now, only one adapter is supported
-    	for(ConsoleProxyAllocator allocator : _consoleProxyAllocators) {
-    		return allocator;
-    	}
-    	
+        for(ConsoleProxyAllocator allocator : _consoleProxyAllocators) {
+            return allocator;
+        }
+
         return null;
     }
 
@@ -903,26 +900,26 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
 
         if(!cmd.isReauthenticating()) {
-	        String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
-	        if (s_logger.isDebugEnabled()) {
-	            s_logger.debug("Console authentication. Ticket in 1 minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticket);
-	        }
-	
-	        if (!ticket.equals(ticketInUrl)) {
-	            Date now = new Date();
-	            // considering of minute round-up
-	            String minuteEarlyTicket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(), new Date(now.getTime() - 60 * 1000));
-	
-	            if (s_logger.isDebugEnabled()) {
-	                s_logger.debug("Console authentication. Ticket in 2-minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + minuteEarlyTicket);
-	            }
-	
-	            if (!minuteEarlyTicket.equals(ticketInUrl)) {
-	                s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId() + "ticket in URL: " + ticketInUrl + ", tickets to check against: " + ticket + ","
-	                        + minuteEarlyTicket);
-	                return new ConsoleAccessAuthenticationAnswer(cmd, false);
-	            }
-	        }
+            String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Console authentication. Ticket in 1 minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticket);
+            }
+
+            if (!ticket.equals(ticketInUrl)) {
+                Date now = new Date();
+                // considering of minute round-up
+                String minuteEarlyTicket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(), new Date(now.getTime() - 60 * 1000));
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Console authentication. Ticket in 2-minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + minuteEarlyTicket);
+                }
+
+                if (!minuteEarlyTicket.equals(ticketInUrl)) {
+                    s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId() + "ticket in URL: " + ticketInUrl + ", tickets to check against: " + ticket + ","
+                            + minuteEarlyTicket);
+                    return new ConsoleAccessAuthenticationAnswer(cmd, false);
+                }
+            }
         }
 
         if (cmd.getVmId() != null && cmd.getVmId().isEmpty()) {
@@ -932,14 +929,12 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
         }
 
-        vmId = _identityDao.getIdentityId("vm_instance", cmd.getVmId());
-        if (vmId == null) {
-            s_logger.error("Invalid vm id " + cmd.getVmId() + " sent from console access authentication");
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
-        }
-
-        VMInstanceVO vm = _instanceDao.findById(vmId);
+        VirtualMachine vm = _instanceDao.findByUuid(cmd.getVmId());
         if (vm == null) {
+            vm = _instanceDao.findById(Long.parseLong(cmd.getVmId()));
+        }
+        if (vm == null) {
+            s_logger.error("Invalid vm id " + cmd.getVmId() + " sent from console access authentication");
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
         }
 
@@ -959,38 +954,38 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             s_logger.warn("sid " + sid + " in url does not match stored sid " + vm.getVncPassword());
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
         }
-        
+
         if(cmd.isReauthenticating()) {
             ConsoleAccessAuthenticationAnswer authenticationAnswer = new ConsoleAccessAuthenticationAnswer(cmd, true);
             authenticationAnswer.setReauthenticating(true);
 
             s_logger.info("Re-authentication request, ask host " + vm.getHostId() + " for new console info");
-        	GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new 
-            	GetVncPortCommand(vm.getId(), vm.getInstanceName()));
+            GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new 
+                    GetVncPortCommand(vm.getId(), vm.getInstanceName()));
 
             if (answer != null && answer.getResult()) {
-            	Ternary<String, String, String> parsedHostInfo = ConsoleProxyServlet.parseHostInfo(answer.getAddress());
-            	
-        		if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
-        			
+                Ternary<String, String, String> parsedHostInfo = ConsoleProxyServlet.parseHostInfo(answer.getAddress());
+
+                if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
+
                     s_logger.info("Re-authentication result. vm: " + vm.getId() + ", tunnel url: " + parsedHostInfo.second()
-                    	+ ", tunnel session: " + parsedHostInfo.third());
-        			
-        			authenticationAnswer.setTunnelUrl(parsedHostInfo.second());
-        			authenticationAnswer.setTunnelSession(parsedHostInfo.third());
-        		} else {
+                            + ", tunnel session: " + parsedHostInfo.third());
+
+                    authenticationAnswer.setTunnelUrl(parsedHostInfo.second());
+                    authenticationAnswer.setTunnelSession(parsedHostInfo.third());
+                } else {
                     s_logger.info("Re-authentication result. vm: " + vm.getId() + ", host address: " + parsedHostInfo.first()
-                        	+ ", port: " + answer.getPort());
-        			
-        			authenticationAnswer.setHost(parsedHostInfo.first());
-        			authenticationAnswer.setPort(answer.getPort());
-        		}
+                            + ", port: " + answer.getPort());
+
+                    authenticationAnswer.setHost(parsedHostInfo.first());
+                    authenticationAnswer.setPort(answer.getPort());
+                }
             } else {
                 s_logger.warn("Re-authentication request failed");
-            	
-            	authenticationAnswer.setSuccess(false);
+
+                authenticationAnswer.setSuccess(false);
             }
-            
+
             return authenticationAnswer;
         }
 
@@ -1198,11 +1193,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 }
             } else {
                 if (s_logger.isDebugEnabled()) {
-                	if (secondaryStorageHost != null) {
-                		s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage: " + secondaryStorageHost.getId());
-                	} else {
-                		s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage.");
-                	}
+                    if (secondaryStorageHost != null) {
+                        s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage: " + secondaryStorageHost.getId());
+                    } else {
+                        s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage.");
+                    }
                 }
             }
         }
@@ -1411,7 +1406,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                     result = result && _hostDao.remove(host.getId());
                 }
             }
-            
+
             return result;
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to expunge " + proxy, e);
@@ -1514,26 +1509,23 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        
+
         //check if there is a default service offering configured
-        String cpvmSrvcOffIdStr = configs.get(Config.ConsoleProxyServiceOffering.key()); 
+        String cpvmSrvcOffIdStr = configs.get(Config.ConsoleProxyServiceOffering.key());
         if (cpvmSrvcOffIdStr != null) {
-            
-            Long cpvmSrvcOffId = null;
-            try {
-                cpvmSrvcOffId = _identityDao.getIdentityId(DiskOfferingVO.class.getAnnotation(Table.class).name(),cpvmSrvcOffIdStr);
-            } catch (Exception e) {
-                String msg = "Can't find system service offering specified by global config, uuid=" + cpvmSrvcOffIdStr + " for console proxy vm";
-                s_logger.warn(msg);
+            DiskOffering diskOffering = _diskOfferingDao.findByUuid(cpvmSrvcOffIdStr);
+            if (diskOffering == null)
+                diskOffering = _diskOfferingDao.findById(Long.parseLong(cpvmSrvcOffIdStr));
+            if (diskOffering != null) {
+                _serviceOffering = _offeringDao.findById(diskOffering.getId());
+            } else {
+                s_logger.warn("Can't find system service offering specified by global config, uuid=" + cpvmSrvcOffIdStr + " for console proxy vm");
             }
-            if(cpvmSrvcOffId != null){
-                _serviceOffering = _offeringDao.findById(cpvmSrvcOffId);
-            }
-        } 
+        }
 
         if(_serviceOffering == null || !_serviceOffering.getSystemUse()){
-        	int ramSize = NumbersUtil.parseInt(_configDao.getValue("console.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
-        	int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("console.cpu.mhz"), DEFAULT_PROXY_VM_CPUMHZ);
+            int ramSize = NumbersUtil.parseInt(_configDao.getValue("console.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
+            int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("console.cpu.mhz"), DEFAULT_PROXY_VM_CPUMHZ);
             _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, ramSize, cpuFreq, 0, 0, false, null, useLocalStorage, true, null, true, VirtualMachine.Type.ConsoleProxy, true);
             _serviceOffering.setUniqueName(ServiceOffering.consoleProxyDefaultOffUniqueName);
             _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
@@ -1552,7 +1544,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         _staticPublicIp = _configDao.getValue("consoleproxy.static.publicIp");
         if (_staticPublicIp != null) {
-        	_staticPort = NumbersUtil.parseInt(_configDao.getValue("consoleproxy.static.port"), 8443);
+            _staticPort = NumbersUtil.parseInt(_configDao.getValue("consoleproxy.static.port"), 8443);
         }
 
         if (s_logger.isInfoEnabled()) {
@@ -2011,7 +2003,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
         return sc.find();
     }
-    
+
     public String getHashKey() {
         // although we may have race conditioning here, database transaction serialization should
         // give us the same key
@@ -2036,8 +2028,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         //not supported
         throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
     }
-	
-	@Override
-	public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
-	}
+
+    @Override
+    public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
+    }
 }

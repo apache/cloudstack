@@ -38,6 +38,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
@@ -113,7 +114,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -1535,6 +1536,31 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         } else {
             return _accountDao.findByIdIncludingRemoved(accountId);
         }
+    }
+
+    @Override
+    public RoleType getRoleType(Account account) {
+        RoleType roleType = RoleType.Unknown;
+        if (account == null)
+            return roleType;
+        short accountType = account.getType();
+
+        // Account type to role type translation
+        switch (accountType) {
+            case Account.ACCOUNT_TYPE_ADMIN:
+                roleType = RoleType.Admin;
+                break;
+            case Account.ACCOUNT_TYPE_DOMAIN_ADMIN:
+                roleType = RoleType.DomainAdmin;
+                break;
+            case Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN:
+                roleType = RoleType.ResourceAdmin;
+                break;
+            case Account.ACCOUNT_TYPE_NORMAL:
+                roleType = RoleType.User;
+                break;
+        }
+        return roleType;
     }
 
     @Override

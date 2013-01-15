@@ -16,13 +16,10 @@
 // under the License.
 package com.cloud.user;
 
-import com.cloud.server.ManagementService;
-import com.cloud.utils.component.ComponentLocator;
-
 public class UserContext {
 
     private static ThreadLocal<UserContext> s_currentContext = new ThreadLocal<UserContext>();
-    
+
     private long userId;
     private String sessionId;
     private Account account;
@@ -82,7 +79,7 @@ public class UserContext {
             // however, there are many places that run background jobs assume the system context.
             //
             // If there is a security concern, all entry points from user (including the front end that takes HTTP
-        	// request in and
+            // request in and
             // the core async-job manager that runs commands from user) have explicitly setup the UserContext.
             //
             return UserContextInitializer.getInstance().getAdminContext();

@@ -23,6 +23,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.api.query.vo.ControlledViewEntity;
 
@@ -341,6 +342,11 @@ public class MockAccountManagerImpl implements Manager, AccountManager, AccountS
     @Override
     public UserAccount getUserByApiKey(String apiKey) {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public RoleType getRoleType(Account account) {
         return null;
     }
 

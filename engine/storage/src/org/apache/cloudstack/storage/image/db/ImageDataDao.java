@@ -22,9 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.cloudstack.storage.image.TemplateEvent;
-import org.apache.cloudstack.storage.image.TemplateState;
-
 import com.cloud.domain.DomainVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -32,9 +29,8 @@ import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.fsm.StateDao;
 
-public interface ImageDataDao extends GenericDao<ImageDataVO, Long>, StateDao<TemplateState, TemplateEvent, ImageDataVO> {
+public interface ImageDataDao extends GenericDao<ImageDataVO, Long> {
     public List<ImageDataVO> listByPublic();
 
     public ImageDataVO findByName(String templateName);

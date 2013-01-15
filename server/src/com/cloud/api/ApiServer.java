@@ -45,13 +45,16 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.cloudstack.acl.APIAccessChecker;
+import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
@@ -74,7 +77,6 @@ import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.discovery.ApiDiscoveryService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -104,12 +106,12 @@ import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.cluster.StackMaid;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -127,70 +129,61 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
-import com.cloud.uuididentity.dao.IdentityDao;
 
+@Component
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
     public static boolean encodeApiResponse = false;
     public static String jsonContentType = "text/javascript";
-    private ApiDispatcher _dispatcher;
+    @Inject ApiDispatcher _dispatcher;
 
-    @Inject private final AccountManager _accountMgr = null;
-    @Inject private final DomainManager _domainMgr = null;
-    @Inject private final AsyncJobManager _asyncMgr = null;
+    @Inject private AccountManager _accountMgr;
+    @Inject private DomainManager _domainMgr;
+    @Inject private AsyncJobManager _asyncMgr;
     @Inject private ConfigurationDao _configDao;
-    @Inject protected List<APIAccessChecker> _apiAccessCheckers;
 
     @Inject List<PluggableService> _pluggableServices;
-    @Inject IdentityDao _identityDao;
 
-    protected List<ApiDiscoveryService> _apiDiscoveryServices;
+    @Inject List<APIChecker> _apiAccessCheckers;
 
     private Account _systemAccount = null;
     private User _systemUser = null;
     private static int _workerCount = 0;
     private static ApiServer s_instance = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-    private final Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
+    private static Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
-    protected ApiServer() {
-        super();
+    public ApiServer() {
     }
-
-    public static void initApiServer(String[] apiConfig) {
-        if (s_instance == null) {
-            s_instance = new ApiServer();
-            s_instance = ComponentContext.inject(s_instance);
-            s_instance.init(apiConfig);
-        }
+    
+    @PostConstruct
+    void initComponent() {
+    	s_instance = this;
+    	init();
     }
 
     public static ApiServer getInstance() {
-        // Assumption: CloudStartupServlet would initialize ApiServer
-        if (s_instance == null) {
-            s_logger.fatal("ApiServer instance failed to initialize");
-        }
         return s_instance;
     }
 
-    public void init(String[] apiConfig) {
+    public void init() {
         BaseCmd.setComponents(new ApiResponseHelper());
         BaseListCmd.configure();
 
         _systemAccount = _accountMgr.getSystemAccount();
         _systemUser = _accountMgr.getSystemUser();
-        _dispatcher = ApiDispatcher.getInstance();
 
         Integer apiPort = null; // api port, null by default
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
@@ -203,13 +196,28 @@ public class ApiServer implements HttpRequestHandler {
             }
         }
 
-        for (ApiDiscoveryService discoveryService: _apiDiscoveryServices) {
-            _apiNameCmdClassMap.putAll(discoveryService.getApiNameCmdClassMapping());
+        Map<String, String> configs = _configDao.getConfiguration();
+        String strSnapshotLimit = configs.get(Config.ConcurrentSnapshotsThresholdPerHost.key());
+        if (strSnapshotLimit != null) {
+            Long snapshotLimit = NumbersUtil.parseLong(strSnapshotLimit, 1L);
+            if (snapshotLimit <= 0) {
+                s_logger.debug("Global config parameter " + Config.ConcurrentSnapshotsThresholdPerHost.toString()
+                        + " is less or equal 0; defaulting to unlimited");
+            } else {
+                _dispatcher.setCreateSnapshotQueueSizeLimit(snapshotLimit);
+            }
         }
 
-        if (_apiNameCmdClassMap.size() == 0) {
-            s_logger.fatal("ApiServer failed to generate apiname, cmd class mappings."
-                    + "Please check and enable at least one ApiDiscovery adapter.");
+        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
+                new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
+
+        for(Class<?> cmdClass: cmdClasses) {
+            String apiName = cmdClass.getAnnotation(APICommand.class).name();
+            if (_apiNameCmdClassMap.containsKey(apiName)) {
+                s_logger.error("API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
+                continue;
+            }
+            _apiNameCmdClassMap.put(apiName, cmdClass);
         }
 
         encodeApiResponse = Boolean.valueOf(_configDao.getValue(Config.EncodeApiResponse.key()));
@@ -403,12 +411,12 @@ public class ApiServer implements HttpRequestHandler {
         // BaseAsyncCmd: cmd is processed and submitted as an AsyncJob, job related info is serialized and returned.
         if (cmdObj instanceof BaseAsyncCmd) {
             Long objectId = null;
-            String objectEntityTable = null;
+            String objectUuid = null;
             if (cmdObj instanceof BaseAsyncCreateCmd) {
                 BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd) cmdObj;
                 _dispatcher.dispatchCreateCmd(createCmd, params);
                 objectId = createCmd.getEntityId();
-                objectEntityTable = createCmd.getEntityTable();
+                objectUuid = createCmd.getEntityUuid();
                 params.put("id", objectId.toString());
             } else {
                 ApiDispatcher.processParameters(cmdObj, params);
@@ -452,8 +460,8 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             if (objectId != null) {
-                SerializationContext.current().setUuidTranslation(true);
-                return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objectId, objectEntityTable);
+                String objUuid = (objectUuid == null) ? objectId.toString() : objectUuid;
+                return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objUuid);
             }
 
             SerializationContext.current().setUuidTranslation(true);
@@ -463,6 +471,7 @@ public class ApiServer implements HttpRequestHandler {
 
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
+            // For those listXXXCommand which we have already created DB views, this step is not needed since async job is joined in their db views.
             if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
                     && !(cmdObj instanceof ListSecurityGroupsCmd)
                     && !(cmdObj instanceof ListTagsCmd)
@@ -553,14 +562,14 @@ public class ApiServer implements HttpRequestHandler {
             if (userId != null) {
                 User user = ApiDBUtils.findUserById(userId);
                 if (!isCommandAvailable(user, commandName)) {
-                    s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
+                    s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
                 return true;
             } else {
                 // check against every available command to see if the command exists or not
-                if (!isCommandAvailable(null, commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
-                    s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
+                if (!_apiNameCmdClassMap.containsKey(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
+                    s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
             }
@@ -604,30 +613,29 @@ public class ApiServer implements HttpRequestHandler {
 
             // if api/secret key are passed to the parameters
             if ((signature == null) || (apiKey == null)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.info("expired session, missing signature, or missing apiKey -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
-                }
+                s_logger.debug("Expired session, missing signature, or missing apiKey -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
                 return false; // no signature, bad request
             }
 
             Date expiresTS = null;
+            // FIXME: Hard coded signature, why not have an enum
             if ("3".equals(signatureVersion)) {
                 // New signature authentication. Check for expire parameter and its validity
                 if (expires == null) {
-                    s_logger.info("missing Expires parameter -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
+                    s_logger.debug("Missing Expires parameter -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
                     return false;
                 }
                 synchronized (_dateFormat) {
                     try {
                         expiresTS = _dateFormat.parse(expires);
                     } catch (ParseException pe) {
-                        s_logger.info("Incorrect date format for Expires parameter", pe);
+                        s_logger.debug("Incorrect date format for Expires parameter", pe);
                         return false;
                     }
                 }
                 Date now = new Date(System.currentTimeMillis());
                 if (expiresTS.before(now)) {
-                    s_logger.info("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
+                    s_logger.debug("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
                     return false;
                 }
             }
@@ -638,7 +646,7 @@ public class ApiServer implements HttpRequestHandler {
             // verify there is a user with this api key
             Pair<User, Account> userAcctPair = _accountMgr.findUserByApiKey(apiKey);
             if (userAcctPair == null) {
-                s_logger.info("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
+                s_logger.debug("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
                 return false;
             }
 
@@ -654,8 +662,8 @@ public class ApiServer implements HttpRequestHandler {
             UserContext.updateContext(user.getId(), account, null);
 
             if (!isCommandAvailable(user, commandName)) {
-                s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
-                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user");
+                s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user");
+                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
             }
 
             // verify secret key exists
@@ -682,18 +690,13 @@ public class ApiServer implements HttpRequestHandler {
             if (ex instanceof ServerApiException && ((ServerApiException) ex).getErrorCode() == BaseCmd.UNSUPPORTED_ACTION_ERROR) {
                 throw (ServerApiException) ex;
             }
-            s_logger.error("unable to verifty request signature", ex);
+            s_logger.error("unable to verify request signature", ex);
         }
         return false;
     }
 
-    public Long fetchDomainId(String domainUUID){
-        try{
-            Long domainId = _identityDao.getIdentityId("domain", domainUUID);
-            return domainId;
-        }catch(InvalidParameterValueException ex){
-            return null;
-        }
+    public Long fetchDomainId(String domainUUID) {
+        return _domainMgr.getDomain(domainUUID).getId();
     }
 
     public void loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, String loginIpAddress ,Map<String, Object[]> requestParameters) throws CloudAuthenticationException {
@@ -789,10 +792,16 @@ public class ApiServer implements HttpRequestHandler {
         return true;
     }
 
-    private boolean isCommandAvailable(User user, String commandName) {
-        for (APIAccessChecker apiChecker : _apiAccessCheckers) {
+    private boolean isCommandAvailable(User user, String commandName) throws PermissionDeniedException {
+        if (user == null) {
+            throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
+        }
+
+        Account account = _accountMgr.getAccount(user.getAccountId());
+        RoleType roleType = _accountMgr.getRoleType(account);
+        for (APIChecker apiChecker : _apiAccessCheckers) {
             // Fail the checking if any checker fails to verify
-            if (!apiChecker.canAccessAPI(user, commandName))
+            if (!apiChecker.checkAccess(roleType, commandName))
                 return false;
         }
         return true;
@@ -907,12 +916,8 @@ public class ApiServer implements HttpRequestHandler {
             HttpContext context = new BasicHttpContext(null);
             try {
                 while (!Thread.interrupted() && _conn.isOpen()) {
-                    try {
-                        _httpService.handleRequest(_conn, context);
-                        _conn.close();
-                    } finally {
-                        StackMaid.current().exitCleanup();
-                    }
+                    _httpService.handleRequest(_conn, context);
+                    _conn.close();
                 }
             } catch (ConnectionClosedException ex) {
                 if (s_logger.isTraceEnabled()) {

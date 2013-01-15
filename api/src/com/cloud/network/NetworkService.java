@@ -60,6 +60,8 @@ public interface NetworkService {
 
     Network getNetwork(long networkId);
 
+    Network getNetwork(String networkUuid);
+
     IpAddress getIp(long id);
 
     NetworkProfile convertNetworkToNetworkProfile(long networkId);

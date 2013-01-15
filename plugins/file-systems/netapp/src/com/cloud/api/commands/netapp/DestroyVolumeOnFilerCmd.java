@@ -31,7 +31,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DeleteVolumeOnFilerCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "destroyVolumeOnFiler", description="Destroy a Volume", responseObject = DeleteVolumeOnFilerCmdResponse.class)
 public class DestroyVolumeOnFilerCmd extends BaseCmd {

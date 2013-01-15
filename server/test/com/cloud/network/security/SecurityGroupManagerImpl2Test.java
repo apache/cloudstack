@@ -19,6 +19,7 @@ package com.cloud.network.security;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import junit.framework.TestCase;
@@ -46,8 +47,7 @@ import com.cloud.user.MockAccountManagerImpl;
 import com.cloud.user.MockDomainManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.utils.Profiler;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.MockComponentLocator;
+
 import com.cloud.vm.MockUserVmManagerImpl;
 import com.cloud.vm.MockVirtualMachineManagerImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
@@ -55,14 +55,13 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 public class SecurityGroupManagerImpl2Test extends TestCase {
     //private final static Logger s_logger = Logger.getLogger(SecurityGroupManagerImpl2Test.class);
-    SecurityGroupManagerImpl2 _sgMgr = null;
-    UserVmDaoImpl _vmDao = null;
+    @Inject SecurityGroupManagerImpl2 _sgMgr = null;
+    @Inject UserVmDaoImpl _vmDao = null;
     
     @Before
     @Override
     public  void setUp() {
-        MockComponentLocator locator = new MockComponentLocator("management-server");
-       
+/*       
         locator.addDao("ConfigurationDao", ConfigurationDaoImpl.class);
         locator.addDao("SecurityGroupDao", SecurityGroupDaoImpl.class);
         
@@ -87,8 +86,7 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
         locator.addManager("DomainManager", MockDomainManagerImpl.class); 
         locator.addManager("ProjectManager", MockProjectManagerImpl.class);
         locator.makeActive(new DefaultInterceptorLibrary());
-        _sgMgr = ComponentLocator.inject(SecurityGroupManagerImpl2.class);
-        _sgMgr._mBean = new SecurityManagerMBeanImpl(_sgMgr);
+*/  
     }
     
     @Override

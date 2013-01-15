@@ -33,7 +33,7 @@ import com.cloud.netapp.NetappManager;
 import com.cloud.netapp.NetappVolumeVO;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ListVolumesOnFilerCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "listVolumesOnFiler", description="List Volumes", responseObject = ListVolumesOnFilerCmdResponse.class)
 public class ListVolumesOnFilerCmd extends BaseCmd {

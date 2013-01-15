@@ -18,11 +18,25 @@
  */
 package org.apache.cloudstack.storage.image;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
+import org.apache.cloudstack.storage.EndPoint;
 
 public interface ImageService {
-    AsyncCallFuture<CommandResult> createTemplateAsync(TemplateInfo template, DataStore store);
-    AsyncCallFuture<CommandResult> deleteTemplateAsync(TemplateInfo template);
+    TemplateEntity registerTemplate(long templateId, long imageStoreId);
+
+    boolean deleteTemplate(long templateId);
+
+    long registerIso(String isoUrl, long accountId);
+
+    boolean deleteIso(long isoId);
+
+    boolean grantTemplateAccess(TemplateInfo template, EndPoint endpointId);
+
+    boolean revokeTemplateAccess(long templateId, long endpointId);
+
+    String grantIsoAccess(long isoId, long endpointId);
+
+    boolean revokeIsoAccess(long isoId, long endpointId);
+
+    TemplateEntity getTemplateEntity(long templateId);
 }

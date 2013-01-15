@@ -27,7 +27,6 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.DOMConfigurator;
 
-import com.cloud.api.ApiServer;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
@@ -42,17 +41,14 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
 
     @Override
     public void init() throws ServletException {
-        initLog4j();
-
-        // Save Configuration Values
-        ConfigurationServer c = ComponentContext.getCompanent(ConfigurationServer.class);
+    	initLog4j();
+        ConfigurationServer c = (ConfigurationServer)ComponentContext.getComponent(ConfigurationServer.Name);
         try {
             c.persistDefaultValues();
-
-            ManagementServer ms = ComponentContext.getCompanent(ManagementServer.class);
+            ManagementServer ms = (ManagementServer)ComponentContext.getComponent(ManagementServer.Name);
             ms.startup();
             ms.enableAdminUser("password");
-            ApiServer.initApiServer(ms.getPropertiesFiles());
+            //ApiServer.initApiServer();
         } catch (InvalidParameterValueException ipve) {
             s_logger.error("Exception starting management server ", ipve);
             throw new ServletException (ipve.getMessage());
@@ -75,18 +71,18 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
     }
-
+    
     private void initLog4j() {
-        File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
-        if (file != null) {
-            s_logger.info("log4j configuration found at " + file.getAbsolutePath());
-            DOMConfigurator.configureAndWatch(file.getAbsolutePath());
-        } else {
-            file = PropertiesUtil.findConfigFile("log4j-cloud.properties");
-            if (file != null) {
-                s_logger.info("log4j configuration found at " + file.getAbsolutePath());
-                PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
-            }
-        }
-    }
+    	File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
+    	if (file != null) {
+        s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+        DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+	    } else {
+	        file = PropertiesUtil.findConfigFile("log4j-cloud.properties");
+	        if (file != null) {
+	            s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+	            PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
+	        }
+	    }
+   }
 }

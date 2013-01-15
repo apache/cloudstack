@@ -22,9 +22,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
 import org.apache.cloudstack.storage.image.ImageService;
 import org.apache.cloudstack.storage.image.TemplateInfo;
@@ -53,7 +53,7 @@ public class ImageMotionServiceImpl implements ImageMotionService {
 
     @Override
     public void copyTemplateAsync(TemplateInfo destTemplate, TemplateInfo srcTemplate, AsyncCompletionCallback<CommandResult> callback) {
-     /*   ImageMotionStrategy ims = null;
+        ImageMotionStrategy ims = null;
         for (ImageMotionStrategy strategy : motionStrategies) {
             if (strategy.canHandle(srcTemplate)) {
                 ims = strategy;
@@ -69,7 +69,7 @@ public class ImageMotionServiceImpl implements ImageMotionService {
         String srcUri = srcTemplate.getDataStore().grantAccess(srcTemplate, ep);
         String destUri = destTemplate.getDataStore().grantAccess(destTemplate, ep);
         
-        ims.copyTemplateAsync(destUri, srcUri, ep, callback);*/
+        ims.copyTemplateAsync(destUri, srcUri, ep, callback);
     }
 
 

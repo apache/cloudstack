@@ -22,7 +22,7 @@ import java.util.Set;
 
 public interface FiniteState2<T, E> {
 
-    StateMachine2<T, ? extends ChangeEvent, ? extends StateObject> getStateMachine();
+    StateMachine2<T, ? extends ChangeEvent, ? extends StateObject<?>> getStateMachine();
 
     T getNextState(ChangeEvent e) throws NoTransitionException;
 

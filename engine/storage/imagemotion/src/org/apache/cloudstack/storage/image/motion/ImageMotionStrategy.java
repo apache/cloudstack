@@ -18,7 +18,15 @@
  */
 package org.apache.cloudstack.storage.image.motion;
 
-import org.apache.cloudstack.storage.motion.DataMotionStrategy;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.datastore.DataStore;
+import org.apache.cloudstack.storage.image.TemplateInfo;
 
-public interface ImageMotionStrategy extends DataMotionStrategy {
+public interface ImageMotionStrategy {
+    public boolean canHandle(TemplateInfo templateStore);
+    public EndPoint getEndPoint(TemplateInfo destTemplate, TemplateInfo srcTemplate);
+    public void copyTemplateAsync(String destUri, String sourceUri, EndPoint ep, AsyncCompletionCallback<CommandResult> callback);
 }

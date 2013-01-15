@@ -26,7 +26,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.Transaction;

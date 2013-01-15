@@ -36,15 +36,14 @@ import javax.naming.ConfigurationException;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.maint.dao.AgentUpgradeDao;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.ComponentLocator;
 
 /**
  *
@@ -57,7 +56,7 @@ import com.cloud.utils.component.ComponentLocator;
 @Component
 @Local(UpgradeManager.class)
 public class UpgradeManagerImpl implements UpgradeManager {
-	private final static Logger s_logger = Logger.getLogger(UpgradeManagerImpl.class);
+    private final static Logger s_logger = Logger.getLogger(UpgradeManagerImpl.class);
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
     String _name;
@@ -66,10 +65,10 @@ public class UpgradeManagerImpl implements UpgradeManager {
 //    String _upgradeUrl;
     String _agentPath;
     long _checkInterval;
-    
+
     @Inject AgentUpgradeDao _upgradeDao;
     @Inject ConfigurationDao _configDao;
-    
+
     @Override
     public State registerForUpgrade(long hostId, String version) {
         State state = State.UpToDate;
@@ -90,11 +89,11 @@ public class UpgradeManagerImpl implements UpgradeManager {
                 _upgradeDao.persist(vo);
             }
         }
-        */
-        
+         */
+
         return state;
     }
-    
+
     public String deployNewAgent(String url) {
         s_logger.info("Updating agent with binary from " + url);
 
@@ -132,18 +131,18 @@ public class UpgradeManagerImpl implements UpgradeManager {
 
             s_logger.debug("New Agent zip file is now retrieved");
         } catch (final HttpException e) {
-        	return "Unable to retrieve the file from " + url;
+            return "Unable to retrieve the file from " + url;
         } catch (final IOException e) {
-        	return "Unable to retrieve the file from " + url;
+            return "Unable to retrieve the file from " + url;
         } finally {
-               method.releaseConnection();
+            method.releaseConnection();
         }
-        
+
         file.delete();
-        
+
         return "File will be deployed.";
     }
-    
+
 //    @Override
 //    public String getAgentUrl() {
 //        return _upgradeUrl;
@@ -174,7 +173,7 @@ public class UpgradeManagerImpl implements UpgradeManager {
             }
 
             //_upgradeUrl = configs.get("upgrade.url");
-            
+
 //			if (_upgradeUrl == null) {
 //				s_logger.debug("There is no upgrade url found in configuration table");
 //                // _upgradeUrl = "http://updates.vmops.com/releases/rss.xml";

@@ -80,9 +80,6 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "firewall_rules";
-    }
 
     public Long getIpAddressId() {
         return ipAddressId;
@@ -242,6 +239,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         try {
             FirewallRule result = _firewallService.createFirewallRule(this);
             setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " + ex.getMessage());
             s_logger.trace("Network Rule Conflict: ", ex);

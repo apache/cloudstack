@@ -22,7 +22,7 @@ import java.util.List;
 
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 
 import com.cloud.deploy.DeploymentPlan;
@@ -62,7 +62,7 @@ public interface StorageOrchestrator {
      */
     void prepareAttachDiskToVM(long diskId, long vmId, String reservationId);
     
-    boolean createVolume(VolumeEntity volume, long dataStoreId, DiskFormat diskType);
-    boolean createVolumeFromTemplate(VolumeEntity volume, long dataStoreId, DiskFormat dis, TemplateEntity template);
+    boolean createVolume(VolumeEntity volume, long dataStoreId, VolumeDiskType diskType);
+    boolean createVolumeFromTemplate(VolumeEntity volume, long dataStoreId, VolumeDiskType dis, TemplateEntity template);
     VolumeEntity allocateVolumeInDb(long size, VolumeType type,String volName, Long templateId);
 }

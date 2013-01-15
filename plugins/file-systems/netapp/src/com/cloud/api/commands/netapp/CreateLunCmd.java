@@ -33,7 +33,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.CreateLunCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "createLunOnFiler", description="Create a LUN from a pool", responseObject = CreateLunCmdResponse.class)
 public class CreateLunCmd extends BaseCmd {

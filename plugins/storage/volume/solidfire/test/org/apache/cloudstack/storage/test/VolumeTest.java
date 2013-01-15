@@ -1,4 +1,22 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 package org.apache.cloudstack.storage.test;
+
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,10 +28,12 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProvider;
+import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProviderManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,9 +43,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -53,8 +73,8 @@ public class VolumeTest {
 	DataCenterDao dcDao;
 	@Inject
 	PrimaryDataStoreDao primaryStoreDao;
-	//@Inject
-	//PrimaryDataStoreProviderManager primaryDataStoreProviderMgr;
+	@Inject
+	PrimaryDataStoreProviderManager primaryDataStoreProviderMgr;
 	@Inject
 	AgentManager agentMgr;
 	Long dcId;
@@ -114,16 +134,16 @@ public class VolumeTest {
 
 	private PrimaryDataStoreInfo createPrimaryDataStore() {
 		try {
-			//primaryDataStoreProviderMgr.configure("primary data store mgr", new HashMap<String, Object>());
-			//PrimaryDataStoreProvider provider = primaryDataStoreProviderMgr.getDataStoreProvider("Solidfre Primary Data Store Provider");
+			primaryDataStoreProviderMgr.configure("primary data store mgr", new HashMap<String, Object>());
+			PrimaryDataStoreProvider provider = primaryDataStoreProviderMgr.getDataStoreProvider("Solidfre Primary Data Store Provider");
 			Map<String, String> params = new HashMap<String, String>();
 			params.put("url", "nfs://test/test");
 			params.put("dcId", dcId.toString());
 			params.put("clusterId", clusterId.toString());
 			params.put("name", "my primary data store");
-			//PrimaryDataStoreInfo primaryDataStoreInfo = provider.registerDataStore(params);
-			return null;
-		} catch (Exception e) {
+			PrimaryDataStoreInfo primaryDataStoreInfo = provider.registerDataStore(params);
+			return primaryDataStoreInfo;
+		} catch (ConfigurationException e) {
 			return null;
 		}
 	}

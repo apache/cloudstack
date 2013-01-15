@@ -130,8 +130,8 @@ import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.AdapterBase;
+
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -216,10 +216,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     private TemplateAdapter getAdapter(HypervisorType type) {
     	TemplateAdapter adapter = null;
     	if (type == HypervisorType.BareMetal) {
-    		adapter = Adapters.getAdapterByName(_adapters, TemplateAdapterType.BareMetal.getName());
+    		adapter = AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.BareMetal.getName());
     	} else {
     		// see HyervisorTemplateAdapter
-    		adapter =  Adapters.getAdapterByName(_adapters, TemplateAdapterType.Hypervisor.getName());
+    		adapter =  AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.Hypervisor.getName());
     	}
     	
     	if (adapter == null) {
@@ -1098,7 +1098,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             s_logger.info("S3 secondary storage synchronization is disabled.");
         }
 
-        return false;
+        return true;
     }
     
     protected TemplateManagerImpl() {

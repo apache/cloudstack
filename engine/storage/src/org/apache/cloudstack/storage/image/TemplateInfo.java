@@ -18,19 +18,17 @@
  */
 package org.apache.cloudstack.storage.image;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.storage.image.store.ImageDataStoreInfo;
 
-import com.cloud.utils.fsm.NoTransitionException;
-
-public interface TemplateInfo extends DataObject {
-    DataStore getDataStore();
+public interface TemplateInfo {
+    ImageDataStoreInfo getDataStore();
     
     long getId();
+
+    VolumeDiskType getDiskType();
     
     String getPath();
     
     String getUuid();
-
-    boolean stateTransit(TemplateEvent e) throws NoTransitionException;
 }

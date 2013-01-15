@@ -17,16 +17,16 @@
 package com.cloud.server;
 
 
+import com.cloud.utils.PropertiesUtil;
+
+import java.util.Map;
+
 public class ManagementServerSimulatorImpl extends ManagementServerExtImpl {
     @Override
-    public String[] getPropertiesFiles() {
-        String[] apis = super.getPropertiesFiles();
-        String[] newapis = new String[apis.length + 1];
-        for (int i = 0; i < apis.length; i++) {
-            newapis[i] = apis[i];
-        }
-
-        newapis[apis.length] = "commands-simulator.properties";
-        return newapis;
+    public Map<String, String> getProperties() {
+        Map<String, String> apiNameRoleMaskMapping = super.getProperties();
+        apiNameRoleMaskMapping.putAll(PropertiesUtil.processConfigFile(new String[]
+                {"commands-simulator.properties"}));
+        return apiNameRoleMaskMapping;
     }
 }

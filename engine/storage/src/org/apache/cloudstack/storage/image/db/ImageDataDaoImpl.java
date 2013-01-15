@@ -29,10 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.image.TemplateEvent;
-import org.apache.cloudstack.storage.image.TemplateState;
 import org.apache.cloudstack.storage.image.format.ISO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -75,18 +74,18 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
     private static final Logger s_logger = Logger.getLogger(VMTemplateDaoImpl.class);
 
 
-    VMTemplateZoneDao _templateZoneDao = null;
+    @Inject VMTemplateZoneDao _templateZoneDao = null;
 
-    VMTemplateDetailsDao _templateDetailsDao = null;
+    @Inject VMTemplateDetailsDao _templateDetailsDao = null;
 
 
-    ConfigurationDao _configDao = null;
+    @Inject ConfigurationDao _configDao = null;
 
-    HostDao _hostDao = null;
+    @Inject HostDao _hostDao = null;
 
-    DomainDao _domainDao = null;
+    @Inject DomainDao _domainDao = null;
 
-    DataCenterDao _dcDao = null;
+    @Inject DataCenterDao _dcDao = null;
     private final String SELECT_TEMPLATE_HOST_REF = "SELECT t.id, h.data_center_id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, "
             + "t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type FROM vm_template t";
 
@@ -925,12 +924,4 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
     private boolean isAdmin(short accountType) {
         return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
     }
-
-    @Override
-    public boolean updateState(TemplateState currentState, TemplateEvent event,
-            TemplateState nextState, ImageDataVO vo, Object data) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
 }

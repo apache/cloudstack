@@ -18,7 +18,10 @@
  */
 package org.apache.cloudstack.storage.image.store.lifecycle;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import java.util.Map;
 
-public interface ImageDataStoreLifeCycle extends DataStoreLifeCycle {
+import org.apache.cloudstack.storage.image.store.ImageDataStore;
+
+public interface ImageDataStoreLifeCycle {
+    public ImageDataStore registerDataStore(String name, Map<String, String> params);
 }

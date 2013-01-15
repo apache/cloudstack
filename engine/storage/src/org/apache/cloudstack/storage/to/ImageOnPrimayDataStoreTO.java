@@ -22,11 +22,11 @@ import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
 
 public class ImageOnPrimayDataStoreTO {
     private final String pathOnPrimaryDataStore;
-    private  PrimaryDataStoreTO dataStore;
+    private final PrimaryDataStoreTO dataStore;
     private final TemplateTO template;
     public ImageOnPrimayDataStoreTO(TemplateOnPrimaryDataStoreInfo template) {
         this.pathOnPrimaryDataStore = template.getPath();
-        //this.dataStore = template.getPrimaryDataStore().getDataStoreTO();
+        this.dataStore = template.getPrimaryDataStore().getDataStoreTO();
         this.template = new TemplateTO(template.getTemplate());
     }
     

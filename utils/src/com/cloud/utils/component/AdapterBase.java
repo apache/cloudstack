@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.utils.component;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -34,6 +35,10 @@ public class AdapterBase implements Adapter {
     public String getName() {
         return _name;
     }
+    
+    public void setName(String name) {
+    	_name = name;
+    }
 
     @Override
     public boolean start() {
@@ -43,6 +48,14 @@ public class AdapterBase implements Adapter {
     @Override
     public boolean stop() {
         return true;
+    }
+
+    public static <T extends Adapter> T getAdapterByName(List<T> adapters, String name) {
+    	for(T adapter : adapters) {
+    		if(adapter.getName().equals(name))
+    			return adapter;
+    	}
+    	return null;
     }
 
 }

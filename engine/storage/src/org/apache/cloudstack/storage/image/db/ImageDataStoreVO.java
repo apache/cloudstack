@@ -34,16 +34,10 @@ public class ImageDataStoreVO {
 
     @Column(name = "name", nullable = false)
     private String name;
-    
-    @Column(name = "protocol", nullable = false)
-    private String protocol;
 
     @Column(name = "image_provider_id", nullable = false)
     private long provider;
-    
-    @Column(name = "data_center_id")
-    private long dcId;
-    
+
     public long getId() {
         return this.id;
     }
@@ -62,21 +56,5 @@ public class ImageDataStoreVO {
 
     public void setProvider(long provider) {
         this.provider = provider;
-    }
-    
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-    
-    public String getProtocol() {
-        return this.protocol;
-    }
-    
-    public void setDcId(long dcId) {
-        this.dcId = dcId;
-    }
-    
-    public long getDcId() {
-        return this.dcId;
     }
 }

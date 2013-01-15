@@ -81,6 +81,7 @@ public class CreateCounterCmd extends BaseAsyncCreateCmd {
 
         if (ctr != null) {
             this.setEntityId(ctr.getId());
+            this.setEntityUuid(ctr.getUuid());
             CounterResponse response = _responseGenerator.createCounterResponse(ctr);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
@@ -113,8 +114,5 @@ public class CreateCounterCmd extends BaseAsyncCreateCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    @Override
-    public String getEntityTable() {
-        return "counter";
-    }
+
 }

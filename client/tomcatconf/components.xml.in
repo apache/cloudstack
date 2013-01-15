@@ -53,11 +53,8 @@ under the License.
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
              <param name="premium">true</param>
         </dao>
-        <adapters key="org.apache.cloudstack.acl.APIAccessChecker">
+        <adapters key="org.apache.cloudstack.acl.APIChecker">
             <adapter name="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
-        </adapters>
-        <adapters key="org.apache.cloudstack.discovery.ApiDiscoveryService">
-            <adapter name="ApiDiscoveryService" class="org.apache.cloudstack.discovery.ApiDiscoveryServiceImpl"/>
         </adapters>
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>

@@ -17,7 +17,6 @@
 package com.cloud.network.element;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,7 +24,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -64,7 +62,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
-@Component
 @Local(value = NetworkElement.class)
 public class CloudZonesNetworkElement extends AdapterBase implements NetworkElement, UserDataServiceProvider {
     private static final Logger s_logger = Logger.getLogger(CloudZonesNetworkElement.class);

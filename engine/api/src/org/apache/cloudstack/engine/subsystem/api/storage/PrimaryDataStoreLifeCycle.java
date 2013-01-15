@@ -18,6 +18,25 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import java.util.Map;
 
-public interface PrimaryDataStoreLifeCycle extends DataStoreLifeCycle {
+public interface PrimaryDataStoreLifeCycle {
+    public boolean initialize(Map<String, String> dsInfos);
+
+    public boolean attachCluster(ClusterScope scope);
+
+    public boolean dettach();
+
+    public boolean unmanaged();
+
+    public boolean maintain();
+
+    public boolean cancelMaintain();
+
+    public boolean deleteDataStore();
+
+    /**
+     * @param dataStore
+     */
+    void setDataStore(PrimaryDataStoreInfo dataStore);
 }

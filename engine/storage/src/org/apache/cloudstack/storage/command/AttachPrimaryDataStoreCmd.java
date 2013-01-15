@@ -18,15 +18,17 @@
  */
 package org.apache.cloudstack.storage.command;
 
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+
 import com.cloud.agent.api.Command;
 
 public class AttachPrimaryDataStoreCmd extends Command implements StorageSubSystemCommand {
-    private final String dataStore;
-    public AttachPrimaryDataStoreCmd(String uri) {
-        this.dataStore = uri;
+    private final PrimaryDataStoreTO dataStore;
+    public AttachPrimaryDataStoreCmd(PrimaryDataStoreTO dataStore) {
+        this.dataStore = dataStore;
     }
     
-    public String getDataStore() {
+    public PrimaryDataStoreTO getDataStore() {
         return this.dataStore;
     }
 

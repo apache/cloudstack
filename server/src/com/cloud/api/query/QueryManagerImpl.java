@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
@@ -57,6 +58,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
@@ -97,15 +99,13 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
-import com.cloud.projects.ProjectInvitation;
-import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.Project;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.Criteria;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -115,7 +115,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -130,6 +129,7 @@ import com.cloud.vm.dao.UserVmDao;
  * @author minc
  *
  */
+@Component
 @Local(value = {QueryService.class })
 public class QueryManagerImpl implements QueryService, Manager {
 
@@ -137,7 +137,7 @@ public class QueryManagerImpl implements QueryService, Manager {
 
     private String _name;
 
-   // public static ViewResponseHelper _responseGenerator;
+    // public static ViewResponseHelper _responseGenerator;
 
     @Inject
     private AccountManager _accountMgr;
@@ -214,8 +214,7 @@ public class QueryManagerImpl implements QueryService, Manager {
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
-       // _responseGenerator = new ViewResponseHelper();
-        return false;
+        return true;
     }
 
     @Override
@@ -717,7 +716,7 @@ public class QueryManagerImpl implements QueryService, Manager {
 
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
-             for (String key : tags.keySet()) {
+            for (String key : tags.keySet()) {
                 sc.setParameters("key" + String.valueOf(count), key);
                 sc.setParameters("value" + String.valueOf(count), tags.get(key));
                 count++;
@@ -883,10 +882,10 @@ public class QueryManagerImpl implements QueryService, Manager {
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
             for (String key : tags.keySet()) {
-               sc.setParameters("key" + String.valueOf(count), key);
-               sc.setParameters("value" + String.valueOf(count), tags.get(key));
-               count++;
-           }
+                sc.setParameters("key" + String.valueOf(count), key);
+                sc.setParameters("value" + String.valueOf(count), tags.get(key));
+                count++;
+            }
         }
 
         if (securityGroup != null) {
@@ -974,10 +973,10 @@ public class QueryManagerImpl implements QueryService, Manager {
         //Filter searchFilter = new Filter(DomainRouterJoinVO.class, null, true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<DomainRouterJoinVO> sb = _routerJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
-                                                             // ids to get
-                                                             // number of
-                                                             // records with
-                                                             // pagination
+        // ids to get
+        // number of
+        // records with
+        // pagination
         _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
@@ -1095,7 +1094,7 @@ public class QueryManagerImpl implements QueryService, Manager {
         Filter searchFilter = new Filter(ProjectJoinVO.class, "id", false, startIndex, pageSize);
         SearchBuilder<ProjectJoinVO> sb = _projectJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
-                                                             // ids
+        // ids
 
         if (_accountMgr.isAdmin(caller.getType())) {
             if (domainId != null) {
@@ -1302,7 +1301,7 @@ public class QueryManagerImpl implements QueryService, Manager {
         Long startIndex = cmd.getStartIndex();
         Long pageSizeVal = cmd.getPageSizeVal();
 
-            //long projectId, String accountName, String role, Long startIndex, Long pageSizeVal) {
+        //long projectId, String accountName, String role, Long startIndex, Long pageSizeVal) {
         Account caller = UserContext.current().getCaller();
 
         //check that the project exists
@@ -1546,7 +1545,7 @@ public class QueryManagerImpl implements QueryService, Manager {
 
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
-             for (String key : tags.keySet()) {
+            for (String key : tags.keySet()) {
                 sc.setParameters("key" + String.valueOf(count), key);
                 sc.setParameters("value" + String.valueOf(count), tags.get(key));
                 count++;

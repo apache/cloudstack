@@ -31,11 +31,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-framework-ipc</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.cxf</groupId>
       <artifactId>cxf-bundle-jaxrs</artifactId>
       <version>2.7.0</version>

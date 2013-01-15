@@ -59,10 +59,6 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.SERVICE_LIST, type=CommandType.LIST, collectionType = CommandType.STRING, description="the list of services to be enabled for this physical network service provider")
     private List<String> enabledServices;
 
-    @Override
-    public String getEntityTable() {
-        return "physical_network_service_providers";
-    }
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -116,6 +112,7 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
         PhysicalNetworkServiceProvider result = _networkService.addProviderToPhysicalNetwork(getPhysicalNetworkId(), getProviderName(), getDestinationPhysicalNetworkId(), getEnabledServices());
         if (result != null) {
             setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add service provider entity to physical network");
         }

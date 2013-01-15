@@ -41,7 +41,7 @@ import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.component.Adapters;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
@@ -87,7 +87,7 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
 
 	protected PxeServerService getServiceByType(String type) {
 		PxeServerService _service;
-		_service = Adapters.getAdapterByName(_services, type);
+		_service = AdapterBase.getAdapterByName(_services, type);
 		if (_service == null) {
 			throw new CloudRuntimeException("Cannot find PXE service for " + type);
 		}

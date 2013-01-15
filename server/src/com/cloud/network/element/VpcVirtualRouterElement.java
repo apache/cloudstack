@@ -26,7 +26,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
@@ -63,7 +62,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Component
 @Local(value = NetworkElement.class)
 public class VpcVirtualRouterElement extends VirtualRouterElement implements VpcProvider, Site2SiteVpnServiceProvider, NetworkACLServiceProvider{
     private static final Logger s_logger = Logger.getLogger(VpcVirtualRouterElement.class);

@@ -66,7 +66,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.utils.UriUtils;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ManagedObjectReference;
 

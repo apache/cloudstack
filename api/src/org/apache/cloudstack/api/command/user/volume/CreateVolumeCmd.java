@@ -76,9 +76,6 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "volumes";
-    }
 
     public String getAccountName() {
         return accountName;
@@ -154,6 +151,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         Volume volume = _storageService.allocVolume(this);
         if (volume != null) {
             this.setEntityId(volume.getId());
+            this.setEntityUuid(volume.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume");
         }

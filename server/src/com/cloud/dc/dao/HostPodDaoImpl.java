@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -37,7 +38,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
@@ -46,32 +46,32 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
 @Local(value={HostPodDao.class})
 public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements HostPodDao {
     private static final Logger s_logger = Logger.getLogger(HostPodDaoImpl.class);
-	
-	protected SearchBuilder<HostPodVO> DataCenterAndNameSearch;
-	protected SearchBuilder<HostPodVO> DataCenterIdSearch;
-	
-	protected HostPodDaoImpl() {
-	    DataCenterAndNameSearch = createSearchBuilder();
-	    DataCenterAndNameSearch.and("dc", DataCenterAndNameSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-	    DataCenterAndNameSearch.and("name", DataCenterAndNameSearch.entity().getName(), SearchCriteria.Op.EQ);
-	    DataCenterAndNameSearch.done();
-	    
-	    DataCenterIdSearch = createSearchBuilder();
-	    DataCenterIdSearch.and("dcId", DataCenterIdSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-	    DataCenterIdSearch.done();
-	}
-	
-	@Override
+    @Inject VMInstanceDaoImpl _vmDao;
+
+    protected SearchBuilder<HostPodVO> DataCenterAndNameSearch;
+    protected SearchBuilder<HostPodVO> DataCenterIdSearch;
+
+    protected HostPodDaoImpl() {
+        DataCenterAndNameSearch = createSearchBuilder();
+        DataCenterAndNameSearch.and("dc", DataCenterAndNameSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        DataCenterAndNameSearch.and("name", DataCenterAndNameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        DataCenterAndNameSearch.done();
+
+        DataCenterIdSearch = createSearchBuilder();
+        DataCenterIdSearch.and("dcId", DataCenterIdSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        DataCenterIdSearch.done();
+    }
+
+    @Override
     public List<HostPodVO> listByDataCenterId(long id) {
-		SearchCriteria<HostPodVO> sc = DataCenterIdSearch.create();
-		sc.setParameters("dcId", id);
-		
-	    return listBy(sc);
-	}
-	
-	@Override
+        SearchCriteria<HostPodVO> sc = DataCenterIdSearch.create();
+        sc.setParameters("dcId", id);
+
+        return listBy(sc);
+    }
+
+    @Override
     public List<HostPodVO> listByDataCenterIdVMTypeAndStates(long id, VirtualMachine.Type type, VirtualMachine.State... states) {
-        final VMInstanceDaoImpl _vmDao = ComponentLocator.inject(VMInstanceDaoImpl.class);
         SearchBuilder<VMInstanceVO> vmInstanceSearch = _vmDao.createSearchBuilder();
         vmInstanceSearch.and("type", vmInstanceSearch.entity().getType(), SearchCriteria.Op.EQ);
         vmInstanceSearch.and("states", vmInstanceSearch.entity().getState(), SearchCriteria.Op.IN);
@@ -90,51 +90,51 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
         return listBy(sc);
     }
 
-	@Override
+    @Override
     public HostPodVO findByName(String name, long dcId) {
-	    SearchCriteria<HostPodVO> sc = DataCenterAndNameSearch.create();
-	    sc.setParameters("dc", dcId);
-	    sc.setParameters("name", name);
-	    
-	    return findOneBy(sc);
-	}
-	
-	@Override
-	public HashMap<Long, List<Object>> getCurrentPodCidrSubnets(long zoneId, long podIdToSkip) {
-		HashMap<Long, List<Object>> currentPodCidrSubnets = new HashMap<Long, List<Object>>();
-		
-		String selectSql = "SELECT id, cidr_address, cidr_size FROM host_pod_ref WHERE data_center_id=" + zoneId +" and removed IS NULL";
-		Transaction txn = Transaction.currentTxn();
-		try {
-        	PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
-        	ResultSet rs = stmt.executeQuery();
-        	while (rs.next()) {
-        		Long podId = rs.getLong("id");
-        		if (podId.longValue() == podIdToSkip) {
+        SearchCriteria<HostPodVO> sc = DataCenterAndNameSearch.create();
+        sc.setParameters("dc", dcId);
+        sc.setParameters("name", name);
+
+        return findOneBy(sc);
+    }
+
+    @Override
+    public HashMap<Long, List<Object>> getCurrentPodCidrSubnets(long zoneId, long podIdToSkip) {
+        HashMap<Long, List<Object>> currentPodCidrSubnets = new HashMap<Long, List<Object>>();
+
+        String selectSql = "SELECT id, cidr_address, cidr_size FROM host_pod_ref WHERE data_center_id=" + zoneId +" and removed IS NULL";
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Long podId = rs.getLong("id");
+                if (podId.longValue() == podIdToSkip) {
                     continue;
                 }
-        		String cidrAddress = rs.getString("cidr_address");
-        		long cidrSize = rs.getLong("cidr_size");
-        		List<Object> cidrPair = new ArrayList<Object>();
-        		cidrPair.add(0, cidrAddress);
-        		cidrPair.add(1, new Long(cidrSize));
-        		currentPodCidrSubnets.put(podId, cidrPair);
-        	}
+                String cidrAddress = rs.getString("cidr_address");
+                long cidrSize = rs.getLong("cidr_size");
+                List<Object> cidrPair = new ArrayList<Object>();
+                cidrPair.add(0, cidrAddress);
+                cidrPair.add(1, new Long(cidrSize));
+                currentPodCidrSubnets.put(podId, cidrPair);
+            }
         } catch (SQLException ex) {
-        	s_logger.warn("DB exception " + ex.getMessage(), ex);
+            s_logger.warn("DB exception " + ex.getMessage(), ex);
             return null;
         }
-        
+
         return currentPodCidrSubnets;
-	}
-	
+    }
+
     @Override
     public boolean remove(Long id) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         HostPodVO pod = createForUpdate();
         pod.setName(null);
-        
+
         update(id, pod);
 
         boolean result = super.remove(id);
@@ -150,11 +150,11 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
         podIdSearch.and("allocationState", podIdSearch.entity().getAllocationState(), Op.EQ);
         podIdSearch.done();
 
-        
+
         SearchCriteria<Long> sc = podIdSearch.create();
         sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         sc.addAnd("allocationState", SearchCriteria.Op.EQ, Grouping.AllocationState.Disabled);
         return customSearch(sc, null);
     }
-    
+
 }

@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.vmware.apputils.version.ExtendedAppUtil;
 
 public class VmwareContextFactory {

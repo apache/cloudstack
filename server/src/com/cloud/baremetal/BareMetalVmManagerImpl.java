@@ -40,6 +40,9 @@ import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
 import com.cloud.agent.api.baremetal.IpmiBootorResetCommand;
 import com.cloud.agent.manager.Commands;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
+
 import com.cloud.baremetal.PxeServerManager.PxeServerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -81,7 +84,7 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Adapters;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -102,6 +105,8 @@ import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
+@Component
+@Primary
 @Local(value={BareMetalVmManager.class, BareMetalVmService.class})
 public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMetalVmManager, BareMetalVmService, Manager,
 		StateListener<State, VirtualMachine.Event, VirtualMachine> {
@@ -110,7 +115,6 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	@Inject PxeServerManager _pxeMgr;
 	@Inject ResourceManager _resourceMgr;
 	
-	// @com.cloud.utils.component.Inject (adapter=TemplateAdapter.class)
     @Inject protected List<TemplateAdapter> _adapters;
 
     @PostConstruct
@@ -181,7 +185,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
          * prepare() will check if current account has right for creating
          * template
          */
-        TemplateAdapter adapter = Adapters.getAdapterByName(_adapters, TemplateAdapterType.BareMetal.getName());
+        TemplateAdapter adapter = AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.BareMetal.getName());
         Long userId = UserContext.current().getCallerUserId();
         userId = (userId == null ? User.UID_SYSTEM : userId);
         AccountVO account = _accountDao.findById(vm.getAccountId());

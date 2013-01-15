@@ -43,6 +43,7 @@
   </issueManagement>
 
   <properties>
+    <skipTests>true</skipTests>
     <cs.jdk.version>1.6</cs.jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -88,7 +89,6 @@
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-io.version>1.4</cs.commons-io.version>
     <cs.reflections.version>0.9.8</cs.reflections.version>
-    <skipTests>true</skipTests>
   </properties>
 
   <distributionManagement>
@@ -296,6 +296,36 @@
     <defaultGoal>install</defaultGoal>
     <pluginManagement>
       <plugins>
+        <!--This plugin's configuration is used to store Eclipse m2e settings
+          only. It has no influence on the Maven build itself. -->
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>
+                      org.apache.maven.plugins
+                    </groupId>
+                    <artifactId>
+                      maven-antrun-plugin
+                    </artifactId>
+                    <versionRange>[1.7,)</versionRange>
+                    <goals>
+                      <goal>run</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore />
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
         <plugin>
           <groupId>org.apache.tomcat.maven</groupId>
           <artifactId>tomcat7-maven-plugin</artifactId>
@@ -346,6 +376,7 @@
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
               <exclude>tools/devcloud/devcloud.cfg</exclude>
+              <exclude>tools/devcloud-kvm/devcloud-kvm.cfg</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>
@@ -472,6 +503,7 @@
         <module>developer</module>
         <module>tools/apidoc</module>
         <module>tools/devcloud</module>
+        <module>tools/devcloud-kvm</module>
         <module>tools/marvin</module>
         <module>tools/cli</module>
       </modules>

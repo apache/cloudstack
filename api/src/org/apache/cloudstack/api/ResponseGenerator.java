@@ -315,13 +315,6 @@ public interface ResponseGenerator {
     StorageNetworkIpRangeResponse createStorageNetworkIpRangeResponse(StorageNetworkIpRange result);
 
     /**
-     * @param tableName TODO
-     * @param token
-     * @return
-     */
-    Long getIdentiyId(String tableName, String token);
-
-    /**
      * @param resourceTag
      * @param keyValueOnly TODO
      * @return

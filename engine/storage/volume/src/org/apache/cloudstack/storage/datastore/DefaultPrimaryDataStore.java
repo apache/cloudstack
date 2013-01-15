@@ -1,46 +1,65 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 package org.apache.cloudstack.storage.datastore;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.storage.HypervisorHostEndPoint;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
-import org.apache.cloudstack.storage.datastore.provider.DataStoreProvider;
-import org.apache.cloudstack.storage.image.ImageDataFactory;
+import org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.image.TemplateInfo;
-import org.apache.cloudstack.storage.snapshot.SnapshotDataFactory;
 import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
-import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeTO;
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
+import org.apache.cloudstack.storage.volume.TemplatePrimaryDataStoreManager;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.cloudstack.storage.volume.db.VolumeDao2;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.apache.log4j.Logger;
 
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+import edu.emory.mathcs.backport.java.util.Collections;
 
 public class DefaultPrimaryDataStore implements PrimaryDataStore {
-    private static final Logger s_logger = Logger
-            .getLogger(DefaultPrimaryDataStore.class);
+    private static final Logger s_logger = Logger.getLogger(DefaultPrimaryDataStore.class);
     protected PrimaryDataStoreDriver driver;
     protected PrimaryDataStoreVO pdsv;
     protected PrimaryDataStoreLifeCycle lifeCycle;
-    protected DataStoreProvider provider;
-    //protected StorageProtocolTransformer protocalTransformer;
+    protected PrimaryDataStoreProvider provider;
+    protected StorageProtocolTransformer protocalTransformer;
     private HypervisorType supportedHypervisor;
     private boolean isLocalStorageSupported = false;
     @Inject
@@ -50,30 +69,42 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     @Inject
     private PrimaryDataStoreDao dataStoreDao;
     @Inject
-    private ObjectInDataStoreManager objectInStoreMgr;
-    @Inject
-    ImageDataFactory imageDataFactory;
-    @Inject
-    SnapshotDataFactory snapshotFactory;
+    private TemplatePrimaryDataStoreManager templatePrimaryStoreMgr;
 
-    private DefaultPrimaryDataStore(PrimaryDataStoreVO pdsv,
-            PrimaryDataStoreDriver driver,
-            DataStoreProvider provider) {
+    private DefaultPrimaryDataStore(PrimaryDataStoreVO pdsv) {
         this.pdsv = pdsv;
+    }
+
+    public void setDriver(PrimaryDataStoreDriver driver) {
+        driver.setDataStore(this);
         this.driver = driver;
+    }
+
+    public void setLifeCycle(PrimaryDataStoreLifeCycle lifeCycle) {
+        lifeCycle.setDataStore(this);
+        this.lifeCycle = lifeCycle;
+    }
+
+    public void setProvider(PrimaryDataStoreProvider provider) {
         this.provider = provider;
     }
 
-    @Override
-    public PrimaryDataStoreDriver getDriver() {
-        return this.driver;
+    public void setProtocolTransFormer(StorageProtocolTransformer transformer) {
+        this.protocalTransformer = transformer;
     }
 
-    public static DefaultPrimaryDataStore createDataStore(
-            PrimaryDataStoreVO pdsv,
-            PrimaryDataStoreDriver driver,
-            DataStoreProvider provider) {
-        DefaultPrimaryDataStore dataStore = new DefaultPrimaryDataStore(pdsv, driver, provider);
+    @Override
+    public PrimaryDataStoreTO getDataStoreTO() {
+        return this.protocalTransformer.getDataStoreTO(this);
+    }
+
+    @Override
+    public VolumeTO getVolumeTO(VolumeInfo volume) {
+        return this.protocalTransformer.getVolumeTO(volume);
+    }
+
+    public static DefaultPrimaryDataStore createDataStore(PrimaryDataStoreVO pdsv) {
+        DefaultPrimaryDataStore dataStore = new DefaultPrimaryDataStore(pdsv);
         return ComponentContext.inject(dataStore);
     }
 
@@ -94,13 +125,16 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
         return volumeInfos;
     }
 
-/*    @Override
-    public void deleteAsync(DataObject volume,
-            AsyncCompletionCallback<CommandResult> callback) {
-        this.driver.deleteAsync((VolumeObject) volume, callback);
+    @Override
+    public void deleteVolumeAsync(VolumeInfo volume, AsyncCompletionCallback<CommandResult> callback) {
+        CommandResult result = new CommandResult();
+        if (volume.isAttachedVM()) {
+            result.setResult("Can't delete volume: " + volume.getId() + ", if it's attached to a VM");
+            callback.complete(result);
+        }
+        this.driver.deleteVolumeAsync((VolumeObject)volume, callback);
     }
-*/
-    /*
+
     @Override
     public List<EndPoint> getEndPoints() {
         Long clusterId = pdsv.getClusterId();
@@ -115,14 +149,13 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
         List<EndPoint> endpoints = new ArrayList<EndPoint>();
         List<HostVO> hosts = hostDao.findHypervisorHostInCluster(clusterId);
         for (HostVO host : hosts) {
-            HypervisorHostEndPoint ep = new HypervisorHostEndPoint(
-                    host.getId(), host.getPrivateIpAddress());
-            ComponentInject.inject(ep);
+            HypervisorHostEndPoint ep = new HypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress());
+            ComponentContext.inject(ep);
             endpoints.add(ep);
         }
         Collections.shuffle(endpoints);
         return endpoints;
-    }*/
+    }
 
     public void setSupportedHypervisor(HypervisorType type) {
         this.supportedHypervisor = type;
@@ -143,53 +176,43 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     }
 
     @Override
-    public boolean isVolumeDiskTypeSupported(DiskFormat diskType) {
+    public boolean isVolumeDiskTypeSupported(VolumeDiskType diskType) {
         return true;
     }
 
     @Override
     public long getCapacity() {
-        return 0;
+        return this.driver.getCapacity();
     }
 
     @Override
     public long getAvailableCapacity() {
-        //return this.driver.getAvailableCapacity();
-        return 0;
-    }
-
-/*    @Override
-    public void createAsync(DataObject data,
-            AsyncCompletionCallback<CommandResult> callback) {
-        this.provider.getVolumeDriver().createAsync(data, callback);
-    }
-*/
-/*    @Override
-    public void takeSnapshot(SnapshotInfo snapshot,
-            AsyncCompletionCallback<CommandResult> callback) {
-        this.provider.getSnapshotDriver().takeSnapshot(snapshot, callback);
-    }
-*/
-/*    @Override
-    public void revertSnapshot(SnapshotInfo snapshot,
-            AsyncCompletionCallback<CommandResult> callback) {
-        this.provider.getSnapshotDriver().revertSnapshot(snapshot, callback);
+        return this.driver.getAvailableCapacity();
     }
 
     @Override
-    public void deleteSnapshot(SnapshotInfo snapshot,
-            AsyncCompletionCallback<CommandResult> callback) {
-        this.provider.getSnapshotDriver().deleteSnapshot(snapshot, callback);
-    }
-*/
-    @Override
-    public boolean exists(DataObject data) {
-        return (objectInStoreMgr.findObject(data.getId(), data.getType(), this.getId(), this.getRole()) != null) ? true
-                : false;
+    public void createVolumeAsync(VolumeInfo vi, VolumeDiskType diskType, AsyncCompletionCallback<CommandResult> callback) {
+        if (!isVolumeDiskTypeSupported(diskType)) {
+            throw new CloudRuntimeException("disk type " + diskType + " is not supported");
+        }
+        VolumeObject vo = (VolumeObject) vi;
+        vo.setVolumeDiskType(diskType);
+        this.driver.createVolumeAsync(vo, callback);
     }
 
     @Override
-    public DiskFormat getDefaultDiskType() {
+    public boolean exists(VolumeInfo vi) {
+        VolumeVO vol = volumeDao.findByVolumeIdAndPoolId(vi.getId(), this.getId());
+        return (vol != null) ? true : false;
+    }
+
+    @Override
+    public boolean templateExists(TemplateInfo template) {
+        return (templatePrimaryStoreMgr.findTemplateOnPrimaryDataStore(template, this) != null) ? true : false;
+    }
+
+    @Override
+    public VolumeDiskType getDefaultDiskType() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -200,19 +223,31 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     }
 
     @Override
-    public TemplateInfo getTemplate(long templateId) {
-       return imageDataFactory.getTemplate(templateId, this);
+    public TemplateOnPrimaryDataStoreInfo getTemplate(TemplateInfo template) {
+        return templatePrimaryStoreMgr.findTemplateOnPrimaryDataStore(template, this);
     }
 
-/*    @Override
-    public void createVoluemFromBaseImageAsync(VolumeInfo volume,
-            TemplateInfo template,
-            AsyncCompletionCallback<CommandResult> callback) {
+    @Override
+    public VolumeInfo createVoluemFromBaseImage(VolumeInfo volume, TemplateOnPrimaryDataStoreInfo template) {
         VolumeObject vo = (VolumeObject) volume;
-        vo.setVolumeDiskType(template.getDiskType());
-        this.driver.createVolumeFromBaseImageAsync(vo, template, callback);
+        vo.setVolumeDiskType(template.getTemplate().getDiskType());
+        //this.driver.createVolumeFromBaseImage(vo, template);
+        return volume;
     }
-*/
+
+    @Override
+    public void createVoluemFromBaseImageAsync(VolumeInfo volume, TemplateInfo templateStore, AsyncCompletionCallback<CommandResult> callback) {
+        VolumeObject vo = (VolumeObject) volume;
+        vo.setVolumeDiskType(templateStore.getDiskType());
+        String templateUri = templateStore.getDataStore().grantAccess(templateStore, this.getEndPoints().get(0));
+        this.driver.createVolumeFromBaseImageAsync(vo, templateUri, callback);
+    }
+
+    @Override
+    public boolean installTemplate(TemplateOnPrimaryDataStoreInfo template) {
+        // TODO Auto-generated method stub
+        return true;
+    }
 
     @Override
     public String getUuid() {
@@ -234,40 +269,55 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
         return this.pdsv.getPoolType();
     }
 
-    public DataStoreProvider getProvider() {
+    @Override
+    public PrimaryDataStoreLifeCycle getLifeCycle() {
+        return lifeCycle;
+    }
+
+    @Override
+    public PrimaryDataStoreProvider getProvider() {
         return this.provider;
     }
 
     @Override
-    public DataStoreRole getRole() {
-        return DataStoreRole.Primary;
+    public String grantAccess(VolumeInfo volume, EndPoint ep) {
+        return this.driver.grantAccess((VolumeObject)volume, ep);
     }
 
     @Override
-    public String getUri() {
-        return this.pdsv.getPoolType() + File.separator
-                + this.pdsv.getHostAddress() + File.separator
-                + this.pdsv.getPath();
+    public boolean revokeAccess(VolumeInfo volume, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
     }
 
     @Override
-    public PrimaryDataStoreLifeCycle getLifeCycle() {
-        return this.lifeCycle;
-    }
-
-    @Override
-    public SnapshotInfo getSnapshot(long snapshotId) {
-        return snapshotFactory.getSnapshot(snapshotId, this);
-    }
-
-    @Override
-    public Scope getScope() {
-        if (pdsv.getScope() == ScopeType.CLUSTER) {
-            return new ClusterScope(pdsv.getClusterId(), pdsv.getPodId(), pdsv.getDataCenterId());
-        } else if (pdsv.getScope() == ScopeType.ZONE) {
-            return new ZoneScope(pdsv.getDataCenterId());
-        }
-        
+    public String grantAccess(TemplateInfo template, EndPoint ep) {
+        // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public boolean revokeAccess(TemplateInfo template, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String grantAccess(SnapshotInfo snapshot, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean revokeAccess(SnapshotInfo snapshot, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String getRole() {
+        // TODO Auto-generated method stub
+        return "volumeStore";
+    }
+
 }

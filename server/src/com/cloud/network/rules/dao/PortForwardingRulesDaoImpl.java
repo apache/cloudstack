@@ -27,7 +27,7 @@ import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.PortForwardingRuleVO;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;

@@ -137,7 +137,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
                 Volume vol = _entityMgr.findById(Volume.class, id);
                 response.setId(vol.getUuid());
                 response.setName(vol.getName());
-                DataCenter zone = _entityMgr.findById(DataCenter.class, id);
+                DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
                 response.setZoneId(zone.getUuid());
                 response.setZoneName(zone.getName());
                 response.setMode(mode);

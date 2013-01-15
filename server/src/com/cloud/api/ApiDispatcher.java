@@ -24,92 +24,82 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 
-import com.cloud.dao.EntityManager;
-import com.cloud.utils.ReflectUtil;
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.PlugService;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.Validate;
+import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.api.BaseCmd.CommandType;
-import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import com.cloud.async.AsyncCommandQueued;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dao.EntityManager;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.server.ManagementServer;
-import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
-import com.cloud.utils.component.PluggableService;
-import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.ReflectUtil;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.uuididentity.dao.IdentityDao;
 
-// ApiDispatcher: A class that dispatches API commands to the appropriate manager for execution.
+@Component
 public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
 
-    ComponentLocator _locator;
     Long _createSnapshotQueueSizeLimit;
-    @Inject private AsyncJobManager _asyncMgr = null;
-    @Inject private AccountManager _accountMgr = null;
+    @Inject AsyncJobManager _asyncMgr = null;
+    @Inject AccountManager _accountMgr = null;
     @Inject EntityManager _entityMgr = null;
-    @Inject IdentityDao _identityDao = null;
 
-    Map<String, Class<? extends GenericDao>> _daoNameMap = new HashMap<String, Class<? extends GenericDao>>();
-    // singleton class
-    private static ApiDispatcher s_instance = ApiDispatcher.getInstance();
+    private static ApiDispatcher s_instance;
 
     public static ApiDispatcher getInstance() {
-        if (s_instance == null) {
-            s_instance = ComponentLocator.inject(ApiDispatcher.class);
-        }
         return s_instance;
     }
 
-    protected ApiDispatcher() {
-        super();
-        _locator = ComponentLocator.getLocator(ManagementServer.Name);
-        ConfigurationDao configDao = _locator.getDao(ConfigurationDao.class);
-        Map<String, String> configs = configDao.getConfiguration();
-        String strSnapshotLimit = configs.get(Config.ConcurrentSnapshotsThresholdPerHost.key());
-        if (strSnapshotLimit != null) {
-            Long snapshotLimit = NumbersUtil.parseLong(strSnapshotLimit, 1L);
-            if (snapshotLimit <= 0) {
-                s_logger.debug("Global config parameter " + Config.ConcurrentSnapshotsThresholdPerHost.toString()
-                        + " is less or equal 0; defaulting to unlimited");
-            } else {
-                _createSnapshotQueueSizeLimit = snapshotLimit;
-            }
-        }
-        _daoNameMap.put("com.cloud.network.Network", NetworkDao.class);
-        _daoNameMap.put("com.cloud.template.VirtualMachineTemplate", VMTemplateDao.class);
+    public ApiDispatcher() {
+    }
+    
+    @PostConstruct
+    void init() {
+    	s_instance = this;
+    }
+
+    public void setCreateSnapshotQueueSizeLimit(Long snapshotLimit) {
+        _createSnapshotQueueSizeLimit = snapshotLimit;
     }
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
-    	processParameters(cmd, params);
+        processParameters(cmd, params);
 
         try {
             UserContext ctx = UserContext.current();
@@ -206,113 +196,113 @@ public class ApiDispatcher {
 
         } catch (Throwable t) {
             if (t instanceof InvalidParameterValueException) {
-            	// earlier, we'd log the db id as part of the log message, but now since we've pushed
-            	// the id into a IdentityProxy object, we would need to dump that object alongwith the
-            	// message.
-            	InvalidParameterValueException ref = (InvalidParameterValueException) t;
-            	ServerApiException ex = new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
+                // earlier, we'd log the db id as part of the log message, but now since we've pushed
+                // the id into a IdentityProxy object, we would need to dump that object alongwith the
+                // message.
+                InvalidParameterValueException ref = (InvalidParameterValueException) t;
+                ServerApiException ex = new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 ArrayList<String> idList = ref.getIdProxyList();
                 if (idList != null) {
-                	// Iterate through entire arraylist and copy over each proxy id.
-                	for (int i = 0 ; i < idList.size(); i++) {
-                		ex.addProxyObject(idList.get(i));
-                		s_logger.info(t.getMessage() + " uuid: " + idList.get(i));
-                	}
+                    // Iterate through entire arraylist and copy over each proxy id.
+                    for (int i = 0 ; i < idList.size(); i++) {
+                        ex.addProxyObject(idList.get(i));
+                        s_logger.info(t.getMessage() + " uuid: " + idList.get(i));
+                    }
                 } else {
-                	s_logger.info(t.getMessage());
+                    s_logger.info(t.getMessage());
                 }
                 // Also copy over the cserror code.
-    			ex.setCSErrorCode(ref.getCSErrorCode());
+                ex.setCSErrorCode(ref.getCSErrorCode());
                 throw ex;
             } else if(t instanceof IllegalArgumentException) {            	
-            	throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
             } else if (t instanceof PermissionDeniedException) {            	
-            	PermissionDeniedException ref = (PermissionDeniedException)t;
-            	ServerApiException ex = new ServerApiException(BaseCmd.ACCOUNT_ERROR, t.getMessage());
+                PermissionDeniedException ref = (PermissionDeniedException)t;
+                ServerApiException ex = new ServerApiException(BaseCmd.ACCOUNT_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-            	ArrayList<String> idList = ref.getIdProxyList();
+                ArrayList<String> idList = ref.getIdProxyList();
                 if (idList != null) {
-                	// Iterate through entire arraylist and copy over each proxy id.
-                	for (int i = 0 ; i < idList.size(); i++) {
-                 		ex.addProxyObject(idList.get(i));
-                 		s_logger.info("PermissionDenied: " + t.getMessage() + "uuid: " + idList.get(i));
-                 	}
-                 } else {
-                	 s_logger.info("PermissionDenied: " + t.getMessage());
-                 }
-                // Also copy over the cserror code.
-    			ex.setCSErrorCode(ref.getCSErrorCode());
-    			throw ex;
-            } else if (t instanceof AccountLimitException) {            	
-            	AccountLimitException ref = (AccountLimitException)t;
-            	ServerApiException ex = new ServerApiException(BaseCmd.ACCOUNT_RESOURCE_LIMIT_ERROR, t.getMessage());
-                // copy over the IdentityProxy information as well and throw the serverapiexception.
-            	ArrayList<String> idList = ref.getIdProxyList();
-                if (idList != null) {
-                	// Iterate through entire arraylist and copy over each proxy id.
-                	for (int i = 0 ; i < idList.size(); i++) {
-                 		ex.addProxyObject(idList.get(i));
-                 		s_logger.info(t.getMessage() + "uuid: " + idList.get(i));
-                	}
+                    // Iterate through entire arraylist and copy over each proxy id.
+                    for (int i = 0 ; i < idList.size(); i++) {
+                        ex.addProxyObject(idList.get(i));
+                        s_logger.info("PermissionDenied: " + t.getMessage() + "uuid: " + idList.get(i));
+                    }
                 } else {
-                	s_logger.info(t.getMessage());
+                    s_logger.info("PermissionDenied: " + t.getMessage());
                 }
                 // Also copy over the cserror code.
-    			ex.setCSErrorCode(ref.getCSErrorCode());
+                ex.setCSErrorCode(ref.getCSErrorCode());
+                throw ex;
+            } else if (t instanceof AccountLimitException) {            	
+                AccountLimitException ref = (AccountLimitException)t;
+                ServerApiException ex = new ServerApiException(BaseCmd.ACCOUNT_RESOURCE_LIMIT_ERROR, t.getMessage());
+                // copy over the IdentityProxy information as well and throw the serverapiexception.
+                ArrayList<String> idList = ref.getIdProxyList();
+                if (idList != null) {
+                    // Iterate through entire arraylist and copy over each proxy id.
+                    for (int i = 0 ; i < idList.size(); i++) {
+                        ex.addProxyObject(idList.get(i));
+                        s_logger.info(t.getMessage() + "uuid: " + idList.get(i));
+                    }
+                } else {
+                    s_logger.info(t.getMessage());
+                }
+                // Also copy over the cserror code.
+                ex.setCSErrorCode(ref.getCSErrorCode());
                 throw ex;
             } else if (t instanceof InsufficientCapacityException) {            	
-            	InsufficientCapacityException ref = (InsufficientCapacityException)t;
-            	ServerApiException ex = new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, t.getMessage());
+                InsufficientCapacityException ref = (InsufficientCapacityException)t;
+                ServerApiException ex = new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-            	ArrayList<String> idList = ref.getIdProxyList();
+                ArrayList<String> idList = ref.getIdProxyList();
                 if (idList != null) {
-                	// Iterate through entire arraylist and copy over each proxy id.
-                	for (int i = 0 ; i < idList.size(); i++) {
-                 		ex.addProxyObject(idList.get(i));
-                 		s_logger.info(t.getMessage() + "uuid: " + idList.get(i));
-                	}
+                    // Iterate through entire arraylist and copy over each proxy id.
+                    for (int i = 0 ; i < idList.size(); i++) {
+                        ex.addProxyObject(idList.get(i));
+                        s_logger.info(t.getMessage() + "uuid: " + idList.get(i));
+                    }
                 } else {
-                	s_logger.info(t.getMessage());
+                    s_logger.info(t.getMessage());
                 }
                 // Also copy over the cserror code
-    			ex.setCSErrorCode(ref.getCSErrorCode());
+                ex.setCSErrorCode(ref.getCSErrorCode());
                 throw ex;
             } else if (t instanceof ResourceAllocationException) {
-            	ResourceAllocationException ref = (ResourceAllocationException)t;
+                ResourceAllocationException ref = (ResourceAllocationException)t;
                 ServerApiException ex = new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 ArrayList<String> idList = ref.getIdProxyList();
                 if (idList != null) {
-                	// Iterate through entire arraylist and copy over each proxy id.
-                	for (int i = 0 ; i < idList.size(); i++) {
-                 		String id = idList.get(i);
-                 		ex.addProxyObject(id);
-                 		s_logger.warn("Exception: " + t.getMessage() + "uuid: " + id);
-                	}
+                    // Iterate through entire arraylist and copy over each proxy id.
+                    for (int i = 0 ; i < idList.size(); i++) {
+                        String id = idList.get(i);
+                        ex.addProxyObject(id);
+                        s_logger.warn("Exception: " + t.getMessage() + "uuid: " + id);
+                    }
                 } else {
-                	s_logger.warn("Exception: ", t);
+                    s_logger.warn("Exception: ", t);
                 }
                 // Also copy over the cserror code.
-    			ex.setCSErrorCode(ref.getCSErrorCode());
+                ex.setCSErrorCode(ref.getCSErrorCode());
                 throw ex;
             } else if (t instanceof ResourceUnavailableException) {
-            	ResourceUnavailableException ref = (ResourceUnavailableException)t;
+                ResourceUnavailableException ref = (ResourceUnavailableException)t;
                 ServerApiException ex = new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, t.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 ArrayList<String> idList = ref.getIdProxyList();
                 if (idList != null) {
-                	// Iterate through entire arraylist and copy over each proxy id.
-                	for (int i = 0 ; i < idList.size(); i++) {
-                 		String id = idList.get(i);
-                 		ex.addProxyObject(id);
-                 		s_logger.warn("Exception: " + t.getMessage() + "uuid: " + id);
-                	}
+                    // Iterate through entire arraylist and copy over each proxy id.
+                    for (int i = 0 ; i < idList.size(); i++) {
+                        String id = idList.get(i);
+                        ex.addProxyObject(id);
+                        s_logger.warn("Exception: " + t.getMessage() + "uuid: " + id);
+                    }
                 } else {
-                	s_logger.warn("Exception: ", t);
+                    s_logger.warn("Exception: ", t);
                 }
                 // Also copy over the cserror code.
-    			ex.setCSErrorCode(ref.getCSErrorCode());
+                ex.setCSErrorCode(ref.getCSErrorCode());
                 throw ex;
             } else if (t instanceof AsyncCommandQueued) {            	
                 throw (AsyncCommandQueued) t;
@@ -323,18 +313,18 @@ public class ApiDispatcher {
                 s_logger.error("Exception while executing " + cmd.getClass().getSimpleName() + ":", t);
                 ServerApiException ex;
                 if (UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                	ex = new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
+                    ex = new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
                 } else {
                     ex = new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
                 }                
                 ex.setCSErrorCode(CSExceptionErrorCode.getCSErrCode(ex.getClass().getName()));
-            	throw ex;
+                throw ex;
             }
         }
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-	public static void processParameters(BaseCmd cmd, Map<String, String> params) {
+    public static void processParameters(BaseCmd cmd, Map<String, String> params) {
         List<Object> entitiesToAccess = new ArrayList<Object>();
         Map<String, Object> unpackedParams = cmd.unpackParams(params);
 
@@ -348,7 +338,7 @@ public class ApiDispatcher {
             if ((unpackedParams.get(ApiConstants.PAGE) == null) && (pageSize != null && pageSize != BaseListCmd.PAGESIZE_UNLIMITED)) {
                 ServerApiException ex = new ServerApiException(BaseCmd.PARAM_ERROR, "\"page\" parameter is required when \"pagesize\" is specified");                
                 ex.setCSErrorCode(CSExceptionErrorCode.getCSErrCode(ex.getClass().getName()));
-            	throw ex;
+                throw ex;
             } else if (pageSize == null && (unpackedParams.get(ApiConstants.PAGE) != null)) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "\"pagesize\" parameter is required when \"page\" is specified");
             }
@@ -399,14 +389,14 @@ public class ApiDispatcher {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value. " + invEx.getMessage());
             } catch (CloudRuntimeException cloudEx) {
                 // FIXME: Better error message? This only happens if the API command is not executable, which typically
-            	//means
+                //means
                 // there was
                 // and IllegalAccessException setting one of the parameters.
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error executing API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
             }
 
             //check access on the resource this field points to
-	        try {
+            try {
                 ACL checkAccess = field.getAnnotation(ACL.class);
                 CommandType fieldType = parameterAnnotation.type();
 
@@ -426,17 +416,17 @@ public class ApiDispatcher {
                             // Check if the parameter type is a single
                             // Id or list of id's/name's
                             switch (fieldType) {
-                                case LIST:
-                                    CommandType listType = parameterAnnotation.collectionType();
-                                    switch (listType) {
-                                        case LONG:
-                                        case UUID:
-                                            List<Long> listParam = (List<Long>) field.get(cmd);
-                                            for (Long entityId : listParam) {
-                                                Object entityObj = s_instance._entityMgr.findById(entity, entityId);
-                                                entitiesToAccess.add(entityObj);
-                                            }
-                                            break;
+                            case LIST:
+                                CommandType listType = parameterAnnotation.collectionType();
+                                switch (listType) {
+                                case LONG:
+                                case UUID:
+                                    List<Long> listParam = (List<Long>) field.get(cmd);
+                                    for (Long entityId : listParam) {
+                                        Object entityObj = s_instance._entityMgr.findById(entity, entityId);
+                                        entitiesToAccess.add(entityObj);
+                                    }
+                                    break;
                                     /*
                                      * case STRING: List<String> listParam =
                                      * new ArrayList<String>(); listParam =
@@ -448,17 +438,17 @@ public class ApiDispatcher {
                                      * entitiesToAccess.add(entityObj); }
                                      * break;
                                      */
-                                        default:
-                                            break;
-        }
-                                    break;
-                                case LONG:
-                                case UUID:
-                                    Object entityObj = s_instance._entityMgr.findById(entity, (Long) field.get(cmd));
-                                    entitiesToAccess.add(entityObj);
-                                    break;
                                 default:
                                     break;
+                                }
+                                break;
+                            case LONG:
+                            case UUID:
+                                Object entityObj = s_instance._entityMgr.findById(entity, (Long) field.get(cmd));
+                                entitiesToAccess.add(entityObj);
+                                break;
+                            default:
+                                break;
                             }
 
                             if (ControlledEntity.class.isAssignableFrom(entity)) {
@@ -474,22 +464,22 @@ public class ApiDispatcher {
                             }
                         }
 
-	            	}
+                    }
 
-	            }
+                }
 
-			} catch (IllegalArgumentException e) {
-	            s_logger.error("Error initializing command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
-	            throw new CloudRuntimeException("Internal error initializing parameters for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
-			} catch (IllegalAccessException e) {
-	            s_logger.error("Error initializing command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
-	            throw new CloudRuntimeException("Internal error initializing parameters for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
-			}
+            } catch (IllegalArgumentException e) {
+                s_logger.error("Error initializing command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
+                throw new CloudRuntimeException("Internal error initializing parameters for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
+            } catch (IllegalAccessException e) {
+                s_logger.error("Error initializing command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
+                throw new CloudRuntimeException("Internal error initializing parameters for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
+            }
 
         }
 
         //check access on the entities.
-        s_instance.doAccessChecks(cmd, entitiesToAccess);
+        getInstance().doAccessChecks(cmd, entitiesToAccess);
 
     }
 
@@ -533,7 +523,7 @@ public class ApiDispatcher {
             // Invoke the getId method, get the internal long ID
             // If that fails hide exceptions as the uuid may not exist
             try {
-                internalId = (Long) ((InternalIdentity)objVO).getId();
+                internalId = ((InternalIdentity)objVO).getId();
             } catch (IllegalArgumentException e) {
             } catch (NullPointerException e) {
             }
@@ -598,7 +588,7 @@ public class ApiDispatcher {
                 // we ignore blank or null values and defer to the command to set a default
                 // value for optional parameters ...
                 if (paramObj != null && isNotBlank(paramObj.toString())) {
-                field.set(cmdObj, Float.valueOf(paramObj.toString()));
+                    field.set(cmdObj, Float.valueOf(paramObj.toString()));
                 }
                 break;
             case INTEGER:
@@ -606,7 +596,7 @@ public class ApiDispatcher {
                 // we ignore blank or null values and defer to the command to set a default
                 // value for optional parameters ...
                 if (paramObj != null && isNotBlank(paramObj.toString())) {
-                field.set(cmdObj, Integer.valueOf(paramObj.toString()));
+                    field.set(cmdObj, Integer.valueOf(paramObj.toString()));
                 }
                 break;
             case LIST:
@@ -619,16 +609,16 @@ public class ApiDispatcher {
                     case INTEGER:
                         listParam.add(Integer.valueOf(token));
                         break;
-                            case UUID:
-                                if (token.isEmpty())
-                                    break;
-                                Long internalId = translateUuidToInternalId(token, annotation);
-                                listParam.add(internalId);
-                                break;
-                    case LONG: {
-                                listParam.add(Long.valueOf(token));
-                    }
+                    case UUID:
+                        if (token.isEmpty())
+                            break;
+                        Long internalId = translateUuidToInternalId(token, annotation);
+                        listParam.add(internalId);
                         break;
+                    case LONG: {
+                        listParam.add(Long.valueOf(token));
+                    }
+                    break;
                     case SHORT:
                         listParam.add(Short.valueOf(token));
                     case STRING:
@@ -645,7 +635,7 @@ public class ApiDispatcher {
                 field.set(cmdObj, internalId);
                 break;
             case LONG:
-                    field.set(cmdObj, Long.valueOf(paramObj.toString()));
+                field.set(cmdObj, Long.valueOf(paramObj.toString()));
                 break;
             case SHORT:
                 field.set(cmdObj, Short.valueOf(paramObj.toString()));
@@ -686,31 +676,23 @@ public class ApiDispatcher {
     }
 
     public static void plugService(Field field, BaseCmd cmd) {
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
 
-                Class<?> fc = field.getType();
-                Object instance = null;
-                if (PluggableService.class.isAssignableFrom(fc)) {
-                    instance = locator.getPluggableService(fc);
-                }
+        Class<?> fc = field.getType();
+        Object instance = null;
 
-                if (instance == null) {
+        if (instance == null) {
             throw new CloudRuntimeException("Unable to plug service " + fc.getSimpleName() + " in command " + cmd.getClass().getSimpleName());
-                }
+        }
 
-                try {
-                    field.setAccessible(true);
-                    field.set(cmd, instance);
-                } catch (IllegalArgumentException e) {
-                    s_logger.error("IllegalArgumentException at plugService for command " + cmd.getCommandName() + ", field " + field.getName());
-                    throw new CloudRuntimeException("Internal error at plugService for command " + cmd.getCommandName() + " [Illegal argumet at field " + field.getName() + "]");
-                } catch (IllegalAccessException e) {
-                    s_logger.error("Error at plugService for command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
-                    throw new CloudRuntimeException("Internal error at plugService for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
-                }
-            }
-    
-    public static Long getIdentiyId(String tableName, String token) {
-        return s_instance._identityDao.getIdentityId(tableName, token);
+        try {
+            field.setAccessible(true);
+            field.set(cmd, instance);
+        } catch (IllegalArgumentException e) {
+            s_logger.error("IllegalArgumentException at plugService for command " + cmd.getCommandName() + ", field " + field.getName());
+            throw new CloudRuntimeException("Internal error at plugService for command " + cmd.getCommandName() + " [Illegal argumet at field " + field.getName() + "]");
+        } catch (IllegalAccessException e) {
+            s_logger.error("Error at plugService for command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
+            throw new CloudRuntimeException("Internal error at plugService for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
+        }
     }
 }

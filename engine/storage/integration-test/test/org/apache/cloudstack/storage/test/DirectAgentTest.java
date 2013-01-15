@@ -18,25 +18,33 @@
  */
 package org.apache.cloudstack.storage.test;
 
+import java.lang.reflect.Method;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.command.CopyTemplateToPrimaryStorageCmd;
 import org.apache.cloudstack.storage.to.ImageDataStoreTO;
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateTO;
+
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Parameters;
 import org.testng.annotations.Test;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -49,6 +57,8 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.resource.ResourceState;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
 
 @ContextConfiguration(locations="classpath:/storageContext.xml")
 public class DirectAgentTest extends CloudStackTestNGBase {
@@ -139,8 +149,7 @@ public class DirectAgentTest extends CloudStackTestNGBase {
         Mockito.when(template.getImageDataStore()).thenReturn(imageStore);
         
         Mockito.when(image.getTemplate()).thenReturn(template);
-        //CopyTemplateToPrimaryStorageCmd cmd = new CopyTemplateToPrimaryStorageCmd(image);
-        Command cmd = null;
+        CopyTemplateToPrimaryStorageCmd cmd = new CopyTemplateToPrimaryStorageCmd(image);
         try {
             agentMgr.send(hostId, cmd);
         } catch (AgentUnavailableException e) {

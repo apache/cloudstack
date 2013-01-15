@@ -25,15 +25,12 @@ import javax.persistence.TableGenerator;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
-import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.DataCenterVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -63,47 +60,47 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     protected SearchBuilder<DataCenterVO> TokenSearch;
     protected SearchBuilder<DataCenterVO> StateChangeSearch;
     protected SearchBuilder<DataCenterVO> UUIDSearch;
-    
+
     protected long _prefix;
     protected Random _rand = new Random(System.currentTimeMillis());
     protected TableGenerator _tgMacAddress;
-    
+
     @Inject protected DcDetailsDao _detailsDao;
 
 
     @Override
     public DataCenterVO findByName(String name) {
-    	SearchCriteria<DataCenterVO> sc = NameSearch.create();
-    	sc.setParameters("name", name);
+        SearchCriteria<DataCenterVO> sc = NameSearch.create();
+        sc.setParameters("name", name);
         return findOneBy(sc);
     }
 
     @Override
     public DataCenterVO findByUUID(String uuid) {
-    	SearchCriteria<DataCenterVO> sc = UUIDSearch.create();
-    	sc.setParameters("uuid", uuid);
+        SearchCriteria<DataCenterVO> sc = UUIDSearch.create();
+        sc.setParameters("uuid", uuid);
         return findOneBy(sc);
     }
-    
+
     @Override
     public DataCenterVO findByToken(String zoneToken){
-    	SearchCriteria<DataCenterVO> sc = TokenSearch.create();
-    	sc.setParameters("zoneToken", zoneToken);
+        SearchCriteria<DataCenterVO> sc = TokenSearch.create();
+        sc.setParameters("zoneToken", zoneToken);
         return findOneBy(sc);
     }
-    
+
     @Override
     public List<DataCenterVO> findZonesByDomainId(Long domainId){
-    	SearchCriteria<DataCenterVO> sc = ListZonesByDomainIdSearch.create();
-    	sc.setParameters("domainId", domainId);
+        SearchCriteria<DataCenterVO> sc = ListZonesByDomainIdSearch.create();
+        sc.setParameters("domainId", domainId);
         return listBy(sc);    	
     }
-    
+
     @Override
     public List<DataCenterVO> findZonesByDomainId(Long domainId, String keyword){
-    	SearchCriteria<DataCenterVO> sc = ListZonesByDomainIdSearch.create();
-    	sc.setParameters("domainId", domainId);
-    	if (keyword != null) {
+        SearchCriteria<DataCenterVO> sc = ListZonesByDomainIdSearch.create();
+        sc.setParameters("domainId", domainId);
+        if (keyword != null) {
             SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -111,12 +108,12 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         }
         return listBy(sc);    	
     }
-    
+
     @Override
     public List<DataCenterVO> findChildZones(Object[] ids, String keyword){
-    	SearchCriteria<DataCenterVO> sc = ChildZonesSearch.create();
-    	sc.setParameters("domainid", ids);
-    	if (keyword != null) {
+        SearchCriteria<DataCenterVO> sc = ChildZonesSearch.create();
+        sc.setParameters("domainid", ids);
+        if (keyword != null) {
             SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -124,28 +121,28 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         }
         return listBy(sc);  
     }
-    
+
     @Override
     public List<DataCenterVO> listPublicZones(String keyword){
-    	SearchCriteria<DataCenterVO> sc = PublicZonesSearch.create();
-    	if (keyword != null) {
+        SearchCriteria<DataCenterVO> sc = PublicZonesSearch.create();
+        if (keyword != null) {
             SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
-    	//sc.setParameters("domainId", domainId);
+        //sc.setParameters("domainId", domainId);
         return listBy(sc);    	    	
     }
-    
+
     @Override
     public List<DataCenterVO> findByKeyword(String keyword){
-    	SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
-    	ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-    	ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
+        ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         return listBy(ssc);
     }
-    
+
 
     @Override
     public String[] getNextAvailableMacAddressPair(long id) {
@@ -155,7 +152,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     @Override
     public String[] getNextAvailableMacAddressPair(long id, long mask) {
         SequenceFetcher fetch = SequenceFetcher.getInstance();
-        
+
         long seq = fetch.getNextSequence(Long.class, _tgMacAddress, id);
         seq = seq | _prefix | ((id & 0x7f) << 32);
         seq |= mask;
@@ -172,49 +169,49 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         if (!super.configure(name, params)) {
             return false;
         }
-        
+
         String value = (String)params.get("mac.address.prefix");
         _prefix = (long)NumbersUtil.parseInt(value, 06) << 40;
 
         return true;
     }
-    
+
     protected DataCenterDaoImpl() {
         super();
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         NameSearch.done();
-        
+
         ListZonesByDomainIdSearch = createSearchBuilder();
         ListZonesByDomainIdSearch.and("domainId", ListZonesByDomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         ListZonesByDomainIdSearch.done();
-        
+
         PublicZonesSearch = createSearchBuilder();
         PublicZonesSearch.and("domainId", PublicZonesSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
         PublicZonesSearch.done();        
-        
+
         ChildZonesSearch = createSearchBuilder();
         ChildZonesSearch.and("domainid", ChildZonesSearch.entity().getDomainId(), SearchCriteria.Op.IN);
         ChildZonesSearch.done();
-        
+
         DisabledZonesSearch = createSearchBuilder();
         DisabledZonesSearch.and("allocationState", DisabledZonesSearch.entity().getAllocationState(), SearchCriteria.Op.EQ);
         DisabledZonesSearch.done();
-        
+
         TokenSearch = createSearchBuilder();
         TokenSearch.and("zoneToken", TokenSearch.entity().getZoneToken(), SearchCriteria.Op.EQ);
         TokenSearch.done();
-        
+
         StateChangeSearch = createSearchBuilder();
         StateChangeSearch.and("id", StateChangeSearch.entity().getId(), SearchCriteria.Op.EQ);
         StateChangeSearch.and("state", StateChangeSearch.entity().getState(), SearchCriteria.Op.EQ);
         StateChangeSearch.done();
-        
+
         UUIDSearch = createSearchBuilder();
         UUIDSearch.and("uuid", UUIDSearch.entity().getUuid(), SearchCriteria.Op.EQ);
         UUIDSearch.done();
 
-        
+
         _tgMacAddress = _tgs.get("macAddress");
         assert _tgMacAddress != null : "Couldn't get mac address table generator";
     }
@@ -231,7 +228,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         txn.commit();
         return persisted;
     }
-    
+
     @Override
     public void loadDetails(DataCenterVO zone) {
         Map<String, String> details =_detailsDao.findDetails(zone.getId());
@@ -246,25 +243,25 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         }
         _detailsDao.persist(zone.getId(), details);
     }
-    
+
     @Override
     public List<DataCenterVO> listDisabledZones(){
-    	SearchCriteria<DataCenterVO> sc = DisabledZonesSearch.create();
-    	sc.setParameters("allocationState", Grouping.AllocationState.Disabled);
-    	
-    	List<DataCenterVO> dcs =  listBy(sc);
-    	
-    	return dcs;
+        SearchCriteria<DataCenterVO> sc = DisabledZonesSearch.create();
+        sc.setParameters("allocationState", Grouping.AllocationState.Disabled);
+
+        List<DataCenterVO> dcs =  listBy(sc);
+
+        return dcs;
     }
-    
+
     @Override
     public List<DataCenterVO> listEnabledZones(){
-    	SearchCriteria<DataCenterVO> sc = DisabledZonesSearch.create();
-    	sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
-    	
-    	List<DataCenterVO> dcs =  listBy(sc);
-    	
-    	return dcs;
+        SearchCriteria<DataCenterVO> sc = DisabledZonesSearch.create();
+        sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
+
+        List<DataCenterVO> dcs =  listBy(sc);
+
+        return dcs;
     }
 
     @Override
@@ -277,36 +274,36 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
                     Long dcId = Long.parseLong(tokenOrIdOrName);
                     return findById(dcId);
                 } catch (NumberFormatException nfe) {
-                    
+
                 }
             }
         }
         return result;
     }
-    
+
     @Override
     public boolean remove(Long id) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         DataCenterVO zone = createForUpdate();
         zone.setName(null);
-        
+
         update(id, zone);
 
         boolean result = super.remove(id);
         txn.commit();
         return result;
     }
-    
 
-	@Override
-	public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity zoneEntity, Object data) {
-		
-		DataCenterVO vo = findById(zoneEntity.getId());
-		
-		Date oldUpdatedTime = vo.getLastUpdated();
 
-		SearchCriteria<DataCenterVO> sc = StateChangeSearch.create();
+    @Override
+    public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity zoneEntity, Object data) {
+
+        DataCenterVO vo = findById(zoneEntity.getId());
+
+        Date oldUpdatedTime = vo.getLastUpdated();
+
+        SearchCriteria<DataCenterVO> sc = StateChangeSearch.create();
         sc.setParameters("id", vo.getId());
         sc.setParameters("state", currentState);
 
@@ -314,14 +311,14 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         builder.set(vo, "state", nextState);
         builder.set(vo, "lastUpdated", new Date());
 
-        int rows = update((DataCenterVO) vo, sc);
-        
+        int rows = update(vo, sc);
+
         if (rows == 0 && s_logger.isDebugEnabled()) {
-        	DataCenterVO dbDC = findByIdIncludingRemoved(vo.getId());
+            DataCenterVO dbDC = findByIdIncludingRemoved(vo.getId());
             if (dbDC != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
                 str.append(": DB Data={id=").append(dbDC.getId()).append("; state=").append(dbDC.getState()).append(";updatedTime=")
-                        .append(dbDC.getLastUpdated());
+                .append(dbDC.getLastUpdated());
                 str.append(": New Data={id=").append(vo.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatedTime=").append(vo.getLastUpdated());
                 str.append(": stale Data={id=").append(vo.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatedTime=").append(oldUpdatedTime);
             } else {
@@ -329,8 +326,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
             }
         }
         return rows > 0;
-		
-	}
-    
-    
+
+    }
+
+
 }

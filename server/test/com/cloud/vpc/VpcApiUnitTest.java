@@ -19,6 +19,8 @@ package com.cloud.vpc;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
@@ -45,8 +47,7 @@ import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountVO;
 import com.cloud.user.MockAccountManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.MockComponentLocator;
+
 import com.cloud.vm.dao.DomainRouterDaoImpl;
 import com.cloud.vpc.dao.MockNetworkDaoImpl;
 import com.cloud.vpc.dao.MockNetworkOfferingDaoImpl;
@@ -58,45 +59,11 @@ import com.cloud.vpc.dao.MockVpcOfferingServiceMapDaoImpl;
 
 public class VpcApiUnitTest extends TestCase{
     private static final Logger s_logger = Logger.getLogger(VpcApiUnitTest.class);
-    MockComponentLocator _locator;
-    VpcManager _vpcService;
+    @Inject VpcManager _vpcService;
 
     @Override
     @Before
     public void setUp() throws Exception {
-        _locator = new MockComponentLocator(ManagementService.Name);
-        _locator.addDao("VpcDao", MockVpcDaoImpl.class);
-        _locator.addDao("VpcOfferingDao", VpcOfferingDaoImpl.class);
-        _locator.addDao("ConfigurationDao", ConfigurationDaoImpl.class);
-        _locator.addDao("NetworkDao", MockNetworkDaoImpl.class);
-        _locator.addDao("IPAddressDao", IPAddressDaoImpl.class);
-        _locator.addDao("DomainRouterDao", DomainRouterDaoImpl.class);
-        _locator.addDao("VpcGatewayDao", VpcGatewayDaoImpl.class);
-        _locator.addDao("PrivateIpDao", PrivateIpDaoImpl.class);
-        _locator.addDao("StaticRouteDao", StaticRouteDaoImpl.class);
-        _locator.addDao("NetworkOfferingServiceMapDao", MockNetworkOfferingServiceMapDaoImpl.class);
-        _locator.addDao("VpcOfferingServiceMapDao", MockVpcOfferingServiceMapDaoImpl.class);
-        _locator.addDao("PhysicalNetworkDao", PhysicalNetworkDaoImpl.class);
-        _locator.addDao("ResourceTagDao", ResourceTagsDaoImpl.class);
-        _locator.addDao("FirewallRulesDao", FirewallRulesDaoImpl.class);
-        _locator.addDao("VlanDao", VlanDaoImpl.class);
-        _locator.addDao("AccountDao", AccountDaoImpl.class);
-        _locator.addDao("ResourceCountDao", ResourceCountDaoImpl.class);
-        _locator.addDao("NetworkOfferingDao", MockNetworkOfferingDaoImpl.class);
-        _locator.addDao("NetworkServiceMapDao", MockNetworkServiceMapDaoImpl.class);
-        _locator.addDao("VpcOfferingDao", MockVpcOfferingDaoImpl.class);
-        _locator.addDao("Site2SiteVpnDao", Site2SiteVpnGatewayDaoImpl.class);
-        
-        _locator.addManager("ConfigService", MockConfigurationManagerImpl.class);
-        _locator.addManager("vpc manager", VpcManagerImpl.class);
-        _locator.addManager("account manager", MockAccountManagerImpl.class);
-        _locator.addManager("network manager", MockNetworkManagerImpl.class);
-        _locator.addManager("Site2SiteVpnManager", MockSite2SiteVpnManagerImpl.class);
-        _locator.addManager("ResourceLimitService", MockResourceLimitManagerImpl.class);
-        
-        _locator.makeActive(null);
-        
-        _vpcService = ComponentLocator.inject(VpcManagerImpl.class);
     }
     
     public void test() {

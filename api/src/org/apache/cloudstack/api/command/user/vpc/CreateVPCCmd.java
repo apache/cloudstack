@@ -124,6 +124,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
                 getCidr(), getNetworkDomain());
         if (vpc != null) {
             this.setEntityId(vpc.getId());
+            this.setEntityUuid(vpc.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a VPC");
         }
@@ -155,11 +156,6 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create VPC");
         }
-    }
-
-    @Override
-    public String getEntityTable() {
-        return "vpc";
     }
 
 

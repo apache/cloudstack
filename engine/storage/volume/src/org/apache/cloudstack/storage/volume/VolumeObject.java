@@ -1,20 +1,39 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 package org.apache.cloudstack.storage.volume;
 
-import java.io.File;
+import java.util.Date;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskTypeHelper;
+import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeTypeHelper;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.volume.db.VolumeDao2;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.Volume;
-import com.cloud.utils.component.ComponentInject;
+import com.cloud.storage.Volume.State;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
@@ -23,71 +42,84 @@ public class VolumeObject implements VolumeInfo {
     private static final Logger s_logger = Logger.getLogger(VolumeObject.class);
     protected VolumeVO volumeVO;
     private StateMachine2<Volume.State, Volume.Event, VolumeVO> _volStateMachine;
-    protected DataStore dataStore;
-
+    protected PrimaryDataStore dataStore;
+    @Inject
+    VolumeDiskTypeHelper diskTypeHelper;
     @Inject
     VolumeTypeHelper volumeTypeHelper;
     @Inject
     VolumeDao2 volumeDao;
     @Inject
     VolumeManager volumeMgr;
-    private VolumeObject(DataStore dataStore, VolumeVO volumeVO) {
+    private VolumeObject(PrimaryDataStore dataStore, VolumeVO volumeVO) {
         this.volumeVO = volumeVO;
         this.dataStore = dataStore;
     }
-    
-    public static VolumeObject getVolumeObject(DataStore dataStore, VolumeVO volumeVO) {
+
+    public static VolumeObject getVolumeObject(PrimaryDataStore dataStore, VolumeVO volumeVO) {
         VolumeObject vo = new VolumeObject(dataStore, volumeVO);
-        vo = ComponentInject.inject(vo);
+        vo = ComponentContext.inject(vo);
         return vo;
     }
 
+    @Override
     public String getUuid() {
         return volumeVO.getUuid();
     }
 
     public void setPath(String uuid) {
-        volumeVO.setPath(uuid);
+        volumeVO.setUuid(uuid);
     }
 
+    @Override
     public String getPath() {
         return volumeVO.getPath();
     }
 
+    @Override
     public String getTemplateUuid() {
         return null;
     }
 
+    @Override
     public String getTemplatePath() {
         return null;
+    }
+
+    public PrimaryDataStoreInfo getDataStoreInfo() {
+        return dataStore;
     }
 
     public Volume.State getState() {
         return volumeVO.getState();
     }
 
-    public DataStore getDataStore() {
+    @Override
+    public PrimaryDataStore getDataStore() {
         return dataStore;
     }
 
+    @Override
     public long getSize() {
         return volumeVO.getSize();
     }
 
-    public DiskFormat getDiskType() {
-        return null;
+    @Override
+    public VolumeDiskType getDiskType() {
+        return diskTypeHelper.getDiskType(volumeVO.getDiskType());
     }
 
-    public DataObjectType getType() {
-        return DataObjectType.VOLUME;
+    @Override
+    public VolumeType getType() {
+        return volumeTypeHelper.getType(volumeVO.getVolumeType());
     }
 
     public long getVolumeId() {
         return volumeVO.getId();
     }
 
-    public void setVolumeDiskType(DiskFormat type) {
-        //volumeVO.setDiskType(type.toString());
+    public void setVolumeDiskType(VolumeDiskType type) {
+        volumeVO.setDiskType(type.toString());
     }
 
     public boolean stateTransit(Volume.Event event) {
@@ -110,22 +142,47 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public long getId() {
-        return this.volumeVO.getId();
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public State getCurrentState() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public State getDesiredState() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Date getCreatedDate() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Date getUpdatedDate() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getOwner() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getName() {
+        return this.volumeVO.getName();
     }
 
     @Override
     public boolean isAttachedVM() {
         return (this.volumeVO.getInstanceId() == null) ? false : true;
-    }
-
-    @Override
-    public String getUri() {
-        return this.dataStore.getUri() + File.separator + "?type=volume&path=" + this.volumeVO.getPath();
-    }
-
-    @Override
-    public DiskFormat getFormat() {
-        // TODO Auto-generated method stub
-        return null;
     }
 }

@@ -23,6 +23,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,51 +32,42 @@ import javax.servlet.http.HttpSession;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
-import com.cloud.cluster.StackMaid;
 import com.cloud.exception.CloudAuthenticationException;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component("apiServlet")
 @SuppressWarnings("serial")
 public class ApiServlet extends HttpServlet {
     public static final Logger s_logger = Logger.getLogger(ApiServlet.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
-    private ApiServer _apiServer = null;
-    private AccountService _accountMgr = null;
+    ApiServer _apiServer;
+    AccountService _accountMgr;
 
     public ApiServlet() {
         super();
         _apiServer = ApiServer.getInstance();
+        _accountMgr = ComponentContext.getComponent(AccountService.class);
         if (_apiServer == null) {
             throw new CloudRuntimeException("ApiServer not initialized");
         }
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _accountMgr = locator.getManager(AccountService.class);
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        try {
-            processRequest(req, resp);
-        } finally {
-            StackMaid.current().exitCleanup();
-        }
+        processRequest(req, resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
-        try {
-            processRequest(req, resp);
-        } finally {
-            StackMaid.current().exitCleanup();
-        }
+        processRequest(req, resp);
     }
 
     private void utf8Fixup(HttpServletRequest req, Map<String, Object[]> params) {
@@ -128,7 +120,7 @@ public class ApiServlet extends HttpServlet {
             reqStr = auditTrailSb.toString() + " " + req.getQueryString();
             s_logger.debug("===START=== " + StringUtils.cleanString(reqStr));
         }
-        
+
         try {
             HttpSession session = req.getSession(false);
             Object[] responseTypeParam = params.get("response");
@@ -305,7 +297,7 @@ public class ApiServlet extends HttpServlet {
 
                 auditTrailSb.insert(0,
                         "(userId=" + UserContext.current().getCallerUserId() + " accountId=" + UserContext.current().getCaller().getId() + " sessionId=" + (session != null ? session.getId() : null)
-                                + ")");
+                        + ")");
 
                 try {
                     String response = _apiServer.handleRequest(params, false, responseType, auditTrailSb);
@@ -386,7 +378,7 @@ public class ApiServlet extends HttpServlet {
     private String getLoginSuccessResponse(HttpSession session, String responseType) {
         StringBuffer sb = new StringBuffer();
         int inactiveInterval = session.getMaxInactiveInterval();
-        
+
         String user_UUID = (String)session.getAttribute("user_UUID");
         session.removeAttribute("user_UUID");
 

@@ -29,7 +29,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.AssociateLunCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "associateLun", description="Associate a LUN with a guest IQN", responseObject = AssociateLunCmdResponse.class)
 public class AssociateLunCmd extends BaseCmd {

@@ -20,13 +20,17 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
+
+
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Volume;
 
 public interface PrimaryDataStoreInfo {
 	public boolean isHypervisorSupported(HypervisorType hypervisor);
 	public boolean isLocalStorageSupported();
-	public boolean isVolumeDiskTypeSupported(DiskFormat diskType);
+	public boolean isVolumeDiskTypeSupported(VolumeDiskType diskType);
 	public long getCapacity();
 	public long getAvailableCapacity();
 
@@ -36,4 +40,6 @@ public interface PrimaryDataStoreInfo {
 	public String getName();
 	public String getType();
 	public PrimaryDataStoreLifeCycle getLifeCycle();
+	PrimaryDataStoreProvider getProvider();
+	
 }

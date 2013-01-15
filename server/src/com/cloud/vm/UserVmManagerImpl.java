@@ -214,7 +214,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.RSAHelper;
@@ -381,7 +380,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected String _instance;
     protected String _zone;
 
-    private ConfigurationDao _configDao;
+    @Inject ConfigurationDao _configDao;
     private int _createprivatetemplatefromvolumewait;
     private int _createprivatetemplatefromsnapshotwait;
 
@@ -1333,8 +1332,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throws ConfigurationException {
         _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        _configDao = locator.getDao(ConfigurationDao.class);
         if (_configDao == null) {
             throw new ConfigurationException(
                     "Unable to get the configuration dao.");

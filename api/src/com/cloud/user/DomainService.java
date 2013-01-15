@@ -30,6 +30,8 @@ public interface DomainService {
 
     Domain getDomain(long id);
 
+    Domain getDomain(String uuid);
+
     /**
      * Return whether a domain is a child domain of a given domain.
      *

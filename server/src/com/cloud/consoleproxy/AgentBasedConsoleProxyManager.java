@@ -49,7 +49,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.Network;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
@@ -87,9 +86,9 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     VirtualMachineManager _itMgr;
     @Inject
     protected ConsoleProxyDao _cpDao;
-    
+
     @Inject ConfigurationDao _configDao;
-    
+
     public int getVncPort(VMInstanceVO vm) {
         if (vm.getHostId() == null) {
             return -1;
@@ -112,7 +111,7 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         if (value != null) {
             _consoleProxyUrlPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_URL_PORT);
         }
-        
+
         value = configs.get("consoleproxy.port");
         if (value != null) {
             _consoleProxyPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT);
@@ -126,10 +125,10 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         _instance = configs.get("instance.name");
 
         _consoleProxyUrlDomain = configs.get("consoleproxy.url.domain");
-        
+
         _listener = new ConsoleProxyListener(this);
         _agentMgr.registerForHostEvents(_listener, true, true, false);
-        
+
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
         if (s_logger.isInfoEnabled()) {
@@ -177,20 +176,20 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
                 }
                 publicIp = host.getPrivateIpAddress();
             }
-            
+
             int urlPort = _consoleProxyUrlPort;
 
             if (host.getProxyPort() != null && host.getProxyPort().intValue() > 0) {
                 urlPort = host.getProxyPort().intValue();
             }
-            
+
             return new ConsoleProxyInfo(_sslEnabled, publicIp, _consoleProxyPort, urlPort, _consoleProxyUrlDomain);
         } else {
             s_logger.warn("Host that VM is running is no longer available, console access to VM " + userVmId + " will be temporarily unavailable.");
         }
         return null;
     }
-    
+
     @Override
     public void onLoadReport(ConsoleProxyLoadReportCommand cmd) {
     }
@@ -273,16 +272,16 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     @Override
     public void setManagementState(ConsoleProxyManagementState state) {
     }
-    
+
     @Override
     public ConsoleProxyManagementState getManagementState() {
-    	return null;
+        return null;
     }
-    
+
     @Override
     public void resumeLastManagementState() {
     }
-    
+
     @Override
     public void startAgentHttpHandlerInVM(StartupProxyCommand startupCmd) {
     }
@@ -299,7 +298,7 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         }
         return VirtualMachineName.getConsoleProxyId(vmName);
     }
-    
+
     @Override
     public ConsoleProxyVO findByName(String name) {
         // TODO Auto-generated method stub
@@ -329,7 +328,7 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         // TODO Auto-generated method stub
         return false;
     }
-    
+
     @Override
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile) {
         // TODO Auto-generated method stub
@@ -346,7 +345,7 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, StopAnswer answer) {
         // TODO Auto-generated method stub
     }
-    
+
     @Override 
     public void finalizeExpunge(ConsoleProxyVO proxy) {
     }
@@ -366,7 +365,7 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         //not supported
         throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
     }
-    
+
     @Override 
     public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
     }

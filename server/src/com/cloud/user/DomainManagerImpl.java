@@ -88,6 +88,11 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
     }
 
     @Override
+    public Domain getDomain(String domainUuid) {
+        return _domainDao.findByUuid(domainUuid);
+    }
+
+    @Override
     public String getName() {
         return _name;
     }

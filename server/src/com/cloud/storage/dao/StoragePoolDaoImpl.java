@@ -35,7 +35,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolDetailVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;

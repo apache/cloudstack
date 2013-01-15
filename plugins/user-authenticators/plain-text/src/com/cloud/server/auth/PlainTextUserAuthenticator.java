@@ -30,7 +30,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 
 

@@ -21,10 +21,9 @@ package org.apache.cloudstack.storage.datastore.lifecycle;
 import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.EndPoint;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.datastore.DataStoreStatus;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
@@ -39,21 +38,29 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     }
     
     @Override
-    public boolean initialize(DataStore store, Map<String, String> dsInfos) {
+    public void setDataStore(PrimaryDataStoreInfo dataStore) {
+        this.dataStore = (PrimaryDataStore)dataStore;
+    }
+    
+    @Override
+    public boolean initialize(Map<String, String> dsInfos) {
+        PrimaryDataStoreVO dataStore = dataStoreDao.findById(this.dataStore.getId());
+        dataStore.setStatus(DataStoreStatus.Initialized);
+        dataStoreDao.update(this.dataStore.getId(), dataStore);
         //TODO: add extension point for each data store
         return true;
     }
 
     protected void attachCluster() {
         //send down AttachPrimaryDataStoreCmd command to all the hosts in the cluster
-        AttachPrimaryDataStoreCmd cmd = new AttachPrimaryDataStoreCmd(this.dataStore.getUri());
-        /*for (EndPoint ep : dataStore.getEndPoints()) {
+        AttachPrimaryDataStoreCmd cmd = new AttachPrimaryDataStoreCmd(this.dataStore.getDataStoreTO());
+        for (EndPoint ep : dataStore.getEndPoints()) {
             ep.sendMessage(cmd);
-        } */
+        } 
     }
     
     @Override
-    public boolean attachCluster(DataStore dataStore, ClusterScope scope) {
+    public boolean attachCluster(ClusterScope scope) {
         PrimaryDataStoreVO dataStoreVO = dataStoreDao.findById(this.dataStore.getId());
         dataStoreVO.setDataCenterId(scope.getZoneId());
         dataStoreVO.setPodId(scope.getPodId());
@@ -96,14 +103,6 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
 
     @Override
     public boolean deleteDataStore() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-
-
-    @Override
-    public boolean attachZone(DataStore dataStore, ZoneScope scope) {
         // TODO Auto-generated method stub
         return false;
     }

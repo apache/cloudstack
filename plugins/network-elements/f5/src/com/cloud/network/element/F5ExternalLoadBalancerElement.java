@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.lang.String;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.utils.PropertiesUtil;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -262,8 +264,9 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     }
 
     @Override
-    public String getPropertiesFile() {
-        return "f5bigip_commands.properties";
+    public Map<String, String> getProperties() {
+        return PropertiesUtil.processConfigFile(new String[]
+                { "f5bigip_commands.properties" });
     }
 
     @Override

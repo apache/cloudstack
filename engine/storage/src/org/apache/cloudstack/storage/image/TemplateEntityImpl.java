@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
-import org.apache.cloudstack.storage.image.datastore.ImageDataStoreInfo;
+import org.apache.cloudstack.storage.image.store.ImageDataStoreInfo;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;

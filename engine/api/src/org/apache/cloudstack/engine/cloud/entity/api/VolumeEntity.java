@@ -20,7 +20,7 @@ package org.apache.cloudstack.engine.cloud.entity.api;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
 import org.apache.cloudstack.engine.entity.api.CloudStackEntity;
-import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import org.apache.cloudstack.engine.subsystem.api.storage.disktype.VolumeDiskType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 
 
@@ -76,9 +76,12 @@ public interface VolumeEntity extends CloudStackEntity {
     
     long getSize();
     
-    DiskFormat getDiskType();
+    VolumeDiskType getDiskType();
     
     VolumeType getType();
     
     StorageEntity getDataStore();
+    
+    boolean createVolumeFromTemplate(long dataStoreId, VolumeDiskType diskType, TemplateEntity template);
+    boolean createVolume(long dataStoreId, VolumeDiskType diskType);
 }

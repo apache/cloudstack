@@ -1,82 +1,97 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
-import java.util.Set;
+import java.util.Map;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
-import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
+import org.apache.cloudstack.storage.EndPoint;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
+import org.apache.cloudstack.storage.volume.VolumeObject;
 
 public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
+
+	@Override
+	public String grantAccess(VolumeObject vol, EndPoint ep) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean revokeAccess(VolumeObject vol, EndPoint ep) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
     @Override
-    public String grantAccess(DataObject data,
-            org.apache.cloudstack.engine.subsystem.api.storage.EndPoint ep) {
+    public long getCapacity() {
         // TODO Auto-generated method stub
-        return null;
+        return 0;
     }
 
     @Override
-    public boolean revokeAccess(DataObject data,
-            org.apache.cloudstack.engine.subsystem.api.storage.EndPoint ep) {
+    public long getAvailableCapacity() {
         // TODO Auto-generated method stub
-        return false;
+        return 0;
     }
 
     @Override
-    public Set<DataObject> listObjects(DataStore store) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void createAsync(DataObject data,
-            AsyncCompletionCallback<CreateCmdResult> callback) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void deleteAsync(
-            DataObject data,
-            AsyncCompletionCallback<org.apache.cloudstack.engine.subsystem.api.storage.CommandResult> callback) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void copyAsync(DataObject srcdata, DataObject destData,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public boolean canCopy(DataObject srcData, DataObject destData) {
+    public boolean initialize(Map<String, String> params) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public void takeSnapshot(
-            SnapshotInfo snapshot,
-            AsyncCompletionCallback<org.apache.cloudstack.engine.subsystem.api.storage.CommandResult> callback) {
+    public boolean grantAccess(EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean revokeAccess(EndPoint ep) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public void setDataStore(PrimaryDataStore dataStore) {
         // TODO Auto-generated method stub
         
     }
 
     @Override
-    public void revertSnapshot(
-            SnapshotInfo snapshot,
-            AsyncCompletionCallback<org.apache.cloudstack.engine.subsystem.api.storage.CommandResult> callback) {
+    public void createVolumeFromBaseImageAsync(VolumeObject volume, TemplateOnPrimaryDataStoreInfo template, AsyncCompletionCallback<CommandResult> callback) {
         // TODO Auto-generated method stub
         
     }
 
+    @Override
+    public void createVolumeAsync(VolumeObject vol, AsyncCompletionCallback<CommandResult> callback) {
+        // TODO Auto-generated method stub
+        
+    }
 
-	
+    @Override
+    public void deleteVolumeAsync(VolumeObject vo, AsyncCompletionCallback<CommandResult> callback) {
+        // TODO Auto-generated method stub
+        
+    }
 
 }

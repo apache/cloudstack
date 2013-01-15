@@ -39,7 +39,7 @@ import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;

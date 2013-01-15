@@ -18,7 +18,6 @@ package com.cloud.deploy;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +73,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Adapters;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -106,7 +104,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
     //@com.cloud.utils.component.Inject(adapter=StoragePoolAllocator.class)
     @Inject protected List<StoragePoolAllocator> _storagePoolAllocators;
-    
+
     //@com.cloud.utils.component.Inject(adapter=HostAllocator.class)
     @Inject protected List<HostAllocator> _hostAllocators;
     protected String _allocationAlgorithm = "random";
@@ -115,7 +113,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     @Override
     public DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vmProfile,
             DeploymentPlan plan, ExcludeList avoid)
-    throws InsufficientServerCapacityException {
+                    throws InsufficientServerCapacityException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
         DataCenter dc = _dcDao.findById(vm.getDataCenterIdToDeployIn());
 
@@ -126,7 +124,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             }
             return null;
         }
-        
+
         ServiceOffering offering = vmProfile.getServiceOffering();
         int cpu_requested = offering.getCpu() * offering.getSpeed();
         long ram_requested = offering.getRamSize() * 1024L * 1024L;
@@ -143,9 +141,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
             s_logger.debug("Is ROOT volume READY (pool already allocated)?: " + (plan.getPoolId()!=null ? "Yes": "No"));
         }
-        
+
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
-        
+
         if(plan.getHostId() != null && haVmTag == null){
             Long hostIdSpecified = plan.getHostId();
             if (s_logger.isDebugEnabled()){
@@ -238,7 +236,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             }
             s_logger.debug("Cannot choose the last host to deploy this VM ");
         }
-        
+
 
         List<Long> clusterList = new ArrayList<Long>();
         if (plan.getClusterId() != null) {
@@ -272,7 +270,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             }
         } else {
             s_logger.debug("Searching all possible resources under this Zone: "+ plan.getDataCenterId());
-            
+
             boolean applyAllocationAtPods = Boolean.parseBoolean(_configDao.getValue(Config.ApplyAllocationAlgorithmToPods.key()));
             if(applyAllocationAtPods){
                 //start scan at all pods under this zone.
@@ -284,15 +282,15 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         }
 
     }
-    
+
     private DeployDestination scanPodsForDestination(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid){
-        
+
         ServiceOffering offering = vmProfile.getServiceOffering();
         int requiredCpu = offering.getCpu() * offering.getSpeed();
         long requiredRam = offering.getRamSize() * 1024L * 1024L;
         String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
         float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
-        
+
         //list pods under this zone by cpu and ram capacity
         List<Long> prioritizedPodIds = new ArrayList<Long>();
         Pair<List<Long>, Map<Long, Double>> podCapacityInfo = listPodsByCapacity(plan.getDataCenterId(), requiredCpu, requiredRam, cpuOverprovisioningFactor); 
@@ -313,16 +311,16 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                     }
                     podsWithCapacity.removeAll(disabledPods);
                 }
-           }
+            }
         }else{
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("No pods found having a host with enough capacity, returning.");
             }
             return null;
         }
-        
+
         if(!podsWithCapacity.isEmpty()){
-            
+
             prioritizedPodIds = reorderPods(podCapacityInfo, vmProfile, plan);
 
             //loop over pods
@@ -345,9 +343,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             return null;
         }
     }
-    
+
     private DeployDestination scanClustersForDestinationInZoneOrPod(long id, boolean isZone, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid){
-        
+
         VirtualMachine vm = vmProfile.getVirtualMachine();
         ServiceOffering offering = vmProfile.getServiceOffering();
         DataCenter dc = _dcDao.findById(vm.getDataCenterIdToDeployIn());
@@ -355,7 +353,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         long requiredRam = offering.getRamSize() * 1024L * 1024L;
         String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
         float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
-        
+
         //list clusters under this zone by cpu and ram capacity
         Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo = listClustersByCapacity(id, requiredCpu, requiredRam, avoid, isZone, cpuOverprovisioningFactor);
         List<Long> prioritizedClusterIds = clusterCapacityInfo.first();
@@ -366,7 +364,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 }
                 prioritizedClusterIds.removeAll(avoid.getClustersToAvoid());
             }
-            
+
             if(!isRootAdmin(plan.getReservationContext())){
                 List<Long> disabledClusters = new ArrayList<Long>();
                 if(isZone){
@@ -397,7 +395,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             return null;
         }
     }
-    
+
     /**
      * This method should reorder the given list of Cluster Ids by applying any necessary heuristic 
      * for this planner
@@ -409,7 +407,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         List<Long> reordersClusterIds = clusterCapacityInfo.first();
         return reordersClusterIds;
     }
-    
+
     /**
      * This method should reorder the given list of Pod Ids by applying any necessary heuristic 
      * for this planner
@@ -421,7 +419,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         List<Long> podIdsByCapacity = podCapacityInfo.first();
         return podIdsByCapacity;
     }
-    
+
     private List<Long> listDisabledClusters(long zoneId, Long podId){
         List<Long> disabledClusters = _clusterDao.listDisabledClusters(zoneId, podId);
         if(podId == null){
@@ -431,70 +429,70 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         }
         return disabledClusters;
     }
-    
+
     private List<Long> listDisabledPods(long zoneId){
         List<Long> disabledPods = _podDao.listDisabledPods(zoneId);
         return disabledPods;
     }    
-    
+
     private Map<Short,Float> getCapacityThresholdMap(){
-    	// Lets build this real time so that the admin wont have to restart MS if he changes these values
-    	Map<Short,Float> disableThresholdMap = new HashMap<Short, Float>();
-    	
-    	String cpuDisableThresholdString = _configDao.getValue(Config.CPUCapacityDisableThreshold.key());
+        // Lets build this real time so that the admin wont have to restart MS if he changes these values
+        Map<Short,Float> disableThresholdMap = new HashMap<Short, Float>();
+
+        String cpuDisableThresholdString = _configDao.getValue(Config.CPUCapacityDisableThreshold.key());
         float cpuDisableThreshold = NumbersUtil.parseFloat(cpuDisableThresholdString, 0.85F);
         disableThresholdMap.put(Capacity.CAPACITY_TYPE_CPU, cpuDisableThreshold);
-        
+
         String memoryDisableThresholdString = _configDao.getValue(Config.MemoryCapacityDisableThreshold.key());
         float memoryDisableThreshold = NumbersUtil.parseFloat(memoryDisableThresholdString, 0.85F);
         disableThresholdMap.put(Capacity.CAPACITY_TYPE_MEMORY, memoryDisableThreshold);
-        
-    	return disableThresholdMap;
+
+        return disableThresholdMap;
     }
 
     private List<Short> getCapacitiesForCheckingThreshold(){
-    	List<Short> capacityList = new ArrayList<Short>();    	
-    	capacityList.add(Capacity.CAPACITY_TYPE_CPU);
-    	capacityList.add(Capacity.CAPACITY_TYPE_MEMORY);    	
-    	return capacityList;
+        List<Short> capacityList = new ArrayList<Short>();    	
+        capacityList.add(Capacity.CAPACITY_TYPE_CPU);
+        capacityList.add(Capacity.CAPACITY_TYPE_MEMORY);    	
+        return capacityList;
     }
-    
+
     private void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
-    	        
-    	Map<Short,Float> capacityThresholdMap = getCapacityThresholdMap();
-    	List<Short> capacityList = getCapacitiesForCheckingThreshold();
-    	List<Long> clustersCrossingThreshold = new ArrayList<Long>();
-    	
+
+        Map<Short,Float> capacityThresholdMap = getCapacityThresholdMap();
+        List<Short> capacityList = getCapacitiesForCheckingThreshold();
+        List<Long> clustersCrossingThreshold = new ArrayList<Long>();
+
         ServiceOffering offering = vmProfile.getServiceOffering();
         int cpu_requested = offering.getCpu() * offering.getSpeed();
         long ram_requested = offering.getRamSize() * 1024L * 1024L;
-    	
+
         // 	For each capacity get the cluster list crossing the threshold and remove it from the clusterList that will be used for vm allocation.
         for(short capacity : capacityList){
-        	
-        	if (clusterListForVmAllocation == null || clusterListForVmAllocation.size() == 0){
-           		return;
-           	}
-           	
-           	if (capacity == Capacity.CAPACITY_TYPE_CPU){
-           		clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(Capacity.CAPACITY_TYPE_CPU, plan.getDataCenterId(),
-           				capacityThresholdMap.get(capacity), cpu_requested, ApiDBUtils.getCpuOverprovisioningFactor());
-           	}else{
-           		clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(),
-           				capacityThresholdMap.get(capacity), ram_requested, 1.0f);//Mem overprov not supported yet
-           	}
 
-           	
-           	if (clustersCrossingThreshold != null && clustersCrossingThreshold.size() != 0){
-               	// addToAvoid Set
-           		avoid.addClusterList(clustersCrossingThreshold);
-           		// Remove clusters crossing disabled threshold
-               	clusterListForVmAllocation.removeAll(clustersCrossingThreshold);
-               	
-           		s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
-           				" crosses the disable capacity threshold: " + capacityThresholdMap.get(capacity) + " for capacity Type : " + capacity + ", skipping these clusters");           		
-           	}
-           	           	           	
+            if (clusterListForVmAllocation == null || clusterListForVmAllocation.size() == 0){
+                return;
+            }
+
+            if (capacity == Capacity.CAPACITY_TYPE_CPU){
+                clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(Capacity.CAPACITY_TYPE_CPU, plan.getDataCenterId(),
+                        capacityThresholdMap.get(capacity), cpu_requested, ApiDBUtils.getCpuOverprovisioningFactor());
+            }else{
+                clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(),
+                        capacityThresholdMap.get(capacity), ram_requested, 1.0f);//Mem overprov not supported yet
+            }
+
+
+            if (clustersCrossingThreshold != null && clustersCrossingThreshold.size() != 0){
+                // addToAvoid Set
+                avoid.addClusterList(clustersCrossingThreshold);
+                // Remove clusters crossing disabled threshold
+                clusterListForVmAllocation.removeAll(clustersCrossingThreshold);
+
+                s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
+                        " crosses the disable capacity threshold: " + capacityThresholdMap.get(capacity) + " for capacity Type : " + capacity + ", skipping these clusters");           		
+            }
+
         }
     }
 
@@ -506,7 +504,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         }
 
         removeClustersCrossingThreshold(clusterList, avoid, vmProfile, plan);
-        
+
         for(Long clusterId : clusterList){
             Cluster clusterVO = _clusterDao.findById(clusterId);
 
@@ -515,7 +513,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 avoid.addCluster(clusterVO.getId());
                 continue;
             }
-            
+
             s_logger.debug("Checking resources in Cluster: "+clusterId + " under Pod: "+clusterVO.getPodId());
             //search for resources(hosts and storage) under this zone, pod, cluster.
             DataCenterDeployment potentialPlan = new DataCenterDeployment(plan.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null, plan.getPoolId(), null, plan.getReservationContext());
@@ -595,11 +593,11 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("ClusterId List having enough CPU and RAM capacity & in order of aggregate capacity: " + clusterIdsOrderedByAggregateCapacity);
         }
-        
+
         return result;
 
     }
-    
+
     protected Pair<List<Long>, Map<Long, Double>> listPodsByCapacity(long zoneId, int requiredCpu, long requiredRam, float cpuOverprovisioningFactor){
         //look at the aggregate available cpu and ram per pod
         //although an aggregate value may be false indicator that a pod can host a vm, it will at the least eliminate those pods which definitely cannot
@@ -632,7 +630,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("PodId List having enough CPU and RAM capacity & in order of aggregate capacity: " + podIdsOrderedByAggregateCapacity);
         }
-        
+
         return result;
 
     }
@@ -719,7 +717,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 break;
             }
         }
-        
+
         if(suitableHosts.isEmpty()){
             s_logger.debug("No suitable hosts found");
         }
@@ -801,8 +799,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 // when deploying VM based on ISO, we have a service offering and an additional disk offering, use-local storage flag is actually
                 // saved in service offering, overrde the flag from service offering when it is a ROOT disk
                 if(!useLocalStorage && vmProfile.getServiceOffering().getUseLocalStorage()) {
-                	if(toBeCreated.getVolumeType() == Volume.Type.ROOT)
-                		useLocalStorage = true;
+                    if(toBeCreated.getVolumeType() == Volume.Type.ROOT)
+                        useLocalStorage = true;
                 }
             }
             diskProfile.setUseLocalStorage(useLocalStorage);
@@ -816,7 +814,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                     break;
                 }
             }
-            
+
             if(!foundPotentialPools){
                 s_logger.debug("No suitable pools found for volume: "+toBeCreated +" under cluster: "+plan.getClusterId());
                 //No suitable storage pools found under this cluster for this volume. - remove any suitable pools found for other volumes.
@@ -862,7 +860,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         }
         return false;
     }
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);

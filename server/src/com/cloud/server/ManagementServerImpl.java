@@ -58,7 +58,6 @@ import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
-import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
@@ -86,7 +85,6 @@ import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -186,7 +184,6 @@ import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Mode;
@@ -223,6 +220,7 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.ComponentContext;
@@ -381,8 +379,14 @@ public class ManagementServerImpl implements ManagementServer {
     S3Manager _s3Mgr;
 
     @Inject
-    ComponentContext _placeholder;			// create a dependency to ComponentContext so that it can be loaded beforehead
- 
+    ComponentContext _forceContextRef;			// create a dependency to ComponentContext so that it can be loaded beforehead
+   
+    @Inject
+    EventUtils	_forceEventUtilsRef;
+
+    @Inject
+    CloudStackComponentComposer _componentRegistry;
+     
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private KeystoreManager _ksMgr;
 
@@ -393,7 +397,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Inject List<UserAuthenticator> _userAuthenticators;
 
     private String _hashKey = null;
-
+    
     public ManagementServerImpl() {
     }
 
@@ -448,12 +452,11 @@ public class ManagementServerImpl implements ManagementServer {
         Map<String, GenericDaoBase> daos = ComponentContext.getApplicationContext().getBeansOfType(
                 GenericDaoBase.class);
 
+ 		Map<String, Object> params = new HashMap<String, Object>();
         for (GenericDaoBase dao : daos.values()) {
             try {
                 s_logger.info("Starting dao " + ComponentContext.getTargetClass(dao).getName());
-
-                // TODO
-                // dao.configure(dao.getClass().getSimpleName(), params);
+                dao.configure(dao.getClass().getSimpleName(), params);
             } catch (Exception e) {
                 s_logger.error("Problems with running checker:" + ComponentContext.getTargetClass(dao).getName(), e);
                 System.exit(1);
@@ -462,12 +465,8 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     private void startManagers() {
-		@SuppressWarnings("rawtypes")
-		Map<String, Manager> managers = ComponentContext.getApplicationContext().getBeansOfType(
-				Manager.class);
-			
-		Map<String, Object> params = new HashMap<String, Object>();
-		for(Manager manager : managers.values()) {
+ 		Map<String, Object> params = new HashMap<String, Object>();
+		for(Manager manager : _componentRegistry.getManagers()) {
 			s_logger.info("Start manager: " + ComponentContext.getTargetClass(manager).getName() + "...");
 			try {
 				if(!manager.configure(manager.getClass().getSimpleName(), params)) {
@@ -2392,8 +2391,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public String[] getPropertiesFiles() {
-        return new String[] { "commands.properties" };
+    public Map<String, String> getProperties() {
+        return PropertiesUtil.processConfigFile(new String[]
+                { "commands.properties" });
     }
 
     protected class EventPurgeTask implements Runnable {

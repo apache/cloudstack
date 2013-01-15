@@ -27,22 +27,21 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.ListNetworkDeviceCmd;
+import org.apache.cloudstack.api.response.NetworkDeviceResponse;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiDBUtils;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.IdentityService;
-import org.apache.cloudstack.api.command.admin.network.DeleteNetworkDeviceCmd;
 import com.cloud.baremetal.ExternalDhcpManager;
 import com.cloud.baremetal.PxeServerManager;
-import com.cloud.baremetal.PxeServerProfile;
 import com.cloud.baremetal.PxeServerManager.PxeServerType;
+import com.cloud.baremetal.PxeServerProfile;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -64,14 +63,11 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.server.ManagementServer;
-import org.apache.cloudstack.api.response.NetworkDeviceResponse;
 import com.cloud.server.api.response.NwDeviceDhcpResponse;
 import com.cloud.server.api.response.PxePingResponse;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
@@ -112,16 +108,16 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
 
     // obsolete
     // private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class); 
-    
+
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalNetworkDeviceManagerImpl.class);
     protected String _name;
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
         return true;
     }
-    
+
     @Override
     public boolean start() {
         return true;
@@ -136,21 +132,21 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     public String getName() {
         return _name;
     }
-    
+
     @Override
     public Host addNetworkDevice(AddNetworkDeviceCmd cmd) {
         Map paramList = cmd.getParamList();
         if (paramList == null) {
             throw new CloudRuntimeException("Parameter list is null");
         }
-    
+
         Collection paramsCollection = paramList.values();
         HashMap params = (HashMap) (paramsCollection.toArray())[0];
         if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.ExternalDhcp.getName())) {
             //Long zoneId = _identityService.getIdentityId("data_center", (String) params.get(ApiConstants.ZONE_ID));
             //Long podId = _identityService.getIdentityId("host_pod_ref", (String)params.get(ApiConstants.POD_ID));
-        	Long zoneId = Long.valueOf((String) params.get(ApiConstants.ZONE_ID));
-        	Long podId = Long.valueOf((String)params.get(ApiConstants.POD_ID));
+            Long zoneId = Long.valueOf((String) params.get(ApiConstants.ZONE_ID));
+            Long podId = Long.valueOf((String)params.get(ApiConstants.POD_ID));
             String type = (String) params.get(ApiConstants.DHCP_SERVER_TYPE);
             String url = (String) params.get(ApiConstants.URL);
             String username = (String) params.get(ApiConstants.USERNAME);
@@ -217,7 +213,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         } else {
             throw new CloudRuntimeException("Unsupported network device type:" + host.getType());
         }
-        
+
         response.setId(device.getUuid());
         return response;
     }
@@ -234,19 +230,19 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
 //        } else {
 //            List<HostVO> devs = _hostDao.listBy(type, zoneId);
 //            res.addAll(devs);
- //       }
-        
- //       return res;
+        //       }
+
+        //       return res;
         return null;
     }
-    
+
     @Override
     public List<Host> listNetworkDevice(ListNetworkDeviceCmd cmd) {
         Map paramList = cmd.getParamList();
         if (paramList == null) {
             throw new CloudRuntimeException("Parameter list is null");
         }
-        
+
         List<Host> res;
         Collection paramsCollection = paramList.values();
         HashMap params = (HashMap) (paramsCollection.toArray())[0];
@@ -275,13 +271,13 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         } else {
             throw new CloudRuntimeException("Unknown network device type:" + cmd.getDeviceType());
         }
-        
+
         return res;
     }
 
     @Override
     public boolean deleteNetworkDevice(DeleteNetworkDeviceCmd cmd) {
-       HostVO device = _hostDao.findById(cmd.getId());
-       return true;
+        HostVO device = _hostDao.findById(cmd.getId());
+        return true;
     }
 }
