@@ -77,11 +77,14 @@ public class StoragePoolVO implements StoragePool {
     @Enumerated(value=EnumType.STRING)
     private StoragePoolStatus status;
     
-    // @Column(name="storage_provider", updatable=true, nullable=false)
-    private String storageProvider;
+    // TODO, disable persisency of storageProvider and storageType, javelin new code not
+    // sync with the schema!
     
-    // @Column(name="storage_type", nullable=false)
-    private String storageType;
+    // @Column(name="storage_provider", updatable=true, nullable=false)
+    @Transient private String storageProvider;
+    
+    // Column(name="storage_type", nullable=false)
+    @Transient private String storageType;
     
 	@Override
     public long getId() {
@@ -135,7 +138,7 @@ public class StoragePoolVO implements StoragePool {
     public long getAvailableBytes() {
 		return availableBytes;
 	}
-	
+
 	@Override
 	public String getStorageProvider() {
 		return storageProvider;
@@ -153,7 +156,7 @@ public class StoragePoolVO implements StoragePool {
 	public void setStorageType(String type) {
 		storageType = type;
 	}
-
+	
 	@Override
     public long getCapacityBytes() {
 		return capacityBytes;

@@ -67,4 +67,10 @@
   -->
   <bean id="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
   
+  
+  <!--
+    Gurus
+  -->
+  
+  
 </beans>

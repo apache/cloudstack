@@ -499,7 +499,7 @@ public class ManagementServerImpl implements ManagementServer {
 				if(Manager.class.isAssignableFrom(ComponentContext.getTargetClass(adapter)))
 					continue;
 				
-				if(!adapter.configure(adapter.getClass().getSimpleName(), params)) {
+				if(!adapter.configure(adapter.getName(), params)) {
                     throw new CloudRuntimeException("Failed to start adapter: " + ComponentContext.getTargetClass(adapter).getName());
                 }
                 if (!adapter.start()) {
