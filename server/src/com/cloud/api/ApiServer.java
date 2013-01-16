@@ -106,6 +106,7 @@ import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
+import org.springframework.aop.framework.Advised;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.response.ApiResponseSerializer;
@@ -348,6 +349,7 @@ public class ApiServer implements HttpRequestHandler {
                     cmdObj.configure();
                     cmdObj.setFullUrlParams(paramMap);
                     cmdObj.setResponseType(responseType);
+                    
                     // This is where the command is either serialized, or directly dispatched
                     response = queueCommand(cmdObj, paramMap);
                     buildAuditTrail(auditTrailSb, command[0], response);
@@ -404,15 +406,17 @@ public class ApiServer implements HttpRequestHandler {
         UserContext ctx = UserContext.current();
         Long callerUserId = ctx.getCallerUserId();
         Account caller = ctx.getCaller();
-
+        
+        BaseCmd realCmdObj = ComponentContext.getTargetObject(cmdObj);
+        
         // Queue command based on Cmd super class:
         // BaseCmd: cmd is dispatched to ApiDispatcher, executed, serialized and returned.
         // BaseAsyncCreateCmd: cmd params are processed and create() is called, then same workflow as BaseAsyncCmd.
         // BaseAsyncCmd: cmd is processed and submitted as an AsyncJob, job related info is serialized and returned.
-        if (cmdObj instanceof BaseAsyncCmd) {
+        if (realCmdObj instanceof BaseAsyncCmd) {
             Long objectId = null;
             String objectUuid = null;
-            if (cmdObj instanceof BaseAsyncCreateCmd) {
+            if (realCmdObj instanceof BaseAsyncCreateCmd) {
                 BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd) cmdObj;
                 _dispatcher.dispatchCreateCmd(createCmd, params);
                 objectId = createCmd.getEntityId();
@@ -472,19 +476,19 @@ public class ApiServer implements HttpRequestHandler {
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
             // For those listXXXCommand which we have already created DB views, this step is not needed since async job is joined in their db views.
-            if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
-                    && !(cmdObj instanceof ListSecurityGroupsCmd)
-                    && !(cmdObj instanceof ListTagsCmd)
-                    && !(cmdObj instanceof ListEventsCmd)
-                    && !(cmdObj instanceof ListVMGroupsCmd)
-                    && !(cmdObj instanceof ListProjectsCmd)
-                    && !(cmdObj instanceof ListProjectAccountsCmd)
-                    && !(cmdObj instanceof ListProjectInvitationsCmd)
-                    && !(cmdObj instanceof ListHostsCmd)
-                    && !(cmdObj instanceof ListVolumesCmd)
-                    && !(cmdObj instanceof ListUsersCmd)
-                    && !(cmdObj instanceof ListAccountsCmd)
-                    && !(cmdObj instanceof ListStoragePoolsCmd)
+            if (realCmdObj instanceof BaseListCmd && !(realCmdObj instanceof ListVMsCmd) && !(realCmdObj instanceof ListRoutersCmd)
+                    && !(realCmdObj instanceof ListSecurityGroupsCmd)
+                    && !(realCmdObj instanceof ListTagsCmd)
+                    && !(realCmdObj instanceof ListEventsCmd)
+                    && !(realCmdObj instanceof ListVMGroupsCmd)
+                    && !(realCmdObj instanceof ListProjectsCmd)
+                    && !(realCmdObj instanceof ListProjectAccountsCmd)
+                    && !(realCmdObj instanceof ListProjectInvitationsCmd)
+                    && !(realCmdObj instanceof ListHostsCmd)
+                    && !(realCmdObj instanceof ListVolumesCmd)
+                    && !(realCmdObj instanceof ListUsersCmd)
+                    && !(realCmdObj instanceof ListAccountsCmd)
+                    && !(realCmdObj instanceof ListStoragePoolsCmd)
                     ) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }

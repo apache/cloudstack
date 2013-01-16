@@ -131,6 +131,18 @@ public class ComponentContext implements ApplicationContextAware {
 	    return instance.getClass();
     }
     
+    public static <T> T getTargetObject(Object instance) {
+        if(instance instanceof Advised) {
+        	 try {
+				return (T)((Advised)instance).getTargetSource().getTarget();
+			} catch (Exception e) {
+				return (T)instance;
+			}
+        } 
+        	
+        return (T)instance;
+    }
+    
     public static <T> T inject(Class<T> clz) {
     	T instance = s_appContext.getAutowireCapableBeanFactory().createBean(clz);
     	return inject(instance);
