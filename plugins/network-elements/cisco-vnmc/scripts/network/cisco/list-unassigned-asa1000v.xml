@@ -1,4 +1,3 @@
-<!--resource-mgr -->
 <configResolveChildren 
 cookie="%cookie%" 
 classId="fwInstance" 
@@ -12,6 +11,7 @@ inHierarchical="false">
     </inFilter> 
 </configResolveChildren> 
 
+<!-- resource-mgr -->
 <!--
 <configResolveChildren cookie="1349366974/592be573-8a27-48d3-aab1-cf6cb94f23ab" commCookie="5/12/0/1cae" srcExtSys="10.223.56.5" destExtSys="10.223.56.5" srcSvc="sam_extXMLApi" destSvc="resource-mgr_dme" response="yes" classId="fwInstance">
   <outConfigs>
