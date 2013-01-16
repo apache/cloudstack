@@ -16,58 +16,19 @@
 // under the License.
 package com.cloud.network;
 
-import java.net.URI;
-import java.security.InvalidParameterException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-
-import com.cloud.utils.db.*;
-import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
-import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.*;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
-
-import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.*;
 import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.Pod;
-import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -110,13 +71,6 @@ import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.*;
 import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.PortForwardingRuleVO;
-import com.cloud.network.rules.RulesManager;
-import com.cloud.network.rules.StaticNat;
-import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateIpVO;
@@ -145,30 +99,38 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.db.*;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.Nic;
-import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.ReservationContext;
-import com.cloud.vm.ReservationContextImpl;
-import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.*;
 import com.cloud.vm.VirtualMachine.Type;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import edu.emory.mathcs.backport.java.util.Collections;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+import org.apache.log4j.Logger;
 
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import java.net.URI;
+import java.security.InvalidParameterException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -980,39 +942,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "allocating Ip", create = true)
-    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId)
-            throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
-
-        if (networkId != null) {
-            Network network = _networksDao.findById(networkId);
-            if (network == null) {
-                throw new InvalidParameterValueException("Invalid network id is given");
-            }
-            if (network.getGuestType() == Network.GuestType.Shared) {
-                DataCenter zone = _configMgr.getZone(zoneId);
-                if (zone == null) {
-                    throw new InvalidParameterValueException("Invalid zone Id is given");
-                }
-
-                // if shared network in the advanced zone, then check the caller against the network for 'AccessType.UseNetwork'
-                if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && zone.getNetworkType() == NetworkType.Advanced) {
-                    Account caller = UserContext.current().getCaller();
-                    long callerUserId = UserContext.current().getCallerUserId();
-                    _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
-                    }
-                    return allocateIp(ipOwner, false, caller, zone);
-                } else {
-                    throw new InvalidParameterValueException("Associate IP address can only be called on the shared networks in the advanced zone" +
-                            " with Firewall/Source Nat/Static Nat/Port Forwarding/Load balancing services enabled");
-                }
-            }
-        }
-
-        return allocateIP(ipOwner, false,  zoneId);
-    }
-
     public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId)
             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
@@ -1022,11 +951,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         DataCenter zone = _configMgr.getZone(zoneId);
         
-        return allocateIp(ipOwner, isSystem, caller, zone);
+        return allocateIp(ipOwner, isSystem, caller, callerUserId, zone);
     }
 
     @DB
-    public IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, DataCenter zone)
+    public IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerUserId, DataCenter zone) 
             throws ConcurrentOperationException, ResourceAllocationException,
             InsufficientAddressCapacityException {
 
@@ -1047,7 +976,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Account accountToLock = null;
         try {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Associate IP address called by the user " + caller.getId());
+                s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
             }
             accountToLock = _accountDao.acquireInLockTable(ipOwner.getId());
             if (accountToLock == null) {
@@ -1127,22 +1056,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         IPAddressVO ipToAssoc = _ipAddressDao.findById(ipId);
         if (ipToAssoc != null) {
-            Network network = _networksDao.findById(networkId);
-            if (network == null) {
-                throw new InvalidParameterValueException("Invalid network id is given");
-            }
-
-            DataCenter zone = _configMgr.getZone(network.getDataCenterId());
-            if (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced) {
-                if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
-                    _accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.UseNetwork, false, network);
-                } else {
-                    throw new InvalidParameterValueException("IP can be associated with guest network of 'shared' type only if" +
-                        "network service Source Nat, Static Nat, Port Forwarding, Load balancing, firewall are enabled in the network");
-                }
-            } else {
-                _accountMgr.checkAccess(caller, null, true, ipToAssoc);
-            }
+            _accountMgr.checkAccess(caller, null, true, ipToAssoc);
             owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
         } else {
             s_logger.debug("Unable to find ip address by id: " + ipId);
@@ -1169,20 +1083,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Ip address can be associated to the network with trafficType " + TrafficType.Guest);
         }
 
-        // Check that network belongs to IP owner - skip this check
-        //     - if zone is basic zone as there is just one guest network,
-        //     - if shared network in Advanced zone
-        //     - and it belongs to the system
-        if (network.getAccountId() != owner.getId()) {
-            if (zone.getNetworkType() != NetworkType.Basic && !(zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Shared)) {
-                throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
-            }
+        // Check that network belongs to IP owner - skip this check for Basic zone as there is just one guest network,
+        // and it belongs to the system
+        if (zone.getNetworkType() != NetworkType.Basic && network.getAccountId() != owner.getId()) {
+            throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
         }
 
-        // In Advance zone only allow to do IP assoc
-        //      - for Isolated networks with source nat service enabled
-        //      - for shared networks with source nat service enabled
-        if (zone.getNetworkType() == NetworkType.Advanced && (!areServicesSupportedInNetwork(network.getId(), Service.SourceNat))) {
+        // In Advance zone only allow to do IP assoc for Isolated networks with source nat service enabled
+        if (zone.getNetworkType() == NetworkType.Advanced &&
+            !(network.getGuestType() == GuestType.Isolated && areServicesSupportedInNetwork(network.getId(),
+                Service.SourceNat))) {
             throw new InvalidParameterValueException("In zone of type " + NetworkType.Advanced +
                     " ip address can be associated only to the network of guest type " + GuestType.Isolated + " with the "
                     + Service.SourceNat.getName() + " enabled");
@@ -1953,19 +1863,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         try {
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
             Network.State state = network.getState();
-            if (state == Network.State.Implemented || state == Network.State.Implementing) {
+            if (state == Network.State.Implemented || state == Network.State.Setup || state == Network.State.Implementing) {
                 s_logger.debug("Network id=" + networkId + " is already implemented");
                 implemented.set(guru, network);
                 return implemented;
-            }
-
-            if (state == Network.State.Setup) {
-                DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
-                if (!isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) || (zone.getNetworkType() == NetworkType.Basic)) {
-                    s_logger.debug("Network id=" + networkId + " is already implemented");
-                    implemented.set(guru, network);
-                    return implemented;
-                }
             }
 
             if (s_logger.isDebugEnabled()) {
@@ -2011,25 +1912,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        return super.equals(o);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
     private void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context,
                                                       NetworkVO network, NetworkOfferingVO offering)
             throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException {
 
-        // Associate a source NAT IP (if one isn't already associated with the network) if this is a
-        //     1) 'Isolated' or 'Shared' guest virtual network in the advance zone
-        //     2) network has sourceNat service
-        //     3) network offering does not support a shared source NAT rule
+        // If this is a 1) guest virtual network 2) network has sourceNat service 3) network offering does not support a
+        // Shared source NAT rule,
+        // associate a source NAT IP (if one isn't already associated with the network)
 
         boolean sharedSourceNat = offering.getSharedSourceNat();
         DataCenter zone = _dcDao.findById(network.getDataCenterId());
-        if (!sharedSourceNat && areServicesSupportedInNetwork(network.getId(), Service.SourceNat)
-                && (network.getGuestType() == Network.GuestType.Isolated ||
-                (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced))) {
+        if (network.getGuestType() == Network.GuestType.Isolated
+                && areServicesSupportedInNetwork(network.getId(), Service.SourceNat)
+                && !sharedSourceNat) {
 
             List<IPAddressVO> ips = null;
             if (network.getVpcId() != null) {
@@ -2510,82 +2405,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    private void checkSharedNetworkCidrOverlap(Long zoneId, long physicalNetworkId, String cidr) {
-        if (zoneId == null || cidr == null) {
-            return;
-        }
-
-        DataCenter zone = _dcDao.findById(zoneId);
-        List<NetworkVO> networks = _networksDao.listByZone(zoneId);
-        Map<Long, String> networkToCidr = new HashMap<Long, String>();
-
-        // check for CIDR overlap with all possible CIDR for isolated guest networks
-        // in the zone when using external networking
-        PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(physicalNetworkId);
-        if (pNetwork.getVnet() != null) {
-            String vlanRange[] = pNetwork.getVnet().split("-");
-            int lowestVlanTag = Integer.valueOf(vlanRange[0]);
-            int highestVlanTag = Integer.valueOf(vlanRange[1]);
-            for (int vlan=lowestVlanTag; vlan <= highestVlanTag; ++vlan) {
-                int offset = vlan - lowestVlanTag;
-                String globalVlanBits = _configDao.getValue(Config.GuestVlanBits.key());
-                int cidrSize = 8 + Integer.parseInt(globalVlanBits);
-                String guestNetworkCidr = zone.getGuestNetworkCidr();
-                String[] cidrTuple = guestNetworkCidr.split("\\/");
-                long newCidrAddress = (NetUtils.ip2Long(cidrTuple[0]) & 0xff000000) | (offset << (32 - cidrSize));
-                if (NetUtils.isNetworksOverlap(NetUtils.long2Ip(newCidrAddress), cidr)) {
-                    throw new InvalidParameterValueException("Specified CIDR for shared network conflict with CIDR that is reserved for zone vlan " + vlan);
-                }
-            }
-        }
-
-        // check for CIDR overlap with all CIDR's of the shared networks in the zone
-        for (NetworkVO network : networks) {
-            if (network.getGuestType() == GuestType.Isolated) {
-                continue;
-            }
-            if (network.getCidr() != null) {
-                networkToCidr.put(network.getId(), network.getCidr());
-            }
-        }
-        if (networkToCidr != null && !networkToCidr.isEmpty()) {
-            for (long networkId : networkToCidr.keySet()) {
-                String ntwkCidr = networkToCidr.get(networkId);
-                if (NetUtils.isNetworksOverlap(ntwkCidr, cidr)) {
-                    throw new InvalidParameterValueException("Specified CIDR for shared network conflict with CIDR of a shared network in the zone.");
-                }
-            }
-        }
-    }
-        public void checkVirtualNetworkCidrOverlap(Long zoneId, String cidr) {
-        if (zoneId == null) {
-            return;
-        }
-        if (cidr == null) {
-            return;
-        }
-        List<NetworkVO> networks = _networksDao.listByZone(zoneId);
-        Map<Long, String> networkToCidr = new HashMap<Long, String>();
-        for (NetworkVO network : networks) {
-            if (network.getGuestType() != GuestType.Isolated) {
-                continue;
-            }
-            if (network.getCidr() != null) {
-                networkToCidr.put(network.getId(), network.getCidr());
-            }
-        }
-        if (networkToCidr == null || networkToCidr.isEmpty()) {
-            return;
-        }
-
-        for (long networkId : networkToCidr.keySet()) {
-            String ntwkCidr = networkToCidr.get(networkId);
-            if (NetUtils.isNetworksOverlap(ntwkCidr, cidr)) {
-                throw new InvalidParameterValueException("Warning: The specified existing network has conflict CIDR subnets with new network!");
-            }
-        }
-    }
-
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_CREATE, eventDescription = "creating network")
@@ -2781,15 +2600,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         Collection<String> ntwkProviders = finalizeServicesAndProvidersForNetwork(ntwkOff, physicalNetworkId).values();
         if (cidr != null && providersConfiguredForExternalNetworking(ntwkProviders)) {
-            if (ntwkOff.getGuestType() == GuestType.Shared && (zone.getNetworkType() == NetworkType.Advanced) &&
-                    isSharedNetworkOfferingWithServices(networkOfferingId)) {
-                // validate if CIDR specified overlaps with any of the CIDR's allocated for isolated networks and shared networks in the zone
-                checkSharedNetworkCidrOverlap(zoneId, pNtwk.getId(), cidr);
-            } else {
-                throw new InvalidParameterValueException("Cannot specify CIDR when using network offering with external devices!");
-            }
+            throw new InvalidParameterValueException("Cannot specify CIDR when using network offering with external devices!");
         }
-
 
         // Vlan is created in 2 cases - works in Advance zone only:
         // 1) GuestType is Shared
@@ -2973,11 +2785,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
             }
             } else {
-                //don't allow to creating shared network with given Vlan ID, if there already exists a isolated network or
-                //shared network with same Vlan ID in the zone
-                if (_networksDao.countByZoneUriAndGuestType(zoneId, uri, GuestType.Isolated) > 0 ||
-                        _networksDao.countByZoneUriAndGuestType(zoneId, uri, GuestType.Shared) > 0) {
-                    throw new InvalidParameterValueException("There is a isolated/shared network with vlan id: " + vlanId + " already exists " + "in zone " + zoneId);
+                //don't allow to create Shared network with Vlan that already exists in the zone for Isolated networks
+                if (_networksDao.countByZoneUriAndGuestType(zoneId, uri, GuestType.Isolated) > 0) {
+                    throw new InvalidParameterValueException("Isolated network with vlan " + vlanId + " already exists " +
+                            "in zone " + zoneId);
                 }
         }
         }
@@ -3565,13 +3376,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             applyProfileToNetwork(network, profile);
 
-            DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
-            if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && (zone.getNetworkType() == NetworkType.Advanced)) {
-                network.setState(Network.State.Setup);
-            } else {
-                network.setState(Network.State.Allocated);
-            }
-
+            network.setState(Network.State.Allocated);
             network.setRestartRequired(false);
             _networksDao.update(network.getId(), network);
             _networksDao.clearCheckForGc(networkId);
@@ -4513,19 +4318,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if(provider.isExternal()){
                 return true;
             }
-        }
-        return false;
-    }
-
-    public boolean isSharedNetworkOfferingWithServices(long networkOfferingId) {
-        NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
-        if ( (networkOffering.getGuestType()  == Network.GuestType.Shared) && (
-                areServicesSupportedByNetworkOffering(networkOfferingId, Service.SourceNat) ||
-                areServicesSupportedByNetworkOffering(networkOfferingId, Service.StaticNat) ||
-                areServicesSupportedByNetworkOffering(networkOfferingId, Service.Firewall) ||
-                areServicesSupportedByNetworkOffering(networkOfferingId, Service.PortForwarding) ||
-                areServicesSupportedByNetworkOffering(networkOfferingId, Service.Lb))) {
-            return true;
         }
         return false;
     }

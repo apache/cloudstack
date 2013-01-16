@@ -130,8 +130,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
     private boolean canHandle(Network network, Service service) {
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
-        if ((zone.getNetworkType() == NetworkType.Advanced && !(network.getGuestType() == Network.GuestType.Isolated || network.getGuestType() == Network.GuestType.Shared ))
-                || (zone.getNetworkType() == NetworkType.Basic && network.getGuestType() != Network.GuestType.Shared)) {
+        if ((zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() != Network.GuestType.Isolated) || (zone.getNetworkType() == NetworkType.Basic && network.getGuestType() != Network.GuestType.Shared)) {
             s_logger.trace("Element " + getProvider().getName() + "is not handling network type = " + network.getGuestType());
             return false;
         }

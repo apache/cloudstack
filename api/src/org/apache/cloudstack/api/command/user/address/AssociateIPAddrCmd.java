@@ -213,7 +213,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException{
         try {
-            IpAddress ip =  _networkService.allocateIP(_accountService.getAccount(getEntityOwnerId()),  getZoneId(), getNetworkId());
+            IpAddress ip =  _networkService.allocateIP(_accountService.getAccount(getEntityOwnerId()), false, getZoneId());
 
             if (ip != null) {
                 this.setEntityId(ip.getId());
