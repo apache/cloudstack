@@ -1,5 +1,6 @@
 package com.cloud.network.cisco;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,10 +9,10 @@ import java.util.UUID;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.api.commands.AddCiscoVnmcDeviceCmd;
-import com.cloud.api.commands.DeleteCiscoVnmcDeviceCmd;
-import com.cloud.api.commands.ListCiscoVnmcDevicesCmd;
-import com.cloud.api.response.CiscoVnmcDeviceResponse;
+import com.cloud.api.commands.AddCiscoVnmcResourceCmd;
+import com.cloud.api.commands.DeleteCiscoVnmcResourceCmd;
+import com.cloud.api.commands.ListCiscoVnmcResourcesCmd;
+import com.cloud.api.response.CiscoVnmcResourceResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -53,17 +54,19 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
     @Inject
     NetworkDao _networkDao;
     
+    CiscoVnmcConnection _vnmcConnection;
+    
     @Override
 	public String getPropertiesFile() {
 		return null;
 	}
 
 	@Override
-	public CiscoVnmcDeviceVO addCiscoVnmcDevice(AddCiscoVnmcDeviceCmd cmd) {
+	public CiscoVnmcResourceVO addCiscoVnmcResource(AddCiscoVnmcResourceCmd cmd) {
         String deviceName = CiscoVnmc.getName();
         NetworkDevice networkDevice = NetworkDevice.getNetworkDevice(deviceName);
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
-        CiscoVnmcDeviceVO ciscoVnmcDevice = null;
+        CiscoVnmcResourceVO CiscoVnmcResource = null;
         
         PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
         if (physicalNetwork == null) {
@@ -107,14 +110,14 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
             if (host != null) {
                 txn.start();
                 
-                ciscoVnmcDevice = new CiscoVnmcDeviceVO(host.getId(), physicalNetworkId, ntwkSvcProvider.getProviderName(), deviceName);
-                _ciscoVnmcDao.persist(ciscoVnmcDevice);
+                CiscoVnmcResource = new CiscoVnmcResourceVO(host.getId(), physicalNetworkId, ntwkSvcProvider.getProviderName(), deviceName);
+                _ciscoVnmcDao.persist(CiscoVnmcResource);
                 
-                DetailVO detail = new DetailVO(host.getId(), "deviceid", String.valueOf(ciscoVnmcDevice.getId()));
+                DetailVO detail = new DetailVO(host.getId(), "deviceid", String.valueOf(CiscoVnmcResource.getId()));
                 _hostDetailsDao.persist(detail);
 
                 txn.commit();
-                return ciscoVnmcDevice;
+                return CiscoVnmcResource;
             } else {
                 throw new CloudRuntimeException("Failed to add Cisco Vnmc Device due to internal error.");
             }            
@@ -125,14 +128,14 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
 	}
 
 	@Override
-	public CiscoVnmcDeviceResponse createCiscoVnmcDeviceResponse(
-			CiscoVnmcDeviceVO ciscoVnmcDeviceVO) {
+	public CiscoVnmcResourceResponse createCiscoVnmcResourceResponse(
+			CiscoVnmcResourceVO CiscoVnmcResourceVO) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public boolean deleteCiscoVnmcDevice(DeleteCiscoVnmcDeviceCmd cmd) {
+	public boolean deleteCiscoVnmcResource(DeleteCiscoVnmcResourceCmd cmd) {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -140,10 +143,32 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
 	
 
 	@Override
-	public List<CiscoVnmcDeviceVO> listCiscoVnmcDevices(
-			ListCiscoVnmcDevicesCmd cmd) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<CiscoVnmcResourceVO> listCiscoVnmcResources(
+			ListCiscoVnmcResourcesCmd cmd) {
+		Long physicalNetworkId = cmd.getPhysicalNetworkId();
+		Long CiscoVnmcResourceId = cmd.getCiscoVnmcResourceId();
+		List<CiscoVnmcResourceVO> responseList = new ArrayList<CiscoVnmcResourceVO>();
+
+		if (physicalNetworkId == null && CiscoVnmcResourceId == null) {
+			throw new InvalidParameterValueException("Either physical network Id or vnmc device Id must be specified");
+		}
+
+		if (CiscoVnmcResourceId != null) {
+			CiscoVnmcResourceVO CiscoVnmcResource = _ciscoVnmcDao.findById(CiscoVnmcResourceId);
+			if (CiscoVnmcResource == null) {
+				throw new InvalidParameterValueException("Could not find Cisco Vnmc device with id: " + CiscoVnmcResource);
+			}
+			responseList.add(CiscoVnmcResource);
+		}
+		else {
+			PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+			if (physicalNetwork == null) {
+				throw new InvalidParameterValueException("Could not find a physical network with id: " + physicalNetworkId);
+			}
+			responseList = _ciscoVnmcDao.listByPhysicalNetwork(physicalNetworkId);
+		}
+
+		return responseList;
 	}
 
 	@Override

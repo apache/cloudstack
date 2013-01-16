@@ -18,27 +18,27 @@ package com.cloud.network.element;
 
 import java.util.List;
 
-import com.cloud.api.commands.AddCiscoVnmcDeviceCmd;
-import com.cloud.api.commands.DeleteCiscoVnmcDeviceCmd;
-import com.cloud.api.commands.ListCiscoVnmcDevicesCmd;
-import com.cloud.api.response.CiscoVnmcDeviceResponse;
+import com.cloud.api.commands.AddCiscoVnmcResourceCmd;
+import com.cloud.api.commands.DeleteCiscoVnmcResourceCmd;
+import com.cloud.api.commands.ListCiscoVnmcResourcesCmd;
+import com.cloud.api.response.CiscoVnmcResourceResponse;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
-import com.cloud.network.cisco.CiscoVnmcDeviceVO;
+import com.cloud.network.cisco.CiscoVnmcResourceVO;
 import com.cloud.utils.component.PluggableService;
 
 public interface CiscoVnmcElementService extends PluggableService {
 
     public static final Provider CiscoVnmc = new Provider("CiscoVnmc", true);
 
-	public CiscoVnmcDeviceVO addCiscoVnmcDevice(AddCiscoVnmcDeviceCmd cmd);
+	public CiscoVnmcResourceVO addCiscoVnmcResource(AddCiscoVnmcResourceCmd cmd);
 
-    public CiscoVnmcDeviceResponse createCiscoVnmcDeviceResponse(
-            CiscoVnmcDeviceVO ciscoVnmcDeviceVO);
+    public CiscoVnmcResourceResponse createCiscoVnmcResourceResponse(
+            CiscoVnmcResourceVO CiscoVnmcResourceVO);
 
-    boolean deleteCiscoVnmcDevice(DeleteCiscoVnmcDeviceCmd cmd);
+    boolean deleteCiscoVnmcResource(DeleteCiscoVnmcResourceCmd cmd);
 
-    List<CiscoVnmcDeviceVO> listCiscoVnmcDevices(ListCiscoVnmcDevicesCmd cmd);
+    List<CiscoVnmcResourceVO> listCiscoVnmcResources(ListCiscoVnmcResourcesCmd cmd);
     
     void assignAsa1000vToNetwork(Network network);
 

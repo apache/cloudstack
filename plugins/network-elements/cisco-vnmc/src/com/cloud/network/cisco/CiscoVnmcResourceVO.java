@@ -27,7 +27,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="external_cisco_vnmc_devices")
-public class CiscoVnmcDeviceVO {
+public class CiscoVnmcResourceVO {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,11 +50,11 @@ public class CiscoVnmcDeviceVO {
     private String deviceName;
 
     
-    public CiscoVnmcDeviceVO() {
+    public CiscoVnmcResourceVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public CiscoVnmcDeviceVO(long hostId, long physicalNetworkId,
+    public CiscoVnmcResourceVO(long hostId, long physicalNetworkId,
             String providerName, String deviceName) {
         super();
         this.hostId = hostId;

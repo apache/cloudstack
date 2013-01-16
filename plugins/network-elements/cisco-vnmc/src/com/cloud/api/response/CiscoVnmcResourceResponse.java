@@ -21,21 +21,36 @@ import com.cloud.serializer.Param;
 import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
-public class CiscoVnmcDeviceResponse extends BaseResponse {
-    @SerializedName(ApiConstants.DEVICE_ID) @Param(description="device id of the Cisco  VNMC controller")
-    private IdentityProxy id = new IdentityProxy("external_devices");
+public class CiscoVnmcResourceResponse extends BaseResponse {
+    public static final String RESOURCE_NAME = "resourcename";
+
+    @SerializedName(ApiConstants.RESOURCE_ID) @Param(description="resource id of the Cisco  VNMC controller")
+    private IdentityProxy id = new IdentityProxy("external_cisco_vnmc_resources");
     
-    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network to which this Nirica Nvp belongs to")
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network to which this VNMC belongs to")
     private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
     
-    @SerializedName(ApiConstants.PROVIDER) @Param(description="name of the provider")
+    public IdentityProxy getPhysicalNetworkId() {
+		return physicalNetworkId;
+	}
+
+	public String getProviderName() {
+		return providerName;
+	}
+
+	public String getResourceName() {
+		return resourceName;
+	}
+
+	@SerializedName(ApiConstants.PROVIDER) @Param(description="name of the provider")
     private String providerName;
     
-    @SerializedName(ApiConstants.DEVICE_NAME) @Param(description="device name")
-    private String deviceName;
+    @SerializedName(RESOURCE_NAME) 
+    @Param(description="Cisco VNMC resource name")
+    private String resourceName;
 
-    public void setId(long nvpDeviceId) {
-        this.id.setValue(nvpDeviceId);
+    public void setId(long ciscoVnmcResourceId) {
+        this.id.setValue(ciscoVnmcResourceId);
     }
 
     public void setPhysicalNetworkId(long physicalNetworkId) {
@@ -46,8 +61,8 @@ public class CiscoVnmcDeviceResponse extends BaseResponse {
         this.providerName = providerName;
     }
 
-    public void setDeviceName(String deviceName) {
-        this.deviceName = deviceName;
+    public void setResourceName(String resourceName) {
+        this.resourceName = resourceName;
     }     
     
 }

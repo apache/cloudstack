@@ -16,59 +16,71 @@
 // under the License.
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.CiscoVnmcDeviceResponse;
+import com.cloud.api.response.CiscoVnmcResourceResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.cisco.CiscoVnmcDeviceVO;
+import com.cloud.network.cisco.CiscoVnmcResourceVO;
 import com.cloud.network.element.CiscoVnmcElementService;
+import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=CiscoVnmcDeviceResponse.class, description="Lists ciscoVnmc NVP devices")
-public class ListCiscoVnmcDevicesCmd extends BaseListCmd {
-    private static final Logger s_logger = Logger.getLogger(ListCiscoVnmcDevicesCmd.class.getName());
-    private static final String s_name = "listCiscoVnmcDevices";
+@Implementation(responseObject=CiscoVnmcResourceResponse.class, description="Adds a Cisco Vnmc Controller")
+public class AddCiscoVnmcResourceCmd extends BaseCmd {
+    private static final Logger s_logger = Logger.getLogger(AddCiscoVnmcResourceCmd.class.getName());
+    private static final String s_name = "addCiscoVnmcResource";
     @PlugService CiscoVnmcElementService _ciscoVnmcElementService;
-
-   /////////////////////////////////////////////////////
+    
+    /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID")
     private Long physicalNetworkId;
 
-    @IdentityMapper(entityTableName="external_cisco_vnmc_devices")
-    @Parameter(name=ApiConstants.DEVICE_ID, type=CommandType.LONG,  description="Cisco Vnmc  device ID")
-    private Long CiscoVnmcDeviceId;
+    @Parameter(name=ApiConstants.HOST_NAME, type=CommandType.STRING, required = true, description="Hostname of ip address of the Cisco VNMC Controller.")
+    private String host;
 
+    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to access the Cisco VNMC Controller API")
+    private String username;
+    
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to access the Cisco VNMC Controller API")
+    private String password;
+   
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getCiscoVnmcDeviceId() {
-        return CiscoVnmcDeviceId;
-    }
-
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
+
+    public String getHost() {
+        return host;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+    
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -77,30 +89,29 @@ public class ListCiscoVnmcDevicesCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            List<CiscoVnmcDeviceVO> ciscoVnmcDevices = _ciscoVnmcElementService.listCiscoVnmcDevices(this);
-            ListResponse<CiscoVnmcDeviceResponse> response = new ListResponse<CiscoVnmcDeviceResponse>();
-            List<CiscoVnmcDeviceResponse> ciscoVnmcDevicesResponse = new ArrayList<CiscoVnmcDeviceResponse>();
-
-            if (ciscoVnmcDevices != null && !ciscoVnmcDevices.isEmpty()) {
-                for (CiscoVnmcDeviceVO ciscoVnmcDeviceVO : ciscoVnmcDevices) {
-                    CiscoVnmcDeviceResponse ciscoVnmcDeviceResponse = _ciscoVnmcElementService.createCiscoVnmcDeviceResponse(ciscoVnmcDeviceVO);
-                    ciscoVnmcDevicesResponse.add(ciscoVnmcDeviceResponse);
-                }
+            CiscoVnmcResourceVO CiscoVnmcResourceVO = _ciscoVnmcElementService.addCiscoVnmcResource(this);
+            if (CiscoVnmcResourceVO != null) {
+                CiscoVnmcResourceResponse response = _ciscoVnmcElementService.createCiscoVnmcResourceResponse(CiscoVnmcResourceVO);
+                response.setObjectName("CiscoVnmcResource");
+                response.setResponseName(getCommandName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to add Cisco VNMC controller due to internal error.");
             }
-
-            response.setResponses(ciscoVnmcDevicesResponse);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
         }  catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
-
+ 
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
+    @Override
+    public long getEntityOwnerId() {
+        return UserContext.current().getCaller().getId();
+    }
 }

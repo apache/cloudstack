@@ -22,6 +22,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -32,6 +33,9 @@ public class CiscoVnmcElement implements DhcpServiceProvider,
 		FirewallServiceProvider, NetworkElement {
 	private static final Logger s_logger = Logger.getLogger(CiscoVnmcElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
+    
+    @Inject
+    CiscoVnmcElementService _vnmcService;
     
 
     private boolean canHandle(Network network) {
@@ -102,8 +106,10 @@ public class CiscoVnmcElement implements DhcpServiceProvider,
 			DeployDestination dest, ReservationContext context)
 			throws ConcurrentOperationException, ResourceUnavailableException,
 			InsufficientCapacityException {
-		// TODO Auto-generated method stub
-		return false;
+		//Ensure that there is an ASA 1000v assigned to this network
+		_vnmcService.assignAsa1000vToNetwork(network);
+		return true;
+				
 	}
 
 	@Override
@@ -112,8 +118,8 @@ public class CiscoVnmcElement implements DhcpServiceProvider,
 			DeployDestination dest, ReservationContext context)
 			throws ConcurrentOperationException, ResourceUnavailableException,
 			InsufficientCapacityException {
-		// TODO Auto-generated method stub
-		return false;
+		//Ensure that there is an ASA 1000v assigned to this network
+		return true;
 	}
 
 	@Override

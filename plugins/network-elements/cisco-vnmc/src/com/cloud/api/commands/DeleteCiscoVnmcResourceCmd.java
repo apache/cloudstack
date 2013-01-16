@@ -35,26 +35,26 @@ import com.cloud.network.element.CiscoVnmcElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=SuccessResponse.class, description=" delete a ciscoVnmc nvp device")
-public class DeleteCiscoVnmcDeviceCmd extends BaseCmd {
-    private static final Logger s_logger = Logger.getLogger(DeleteCiscoVnmcDeviceCmd.class.getName());
-    private static final String s_name = "addCiscoVnmcdevice";
+@Implementation(responseObject=SuccessResponse.class, description=" delete a Cisco Vnmc Resource")
+public class DeleteCiscoVnmcResourceCmd extends BaseCmd {
+    private static final Logger s_logger = Logger.getLogger(DeleteCiscoVnmcResourceCmd.class.getName());
+    private static final String s_name = "addCiscoVnmcResource";
     @PlugService CiscoVnmcElementService _ciscoVnmcElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="external_ciscoVnmc_nvp_devices")
-    @Parameter(name=ApiConstants.DEVICE_ID, type=CommandType.LONG, required=true, description="Cisco Vnmc device ID")
-    private Long CiscoVnmcDeviceId;
+    @IdentityMapper(entityTableName="external_cisco_vnmc_resources")
+    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.LONG, required=true, description="Cisco Vnmc resource ID")
+    private Long CiscoVnmcResourceId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getCiscoVnmcDeviceId() {
-        return CiscoVnmcDeviceId;
+    public Long getCiscoVnmcResourceId() {
+        return CiscoVnmcResourceId;
     }
 
     /////////////////////////////////////////////////////
@@ -64,13 +64,13 @@ public class DeleteCiscoVnmcDeviceCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            boolean result = _ciscoVnmcElementService.deleteCiscoVnmcDevice(this);
+            boolean result = _ciscoVnmcElementService.deleteCiscoVnmcResource(this);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete ciscoVnmc device.");
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete Cisco Vnmc resource.");
             }
         }  catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());

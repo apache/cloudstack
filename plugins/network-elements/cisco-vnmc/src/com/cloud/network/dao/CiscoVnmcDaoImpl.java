@@ -20,17 +20,17 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.network.cisco.CiscoVnmcDeviceVO;
+import com.cloud.network.cisco.CiscoVnmcResourceVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Local(value=CiscoVnmcDao.class)
-public class CiscoVnmcDaoImpl extends GenericDaoBase<CiscoVnmcDeviceVO, Long>
+public class CiscoVnmcDaoImpl extends GenericDaoBase<CiscoVnmcResourceVO, Long>
         implements CiscoVnmcDao {
     
-    protected final SearchBuilder<CiscoVnmcDeviceVO> physicalNetworkIdSearch;
+    protected final SearchBuilder<CiscoVnmcResourceVO> physicalNetworkIdSearch;
     
     public CiscoVnmcDaoImpl() {
         physicalNetworkIdSearch = createSearchBuilder();
@@ -39,8 +39,8 @@ public class CiscoVnmcDaoImpl extends GenericDaoBase<CiscoVnmcDeviceVO, Long>
     }
 
     @Override
-    public List<CiscoVnmcDeviceVO> listByPhysicalNetwork(long physicalNetworkId) {
-        SearchCriteria<CiscoVnmcDeviceVO> sc = physicalNetworkIdSearch.create();
+    public List<CiscoVnmcResourceVO> listByPhysicalNetwork(long physicalNetworkId) {
+        SearchCriteria<CiscoVnmcResourceVO> sc = physicalNetworkIdSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         return search(sc, null);
     }
