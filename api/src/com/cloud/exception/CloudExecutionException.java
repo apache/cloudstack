@@ -17,14 +17,14 @@
 package com.cloud.exception;
 
 import java.util.HashMap;
-import com.cloud.utils.exception.RuntimeCloudException;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.SerialVersionUID;
 
 /**
  *
  */
-public class CloudExecutionException extends RuntimeCloudException {
+public class CloudExecutionException extends CloudRuntimeException {
     private final static long serialVersionUID = SerialVersionUID.CloudExecutionException;
 
     private final ErrorCode code;
