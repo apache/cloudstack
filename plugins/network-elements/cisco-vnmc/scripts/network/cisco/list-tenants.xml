@@ -1,0 +1,8 @@
+<configResolveChildren
+cookie="%cookie%"
+classId="orgTenant"
+inDn="org-root"
+inHierarchical="false">
+    <inFilter>
+    </inFilter>
+</configResolveChildren>

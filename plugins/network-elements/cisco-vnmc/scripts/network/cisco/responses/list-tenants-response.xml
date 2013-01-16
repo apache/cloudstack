@@ -1,0 +1,7 @@
+<configResolveChildren cookie="1349183392/5c1d1ceb-9a5d-433b-aab2-0760b90f31f8" commCookie="2/12/0/eab" srcExtSys="10.223.56.5" destExtSys="10.223.56.5" srcSvc="sam_extXMLApi" destSvc="service-reg_dme" response="yes" classId="orgTenant">
+  <outConfigs>
+    <orgTenant descr="Test Tenant 2" dn="org-root/org-TestTenant2" fltAggr="0" level="1" name="TestTenant2"/>
+    <orgTenant descr="First test" dn="org-root/org-TestTenant1" fltAggr="0" level="1" name="TestTenant1"/>
+  </outConfigs>
+</configResolveChildren>
+

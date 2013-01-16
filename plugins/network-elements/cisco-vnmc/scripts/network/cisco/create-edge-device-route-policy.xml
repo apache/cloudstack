@@ -1,0 +1,12 @@
+<configConfMo 
+  dn=""
+  cookie="%cookie%"
+  inHierarchical="false">
+    <inConfig>
+      <routeRoutingPolicy
+        descr="%descr%" 
+        dn="%routepolicydn%"
+        name="%name%" 
+        status="created"/>
+    </inConfig>
+</configConfMo>

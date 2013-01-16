@@ -1,0 +1,17 @@
+<configConfMos 
+cookie="%cookie%"
+inHierarchical="false"> 
+    <inConfigs> 
+      <pair key="%routedn%" >
+        <routeStaticRoute 
+          dn="%routedn%"
+          id="%id%" 
+          ipAddress="%destination%"
+          ipSubnet="%netmask%" 
+          nextHopGWIp="%nexthop%"
+          nextHopIntf="%nexthopintf%"
+          routeMetric="1" 
+          status="created"/> 
+      </pair> 
+  </inConfigs> 
+</configConfMos> 
