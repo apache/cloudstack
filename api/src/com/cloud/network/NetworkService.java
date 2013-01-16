@@ -41,7 +41,7 @@ public interface NetworkService {
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
-    IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId) throws ResourceAllocationException,
+    IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws ResourceAllocationException,
         InsufficientAddressCapacityException, ConcurrentOperationException;
 
     boolean releaseIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;
@@ -59,6 +59,8 @@ public interface NetworkService {
     int getActiveNicsInNetwork(long networkId);
 
     Network getNetwork(long networkId);
+
+    Network getNetwork(String networkUuid);
 
     IpAddress getIp(long id);
 

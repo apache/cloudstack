@@ -823,26 +823,29 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     String privateIP = router.getPrivateIpAddress();
 
                     if (privateIP != null) {
+                        boolean forVpc = router.getVpcId() != null;
                         List<? extends Nic> routerNics = _nicDao.listByVmId(router.getId());
                         for (Nic routerNic : routerNics) {
                             Network network = _networkMgr.getNetwork(routerNic.getNetworkId());
-                            if (network.getTrafficType() == TrafficType.Public) {
-                                boolean forVpc = router.getVpcId() != null;
+                            //Send network usage command for public nic in VPC VR
+                            //Send network usage command for isolated guest nic of non VPC VR                            
+                            if ((forVpc && network.getTrafficType() == TrafficType.Public) || (!forVpc && network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Isolated)) {
                                 final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
                                         forVpc, routerNic.getIp4Address());
-                                UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(), 
-                                        router.getDataCenterIdToDeployIn(), network.getId(), null, router.getId(), router.getType().toString());
+                                String routerType = router.getType().toString();
+                                UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(),
+                                        router.getDataCenterIdToDeployIn(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), routerType);
                                 NetworkUsageAnswer answer = null;
                                 try {
                                     answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
                                 } catch (Exception e) {
-                                    s_logger.warn("Error while collecting network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId(), e);
+                                    s_logger.warn("Error while collecting network stats from router: " + router.getInstanceName() + " from host: " + router.getHostId(), e);
                                     continue;
                                 }
 
                                 if (answer != null) {
                                     if (!answer.getResult()) {
-                                        s_logger.warn("Error while collecting network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId() + "; details: " + answer.getDetails());
+                                        s_logger.warn("Error while collecting network stats from router: " + router.getInstanceName() + " from host: " + router.getHostId() + "; details: " + answer.getDetails());
                                         continue;
                                     }
                                     Transaction txn = Transaction.open(Transaction.CLOUD_DB);
@@ -852,27 +855,27 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                                             continue;
                                         }
                                         txn.start();
-                                        UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), 
-                                                router.getDataCenterIdToDeployIn(), network.getId(), routerNic.getIp4Address(), router.getId(), router.getType().toString());
+                                        UserStatisticsVO stats = _statsDao.lock(router.getAccountId(),
+                                                router.getDataCenterIdToDeployIn(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), routerType);
                                         if (stats == null) {
                                             s_logger.warn("unable to find stats for account: " + router.getAccountId());
                                             continue;
                                         }
 
-                                        if(previousStats != null 
-                                                && ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) 
-                                                        || (previousStats.getCurrentBytesSent() != stats.getCurrentBytesSent()))){
+                                        if (previousStats != null
+                                                && ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived())
+                                                || (previousStats.getCurrentBytesSent() != stats.getCurrentBytesSent()))) {
                                             s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " +
-                                                    "Ignoring current answer. Router: "+answer.getRouterName()+" Rcvd: " + 
-                                                    answer.getBytesReceived()+ "Sent: " +answer.getBytesSent());
+                                                    "Ignoring current answer. Router: " + answer.getRouterName() + " Rcvd: " +
+                                                    answer.getBytesReceived() + "Sent: " + answer.getBytesSent());
                                             continue;
                                         }
 
                                         if (stats.getCurrentBytesReceived() > answer.getBytesReceived()) {
                                             if (s_logger.isDebugEnabled()) {
                                                 s_logger.debug("Received # of bytes that's less than the last one.  " +
-                                                        "Assuming something went wrong and persisting it. Router: " + 
-                                                        answer.getRouterName()+" Reported: " + answer.getBytesReceived()
+                                                        "Assuming something went wrong and persisting it. Router: " +
+                                                        answer.getRouterName() + " Reported: " + answer.getBytesReceived()
                                                         + " Stored: " + stats.getCurrentBytesReceived());
                                             }
                                             stats.setNetBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
@@ -881,8 +884,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                                         if (stats.getCurrentBytesSent() > answer.getBytesSent()) {
                                             if (s_logger.isDebugEnabled()) {
                                                 s_logger.debug("Received # of bytes that's less than the last one.  " +
-                                                        "Assuming something went wrong and persisting it. Router: " + 
-                                                        answer.getRouterName()+" Reported: " + answer.getBytesSent()
+                                                        "Assuming something went wrong and persisting it. Router: " +
+                                                        answer.getRouterName() + " Reported: " + answer.getBytesSent()
                                                         + " Stored: " + stats.getCurrentBytesSent());
                                             }
                                             stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
@@ -1378,9 +1381,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             assert guestNetwork.getTrafficType() == TrafficType.Guest;
         
             // 1) Get deployment plan and find out the list of routers
-            boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic ||
-                    _networkMgr.areServicesSupportedInNetwork(guestNetwork.getId(), Service.SecurityGroup))
-                    && guestNetwork.getTrafficType() == TrafficType.Guest;
+            boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic);
 
             // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
             List<DeployDestination> destinations = new ArrayList<DeployDestination>();
@@ -1468,31 +1469,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     offeringId = _offering.getId();
                 }
 
+                PublicIp sourceNatIp = null;
+                if (publicNetwork) {
+                    sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
+                }
+
                 // 3) deploy virtual router(s)
                 int count = routerCount - routers.size();
                 DeploymentPlan plan = planAndRouters.first();
                 for (int i = 0; i < count; i++) {
-                    PublicIp sourceNatIp = null;
-                    if (publicNetwork) {
-                        int failCount = 0;
-                        // Generate different MAC for VR
-                        while (sourceNatIp == null) {
-                            sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
-                            NicVO nic = _nicDao.findByMacAddress(sourceNatIp.getMacAddress());
-                            // We got duplicate MAC here, so regenerate the mac
-                            if (nic != null) {
-                                s_logger.debug("Failed to find a different mac for redundant router. Try again. The current mac is " + sourceNatIp.getMacAddress());
-                                sourceNatIp = null;
-                                failCount ++;
-                            }
-                            //Prevent infinite loop
-                            if (failCount > 3) {
-                                s_logger.error("Failed to find a different mac for redundant router! Abort operation!");
-                                throw new InsufficientAddressCapacityException("Failed to find a different mac for redundant router", null, offeringId);
-                            }
-                        }
-                    }
-                    
                     List<Pair<NetworkVO, NicProfile>> networks = createRouterNetworks(owner, isRedundant, plan, guestNetwork,
                             new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
                     //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
@@ -1714,6 +1699,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
             NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
             List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
+            String publicIp = defaultNic.getIp4Address();
+            // We want to use the identical MAC address for RvR on public interface if possible
+            NicVO peerNic = _nicDao.findByIp4AddressAndNetworkId(publicIp, publicNetworks.get(0).getId());
+            if (peerNic != null) {
+                s_logger.info("Use same MAC as previous RvR, the MAC is " + peerNic.getMacAddress());
+                defaultNic.setMacAddress(peerNic.getMacAddress());
+            }
             networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
         }
 

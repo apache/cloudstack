@@ -51,8 +51,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.cloud.utils.ReflectUtil;
-import org.apache.cloudstack.acl.APIAccessChecker;
-import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -60,7 +60,6 @@ import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
-import org.apache.cloudstack.discovery.ApiDiscoveryService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.ConnectionClosedException;
@@ -132,9 +131,6 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CSExceptionErrorCode;
-import com.cloud.uuididentity.dao.IdentityDao;
-
-import org.reflections.Reflections;
 
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
@@ -148,17 +144,15 @@ public class ApiServer implements HttpRequestHandler {
     @Inject private DomainManager _domainMgr = null;
     @Inject private AsyncJobManager _asyncMgr = null;
 
-    @Inject(adapter = APIAccessChecker.class)
-    protected Adapters<APIAccessChecker> _apiAccessCheckers;
-    @Inject(adapter = ApiDiscoveryService.class)
-    protected Adapters<ApiDiscoveryService> _apiDiscoveryServices;
+    @Inject(adapter = APIChecker.class)
+    protected Adapters<APIChecker> _apiAccessCheckers;
 
     private Account _systemAccount = null;
     private User _systemUser = null;
     private static int _workerCount = 0;
     private static ApiServer s_instance = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-    private Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
+    private static Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
@@ -166,23 +160,22 @@ public class ApiServer implements HttpRequestHandler {
         super();
     }
 
-    public static void initApiServer(String[] apiConfig) {
+    public static void initApiServer() {
         if (s_instance == null) {
             //Injection will create ApiServer and all its fields which have @Inject
             s_instance = ComponentLocator.inject(ApiServer.class);
-            s_instance.init(apiConfig);
+            s_instance.init();
         }
     }
 
     public static ApiServer getInstance() {
-        // Assumption: CloudStartupServlet would initialize ApiServer
         if (s_instance == null) {
-            s_logger.fatal("ApiServer instance failed to initialize");
+            ApiServer.initApiServer();
         }
         return s_instance;
     }
 
-    public void init(String[] apiConfig) {
+    public void init() {
         BaseCmd.setComponents(new ApiResponseHelper());
         BaseListCmd.configure();
 
@@ -203,13 +196,16 @@ public class ApiServer implements HttpRequestHandler {
             }
         }
 
-        for (ApiDiscoveryService discoveryService: _apiDiscoveryServices) {
-            _apiNameCmdClassMap.putAll(discoveryService.getApiNameCmdClassMapping());
-        }
+        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
+                new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
 
-        if (_apiNameCmdClassMap.size() == 0) {
-            s_logger.fatal("ApiServer failed to generate apiname, cmd class mappings."
-                         + "Please check and enable at least one ApiDiscovery adapter.");
+        for(Class<?> cmdClass: cmdClasses) {
+            String apiName = cmdClass.getAnnotation(APICommand.class).name();
+            if (_apiNameCmdClassMap.containsKey(apiName)) {
+                s_logger.error("API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
+                continue;
+            }
+            _apiNameCmdClassMap.put(apiName, cmdClass);
         }
 
         encodeApiResponse = Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key()));
@@ -403,12 +399,12 @@ public class ApiServer implements HttpRequestHandler {
         // BaseAsyncCmd: cmd is processed and submitted as an AsyncJob, job related info is serialized and returned.
         if (cmdObj instanceof BaseAsyncCmd) {
             Long objectId = null;
-            String objectEntityTable = null;
+            String objectUuid = null;
             if (cmdObj instanceof BaseAsyncCreateCmd) {
                 BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd) cmdObj;
                 _dispatcher.dispatchCreateCmd(createCmd, params);
                 objectId = createCmd.getEntityId();
-                objectEntityTable = createCmd.getEntityTable();
+                objectUuid = createCmd.getEntityUuid();
                 params.put("id", objectId.toString());
             } else {
                 ApiDispatcher.processParameters(cmdObj, params);
@@ -452,8 +448,8 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             if (objectId != null) {
-                SerializationContext.current().setUuidTranslation(true);
-                return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objectId, objectEntityTable);
+                String objUuid = (objectUuid == null) ? objectId.toString() : objectUuid;
+                return ((BaseAsyncCreateCmd) asyncCmd).getResponse(jobId, objUuid);
             }
 
             SerializationContext.current().setUuidTranslation(true);
@@ -463,6 +459,7 @@ public class ApiServer implements HttpRequestHandler {
 
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
+            // For those listXXXCommand which we have already created DB views, this step is not needed since async job is joined in their db views.
             if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
                     && !(cmdObj instanceof ListSecurityGroupsCmd)
                     && !(cmdObj instanceof ListTagsCmd)
@@ -552,15 +549,18 @@ public class ApiServer implements HttpRequestHandler {
             // if userId not null, that mean that user is logged in
             if (userId != null) {
             	User user = ApiDBUtils.findUserById(userId);
-                if (!isCommandAvailable(user, commandName)) {
-                    s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
+            	try{
+            	    checkCommandAvailable(user, commandName);
+            	}
+            	catch (PermissionDeniedException ex){
+                    s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
                 return true;
             } else {
                 // check against every available command to see if the command exists or not
-                if (!isCommandAvailable(null, commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
-                    s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
+                if (!_apiNameCmdClassMap.containsKey(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
+                    s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
             }
@@ -604,30 +604,29 @@ public class ApiServer implements HttpRequestHandler {
 
             // if api/secret key are passed to the parameters
             if ((signature == null) || (apiKey == null)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.info("expired session, missing signature, or missing apiKey -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
-                }
+                s_logger.debug("Expired session, missing signature, or missing apiKey -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
                 return false; // no signature, bad request
             }
 
             Date expiresTS = null;
+            // FIXME: Hard coded signature, why not have an enum
             if ("3".equals(signatureVersion)) {
                 // New signature authentication. Check for expire parameter and its validity
                 if (expires == null) {
-                    s_logger.info("missing Expires parameter -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
+                    s_logger.debug("Missing Expires parameter -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
                     return false;
                 }
                 synchronized (_dateFormat) {
                     try {
                         expiresTS = _dateFormat.parse(expires);
                     } catch (ParseException pe) {
-                        s_logger.info("Incorrect date format for Expires parameter", pe);
+                        s_logger.debug("Incorrect date format for Expires parameter", pe);
                         return false;
                     }
                 }
                 Date now = new Date(System.currentTimeMillis());
                 if (expiresTS.before(now)) {
-                    s_logger.info("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
+                    s_logger.debug("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
                     return false;
                 }
             }
@@ -638,7 +637,7 @@ public class ApiServer implements HttpRequestHandler {
             // verify there is a user with this api key
             Pair<User, Account> userAcctPair = _accountMgr.findUserByApiKey(apiKey);
             if (userAcctPair == null) {
-                s_logger.info("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
+                s_logger.debug("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
                 return false;
             }
 
@@ -653,9 +652,12 @@ public class ApiServer implements HttpRequestHandler {
 
             UserContext.updateContext(user.getId(), account, null);
 
-            if (!isCommandAvailable(user, commandName)) {
-                s_logger.warn("The given command:" + commandName + " does not exist or it is not available for user");
-                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user");
+            try{
+                checkCommandAvailable(user, commandName);
+            }
+            catch (PermissionDeniedException ex){
+                s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user");
+                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
             }
 
             // verify secret key exists
@@ -682,20 +684,13 @@ public class ApiServer implements HttpRequestHandler {
             if (ex instanceof ServerApiException && ((ServerApiException) ex).getErrorCode() == BaseCmd.UNSUPPORTED_ACTION_ERROR) {
                 throw (ServerApiException) ex;
             }
-            s_logger.error("unable to verifty request signature", ex);
+            s_logger.error("unable to verify request signature", ex);
         }
         return false;
     }
 
-    public Long fetchDomainId(String domainUUID){
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        IdentityDao identityDao = locator.getDao(IdentityDao.class);
-        try{
-            Long domainId = identityDao.getIdentityId("domain", domainUUID);
-            return domainId;
-        }catch(InvalidParameterValueException ex){
-            return null;
-        }
+    public Long fetchDomainId(String domainUUID) {
+        return _domainMgr.getDomain(domainUUID).getId();
     }
 
     public void loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, String loginIpAddress ,Map<String, Object[]> requestParameters) throws CloudAuthenticationException {
@@ -791,13 +786,14 @@ public class ApiServer implements HttpRequestHandler {
         return true;
     }
 
-    private boolean isCommandAvailable(User user, String commandName) {
-        for (APIAccessChecker apiChecker : _apiAccessCheckers) {
-            // Fail the checking if any checker fails to verify
-            if (!apiChecker.canAccessAPI(user, commandName))
-                return false;
+    private void checkCommandAvailable(User user, String commandName) throws PermissionDeniedException {
+        if (user == null) {
+            throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
         }
-        return true;
+
+        for (APIChecker apiChecker : _apiAccessCheckers) {
+            apiChecker.checkAccess(user, commandName);
+        }
     }
 
     private Class<?> getCmdClass(String cmdName) {

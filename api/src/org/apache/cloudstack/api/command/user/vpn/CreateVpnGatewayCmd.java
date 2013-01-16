@@ -47,10 +47,6 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "s2s_vpn_gateway";
-    }
-
     public Long getVpcId() {
         return vpcId;
     }

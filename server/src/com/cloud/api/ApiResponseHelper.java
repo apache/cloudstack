@@ -482,7 +482,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setEndPoint(result.getEndPoint());
         response.setHttpsFlag(result.getHttpsFlag());
         response.setMaxErrorRetry(result.getMaxErrorRetry());
-        response.setObjectId(result.getId());
+        response.setObjectId(result.getUuid());
         response.setSecretKey(result.getSecretKey());
         response.setSocketTimeout(result.getSocketTimeout());
         response.setTemplateBucketName(result.getBucketName());
@@ -2789,11 +2789,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setGateway(result.getGateway());
         response.setObjectName("storagenetworkiprange");
         return response;
-    }
-
-    @Override
-    public Long getIdentiyId(String tableName, String token) {
-        return ApiDispatcher.getIdentiyId(tableName, token);
     }
 
     @Override

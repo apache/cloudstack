@@ -25,6 +25,8 @@ public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
     @Parameter(name = "id", type = CommandType.LONG)
     private Long id;
 
+    private String uuid;
+
     public abstract void create() throws ResourceAllocationException;
 
     public Long getEntityId() {
@@ -35,14 +37,19 @@ public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
         this.id = id;
     }
 
-    public abstract String getEntityTable();
+    public String getEntityUuid() {
+        return uuid;
+    }
 
-    public String getResponse(long jobId, long objectId, String objectEntityTable) {
+    public void setEntityUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public String getResponse(long jobId, String objectUuid) {
         CreateCmdResponse response = new CreateCmdResponse();
         AsyncJob job = _entityMgr.findById(AsyncJob.class, jobId);
         response.setJobId(job.getUuid());
-        response.setId(objectId);
-        response.setIdEntityTable(objectEntityTable);
+        response.setId(objectUuid);
         response.setResponseName(getCommandName());
         return _responseGenerator.toSerializedString(response, getResponseType());
     }

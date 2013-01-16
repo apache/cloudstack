@@ -223,6 +223,7 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
@@ -759,7 +760,6 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("vm_type", SearchCriteria.Op.EQ, vmTypeStr);
         }
 
-        sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
         sc.addAnd("removed", SearchCriteria.Op.NULL);
         return _offeringsDao.search(sc, searchFilter);
 
@@ -2297,8 +2297,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public String[] getPropertiesFiles() {
-        return new String[] { "commands.properties" };
+    public List<Class<?>> getCommands() {
+        //TODO: Add cmd classes
+        return null;
     }
 
     protected class EventPurgeTask implements Runnable {

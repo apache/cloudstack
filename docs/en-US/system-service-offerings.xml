@@ -26,4 +26,5 @@
     <title>System Service Offerings</title>
     <para>System service offerings provide a choice of CPU speed, number of CPUs, tags, and RAM size, just as other service offerings do. But rather than being used for virtual machine instances and exposed to users, system service offerings are used to change the default properties of virtual routers, console proxies, and other system VMs. System service offerings are visible only to the &PRODUCT; root administrator. &PRODUCT; provides default system service offerings. The &PRODUCT; root administrator can create additional custom system service offerings.</para>
     <para>When &PRODUCT; creates a virtual router for a guest network, it uses default settings which are defined in the system service offering associated with the network offering. You can upgrade the capabilities of the virtual router by applying a new network offering that contains a different system service offering. All virtual routers in that network will begin using the settings from the new service offering.</para>
+    <xi:include href="creating-system-service-offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

@@ -94,9 +94,6 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "firewall_rules";
-    }
 
     public Long getIpAddressId() {
         return ipAddressId;
@@ -301,6 +298,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         try {
             PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId, getOpenFirewall());
             setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " , ex);
             s_logger.trace("Network Rule Conflict: ", ex);

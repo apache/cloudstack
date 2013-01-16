@@ -2071,7 +2071,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Long projectId = cmd.getProjectId();
         Long domainId = cmd.getDomainId();
         Account vlanOwner = null;
-
+        
+        // if end ip is not specified, default it to startIp
+        if (endIP == null && startIP != null) {
+            endIP = startIP;
+        }
+        
         if (projectId != null) {
             if (accountName != null) {
                 throw new InvalidParameterValueException("Account and projectId are mutually exclusive");
@@ -2176,6 +2181,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                         throw new InvalidParameterValueException("Nework id is required for Direct vlan creation ");
                     }
                     networkId = network.getId();
+                    zoneId = network.getDataCenterId();
                 }
             } else if (network.getGuestType() == null || network.getGuestType() == Network.GuestType.Isolated) {
                 throw new InvalidParameterValueException("Can't create direct vlan for network id=" + networkId + " with type: " + network.getGuestType());
@@ -2192,33 +2198,33 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             endIP = startIP;
         }
 
-        if (forVirtualNetwork || zone.getNetworkType() == DataCenter.NetworkType.Basic || zone.isSecurityGroupEnabled()) {
-            if (vlanGateway == null || vlanNetmask == null || zoneId == null) {
-                throw new InvalidParameterValueException("Gateway, netmask and zoneId have to be passed in for virtual and direct untagged networks");
-            }
-        } else {
-            // check if startIp and endIp belong to network Cidr
-            String networkCidr = network.getCidr();
-            String networkGateway = network.getGateway();
-            Long networkZoneId = network.getDataCenterId();
-            String networkNetmask = NetUtils.getCidrNetmask(networkCidr);
-
-            // Check if ip addresses are in network range
-            if (!NetUtils.sameSubnet(startIP, networkGateway, networkNetmask)) {
-                throw new InvalidParameterValueException("Start ip is not in network cidr: " + networkCidr);
-            }
-
-            if (endIP != null) {
-                if (!NetUtils.sameSubnet(endIP, networkGateway, networkNetmask)) {
-                    throw new InvalidParameterValueException("End ip is not in network cidr: " + networkCidr);
+        if ( zone.getNetworkType() == DataCenter.NetworkType.Advanced ) {
+            if (network.getTrafficType() == TrafficType.Guest) {
+                if (network.getGuestType() != GuestType.Shared) {
+                    throw new InvalidParameterValueException("Can execute createVLANIpRanges on shared guest network, but type of this guest network "
+                            + network.getId() + " is " + network.getGuestType());
                 }
+                List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(network.getId());
+                if ( vlans != null && vlans.size() > 0 ) {
+                    VlanVO vlan = vlans.get(0);
+                    if ( vlanId == null ) {
+                        vlanId = vlan.getVlanTag();
+                    } else if ( vlan.getVlanTag() != vlanId ) {
+                        throw new InvalidParameterValueException("there is already one vlan " + vlan.getVlanTag() + " on network :" +
+                                + network.getId() + ", only one vlan is allowed on guest network");
+                    }
+                    vlanGateway = vlan.getVlanGateway();
+                    vlanNetmask = vlan.getVlanNetmask();
+                }
+            } else if (network.getTrafficType() == TrafficType.Management) {
+                throw new InvalidParameterValueException("Cannot execute createVLANIpRanges on management network");
             }
-
-            // set gateway, netmask, zone from network object
-            vlanGateway = networkGateway;
-            vlanNetmask = networkNetmask;
-            zoneId = networkZoneId;
         }
+
+        if (vlanGateway == null || vlanNetmask == null || zoneId == null) {
+            throw new InvalidParameterValueException("Gateway, netmask and zoneId have to be passed in for virtual and direct untagged networks");
+        }
+
 
         // if it's an account specific range, associate ip address list to the account
         boolean associateIpRangeToAccount = false;
@@ -3157,33 +3163,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     void validateStaticNatServiceCapablities(Map<Capability, String> staticNatServiceCapabilityMap) {
         if (staticNatServiceCapabilityMap != null && !staticNatServiceCapabilityMap.isEmpty()) {
-            if (staticNatServiceCapabilityMap.keySet().size() > 2) {
-                throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() +  " and " + Capability.AssociatePublicIP.getName() +  " capabilitiy can be sepcified for static nat service");
+            if (staticNatServiceCapabilityMap.keySet().size() > 1) {
+                throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() +  " capability can be specified for static nat service");
             }
-            boolean eipEnabled = false;
-            boolean eipDisabled = false;
-            boolean associatePublicIP = true;
+
             for (Capability capability : staticNatServiceCapabilityMap.keySet()) {
                 String value = staticNatServiceCapabilityMap.get(capability);
                 if (capability == Capability.ElasticIp) {
-                    eipEnabled = value.contains("true");
-                    eipDisabled = value.contains("false");
-                    if (!eipEnabled && !eipDisabled) {
+                    boolean enabled = value.contains("true");
+                    boolean disabled = value.contains("false");
+                    if (!enabled && !disabled) {
                         throw new InvalidParameterValueException("Unknown specified value for " + Capability.ElasticIp.getName());
                     }
-                } else if (capability == Capability.AssociatePublicIP) {
-                    if (value.contains("true")) {
-                        associatePublicIP = true;
-                    } else if (value.contains("false")) {
-                        associatePublicIP = false;
-                    } else {
-                        throw new InvalidParameterValueException("Unknown specified value for " + Capability.AssociatePublicIP.getName());
-                    }
                 } else {
-                    throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() +  " and " + Capability.AssociatePublicIP.getName() +  " capabilitiy can be sepcified for static nat service");
-                }
-                if (eipDisabled && associatePublicIP) {
-                    throw new InvalidParameterValueException("Capability " + Capability.AssociatePublicIP.getName() + " can only be set when capability " + Capability.ElasticIp.getName() + " is true");
+                    throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() + " capability can be specified for static nat service");
                 }
             }
         }
@@ -3237,7 +3230,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         boolean sharedSourceNat = false;
         boolean redundantRouter = false;
         boolean elasticIp = false;
-        boolean associatePublicIp = false;
         boolean inline = false;
         if (serviceCapabilityMap != null && !serviceCapabilityMap.isEmpty()) {
             Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
@@ -3287,17 +3279,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 String param = staticNatServiceCapabilityMap.get(Capability.ElasticIp);
                 if (param != null) {
                     elasticIp = param.contains("true");
-                    String associatePublicIP = staticNatServiceCapabilityMap.get(Capability.AssociatePublicIP);
-                    if (associatePublicIP != null) {
-                        associatePublicIp = associatePublicIP.contains("true");
-                    }
                 }
             }
         }
 
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, 
                 networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb,
-                sharedSourceNat, redundantRouter, elasticIp, elasticLb, associatePublicIp, specifyIpRanges, inline);
+                sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline);
 
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);

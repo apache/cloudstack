@@ -86,10 +86,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     private Long domainId;
     private Long accountId;
 
-    @Override
-    public String getEntityTable() {
-        return "autoscale_vmprofiles";
-    }
+
 
     public Long getDomainId() {
         if (domainId == null) {
@@ -232,6 +229,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         AutoScaleVmProfile result = _autoScaleService.createAutoScaleVmProfile(this);
         if (result != null) {
             this.setEntityId(result.getId());
+            this.setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create Autoscale Vm Profile");
         }

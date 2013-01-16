@@ -16,17 +16,22 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
-import java.util.Properties;
+// Enum for default roles in CloudStack
+public enum RoleType {
 
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.user.Account;
-import com.cloud.user.User;
-import com.cloud.utils.component.Adapter;
+    Admin(1),
+    ResourceAdmin(2),
+    DomainAdmin(4),
+    User(8),
+    Unknown(0);
 
-/**
- * APIAccessChecker checks the ownership and access control to API requests
- */
-public interface APIAccessChecker extends Adapter {
-    // Interface for checking access to an API for an user
-    boolean canAccessAPI(User user, String apiCommandName) throws PermissionDeniedException;
+    private int mask;
+
+    private RoleType(int mask) {
+        this.mask = mask;
+    }
+
+    public int getValue() {
+        return mask;
+    }
 }

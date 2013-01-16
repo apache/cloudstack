@@ -1115,6 +1115,9 @@ class DiskOffering:
         if domainid:
             cmd.domainid = domainid
 
+        if services["storagetype"]:
+            cmd.storagetype = services["storagetype"]
+
         return DiskOffering(apiclient.createDiskOffering(cmd).__dict__)
 
     def delete(self, apiclient):

@@ -120,9 +120,6 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         return privatePort;
     }
 
-    public String getEntityTable() {
-        return "firewall_rules";
-    }
 
     public Long getSourceIpAddressId() {
         if (publicIpId != null) {
@@ -283,6 +280,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
         try {
             LoadBalancer result = _lbService.createLoadBalancerRule(this, getOpenFirewall());
             this.setEntityId(result.getId());
+            this.setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());

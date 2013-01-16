@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.lang.String;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.Set;
 
 import javax.ejb.Local;
 
+import com.cloud.utils.PropertiesUtil;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -128,8 +130,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
     private boolean canHandle(Network network, Service service) {
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
-        if ((zone.getNetworkType() == NetworkType.Advanced && !(network.getGuestType() == Network.GuestType.Isolated || network.getGuestType() == Network.GuestType.Shared ))
-                || (zone.getNetworkType() == NetworkType.Basic && network.getGuestType() != Network.GuestType.Shared)) {
+        if ((zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() != Network.GuestType.Isolated) || (zone.getNetworkType() == NetworkType.Basic && network.getGuestType() != Network.GuestType.Shared)) {
             s_logger.trace("Element " + getProvider().getName() + "is not handling network type = " + network.getGuestType());
             return false;
         }
@@ -402,8 +403,17 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     }
 
     @Override
-    public String[] getPropertiesFiles() {
-        return new String[] { "junipersrx_commands.properties"};
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(AddExternalFirewallCmd.class);
+        cmdList.add(AddSrxFirewallCmd.class);
+        cmdList.add(ConfigureSrxFirewallCmd.class);
+        cmdList.add(DeleteExternalFirewallCmd.class);
+        cmdList.add(DeleteSrxFirewallCmd.class);
+        cmdList.add(ListExternalFirewallsCmd.class);
+        cmdList.add(ListSrxFirewallNetworksCmd.class);
+        cmdList.add(ListSrxFirewallsCmd.class);
+        return cmdList;
     }
 
     @Override

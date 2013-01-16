@@ -37,7 +37,6 @@ import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseObject;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.encoding.URLEncoder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uuididentity.dao.IdentityDao;
@@ -226,27 +225,17 @@ public class ApiResponseSerializer {
                                 subObj.setObjectName(serializedName.value());
                             }
                             serializeResponseObjXML(sb, subObj);
-                        } else if (value instanceof IdentityProxy) {
-                        	// Only exception reponses carry a list of IdentityProxy objects.
-                        	IdentityProxy idProxy = (IdentityProxy)value;
-                        	String id = (idProxy.getValue() != null ? String.valueOf(idProxy.getValue()) : "");
-                        	if(!id.isEmpty()) {
-                        		IdentityDao identityDao = new IdentityDaoImpl();
-                        		id = identityDao.getIdentityUuid(idProxy.getTableName(), id);
-                        	}
-                        	if(id != null && !id.isEmpty()) {
-                        		// If this is the first IdentityProxy field encountered, put in a uuidList tag.
-                        		if (!usedUuidList) {
-                        			sb.append("<").append(serializedName.value()).append(">");
-                        			usedUuidList = true;
-                        		}
-                        		sb.append("<uuid>").append(id).append("</uuid>");
-                        	}
-                        	// Append the new idFieldName property also.
-                        	String idFieldName = idProxy.getidFieldName();
-                        	if (idFieldName != null) {
-                        		sb.append("<uuidProperty>").append(idFieldName).append("</uuidProperty>");
-                        	}
+                        } else {
+                            // Only exception reponses carry a list of uuid
+                            // strings.
+                            // If this is the first IdentityProxy field
+                            // encountered, put in a uuidList tag.
+                            if (!usedUuidList) {
+                                sb.append("<").append(serializedName.value()).append(">");
+                                usedUuidList = true;
+                            }
+                            sb.append("<uuid>").append(value).append("</uuid>");
+                            // We have removed uuid property field due to removal of IdentityProxy class.
                         }
                     }
                     if (usedUuidList) {
@@ -256,19 +245,6 @@ public class ApiResponseSerializer {
                 } else if (fieldValue instanceof Date) {
                     sb.append("<").append(serializedName.value()).append(">").append(BaseCmd.getDateString((Date) fieldValue)).
                     append("</").append(serializedName.value()).append(">");
-                } else if (fieldValue instanceof IdentityProxy) {
-                	IdentityProxy idProxy = (IdentityProxy)fieldValue;
-                	String id = (idProxy.getValue() != null ? String.valueOf(idProxy.getValue()) : "");
-                	if(!id.isEmpty()) {
-                		IdentityDao identityDao = new IdentityDaoImpl();
-                		if(idProxy.getTableName() != null) {
-                		    id = identityDao.getIdentityUuid(idProxy.getTableName(), id);
-                		} else {
-                		    s_logger.warn("IdentityProxy sanity check issue, invalid IdentityProxy table name found in class: " + obj.getClass().getName());
-                		}
-                	}
-                	if(id != null && !id.isEmpty())
-                		sb.append("<").append(serializedName.value()).append(">").append(id).append("</").append(serializedName.value()).append(">");
                 } else {
                     String resultString = escapeSpecialXmlChars(fieldValue.toString());
                     if (!(obj instanceof ExceptionResponse)) {

@@ -72,10 +72,6 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
-    @Override
-    public String getEntityTable() {
-        return "autoscale_vmgroups";
-    }
 
     public int getMinMembers() {
         return minMembers;
@@ -161,6 +157,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
         AutoScaleVmGroup result = _autoScaleService.createAutoScaleVmGroup(this);
         if (result != null) {
             this.setEntityId(result.getId());
+            this.setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create Autoscale Vm Group");
         }

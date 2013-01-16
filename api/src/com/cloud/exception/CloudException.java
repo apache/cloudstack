@@ -16,10 +16,8 @@
 // under the License.
 package com.cloud.exception;
 
-import com.cloud.utils.IdentityProxy;
 import java.util.ArrayList;
 import com.cloud.utils.exception.CSExceptionErrorCode;
-import com.cloud.utils.AnnotationHelper;
 
 /**
  * by the API response serializer. Any exceptions that are thrown by

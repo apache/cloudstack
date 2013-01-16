@@ -16,18 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.user.Account;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
 
 import java.util.HashSet;
 import java.util.Set;
 
 @SuppressWarnings("unused")
-@EntityReference(value = Account.class)
 public class ApiDiscoveryResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the api command")
     private String name;
@@ -41,11 +38,18 @@ public class ApiDiscoveryResponse extends BaseResponse {
     @SerializedName(ApiConstants.IS_ASYNC) @Param(description="true if api is asynchronous")
     private Boolean isAsync;
 
+    @SerializedName("related") @Param(description="comma separated related apis")
+    private String related;
+
     @SerializedName(ApiConstants.PARAMS)  @Param(description="the list params the api accepts", responseObject = ApiParameterResponse.class)
     private Set<ApiParameterResponse> params;
 
+    @SerializedName(ApiConstants.RESPONSE)  @Param(description="api response fields", responseObject = ApiResponseResponse.class)
+    private Set<ApiResponseResponse> apiResponse;
+
     public ApiDiscoveryResponse(){
         params = new HashSet<ApiParameterResponse>();
+        apiResponse = new HashSet<ApiResponseResponse>();
         isAsync = false;
     }
 
@@ -65,11 +69,27 @@ public class ApiDiscoveryResponse extends BaseResponse {
         this.isAsync = isAsync;
     }
 
+    public String getRelated() {
+        return related;
+    }
+
+    public void setRelated(String related) {
+        this.related = related;
+    }
+
+    public Set<ApiParameterResponse> getParams() {
+        return params;
+    }
+
     public void setParams(Set<ApiParameterResponse> params) {
         this.params = params;
     }
 
     public void addParam(ApiParameterResponse param) {
         this.params.add(param);
+    }
+
+    public void addApiResponse(ApiResponseResponse apiResponse) {
+        this.apiResponse.add(apiResponse);
     }
 }

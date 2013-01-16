@@ -306,7 +306,6 @@ CREATE TABLE `cloud`.`network_offerings` (
   `state` char(32) COMMENT 'state of the network offering that has Disabled value by default',
   `guest_type` char(32) COMMENT 'type of guest network that can be shared or isolated',
   `elastic_ip_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides elastic ip service',
-  `eip_associate_public_ip` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if public IP is associated with user VM creation by default when EIP service is enabled.',
   `elastic_lb_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides elastic lb service',
   `specify_ip_ranges` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides an ability to define ip ranges',
   `inline` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering LB provider is in inline mode',

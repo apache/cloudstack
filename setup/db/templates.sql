@@ -211,6 +211,8 @@ INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (159
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (160, UUID(), 6, 'Windows PV');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (161, UUID(), 1, 'CentOS 5.7 (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (162, UUID(), 1, 'CentOS 5.7 (64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (163, UUID(), 10, 'Ubuntu 12.04 (32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (164, UUID(), 10, 'Ubuntu 12.04 (64-bit)');
 
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (200, UUID(), 1, 'Other CentOS (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (201, UUID(), 1, 'Other CentOS (64-bit)');
@@ -370,11 +372,13 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Debian GNU/Linux 4(32-bit)', 73);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Debian GNU/Linux 4(64-bit)', 74);
 
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Ubuntu 12.04 (32-bit)', 162);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Ubuntu 10.04 (32-bit)', 121);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Ubuntu 9.10 (32-bit)', 122);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Ubuntu 9.04 (32-bit)', 123);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Ubuntu 8.10 (32-bit)', 124);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Ubuntu 8.04 (32-bit)', 125);
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Ubuntu 12.04 (64-bit)', 163);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Ubuntu 10.04 (64-bit)', 126);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Ubuntu 9.10 (64-bit)', 127);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Ubuntu 9.04 (64-bit)', 128);
@@ -384,6 +388,7 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Ubuntu 10.10 (64-bit)', 100);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Other Ubuntu Linux (32-bit)', 59);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Other Ubuntu (64-bit)', 100);
+
 
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Other 2.6x Linux (32-bit)', 75);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Other 2.6x Linux (64-bit)', 76);
@@ -454,6 +459,8 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ('KVM', 'Fedora 8', 120);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ('KVM', 'Ubuntu 10.04', 121);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ('KVM', 'Ubuntu 10.04', 126);
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ('KVM', 'Ubuntu 10.04', 162);
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ('KVM', 'Ubuntu 10.04', 163);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ('KVM', 'Ubuntu 9.10', 122);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ('KVM', 'Ubuntu 9.10', 127);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ('KVM', 'Ubuntu 9.04', 123);

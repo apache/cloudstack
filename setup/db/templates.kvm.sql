@@ -51,11 +51,12 @@ INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (U
 INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 5, 'Fedora 10', 'Fedora 10');
 INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 5, 'Fedora 9', 'Fedora 9');
 INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 5, 'Fedora 8', 'Fedora 8');
-INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 2, 'Ubuntu 10.04', 'Ubuntu 10.04');
-INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 2, 'Ubuntu 9.10', 'Ubuntu 9.10');
-INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 2, 'Ubuntu 9.04', 'Ubuntu 9.04');
-INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 2, 'Ubuntu 8.10', 'Ubuntu 8.10');
-INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 2, 'Ubuntu 8.04', 'Ubuntu 8.04');
+INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 10, 'Ubuntu 12.04', 'Ubuntu 12.04');
+INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 10, 'Ubuntu 10.04', 'Ubuntu 10.04');
+INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 10, 'Ubuntu 9.10', 'Ubuntu 9.10');
+INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 10, 'Ubuntu 9.04', 'Ubuntu 9.04');
+INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 10, 'Ubuntu 8.10', 'Ubuntu 8.10');
+INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 10, 'Ubuntu 8.04', 'Ubuntu 8.04');
 INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 2, 'Debian Squeeze', 'Debian Squeeze');
 INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 2, 'Debian Lenny', 'Debian Lenny');
 INSERT INTO `cloud`.`guest_os` (uuid, category_id, name, display_name) VALUES (UUID(), 2, 'Debian Etch', 'Debian Etch');

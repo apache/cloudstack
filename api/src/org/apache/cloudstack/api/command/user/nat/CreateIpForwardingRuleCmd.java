@@ -75,9 +75,6 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getEntityTable() {
-        return "firewall_rules";
-    }
 
     public Long getIpAddressId() {
         return ipAddressId;
@@ -151,6 +148,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
         try {
             StaticNatRule rule = _rulesService.createStaticNatRule(this, getOpenFirewall());
             this.setEntityId(rule.getId());
+            this.setEntityUuid(rule.getUuid());
         } catch (NetworkRuleConflictException e) {
             s_logger.info("Unable to create Static Nat Rule due to ", e);
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());

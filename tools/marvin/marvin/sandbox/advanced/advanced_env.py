@@ -52,10 +52,22 @@ def describeResources(config):
     
     pn = physical_network()
     pn.name = "Sandbox-pnet"
-    pn.traffictypes = [traffictype("Guest"), traffictype("Management"), traffictype("Public")]
+    pn.vlan = config.get('cloudstack', 'pnet.vlan')
+    pn.tags = ["cloud-simulator-public"]
+    pn.traffictypes = [traffictype("Guest"),
+            traffictype("Management", {"simulator" : "cloud-simulator-mgmt"}),
+            traffictype("Public", {"simulator":"cloud-simulator-public"})]
     pn.providers.append(vpcprovider)
+
+    pn2 = physical_network()
+    pn2.name = "Sandbox-pnet2"
+    pn2.vlan = config.get('cloudstack', 'pnet2.vlan')
+    pn2.tags = ["cloud-simulator-guest"]
+    pn2.traffictypes = [traffictype('Guest', {'simulator': 'cloud-simulator-guest'})]
+    pn2.providers.append(vpcprovider)
     
     z.physical_networks.append(pn)
+    z.physical_networks.append(pn2)
 
     p = pod()
     p.name = 'POD0'
@@ -118,11 +130,11 @@ def describeResources(config):
     ''''add loggers'''
     testClientLogger = logger()
     testClientLogger.name = 'TestClient'
-    testClientLogger.file = '/var/log/testclient.log'
+    testClientLogger.file = 'testclient.log'
 
     testCaseLogger = logger()
     testCaseLogger.name = 'TestCase'
-    testCaseLogger.file = '/var/log/testcase.log'
+    testCaseLogger.file = 'testcase.log'
 
     zs.logger.append(testClientLogger)
     zs.logger.append(testCaseLogger)

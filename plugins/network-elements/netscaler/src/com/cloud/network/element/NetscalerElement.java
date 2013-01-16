@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.lang.Class;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import java.util.Set;
 
 import javax.ejb.Local;
 
+import com.cloud.utils.PropertiesUtil;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -152,8 +154,7 @@ StaticNatServiceProvider {
 
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
-        boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced &&
-                (config.getGuestType() == Network.GuestType.Isolated || config.getGuestType() == Network.GuestType.Shared) && config.getTrafficType() == TrafficType.Guest);
+        boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced && config.getGuestType() == Network.GuestType.Isolated && config.getTrafficType() == TrafficType.Guest);
         boolean handleInBasicZone = (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() == Network.GuestType.Shared && config.getTrafficType() == TrafficType.Guest);
 
         if (!(handleInAdvanceZone || handleInBasicZone)) {
@@ -464,8 +465,14 @@ StaticNatServiceProvider {
     }
 
     @Override
-    public String[] getPropertiesFiles() {
-        return new String[] { "netscalerloadbalancer_commands.properties" };
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(AddNetscalerLoadBalancerCmd.class);
+        cmdList.add(ConfigureNetscalerLoadBalancerCmd.class);
+        cmdList.add(DeleteNetscalerLoadBalancerCmd.class);
+        cmdList.add(ListNetscalerLoadBalancerNetworksCmd.class);
+        cmdList.add(ListNetscalerLoadBalancersCmd.class);
+        return cmdList;
     }
 
     @Override

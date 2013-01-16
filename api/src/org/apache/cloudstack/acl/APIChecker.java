@@ -14,16 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.discovery;
+package org.apache.cloudstack.acl;
 
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.user.User;
 import com.cloud.utils.component.Adapter;
-import com.cloud.utils.component.PluggableService;
-import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 
-import java.util.Map;
-
-public interface ApiDiscoveryService extends Adapter, PluggableService {
-    ListResponse<? extends BaseResponse> listApis();
-    Map<String, Class<?>> getApiNameCmdClassMapping();
+// APIChecker checks the ownership and access control to API requests
+public interface APIChecker extends Adapter {
+    // Interface for checking access for a role using apiname
+    // If true, apiChecker has checked the operation
+    // If false, apiChecker is unable to handle the operation or not implemented
+    // On exception, checkAccess failed don't allow
+    boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException;
 }

@@ -19,7 +19,6 @@ package org.apache.cloudstack.api;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -64,7 +63,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.BareMetalVmService;

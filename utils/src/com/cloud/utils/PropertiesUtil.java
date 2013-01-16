@@ -17,6 +17,8 @@
 package com.cloud.utils;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -28,6 +30,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 public class PropertiesUtil {
+    private static final Logger s_logger = Logger.getLogger(PropertiesUtil.class);
     /**
      * Searches the class path and local paths to find the config file.
      * @param path path to find.  if it starts with / then it's absolute path.
@@ -115,5 +118,42 @@ public class PropertiesUtil {
             }
         }
         return null;
+    }
+
+    // Returns key=value pairs by parsing a commands.properties/config file
+    // with syntax; key=cmd;value (with this syntax cmd is stripped) and key=value
+    public static Map<String, String> processConfigFile(String[] configFiles) {
+        Map<String, String> configMap = new HashMap<String, String>();
+        Properties preProcessedCommands = new Properties();
+        for (String configFile : configFiles) {
+            File commandsFile = findConfigFile(configFile);
+            if (commandsFile != null) {
+                try {
+                    preProcessedCommands.load(new FileInputStream(commandsFile));
+                } catch (FileNotFoundException fnfex) {
+                    // in case of a file within a jar in classpath, try to open stream using url
+                    InputStream stream = PropertiesUtil.openStreamFromURL(configFile);
+                    if (stream != null) {
+                        try {
+                            preProcessedCommands.load(stream);
+                        } catch (IOException e) {
+                            s_logger.error("IO Exception, unable to find properties file:", fnfex);
+                        }
+                    } else {
+                        s_logger.error("Unable to find properites file", fnfex);
+                    }
+                } catch (IOException ioe) {
+                    s_logger.error("IO Exception loading properties file", ioe);
+                }
+            }
+        }
+
+        for (Object key : preProcessedCommands.keySet()) {
+            String preProcessedCommand = preProcessedCommands.getProperty((String) key);
+            int splitIndex = preProcessedCommand.lastIndexOf(";");
+            String value = preProcessedCommand.substring(splitIndex+1);
+            configMap.put((String)key, value);
+        }
+        return configMap;
     }
 }
