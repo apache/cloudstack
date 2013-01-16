@@ -980,14 +980,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "allocating Ip", create = true)
-    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId)
+    public IpAddress allocateIP(Account ipOwner,  long zoneId, Long networkId)
             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
-
         if (networkId != null) {
             Network network = _networksDao.findById(networkId);
             if (network == null) {
                 throw new InvalidParameterValueException("Invalid network id is given");
             }
+
             if (network.getGuestType() == Network.GuestType.Shared) {
                 DataCenter zone = _configMgr.getZone(zoneId);
                 if (zone == null) {
@@ -1002,9 +1002,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
                     }
-                    return allocateIp(ipOwner, false, caller, zone);
+                    return allocateIp(ipOwner, false, caller, callerUserId, zone);
                 } else {
-                    throw new InvalidParameterValueException("Associate IP address can only be called on the shared networks in the advanced zone" +
+                    throw new InvalidParameterValueException("Associate IP address can only called on the shared networks in the advanced zone" +
                             " with Firewall/Source Nat/Static Nat/Port Forwarding/Load balancing services enabled");
                 }
             }
@@ -1022,11 +1022,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         DataCenter zone = _configMgr.getZone(zoneId);
         
-        return allocateIp(ipOwner, isSystem, caller, zone);
+        return allocateIp(ipOwner, isSystem, caller, callerUserId, zone);
     }
 
     @DB
-    public IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, DataCenter zone)
+    public IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerUserId, DataCenter zone) 
             throws ConcurrentOperationException, ResourceAllocationException,
             InsufficientAddressCapacityException {
 
@@ -1047,7 +1047,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Account accountToLock = null;
         try {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Associate IP address called by the user " + caller.getId());
+                s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
             }
             accountToLock = _accountDao.acquireInLockTable(ipOwner.getId());
             if (accountToLock == null) {
@@ -1133,13 +1133,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             DataCenter zone = _configMgr.getZone(network.getDataCenterId());
-            if (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced) {
-                if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
-                    _accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.UseNetwork, false, network);
-                } else {
-                    throw new InvalidParameterValueException("IP can be associated with guest network of 'shared' type only if" +
-                        "network service Source Nat, Static Nat, Port Forwarding, Load balancing, firewall are enabled in the network");
-                }
+            if (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced && isSharedNetworkOfferingWithServices(network.getNetworkOfferingId())) {
+                _accountMgr.checkAccess(UserContext.current().getCaller(), AccessType.UseNetwork, false, network);
             } else {
                 _accountMgr.checkAccess(caller, null, true, ipToAssoc);
             }
@@ -2011,11 +2006,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        return super.equals(o);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
     private void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context,
                                                       NetworkVO network, NetworkOfferingVO offering)
             throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException {
@@ -2510,36 +2500,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    private void checkSharedNetworkCidrOverlap(Long zoneId, long physicalNetworkId, String cidr) {
-        if (zoneId == null || cidr == null) {
+    private void checkSharedNetworkCidrOverlap(Long zoneId, String cidr) {
+        if (zoneId == null) {
             return;
         }
 
-        DataCenter zone = _dcDao.findById(zoneId);
-        List<NetworkVO> networks = _networksDao.listByZone(zoneId);
-        Map<Long, String> networkToCidr = new HashMap<Long, String>();
-
-        // check for CIDR overlap with all possible CIDR for isolated guest networks
-        // in the zone when using external networking
-        PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(physicalNetworkId);
-        if (pNetwork.getVnet() != null) {
-            String vlanRange[] = pNetwork.getVnet().split("-");
-            int lowestVlanTag = Integer.valueOf(vlanRange[0]);
-            int highestVlanTag = Integer.valueOf(vlanRange[1]);
-            for (int vlan=lowestVlanTag; vlan <= highestVlanTag; ++vlan) {
-                int offset = vlan - lowestVlanTag;
-                String globalVlanBits = _configDao.getValue(Config.GuestVlanBits.key());
-                int cidrSize = 8 + Integer.parseInt(globalVlanBits);
-                String guestNetworkCidr = zone.getGuestNetworkCidr();
-                String[] cidrTuple = guestNetworkCidr.split("\\/");
-                long newCidrAddress = (NetUtils.ip2Long(cidrTuple[0]) & 0xff000000) | (offset << (32 - cidrSize));
-                if (NetUtils.isNetworksOverlap(NetUtils.long2Ip(newCidrAddress), cidr)) {
-                    throw new InvalidParameterValueException("Specified CIDR for shared network conflict with CIDR that is reserved for zone vlan " + vlan);
-                }
-            }
+        if (cidr == null) {
+            return;
         }
 
-        // check for CIDR overlap with all CIDR's of the shared networks in the zone
+        List<NetworkVO> networks = _networksDao.listByZone(zoneId);
+        Map<Long, String> networkToCidr = new HashMap<Long, String>();
         for (NetworkVO network : networks) {
             if (network.getGuestType() == GuestType.Isolated) {
                 continue;
@@ -2548,15 +2519,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 networkToCidr.put(network.getId(), network.getCidr());
             }
         }
-        if (networkToCidr != null && !networkToCidr.isEmpty()) {
-            for (long networkId : networkToCidr.keySet()) {
-                String ntwkCidr = networkToCidr.get(networkId);
-                if (NetUtils.isNetworksOverlap(ntwkCidr, cidr)) {
-                    throw new InvalidParameterValueException("Specified CIDR for shared network conflict with CIDR of a shared network in the zone.");
-                }
+
+        //TODO: check for CIDR overlap with all possible CIDR for guest networks in the zone
+        //when using external networking
+
+        if (networkToCidr == null || networkToCidr.isEmpty()) {
+            return;
+        }
+
+        for (long networkId : networkToCidr.keySet()) {
+            String ntwkCidr = networkToCidr.get(networkId);
+            if (NetUtils.isNetworksOverlap(ntwkCidr, cidr)) {
+                throw new InvalidParameterValueException("Warning: The specified existing network has conflict CIDR subnets with new network!");
             }
         }
     }
+
         public void checkVirtualNetworkCidrOverlap(Long zoneId, String cidr) {
         if (zoneId == null) {
             return;
@@ -2784,7 +2762,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (ntwkOff.getGuestType() == GuestType.Shared && (zone.getNetworkType() == NetworkType.Advanced) &&
                     isSharedNetworkOfferingWithServices(networkOfferingId)) {
                 // validate if CIDR specified overlaps with any of the CIDR's allocated for isolated networks and shared networks in the zone
-                checkSharedNetworkCidrOverlap(zoneId, pNtwk.getId(), cidr);
+                checkSharedNetworkCidrOverlap(zoneId, cidr);
             } else {
                 throw new InvalidParameterValueException("Cannot specify CIDR when using network offering with external devices!");
             }
