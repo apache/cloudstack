@@ -19,6 +19,7 @@ package com.cloud.network.resource.test;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.cloud.network.resource.CiscoVnmcResource;
@@ -41,7 +42,8 @@ public class CiscoVnmcResourceTest {
 		}
 	}
 
-	//@Test
+	@Ignore
+	@Test
 	public void testLogin() {
 		//fail("Not yet implemented");
 		try {
@@ -53,6 +55,7 @@ public class CiscoVnmcResourceTest {
 		}
 	}
 
+	@Ignore
 	@Test
 	public void testCreateTenant() {
 		//fail("Not yet implemented");
@@ -65,6 +68,7 @@ public class CiscoVnmcResourceTest {
 		}
 	}
 	
+	@Ignore
 	@Test
 	public void testCreateTenantVDC() {
 		//fail("Not yet implemented");
@@ -77,7 +81,7 @@ public class CiscoVnmcResourceTest {
 		}
 	}
 	
-	
+	@Ignore
 	@Test
 	public void testCreateTenantVDCEdgeDeviceProfile() {
 		//fail("Not yet implemented");
@@ -90,6 +94,7 @@ public class CiscoVnmcResourceTest {
 		}
 	}
 	
+	@Ignore
 	@Test
 	public void testCreateTenantVDCEdgeDeviceRoutePolicy() {
 		try {
@@ -101,6 +106,7 @@ public class CiscoVnmcResourceTest {
 		}
 	}
 	
+	@Ignore
 	@Test
 	public void testCreateTenantVDCEdgeDeviceRoute() {
 		try {
@@ -113,6 +119,7 @@ public class CiscoVnmcResourceTest {
 		}
 	}
 	
+	@Ignore
 	@Test
 	public void testAssociateRoutePolicyWithEdgeProfile() {
 		try {
@@ -124,6 +131,7 @@ public class CiscoVnmcResourceTest {
 		}
 	}
 	
+	@Ignore
 	@Test
 	public void testAssociateTenantVDCEdgeDhcpPolicy() {
 		try {
@@ -135,6 +143,7 @@ public class CiscoVnmcResourceTest {
 		}
 	}
 	
+	@Ignore
 	@Test
 	public void testCreateTenantVDCEdgeDhcpPolicy() {
 		try {
@@ -147,14 +156,63 @@ public class CiscoVnmcResourceTest {
 		}
 	}
 	
+	@Ignore
 	@Test
-	public void testAssociateTenantVDCEdgeDhcpServerPolicy() {
+	public void testCreateTenantVDCEdgeSecurityProfile() {
 		try {
-			boolean response = resource.associateTenantVDCEdgeDhcpServerPolicy(tenantName, "Edge_Inside"); 
+			boolean response = resource.createTenantVDCEdgeSecurityProfile(tenantName); 
 			assertTrue(response);
 		} catch (ExecutionException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
+	
+	@Ignore
+	@Test
+	public void testCreateTenantVDCSourceNATPool() {
+		try {
+			boolean response = resource.createTenantVDCSourceNATPool(tenantName, "10.223.136.10"); 
+			assertTrue(response);
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	@Ignore
+	@Test
+	public void testCreateTenantVDCSourceNATPolicy() {
+		try {
+			boolean response = resource.createTenantVDCSourceNATPolicy(tenantName, "10.1.1.2", "10.1.1.254"); 
+			assertTrue(response);
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	@Ignore
+	@Test
+	public void testCreateTenantVDCNatPolicySet() {
+		try {
+			boolean response = resource.createTenantVDCNatPolicySet(tenantName); 
+			assertTrue(response);
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	@Test
+	public void testAssociateNatPolicySet() {
+		try {
+			boolean response = resource.associateNatPolicySet(tenantName); 
+			assertTrue(response);
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 }

@@ -1,0 +1,23 @@
+<configConfMo
+  dn=""
+  cookie="%cookie%" 
+  inHierarchical="false">
+      <inConfig>
+        <policyVirtualNetworkEdgeProfile
+        descr="%descr%"
+        dn="%espdn%"
+        egressAclPsetRef="%egressref%"
+        ingressAclPsetRef="%ingressref%"
+        name="%name%"
+        status="created"
+        vpnRef=""/>
+      </inConfig>
+</configConfMo>
+
+<!--
+        descr="Edge Security Profile for Tenant3"
+        dn="org-root/org-TestTenant3/org-Tenant3-VDC/vnep-Tenant3-ESSP"
+        egressAclPsetRef="default-egress"
+        ingressAclPsetRef="default-ingress"
+        name="Tenant3-ESSP"
+--!>

@@ -1,0 +1,19 @@
+<configConfMos 
+  cookie="%cookie%" 
+  inHierarchical="false">
+    <inConfigs>
+      <pair key="%espdn%" >
+          <policyVirtualNetworkEdgeProfile
+          connTimeoutRef=""
+          descr="%descr%"
+          dn="%espdn%"
+          egressAclPsetRef="default-egress"
+          ingressAclPsetRef="default-ingress"
+          inspectRef=""
+          name="%name%"
+          natPsetRef="%natpolicysetname%"
+          status="modified"
+          vpnRef=""/>
+      </pair>
+    </inConfigs>
+</configConfMos>

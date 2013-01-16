@@ -89,7 +89,15 @@ public class CiscoVnmcResource implements ServerResource {
         RESOLVE_EDGE_ROUTE_POLICY("associate-route-policy.xml", "policy-mgr"),
         RESOLVE_EDGE_DHCP_POLICY("associate-dhcp-policy.xml", "policy-mgr"),
         CREATE_DHCP_POLICY("create-dhcp-policy.xml", "policy-mgr"),
-        RESOLVE_EDGE_DHCP_SERVER_POLICY("associate-dhcp-server.xml", "policy-mgr");
+        RESOLVE_EDGE_DHCP_SERVER_POLICY("associate-dhcp-server.xml", "policy-mgr"),
+        CREATE_EDGE_SECURITY_PROFILE("create-edge-security-profile.xml", "policy-mgr"),
+        CREATE_SOURCE_NAT_POOL("create-source-nat-pool.xml", "policy-mgr"),
+        CREATE_SOURCE_NAT_POLICY("create-source-nat-policy.xml", "policy-mgr"),
+        CREATE_NAT_POLICY_SET("create-nat-policy-set.xml", "policy-mgr"),
+        RESOLVE_NAT_POLICY_SET("associate-nat-policy-set.xml", "policy-mgr");
+
+
+
 
         private String scriptsDir = "scripts/network/cisco";
         private String xml;
@@ -119,7 +127,8 @@ public class CiscoVnmcResource implements ServerResource {
                 String xml = "";
                 String line;
                 while ((line = br.readLine()) != null) {
-                    xml += line.replaceAll("\n"," ");
+                    //xml += line.replaceAll("\n"," ");
+                	xml += line;
                 }
 
                 return xml;
@@ -337,6 +346,10 @@ public class CiscoVnmcResource implements ServerResource {
     	return getDnForTenantVDC(tenantName) + "/edsp-" + getNameForEdgeDeviceServiceProfile(tenantName);
     }
     
+    private String getDnForTenantVDCEdgeSecurityProfile(String tenantName) {
+    	return getDnForTenantVDC(tenantName) + "/vnep-" + getNameForEdgeDeviceSecurityProfile(tenantName);
+    }
+    
     private String getDnForEdgeDeviceRoutingPolicy(String tenantName) {
     	return getDnForTenantVDC(tenantName) + "/routing-policy-" + getNameForEdgeDeviceRoutePolicy(tenantName);
     	//FIXME: any other construct is unreliable. why?
@@ -391,6 +404,10 @@ public class CiscoVnmcResource implements ServerResource {
     	return "EDSP-" + tenantName;
     }
     
+    private String getNameForEdgeDeviceSecurityProfile(String tenantName) {
+    	return "ESP-" + tenantName;
+    }
+    
     private String getNameForEdgeDeviceRoutePolicy(String tenantName) {
     	return "EDSP-" + tenantName + "-Routes";//FIXME: this has to match DN somehow?
     }
@@ -404,17 +421,7 @@ public class CiscoVnmcResource implements ServerResource {
          xml = replaceXmlValue(xml, "dn", getDnForTenant(tenantName));
 
          String response =  sendRequest(service, xml);
-         Map<String, String> checked = checkResponse(response, "errorCode", "response");
-         
-         if (checked.get("errorCode") != null) {
-        	 String errorCode = checked.get("errorCode");
-        	 if (errorCode.equals("103")) {
-        		 //tenant already exists
-        		 return true;
-        	 }
-        	 return false;
-         }
-         return true;
+         return verifySuccess(response);
     }
     
     public boolean createTenantVDC(String tenantName) throws ExecutionException {
@@ -426,17 +433,8 @@ public class CiscoVnmcResource implements ServerResource {
         xml = replaceXmlValue(xml, "dn", getDnForTenantVDC(tenantName));
 
         String response =  sendRequest(service, xml);
-        Map<String, String> checked = checkResponse(response, "errorCode", "response");
         
-        if (checked.get("errorCode") != null) {
-       	 String errorCode = checked.get("errorCode");
-       	 if (errorCode.equals("103")) {
-       		 //tenant already exists
-       		 return true;
-       	 }
-       	 return false;
-        }
-        return true;
+        return verifySuccess(response);
    }
     
     public boolean createTenantVDCEdgeDeviceProfile(String tenantName) throws ExecutionException {
@@ -448,17 +446,8 @@ public class CiscoVnmcResource implements ServerResource {
            xml = replaceXmlValue(xml, "dn", getDnForTenantVDCEdgeDeviceProfile(tenantName));
 
            String response =  sendRequest(service, xml);
-           Map<String, String> checked = checkResponse(response, "errorCode", "response");
            
-           if (checked.get("errorCode") != null) {
-          	 String errorCode = checked.get("errorCode");
-          	 if (errorCode.equals("103")) {
-          		 //tenant already exists
-          		 return true;
-          	 }
-          	 return false;
-           }
-           return true;
+           return verifySuccess(response);
     }
 
     public boolean createTenantVDCEdgeStaticRoutePolicy(String tenantName) throws ExecutionException {
@@ -471,17 +460,7 @@ public class CiscoVnmcResource implements ServerResource {
 
 
           String response =  sendRequest(service, xml);
-          Map<String, String> checked = checkResponse(response, "errorCode", "response");
-          
-          if (checked.get("errorCode") != null) {
-         	 String errorCode = checked.get("errorCode");
-         	 if (errorCode.equals("103")) {
-         		 //already exists
-         		 return true;
-         	 }
-         	 return false;
-          }
-          return true;
+          return verifySuccess(response);
    }
     
     public boolean createTenantVDCEdgeStaticRoute(String tenantName, 
@@ -500,17 +479,7 @@ public class CiscoVnmcResource implements ServerResource {
          //TODO: this adds default route, make it more generic
 
          String response =  sendRequest(service, xml);
-         Map<String, String> checked = checkResponse(response, "errorCode", "response");
-         
-         if (checked.get("errorCode") != null) {
-        	 String errorCode = checked.get("errorCode");
-        	 if (errorCode.equals("103")) {
-        		 //tenant already exists
-        		 return true;
-        	 }
-        	 return false;
-         }
-         return true;
+         return verifySuccess(response);
     }
     
     public boolean associateTenantVDCEdgeStaticRoutePolicy(String tenantName) throws ExecutionException {
@@ -522,17 +491,7 @@ public class CiscoVnmcResource implements ServerResource {
          xml = replaceXmlValue(xml, "routepolicyname", getNameForEdgeDeviceRoutePolicy(tenantName));
 
          String response =  sendRequest(service, xml);
-         Map<String, String> checked = checkResponse(response, "errorCode", "response");
-         
-         if (checked.get("errorCode") != null) {
-        	 String errorCode = checked.get("errorCode");
-        	 if (errorCode.equals("103")) {
-        		 //already exists
-        		 return true;
-        	 }
-        	 return false;
-         }
-         return true;
+         return verifySuccess(response);
     }
     
     public boolean associateTenantVDCEdgeDhcpPolicy(String tenantName, String intfName) throws ExecutionException {
@@ -543,17 +502,8 @@ public class CiscoVnmcResource implements ServerResource {
         xml = replaceXmlValue(xml, "insideintf", intfName);
 
         String response =  sendRequest(service, xml);
-        Map<String, String> checked = checkResponse(response, "errorCode", "response");
         
-        if (checked.get("errorCode") != null) {
-       	 String errorCode = checked.get("errorCode");
-       	 if (errorCode.equals("103")) {
-       		 //already exists
-       		 return true;
-       	 }
-       	 return false;
-        }
-        return true;
+        return verifySuccess(response);
     }
     
     public boolean createTenantVDCEdgeDhcpPolicy(String tenantName, 
@@ -575,17 +525,7 @@ public class CiscoVnmcResource implements ServerResource {
     	xml = replaceXmlValue(xml, "nameserverdn", getDnForDnsServer(tenantName, nameServerIp));
 
     	String response =  sendRequest(service, xml);
-    	Map<String, String> checked = checkResponse(response, "errorCode", "response");
-
-    	if (checked.get("errorCode") != null) {
-    		String errorCode = checked.get("errorCode");
-    		if (errorCode.equals("103")) {
-    			//already exists
-    			return true;
-    		}
-    		return false;
-    	}
-    	return true;
+    	return verifySuccess(response);
     }
     
     public boolean associateTenantVDCEdgeDhcpServerPolicy(String tenantName, String intfName) throws ExecutionException {
@@ -597,18 +537,167 @@ public class CiscoVnmcResource implements ServerResource {
            xml = replaceXmlValue(xml, "dhcpserverpolicyname", getNameForDhcpServer(tenantName));
 
            String response =  sendRequest(service, xml);
-           Map<String, String> checked = checkResponse(response, "errorCode", "response");
-           
-           if (checked.get("errorCode") != null) {
-          	 String errorCode = checked.get("errorCode");
-          	 if (errorCode.equals("103")) {
-          		 //already exists
-          		 return true;
-          	 }
-          	 return false;
-           }
-           return true;
-       }
+           return verifySuccess(response);
+    }
+    
+    public boolean createTenantVDCEdgeSecurityProfile(String tenantName) throws ExecutionException {
+    	String xml = VnmcXml.CREATE_EDGE_SECURITY_PROFILE.getXml();
+    	String service = VnmcXml.CREATE_EDGE_SECURITY_PROFILE.getService();
+    	xml = replaceXmlValue(xml, "cookie", _cookie);
+    	xml = replaceXmlValue(xml, "descr", "Edge Security Profile for Tenant VDC" + tenantName);
+    	xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceSecurityProfile(tenantName));
+    	xml = replaceXmlValue(xml, "espdn", getDnForTenantVDCEdgeSecurityProfile(tenantName));
+    	xml = replaceXmlValue(xml, "egressref", "default-egress");
+    	xml = replaceXmlValue(xml, "ingressref", "default-ingress"); //FIXME: allows everything
+
+    	String response =  sendRequest(service, xml);
+
+    	return verifySuccess(response);
+   }
+    
+    private String getNameForSourceNatPool(String tenantName) {
+    	return "Source-NAT-Pool-For-" + tenantName;
+    }
+    
+    private String getDnForSourceNatPool(String tenantName) {
+    	return getDnForTenantVDC(tenantName) + "/objgrp-" + getNameForSourceNatPool(tenantName);
+    }
+    
+    private String getDnForSourceNatPoolExpr(String tenantName) {
+    	return getDnForSourceNatPool(tenantName) + "/objgrp-expr-2";
+    }
+    
+    private String getDnForSourceNatPublicIp(String tenantName) {
+    	return getDnForSourceNatPoolExpr(tenantName) + "/nw-ip-2";
+    }
+    
+    public boolean createTenantVDCSourceNATPool(String tenantName, String publicIp) throws ExecutionException {
+    	String xml = VnmcXml.CREATE_SOURCE_NAT_POOL.getXml();
+    	String service = VnmcXml.CREATE_SOURCE_NAT_POOL.getService();
+    	xml = replaceXmlValue(xml, "cookie", _cookie);
+    	xml = replaceXmlValue(xml, "descr", "Source NAT pool for Tenant VDC " + tenantName);
+    	xml = replaceXmlValue(xml, "name", getNameForSourceNatPool(tenantName));
+    	xml = replaceXmlValue(xml, "snatpooldn", getDnForSourceNatPool(tenantName));
+    	xml = replaceXmlValue(xml, "snatpoolexprdn", getDnForSourceNatPoolExpr(tenantName));
+    	xml = replaceXmlValue(xml, "publicipdn", getDnForSourceNatPublicIp(tenantName));
+    	xml = replaceXmlValue(xml, "publicip", publicIp);
+
+    	String response =  sendRequest(service, xml);
+
+    	return verifySuccess(response);
+    }
+    
+    
+    private String getNameForSourceNatPolicy(String tenantName) {
+       return "Source-NAT-For-" + tenantName;	
+    }
+    
+    private String getDnForSourceNatPolicy(String tenantName) {
+    	return getDnForTenantVDC(tenantName) + "/natpol-" + getNameForSourceNatPolicy(tenantName);
+    }
+    
+    private String getNameForSourceNatRule(String tenantName) {
+    	return "Source-NAT-Policy-Rule-" + tenantName;
+    }
+    
+    private String getDnForSourceNatRule(String tenantName) {
+    	return getDnForSourceNatPolicy(tenantName) + "/rule-" + getNameForSourceNatRule(tenantName);
+    }
+    
+    private String getDnForSourceNatRuleAction(String tenantName) {
+    	return getDnForSourceNatRule(tenantName) + "/nat-action";
+    }
+    
+    private String getDnForSourceNatRuleRule(String tenantName) {
+    	return getDnForSourceNatRule(tenantName) + "/rule-cond-2";
+    }
+    
+    private String getDnForSourceNatRuleRange(String tenantName) {
+    	return getDnForSourceNatRuleRule(tenantName) + "/nw-expr2";
+    }
+    
+    private String getDnForSourceNatRuleRangeIp(String tenantName, int id) {
+    	return getDnForSourceNatRuleRange(tenantName) + "/nw-ip-" + id;
+    }
+    
+    private String getDnForSourceNatRuleRangeAttr(String tenantName) {
+    	return getDnForSourceNatRuleRange(tenantName) + "/nw-attr-qual";
+    }
+    
+    public boolean createTenantVDCSourceNATPolicy(String tenantName, 
+    		String startSourceIp, String endSourceIp) throws ExecutionException {
+    	
+    	String xml = VnmcXml.CREATE_SOURCE_NAT_POLICY.getXml();
+    	String service = VnmcXml.CREATE_SOURCE_NAT_POLICY.getService();
+    	xml = replaceXmlValue(xml, "cookie", _cookie);
+    	xml = replaceXmlValue(xml, "descr", "Source NAT Policy for Tenant VDC " + tenantName);
+    	xml = replaceXmlValue(xml, "srcTranslatedIpPool", getNameForSourceNatPool(tenantName));
+    	xml = replaceXmlValue(xml, "natrulename", getNameForSourceNatRule(tenantName));
+    	xml = replaceXmlValue(xml, "natpolname", getNameForSourceNatPolicy(tenantName));
+    	xml = replaceXmlValue(xml, "natruleruledescr", "Source NAT Policy for Tenant " + tenantName);
+    	xml = replaceXmlValue(xml, "natpoldescr", "Source NAT Rule for Tenant " + tenantName);
+    	xml = replaceXmlValue(xml, "natpoldn", getDnForSourceNatPolicy(tenantName));
+    	xml = replaceXmlValue(xml, "natruledn", getDnForSourceNatRule(tenantName));
+    	xml = replaceXmlValue(xml, "sourcestartip", startSourceIp);
+    	xml = replaceXmlValue(xml, "sourceendip", endSourceIp);
+    	xml = replaceXmlValue(xml, "sourcenatpoolname", getNameForSourceNatPool(tenantName));
+
+    	
+    	xml = replaceXmlValue(xml, "natactiondn", getDnForSourceNatRuleAction(tenantName));
+    	xml = replaceXmlValue(xml, "natruleruledn", getDnForSourceNatRuleRule(tenantName));
+    	xml = replaceXmlValue(xml, "natrangedn", getDnForSourceNatRuleRange(tenantName));
+    	xml = replaceXmlValue(xml, "natipdn2", getDnForSourceNatRuleRangeIp(tenantName, 2));
+    	xml = replaceXmlValue(xml, "natipdn3", getDnForSourceNatRuleRangeIp(tenantName, 3));
+
+    	xml = replaceXmlValue(xml, "natsnatruleconddn", getDnForSourceNatRuleRangeAttr(tenantName));
+
+    	String response =  sendRequest(service, xml);
+
+    	return verifySuccess(response);
+    }
+    
+    private String getNameForNatPolicySet(String tenantName) {
+    	return "NAT-Policy-Set-" + tenantName;
+    }
+
+    private String getDnForNatPolicySet(String tenantName) {
+    	return getDnForTenantVDC(tenantName) + "/natpset-" + getNameForNatPolicySet(tenantName) ;
+    }
+    
+    private String getDnForNatPolicySetRef(String tenantName) {
+    	return getDnForNatPolicySet(tenantName) + "/polref-" + getNameForSourceNatPolicy(tenantName) ;
+    }
+    
+    public boolean createTenantVDCNatPolicySet(String tenantName) throws ExecutionException {
+    	String xml = VnmcXml.CREATE_NAT_POLICY_SET.getXml();
+    	String service = VnmcXml.CREATE_NAT_POLICY_SET.getService();
+    	xml = replaceXmlValue(xml, "cookie", _cookie);
+    	//xml = replaceXmlValue(xml, "descr", "Nat Policy Set for Tenant VDC " + tenantName);
+    	xml = replaceXmlValue(xml, "natpolicyname", getNameForSourceNatPolicy(tenantName));
+    	xml = replaceXmlValue(xml, "natpolicysetname", getNameForNatPolicySet(tenantName));
+    	xml = replaceXmlValue(xml, "natpolicysetdn", getDnForNatPolicySet(tenantName));
+    	xml = replaceXmlValue(xml, "natpolicyrefdn", getDnForNatPolicySetRef(tenantName));
+
+    	String response =  sendRequest(service, xml);
+
+    	return verifySuccess(response);
+    }
+    
+    public boolean associateNatPolicySet(String tenantName) throws ExecutionException {
+    	String xml = VnmcXml.RESOLVE_NAT_POLICY_SET.getXml();
+    	String service = VnmcXml.RESOLVE_NAT_POLICY_SET.getService();
+    	xml = replaceXmlValue(xml, "cookie", _cookie);
+    	xml = replaceXmlValue(xml, "descr", "Edge Security Profile for Tenant VDC" + tenantName);
+    	xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceSecurityProfile(tenantName));
+    	xml = replaceXmlValue(xml, "espdn", getDnForTenantVDCEdgeSecurityProfile(tenantName));
+    	xml = replaceXmlValue(xml, "egressref", "default-egress");
+    	xml = replaceXmlValue(xml, "ingressref", "default-ingress");
+    	xml = replaceXmlValue(xml, "natpolicysetname", getNameForNatPolicySet(tenantName));
+
+    	String response =  sendRequest(service, xml);
+
+    	return verifySuccess(response);
+    }
 
     private String sendRequest(String service, String xmlRequest) throws ExecutionException {
     	org.apache.commons.httpclient.protocol.Protocol myhttps = 
@@ -629,6 +718,7 @@ public class CiscoVnmcResource implements ServerResource {
     	    response = method.getResponseBody();
     	}catch(Exception e){
     	    System.out.println(e.getMessage());
+    	    throw new ExecutionException(e.getMessage());
     	}
     	System.out.println(new String(response));
     	return new String(response);
@@ -702,8 +792,20 @@ public class CiscoVnmcResource implements ServerResource {
         return result;
     }
 
-                                                                                                                                                                                                         
+    private boolean verifySuccess(String xmlResponse) throws ExecutionException {                                                                                                                                                                                                   
+    	Map<String, String> checked = checkResponse(xmlResponse, "errorCode", "errorDescr");
 
+    	if (checked.get("errorCode") != null) {
+    		String errorCode = checked.get("errorCode");
+    		if (errorCode.equals("103")) {
+    			//tenant already exists
+    			return true;
+    		}
+    		String errorDescr = checked.get("errorDescr");
+    		throw new ExecutionException(errorDescr);
+    	}
+    	return true;
+    }
 
     /*
      * XML utils
