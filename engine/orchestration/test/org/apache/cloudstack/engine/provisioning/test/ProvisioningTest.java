@@ -31,10 +31,10 @@ import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEnti
 import org.apache.cloudstack.engine.datacenter.entity.api.HostEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.PodEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntity;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.ClusterDao;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.DataCenterDao;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.HostDao;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.HostPodDao;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineClusterDao;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineDataCenterDao;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineHostDao;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineHostPodDao;
 import org.apache.cloudstack.engine.service.api.ProvisioningService;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,10 +43,10 @@ import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import org.apache.cloudstack.engine.datacenter.entity.api.db.ClusterVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.DataCenterVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.HostPodVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineClusterVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineDataCenterVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostPodVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO;
 
 import com.cloud.dc.DataCenter.NetworkType;
 
@@ -60,35 +60,35 @@ public class ProvisioningTest extends TestCase {
 	ProvisioningService service;
 	
 	@Inject
-	DataCenterDao dcDao;
+	EngineDataCenterDao dcDao;
 	
 	@Inject
-	HostPodDao _podDao;
+	EngineHostPodDao _podDao;
 
 	@Inject
-	ClusterDao _clusterDao;
+	EngineClusterDao _clusterDao;
 
 	@Inject
-	HostDao _hostDao;
+	EngineHostDao _hostDao;
 	
     @Before
 	public void setUp() {
-    	DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24", 
+    	EngineDataCenterVO dc = new EngineDataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24", 
 				null, null, NetworkType.Basic, null, null, true,  true);
-		Mockito.when(dcDao.findByUUID(Mockito.anyString())).thenReturn(dc);
-		Mockito.when(dcDao.persist((DataCenterVO) Mockito.anyObject())).thenReturn(dc);
+		Mockito.when(dcDao.findByUuid(Mockito.anyString())).thenReturn(dc);
+		Mockito.when(dcDao.persist((EngineDataCenterVO) Mockito.anyObject())).thenReturn(dc);
 		
-		HostPodVO pod = new HostPodVO("lab", 123, "10.0.0.1", "10.0.0.1", 24, "test");
-		Mockito.when(_podDao.findByUUID(Mockito.anyString())).thenReturn(pod);
-		Mockito.when(_podDao.persist((HostPodVO) Mockito.anyObject())).thenReturn(pod);    	    	
+		EngineHostPodVO pod = new EngineHostPodVO("lab", 123, "10.0.0.1", "10.0.0.1", 24, "test");
+		Mockito.when(_podDao.findByUuid(Mockito.anyString())).thenReturn(pod);
+		Mockito.when(_podDao.persist((EngineHostPodVO) Mockito.anyObject())).thenReturn(pod);    	    	
 		
-    	ClusterVO cluster = new ClusterVO();
-		Mockito.when(_clusterDao.findByUUID(Mockito.anyString())).thenReturn(cluster);
-		Mockito.when(_clusterDao.persist((ClusterVO) Mockito.anyObject())).thenReturn(cluster);
+    	EngineClusterVO cluster = new EngineClusterVO();
+		Mockito.when(_clusterDao.findByUuid(Mockito.anyString())).thenReturn(cluster);
+		Mockito.when(_clusterDao.persist((EngineClusterVO) Mockito.anyObject())).thenReturn(cluster);
 		
-		HostVO host = new HostVO("68765876598");
-		Mockito.when(_hostDao.findByUUID(Mockito.anyString())).thenReturn(host);
-		Mockito.when(_hostDao.persist((HostVO) Mockito.anyObject())).thenReturn(host);    	    	
+		EngineHostVO host = new EngineHostVO("68765876598");
+		Mockito.when(_hostDao.findByUuid(Mockito.anyString())).thenReturn(host);
+		Mockito.when(_hostDao.persist((EngineHostVO) Mockito.anyObject())).thenReturn(host);    	    	
 		
     }
 

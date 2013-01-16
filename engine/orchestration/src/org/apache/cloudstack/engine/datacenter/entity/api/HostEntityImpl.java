@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -31,7 +31,7 @@ public class HostEntityImpl implements HostEntity {
 	
 	private DataCenterResourceManager manager;
     
-    private HostVO hostVO;
+    private EngineHostVO hostVO;
 
     public HostEntityImpl(String uuid, DataCenterResourceManager manager) {
     	this.manager = manager;

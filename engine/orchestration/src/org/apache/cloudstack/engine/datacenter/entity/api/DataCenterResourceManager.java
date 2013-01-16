@@ -18,10 +18,10 @@ package org.apache.cloudstack.engine.datacenter.entity.api;
 
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.ClusterVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.DataCenterVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.HostPodVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineClusterVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineDataCenterVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostPodVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO;
 
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -29,22 +29,22 @@ import com.cloud.utils.fsm.NoTransitionException;
 
 public interface DataCenterResourceManager {
 	
-	DataCenterVO loadDataCenter(String dataCenterId);
+	EngineDataCenterVO loadDataCenter(String dataCenterId);
 	
-	void saveDataCenter(DataCenterVO dc);
+	void saveDataCenter(EngineDataCenterVO dc);
 	
-	void savePod(HostPodVO dc);
+	void savePod(EngineHostPodVO dc);
 	
-	void saveCluster(ClusterVO cluster);
+	void saveCluster(EngineClusterVO cluster);
 	
 	boolean changeState(DataCenterResourceEntity entity, Event event) throws NoTransitionException;
 	
-	HostPodVO loadPod(String uuid);
+	EngineHostPodVO loadPod(String uuid);
 	
-	ClusterVO loadCluster(String uuid);
+	EngineClusterVO loadCluster(String uuid);
 
-	HostVO loadHost(String uuid);
+	EngineHostVO loadHost(String uuid);
 
-	void saveHost(HostVO hostVO);
+	void saveHost(EngineHostVO hostVO);
 
 }

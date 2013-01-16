@@ -20,14 +20,14 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.ClusterVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.DataCenterVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.HostPodVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.ClusterDao;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.DataCenterDao;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.HostDao;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.HostPodDao;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineClusterVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineDataCenterVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostPodVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineClusterDao;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineDataCenterDao;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineHostDao;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineHostPodDao;
 import org.springframework.stereotype.Component;
 
 
@@ -39,23 +39,23 @@ import com.cloud.utils.fsm.StateMachine2;
 public class DataCenterResourceManagerImpl implements DataCenterResourceManager {
 
 	@Inject
-    DataCenterDao _dataCenterDao;
+    EngineDataCenterDao _dataCenterDao;
 
 	@Inject
-	HostPodDao _podDao;
+	EngineHostPodDao _podDao;
 
 	@Inject
-	ClusterDao _clusterDao;
+	EngineClusterDao _clusterDao;
 	
 	@Inject
-	HostDao _hostDao;
+	EngineHostDao _hostDao;
 	
 	
     protected StateMachine2<State, Event, DataCenterResourceEntity> _stateMachine = DataCenterResourceEntity.State.s_fsm;
 
 	@Override
-	public DataCenterVO loadDataCenter(String dataCenterId) {
-    	DataCenterVO dataCenterVO = _dataCenterDao.findByUuid(dataCenterId);
+	public EngineDataCenterVO loadDataCenter(String dataCenterId) {
+    	EngineDataCenterVO dataCenterVO = _dataCenterDao.findByUuid(dataCenterId);
     	if(dataCenterVO == null){
     		throw new InvalidParameterValueException("Zone does not exist");
     	}
@@ -63,7 +63,7 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 	}
 
 	@Override
-	public void saveDataCenter(DataCenterVO dc) {
+	public void saveDataCenter(EngineDataCenterVO dc) {
 		_dataCenterDao.persist(dc);
 
 	}
@@ -85,8 +85,8 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 	}
 
 	@Override
-	public HostPodVO loadPod(String uuid) {
-		HostPodVO pod = _podDao.findByUuid(uuid);
+	public EngineHostPodVO loadPod(String uuid) {
+		EngineHostPodVO pod = _podDao.findByUuid(uuid);
     	if(pod == null){
     		throw new InvalidParameterValueException("Pod does not exist");
     	}
@@ -94,8 +94,8 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 	}
 
 	@Override
-	public ClusterVO loadCluster(String uuid) {
-		ClusterVO cluster = _clusterDao.findByUuid(uuid);
+	public EngineClusterVO loadCluster(String uuid) {
+		EngineClusterVO cluster = _clusterDao.findByUuid(uuid);
     	if(cluster == null){
     		throw new InvalidParameterValueException("Pod does not exist");
     	}
@@ -103,18 +103,18 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 	}
 
 	@Override
-	public void savePod(HostPodVO pod) {
+	public void savePod(EngineHostPodVO pod) {
 		_podDao.persist(pod);
 	}
 
 	@Override
-	public void saveCluster(ClusterVO cluster) {
+	public void saveCluster(EngineClusterVO cluster) {
 		_clusterDao.persist(cluster);		
 	}
 
 	@Override
-	public HostVO loadHost(String uuid) {
-		HostVO host = _hostDao.findByUuid(uuid);
+	public EngineHostVO loadHost(String uuid) {
+		EngineHostVO host = _hostDao.findByUuid(uuid);
     	if(host == null){
     		throw new InvalidParameterValueException("Host does not exist");
     	}
@@ -122,7 +122,7 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 	}
 
 	@Override
-	public void saveHost(HostVO hostVO) {
+	public void saveHost(EngineHostVO hostVO) {
 		_hostDao.persist(hostVO);		
 	}
 

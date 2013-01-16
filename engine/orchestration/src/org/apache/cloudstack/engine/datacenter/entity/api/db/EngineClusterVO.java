@@ -30,51 +30,58 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 
-import com.cloud.dc.Pod;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
+import com.cloud.org.Managed.ManagedState;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 
 @Entity
-@Table(name = "host_pod_ref")
-public class HostPodVO implements Pod, Identity {
+@Table(name="cluster")
+public class EngineClusterVO implements Cluster, Identity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="id")
     long id;
 
-    @Column(name = "name")
-    private String name = null;
+    @Column(name="name")
+    String name;
 
-    @Column(name = "data_center_id")
-    private long dataCenterId;
+    @Column(name="guid")
+    String guid;
 
-    @Column(name = "gateway")
-    private String gateway;
+    @Column(name="data_center_id")
+    long dataCenterId;
 
-    @Column(name = "cidr_address")
-    private String cidrAddress;
+    @Column(name="pod_id")
+    long podId;
 
-    @Column(name = "cidr_size")
-    private int cidrSize;
+    @Column(name="hypervisor_type")
+    String hypervisorType;
 
-    @Column(name = "description")
-    private String description;
+    @Column(name="cluster_type")
+    @Enumerated(value=EnumType.STRING)
+    Cluster.ClusterType clusterType;
 
     @Column(name="allocation_state")
     @Enumerated(value=EnumType.STRING)
     AllocationState allocationState;
 
-    @Column(name = "external_dhcp")
-    private Boolean externalDhcp;
+    @Column(name="managed_state")
+    @Enumerated(value=EnumType.STRING)
+    ManagedState managedState;
 
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name = "uuid")
-    private String uuid;
+    @Column(name="uuid")
+    String uuid;
 
     //orchestration
+
     @Column(name="owner")
     private String owner = null;
 
@@ -83,7 +90,7 @@ public class HostPodVO implements Pod, Identity {
 
     @Column(name="lastUpdated", updatable=true)
     @Temporal(value=TemporalType.TIMESTAMP)
-    protected Date lastUpdated;    
+    protected Date lastUpdated;
 
     /**
      * Note that state is intentionally missing the setter.  Any updates to
@@ -92,27 +99,27 @@ public class HostPodVO implements Pod, Identity {
      */
     @Enumerated(value=EnumType.STRING)
     @StateMachine(state=State.class, event=Event.class)
-    @Column(name="state", updatable=true, nullable=false, length=32)
-    protected State state = null;
+    @Column(name="engine_state", updatable=true, nullable=false, length=32)
+    protected State engineState = null;
 
-    public HostPodVO(String name, long dcId, String gateway, String cidrAddress, int cidrSize, String description) {
-        this.name = name;
-        this.dataCenterId = dcId;
-        this.gateway = gateway;
-        this.cidrAddress = cidrAddress;
-        this.cidrSize = cidrSize;
-        this.description = description;
-        this.allocationState = Grouping.AllocationState.Enabled;
-        this.externalDhcp = false;
+
+    public EngineClusterVO() {
+        clusterType = Cluster.ClusterType.CloudManaged;
+        allocationState = Grouping.AllocationState.Enabled;
+
         this.uuid = UUID.randomUUID().toString();
-        this.state = State.Disabled;
+        this.engineState = State.Disabled;
     }
 
-    /*
-     * public HostPodVO(String name, long dcId) { this(null, name, dcId); }
-     */
-    protected HostPodVO() {
+    public EngineClusterVO(long dataCenterId, long podId, String name) {
+        this.dataCenterId = dataCenterId;
+        this.podId = podId;
+        this.name = name;
+        this.clusterType = Cluster.ClusterType.CloudManaged;
+        this.allocationState = Grouping.AllocationState.Enabled;
+        this.managedState = ManagedState.Managed;
         this.uuid = UUID.randomUUID().toString();
+        this.engineState = State.Disabled;
     }
 
     @Override
@@ -121,57 +128,27 @@ public class HostPodVO implements Pod, Identity {
     }
 
     @Override
-    public long getDataCenterId() {
-        return dataCenterId;
-    }
-
-    public void setDataCenterId(long dataCenterId) {
-        this.dataCenterId = dataCenterId;
-    }
-
-    @Override
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    @Override
+    public long getDataCenterId() {
+        return dataCenterId;
     }
 
     @Override
-    public String getCidrAddress() {
-        return cidrAddress;
-    }
-
-    public void setCidrAddress(String cidrAddress) {
-        this.cidrAddress = cidrAddress;
+    public long getPodId() {
+        return podId;
     }
 
     @Override
-    public int getCidrSize() {
-        return cidrSize;
+    public Cluster.ClusterType getClusterType() {
+        return clusterType;
     }
 
-    public void setCidrSize(int cidrSize) {
-        this.cidrSize = cidrSize;
-    }
-
-    @Override
-    public String getGateway() {
-        return gateway;
-    }
-
-    public void setGateway(String gateway) {
-        this.gateway = gateway;
-    }
-
-    @Override
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
+    public void setClusterType(Cluster.ClusterType clusterType) {
+        this.clusterType = clusterType;
     }
 
     @Override
@@ -183,36 +160,56 @@ public class HostPodVO implements Pod, Identity {
         this.allocationState = allocationState;
     }
 
-    // Use for comparisons only.
-    public HostPodVO(Long id) {
-        this.id = id;
+    @Override
+    public ManagedState getManagedState() {
+        return managedState;
+    }
+
+    public void setManagedState(ManagedState managedState) {
+        this.managedState = managedState;
+    }
+
+    public EngineClusterVO(long clusterId) {
+        this.id = clusterId;
     }
 
     @Override
     public int hashCode() {
-        return  NumbersUtil.hash(id);
-    }
-
-    @Override
-    public boolean getExternalDhcp() {
-        return externalDhcp;
-    }
-
-    public void setExternalDhcp(boolean use) {
-        externalDhcp = use;
+        return NumbersUtil.hash(id);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof HostPodVO) {
-            return id == ((HostPodVO)obj).id;
-        } else {
+        if (!(obj instanceof EngineClusterVO)) {
             return false;
         }
+        EngineClusterVO that = (EngineClusterVO)obj;
+        return this.id == that.id;
+    }
+
+    @Override
+    public HypervisorType getHypervisorType() {
+        return HypervisorType.getType(hypervisorType);
+    }
+
+    public void setHypervisorType(String hy) {
+        hypervisorType = hy;
+    }
+
+    public String getGuid() {
+        return guid;
+    }
+
+    public void setGuid(String guid) {
+        this.guid = guid;
     }
 
     public Date getRemoved() {
         return removed;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Override
@@ -241,6 +238,6 @@ public class HostPodVO implements Pod, Identity {
     }
 
     public State getState() {
-        return state;
-    }	
+        return engineState;
+    }    
 }

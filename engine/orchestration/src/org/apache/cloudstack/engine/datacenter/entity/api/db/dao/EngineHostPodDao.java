@@ -16,16 +16,16 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.HostPodVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostPodVO;
 
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
-public interface HostPodDao extends GenericDao<HostPodVO, Long>, StateDao<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event, DataCenterResourceEntity> {
-	public List<HostPodVO> listByDataCenterId(long id);
+public interface EngineHostPodDao extends GenericDao<EngineHostPodVO, Long>, StateDao<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event, DataCenterResourceEntity> {
+	public List<EngineHostPodVO> listByDataCenterId(long id);
 	
-	public HostPodVO findByName(String name, long dcId);
+	public EngineHostPodVO findByName(String name, long dcId);
 	
 	public HashMap<Long, List<Object>> getCurrentPodCidrSubnets(long zoneId, long podIdToSkip);
 

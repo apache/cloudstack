@@ -354,7 +354,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
         }
         
         UserVmVO vm = new UserVmVO(id, instanceName, cmd.getDisplayName(), template.getId(), HypervisorType.BareMetal,
-                template.getGuestOSId(), offering.getOfferHA(), false, domainId, owner.getId(), offering.getId(), userData, hostName);
+                template.getGuestOSId(), offering.getOfferHA(), false, domainId, owner.getId(), offering.getId(), userData, hostName, null);
         
         if (sshPublicKey != null) {
             vm.setDetail("SSH.PublicKey", sshPublicKey);

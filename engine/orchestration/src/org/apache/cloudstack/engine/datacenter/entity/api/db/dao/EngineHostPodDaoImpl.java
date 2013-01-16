@@ -25,7 +25,7 @@ import javax.ejb.Local;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.HostPodVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostPodVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -40,16 +40,16 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
 @Component(value="EngineHostPodDao")
-@Local(value={HostPodDao.class})
-public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements HostPodDao {
-    private static final Logger s_logger = Logger.getLogger(HostPodDaoImpl.class);
+@Local(value={EngineHostPodDao.class})
+public class EngineHostPodDaoImpl extends GenericDaoBase<EngineHostPodVO, Long> implements EngineHostPodDao {
+    private static final Logger s_logger = Logger.getLogger(EngineHostPodDaoImpl.class);
 	
-	protected SearchBuilder<HostPodVO> DataCenterAndNameSearch;
-	protected SearchBuilder<HostPodVO> DataCenterIdSearch;
-	protected SearchBuilder<HostPodVO> UUIDSearch;
-    protected SearchBuilder<HostPodVO> StateChangeSearch;	
+	protected SearchBuilder<EngineHostPodVO> DataCenterAndNameSearch;
+	protected SearchBuilder<EngineHostPodVO> DataCenterIdSearch;
+	protected SearchBuilder<EngineHostPodVO> UUIDSearch;
+    protected SearchBuilder<EngineHostPodVO> StateChangeSearch;	
 	
-	protected HostPodDaoImpl() {
+	protected EngineHostPodDaoImpl() {
 	    DataCenterAndNameSearch = createSearchBuilder();
 	    DataCenterAndNameSearch.and("dc", DataCenterAndNameSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
 	    DataCenterAndNameSearch.and("name", DataCenterAndNameSearch.entity().getName(), SearchCriteria.Op.EQ);
@@ -72,16 +72,16 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
 	}
 	
 	@Override
-    public List<HostPodVO> listByDataCenterId(long id) {
-		SearchCriteria<HostPodVO> sc = DataCenterIdSearch.create();
+    public List<EngineHostPodVO> listByDataCenterId(long id) {
+		SearchCriteria<EngineHostPodVO> sc = DataCenterIdSearch.create();
 		sc.setParameters("dcId", id);
 		
 	    return listBy(sc);
 	}
 	
 	@Override
-    public HostPodVO findByName(String name, long dcId) {
-	    SearchCriteria<HostPodVO> sc = DataCenterAndNameSearch.create();
+    public EngineHostPodVO findByName(String name, long dcId) {
+	    SearchCriteria<EngineHostPodVO> sc = DataCenterAndNameSearch.create();
 	    sc.setParameters("dc", dcId);
 	    sc.setParameters("name", name);
 	    
@@ -121,7 +121,7 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
     public boolean remove(Long id) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        HostPodVO pod = createForUpdate();
+        EngineHostPodVO pod = createForUpdate();
         pod.setName(null);
         
         update(id, pod);
@@ -133,7 +133,7 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
 
     @Override
     public List<Long> listDisabledPods(long zoneId) {
-        GenericSearchBuilder<HostPodVO, Long> podIdSearch = createSearchBuilder(Long.class);
+        GenericSearchBuilder<EngineHostPodVO, Long> podIdSearch = createSearchBuilder(Long.class);
         podIdSearch.selectField(podIdSearch.entity().getId());
         podIdSearch.and("dataCenterId", podIdSearch.entity().getDataCenterId(), Op.EQ);
         podIdSearch.and("allocationState", podIdSearch.entity().getAllocationState(), Op.EQ);
@@ -150,11 +150,11 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
 	@Override
 	public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity podEntity, Object data) {
 		
-		HostPodVO vo = findById(podEntity.getId());
+		EngineHostPodVO vo = findById(podEntity.getId());
 		
 		Date oldUpdatedTime = vo.getLastUpdated();
 
-		SearchCriteria<HostPodVO> sc = StateChangeSearch.create();
+		SearchCriteria<EngineHostPodVO> sc = StateChangeSearch.create();
         sc.setParameters("id", vo.getId());
         sc.setParameters("state", currentState);
 
@@ -162,10 +162,10 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
         builder.set(vo, "state", nextState);
         builder.set(vo, "lastUpdated", new Date());
 
-        int rows = update((HostPodVO) vo, sc);
+        int rows = update((EngineHostPodVO) vo, sc);
         
         if (rows == 0 && s_logger.isDebugEnabled()) {
-        	HostPodVO dbDC = findByIdIncludingRemoved(vo.getId());
+        	EngineHostPodVO dbDC = findByIdIncludingRemoved(vo.getId());
             if (dbDC != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
                 str.append(": DB Data={id=").append(dbDC.getId()).append("; state=").append(dbDC.getState()).append(";updatedTime=")

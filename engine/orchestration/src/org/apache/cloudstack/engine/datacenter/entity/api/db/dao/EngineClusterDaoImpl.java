@@ -27,8 +27,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.ClusterVO;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.HostPodVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineClusterVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostPodVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -46,24 +46,24 @@ import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component(value="EngineClusterDao")
-@Local(value=ClusterDao.class)
-public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements ClusterDao {
-    private static final Logger s_logger = Logger.getLogger(ClusterDaoImpl.class);
+@Local(value=EngineClusterDao.class)
+public class EngineClusterDaoImpl extends GenericDaoBase<EngineClusterVO, Long> implements EngineClusterDao {
+    private static final Logger s_logger = Logger.getLogger(EngineClusterDaoImpl.class);
 
-    protected final SearchBuilder<ClusterVO> PodSearch;
-    protected final SearchBuilder<ClusterVO> HyTypeWithoutGuidSearch;
-    protected final SearchBuilder<ClusterVO> AvailHyperSearch;
-    protected final SearchBuilder<ClusterVO> ZoneSearch;
-    protected final SearchBuilder<ClusterVO> ZoneHyTypeSearch;
-    protected SearchBuilder<ClusterVO> StateChangeSearch;
-    protected SearchBuilder<ClusterVO> UUIDSearch;
+    protected final SearchBuilder<EngineClusterVO> PodSearch;
+    protected final SearchBuilder<EngineClusterVO> HyTypeWithoutGuidSearch;
+    protected final SearchBuilder<EngineClusterVO> AvailHyperSearch;
+    protected final SearchBuilder<EngineClusterVO> ZoneSearch;
+    protected final SearchBuilder<EngineClusterVO> ZoneHyTypeSearch;
+    protected SearchBuilder<EngineClusterVO> StateChangeSearch;
+    protected SearchBuilder<EngineClusterVO> UUIDSearch;
 
     private static final String GET_POD_CLUSTER_MAP_PREFIX = "SELECT pod_id, id FROM cloud.cluster WHERE cluster.id IN( ";
     private static final String GET_POD_CLUSTER_MAP_SUFFIX = " )";
 
-    @Inject protected HostPodDao _hostPodDao;
+    @Inject protected EngineHostPodDao _hostPodDao;
 
-    protected ClusterDaoImpl() {
+    protected EngineClusterDaoImpl() {
         super();
 
         HyTypeWithoutGuidSearch = createSearchBuilder();
@@ -102,23 +102,23 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
-    public List<ClusterVO> listByZoneId(long zoneId) {
-        SearchCriteria<ClusterVO> sc = ZoneSearch.create();
+    public List<EngineClusterVO> listByZoneId(long zoneId) {
+        SearchCriteria<EngineClusterVO> sc = ZoneSearch.create();
         sc.setParameters("dataCenterId", zoneId);        
         return listBy(sc);
     }
 
     @Override
-    public List<ClusterVO> listByPodId(long podId) {
-        SearchCriteria<ClusterVO> sc = PodSearch.create();
+    public List<EngineClusterVO> listByPodId(long podId) {
+        SearchCriteria<EngineClusterVO> sc = PodSearch.create();
         sc.setParameters("pod", podId);
 
         return listBy(sc);
     }
 
     @Override
-    public ClusterVO findBy(String name, long podId) {
-        SearchCriteria<ClusterVO> sc = PodSearch.create();
+    public EngineClusterVO findBy(String name, long podId) {
+        SearchCriteria<EngineClusterVO> sc = PodSearch.create();
         sc.setParameters("pod", podId);
         sc.setParameters("name", name);
 
@@ -126,16 +126,16 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
-    public List<ClusterVO> listByHyTypeWithoutGuid(String hyType) {
-        SearchCriteria<ClusterVO> sc = HyTypeWithoutGuidSearch.create();
+    public List<EngineClusterVO> listByHyTypeWithoutGuid(String hyType) {
+        SearchCriteria<EngineClusterVO> sc = HyTypeWithoutGuidSearch.create();
         sc.setParameters("hypervisorType", hyType);
 
         return listBy(sc);
     }
 
     @Override
-    public List<ClusterVO> listByDcHyType(long dcId, String hyType) {
-        SearchCriteria<ClusterVO> sc = ZoneHyTypeSearch.create();
+    public List<EngineClusterVO> listByDcHyType(long dcId, String hyType) {
+        SearchCriteria<EngineClusterVO> sc = ZoneHyTypeSearch.create();
         sc.setParameters("dataCenterId", dcId);
         sc.setParameters("hypervisorType", hyType);
         return listBy(sc);
@@ -143,13 +143,13 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 
     @Override
     public List<HypervisorType> getAvailableHypervisorInZone(Long zoneId) {
-        SearchCriteria<ClusterVO> sc = AvailHyperSearch.create();
+        SearchCriteria<EngineClusterVO> sc = AvailHyperSearch.create();
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
         }
-        List<ClusterVO> clusters = listBy(sc);
+        List<EngineClusterVO> clusters = listBy(sc);
         List<HypervisorType> hypers = new ArrayList<HypervisorType>(4);
-        for (ClusterVO cluster : clusters) {
+        for (EngineClusterVO cluster : clusters) {
             hypers.add(cluster.getHypervisorType());
         }
 
@@ -197,7 +197,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 
     @Override
     public List<Long> listDisabledClusters(long zoneId, Long podId) {
-        GenericSearchBuilder<ClusterVO, Long> clusterIdSearch = createSearchBuilder(Long.class);
+        GenericSearchBuilder<EngineClusterVO, Long> clusterIdSearch = createSearchBuilder(Long.class);
         clusterIdSearch.selectField(clusterIdSearch.entity().getId());
         clusterIdSearch.and("dataCenterId", clusterIdSearch.entity().getDataCenterId(), Op.EQ);
         if(podId != null){
@@ -219,12 +219,12 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     @Override
     public List<Long> listClustersWithDisabledPods(long zoneId) {
 
-        GenericSearchBuilder<HostPodVO, Long> disabledPodIdSearch = _hostPodDao.createSearchBuilder(Long.class);
+        GenericSearchBuilder<EngineHostPodVO, Long> disabledPodIdSearch = _hostPodDao.createSearchBuilder(Long.class);
         disabledPodIdSearch.selectField(disabledPodIdSearch.entity().getId());
         disabledPodIdSearch.and("dataCenterId", disabledPodIdSearch.entity().getDataCenterId(), Op.EQ);
         disabledPodIdSearch.and("allocationState", disabledPodIdSearch.entity().getAllocationState(), Op.EQ);
 
-        GenericSearchBuilder<ClusterVO, Long> clusterIdSearch = createSearchBuilder(Long.class);
+        GenericSearchBuilder<EngineClusterVO, Long> clusterIdSearch = createSearchBuilder(Long.class);
         clusterIdSearch.selectField(clusterIdSearch.entity().getId());
         clusterIdSearch.join("disabledPodIdSearch", disabledPodIdSearch, clusterIdSearch.entity().getPodId(), disabledPodIdSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         clusterIdSearch.done();
@@ -241,7 +241,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     public boolean remove(Long id) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        ClusterVO cluster = createForUpdate();
+        EngineClusterVO cluster = createForUpdate();
         cluster.setName(null);
         cluster.setGuid(null);
 
@@ -255,11 +255,11 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 	@Override
 	public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity clusterEntity, Object data) {
 		
-		ClusterVO vo = findById(clusterEntity.getId());
+		EngineClusterVO vo = findById(clusterEntity.getId());
 		
 		Date oldUpdatedTime = vo.getLastUpdated();
 
-        SearchCriteria<ClusterVO> sc = StateChangeSearch.create();
+        SearchCriteria<EngineClusterVO> sc = StateChangeSearch.create();
         sc.setParameters("id", vo.getId());
         sc.setParameters("state", currentState);
 
@@ -270,7 +270,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         int rows = update(vo, sc);
 
         if (rows == 0 && s_logger.isDebugEnabled()) {
-            ClusterVO dbCluster = findByIdIncludingRemoved(vo.getId());
+            EngineClusterVO dbCluster = findByIdIncludingRemoved(vo.getId());
             if (dbCluster != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
                 str.append(": DB Data={id=").append(dbCluster.getId()).append("; state=").append(dbCluster.getState()).append(";updatedTime=")

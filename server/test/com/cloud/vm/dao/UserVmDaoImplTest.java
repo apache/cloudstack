@@ -33,7 +33,7 @@ public class UserVmDaoImplTest extends TestCase {
         
         dao.expunge(1000l);
         
-        UserVmVO vo = new UserVmVO(1000l, "instancename", "displayname", 1, HypervisorType.XenServer, 1, true, true, 1, 1, 1, "userdata", "name");
+        UserVmVO vo = new UserVmVO(1000l, "instancename", "displayname", 1, HypervisorType.XenServer, 1, true, true, 1, 1, 1, "userdata", "name", null);
         dao.persist(vo);
         
         vo = dao.findById(1000l);

@@ -154,7 +154,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
         
         }
         
-        DeploymentPlanner planner = ComponentContext.getCompanent(plannerToUse);
+        DeploymentPlanner planner = ComponentContext.getComponent(plannerToUse);
         DeployDestination dest = null;
         
         if (planner.canHandle(vmProfile, plan, exclude)) {

@@ -16,15 +16,15 @@ import java.util.List;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntity;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.DataCenterVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineDataCenterVO;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
 
-public interface DataCenterDao extends GenericDao<DataCenterVO, Long>, StateDao<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event, DataCenterResourceEntity> {
-    DataCenterVO findByName(String name);
+public interface EngineDataCenterDao extends GenericDao<EngineDataCenterVO, Long>, StateDao<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event, DataCenterResourceEntity> {
+    EngineDataCenterVO findByName(String name);
     
     /**
      * @param id data center id
@@ -32,24 +32,24 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long>, StateDao<
      */
     String[] getNextAvailableMacAddressPair(long id);
     String[] getNextAvailableMacAddressPair(long id, long mask);
-	List<DataCenterVO> findZonesByDomainId(Long domainId);
+	List<EngineDataCenterVO> findZonesByDomainId(Long domainId);
 
-	List<DataCenterVO> listPublicZones(String keyword);
+	List<EngineDataCenterVO> listPublicZones(String keyword);
 
-	List<DataCenterVO> findChildZones(Object[] ids, String keyword);
+	List<EngineDataCenterVO> findChildZones(Object[] ids, String keyword);
 
-    void loadDetails(DataCenterVO zone);
-    void saveDetails(DataCenterVO zone);
+    void loadDetails(EngineDataCenterVO zone);
+    void saveDetails(EngineDataCenterVO zone);
     
-    List<DataCenterVO> listDisabledZones();
-    List<DataCenterVO> listEnabledZones();
-    DataCenterVO findByToken(String zoneToken);    
-    DataCenterVO findByTokenOrIdOrName(String tokenIdOrName);
+    List<EngineDataCenterVO> listDisabledZones();
+    List<EngineDataCenterVO> listEnabledZones();
+    EngineDataCenterVO findByToken(String zoneToken);    
+    EngineDataCenterVO findByTokenOrIdOrName(String tokenIdOrName);
 
     
 
-	List<DataCenterVO> findZonesByDomainId(Long domainId, String keyword);
+	List<EngineDataCenterVO> findZonesByDomainId(Long domainId, String keyword);
 
-	List<DataCenterVO> findByKeyword(String keyword);
+	List<EngineDataCenterVO> findByKeyword(String keyword);
 
 }

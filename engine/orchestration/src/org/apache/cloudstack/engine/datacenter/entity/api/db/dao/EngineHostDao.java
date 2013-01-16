@@ -20,7 +20,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO;
 
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -34,7 +34,7 @@ import com.cloud.utils.fsm.StateDao;
  * Data Access Object for server
  *
  */
-public interface HostDao extends GenericDao<HostVO, Long>, StateDao<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event, DataCenterResourceEntity> {
+public interface EngineHostDao extends GenericDao<EngineHostVO, Long>, StateDao<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event, DataCenterResourceEntity> {
     long countBy(long clusterId,  ResourceState... states);
 
     /**
@@ -45,32 +45,32 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<DataCenterRe
      */
     void markHostsAsDisconnected(long msId, long lastPing);
 
-	List<HostVO> findLostHosts(long timeout);
+	List<EngineHostVO> findLostHosts(long timeout);
 
-    List<HostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId);
+    List<EngineHostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId);
 
     List<RunningHostCountInfo> getRunningHostCounts(Date cutTime);
 
     long getNextSequence(long hostId);
 
-    void loadDetails(HostVO host);
+    void loadDetails(EngineHostVO host);
 
-    void saveDetails(HostVO host);
+    void saveDetails(EngineHostVO host);
 
-    void loadHostTags(HostVO host);
+    void loadHostTags(EngineHostVO host);
 
-    List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag);
+    List<EngineHostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag);
 
     long countRoutingHostsByDataCenter(long dcId);
 
-	List<HostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId);
+	List<EngineHostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId);
 
     boolean updateResourceState(ResourceState oldState, ResourceState.Event event, ResourceState newState, Host vo);
 
-	HostVO findByGuid(String guid);
+	EngineHostVO findByGuid(String guid);
 	
-	HostVO findByTypeNameAndZoneId(long zoneId, String name, Host.Type type);
-	List<HostVO> findHypervisorHostInCluster(long clusterId);
+	EngineHostVO findByTypeNameAndZoneId(long zoneId, String name, Host.Type type);
+	List<EngineHostVO> findHypervisorHostInCluster(long clusterId);
 
 
     /**
@@ -81,5 +81,5 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<DataCenterRe
      * @param haTag TODO
      * @return
      */
-    List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag);
+    List<EngineHostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag);
 }

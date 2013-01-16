@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.ClusterVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineClusterVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Grouping.AllocationState;
@@ -36,7 +36,7 @@ public class ClusterEntityImpl implements ClusterEntity {
 	
 	private DataCenterResourceManager manager;
 
-	private ClusterVO clusterVO;
+	private EngineClusterVO clusterVO;
 	
 	
 	public ClusterEntityImpl(String clusterId, DataCenterResourceManager manager) {

@@ -25,7 +25,7 @@ import javax.persistence.TableGenerator;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.DataCenterVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineDataCenterVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -48,18 +48,18 @@ import com.cloud.utils.net.NetUtils;
  *  }
  **/
 @Component(value="EngineDataCenterDao")
-@Local(value={DataCenterDao.class})
-public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implements DataCenterDao {
-    private static final Logger s_logger = Logger.getLogger(DataCenterDaoImpl.class);
+@Local(value={EngineDataCenterDao.class})
+public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, Long> implements EngineDataCenterDao {
+    private static final Logger s_logger = Logger.getLogger(EngineDataCenterDaoImpl.class);
 
-    protected SearchBuilder<DataCenterVO> NameSearch;
-    protected SearchBuilder<DataCenterVO> ListZonesByDomainIdSearch;
-    protected SearchBuilder<DataCenterVO> PublicZonesSearch;
-    protected SearchBuilder<DataCenterVO> ChildZonesSearch;
-    protected SearchBuilder<DataCenterVO> DisabledZonesSearch;
-    protected SearchBuilder<DataCenterVO> TokenSearch;
-    protected SearchBuilder<DataCenterVO> StateChangeSearch;
-    protected SearchBuilder<DataCenterVO> UUIDSearch;
+    protected SearchBuilder<EngineDataCenterVO> NameSearch;
+    protected SearchBuilder<EngineDataCenterVO> ListZonesByDomainIdSearch;
+    protected SearchBuilder<EngineDataCenterVO> PublicZonesSearch;
+    protected SearchBuilder<EngineDataCenterVO> ChildZonesSearch;
+    protected SearchBuilder<EngineDataCenterVO> DisabledZonesSearch;
+    protected SearchBuilder<EngineDataCenterVO> TokenSearch;
+    protected SearchBuilder<EngineDataCenterVO> StateChangeSearch;
+    protected SearchBuilder<EngineDataCenterVO> UUIDSearch;
 
     protected long _prefix;
     protected Random _rand = new Random(System.currentTimeMillis());
@@ -69,33 +69,33 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
 
     @Override
-    public DataCenterVO findByName(String name) {
-        SearchCriteria<DataCenterVO> sc = NameSearch.create();
+    public EngineDataCenterVO findByName(String name) {
+        SearchCriteria<EngineDataCenterVO> sc = NameSearch.create();
         sc.setParameters("name", name);
         return findOneBy(sc);
     }
 
     
     @Override
-    public DataCenterVO findByToken(String zoneToken){
-        SearchCriteria<DataCenterVO> sc = TokenSearch.create();
+    public EngineDataCenterVO findByToken(String zoneToken){
+        SearchCriteria<EngineDataCenterVO> sc = TokenSearch.create();
         sc.setParameters("zoneToken", zoneToken);
         return findOneBy(sc);
     }
 
     @Override
-    public List<DataCenterVO> findZonesByDomainId(Long domainId){
-        SearchCriteria<DataCenterVO> sc = ListZonesByDomainIdSearch.create();
+    public List<EngineDataCenterVO> findZonesByDomainId(Long domainId){
+        SearchCriteria<EngineDataCenterVO> sc = ListZonesByDomainIdSearch.create();
         sc.setParameters("domainId", domainId);
         return listBy(sc);    	
     }
 
     @Override
-    public List<DataCenterVO> findZonesByDomainId(Long domainId, String keyword){
-        SearchCriteria<DataCenterVO> sc = ListZonesByDomainIdSearch.create();
+    public List<EngineDataCenterVO> findZonesByDomainId(Long domainId, String keyword){
+        SearchCriteria<EngineDataCenterVO> sc = ListZonesByDomainIdSearch.create();
         sc.setParameters("domainId", domainId);
         if (keyword != null) {
-            SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
+            SearchCriteria<EngineDataCenterVO> ssc = createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
@@ -104,11 +104,11 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public List<DataCenterVO> findChildZones(Object[] ids, String keyword){
-        SearchCriteria<DataCenterVO> sc = ChildZonesSearch.create();
+    public List<EngineDataCenterVO> findChildZones(Object[] ids, String keyword){
+        SearchCriteria<EngineDataCenterVO> sc = ChildZonesSearch.create();
         sc.setParameters("domainid", ids);
         if (keyword != null) {
-            SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
+            SearchCriteria<EngineDataCenterVO> ssc = createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
@@ -117,10 +117,10 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public List<DataCenterVO> listPublicZones(String keyword){
-        SearchCriteria<DataCenterVO> sc = PublicZonesSearch.create();
+    public List<EngineDataCenterVO> listPublicZones(String keyword){
+        SearchCriteria<EngineDataCenterVO> sc = PublicZonesSearch.create();
         if (keyword != null) {
-            SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
+            SearchCriteria<EngineDataCenterVO> ssc = createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
@@ -130,8 +130,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public List<DataCenterVO> findByKeyword(String keyword){
-        SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
+    public List<EngineDataCenterVO> findByKeyword(String keyword){
+        SearchCriteria<EngineDataCenterVO> ssc = createSearchCriteria();
         ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         return listBy(ssc);
@@ -170,7 +170,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         return true;
     }
 
-    protected DataCenterDaoImpl() {
+    protected EngineDataCenterDaoImpl() {
         super();
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
@@ -211,7 +211,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override @DB
-    public boolean update(Long zoneId, DataCenterVO zone) {
+    public boolean update(Long zoneId, EngineDataCenterVO zone) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         boolean persisted = super.update(zoneId, zone);
@@ -224,13 +224,13 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public void loadDetails(DataCenterVO zone) {
+    public void loadDetails(EngineDataCenterVO zone) {
         Map<String, String> details =_detailsDao.findDetails(zone.getId());
         zone.setDetails(details);
     }
 
     @Override
-    public void saveDetails(DataCenterVO zone) {
+    public void saveDetails(EngineDataCenterVO zone) {
         Map<String, String> details = zone.getDetails();
         if (details == null) {
             return;
@@ -239,28 +239,28 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public List<DataCenterVO> listDisabledZones(){
-        SearchCriteria<DataCenterVO> sc = DisabledZonesSearch.create();
+    public List<EngineDataCenterVO> listDisabledZones(){
+        SearchCriteria<EngineDataCenterVO> sc = DisabledZonesSearch.create();
         sc.setParameters("allocationState", Grouping.AllocationState.Disabled);
 
-        List<DataCenterVO> dcs =  listBy(sc);
+        List<EngineDataCenterVO> dcs =  listBy(sc);
 
         return dcs;
     }
 
     @Override
-    public List<DataCenterVO> listEnabledZones(){
-        SearchCriteria<DataCenterVO> sc = DisabledZonesSearch.create();
+    public List<EngineDataCenterVO> listEnabledZones(){
+        SearchCriteria<EngineDataCenterVO> sc = DisabledZonesSearch.create();
         sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
 
-        List<DataCenterVO> dcs =  listBy(sc);
+        List<EngineDataCenterVO> dcs =  listBy(sc);
 
         return dcs;
     }
 
     @Override
-    public DataCenterVO findByTokenOrIdOrName(String tokenOrIdOrName) {
-        DataCenterVO result = findByToken(tokenOrIdOrName);
+    public EngineDataCenterVO findByTokenOrIdOrName(String tokenOrIdOrName) {
+        EngineDataCenterVO result = findByToken(tokenOrIdOrName);
         if (result == null) {
             result = findByName(tokenOrIdOrName);
             if (result == null) {
@@ -279,7 +279,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     public boolean remove(Long id) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        DataCenterVO zone = createForUpdate();
+        EngineDataCenterVO zone = createForUpdate();
         zone.setName(null);
 
         update(id, zone);
@@ -293,11 +293,11 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     @Override
     public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity zoneEntity, Object data) {
 
-        DataCenterVO vo = findById(zoneEntity.getId());
+        EngineDataCenterVO vo = findById(zoneEntity.getId());
 
         Date oldUpdatedTime = vo.getLastUpdated();
 
-        SearchCriteria<DataCenterVO> sc = StateChangeSearch.create();
+        SearchCriteria<EngineDataCenterVO> sc = StateChangeSearch.create();
         sc.setParameters("id", vo.getId());
         sc.setParameters("state", currentState);
 
@@ -308,7 +308,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         int rows = update(vo, sc);
 
         if (rows == 0 && s_logger.isDebugEnabled()) {
-            DataCenterVO dbDC = findByIdIncludingRemoved(vo.getId());
+            EngineDataCenterVO dbDC = findByIdIncludingRemoved(vo.getId());
             if (dbDC != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
                 str.append(": DB Data={id=").append(dbDC.getId()).append("; state=").append(dbDC.getState()).append(";updatedTime=")

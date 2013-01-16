@@ -42,7 +42,7 @@ import com.cloud.utils.db.StateMachine;
 
 @Entity
 @Table(name="data_center")
-public class DataCenterVO implements DataCenter, Identity {
+public class EngineDataCenterVO implements DataCenter, Identity {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -151,8 +151,8 @@ public class DataCenterVO implements DataCenter, Identity {
      */
     @Enumerated(value=EnumType.STRING)
     @StateMachine(state=State.class, event=Event.class)
-    @Column(name="state", updatable=true, nullable=false, length=32)
-    protected State state = null;
+    @Column(name="engine_state", updatable=true, nullable=false, length=32)
+    protected State engineState = null;
 
 
     @Override
@@ -200,14 +200,14 @@ public class DataCenterVO implements DataCenter, Identity {
         this.firewallProvider = firewallProvider;
     }
 
-    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
+    public EngineDataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
         this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false, false);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled) {
+    public EngineDataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
@@ -240,7 +240,7 @@ public class DataCenterVO implements DataCenter, Identity {
         this.zoneToken = zoneToken;
         this.domain = domainSuffix;
         this.uuid = UUID.randomUUID().toString();
-        this.state = State.Disabled;
+        this.engineState = State.Disabled;
     }
 
     @Override
@@ -310,7 +310,7 @@ public class DataCenterVO implements DataCenter, Identity {
         return internalDns2;
     }
 
-    protected DataCenterVO() {
+    protected EngineDataCenterVO() {
     }
 
     @Override
@@ -421,10 +421,10 @@ public class DataCenterVO implements DataCenter, Identity {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof DataCenterVO)) {
+        if (!(obj instanceof EngineDataCenterVO)) {
             return false;
         }
-        DataCenterVO that = (DataCenterVO)obj;
+        EngineDataCenterVO that = (EngineDataCenterVO)obj;
         return this.id == that.id;
     }
 
@@ -475,6 +475,6 @@ public class DataCenterVO implements DataCenter, Identity {
     }
 
     public State getState() {
-        return state;
+        return engineState;
     }
 }

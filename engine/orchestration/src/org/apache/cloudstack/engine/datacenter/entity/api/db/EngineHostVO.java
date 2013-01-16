@@ -54,7 +54,7 @@ import com.cloud.utils.db.StateMachine;
 @Table(name="host")
 @Inheritance(strategy=InheritanceType.TABLE_PER_CLASS)
 @DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
-public class HostVO implements Host, Identity {
+public class EngineHostVO implements Host, Identity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -383,26 +383,26 @@ public class HostVO implements Host, Identity {
      */
     @Enumerated(value=EnumType.STRING)
     @StateMachine(state=State.class, event=Event.class)
-    @Column(name="state", updatable=true, nullable=false, length=32)
-    protected State state = null;
+    @Column(name="engine_state", updatable=true, nullable=false, length=32)
+    protected State engineState = null;
 
 
-    public HostVO(String guid) {
+    public EngineHostVO(String guid) {
         this.guid = guid;
         this.status = Status.Creating;
         this.totalMemory = 0;
         this.dom0MinMemory = 0;
         this.resourceState = ResourceState.Creating;
         this.uuid = UUID.randomUUID().toString();
-        this.state = State.Disabled;
+        this.engineState = State.Disabled;
     }
 
-    protected HostVO() {
+    protected EngineHostVO() {
         this.uuid = UUID.randomUUID().toString();
-        this.state = State.Disabled;
+        this.engineState = State.Disabled;
     }
 
-    public HostVO(long id,
+    public EngineHostVO(long id,
             String name,
             Type type,
             String privateIpAddress,
@@ -434,10 +434,10 @@ public class HostVO implements Host, Identity {
         this.totalSize = totalSize;
         this.fsType = fsType;
         this.uuid = UUID.randomUUID().toString();
-        this.state = State.Disabled;
+        this.engineState = State.Disabled;
     }
 
-    public HostVO(long id,
+    public EngineHostVO(long id,
             String name,
             Type type,
             String privateIpAddress,
@@ -493,7 +493,7 @@ public class HostVO implements Host, Identity {
         this.dom0MinMemory = dom0MinMemory;
         this.storageUrl = url;
         this.uuid = UUID.randomUUID().toString();
-        this.state = State.Disabled;
+        this.engineState = State.Disabled;
     }
 
     public void setPodId(Long podId) {
@@ -689,8 +689,8 @@ public class HostVO implements Host, Identity {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof HostVO) {
-            return ((HostVO)obj).getId() == this.getId();
+        if (obj instanceof EngineHostVO) {
+            return ((EngineHostVO)obj).getId() == this.getId();
         } else {
             return false;
         }
@@ -774,6 +774,6 @@ public class HostVO implements Host, Identity {
     }
 
     public State getOrchestrationState() {
-        return state;
+        return engineState;
     }	
 }

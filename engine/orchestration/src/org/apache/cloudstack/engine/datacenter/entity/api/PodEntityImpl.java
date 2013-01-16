@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
-import org.apache.cloudstack.engine.datacenter.entity.api.db.HostPodVO;
+import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostPodVO;
 
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
@@ -35,7 +35,7 @@ public class PodEntityImpl implements PodEntity {
 	
 	private DataCenterResourceManager manager;
     
-    private HostPodVO podVO;
+    private EngineHostPodVO podVO;
 
     public PodEntityImpl(String uuid, DataCenterResourceManager manager) {
     	this.manager = manager;
