@@ -28,7 +28,7 @@ import com.cloud.utils.exception.ExecutionException;
 
 public class CiscoVnmcResourceTest {
 	static CiscoVnmcResource resource;
-	static String tenantName = "TenantD";
+	static String tenantName = "TenantE";
 	@BeforeClass
 	public static void setUpClass() throws Exception {
 		resource = new CiscoVnmcResource("10.223.56.5", "admin", "C1sco123");
@@ -140,6 +140,17 @@ public class CiscoVnmcResourceTest {
 		try {
 			boolean response = resource.createTenantVDCEdgeDhcpPolicy(tenantName, 
 					"10.1.1.2", "10.1.1.254", "255.255.255.0","4.4.4.4", tenantName+ ".net"); 
+			assertTrue(response);
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	@Test
+	public void testAssociateTenantVDCEdgeDhcpServerPolicy() {
+		try {
+			boolean response = resource.associateTenantVDCEdgeDhcpServerPolicy(tenantName, "Edge_Inside"); 
 			assertTrue(response);
 		} catch (ExecutionException e) {
 			// TODO Auto-generated catch block

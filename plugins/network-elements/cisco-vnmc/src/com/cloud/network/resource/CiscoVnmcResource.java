@@ -88,10 +88,8 @@ public class CiscoVnmcResource implements ServerResource {
         CREATE_EDGE_ROUTE("create-edge-device-route.xml", "policy-mgr"),
         RESOLVE_EDGE_ROUTE_POLICY("associate-route-policy.xml", "policy-mgr"),
         RESOLVE_EDGE_DHCP_POLICY("associate-dhcp-policy.xml", "policy-mgr"),
-        CREATE_DHCP_POLICY("create-dhcp-policy.xml", "policy-mgr");
-
-
-
+        CREATE_DHCP_POLICY("create-dhcp-policy.xml", "policy-mgr"),
+        RESOLVE_EDGE_DHCP_SERVER_POLICY("associate-dhcp-server.xml", "policy-mgr");
 
         private String scriptsDir = "scripts/network/cisco";
         private String xml;
@@ -565,7 +563,7 @@ public class CiscoVnmcResource implements ServerResource {
     	xml = replaceXmlValue(xml, "cookie", _cookie);
     	xml = replaceXmlValue(xml, "dhcpserverdn", getDnForDhcpServerPolicy(tenantName));
     	xml = replaceXmlValue(xml, "dhcpserverdescr", "DHCP server for " + tenantName);
-    	xml = replaceXmlValue(xml, "dhcpservername", getNameForDhcpServer(tenantName));
+    	xml = replaceXmlValue(xml, "dhcpservername", getNameForDhcpPolicy(tenantName));
     	xml = replaceXmlValue(xml, "iprangedn", getDnForDhcpIpRange(tenantName));
     	xml = replaceXmlValue(xml, "startip", startIp);
     	xml = replaceXmlValue(xml, "endip", endIp);
@@ -589,6 +587,28 @@ public class CiscoVnmcResource implements ServerResource {
     	}
     	return true;
     }
+    
+    public boolean associateTenantVDCEdgeDhcpServerPolicy(String tenantName, String intfName) throws ExecutionException {
+      	 String xml = VnmcXml.RESOLVE_EDGE_DHCP_SERVER_POLICY.getXml();
+           String service = VnmcXml.RESOLVE_EDGE_DHCP_SERVER_POLICY.getService();
+           xml = replaceXmlValue(xml, "cookie", _cookie);
+           xml = replaceXmlValue(xml, "dhcpdn", getDnForDhcpPolicy(tenantName, intfName));
+           xml = replaceXmlValue(xml, "insideintf", intfName);
+           xml = replaceXmlValue(xml, "dhcpserverpolicyname", getNameForDhcpServer(tenantName));
+
+           String response =  sendRequest(service, xml);
+           Map<String, String> checked = checkResponse(response, "errorCode", "response");
+           
+           if (checked.get("errorCode") != null) {
+          	 String errorCode = checked.get("errorCode");
+          	 if (errorCode.equals("103")) {
+          		 //already exists
+          		 return true;
+          	 }
+          	 return false;
+           }
+           return true;
+       }
 
     private String sendRequest(String service, String xmlRequest) throws ExecutionException {
     	org.apache.commons.httpclient.protocol.Protocol myhttps = 
