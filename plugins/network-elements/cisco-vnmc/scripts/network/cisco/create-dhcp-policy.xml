@@ -1,0 +1,62 @@
+<configConfMos 
+  cookie="%cookie%" 
+  inHierarchical="false"> 
+      <inConfigs> 
+         <pair key="%dhcpserverdn%">
+             <policyDhcpServerPolicy 
+             adminState="enabled" 
+             autoConfigIfName="" 
+          
+             descr="%dhcpserverdescr%"
+             dn="%dhcpserverdn%" 
+             dnsDomainRef="" 
+             leaseTime="1036799" 
+             name="%dhcpservername%"
+             pingTimeout="50" 
+             status="created"/> 
+         </pair> 
+                   
+         <pair key="%iprangedn%" >
+             <policyIPAddressRange 
+             descr="" 
+             dn="%iprangedn%"
+             endip="%endip%"
+             name="iprange" 
+             startip="%startip%"
+             status="created" 
+             subnet="%subnet%"/> 
+         </pair> 
+          
+         <pair key="%dnsservicedn%">
+             <commDns 
+             adminState="enabled" 
+             descr="" 
+             dn="%dnsservicedn%" 
+             domain="%domain%" 
+             name="%dnsservicename%"
+             port="0" 
+             proto="none" 
+             status="created"/> 
+         </pair> 
+          
+         <pair key="%nameserverdn%">
+             <commDnsProvider 
+             adminState="enabled" 
+             descr="" 
+             dn="%nameserverdn%"
+             hostip="%nameserverip%"
+             hostname="" 
+             intfName=""  
+             name="" 
+             order="100" 
+             status="created"/> 
+         </pair> 
+          
+    </inConfigs>  
+</configConfMos> 
+  
+<!--"org-root/org-TestTenant3/org-Tenant3-VDC/dhcp-server-Tenant3-DHCP-Policy" 
+"org-root/org-TestTenant3/org-Tenant3-VDC/dhcp-server-Tenant3-DHCP-Policy/ip-range-iprange" 
+    "org-root/org-TestTenant3/org-Tenant3-VDC/dhcp-server-Tenant3-DHCP-Policy/dns-svc-Tenant3-DNS" 
+   "org-root/org-TestTenant3/org-Tenant3-VDC/dhcp-server-Tenant3-DHCP-Policy/dns-svc-Tenant3-DNS/dns-8.8.8.8" 
+--!>

@@ -20,7 +20,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.StringReader;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -49,15 +48,12 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupExternalFirewallCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
-import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.ExecutionException;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 
 public class CiscoVnmcResource implements ServerResource {
@@ -89,7 +85,12 @@ public class CiscoVnmcResource implements ServerResource {
         CREATE_VDC("create-vdc.xml", "service-reg"),
         CREATE_EDGE_DEVICE_PROFILE("create-edge-device-profile.xml", "policy-mgr"),
         CREATE_EDGE_ROUTE_POLICY("create-edge-device-route-policy.xml", "policy-mgr"),
-        CREATE_EDGE_ROUTE("create-edge-device-route.xml", "policy-mgr");
+        CREATE_EDGE_ROUTE("create-edge-device-route.xml", "policy-mgr"),
+        RESOLVE_EDGE_ROUTE_POLICY("associate-route-policy.xml", "policy-mgr"),
+        RESOLVE_EDGE_DHCP_POLICY("associate-dhcp-policy.xml", "policy-mgr"),
+        CREATE_DHCP_POLICY("create-dhcp-policy.xml", "policy-mgr");
+
+
 
 
         private String scriptsDir = "scripts/network/cisco";
@@ -335,11 +336,11 @@ public class CiscoVnmcResource implements ServerResource {
     }
     
     private String getDnForTenantVDCEdgeDeviceProfile(String tenantName) {
-    	return getDnForTenantVDC(tenantName) + "/edsp-" + tenantName + "-Edge-Device-Profile";
+    	return getDnForTenantVDC(tenantName) + "/edsp-" + getNameForEdgeDeviceServiceProfile(tenantName);
     }
     
     private String getDnForEdgeDeviceRoutingPolicy(String tenantName) {
-    	return getDnForTenantVDC(tenantName) + "/routing-policy-EDSP-" + tenantName + "-Routes";
+    	return getDnForTenantVDC(tenantName) + "/routing-policy-" + getNameForEdgeDeviceRoutePolicy(tenantName);
     	//FIXME: any other construct is unreliable. why?
     }
     
@@ -347,7 +348,55 @@ public class CiscoVnmcResource implements ServerResource {
     	return getDnForEdgeDeviceRoutingPolicy(tenantName) + "/sroute-" + id ;
     }
     
+    private String getDnForDhcpPolicy(String tenantName, String intfName) {
+    	return getDnForTenantVDCEdgeDeviceProfile(tenantName) + "/dhcp-" + intfName;
+    }
     
+    private String getNameForDhcpPolicy(String tenantName) {
+    	return tenantName + "-Dhcp-Policy";
+    }
+    
+    private String getNameForDhcpServer(String tenantName) {
+    	return tenantName + "-Dhcp-Server";
+    }
+    
+    private String getDnForDhcpServerPolicy(String tenantName) {
+    	return getDnForTenantVDC(tenantName) + "/dhcp-server-" + getNameForDhcpPolicy(tenantName);
+    }
+    
+    private String getNameForIpRange() {
+    	return "iprange";
+    }
+    
+    private String getDnForDhcpIpRange(String tenantName) {
+    	return getDnForDhcpServerPolicy(tenantName) + "/ip-range-" + getNameForIpRange();
+    }
+    
+    private String getNameForDNSService(String tenantName) {
+    	return tenantName + "-DNS";
+    }
+   
+    
+    private String getDnForDnsService(String tenantName) {
+    	return getDnForDhcpServerPolicy(tenantName) + "/dns-svc-" + getNameForDNSService(tenantName); 
+    }
+    
+    private String getDnForDnsServer(String tenantName, String dnsip) {
+    	return getDnForDnsService(tenantName) + "/dns-" + dnsip; 
+    }
+    
+    private String getNameForTenantVDC(String tenantName) {
+    	return "VDC-" + tenantName;
+    }
+    
+    private String getNameForEdgeDeviceServiceProfile(String tenantName) {
+    	return "EDSP-" + tenantName;
+    }
+    
+    private String getNameForEdgeDeviceRoutePolicy(String tenantName) {
+    	return "EDSP-" + tenantName + "-Routes";//FIXME: this has to match DN somehow?
+    }
+        
     public boolean createTenant(String tenantName) throws ExecutionException {
     	 String xml = VnmcXml.CREATE_TENANT.getXml();
          String service = VnmcXml.CREATE_TENANT.getService();
@@ -375,7 +424,7 @@ public class CiscoVnmcResource implements ServerResource {
         String service = VnmcXml.CREATE_VDC.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
         xml = replaceXmlValue(xml, "descr", "VDC for Tenant" + tenantName);
-        xml = replaceXmlValue(xml, "name", "VDC-" + tenantName);
+        xml = replaceXmlValue(xml, "name", getNameForTenantVDC(tenantName));
         xml = replaceXmlValue(xml, "dn", getDnForTenantVDC(tenantName));
 
         String response =  sendRequest(service, xml);
@@ -397,7 +446,7 @@ public class CiscoVnmcResource implements ServerResource {
            String service = VnmcXml.CREATE_EDGE_DEVICE_PROFILE.getService();
            xml = replaceXmlValue(xml, "cookie", _cookie);
            xml = replaceXmlValue(xml, "descr", "Edge Device Profile for Tenant VDC" + tenantName);
-           xml = replaceXmlValue(xml, "name", "EDSP-" + tenantName);
+           xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceServiceProfile(tenantName));
            xml = replaceXmlValue(xml, "dn", getDnForTenantVDCEdgeDeviceProfile(tenantName));
 
            String response =  sendRequest(service, xml);
@@ -418,7 +467,7 @@ public class CiscoVnmcResource implements ServerResource {
      	 String xml = VnmcXml.CREATE_EDGE_ROUTE_POLICY.getXml();
           String service = VnmcXml.CREATE_EDGE_ROUTE_POLICY.getService();
           xml = replaceXmlValue(xml, "cookie", _cookie);
-          xml = replaceXmlValue(xml, "name", "EDSP-" + tenantName + "-Routes");//FIXME: this has to match DN somehow?
+          xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceRoutePolicy(tenantName));//FIXME: this has to match DN somehow?
           xml = replaceXmlValue(xml, "routepolicydn", getDnForEdgeDeviceRoutingPolicy(tenantName));
           xml = replaceXmlValue(xml, "descr", "Routing Policy for Edge Device for Tenant " + tenantName);
 
@@ -465,6 +514,82 @@ public class CiscoVnmcResource implements ServerResource {
          }
          return true;
     }
+    
+    public boolean associateTenantVDCEdgeStaticRoutePolicy(String tenantName) throws ExecutionException {
+    	 String xml = VnmcXml.RESOLVE_EDGE_ROUTE_POLICY.getXml();
+         String service = VnmcXml.RESOLVE_EDGE_ROUTE_POLICY.getService();
+         xml = replaceXmlValue(xml, "cookie", _cookie);
+         xml = replaceXmlValue(xml, "profilename", getNameForEdgeDeviceServiceProfile(tenantName));
+         xml = replaceXmlValue(xml, "profiledn", getDnForTenantVDC(tenantName) + "/edsp-" + getNameForEdgeDeviceServiceProfile(tenantName));
+         xml = replaceXmlValue(xml, "routepolicyname", getNameForEdgeDeviceRoutePolicy(tenantName));
+
+         String response =  sendRequest(service, xml);
+         Map<String, String> checked = checkResponse(response, "errorCode", "response");
+         
+         if (checked.get("errorCode") != null) {
+        	 String errorCode = checked.get("errorCode");
+        	 if (errorCode.equals("103")) {
+        		 //already exists
+        		 return true;
+        	 }
+        	 return false;
+         }
+         return true;
+    }
+    
+    public boolean associateTenantVDCEdgeDhcpPolicy(String tenantName, String intfName) throws ExecutionException {
+   	 String xml = VnmcXml.RESOLVE_EDGE_DHCP_POLICY.getXml();
+        String service = VnmcXml.RESOLVE_EDGE_DHCP_POLICY.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "dhcpdn", getDnForDhcpPolicy(tenantName, intfName));
+        xml = replaceXmlValue(xml, "insideintf", intfName);
+
+        String response =  sendRequest(service, xml);
+        Map<String, String> checked = checkResponse(response, "errorCode", "response");
+        
+        if (checked.get("errorCode") != null) {
+       	 String errorCode = checked.get("errorCode");
+       	 if (errorCode.equals("103")) {
+       		 //already exists
+       		 return true;
+       	 }
+       	 return false;
+        }
+        return true;
+    }
+    
+    public boolean createTenantVDCEdgeDhcpPolicy(String tenantName, 
+    		String startIp, String endIp, String subnet, String nameServerIp, String domain) throws ExecutionException {
+    	String xml = VnmcXml.CREATE_DHCP_POLICY.getXml();
+    	String service = VnmcXml.CREATE_DHCP_POLICY.getService();
+    	xml = replaceXmlValue(xml, "cookie", _cookie);
+    	xml = replaceXmlValue(xml, "dhcpserverdn", getDnForDhcpServerPolicy(tenantName));
+    	xml = replaceXmlValue(xml, "dhcpserverdescr", "DHCP server for " + tenantName);
+    	xml = replaceXmlValue(xml, "dhcpservername", getNameForDhcpServer(tenantName));
+    	xml = replaceXmlValue(xml, "iprangedn", getDnForDhcpIpRange(tenantName));
+    	xml = replaceXmlValue(xml, "startip", startIp);
+    	xml = replaceXmlValue(xml, "endip", endIp);
+    	xml = replaceXmlValue(xml, "subnet", subnet);
+    	xml = replaceXmlValue(xml, "domain", domain);
+    	xml = replaceXmlValue(xml, "dnsservicedn", getDnForDnsService(tenantName));
+    	xml = replaceXmlValue(xml, "dnsservicename", getNameForDNSService(tenantName));
+    	xml = replaceXmlValue(xml, "nameserverip", nameServerIp);
+    	xml = replaceXmlValue(xml, "nameserverdn", getDnForDnsServer(tenantName, nameServerIp));
+
+    	String response =  sendRequest(service, xml);
+    	Map<String, String> checked = checkResponse(response, "errorCode", "response");
+
+    	if (checked.get("errorCode") != null) {
+    		String errorCode = checked.get("errorCode");
+    		if (errorCode.equals("103")) {
+    			//already exists
+    			return true;
+    		}
+    		return false;
+    	}
+    	return true;
+    }
+
     private String sendRequest(String service, String xmlRequest) throws ExecutionException {
     	org.apache.commons.httpclient.protocol.Protocol myhttps = 
     			new org.apache.commons.httpclient.protocol.Protocol("https", new EasySSLProtocolSocketFactory(), 443);

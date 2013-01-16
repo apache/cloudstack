@@ -1,0 +1,16 @@
+<configConfMos
+  cookie="%cookie%" 
+  inHierarchical="false">
+    <inConfigs>
+      <pair key="%dhcpdn%">
+          <policyDhcpPolicyAssoc
+            dn="%dhcpdn%" 
+            interfaceName="%insideintf%"
+            policyRef=""
+            status="created"
+            type="server"/>
+      </pair>
+    </inConfigs>
+</configConfMos>
+            <!--dn="org-root/org-TestTenant3/org-Tenant3-VDC/edsp-Tenant3-Edge-Device-Profile/dhcp-Edge_Inside"-->
+
