@@ -18,6 +18,8 @@ package com.cloud.network.resource.test;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
+
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -30,6 +32,8 @@ import com.cloud.utils.exception.ExecutionException;
 public class CiscoVnmcResourceTest {
 	static CiscoVnmcResource resource;
 	static String tenantName = "TenantE";
+	static List<String> fwDns = null;
+	
 	@BeforeClass
 	public static void setUpClass() throws Exception {
 		resource = new CiscoVnmcResource("10.223.56.5", "admin", "C1sco123");
@@ -216,6 +220,7 @@ public class CiscoVnmcResourceTest {
 		}
 	}
 	
+	@Ignore
 	@Test
 	public void testCreateEdgeFirewall() {
 		try {
@@ -223,6 +228,29 @@ public class CiscoVnmcResourceTest {
 					"44.44.44.44", "192.168.1.1", "255.255.255.0", "255.255.255.192"); 
 			assertTrue(response);
 		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Test
+	public void testListUnassocAsa1000v() {
+		try {
+			List<String> response = resource.listUnAssocAsa1000v(); 
+			assertTrue(response.size() >=0);
+			fwDns = response;
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	@Test
+	public void assocAsa1000v() {
+		try {
+			boolean result = resource.assocAsa1000v(tenantName, fwDns.get(0)); 
+			assertTrue(result);
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

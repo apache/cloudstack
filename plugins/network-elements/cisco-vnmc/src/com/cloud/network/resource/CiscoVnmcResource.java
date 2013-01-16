@@ -19,9 +19,12 @@ package com.cloud.network.resource;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import javax.lang.model.element.Element;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -32,6 +35,7 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import com.cloud.agent.IAgentControl;
@@ -95,7 +99,9 @@ public class CiscoVnmcResource implements ServerResource {
         CREATE_SOURCE_NAT_POLICY("create-source-nat-policy.xml", "policy-mgr"),
         CREATE_NAT_POLICY_SET("create-nat-policy-set.xml", "policy-mgr"),
         RESOLVE_NAT_POLICY_SET("associate-nat-policy-set.xml", "policy-mgr"),
-        CREATE_EDGE_FIREWALL("create-edge-firewall.xml", "resource-mgr");
+        CREATE_EDGE_FIREWALL("create-edge-firewall.xml", "resource-mgr"),
+        LIST_UNASSOC_ASA1000V("list-unassigned-asa1000v.xml", "resource-mgr"),
+        ASSIGN_ASA1000V("assoc-asa1000v.xml", "resource-mgr");
 
         private String scriptsDir = "scripts/network/cisco";
         private String xml;
@@ -753,6 +759,46 @@ public class CiscoVnmcResource implements ServerResource {
     	return verifySuccess(response);
 
     }
+    
+    
+    public List<String> listUnAssocAsa1000v() throws ExecutionException {
+    	
+    	String xml = VnmcXml.LIST_UNASSOC_ASA1000V.getXml();
+    	String service = VnmcXml.LIST_UNASSOC_ASA1000V.getService();
+    	xml = replaceXmlValue(xml, "cookie", _cookie);
+    	
+    	
+    	String response =  sendRequest(service, xml);
+
+    	List<String> result = new ArrayList<String>();
+    	
+    	Document xmlDoc = getDocument(response);
+    	xmlDoc.normalize();
+    	NodeList fwList = xmlDoc.getElementsByTagName("fwInstance");
+    	for (int j=0; j < fwList.getLength(); j++) {
+			Node fwNode = fwList.item(j);
+			result.add (fwNode.getAttributes().getNamedItem("dn").getNodeValue());
+			
+		}
+        
+        return result;
+
+    }
+    
+    public boolean assocAsa1000v(String tenantName, String firewallDn) throws ExecutionException {
+    	
+    	String xml = VnmcXml.ASSIGN_ASA1000V.getXml();
+    	String service = VnmcXml.ASSIGN_ASA1000V.getService();
+    	xml = replaceXmlValue(xml, "cookie", _cookie);
+    	xml = replaceXmlValue(xml, "binddn", getDnForEdgeFirewall(tenantName) + "/binding");
+    	xml = replaceXmlValue(xml, "fwdn", firewallDn);
+    	
+    	String response =  sendRequest(service, xml);
+
+    	return verifySuccess(response);
+
+    }
+    
 
     private String sendRequest(String service, String xmlRequest) throws ExecutionException {
     	org.apache.commons.httpclient.protocol.Protocol myhttps = 
