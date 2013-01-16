@@ -170,7 +170,6 @@ public interface Network extends ControlledEntity, InternalIdentity, Identity {
         public static final Capability AllowDnsSuffixModification = new Capability("AllowDnsSuffixModification");
         public static final Capability RedundantRouter = new Capability("RedundantRouter");
         public static final Capability ElasticIp = new Capability("ElasticIp");
-        public static final Capability AssociatePublicIP = new Capability("AssociatePublicIP");
         public static final Capability ElasticLb = new Capability("ElasticLb");
         public static final Capability AutoScaleCounters = new Capability("AutoScaleCounters");
         public static final Capability InlineMode = new Capability("InlineMode");

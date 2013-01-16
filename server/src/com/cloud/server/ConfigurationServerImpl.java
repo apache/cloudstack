@@ -70,7 +70,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
-import com.cloud.uuididentity.dao.IdentityDao;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -972,7 +971,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Shared networks with Elastic IP and Elastic LB capabilities",
                 TrafficType.Guest,
                 false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Shared, true, false, false, false, true, true, true, true, false);
+                null, Network.GuestType.Shared, true, false, false, false, true, true, true, false);
 
         defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);

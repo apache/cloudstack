@@ -16,18 +16,6 @@
 // under the License.
 package com.cloud.network.rules;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
-import org.apache.log4j.Logger;
-
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -65,13 +53,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.*;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.Nic;
@@ -80,6 +63,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
@@ -1189,12 +1173,11 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Network guestNetwork = _networkMgr.getNetwork(ipAddress.getAssociatedWithNetworkId());
         NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
         if (offering.getElasticIp()) {
-            if (offering.getAssociatePublicIP()) {
-                getSystemIpAndEnableStaticNatForVm(_vmDao.findById(vmId), true);
-                return true;
-            }
+            getSystemIpAndEnableStaticNatForVm(_vmDao.findById(vmId), true);
+            return true;
+        } else {
+            return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
         }
-        return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
     }
 
     @Override
@@ -1380,11 +1363,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             Network guestNetwork = _networkMgr.getNetwork(nic.getNetworkId());
             NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
             if (offering.getElasticIp()) {
-                boolean isSystemVM = (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm);
-                // for user VM's associate public IP only if offering is marked to associate a public IP by default on start of VM
-                if (!isSystemVM && !offering.getAssociatePublicIP()) {
-                    continue;
-                }
                 // check if there is already static nat enabled
                 if (_ipAddressDao.findByAssociatedVmId(vm.getId()) != null && !getNewIp) {
                     s_logger.debug("Vm " + vm + " already has ip associated with it in guest network " + guestNetwork);
@@ -1399,6 +1377,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
                 s_logger.debug("Allocated system ip " + ip + ", now enabling static nat on it for vm " + vm);
 
+                boolean isSystemVM = (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm);
                 try {
                     success = enableStaticNat(ip.getId(), vm.getId(), guestNetwork.getId(), isSystemVM);
                 } catch (NetworkRuleConflictException ex) {
