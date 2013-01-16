@@ -143,9 +143,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Enumerated(value=EnumType.STRING)
     protected HypervisorType hypervisorType;
 
+/*
     @Column(name="tags")
     protected String tags;
-
+*/
+    
     @Transient
     Map<String, String> details;
 
