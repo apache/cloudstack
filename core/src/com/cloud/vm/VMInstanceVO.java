@@ -42,7 +42,6 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 import com.cloud.utils.fsm.FiniteStateObject;
 import com.cloud.vm.VirtualMachine.State;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="vm_instance")
@@ -143,12 +142,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name="hypervisor_type")
     @Enumerated(value=EnumType.STRING)
     protected HypervisorType hypervisorType;
-
-    @Column(name="ram")
-    protected long ram;
-
-    @Column(name="cpu")
-    protected int cpu;
 
     @Column(name="tags")
     protected String tags;

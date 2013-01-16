@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.datastore.DataStoreStatus;
@@ -49,7 +50,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<PrimaryDataStoreVO, 
     protected final SearchBuilder<PrimaryDataStoreVO> DeleteLvmSearch;
     protected final GenericSearchBuilder<PrimaryDataStoreVO, Long> StatusCountSearch;
 
-    protected final PrimaryDataStoreDetailsDao _detailsDao = null;
+    @Inject protected PrimaryDataStoreDetailsDao _detailsDao;
 
     private final String DetailsSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_details ON storage_pool.id = storage_pool_details.pool_id WHERE storage_pool.removed is null and storage_pool.data_center_id = ? and (storage_pool.pod_id = ? or storage_pool.pod_id is null) and (";
     private final String DetailsSqlSuffix = ") GROUP BY storage_pool_details.pool_id HAVING COUNT(storage_pool_details.name) >= ?";
@@ -95,8 +96,6 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<PrimaryDataStoreVO, 
         StatusCountSearch.and("status", StatusCountSearch.entity().getStatus(), SearchCriteria.Op.IN);
         StatusCountSearch.select(null, Func.COUNT, null);
         StatusCountSearch.done();
-
-       // _detailsDao = ComponentInject.inject(PrimaryDataStoreDetailsDaoImpl.class);
     }
 
     @Override

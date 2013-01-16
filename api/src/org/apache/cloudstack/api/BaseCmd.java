@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 
@@ -109,83 +111,42 @@ public abstract class BaseCmd {
     @Parameter(name = "response", type = CommandType.STRING)
     private String responseType;
 
-    public static ConfigurationService _configService;
-    public static AccountService _accountService;
-    public static UserVmService _userVmService;
-    public static ManagementService _mgr;
-    public static StorageService _storageService;
-    public static ResourceService _resourceService;
-    public static NetworkService _networkService;
-    public static TemplateService _templateService;
-    public static SecurityGroupService _securityGroupService;
-    public static SnapshotService _snapshotService;
-    public static ConsoleProxyService _consoleProxyService;
-    public static VpcVirtualNetworkApplianceService _routerService;
-    public static ResponseGenerator _responseGenerator;
-    public static EntityManager _entityMgr;
-    public static RulesService _rulesService;
-    public static AutoScaleService _autoScaleService;
-    public static LoadBalancingRulesService _lbService;
-    public static RemoteAccessVpnService _ravService;
-    public static BareMetalVmService _bareMetalVmService;
-    public static ProjectService _projectService;
-    public static FirewallService _firewallService;
-    public static DomainService _domainService;
-    public static ResourceLimitService _resourceLimitService;
-    public static IdentityService _identityService;
-    public static StorageNetworkService _storageNetworkService;
-    public static TaggedResourceService _taggedResourceService;
-    public static VpcService _vpcService;
-    public static NetworkACLService _networkACLService;
-    public static Site2SiteVpnService _s2sVpnService;
+    @Inject public ConfigurationService _configService;
+    @Inject public AccountService _accountService;
+    @Inject public UserVmService _userVmService;
+    @Inject public ManagementService _mgr;
+    @Inject public StorageService _storageService;
+    @Inject public ResourceService _resourceService;
+    @Inject public NetworkService _networkService;
+    @Inject public TemplateService _templateService;
+    @Inject public SecurityGroupService _securityGroupService;
+    @Inject public SnapshotService _snapshotService;
+    @Inject public ConsoleProxyService _consoleProxyService;
+    @Inject public VpcVirtualNetworkApplianceService _routerService;
+    @Inject public ResponseGenerator _responseGenerator;
+    @Inject public EntityManager _entityMgr;
+    @Inject public RulesService _rulesService;
+    @Inject public AutoScaleService _autoScaleService;
+    @Inject public LoadBalancingRulesService _lbService;
+    @Inject public RemoteAccessVpnService _ravService;
+    @Inject public BareMetalVmService _bareMetalVmService;
+    @Inject public ProjectService _projectService;
+    @Inject public FirewallService _firewallService;
+    @Inject public DomainService _domainService;
+    @Inject public ResourceLimitService _resourceLimitService;
+    @Inject public IdentityService _identityService;
+    @Inject public StorageNetworkService _storageNetworkService;
+    @Inject public TaggedResourceService _taggedResourceService;
+    @Inject public VpcService _vpcService;
+    @Inject public NetworkACLService _networkACLService;
+    @Inject public Site2SiteVpnService _s2sVpnService;
 
-    public static QueryService _queryService;
-
-    public static void setComponents(ResponseGenerator generator) {
-        _mgr = ComponentContext.getComponent(ManagementService.class);
-        _accountService = ComponentContext.getComponent(AccountService.class);
-        _configService = ComponentContext.getComponent(ConfigurationService.class);
-
-        _userVmService = ComponentContext.getComponent(UserVmService.class);
-
-        // TODO, ugly and will change soon
-        //
-        Map<String, UserVmService> svmServices = ComponentContext.getComponentsOfType(UserVmService.class);
-        _userVmService = svmServices.get("BareMetalVmManagerImpl");
-
-        _storageService = ComponentContext.getComponent(StorageService.class);
-        _resourceService = ComponentContext.getComponent(ResourceService.class);
-
-        _networkService = ComponentContext.getComponent(NetworkService.class);
-        _templateService = ComponentContext.getComponent(TemplateService.class);
-
-        // TODO, will change to looking for primary component
-        // ugly binding to a specific implementation
-        Map<String, SecurityGroupService> _sgServices = ComponentContext.getComponentsOfType(SecurityGroupService.class);
-        _securityGroupService = _sgServices.get("SecurityGroupManagerImpl2");
-
-        _snapshotService = ComponentContext.getComponent(SnapshotService.class);
-        _consoleProxyService = ComponentContext.getComponent(ConsoleProxyService.class);
-        _routerService = ComponentContext.getComponent(VpcVirtualNetworkApplianceService.class);
-        _entityMgr = ComponentContext.getComponent(EntityManager.class);
-        _rulesService = ComponentContext.getComponent(RulesService.class);
-        _lbService = ComponentContext.getComponent(LoadBalancingRulesService.class);
-        _ravService = ComponentContext.getComponent(RemoteAccessVpnService.class);
-        _responseGenerator = generator;
-        _bareMetalVmService = ComponentContext.getComponent(BareMetalVmService.class);
-        _projectService = ComponentContext.getComponent(ProjectService.class);
-        _firewallService = ComponentContext.getComponent(FirewallService.class);
-        _domainService = ComponentContext.getComponent(DomainService.class);
-        _resourceLimitService = ComponentContext.getComponent(ResourceLimitService.class);
-        _identityService = ComponentContext.getComponent(IdentityService.class);
-        _storageNetworkService = ComponentContext.getComponent(StorageNetworkService.class);
-        _taggedResourceService = ComponentContext.getComponent(TaggedResourceService.class);
-        _vpcService = ComponentContext.getComponent(VpcService.class);
-        _networkACLService = ComponentContext.getComponent(NetworkACLService.class);
-        _s2sVpnService = ComponentContext.getComponent(Site2SiteVpnService.class);
-    }
+    @Inject public QueryService _queryService;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
+
+    public void configure() {
+    }
 
     public String getResponseType() {
         if (responseType == null) {

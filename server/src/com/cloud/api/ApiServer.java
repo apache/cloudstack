@@ -132,6 +132,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
@@ -179,9 +180,6 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     public void init() {
-        BaseCmd.setComponents(new ApiResponseHelper());
-        BaseListCmd.configure();
-
         _systemAccount = _accountMgr.getSystemAccount();
         _systemUser = _accountMgr.getSystemUser();
 
@@ -346,6 +344,8 @@ public class ApiServer implements HttpRequestHandler {
                 Class<?> cmdClass = getCmdClass(command[0]);
                 if (cmdClass != null) {
                     BaseCmd cmdObj = (BaseCmd) cmdClass.newInstance();
+                    cmdObj = ComponentContext.inject(cmdObj);
+                    cmdObj.configure();
                     cmdObj.setFullUrlParams(paramMap);
                     cmdObj.setResponseType(responseType);
                     // This is where the command is either serialized, or directly dispatched
