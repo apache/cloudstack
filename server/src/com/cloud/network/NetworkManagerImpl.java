@@ -2951,11 +2951,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
             }
             } else {
-                //don't allow to creating shared network with given Vlan ID, if there already exists a isolated network or
-                //shared network with same Vlan ID in the zone
-                if (_networksDao.countByZoneUriAndGuestType(zoneId, uri, GuestType.Isolated) > 0 ||
-                        _networksDao.countByZoneUriAndGuestType(zoneId, uri, GuestType.Shared) > 0) {
-                    throw new InvalidParameterValueException("There is a isolated/shared network with vlan id: " + vlanId + " already exists " + "in zone " + zoneId);
+                //don't allow to create Shared network with Vlan that already exists in the zone for Isolated networks
+                if (_networksDao.countByZoneUriAndGuestType(zoneId, uri, GuestType.Isolated) > 0) {
+                    throw new InvalidParameterValueException("Isolated network with vlan " + vlanId + " already exists " +
+                            "in zone " + zoneId);
                 }
         }
         }
@@ -3543,13 +3542,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             applyProfileToNetwork(network, profile);
 
-            DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
-            if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && (zone.getNetworkType() == NetworkType.Advanced)) {
-                network.setState(Network.State.Setup);
-            } else {
-                network.setState(Network.State.Allocated);
-            }
-
+            network.setState(Network.State.Allocated);
             network.setRestartRequired(false);
             _networksDao.update(network.getId(), network);
             _networksDao.clearCheckForGc(networkId);
