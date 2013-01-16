@@ -65,3 +65,28 @@ CREATE TABLE `cloud`.`vm_network_map` (
   `network_id` bigint unsigned NOT NULL COMMENT 'network id',
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE `cloud`.`vm_reservation` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40) NOT NULL COMMENT 'reservation id',
+  `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
+  `datacenter_id` bigint unsigned NOT NULL COMMENT 'zone id',
+  `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',
+  `cluster_id` bigint unsigned NOT NULL COMMENT 'cluster id',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id',
+  `created` datetime COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  CONSTRAINT `uc_vm_reservation__uuid` UNIQUE (`uuid`),
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`volume_reservation` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `vm_reservation_id` bigint unsigned NOT NULL COMMENT 'id of the vm reservation',
+  `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
+  `volume_id` bigint unsigned NOT NULL COMMENT 'volume id',
+  `pool_id` bigint unsigned NOT NULL COMMENT 'pool assigned to the volume',
+  CONSTRAINT `fk_vm_pool_reservation__vm_reservation_id` FOREIGN KEY (`vm_reservation_id`) REFERENCES `vm_reservation`(`id`) ON DELETE CASCADE,
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

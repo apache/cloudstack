@@ -725,94 +725,85 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return findOneBy(sc);
     }
 
-    @Override
-    public List<HostVO> findHypervisorHostInCluster(long clusterId) {
-        SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
-        sc.setParameters("type", Host.Type.Routing);
-        sc.setParameters("cluster", clusterId);
-        sc.setParameters("status", Status.Up);
-        sc.setParameters("resourceState", ResourceState.Enabled);
+	@Override
+	public List<HostVO> findHypervisorHostInCluster(long clusterId) {
+		 SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
+		 sc.setParameters("type", Host.Type.Routing);
+		 sc.setParameters("cluster", clusterId);
+		 sc.setParameters("status", Status.Up);
+		 sc.setParameters("resourceState", ResourceState.Enabled);
+		
+		return listBy(sc);
+	}
 
-        return listBy(sc);
-    }
+	@Override
+	public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> lockRows(
+			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
+			Filter filter, boolean exclusive) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    @Override
-    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> lockRows(
-            SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
-            Filter filter, boolean exclusive) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO lockOneRandomRow(
-            SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
-            boolean exclusive) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-
-    @Override
-    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> search(
-            SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
-            Filter filter) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> search(
-            SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
-            Filter filter, boolean enable_query_cache) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> searchIncludingRemoved(
-            SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
-            Filter filter, Boolean lock, boolean cache) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<HostVO> searchIncludingRemoved(
-            SearchCriteria<HostVO> sc,
-            Filter filter, Boolean lock, boolean cache,
-            boolean enable_query_cache) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	@Override
+	public org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO lockOneRandomRow(
+			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
+			boolean exclusive) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 
-    @Override
-    public int remove(
-            SearchCriteria<HostVO> sc) {
-        // TODO Auto-generated method stub
-        return 0;
-    }
+	@Override
+	public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> search(
+			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
+			Filter filter) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    @Override
-    public int expunge(SearchCriteria<HostVO> sc) {
-        // TODO Auto-generated method stub
-        return 0;
-    }
+	@Override
+	public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> search(
+			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
+			Filter filter, boolean enable_query_cache) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    @Override
-    public HostVO findOneBy(SearchCriteria<HostVO> sc) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	@Override
+	public List<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> searchIncludingRemoved(
+			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.HostVO> sc,
+			Filter filter, Boolean lock, boolean cache) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<HostVO> searchIncludingRemoved(
+			SearchCriteria<HostVO> sc,
+			Filter filter, Boolean lock, boolean cache,
+			boolean enable_query_cache) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 
+	@Override
+	public int remove(
+			SearchCriteria<HostVO> sc) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 
-    @Override
-    public HostVO findByUUID(String uuid) {
-        SearchCriteria<HostVO> sc = UUIDSearch.create();
-        sc.setParameters("uuid", uuid);
-        return findOneBy(sc);
-    }
+	@Override
+	public int expunge(SearchCriteria<HostVO> sc) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public HostVO findOneBy(SearchCriteria<HostVO> sc) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

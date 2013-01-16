@@ -40,12 +40,16 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.NetworkVO;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -74,6 +78,13 @@ public class CloudOrchestrator implements OrchestrationService {
 	
 	@Inject 
 	protected VirtualMachineEntityFactory _vmEntityFactory;
+
+	@Inject
+	protected NetworkDao _networkDao;
+	
+	@Inject
+	protected AccountDao _accountDao = null;
+
 	
     public VirtualMachineEntity createFromScratch(String uuid, String iso, String os, String hypervisor, String hostName, int cpu, int speed, long memory, List<String> networks, List<String> computeTags,
             Map<String, String> details, String owner) {
@@ -143,28 +154,36 @@ public class CloudOrchestrator implements OrchestrationService {
             Long diskSize,
             List<String> computeTags, 
             List<String> rootDiskTags,
-            List<String> networks, DeploymentPlan plan) throws InsufficientCapacityException {
+            Map<String, NicProfile> networkNicMap, DeploymentPlan plan) throws InsufficientCapacityException {
 
     	// VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
-    	
+
+        List<Pair<NetworkVO, NicProfile>> networkIpMap = new ArrayList<Pair<NetworkVO, NicProfile>>();
+        for (String uuid : networkNicMap.keySet()) {
+            NetworkVO network = _networkDao.findByUuid(uuid);
+            if(network != null){
+                networkIpMap.add(new Pair<NetworkVO, NicProfile>(network, networkNicMap.get(uuid)));
+            }
+        }
+
     	VirtualMachineEntityImpl vmEntity = null;
 		try {
 			vmEntity = _vmEntityFactory.getObject();
 		} catch (Exception e) {
 			// add error handling here
 		}
-    	vmEntity.init(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks);
+    	vmEntity.init(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, new ArrayList<String>(networkNicMap.keySet()));
+        
     	
     	HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
 
     	//load vm instance and offerings and call virtualMachineManagerImpl
-    	VMInstanceVO vm = _vmDao.findByUUID(id);
+    	VMInstanceVO vm = _vmDao.findByUuid(id);
     	
-		// If the template represents an ISO, a disk offering must be passed in,
-		// and will be used to create the root disk
-		// Else, a disk offering is optional, and if present will be used to
-		// create the data disk
-		Pair<DiskOfferingVO, Long> rootDiskOffering = new Pair<DiskOfferingVO, Long>(null, null);
+		// If the template represents an ISO, a disk offering must be passed in, and will be used to create the root disk
+		// Else, a disk offering is optional, and if present will be used to create the data disk
+
+    	Pair<DiskOfferingVO, Long> rootDiskOffering = new Pair<DiskOfferingVO, Long>(null, null);
 		List<Pair<DiskOfferingVO, Long>> dataDiskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>();
  
 		ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
@@ -172,8 +191,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
 		DiskOfferingVO diskOffering = _diskOfferingDao.findById(vm.getDiskOfferingId());
 		if (diskOffering == null) {
-			throw new InvalidParameterValueException(
-					"Unable to find disk offering " + vm.getDiskOfferingId());
+			throw new InvalidParameterValueException("Unable to find disk offering " + vm.getDiskOfferingId());
 		}
 		Long size = null;
 		if (diskOffering.getDiskSize() == 0) {
@@ -186,7 +204,8 @@ public class CloudOrchestrator implements OrchestrationService {
 		}
 		dataDiskOfferings.add(new Pair<DiskOfferingVO, Long>(diskOffering, size));
 		
-    	if (_itMgr.allocate(vm, _templateDao.findById(new Long(templateId)), offering, rootDiskOffering, dataDiskOfferings, null, null,	plan, hypervisorType, null) == null) {
+		
+    	if (_itMgr.allocate(vm, _templateDao.findById(new Long(templateId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, null,	plan, hypervisorType, _accountDao.findById(new Long(owner))) == null) {
 			return null;
 		}
     	
@@ -195,7 +214,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
     @Override
     public VirtualMachineEntity createVirtualMachineFromScratch(String id, String owner, String isoId, String hostName, String displayName, String hypervisor, String os, int cpu, int speed, long memory,Long diskSize,
-            List<String> computeTags, List<String> rootDiskTags, List<String> networks, DeploymentPlan plan)  throws InsufficientCapacityException {
+            List<String> computeTags, List<String> rootDiskTags, Map<String, NicProfile> networkNicMap, DeploymentPlan plan)  throws InsufficientCapacityException {
 		
     	// VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
     	VirtualMachineEntityImpl vmEntity = null;
@@ -204,10 +223,10 @@ public class CloudOrchestrator implements OrchestrationService {
 		} catch (Exception e) {
 			// add error handling here
 		}
-    	vmEntity.init(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks);
+    	vmEntity.init(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, new ArrayList<String>(networkNicMap.keySet()));
 
     	//load vm instance and offerings and call virtualMachineManagerImpl
-    	VMInstanceVO vm = _vmDao.findByUUID(id);
+    	VMInstanceVO vm = _vmDao.findByUuid(id);
     	
     	
 		Pair<DiskOfferingVO, Long> rootDiskOffering = new Pair<DiskOfferingVO, Long>(null, null);
@@ -250,5 +269,11 @@ public class CloudOrchestrator implements OrchestrationService {
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public VirtualMachineEntity getVirtualMachine(String id) {
+		VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, vmEntityManager);
+		return vmEntity;
+	}
 
 }

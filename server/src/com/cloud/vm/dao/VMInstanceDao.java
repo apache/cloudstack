@@ -114,7 +114,5 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
      * @return
      */
     List<String> listDistinctHostNames(long networkId, VirtualMachine.Type... types);
-    
-    VMInstanceVO findByUUID(String uuid);
 
 }

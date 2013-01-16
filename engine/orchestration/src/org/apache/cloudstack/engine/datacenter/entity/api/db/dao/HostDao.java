@@ -82,6 +82,4 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<DataCenterRe
      * @return
      */
     List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag);
-
-	HostVO findByUUID(String uuid);
 }

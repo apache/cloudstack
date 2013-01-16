@@ -155,6 +155,9 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     protected String uuid = UUID.randomUUID().toString();
     ;
 
+    @Column(name="disk_offering_id")
+    protected Long diskOfferingId;
+    
     public VMInstanceVO(long id,
             long serviceOfferingId,
             String name,
@@ -195,9 +198,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
             long domainId,
             long accountId,
             boolean haEnabled,
-            boolean limitResourceUse) {
+            boolean limitResourceUse, Long diskOfferingId) {
         this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.limitCpuUse = limitResourceUse;
+        this.diskOfferingId = diskOfferingId;
     }
 
     protected VMInstanceVO() {
@@ -472,9 +476,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
 	@Override
-	public long getDiskOfferingId() {
-		// TODO Auto-generated method stub
-		return 0;
+	public Long getDiskOfferingId() {
+		return diskOfferingId;
 	}
 
 }

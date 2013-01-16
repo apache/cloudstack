@@ -24,10 +24,17 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
+import org.springframework.stereotype.Component;
 
-import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceUnavailableException;
 
+@Component
 public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 	
 	@Inject private VMEntityManager manager;
@@ -185,28 +192,25 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 	}
 
 	@Override
-	public String reserve(String plannerToUse, DeployDestination dest,
-			ExcludeList exclude) {
-		// TODO Auto-generated method stub
-		return null;
+	public String reserve(String plannerToUse, DeploymentPlan plan,
+			ExcludeList exclude, String caller) throws InsufficientCapacityException, ResourceUnavailableException {
+		return manager.reserveVirtualMachine(this.vmEntityVO, plannerToUse, plan, exclude);
 	}
 
 	@Override
-	public void migrateTo(String reservationId) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void deploy(String reservationId) {
+	public void migrateTo(String reservationId, String caller) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void stop() {
-		// TODO Auto-generated method stub
+	public void deploy(String reservationId, String caller) throws InsufficientCapacityException, ResourceUnavailableException{
+	    manager.deployVirtualMachine(reservationId, caller);
+	}
 
+	@Override
+	public boolean stop(String caller) throws ResourceUnavailableException{
+	    return manager.stopvirtualmachine(this.vmEntityVO, caller);
 	}
 
 	@Override
@@ -216,9 +220,8 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 	}
 
 	@Override
-	public void destroy() {
-		// TODO Auto-generated method stub
-
+	public boolean destroy(String caller) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+		return manager.destroyVirtualMachine(this.vmEntityVO, caller);
 	}
 
 	@Override

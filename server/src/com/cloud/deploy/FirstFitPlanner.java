@@ -734,31 +734,35 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             //If the plan specifies a poolId, it means that this VM's ROOT volume is ready and the pool should be reused.
             //In this case, also check if rest of the volumes are ready and can be reused.
             if(plan.getPoolId() != null){
-                if (toBeCreated.getState() == Volume.State.Ready && toBeCreated.getPoolId() != null) {
-                    s_logger.debug("Volume is in READY state and has pool already allocated, checking if pool can be reused, poolId: "+toBeCreated.getPoolId());
-                    List<StoragePool> suitablePools = new ArrayList<StoragePool>();
-                    StoragePoolVO pool = _storagePoolDao.findById(toBeCreated.getPoolId());
-                    if(!pool.isInMaintenance()){
-                        if(!avoid.shouldAvoid(pool)){
-                            long exstPoolDcId = pool.getDataCenterId();
+                s_logger.debug("Volume has pool already allocated, checking if pool can be reused, poolId: "+toBeCreated.getPoolId());
+                List<StoragePool> suitablePools = new ArrayList<StoragePool>();
+                StoragePoolVO pool;
+                if(toBeCreated.getPoolId() != null){
+                    pool = _storagePoolDao.findById(toBeCreated.getPoolId());
+                }else{
+                    pool = _storagePoolDao.findById(plan.getPoolId());
+                }
+                
+                if(!pool.isInMaintenance()){
+                    if(!avoid.shouldAvoid(pool)){
+                        long exstPoolDcId = pool.getDataCenterId();
 
-                            long exstPoolPodId = pool.getPodId() != null ? pool.getPodId() : -1;
-                            long exstPoolClusterId = pool.getClusterId() != null ? pool.getClusterId() : -1;
-                            if(plan.getDataCenterId() == exstPoolDcId && plan.getPodId() == exstPoolPodId && plan.getClusterId() == exstPoolClusterId){
-                                s_logger.debug("Planner need not allocate a pool for this volume since its READY");
-                                suitablePools.add(pool);
-                                suitableVolumeStoragePools.put(toBeCreated, suitablePools);
-                                readyAndReusedVolumes.add(toBeCreated);
-                                continue;
-                            }else{
-                                s_logger.debug("Pool of the volume does not fit the specified plan, need to reallocate a pool for this volume");
-                            }
+                        long exstPoolPodId = pool.getPodId() != null ? pool.getPodId() : -1;
+                        long exstPoolClusterId = pool.getClusterId() != null ? pool.getClusterId() : -1;
+                        if(plan.getDataCenterId() == exstPoolDcId && plan.getPodId() == exstPoolPodId && plan.getClusterId() == exstPoolClusterId){
+                            s_logger.debug("Planner need not allocate a pool for this volume since its READY");
+                            suitablePools.add(pool);
+                            suitableVolumeStoragePools.put(toBeCreated, suitablePools);
+                            readyAndReusedVolumes.add(toBeCreated);
+                            continue;
                         }else{
-                            s_logger.debug("Pool of the volume is in avoid set, need to reallocate a pool for this volume");
+                            s_logger.debug("Pool of the volume does not fit the specified plan, need to reallocate a pool for this volume");
                         }
                     }else{
-                        s_logger.debug("Pool of the volume is in maintenance, need to reallocate a pool for this volume");
+                        s_logger.debug("Pool of the volume is in avoid set, need to reallocate a pool for this volume");
                     }
+                }else{
+                    s_logger.debug("Pool of the volume is in maintenance, need to reallocate a pool for this volume");
                 }
             }
 

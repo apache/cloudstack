@@ -55,7 +55,7 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 
 	@Override
 	public DataCenterVO loadDataCenter(String dataCenterId) {
-    	DataCenterVO dataCenterVO = _dataCenterDao.findByUUID(dataCenterId);
+    	DataCenterVO dataCenterVO = _dataCenterDao.findByUuid(dataCenterId);
     	if(dataCenterVO == null){
     		throw new InvalidParameterValueException("Zone does not exist");
     	}
@@ -86,7 +86,7 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 
 	@Override
 	public HostPodVO loadPod(String uuid) {
-		HostPodVO pod = _podDao.findByUUID(uuid);
+		HostPodVO pod = _podDao.findByUuid(uuid);
     	if(pod == null){
     		throw new InvalidParameterValueException("Pod does not exist");
     	}
@@ -95,7 +95,7 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 
 	@Override
 	public ClusterVO loadCluster(String uuid) {
-		ClusterVO cluster = _clusterDao.findByUUID(uuid);
+		ClusterVO cluster = _clusterDao.findByUuid(uuid);
     	if(cluster == null){
     		throw new InvalidParameterValueException("Pod does not exist");
     	}
@@ -114,7 +114,7 @@ public class DataCenterResourceManagerImpl implements DataCenterResourceManager 
 
 	@Override
 	public HostVO loadHost(String uuid) {
-		HostVO host = _hostDao.findByUUID(uuid);
+		HostVO host = _hostDao.findByUuid(uuid);
     	if(host == null){
     		throw new InvalidParameterValueException("Host does not exist");
     	}

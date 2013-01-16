@@ -20,6 +20,7 @@ package org.apache.cloudstack.engine.service.api;
 
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
@@ -35,6 +36,7 @@ import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.vm.NicProfile;
 
 @Path("orchestration")
 @Produces({"application/json", "application/xml"})
@@ -70,7 +72,7 @@ public interface OrchestrationService {
             @QueryParam("disk-size") Long diskSize,
             @QueryParam("compute-tags") List<String> computeTags,
             @QueryParam("root-disk-tags") List<String> rootDiskTags,
-            @QueryParam("networks") List<String> networks,
+            @QueryParam("network-nic-map") Map<String, NicProfile> networkNicMap,
             @QueryParam("deploymentplan") DeploymentPlan plan
             ) throws InsufficientCapacityException;
 
@@ -89,7 +91,7 @@ public interface OrchestrationService {
             @QueryParam("disk-size") Long diskSize,
             @QueryParam("compute-tags") List<String> computeTags,
             @QueryParam("root-disk-tags") List<String> rootDiskTags,
-            @QueryParam("networks") List<String> networks,
+            @QueryParam("network-nic-map") Map<String, NicProfile> networkNicMap,
     		@QueryParam("deploymentplan") DeploymentPlan plan
     		) throws InsufficientCapacityException;
 
@@ -107,4 +109,6 @@ public interface OrchestrationService {
 
     @POST
     TemplateEntity registerTemplate(String name, URL path, String os, Hypervisor hypervisor);
+    
+    VirtualMachineEntity getVirtualMachine(@QueryParam("id") String id);
 }

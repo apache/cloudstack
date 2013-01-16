@@ -146,13 +146,7 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
         return customSearch(sc, null);
     }
 
-	@Override
-	public HostPodVO findByUUID(String uuid) {
-    	SearchCriteria<HostPodVO> sc = UUIDSearch.create();
-    	sc.setParameters("uuid", uuid);
-        return findOneBy(sc);
-	}
-	
+
 	@Override
 	public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity podEntity, Object data) {
 		

@@ -50,6 +50,7 @@ import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.commons.codec.binary.Base64;
@@ -97,12 +98,14 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.exception.CloudException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -542,10 +545,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Account account = _accountDao.findById(user.getAccountId());
 
         try {
-            status = _itMgr.stop(vm, user, account);
+            VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
+            status = vmEntity.stop(new Long(userId).toString());            
         } catch (ResourceUnavailableException e) {
             s_logger.debug("Unable to stop due to ", e);
             status = false;
+        } catch (CloudException e) {
+            throw new CloudRuntimeException(
+                    "Unable to contact the agent to stop the virtual machine "
+                            + vm, e);
         }
 
         if (status) {
@@ -2903,8 +2911,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
-
-        List<String> networkUuidList = new ArrayList<String>();
+       
+        Map<String, NicProfile> networkNicMap = new HashMap<String, NicProfile>();
 
         short defaultNetworkNumber = 0;
         boolean securityGroupEnabled = false;
@@ -2948,7 +2956,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 vpcNetwork = true;
             }
 
-            networkUuidList.add(network.getUuid());
+            networkNicMap.put(network.getUuid(), profile);
         }
 
         if (securityGroupIdList != null && !securityGroupIdList.isEmpty()
@@ -3030,7 +3038,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 template.getId(), hypervisorType, template.getGuestOSId(),
                 offering.getOfferHA(), offering.getLimitCpuUse(),
                 owner.getDomainId(), owner.getId(), offering.getId(), userData,
-                hostName);
+                hostName, diskOfferingId);
         vm.setUuid(uuidName);
 
         if (sshPublicKey != null) {
@@ -3063,9 +3071,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         rootDiskTags.add(offering.getTags());
 
         if(isIso){
-            VirtualMachineEntity vmEntity = _orchSrvc.createVirtualMachineFromScratch(vm.getUuid(), owner.getAccountName(), vm.getIsoId().toString(), hostName, displayName, hypervisor.name(), guestOSCategory.getName(), offering.getCpu(), offering.getSpeed(), offering.getRamSize(), diskSize,  computeTags, rootDiskTags, networkUuidList, plan);
+            VirtualMachineEntity vmEntity = _orchSrvc.createVirtualMachineFromScratch(vm.getUuid(), new Long(owner.getAccountId()).toString(), vm.getIsoId().toString(), hostName, displayName, hypervisor.name(), guestOSCategory.getName(), offering.getCpu(), offering.getSpeed(), offering.getRamSize(), diskSize,  computeTags, rootDiskTags, networkNicMap, plan);
         }else {
-            VirtualMachineEntity vmEntity = _orchSrvc.createVirtualMachine(vm.getUuid(), owner.getAccountName(), new Long(template.getId()).toString(), hostName, displayName, hypervisor.name(), offering.getCpu(),  offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags, networkUuidList, plan);
+            VirtualMachineEntity vmEntity = _orchSrvc.createVirtualMachine(vm.getUuid(), new Long(owner.getAccountId()).toString(), new Long(template.getId()).toString(), hostName, displayName, hypervisor.name(), offering.getCpu(),  offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags, networkNicMap, plan);
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -3377,12 +3385,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserVO user = _userDao.findById(userId);
 
         try {
-            _itMgr.advanceStop(vm, forced, user, caller);
+            VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
+            vmEntity.stop(new Long(userId).toString());            
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException(
                     "Unable to contact the agent to stop the virtual machine "
                             + vm, e);
-        } catch (OperationTimedoutException e) {
+        } catch (CloudException e) {
             throw new CloudRuntimeException(
                     "Unable to contact the agent to stop the virtual machine "
                             + vm, e);
@@ -3533,16 +3542,17 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             params.put(VirtualMachineProfile.Param.VmPassword, password);
         }
 
-        vm = _itMgr.start(vm, params, callerUser, callerAccount, plan);
+        VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
+        
+        String reservationId = vmEntity.reserve("FirstFitPlanner", plan, new ExcludeList(), new Long(callerUser.getId()).toString());
+        vmEntity.deploy(reservationId, new Long(callerUser.getId()).toString());
 
-        Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = new Pair(
-                vm, params);
+        Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = new Pair(vm, params);
         if (vm != null && vm.isUpdateParameters()) {
             // this value is not being sent to the backend; need only for api
             // display purposes
             if (template.getEnablePassword()) {
-                vm.setPassword((String) vmParamPair.second().get(
-                        VirtualMachineProfile.Param.VmPassword));
+                vm.setPassword((String) vmParamPair.second().get(VirtualMachineProfile.Param.VmPassword));
                 vm.setUpdateParameters(false);
                 _vmDao.update(vm.getId(), vm);
             }
@@ -3579,8 +3589,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         State vmState = vm.getState();
 
         try {
-            status = _itMgr.destroy(vm, userCaller, caller);
-        } catch (OperationTimedoutException e) {
+            VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
+            status = vmEntity.destroy(new Long(userId).toString());    
+        } catch (CloudException e) {
             CloudRuntimeException ex = new CloudRuntimeException(
                     "Unable to destroy with specified vmId", e);
             ex.addProxyObject(vm, vmId, "vmId");
@@ -4503,4 +4514,5 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
     }
+
 }

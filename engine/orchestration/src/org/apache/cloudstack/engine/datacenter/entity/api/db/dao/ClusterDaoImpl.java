@@ -252,20 +252,12 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         return result;
     }
 
-
-    @Override
-    public ClusterVO findByUUID(String uuid) {
-        SearchCriteria<ClusterVO> sc = UUIDSearch.create();
-        sc.setParameters("uuid", uuid);
-        return findOneBy(sc);
-    }
-
-    @Override
-    public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity clusterEntity, Object data) {
-
-        ClusterVO vo = findById(clusterEntity.getId());
-
-        Date oldUpdatedTime = vo.getLastUpdated();
+	@Override
+	public boolean updateState(State currentState, Event event, State nextState, DataCenterResourceEntity clusterEntity, Object data) {
+		
+		ClusterVO vo = findById(clusterEntity.getId());
+		
+		Date oldUpdatedTime = vo.getLastUpdated();
 
         SearchCriteria<ClusterVO> sc = StateChangeSearch.create();
         sc.setParameters("id", vo.getId());

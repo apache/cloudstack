@@ -182,6 +182,12 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Transient
     List<String> networkIds;
 
+    @Column(name="disk_offering_id")
+    protected Long diskOfferingId;
+    
+    @Transient
+    private VMReservationVO vmReservation;
+    
 
     public VMEntityVO(long id,
             long serviceOfferingId,
@@ -193,7 +199,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
             long guestOSId,
             long domainId,
             long accountId,
-            boolean haEnabled) {
+            boolean haEnabled, Long diskOfferingId) {
         this.id = id;
         this.hostName = name != null ? name : this.uuid;
         if (vmTemplateId != null) {
@@ -210,6 +216,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
         this.serviceOfferingId = serviceOfferingId;
         this.hypervisorType = hypervisorType;
         this.limitCpuUse = false;
+        this.diskOfferingId = diskOfferingId;
     }
 
     public VMEntityVO(long id,
@@ -224,7 +231,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
             long accountId,
             boolean haEnabled,
             boolean limitResourceUse) {
-        this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
+        this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, haEnabled, null);
         this.limitCpuUse = limitResourceUse;
     }
 
@@ -557,10 +564,17 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
         this.networkIds = networkIds;
     }
 
-    @Override
-    public long getDiskOfferingId() {
-        // TODO Auto-generated method stub
-        return 0;
+	@Override
+	public Long getDiskOfferingId() {
+		return diskOfferingId;
+	}
+
+    public VMReservationVO getVmReservation() {
+        return vmReservation;
+    }
+
+    public void setVmReservation(VMReservationVO vmReservation) {
+        this.vmReservation = vmReservation;
     }
 
 }

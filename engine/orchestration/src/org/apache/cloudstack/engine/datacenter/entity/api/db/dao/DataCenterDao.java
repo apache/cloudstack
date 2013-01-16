@@ -52,5 +52,4 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long>, StateDao<
 
 	List<DataCenterVO> findByKeyword(String keyword);
 
-	DataCenterVO findByUUID(String uuid);
 }

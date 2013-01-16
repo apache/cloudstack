@@ -28,9 +28,15 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.apache.cloudstack.engine.entity.api.CloudStackEntity;
 
-import com.cloud.deploy.DeployDestination;
+
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.vm.VirtualMachine;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.CloudException;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
+
 
 /**
  * VirtualMachineEntity represents a Virtual Machine in Cloud Orchestration 
@@ -78,33 +84,33 @@ public interface VirtualMachineEntity extends CloudStackEntity {
     void delTag();
 
     /**
-     * Start the virtual machine with a given deploy destination
+     * Start the virtual machine with a given deployment plan
      * @param plannerToUse the Deployment Planner that should be used 
-     * @param dest destination to which to deploy the machine
+     * @param plan plan to which to deploy the machine
      * @param exclude list of areas to exclude
      * @return a reservation id
      */
-    String reserve(String plannerToUse, @BeanParam DeployDestination dest, ExcludeList exclude);
+    String reserve(String plannerToUse, @BeanParam DeploymentPlan plan, ExcludeList exclude, String caller) throws InsufficientCapacityException, ResourceUnavailableException;
 
     /**
      * Migrate this VM to a certain destination.
      * 
      * @param reservationId reservation id from reserve call.
      */
-    void migrateTo(String reservationId);
+    void migrateTo(String reservationId, String caller);
 
     /**
      * Deploy this virtual machine according to the reservation from before.
      * @param reservationId reservation id from reserve call.
      * 
      */
-    void deploy(String reservationId);
+    void deploy(String reservationId, String caller) throws InsufficientCapacityException, ResourceUnavailableException;
 
     /**
      * Stop the virtual machine
      * 
      */
-    void stop();
+    boolean stop(String caller) throws ResourceUnavailableException, CloudException;
 
     /**
      * Cleans up after any botched starts.  CloudStack Orchestration Platform
@@ -116,7 +122,7 @@ public interface VirtualMachineEntity extends CloudStackEntity {
     /**
      * Destroys the VM.
      */
-    void destroy();
+    boolean destroy(String caller) throws AgentUnavailableException, CloudException, ConcurrentOperationException;
 
     /**
      * Duplicate this VM in the database so that it will start new

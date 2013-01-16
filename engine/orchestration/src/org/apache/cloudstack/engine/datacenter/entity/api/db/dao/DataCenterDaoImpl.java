@@ -75,13 +75,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         return findOneBy(sc);
     }
 
-    @Override
-    public DataCenterVO findByUUID(String uuid) {
-        SearchCriteria<DataCenterVO> sc = UUIDSearch.create();
-        sc.setParameters("uuid", uuid);
-        return findOneBy(sc);
-    }
-
+    
     @Override
     public DataCenterVO findByToken(String zoneToken){
         SearchCriteria<DataCenterVO> sc = TokenSearch.create();

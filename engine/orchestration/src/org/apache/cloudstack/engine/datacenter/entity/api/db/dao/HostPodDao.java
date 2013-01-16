@@ -30,7 +30,4 @@ public interface HostPodDao extends GenericDao<HostPodVO, Long>, StateDao<DataCe
 	public HashMap<Long, List<Object>> getCurrentPodCidrSubnets(long zoneId, long podIdToSkip);
 
     public List<Long> listDisabledPods(long zoneId);
-
-	public HostPodVO findByUUID(String uuid);
-
 }

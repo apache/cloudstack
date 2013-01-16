@@ -617,9 +617,4 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         return result;
     }
 
-	@Override
-	public VMInstanceVO findByUUID(String uuid) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 }
