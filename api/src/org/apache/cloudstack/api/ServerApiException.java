@@ -15,10 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api;
-import com.cloud.utils.exception.RuntimeCloudException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @SuppressWarnings("serial")
-public class ServerApiException extends RuntimeCloudException {
+public class ServerApiException extends CloudRuntimeException {
     private int _errorCode;
     private String _description;
 

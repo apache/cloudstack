@@ -17,9 +17,9 @@
 package com.cloud.async;
 
 import com.cloud.utils.SerialVersionUID;
-import com.cloud.utils.exception.RuntimeCloudException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-public class AsyncCommandQueued extends RuntimeCloudException {
+public class AsyncCommandQueued extends CloudRuntimeException {
     private static final long serialVersionUID = SerialVersionUID.AsyncCommandQueued;
 
     private SyncQueueVO _queue = null;
