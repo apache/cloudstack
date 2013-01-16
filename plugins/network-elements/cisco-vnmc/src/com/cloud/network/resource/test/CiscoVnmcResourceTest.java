@@ -204,6 +204,7 @@ public class CiscoVnmcResourceTest {
 		}
 	}
 	
+	@Ignore
 	@Test
 	public void testAssociateNatPolicySet() {
 		try {
@@ -215,4 +216,14 @@ public class CiscoVnmcResourceTest {
 		}
 	}
 	
+	@Test
+	public void testCreateEdgeFirewall() {
+		try {
+			boolean response = resource.createEdgeFirewall(tenantName, 
+					"44.44.44.44", "192.168.1.1", "255.255.255.0", "255.255.255.192"); 
+			assertTrue(response);
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+	}
 }

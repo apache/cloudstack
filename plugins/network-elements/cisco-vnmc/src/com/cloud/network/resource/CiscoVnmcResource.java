@@ -94,10 +94,8 @@ public class CiscoVnmcResource implements ServerResource {
         CREATE_SOURCE_NAT_POOL("create-source-nat-pool.xml", "policy-mgr"),
         CREATE_SOURCE_NAT_POLICY("create-source-nat-policy.xml", "policy-mgr"),
         CREATE_NAT_POLICY_SET("create-nat-policy-set.xml", "policy-mgr"),
-        RESOLVE_NAT_POLICY_SET("associate-nat-policy-set.xml", "policy-mgr");
-
-
-
+        RESOLVE_NAT_POLICY_SET("associate-nat-policy-set.xml", "policy-mgr"),
+        CREATE_EDGE_FIREWALL("create-edge-firewall.xml", "resource-mgr");
 
         private String scriptsDir = "scripts/network/cisco";
         private String xml;
@@ -697,6 +695,63 @@ public class CiscoVnmcResource implements ServerResource {
     	String response =  sendRequest(service, xml);
 
     	return verifySuccess(response);
+    }
+    
+    private String getNameForEdgeFirewall(String tenantName) {
+    	return "ASA-1000v-" + tenantName;
+    }
+    
+    private String getDnForEdgeFirewall(String tenantName) {
+    	return getDnForTenantVDC(tenantName) + "/efw-" + getNameForEdgeFirewall(tenantName);
+    }
+    
+    private String getNameForEdgeInsideIntf(String tenantName) {
+    	return "Edge_Inside";
+    }
+    
+    private String getNameForEdgeOutsideIntf(String tenantName) {
+    	return "Edge_Outside";
+    }
+    
+    private String getDnForOutsideIntf(String tenantName) {
+    	return getDnForEdgeFirewall(tenantName) + "/interface-" + getNameForEdgeOutsideIntf(tenantName);
+    }
+    
+    private String getDnForInsideIntf(String tenantName) {
+    	return getDnForEdgeFirewall(tenantName) + "/interface-" + getNameForEdgeInsideIntf(tenantName);
+    }
+    
+    public boolean createEdgeFirewall(String tenantName, String publicIp, String insideIp, 
+    		String insideSubnet, String outsideSubnet) throws ExecutionException {
+    	
+    	String xml = VnmcXml.CREATE_EDGE_FIREWALL.getXml();
+    	String service = VnmcXml.CREATE_EDGE_FIREWALL.getService();
+    	xml = replaceXmlValue(xml, "cookie", _cookie);
+    	xml = replaceXmlValue(xml, "edgefwdescr", "Edge Firewall for Tenant VDC " + tenantName);
+    	xml = replaceXmlValue(xml, "edgefwname", getNameForEdgeFirewall(tenantName));
+    	xml = replaceXmlValue(xml, "edgefwdn", getDnForEdgeFirewall(tenantName));
+    	xml = replaceXmlValue(xml, "insideintfname", getNameForEdgeInsideIntf(tenantName));
+    	xml = replaceXmlValue(xml, "outsideintfname", getNameForEdgeOutsideIntf(tenantName));
+
+    	xml = replaceXmlValue(xml, "insideintfdn", getDnForInsideIntf(tenantName));
+    	xml = replaceXmlValue(xml, "outsideintfdn", getDnForOutsideIntf(tenantName));
+
+    	xml = replaceXmlValue(xml, "deviceserviceprofiledn", getDnForEdgeFirewall(tenantName) + "/device-service-profile");
+    	xml = replaceXmlValue(xml, "outsideintfsp", getDnForOutsideIntf(tenantName)  + "/interface-service-profile");
+
+    	xml = replaceXmlValue(xml, "secprofileref", getNameForEdgeDeviceSecurityProfile(tenantName));
+    	xml = replaceXmlValue(xml, "deviceserviceprofile", getNameForEdgeDeviceServiceProfile(tenantName));
+
+
+    	xml = replaceXmlValue(xml, "insideip", insideIp);
+    	xml = replaceXmlValue(xml, "publicip", publicIp);
+    	xml = replaceXmlValue(xml, "insidesubnet", insideSubnet);
+    	xml = replaceXmlValue(xml, "outsidesubnet", outsideSubnet);
+    	
+    	String response =  sendRequest(service, xml);
+
+    	return verifySuccess(response);
+
     }
 
     private String sendRequest(String service, String xmlRequest) throws ExecutionException {
