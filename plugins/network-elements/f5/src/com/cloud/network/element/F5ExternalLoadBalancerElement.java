@@ -122,7 +122,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     ConfigurationDao _configDao;
 
     private boolean canHandle(Network config) {
-        if ((config.getGuestType() != Network.GuestType.Isolated && config.getGuestType() != Network.GuestType.Shared) || config.getTrafficType() != TrafficType.Guest) {
+        if (config.getGuestType() != Network.GuestType.Isolated || config.getTrafficType() != TrafficType.Guest) {
             s_logger.trace("Not handling network with Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType());
             return false;
         }
