@@ -1,0 +1,14 @@
+<configConfMo
+dn=""
+cookie="1349366974/592be573-8a27-48d3-aab1-cf6cb94f23ab"
+inHierarchical="false">
+    <inConfig>
+<fwResourceBinding
+assignedToDn="fw/inst-1007"
+
+dn="org-root/org-TenantD/org-VDC-TenantD/efw-ASA-1000v-TenantD/binding"
+
+status="created"/>
+    </inConfig>
+</configConfMo>
+

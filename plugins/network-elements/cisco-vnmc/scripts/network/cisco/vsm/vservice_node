@@ -1,0 +1,6 @@
+vservice node ASA_vlanid type asa
+  ip address 10.1.1.1
+  adjacency l2 vlan vlanid
+  fail-mode close
+
+
