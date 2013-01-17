@@ -20,7 +20,6 @@ package org.apache.cloudstack.engine.rest.service.api;
 
 import java.util.List;
 
-import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -38,7 +37,7 @@ import org.springframework.stereotype.Service;
 @Service("ClusterRestService")
 @Produces("application/json")
 public class ClusterRestService {
-    @Inject
+//    @Inject
     ProvisioningService _provisioningService;
 
     @GET @Path("/clusters")

@@ -159,12 +159,18 @@
     <testSourceDirectory>test</testSourceDirectory>
     <testResources>
       <testResource>
+        <directory>${project.basedir}/test/resources</directory>
+      </testResource>
+    </testResources>
+    <!-- 
+    <testResources>
+      <testResource>
         <directory>test/resources</directory>
       </testResource>
       <testResource>
         <directory>conf</directory>
       </testResource>
-    </testResources>    
+    </testResources> -->    
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

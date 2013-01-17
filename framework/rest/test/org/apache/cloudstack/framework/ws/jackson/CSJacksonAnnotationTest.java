@@ -27,6 +27,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
@@ -41,7 +42,7 @@ public class CSJacksonAnnotationTest {
     public void setUp() throws Exception {
     }
 
-    @Test
+    @Test @Ignore
     public void test() {
         ObjectMapper mapper = new ObjectMapper();
         JaxbAnnotationModule jaxbModule = new JaxbAnnotationModule();

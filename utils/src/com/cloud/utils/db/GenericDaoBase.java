@@ -176,7 +176,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         return builder;
     }
 
-    public final Map<String, Attribute> getAllAttributes() {
+    public Map<String, Attribute> getAllAttributes() {
         return _allAttributes;
     }
 
@@ -1222,7 +1222,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     public List<T> search(final SearchCriteria<T> sc, final Filter filter) {
         return search(sc, filter, null, false);
     }
-    
+
     @Override @DB(txn=false)
     public Pair<List<T>, Integer> searchAndCount(final SearchCriteria<T> sc, final Filter filter) {
         List<T> objects = search(sc, filter, null, false);
@@ -1832,14 +1832,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             if (joins != null) {
                 i = addJoinAttributes(i, pstmt, joins);
             }
-            
+
             /*
             if (groupByValues != null) {
                 for (Object value : groupByValues) {
                     pstmt.setObject(i++, value);
                 }
             }
-            */
+             */
 
             final ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
@@ -1863,5 +1863,5 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
         return sql;
     }
-    
+
 }

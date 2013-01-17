@@ -43,7 +43,7 @@
   </issueManagement>
 
   <properties>
-    <skipTests>true</skipTests>
+    <!-- <skipTests>true</skipTests-->
     <cs.jdk.version>1.6</cs.jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 

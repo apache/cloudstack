@@ -20,7 +20,6 @@ package org.apache.cloudstack.engine.rest.service.api;
 
 import java.util.List;
 
-import javax.inject.Inject;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -39,7 +38,7 @@ import org.springframework.stereotype.Service;
 @Service("zoneService")
 @Produces({"application/json"})
 public class ZoneRestService {
-    @Inject
+//    @Inject
     ProvisioningService _provisioningService;
 
     @GET @Path("/zones")

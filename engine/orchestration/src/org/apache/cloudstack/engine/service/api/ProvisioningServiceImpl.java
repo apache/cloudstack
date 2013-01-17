@@ -22,15 +22,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-
 import javax.inject.Inject;
-import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntityImpl;
-import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceManager;
 import org.apache.cloudstack.engine.datacenter.entity.api.HostEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.HostEntityImpl;
@@ -42,21 +38,20 @@ import org.apache.cloudstack.engine.datacenter.entity.api.ZoneEntityImpl;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-import com.cloud.dc.Pod;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.storage.StoragePool;
 
 
-
+@Component
 @Service("provisioningService")
 @Path("/provisioning")
 public class ProvisioningServiceImpl implements ProvisioningService {
 
-	@Inject
-	DataCenterResourceManager manager;
-	
-	@Override
+    @Inject
+    DataCenterResourceManager manager;
+
+    @Override
     public StorageEntity registerStorage(String name, List<String> tags, Map<String, String> details) {
         // TODO Auto-generated method stub
         return null;
@@ -64,41 +59,41 @@ public class ProvisioningServiceImpl implements ProvisioningService {
 
     @Override
     public ZoneEntity registerZone(String zoneUuid, String name, String owner, List<String> tags, Map<String, String> details) {
-    	ZoneEntityImpl zoneEntity = new ZoneEntityImpl(zoneUuid, manager);
-    	zoneEntity.setName(name);
-    	zoneEntity.setOwner(owner);
-    	zoneEntity.setDetails(details);
-    	zoneEntity.persist();
-    	return zoneEntity;
+        ZoneEntityImpl zoneEntity = new ZoneEntityImpl(zoneUuid, manager);
+        zoneEntity.setName(name);
+        zoneEntity.setOwner(owner);
+        zoneEntity.setDetails(details);
+        zoneEntity.persist();
+        return zoneEntity;
     }
 
     @Override
     public PodEntity registerPod(String podUuid, String name, String owner, String zoneUuid, List<String> tags, Map<String, String> details) {
-    	PodEntityImpl podEntity = new PodEntityImpl(podUuid, manager);
-    	podEntity.setOwner(owner);
-    	podEntity.setName(name);
-    	podEntity.persist();
-    	return podEntity;
+        PodEntityImpl podEntity = new PodEntityImpl(podUuid, manager);
+        podEntity.setOwner(owner);
+        podEntity.setName(name);
+        podEntity.persist();
+        return podEntity;
     }
 
     @Override
     public ClusterEntity registerCluster(String clusterUuid, String name, String owner, List<String> tags, Map<String, String> details) {
-    	ClusterEntityImpl clusterEntity = new ClusterEntityImpl(clusterUuid, manager);
-    	clusterEntity.setOwner(owner);
-    	clusterEntity.setName(name);
-    	clusterEntity.persist();
-    	return clusterEntity;
+        ClusterEntityImpl clusterEntity = new ClusterEntityImpl(clusterUuid, manager);
+        clusterEntity.setOwner(owner);
+        clusterEntity.setName(name);
+        clusterEntity.persist();
+        return clusterEntity;
     }
 
     @Override
     public HostEntity registerHost(String hostUuid, String name, String owner, List<String> tags, Map<String, String> details) {
-    	HostEntityImpl hostEntity = new HostEntityImpl(hostUuid, manager);
-    	hostEntity.setOwner(owner);
-    	hostEntity.setName(name);
-    	hostEntity.setDetails(details);
-    	
-    	hostEntity.persist();
-    	return hostEntity;
+        HostEntityImpl hostEntity = new HostEntityImpl(hostUuid, manager);
+        hostEntity.setOwner(owner);
+        hostEntity.setName(name);
+        hostEntity.setDetails(details);
+
+        hostEntity.persist();
+        return hostEntity;
     }
 
     @Override
@@ -109,27 +104,27 @@ public class ProvisioningServiceImpl implements ProvisioningService {
 
     @Override
     public void deregisterZone(String uuid) {
-    	ZoneEntityImpl zoneEntity = new ZoneEntityImpl(uuid, manager);
-    	zoneEntity.disable();
+        ZoneEntityImpl zoneEntity = new ZoneEntityImpl(uuid, manager);
+        zoneEntity.disable();
     }
 
     @Override
     public void deregisterPod(String uuid) {
-    	PodEntityImpl podEntity = new PodEntityImpl(uuid, manager);
-    	podEntity.disable();
+        PodEntityImpl podEntity = new PodEntityImpl(uuid, manager);
+        podEntity.disable();
     }
 
     @Override
     public void deregisterCluster(String uuid) {
-    	ClusterEntityImpl clusterEntity = new ClusterEntityImpl(uuid, manager);
-    	clusterEntity.disable();
+        ClusterEntityImpl clusterEntity = new ClusterEntityImpl(uuid, manager);
+        clusterEntity.disable();
 
     }
 
     @Override
     public void deregisterHost(String uuid) {
-    	HostEntityImpl hostEntity = new HostEntityImpl(uuid, manager);
-    	hostEntity.disable();
+        HostEntityImpl hostEntity = new HostEntityImpl(uuid, manager);
+        hostEntity.disable();
     }
 
     @Override

@@ -17,13 +17,20 @@
 package com.cloud.utils.db;
 
 import org.apache.log4j.Logger;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import junit.framework.Assert;
 
 import com.cloud.utils.Profiler;
 import com.cloud.utils.testcase.Log4jEnabledTestCase;
 
-public class GlobalLockTest extends Log4jEnabledTestCase{
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations="classpath:/testContext.xml")
+public class GlobalLockTest {
     public static final Logger s_logger = Logger.getLogger(GlobalLockTest.class);
     private final static GlobalLock _workLock = GlobalLock.getInternLock("SecurityGroupWork");
     public static class Worker implements Runnable {
@@ -56,6 +63,7 @@ public class GlobalLockTest extends Log4jEnabledTestCase{
         }
     }
 
+    @Test
     public void testTimeout() {
         Thread [] pool = new Thread[50];
         for (int i=0; i < pool.length; i++) {

@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.engine.rest.service.api;
 
-import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -36,7 +35,7 @@ import org.springframework.stereotype.Service;
 @Service("PodService")
 @Produces({"application/json"})
 public class PodRestService {
-    @Inject
+//  @Inject
     ProvisioningService _provisioningService;
 
     @GET @Path("/pod/{pod-id}")
