@@ -676,48 +676,65 @@ public class EC2RestServlet extends HttpServlet {
         String[] groupName = request.getParameterValues( "GroupName" );
 		if ( null != groupName && 0 < groupName.length ) 
 			 EC2request.setName( groupName[0] );
-		else { response.sendError(530, "Missing GroupName parameter" ); return; }
+        else { response.sendError(530, "Missing GroupName parameter" ); return; }
 
-		EC2IpPermission perm = new EC2IpPermission();       	
+        // -> not clear how many parameters there are until we fail to get IpPermissions.n.IpProtocol
+        int nCount = 1, mCount;
+        do  {
+            EC2IpPermission perm = new EC2IpPermission();
 
-        String[] protocol = request.getParameterValues( "IpProtocol" );
-		if ( null != protocol && 0 < protocol.length ) 
-		     perm.setProtocol( protocol[0] );
-		else { response.sendError(530, "Missing IpProtocol parameter" ); return; }
+            String[] protocol = request.getParameterValues( "IpPermissions." + nCount + ".IpProtocol" );
+            if ( null != protocol && 0 < protocol.length )
+                perm.setProtocol( protocol[0]);
+            else break;
 
-        String[] fromPort = request.getParameterValues( "FromPort" );
-	    if ( null != fromPort && 0 < fromPort.length ) 
-	    	 perm.setProtocol( fromPort[0] );
-		else { response.sendError(530, "Missing FromPort parameter" ); return; }
+            String[] fromPort = request.getParameterValues( "IpPermissions." + nCount + ".FromPort" );
+            if ( null != fromPort && 0 < fromPort.length)
+                perm.setFromPort( Integer.parseInt( fromPort[0]));
 
-        String[] toPort = request.getParameterValues( "ToPort" );
-		if ( null != toPort && 0 < toPort.length ) 
-			 perm.setProtocol( toPort[0] );
-		else { response.sendError(530, "Missing ToPort parameter" ); return; }
-		    		    
-	    String[] ranges = request.getParameterValues( "CidrIp" );
-		if ( null != ranges && 0 < ranges.length) 
-		 	 perm.addIpRange( ranges[0] );
-		else { response.sendError(530, "Missing CidrIp parameter" ); return; }
-		
-	    String[] user = request.getParameterValues( "SourceSecurityGroupOwnerId" );
-		if ( null == user || 0 == user.length) { 
-		     response.sendError(530, "Missing SourceSecurityGroupOwnerId parameter" ); 
-		     return; 
-		}
-	
-		String[] name = request.getParameterValues( "SourceSecurityGroupName" );
-		if ( null == name || 0 == name.length) {
-		     response.sendError(530, "Missing SourceSecurityGroupName parameter" ); 
-		     return; 		
-		}
+            String[] toPort = request.getParameterValues( "IpPermissions." + nCount + ".ToPort" );
+            if ( null != toPort && 0 < toPort.length)
+                perm.setToPort( Integer.parseInt( toPort[0]));
 
-		EC2SecurityGroup group = new EC2SecurityGroup();
-		group.setAccount( user[0] );
-		group.setName( name[0] );
-		perm.addUser( group );
-	    EC2request.addIpPermission( perm );	
-		
+            // -> list: IpPermissions.n.IpRanges.m.CidrIp
+            mCount = 1;
+            do {
+                String[] ranges = request.getParameterValues( "IpPermissions." + nCount + ".IpRanges." + mCount + ".CidrIp" );
+                if ( null != ranges && 0 < ranges.length)
+                    perm.addIpRange( ranges[0]);
+                else break;
+                mCount++;
+            } while( true );
+
+            // -> list: IpPermissions.n.Groups.m.UserId and IpPermissions.n.Groups.m.GroupName
+            mCount = 1;
+            do {
+                EC2SecurityGroup group = new EC2SecurityGroup();
+
+                String[] user = request.getParameterValues( "IpPermissions." + nCount + ".Groups." + mCount + ".UserId" );
+                if ( null != user && 0 < user.length)
+                    group.setAccount( user[0]);
+                else break;
+
+                String[] name = request.getParameterValues( "IpPermissions." + nCount + ".Groups." + mCount + ".GroupName" );
+                if ( null != name && 0 < name.length)
+                    group.setName( name[0]);
+                else break;
+
+                perm.addUser( group);
+                mCount++;
+            } while( true );
+
+            // -> multiple IP permissions can be specified per group name
+            EC2request.addIpPermission( perm);
+            nCount++;
+        } while( true );
+
+        if (1 == nCount) {
+            response.sendError(530, "At least one IpPermissions required" );
+            return;
+        }
+
 	    // -> execute the request
         RevokeSecurityGroupIngressResponse EC2response = EC2SoapServiceImpl.toRevokeSecurityGroupIngressResponse( 
         		ServiceProvider.getInstance().getEC2Engine().revokeSecurityGroup( EC2request ));
@@ -732,7 +749,7 @@ public class EC2RestServlet extends HttpServlet {
         String[] groupName = request.getParameterValues( "GroupName" );
 		if ( null != groupName && 0 < groupName.length ) 
 			 EC2request.setName( groupName[0] );
-		else { response.sendError(530, "Missing GroupName parameter" ); return; }
+        else { response.sendError(530, "Missing GroupName parameter" ); return; }
 
 		// -> not clear how many parameters there are until we fail to get IpPermissions.n.IpProtocol
 		int nCount = 1;
@@ -754,7 +771,7 @@ public class EC2RestServlet extends HttpServlet {
 			int mCount = 1;
 	        do 
 	        {  String[] ranges = request.getParameterValues( "IpPermissions." + nCount + ".IpRanges." + mCount + ".CidrIp" );
-		       if ( null != ranges && 0 < ranges.length) 
+               if ( null != ranges && 0 < ranges.length)
 		    	    perm.addIpRange( ranges[0] );
 		       else break;
 		       mCount++;

@@ -709,58 +709,27 @@ public class EC2Engine {
 			throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
 		}
 	}
+
 	/**
-	 * Lists SSH KeyPairs on the systme
+     * Lists SSH KeyPairs on the system
 	 * 
 	 * @param request
 	 * @return
 	 */
 	public EC2DescribeKeyPairsResponse describeKeyPairs( EC2DescribeKeyPairs request ) {
-		try {
-			EC2KeyPairFilterSet filterSet = request.getKeyFilterSet();
-			String[] keyNames = request.getKeyNames();
-			List<CloudStackKeyPair> keyPairs = getApi().listSSHKeyPairs(null, null, null);
-			List<EC2SSHKeyPair> keyPairsList = new ArrayList<EC2SSHKeyPair>();
-	
-			if (keyPairs != null) {
-				// Let's trim the list of keypairs to only the ones listed in keyNames
-			    List<CloudStackKeyPair> matchedKeyPairs = new ArrayList<CloudStackKeyPair>();
-				if (keyNames != null && keyNames.length > 0) {
-					for (CloudStackKeyPair keyPair : keyPairs) {
-						boolean matched = false;
-						for (String keyName : keyNames) {
-							if (keyPair.getName().equalsIgnoreCase(keyName)) {
-								matched = true;
-								break;
-							}
-						}
-						if (matched) {
-						    matchedKeyPairs.add(keyPair);
-						}
-					}
-	                if (matchedKeyPairs.isEmpty()) {
-	                    throw new EC2ServiceException(ServerError.InternalError, "No matching keypairs found");
-	                }
-				}else{
-				    matchedKeyPairs = keyPairs;
-				}
-	
-	
-				// this should be reworked... converting from CloudStackKeyPairResponse to EC2SSHKeyPair is dumb
-				for (CloudStackKeyPair respKeyPair: matchedKeyPairs) {
-					EC2SSHKeyPair ec2KeyPair = new EC2SSHKeyPair();
-					ec2KeyPair.setFingerprint(respKeyPair.getFingerprint());
-					ec2KeyPair.setKeyName(respKeyPair.getName());
-					ec2KeyPair.setPrivateKey(respKeyPair.getPrivatekey());
-					keyPairsList.add(ec2KeyPair);
-				}
-			}
-			return filterSet.evaluate(keyPairsList);
-		} catch(Exception e) {
-			logger.error("EC2 DescribeKeyPairs - ", e);
-			throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
-		}
-	}
+        try {
+            EC2DescribeKeyPairsResponse response = listKeyPairs(request.getKeyNames());
+            EC2KeyPairFilterSet kfs = request.getKeyFilterSet();
+
+            if (kfs == null)
+                return response;
+            else
+                return kfs.evaluate(response);
+        } catch(Exception e) {
+            logger.error("EC2 DescribeKeyPairs - ", e);
+            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+        }
+    }
 
 	/**
 	 * Delete SSHKeyPair
@@ -2074,6 +2043,38 @@ public class EC2Engine {
 			throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
 		}
 			}
+
+    private EC2DescribeKeyPairsResponse listKeyPairs( String[] keyNames ) throws Exception {
+        try {
+            EC2DescribeKeyPairsResponse keyPairSet = new EC2DescribeKeyPairsResponse();
+
+            List<CloudStackKeyPair> keyPairs = getApi().listSSHKeyPairs(null, null, null);
+            if (keyPairs != null && keyPairs.size() > 0) {
+                for (CloudStackKeyPair keyPair : keyPairs) {
+                    boolean matched = false;
+                    if (keyNames.length > 0) {
+                        for (String keyName : keyNames) {
+                            if (keyName.equalsIgnoreCase(keyPair.getName())) {
+                                matched = true;
+                                break;
+                            }
+                        }
+                    } else matched = true;
+                    if (!matched) continue;
+                    EC2SSHKeyPair ec2KeyPair = new EC2SSHKeyPair();
+                    ec2KeyPair.setFingerprint(keyPair.getFingerprint());
+                    ec2KeyPair.setKeyName(keyPair.getName());
+                    ec2KeyPair.setPrivateKey(keyPair.getPrivatekey());
+
+                    keyPairSet.addKeyPair(ec2KeyPair);
+                }
+            }
+            return keyPairSet;
+        } catch(Exception e) {
+            logger.error( "List Keypairs - ", e);
+            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+        }
+    }
 
 	/**
 	 * Convert ingress rule to EC2IpPermission records
