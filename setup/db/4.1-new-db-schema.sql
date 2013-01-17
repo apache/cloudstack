@@ -42,8 +42,6 @@ alter table cluster add column created datetime COMMENT 'date created';
 alter table cluster add column lastUpdated datetime COMMENT 'last updated';
 alter table cluster add column engine_state varchar(32) NOT NULL COMMENT 'the engine state of the zone';
 
-alter table data_center add column removed datetime COMMENT 'date removed';
-
 CREATE TABLE `cloud`.`data_store_provider` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) NOT NULL COMMENT 'name of primary data store provider',
