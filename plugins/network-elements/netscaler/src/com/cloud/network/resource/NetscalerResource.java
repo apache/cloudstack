@@ -369,7 +369,7 @@ public class NetscalerResource implements ServerResource {
         cmd.setPod("");
         cmd.setPrivateIpAddress(_ip);
         cmd.setStorageIpAddress("");
-        cmd.setVersion("");
+        cmd.setVersion(NetscalerResource.class.getPackage().getImplementationVersion());
         cmd.setGuid(_guid);
         return new StartupCommand[]{cmd};
     }

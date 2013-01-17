@@ -166,7 +166,7 @@ public class NiciraNvpResource implements ServerResource {
         sc.setPod("");
         sc.setPrivateIpAddress("");
         sc.setStorageIpAddress("");
-        sc.setVersion("");
+        sc.setVersion(NiciraNvpResource.class.getPackage().getImplementationVersion());
         return new StartupCommand[] { sc };
     }
 
