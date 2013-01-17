@@ -16,28 +16,29 @@
 // under the License.
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.PlugService;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
-import com.cloud.api.ServerApiException;
+
 import com.cloud.api.response.CiscoVnmcResourceResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.cisco.CiscoVnmcResourceVO;
+import com.cloud.network.cisco.CiscoVnmcController;
 import com.cloud.network.element.CiscoVnmcElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=CiscoVnmcResourceResponse.class, description="Adds a Cisco Vnmc Controller")
+@APICommand(responseObject=CiscoVnmcResourceResponse.class, description="Adds a Cisco Vnmc Controller")
 public class AddCiscoVnmcResourceCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(AddCiscoVnmcResourceCmd.class.getName());
     private static final String s_name = "addCiscoVnmcResource";
@@ -47,8 +48,7 @@ public class AddCiscoVnmcResourceCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class, required=true, description="the Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name=ApiConstants.HOST_NAME, type=CommandType.STRING, required = true, description="Hostname of ip address of the Cisco VNMC Controller.")
@@ -89,7 +89,7 @@ public class AddCiscoVnmcResourceCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            CiscoVnmcResourceVO CiscoVnmcResourceVO = _ciscoVnmcElementService.addCiscoVnmcResource(this);
+            CiscoVnmcController CiscoVnmcResourceVO = _ciscoVnmcElementService.addCiscoVnmcResource(this);
             if (CiscoVnmcResourceVO != null) {
                 CiscoVnmcResourceResponse response = _ciscoVnmcElementService.createCiscoVnmcResourceResponse(CiscoVnmcResourceVO);
                 response.setObjectName("CiscoVnmcResource");

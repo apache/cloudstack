@@ -16,21 +16,27 @@
 // under the License.
 package com.cloud.api.response;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
-import com.google.gson.annotations.SerializedName;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+
+import com.cloud.network.cisco.CiscoVnmcController;
+import com.google.gson.annotations.SerializedName;
+@EntityReference(value = CiscoVnmcController.class)
 public class CiscoVnmcResourceResponse extends BaseResponse {
     public static final String RESOURCE_NAME = "resourcename";
 
-    @SerializedName(ApiConstants.RESOURCE_ID) @Param(description="resource id of the Cisco  VNMC controller")
-    private IdentityProxy id = new IdentityProxy("external_cisco_vnmc_resources");
+    @SerializedName(ApiConstants.RESOURCE_ID) @Parameter(description="resource id of the Cisco  VNMC controller")
+    private String id;
     
-    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network to which this VNMC belongs to")
-    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) 
+    @Parameter(description="the physical network to which this VNMC belongs to", entityType = PhysicalNetworkResponse.class)
+    private Long physicalNetworkId ;
     
-    public IdentityProxy getPhysicalNetworkId() {
+    public Long getPhysicalNetworkId() {
 		return physicalNetworkId;
 	}
 
@@ -42,19 +48,19 @@ public class CiscoVnmcResourceResponse extends BaseResponse {
 		return resourceName;
 	}
 
-	@SerializedName(ApiConstants.PROVIDER) @Param(description="name of the provider")
+	@SerializedName(ApiConstants.PROVIDER) @Parameter(description="name of the provider")
     private String providerName;
     
     @SerializedName(RESOURCE_NAME) 
-    @Param(description="Cisco VNMC resource name")
+    @Parameter(description="Cisco VNMC resource name")
     private String resourceName;
 
-    public void setId(long ciscoVnmcResourceId) {
-        this.id.setValue(ciscoVnmcResourceId);
+    public void setId(String ciscoVnmcResourceId) {
+        this.id = ciscoVnmcResourceId;
     }
 
-    public void setPhysicalNetworkId(long physicalNetworkId) {
-        this.physicalNetworkId.setValue(physicalNetworkId);
+    public void setPhysicalNetworkId(Long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
     }
 
     public void setProviderName(String providerName) {

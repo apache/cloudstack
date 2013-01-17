@@ -139,12 +139,6 @@ public class CiscoVnmcElement implements DhcpServiceProvider,
 		return false;
 	}
 
-	@Override
-	public boolean destroy(Network network)
-			throws ConcurrentOperationException, ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
-	}
 
 	@Override
 	public boolean isReady(PhysicalNetworkServiceProvider provider) {
@@ -186,6 +180,13 @@ public class CiscoVnmcElement implements DhcpServiceProvider,
 			DeployDestination dest, ReservationContext context)
 			throws ConcurrentOperationException, InsufficientCapacityException,
 			ResourceUnavailableException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean destroy(Network network, ReservationContext context)
+			throws ConcurrentOperationException, ResourceUnavailableException {
 		// TODO Auto-generated method stub
 		return false;
 	}

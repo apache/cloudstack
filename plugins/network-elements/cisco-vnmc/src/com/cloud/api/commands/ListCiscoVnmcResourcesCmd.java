@@ -19,28 +19,30 @@ package com.cloud.api.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.PlugService;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseListCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ListResponse;
+
 import com.cloud.api.response.CiscoVnmcResourceResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.cisco.CiscoVnmcResourceVO;
+import com.cloud.network.cisco.CiscoVnmcController;
+import com.cloud.network.cisco.CiscoVnmcControllerVO;
 import com.cloud.network.element.CiscoVnmcElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=CiscoVnmcResourceResponse.class, description="Lists Cisco VNMC controllers")
+@APICommand(responseObject=CiscoVnmcResourceResponse.class, description="Lists Cisco VNMC controllers")
 public class ListCiscoVnmcResourcesCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListCiscoVnmcResourcesCmd.class.getName());
     private static final String s_name = "listCiscoVnmcResources";
@@ -50,12 +52,10 @@ public class ListCiscoVnmcResourcesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class, description="the Physical Network ID")
     private Long physicalNetworkId;
 
-    @IdentityMapper(entityTableName="external_cisco_vnmc_resources")
-    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.LONG,  description="Cisco VNMC  resource ID")
+    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.UUID,  entityType=CiscoVnmcResourceResponse.class, description="Cisco VNMC  resource ID")
     private Long ciscoVnmcResourceId;
 
     /////////////////////////////////////////////////////
@@ -77,12 +77,12 @@ public class ListCiscoVnmcResourcesCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            List<CiscoVnmcResourceVO> CiscoVnmcResources = _ciscoVnmcElementService.listCiscoVnmcResources(this);
+            List<CiscoVnmcControllerVO> CiscoVnmcResources = _ciscoVnmcElementService.listCiscoVnmcResources(this);
             ListResponse<CiscoVnmcResourceResponse> response = new ListResponse<CiscoVnmcResourceResponse>();
             List<CiscoVnmcResourceResponse> CiscoVnmcResourcesResponse = new ArrayList<CiscoVnmcResourceResponse>();
 
             if (CiscoVnmcResources != null && !CiscoVnmcResources.isEmpty()) {
-                for (CiscoVnmcResourceVO CiscoVnmcResourceVO : CiscoVnmcResources) {
+                for (CiscoVnmcController CiscoVnmcResourceVO : CiscoVnmcResources) {
                     CiscoVnmcResourceResponse CiscoVnmcResourceResponse = _ciscoVnmcElementService.createCiscoVnmcResourceResponse(CiscoVnmcResourceVO);
                     CiscoVnmcResourcesResponse.add(CiscoVnmcResourceResponse);
                 }

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the 
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.cisco.test;
+package com.cloud.network.cisco;
 
 import static org.junit.Assert.assertTrue;
 
@@ -28,7 +28,7 @@ import com.cloud.network.cisco.CiscoVnmcConnectionImpl;
 import com.cloud.utils.exception.ExecutionException;
 
 
-
+@Ignore("Requires actual VNMC to connect to")
 public class CiscoVnmcConnectionTest {
 	static CiscoVnmcConnectionImpl connection;
 	static String tenantName = "TenantE";
@@ -46,7 +46,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 
-	@Ignore
+	
 	@Test
 	public void testLogin() {
 		//fail("Not yet implemented");
@@ -59,7 +59,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 
-	@Ignore
+	
 	@Test
 	public void testCreateTenant() {
 		//fail("Not yet implemented");
@@ -72,7 +72,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 	
-	@Ignore
+	
 	@Test
 	public void testCreateTenantVDC() {
 		//fail("Not yet implemented");
@@ -85,7 +85,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 	
-	@Ignore
+	
 	@Test
 	public void testCreateTenantVDCEdgeDeviceProfile() {
 		//fail("Not yet implemented");
@@ -98,7 +98,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 	
-	@Ignore
+	
 	@Test
 	public void testCreateTenantVDCEdgeDeviceRoutePolicy() {
 		try {
@@ -110,7 +110,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 	
-	@Ignore
+	
 	@Test
 	public void testCreateTenantVDCEdgeDeviceRoute() {
 		try {
@@ -123,7 +123,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 	
-	@Ignore
+	
 	@Test
 	public void testAssociateRoutePolicyWithEdgeProfile() {
 		try {
@@ -135,7 +135,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 	
-	@Ignore
+	
 	@Test
 	public void testAssociateTenantVDCEdgeDhcpPolicy() {
 		try {
@@ -147,7 +147,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 	
-	@Ignore
+	
 	@Test
 	public void testCreateTenantVDCEdgeDhcpPolicy() {
 		try {
@@ -160,7 +160,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 	
-	@Ignore
+	
 	@Test
 	public void testCreateTenantVDCEdgeSecurityProfile() {
 		try {
@@ -172,7 +172,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 	
-	@Ignore
+	
 	@Test
 	public void testCreateTenantVDCSourceNATPool() {
 		try {
@@ -184,7 +184,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 	
-	@Ignore
+	
 	@Test
 	public void testCreateTenantVDCSourceNATPolicy() {
 		try {
@@ -196,7 +196,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 	
-	@Ignore
+	
 	@Test
 	public void testCreateTenantVDCNatPolicySet() {
 		try {
@@ -208,7 +208,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 	
-	@Ignore
+	
 	@Test
 	public void testAssociateNatPolicySet() {
 		try {
@@ -220,7 +220,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 	
-	@Ignore
+	
 	@Test
 	public void testCreateEdgeFirewall() {
 		try {
@@ -244,7 +244,7 @@ public class CiscoVnmcConnectionTest {
 		}
 	}
 	
-	@Ignore
+	
 	@Test
 	public void assocAsa1000v() {
 		try {

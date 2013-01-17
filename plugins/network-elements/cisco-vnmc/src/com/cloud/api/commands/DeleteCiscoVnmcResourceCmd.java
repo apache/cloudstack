@@ -16,16 +16,16 @@
 // under the License.
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.PlugService;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import com.cloud.api.response.CiscoVnmcResourceResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -35,7 +35,7 @@ import com.cloud.network.element.CiscoVnmcElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=SuccessResponse.class, description=" delete a Cisco Vnmc Resource")
+@APICommand(responseObject=SuccessResponse.class, description=" delete a Cisco Vnmc Resource")
 public class DeleteCiscoVnmcResourceCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(DeleteCiscoVnmcResourceCmd.class.getName());
     private static final String s_name = "addCiscoVnmcResource";
@@ -45,8 +45,7 @@ public class DeleteCiscoVnmcResourceCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="external_cisco_vnmc_resources")
-    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.LONG, required=true, description="Cisco Vnmc resource ID")
+    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.UUID, required=true, entityType=CiscoVnmcResourceResponse.class, description="Cisco Vnmc resource ID")
     private Long CiscoVnmcResourceId;
 
     /////////////////////////////////////////////////////

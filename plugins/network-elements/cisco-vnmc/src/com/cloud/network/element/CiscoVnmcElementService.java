@@ -24,21 +24,22 @@ import com.cloud.api.commands.ListCiscoVnmcResourcesCmd;
 import com.cloud.api.response.CiscoVnmcResourceResponse;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
-import com.cloud.network.cisco.CiscoVnmcResourceVO;
+import com.cloud.network.cisco.CiscoVnmcController;
+import com.cloud.network.cisco.CiscoVnmcControllerVO;
 import com.cloud.utils.component.PluggableService;
 
 public interface CiscoVnmcElementService extends PluggableService {
 
     public static final Provider CiscoVnmc = new Provider("CiscoVnmc", true);
 
-	public CiscoVnmcResourceVO addCiscoVnmcResource(AddCiscoVnmcResourceCmd cmd);
+	public CiscoVnmcController addCiscoVnmcResource(AddCiscoVnmcResourceCmd cmd);
 
     public CiscoVnmcResourceResponse createCiscoVnmcResourceResponse(
-            CiscoVnmcResourceVO CiscoVnmcResourceVO);
+            CiscoVnmcController CiscoVnmcResourceVO);
 
     boolean deleteCiscoVnmcResource(DeleteCiscoVnmcResourceCmd cmd);
 
-    List<CiscoVnmcResourceVO> listCiscoVnmcResources(ListCiscoVnmcResourcesCmd cmd);
+    List<CiscoVnmcControllerVO> listCiscoVnmcResources(ListCiscoVnmcResourcesCmd cmd);
     
     void assignAsa1000vToNetwork(Network network);
 

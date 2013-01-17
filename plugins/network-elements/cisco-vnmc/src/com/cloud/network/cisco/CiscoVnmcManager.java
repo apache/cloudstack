@@ -8,6 +8,8 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.api.commands.AddCiscoVnmcResourceCmd;
 import com.cloud.api.commands.DeleteCiscoVnmcResourceCmd;
@@ -18,7 +20,6 @@ import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
@@ -56,17 +57,13 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
     
     CiscoVnmcConnection _vnmcConnection;
     
-    @Override
-	public String getPropertiesFile() {
-		return null;
-	}
-
+   
 	@Override
-	public CiscoVnmcResourceVO addCiscoVnmcResource(AddCiscoVnmcResourceCmd cmd) {
+	public CiscoVnmcController addCiscoVnmcResource(AddCiscoVnmcResourceCmd cmd) {
         String deviceName = CiscoVnmc.getName();
         NetworkDevice networkDevice = NetworkDevice.getNetworkDevice(deviceName);
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
-        CiscoVnmcResourceVO CiscoVnmcResource = null;
+        CiscoVnmcController CiscoVnmcResource = null;
         
         PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
         if (physicalNetwork == null) {
@@ -110,8 +107,8 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
             if (host != null) {
                 txn.start();
                 
-                CiscoVnmcResource = new CiscoVnmcResourceVO(host.getId(), physicalNetworkId, ntwkSvcProvider.getProviderName(), deviceName);
-                _ciscoVnmcDao.persist(CiscoVnmcResource);
+                CiscoVnmcResource = new CiscoVnmcControllerVO(host.getId(), physicalNetworkId, ntwkSvcProvider.getProviderName(), deviceName);
+                _ciscoVnmcDao.persist((CiscoVnmcControllerVO) CiscoVnmcResource);
                 
                 DetailVO detail = new DetailVO(host.getId(), "deviceid", String.valueOf(CiscoVnmcResource.getId()));
                 _hostDetailsDao.persist(detail);
@@ -129,7 +126,7 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
 
 	@Override
 	public CiscoVnmcResourceResponse createCiscoVnmcResourceResponse(
-			CiscoVnmcResourceVO CiscoVnmcResourceVO) {
+			CiscoVnmcController CiscoVnmcResourceVO) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -143,18 +140,18 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
 	
 
 	@Override
-	public List<CiscoVnmcResourceVO> listCiscoVnmcResources(
+	public List<CiscoVnmcControllerVO> listCiscoVnmcResources(
 			ListCiscoVnmcResourcesCmd cmd) {
 		Long physicalNetworkId = cmd.getPhysicalNetworkId();
 		Long CiscoVnmcResourceId = cmd.getCiscoVnmcResourceId();
-		List<CiscoVnmcResourceVO> responseList = new ArrayList<CiscoVnmcResourceVO>();
+		List<CiscoVnmcControllerVO> responseList = new ArrayList<CiscoVnmcControllerVO>();
 
 		if (physicalNetworkId == null && CiscoVnmcResourceId == null) {
 			throw new InvalidParameterValueException("Either physical network Id or vnmc device Id must be specified");
 		}
 
 		if (CiscoVnmcResourceId != null) {
-			CiscoVnmcResourceVO CiscoVnmcResource = _ciscoVnmcDao.findById(CiscoVnmcResourceId);
+			CiscoVnmcControllerVO CiscoVnmcResource = _ciscoVnmcDao.findById(CiscoVnmcResourceId);
 			if (CiscoVnmcResource == null) {
 				throw new InvalidParameterValueException("Could not find Cisco Vnmc device with id: " + CiscoVnmcResource);
 			}
@@ -200,6 +197,12 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
 	public void assignAsa1000vToNetwork(Network network) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public List<Class<?>> getCommands() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

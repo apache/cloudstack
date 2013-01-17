@@ -18,15 +18,15 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.network.cisco.CiscoVnmcResourceVO;
+import com.cloud.network.cisco.CiscoVnmcControllerVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface CiscoVnmcDao extends GenericDao<CiscoVnmcResourceVO, Long>{
+public interface CiscoVnmcDao extends GenericDao<CiscoVnmcControllerVO, Long>{
     /**
      * list all the Cisco VNMC devices added in to this physical network
      * @param physicalNetworkId physical Network Id
      * @return list of CiscoVnmcDeviceVO for this physical network.
      */
-    List<CiscoVnmcResourceVO> listByPhysicalNetwork(long physicalNetworkId);
+    List<CiscoVnmcControllerVO> listByPhysicalNetwork(long physicalNetworkId);
 
 }
