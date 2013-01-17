@@ -16,14 +16,19 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.ratelimit;
 
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.PlugService;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApiLimitResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.ratelimit.ApiRateLimitService;
+import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -88,7 +93,7 @@ public class ResetApiLimitCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to reset api limit counter");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reset api limit counter");
         }
     }
 }

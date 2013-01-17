@@ -100,7 +100,7 @@ public class ApiRateLimitTest {
 
     @Test
     public void canDoReasonableNumberOfApiAccessPerSecond() throws Exception {
-        int allowedRequests = 50000;
+        int allowedRequests = 200;
         _limitService.setMaxAllowed(allowedRequests);
         _limitService.setTimeToLive(1);
 
