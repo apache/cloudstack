@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -39,7 +40,7 @@ import com.cloud.server.api.response.netapp.ListLunsCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
 @APICommand(name = "listLunsOnFiler", description="List LUN", responseObject = ListLunsCmdResponse.class)
-public class ListLunsCmd extends BaseCmd 
+public class ListLunsCmd extends BaseCmd
 {
 	public static final Logger s_logger = Logger.getLogger(ListLunsCmd.class.getName());
     private static final String s_name = "listlunresponse";
@@ -70,8 +71,8 @@ public class ListLunsCmd extends BaseCmd
     		listResponse.setResponseName(getCommandName());
     		this.setResponseObject(listResponse);
     	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
-    	}		
+    		throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
+    	}
 	}
 
 	@Override

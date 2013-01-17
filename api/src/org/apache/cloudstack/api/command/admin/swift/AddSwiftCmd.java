@@ -92,12 +92,12 @@ public class AddSwiftCmd extends BaseCmd {
                 swiftResponse.setObjectName("swift");
                 this.setResponseObject(swiftResponse);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add Swift");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Swift");
             }
         } catch (DiscoveryException ex) {
             String errMsg = "Failed to add Swift due to " + ex.toString();
             s_logger.warn(errMsg, ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, errMsg);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errMsg);
         }
     }
 }

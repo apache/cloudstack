@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.vpc;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
@@ -71,7 +72,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " + ex.getMessage());
             s_logger.trace("Network rule conflict: ", ex);
-            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
     }
 
@@ -105,7 +106,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
         } finally {
             if (!success || route == null) {
                 _vpcService.revokeStaticRoute(getEntityId());
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create static route");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create static route");
             }
         }
     }

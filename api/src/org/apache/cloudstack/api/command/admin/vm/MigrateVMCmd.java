@@ -150,20 +150,20 @@ public class MigrateVMCmd extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to migrate vm");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate vm");
             }
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException e) {
             s_logger.warn("Exception: ", e);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } catch (ManagementServerException e) {
             s_logger.warn("Exception: ", e);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } catch (VirtualMachineMigrationException e) {
             s_logger.warn("Exception: ", e);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 }

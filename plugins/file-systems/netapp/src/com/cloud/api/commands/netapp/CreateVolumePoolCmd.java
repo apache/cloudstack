@@ -19,6 +19,7 @@ package com.cloud.api.commands.netapp;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -42,11 +43,11 @@ public class CreateVolumePoolCmd extends BaseCmd {
 	private String poolName;
     @Parameter(name=ApiConstants.ALGORITHM, type=CommandType.STRING, required = true, description="algorithm.")
 	private String algorithm;
-    
+
     public String getPoolName() {
     	return poolName;
     }
-    
+
     public String getAlgorithm() {
     	return algorithm;
     }
@@ -57,16 +58,16 @@ public class CreateVolumePoolCmd extends BaseCmd {
 			ConcurrentOperationException, ResourceAllocationException {
 		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
     	NetappManager netappMgr = locator.getManager(NetappManager.class);
-    	
+
     	try {
     		CreateVolumePoolCmdResponse response = new CreateVolumePoolCmdResponse();
     		netappMgr.createPool(getPoolName(), getAlgorithm());
     		response.setResponseName(getCommandName());
     		this.setResponseObject(response);
     	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
     	}
-		
+
 	}
 
 	@Override
@@ -80,5 +81,5 @@ public class CreateVolumePoolCmd extends BaseCmd {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-    
+
 }

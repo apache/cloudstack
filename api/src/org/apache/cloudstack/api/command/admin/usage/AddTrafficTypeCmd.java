@@ -20,6 +20,7 @@ import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -123,7 +124,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add traffic type to physical network");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add traffic type to physical network");
         }
     }
 
@@ -134,7 +135,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add traffic type to physical network");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add traffic type to physical network");
         }
     }
 

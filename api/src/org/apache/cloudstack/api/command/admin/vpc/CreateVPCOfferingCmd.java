@@ -72,7 +72,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
             this.setEntityId(vpcOff.getId());
             this.setEntityUuid(vpcOff.getUuid());
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a VPC offering");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a VPC offering");
         }
     }
 
@@ -84,7 +84,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create VPC offering");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create VPC offering");
         }
     }
 

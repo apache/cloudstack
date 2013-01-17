@@ -21,6 +21,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -38,11 +39,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class AddExternalLoadBalancerCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddExternalLoadBalancerCmd.class.getName());
     private static final String s_name = "addexternalloadbalancerresponse";
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-	
+
 	@Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
             required = true, description="Zone in which to add the external load balancer appliance.")
 	private Long zoneId;
@@ -59,19 +60,19 @@ public class AddExternalLoadBalancerCmd extends BaseCmd {
     ///////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-     
+
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public String getUrl() {
         return url;
     }
-    
+
     public String getUsername() {
         return username;
     }
-    
+
     public String getPassword() {
         return password;
     }
@@ -102,9 +103,9 @@ public class AddExternalLoadBalancerCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } catch (InvalidParameterValueException ipve) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, ipve.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ipve.getMessage());
         } catch (CloudRuntimeException cre) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, cre.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, cre.getMessage());
         }
     }
 }

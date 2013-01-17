@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
@@ -219,15 +220,15 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
                 this.setEntityId(ip.getId());
                 this.setEntityUuid(ip.getUuid());
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to allocate ip address");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to allocate ip address");
             }
         } catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (InsufficientAddressCapacityException ex) {
             s_logger.info(ex);
             s_logger.trace(ex);
-            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         }
     }
 
@@ -249,7 +250,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             ipResponse.setResponseName(getCommandName());
             this.setResponseObject(ipResponse);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign ip address");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign ip address");
         }
     }
 

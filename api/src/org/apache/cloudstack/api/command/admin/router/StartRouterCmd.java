@@ -102,7 +102,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
             routerResponse.setResponseName(getCommandName());
             this.setResponseObject(routerResponse);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to start router");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start router");
         }
     }
 }

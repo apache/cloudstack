@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -100,7 +101,7 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to search for physical networks");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to search for physical networks");
         }
     }
 }

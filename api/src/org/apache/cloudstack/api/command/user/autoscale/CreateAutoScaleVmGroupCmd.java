@@ -159,7 +159,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create Autoscale Vm Group");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Vm Group");
         }
     }
 
@@ -182,7 +182,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
         } finally {
             if (!success || vmGroup == null) {
                 _autoScaleService.deleteAutoScaleVmGroup(getEntityId());
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create Autoscale Vm Group");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Vm Group");
             }
         }
     }

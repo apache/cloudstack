@@ -122,17 +122,17 @@ public class CreateStoragePoolCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add storage pool");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add storage pool");
             }
         } catch (ResourceUnavailableException ex1) {
             s_logger.warn("Exception: ", ex1);
-            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex1.getMessage());
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex1.getMessage());
         }catch (ResourceInUseException ex2) {
             s_logger.warn("Exception: ", ex2);
-            throw new ServerApiException(BaseCmd.RESOURCE_IN_USE_ERROR, ex2.getMessage());
+            throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, ex2.getMessage());
         } catch (UnknownHostException ex3) {
             s_logger.warn("Exception: ", ex3);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex3.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex3.getMessage());
         }
     }
 }

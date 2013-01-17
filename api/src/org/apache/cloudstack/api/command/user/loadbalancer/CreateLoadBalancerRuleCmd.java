@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -266,7 +267,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
                 // no need to apply the rule on the backend as it exists in the db only
                 _lbService.deleteLoadBalancerRule(getEntityId(), false);
 
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create load balancer rule");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create load balancer rule");
             }
         }
     }
@@ -283,10 +284,10 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             this.setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException e) {
             s_logger.warn("Exception: ", e);
-            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
+            throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         } catch (InsufficientAddressCapacityException e) {
             s_logger.warn("Exception: ", e);
-            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, e.getMessage());
         }
     }
 
