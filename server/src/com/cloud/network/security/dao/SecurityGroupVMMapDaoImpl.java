@@ -24,6 +24,8 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.security.SecurityGroupVMMapVO;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -112,6 +114,13 @@ public class SecurityGroupVMMapDaoImpl extends GenericDaoBase<SecurityGroupVMMap
         SearchCriteria<SecurityGroupVMMapVO> sc = ListByVmId.create();
         sc.setParameters("instanceId", vmId);
         return listBy(sc);
+    }
+
+    @Override
+    public Pair<List<SecurityGroupVMMapVO>, Integer> listByInstanceId(long instanceId, Filter filter) {
+        SearchCriteria<SecurityGroupVMMapVO> sc = ListByVmId.create();
+        sc.setParameters("instanceId", instanceId);
+        return this.searchAndCount(sc, filter);
     }
 
     @Override

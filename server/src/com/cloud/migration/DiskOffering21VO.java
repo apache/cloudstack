@@ -32,12 +32,13 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="disk_offering_21")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
-public class DiskOffering21VO {
+public class DiskOffering21VO implements InternalIdentity {
     public enum Type {
         Disk,
         Service

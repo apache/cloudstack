@@ -49,7 +49,7 @@ public abstract class InsufficientCapacityException extends CloudException {
     /**
      * @return the id of the object that it is insufficient in.  Note that this method is
      *         marked such that if the id is not set, then it will throw NullPointerException.
-     *         This is intended as you should check to see if the Scope is present before 
+     *         This is intended as you should check to see if the Scope is present before
      *         accessing this method.
      */
     public long getId() {

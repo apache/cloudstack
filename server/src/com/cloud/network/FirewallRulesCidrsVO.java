@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,7 +27,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name=("firewall_rules_cidrs"))
-public class FirewallRulesCidrsVO {
+public class FirewallRulesCidrsVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -44,7 +46,7 @@ public class FirewallRulesCidrsVO {
         this.sourceCidrList = sourceCidrList;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

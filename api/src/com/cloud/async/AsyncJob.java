@@ -18,9 +18,10 @@ package com.cloud.async;
 
 import java.util.Date;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface AsyncJob extends Identity {
+public interface AsyncJob extends Identity, InternalIdentity {
     public enum Type {
         None,
         VirtualMachine,
@@ -42,10 +43,13 @@ public interface AsyncJob extends Identity {
         Account,
         User,
         PrivateGateway,
-        StaticRoute
+        StaticRoute,
+        Counter,
+        Condition,
+        AutoScalePolicy,
+        AutoScaleVmProfile,
+        AutoScaleVmGroup
     }
-
-    Long getId();
 
     long getUserId();
 

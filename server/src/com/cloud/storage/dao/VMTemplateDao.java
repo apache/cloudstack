@@ -58,6 +58,10 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
             boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex,
             Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller, Map<String, String> tags);
 
+    public Set<Pair<Long, Long>> searchS3Templates(String name, String keyword, TemplateFilter templateFilter,
+            boolean isIso, List<HypervisorType> hypers, Boolean bootable, DomainVO domain, Long pageSize, Long startIndex,
+            Long zoneId, HypervisorType hyperType, boolean onlyReady, boolean showDomr, List<Account> permittedAccounts, Account caller, Map<String, String> tags);
+
 	public long addTemplateToZone(VMTemplateVO tmplt, long zoneId);
 	public List<VMTemplateVO> listAllInZone(long dataCenterId);	
 	
@@ -71,4 +75,6 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
     List<Long> listPrivateTemplatesByHost(Long hostId);
     public Long countTemplatesForAccount(long accountId);
 	
+    List<VMTemplateVO> findTemplatesToSyncToS3();
+
 }

@@ -560,8 +560,8 @@
           return $(this).index() == index;
         });
 
-        if ($target.index() > $tr.index()) $target.after($tr);
-        else $target.before($tr);
+    //    if ($target.index() > $tr.index()) $target.after($tr);
+      //  else $target.before($tr);
 
         $tr.closest('.list-view').scrollTop($tr.position().top - $tr.height() * 2);
 
@@ -914,6 +914,8 @@
             $('<span></span>').html(_s(content))
           );
         }
+        
+        $td.attr('title', _s(content));
       });
 
       $tr.find('td:first').addClass('first');
@@ -1076,7 +1078,7 @@
               $('<span>').addClass('icon').html('&nbsp;')
             );
             $quickViewTooltip.append($title);
-
+            $('.quick-view-tooltip').remove();
             // Setup positioning
             $quickViewTooltip.hide().appendTo('#container').fadeIn(200, function() {
               if (!$quickViewTooltip.is(':visible')) return;

@@ -31,6 +31,8 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import javax.persistence.Table;
 
+import com.cloud.offering.DiskOffering;
+import com.cloud.storage.dao.DiskOfferingDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -52,7 +54,7 @@ import com.cloud.agent.api.proxy.StartConsoleProxyAgentHttpHandlerCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.commands.DestroyConsoleProxyCmd;
 import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.cluster.ClusterManager;
@@ -107,7 +109,6 @@ import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
@@ -138,7 +139,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -216,6 +216,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     @Inject
     ServiceOfferingDao _offeringDao;
     @Inject
+    DiskOfferingDao _diskOfferingDao;
+    @Inject
     NetworkOfferingDao _networkOfferingDao;
     @Inject
     StoragePoolDao _storagePoolDao;
@@ -223,8 +225,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     UserVmDetailsDao _vmDetailsDao;
     @Inject
     ResourceManager _resourceMgr;
-    @Inject
-    IdentityDao _identityDao;
     @Inject
     NetworkDao _networkDao;
     @Inject
@@ -928,14 +928,12 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
         }
 
-        vmId = _identityDao.getIdentityId("vm_instance", cmd.getVmId());
-        if (vmId == null) {
-            s_logger.error("Invalid vm id " + cmd.getVmId() + " sent from console access authentication");
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
-        }
-
-        VMInstanceVO vm = _instanceDao.findById(vmId);
+        VirtualMachine vm = _instanceDao.findByUuid(cmd.getVmId());
         if (vm == null) {
+            vm = _instanceDao.findById(Long.parseLong(cmd.getVmId()));
+        }
+        if (vm == null) {
+            s_logger.error("Invalid vm id " + cmd.getVmId() + " sent from console access authentication");
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
         }
 
@@ -1525,16 +1523,13 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         //check if there is a default service offering configured
         String cpvmSrvcOffIdStr = configs.get(Config.ConsoleProxyServiceOffering.key()); 
         if (cpvmSrvcOffIdStr != null) {
-            
-            Long cpvmSrvcOffId = null;
-            try {
-                cpvmSrvcOffId = _identityDao.getIdentityId(DiskOfferingVO.class.getAnnotation(Table.class).name(),cpvmSrvcOffIdStr);
-            } catch (Exception e) {
-                String msg = "Can't find system service offering specified by global config, uuid=" + cpvmSrvcOffIdStr + " for console proxy vm";
-                s_logger.warn(msg);
-            }
-            if(cpvmSrvcOffId != null){
-                _serviceOffering = _offeringDao.findById(cpvmSrvcOffId);
+            DiskOffering diskOffering = _diskOfferingDao.findByUuid(cpvmSrvcOffIdStr);
+            if (diskOffering == null)
+                diskOffering = _diskOfferingDao.findById(Long.parseLong(cpvmSrvcOffIdStr));
+            if (diskOffering != null) {
+                _serviceOffering = _offeringDao.findById(diskOffering.getId());
+            } else {
+                s_logger.warn("Can't find system service offering specified by global config, uuid=" + cpvmSrvcOffIdStr + " for console proxy vm");
             }
         } 
 

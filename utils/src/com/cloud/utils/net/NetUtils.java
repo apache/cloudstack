@@ -60,6 +60,9 @@ public class NetUtils {
 
     public final static String ALL_CIDRS = "0.0.0.0/0";
 
+    public final static int DEFAULT_AUTOSCALE_VM_DESTROY_TIME = 2 * 60; // Grace period before Vm is destroyed
+    public final static int DEFAULT_AUTOSCALE_POLICY_INTERVAL_TIME = 30;
+    public final static int DEFAULT_AUTOSCALE_POLICY_QUIET_TIME = 5 * 60;
     private final static Random _rand = new Random(System.currentTimeMillis());
 
     public static long createSequenceBasedMacAddress(long macAddress) {
@@ -793,7 +796,7 @@ public class NetUtils {
         long shift = 32 - cidrBLong[1];
         return ((cidrALong[0] >> shift) == (cidrBLong[0] >> shift));
     }
-
+    
     public static Long[] cidrToLong(String cidr) {
         if (cidr == null || cidr.isEmpty()) {
             return null;
@@ -911,6 +914,11 @@ public class NetUtils {
     public static boolean isValidAlgorithm(String p) {
         String algo = p.toLowerCase();
         return (algo.equals("roundrobin") || algo.equals("leastconn") || algo.equals("source"));
+    }
+
+    public static boolean isValidAutoScaleAction(String p) {
+        String action = p.toLowerCase();
+        return (action.equals("scaleup") || action.equals("scaledown"));
     }
 
     public static String getLinkLocalNetMask() {

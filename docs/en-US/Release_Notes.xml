@@ -19,7 +19,7 @@
   under the License.
 -->
 <book>
-  <xi:include href="Book_Info_Release_Notes_4.0.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="Book_Info_Release_Notes_4-0.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <chapter id="submitting-feedback">
     <title>Submitting Feedback and Getting Help</title>
     <para>The Apache CloudStack project has mailing lists for users and developers. These are the

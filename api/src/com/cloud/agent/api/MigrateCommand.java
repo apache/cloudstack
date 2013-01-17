@@ -25,29 +25,29 @@ public class MigrateCommand extends Command {
 
     protected MigrateCommand() {
     }
-    
+
     public MigrateCommand(String vmName, String destIp, boolean isWindows) {
         this.vmName = vmName;
         this.destIp = destIp;
         this.isWindows = isWindows;
     }
-    
+
     public boolean isWindows() {
         return isWindows;
     }
-    
+
     public String getDestinationIp() {
         return destIp;
     }
-    
+
     public String getVmName() {
         return vmName;
     }
-    
+
     public void setHostGuid(String guid) {
         this.hostGuid = guid;
     }
-    
+
     public String getHostGuid() {
         return this.hostGuid;
     }

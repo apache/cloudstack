@@ -105,7 +105,7 @@ class Services:
                         "templates": {
                                     "displaytext": 'Template',
                                     "name": 'Template',
-                                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                                    "ostype": "CentOS 5.3 (64-bit)",
                                     "templatefilter": 'self',
                                 },
                         "diskdevice": "/dev/xvda",
@@ -117,8 +117,7 @@ class Services:
                         "sub_lvl_dir1": "test1",
                         "sub_lvl_dir2": "test2",
                         "random_data": "random.data",
-
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                        "ostype": "CentOS 5.3 (64-bit)",
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -139,11 +138,11 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["server_without_disk"]["zoneid"] = cls.zone.id
-        cls.services["template"] = template.id
+        cls.services["templates"]["ostypeid"] = template.ostypeid
         cls.services["zoneid"] = cls.zone.id
 
         # Create VMs, NAT Rules etc
@@ -364,7 +363,7 @@ class TestSnapshots(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         
         cls.services["domainid"] = cls.domain.id
@@ -373,7 +372,7 @@ class TestSnapshots(cloudstackTestCase):
 
         cls.services["server_without_disk"]["zoneid"] = cls.zone.id
 
-        cls.services["template"] = template.id
+        cls.services["templates"]["ostypeid"] = template.ostypeid
         cls.services["zoneid"] = cls.zone.id
         cls.services["diskoffering"] = cls.disk_offering.id
 
@@ -583,7 +582,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "xen"])
     def test_03_volume_from_snapshot(self):
         """Create volumes from snapshots
         """
@@ -996,7 +995,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "xen"])
     def test_07_template_from_snapshot(self):
         """Create Template from snapshot
         """
@@ -1195,12 +1194,11 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["server"]["zoneid"] = cls.zone.id
 
-        cls.services["template"] = cls.template.id
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
@@ -1491,7 +1489,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -1843,7 +1841,7 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
         cls.services["server"]["diskoffering"] = cls.disk_offering.id
@@ -1903,7 +1901,7 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags = ["advanced", "advancedns", "xen"])
     def test_03_snapshot_detachedDisk(self):
         """Test snapshot from detached disk
         """
@@ -2126,7 +2124,7 @@ class TestSnapshotLimit(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -2384,7 +2382,7 @@ class TestSnapshotEvents(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 

@@ -161,9 +161,17 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                 pstmtUpdate.setLong(2, zoneId);
                 pstmtUpdate.executeUpdate();
                 pstmtUpdate.close();
-
-                //check if there are multiple guest networks configured using network_tags
                 
+                //check if public network needs to be created
+                boolean crtPbNtwk = false;
+                pstmt = conn.prepareStatement("SELECT * FROM `cloud`.`networks` where traffic_type=\"public\" and data_center_id=?");
+                pstmt.setLong(1, zoneId);
+                ResultSet rs1 = pstmt.executeQuery();
+                if (rs1.next()) {
+                    crtPbNtwk = true;
+                }
+                
+                //check if there are multiple guest networks configured using network_tags
                 PreparedStatement pstmt2 = conn.prepareStatement("SELECT distinct tag FROM `cloud`.`network_tags` t JOIN `cloud`.`networks` n ON t.network_id = n.id WHERE n.data_center_id = ? and n.removed IS NULL");
                 pstmt2.setLong(1, zoneId);
                 ResultSet rsTags = pstmt2.executeQuery();
@@ -235,7 +243,11 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                         long physicalNetworkId = addPhysicalNetworkToZone(conn, zoneId, zoneName, networkType, (isFirstPhysicalNtwk) ? vnet : null, domainId);
                         //add Traffic types
                         if(isFirstPhysicalNtwk){
-                            addTrafficType(conn, physicalNetworkId, "Public", xenPublicLabel, kvmPublicLabel, vmwarePublicLabel);
+                            if (crtPbNtwk) {
+                                addTrafficType(conn, physicalNetworkId, "Public", xenPublicLabel, kvmPublicLabel, vmwarePublicLabel);
+                            } else {
+                                s_logger.debug("Skip adding public traffic type to zone id=" + zoneId);
+                            }
                             addTrafficType(conn, physicalNetworkId, "Management", xenPrivateLabel, kvmPrivateLabel, vmwarePrivateLabel);
                             addTrafficType(conn, physicalNetworkId, "Storage", xenStorageLabel, null, null);
                         }
@@ -270,7 +282,11 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                     //default to one physical network
                     long physicalNetworkId = addPhysicalNetworkToZone(conn, zoneId, zoneName, networkType, vnet, domainId);
                     // add traffic types
-                    addTrafficType(conn, physicalNetworkId, "Public", xenPublicLabel, kvmPublicLabel, vmwarePublicLabel);
+                    if (crtPbNtwk) {
+                        addTrafficType(conn, physicalNetworkId, "Public", xenPublicLabel, kvmPublicLabel, vmwarePublicLabel);  
+                    } else {
+                        s_logger.debug("Skip adding public traffic type to zone id=" + zoneId);
+                    }
                     addTrafficType(conn, physicalNetworkId, "Management", xenPrivateLabel, kvmPrivateLabel, vmwarePrivateLabel);
                     addTrafficType(conn, physicalNetworkId, "Storage", xenStorageLabel, null, null);
                     addTrafficType(conn, physicalNetworkId, "Guest", xenGuestLabel, kvmGuestLabel, vmwareGuestLabel);

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.dc;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -29,7 +31,7 @@ import javax.persistence.TemporalType;
 
 @Entity
 @Table(name="op_pod_vlan_alloc")
-public class PodVlanVO {
+public class PodVlanVO implements InternalIdentity {
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -67,7 +69,7 @@ public class PodVlanVO {
         this.takenAt = null;
     }
     
-    public Long getId() {
+    public long getId() {
         return id;
     }
     

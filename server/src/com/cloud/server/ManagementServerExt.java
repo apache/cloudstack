@@ -21,7 +21,7 @@ import java.util.TimeZone;
 
 import com.cloud.api.commands.GenerateUsageRecordsCmd;
 import com.cloud.api.commands.GetUsageRecordsCmd;
-import com.cloud.server.api.response.UsageTypeResponse;
+import org.apache.cloudstack.api.response.UsageTypeResponse;
 import com.cloud.usage.UsageVO;
 public interface ManagementServerExt extends ManagementServer {
     /**

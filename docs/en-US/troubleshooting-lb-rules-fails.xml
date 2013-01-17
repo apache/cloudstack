@@ -30,7 +30,7 @@
     </formalpara>
     <formalpara>
         <title>Cause</title>
-        <para>Load balancing rules were created while using a network service offering that includes an external load balancer device such as NetScaler, and later the network service offering changed to one that uses the CloudPlatform virtual router.</para>
+        <para>Load balancing rules were created while using a network service offering that includes an external load balancer device such as NetScaler, and later the network service offering changed to one that uses the &PRODUCT; virtual router.</para>
     </formalpara>
     <formalpara>
         <title>Solution</title>

@@ -1026,8 +1026,8 @@
               createForm: {
                 desc: 'message.enter.token',
                 fields: {
-                  projectid: { label: 'label.project.id', validation: { required: true }},
-                  token: { label: 'label.token', validation: { required: true }}
+                  projectid: { label: 'label.project.id', validation: { required: true, docID: 'helpEnterTokenProjectID' }},
+                  token: { label: 'label.token', docID: 'helpEnterTokenToken', validation: { required: true }}
                 }
               },
               action: function(args) {

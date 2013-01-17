@@ -193,11 +193,8 @@ public abstract class Upgrade30xBase implements DbUpgrade{
                 pstmtUpdate.setString(1, UUID.randomUUID().toString());
                 pstmtUpdate.setLong(2, physicalNetworkId);
                 pstmtUpdate.setString(3, "SecurityGroupProvider");
-                if ("Advanced".equals(networkType)) {
-                    pstmtUpdate.setString(4, "Disabled");
-                }else{
-                    pstmtUpdate.setString(4, "Enabled");
-                }
+                pstmtUpdate.setString(4, "Enabled");
+                
                 pstmtUpdate.executeUpdate();
                 pstmtUpdate.close();
             }

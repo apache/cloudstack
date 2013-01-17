@@ -19,14 +19,11 @@ package com.cloud.api.commands.netapp;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -38,11 +35,11 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ListVolumesOnFilerCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="List Volumes", responseObject = ListVolumesOnFilerCmdResponse.class)
+@APICommand(name = "listVolumesOnFiler", description="List Volumes", responseObject = ListVolumesOnFilerCmdResponse.class)
 public class ListVolumesOnFilerCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(ListVolumesOnFilerCmd.class.getName());
     private static final String s_name = "listvolumesresponse";
-    
+
     @Parameter(name=ApiConstants.POOL_NAME, type=CommandType.STRING, required = true, description="pool name.")
 	private String poolName;
 
@@ -52,7 +49,7 @@ public class ListVolumesOnFilerCmd extends BaseCmd {
 			ConcurrentOperationException, ResourceAllocationException {
 		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
     	NetappManager netappMgr = locator.getManager(NetappManager.class);
-    	
+
     	try {
     		List<NetappVolumeVO> volumes = netappMgr.listVolumesOnFiler(poolName);
     		ListResponse<ListVolumesOnFilerCmdResponse> listResponse = new ListResponse<ListVolumesOnFilerCmdResponse>();
@@ -74,9 +71,9 @@ public class ListVolumesOnFilerCmd extends BaseCmd {
     		listResponse.setResponseName(getCommandName());
     		this.setResponseObject(listResponse);
     	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
     	}
-		
+
 	}
 
 	@Override

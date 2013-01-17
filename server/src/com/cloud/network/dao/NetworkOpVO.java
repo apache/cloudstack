@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.dao;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -23,7 +25,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="op_networks")
-public class NetworkOpVO {
+public class NetworkOpVO implements InternalIdentity {
     
     @Id
     @Column(name="id")

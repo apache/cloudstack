@@ -18,34 +18,33 @@ package com.cloud.resource;
 
 import java.util.List;
 
-import com.cloud.api.commands.AddClusterCmd;
-import com.cloud.api.commands.AddHostCmd;
-import com.cloud.api.commands.AddSecondaryStorageCmd;
-import com.cloud.api.commands.AddSwiftCmd;
-import com.cloud.api.commands.CancelMaintenanceCmd;
-import com.cloud.api.commands.DeleteClusterCmd;
-import com.cloud.api.commands.ListSwiftsCmd;
-import com.cloud.api.commands.PrepareForMaintenanceCmd;
-import com.cloud.api.commands.ReconnectHostCmd;
-import com.cloud.api.commands.UpdateHostCmd;
-import com.cloud.api.commands.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
+import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
+import org.apache.cloudstack.api.command.admin.host.*;
+import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
+import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
+import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
+import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
+import com.cloud.storage.S3;
 import com.cloud.storage.Swift;
 import com.cloud.utils.fsm.NoTransitionException;
+import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 
 public interface ResourceService {
     /**
      * Updates a host
-     * 
+     *
      * @param cmd
      *            - the command specifying hostId
      * @return hostObject
-     * @throws NoTransitionException 
+     * @throws NoTransitionException
      */
     Host updateHost(UpdateHostCmd cmd) throws NoTransitionException;
 
@@ -56,7 +55,7 @@ public interface ResourceService {
     /**
      * We will automatically create a cloud.com cluster to attach to the external cluster and return a hyper host to perform
      * host related operation within the cluster
-     * 
+     *
      * @param cmd
      * @return
      * @throws IllegalArgumentException
@@ -76,12 +75,12 @@ public interface ResourceService {
 
     /**
      * Deletes a host
-     * 
+     *
      * @param hostId
      *            TODO
      * @param isForced
      *            TODO
-     * 
+     *
      * @param true if deleted, false otherwise
      */
     boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage);
@@ -93,8 +92,13 @@ public interface ResourceService {
     Cluster getCluster(Long clusterId);
 
     Swift discoverSwift(AddSwiftCmd addSwiftCmd) throws DiscoveryException;
+
+    S3 discoverS3(AddS3Cmd cmd) throws DiscoveryException;
     
     List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forVirtualRouter, Long podId);
 
     List<? extends Swift> listSwifts(ListSwiftsCmd cmd);
+
+    List<? extends S3> listS3s(ListS3sCmd cmd);
+
 }

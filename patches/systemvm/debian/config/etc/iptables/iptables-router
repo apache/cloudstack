@@ -33,6 +33,7 @@ COMMIT
 -A INPUT -i lo -j ACCEPT
 -A INPUT -i eth0 -p udp -m udp --dport 67 -j ACCEPT
 -A INPUT -i eth0 -p udp -m udp --dport 53 -j ACCEPT
+-A INPUT -i eth0 -p tcp -m tcp --dport 53 -j ACCEPT
 -A INPUT -i eth1 -p tcp -m state --state NEW --dport 3922 -j ACCEPT
 -A INPUT -i eth0 -p tcp -m state --state NEW --dport 80 -j ACCEPT
 -A FORWARD -i eth0 -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT

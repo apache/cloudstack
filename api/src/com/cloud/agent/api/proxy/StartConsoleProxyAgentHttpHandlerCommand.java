@@ -27,21 +27,21 @@ public class StartConsoleProxyAgentHttpHandlerCommand extends Command {
 	private String keystorePassword;
     @LogLevel(Log4jLevel.Off)
 	private String encryptorPassword;
-    
+
 	public StartConsoleProxyAgentHttpHandlerCommand() {
 		super();
 	}
-	
+
 	public StartConsoleProxyAgentHttpHandlerCommand(byte[] ksBits, String ksPassword) {
 		this.keystoreBits = ksBits;
 		this.keystorePassword = ksPassword;
 	}
-	
+
 	@Override
 	public boolean executeInSequence() {
 		return true;
 	}
-	
+
 	public byte[] getKeystoreBits() {
 		return keystoreBits;
 	}

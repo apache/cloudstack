@@ -1,0 +1,145 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="aws-api-examples">
+    <title>Examples</title>
+    <para>There are many tools available to interface with a AWS compatible API. In this section we provide
+    a few examples that users of &PRODUCT; can build upon.</para>
+
+    <section id="aws-api-boto-examples">
+        <title>Boto Examples</title>
+        <para>Boto is one of them. It is a Python package available at https://github.com/boto/boto.
+        In this section we provide two examples of Python scripts that use Boto and have been tested with the
+        &PRODUCT; AWS API Interface.</para>
+        <para>First is an EC2 example. Replace the Access and Secret Keys with your own and
+        update the endpoint.</para>
+        <para>
+            <example>
+                <title>An EC2 Boto example</title>
+                <programlisting>#!/usr/bin/env python
+
+import sys
+import os
+import boto
+import boto.ec2
+
+region = boto.ec2.regioninfo.RegionInfo(name="ROOT",endpoint="localhost")
+apikey='GwNnpUPrO6KgIdZu01z_ZhhZnKjtSdRwuYd4DvpzvFpyxGMvrzno2q05MB0ViBoFYtdqKd'
+secretkey='t4eXLEYWw7chBhDlaKf38adCMSHx_wlds6JfSx3z9fSpSOm0AbP9Moj0oGIzy2LSC8iw'
+
+def main():
+	'''Establish connection to EC2 cloud'''
+        conn =boto.connect_ec2(aws_access_key_id=apikey,
+                       aws_secret_access_key=secretkey,
+                       is_secure=False,
+                       region=region,
+                       port=7080,
+                       path="/awsapi",
+                       api_version="2010-11-15")
+
+        '''Get list of images that I own'''
+	images = conn.get_all_images()
+	print images
+	myimage = images[0]
+	'''Pick an instance type'''
+	vm_type='m1.small'
+	reservation = myimage.run(instance_type=vm_type,security_groups=['default'])
+
+if __name__ == '__main__':
+	main()
+                </programlisting>
+            </example>
+        </para>
+        <para>Second is an S3 example. Replace the Access and Secret keys with your own,
+            as well as the endpoint of the service. Be sure to also update the file paths to something
+            that exists on your machine.</para>
+        <para>
+            <example>
+                <title>An S3 Boto Example</title>
+                <programlisting>#!/usr/bin/env python
+
+import sys
+import os
+from boto.s3.key import Key
+from boto.s3.connection import S3Connection
+from boto.s3.connection import OrdinaryCallingFormat
+
+apikey='ChOw-pwdcCFy6fpeyv6kUaR0NnhzmG3tE7HLN2z3OB_s-ogF5HjZtN4rnzKnq2UjtnHeg_yLA5gOw'
+secretkey='IMY8R7CJQiSGFk4cHwfXXN3DUFXz07cCiU80eM3MCmfLs7kusgyOfm0g9qzXRXhoAPCH-IRxXc3w'
+
+cf=OrdinaryCallingFormat()
+
+def main():	
+	'''Establish connection to S3 service'''
+        conn =S3Connection(aws_access_key_id=apikey,aws_secret_access_key=secretkey, \
+                          is_secure=False, \
+                          host='localhost', \
+                          port=7080, \
+                          calling_format=cf, \
+                          path="/awsapi/rest/AmazonS3")
+
+        try:
+            bucket=conn.create_bucket('cloudstack')
+            k = Key(bucket)
+            k.key = 'test'
+            try:
+               k.set_contents_from_filename('/Users/runseb/Desktop/s3cs.py')
+            except:
+               print 'could not write file'
+               pass
+        except:
+            bucket = conn.get_bucket('cloudstack')
+            k = Key(bucket)
+            k.key = 'test'
+            try:
+               k.get_contents_to_filename('/Users/runseb/Desktop/foobar')
+            except:
+               print 'Could not get file'
+               pass
+
+        try:
+           bucket1=conn.create_bucket('teststring')
+           k=Key(bucket1)
+           k.key('foobar')
+           k.set_contents_from_string('This is my silly test')
+        except:
+           bucket1=conn.get_bucket('teststring')
+           k = Key(bucket1)
+           k.key='foobar'
+           k.get_contents_as_string()
+	
+if __name__ == '__main__':
+	main()
+
+                </programlisting>
+            </example>
+        </para>
+    </section>
+
+    <section id="aws-api-jclouds-examples">
+        <title>JClouds Examples</title>
+        <para></para>
+    </section>
+
+ </section>

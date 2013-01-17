@@ -17,34 +17,35 @@
 package com.cloud.network.security;
 
 import com.cloud.async.AsyncInstanceCreateStatus;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface SecurityRule {
+public interface SecurityRule extends Identity, InternalIdentity {
 
     public static class SecurityRuleType {
         public static final SecurityRuleType IngressRule = new SecurityRuleType("ingress");
         public static final SecurityRuleType EgressRule = new SecurityRuleType("egress");
-        
+
         public SecurityRuleType(String type) {
             this._type = type;
         }
-        
+
         public String getType(){
             return _type;
         }
         private String _type;
     }
-    long getId();
 
     long getSecurityGroupId();
 
     int getStartPort();
 
     int getEndPort();
-    
+
     String getType();
-    
+
     SecurityRuleType getRuleType();
-    
+
     String getProtocol();
 
     AsyncInstanceCreateStatus getCreateStatus();
@@ -52,7 +53,4 @@ public interface SecurityRule {
     Long getAllowedNetworkId();
 
     String getAllowedSourceIpCidr();
-    
-    String getUuid();
-
 }

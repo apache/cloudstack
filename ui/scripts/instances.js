@@ -203,11 +203,28 @@
           data: data,          
           success: function(json) {
             var items = json.listvirtualmachinesresponse.virtualmachine;
+           // Code for hiding "Expunged VMs"
+           /* if(items != null) {
+            var i=0;
+            for( i=0;i< items.length;i++){
+              if(items[i].state == 'Expunging')
+                args.response.success ({
 
+              });
+            else {
             args.response.success({
               actionFilter: vmActionfilter,
+              data: items[i]
+             });
+            }
+           }
+          }
+          else {*/
+             args.response.success({
+              actionFilter: vmActionfilter,
               data: items
-            });
+             });
+
           }
         });
       },
@@ -217,17 +234,19 @@
         viewAll: { path: 'storage.volumes', label: 'label.volumes' },
         tabFilter: function(args) {
           var hiddenTabs = [];
-          var zoneNetworktype;
+					
+					var zoneObj;
           $.ajax({
             url: createURL("listZones&id=" + args.context.instances[0].zoneid),
             dataType: "json",
             async: false,
-            success: function(json) {
-              zoneNetworktype = json.listzonesresponse.zone[0].networktype;
+            success: function(json) {              
+							zoneObj = json.listzonesresponse.zone[0];
             }
           });
-          if(zoneNetworktype == "Basic") { //Basic zone has only one guest network (only one NIC)
-            var includingSecurityGroupService = false;
+					
+					var includingSecurityGroupService = false;
+          if(zoneObj.networktype == "Basic") { //Basic zone           
             $.ajax({
               url: createURL("listNetworks&id=" + args.context.instances[0].nic[0].networkid),
               dataType: "json",
@@ -235,7 +254,7 @@
               success: function(json) {
                 var items = json.listnetworksresponse.network;
                 if(items != null && items.length > 0) {
-                  var networkObj = items[0];    //basic zone has only one guest network
+                  var networkObj = items[0];    //Basic zone has only one guest network (only one NIC)    
                   var serviceObjArray = networkObj.service;
                   for(var k = 0; k < serviceObjArray.length; k++) {
                     if(serviceObjArray[k].name == "SecurityGroup") {
@@ -246,12 +265,18 @@
                 }
               }
             });
-            if(includingSecurityGroupService == false)
-              hiddenTabs.push("securityGroups");
           }
-          else { //Advanced zone
+          else if(zoneObj.networktype == "Advanced") { //Advanced zone    
+            if(zoneObj.securitygroupsenabled == true)	
+              includingSecurityGroupService = true;
+						else
+						  includingSecurityGroupService = false;						
+          }
+					
+					if(includingSecurityGroupService == false) {
             hiddenTabs.push("securityGroups");
-          }
+					}
+					
           return hiddenTabs;
         },
         actions: {
@@ -449,6 +474,39 @@
               }
             }
           },
+
+          reset: {
+            label: 'Reset VM',
+            messages:{
+              confirm:function(args) {
+                 return 'Do you want to restore the VM ?';
+                },
+               notification:function(args) {
+                return 'Reset VM';
+               }
+            },
+
+            action:function(args){
+                $.ajax({
+                url: createURL("restoreVirtualMachine&virtualmachineid=" + args.context.instances[0].id),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var item = json.restorevmresponse;
+                  args.response.success({data:item});
+                }
+              });
+
+            },
+
+           notification: {
+              poll: function(args) {
+                args.complete({ data: { state: 'Stopped' }});
+              }
+            }
+
+           },
+
 
           edit: {
             label: 'label.edit',
@@ -1176,6 +1234,7 @@
       allowedActions.push("restart");
       allowedActions.push("destroy");
       allowedActions.push("changeService");
+      allowedActions.push("reset");
 
       if (isAdmin())
         allowedActions.push("migrate");
@@ -1197,6 +1256,7 @@
       allowedActions.push("edit");
       allowedActions.push("start");
       allowedActions.push("destroy");
+      allowedActions.push("reset");
 
       if(isAdmin())
         allowedActions.push("migrateToAnotherStorage");

@@ -20,15 +20,15 @@ public class FenceAnswer extends Answer {
     public FenceAnswer() {
         super();
     }
-    
+
     public FenceAnswer(FenceCommand cmd) {
         super(cmd, true, null);
     }
-    
+
     public FenceAnswer(FenceCommand cmd, String details) {
         super(cmd, true, details);
     }
-    
+
     public FenceAnswer(FenceCommand cmd, boolean result, String details) {
         super(cmd, result, details);
     }

@@ -1039,9 +1039,6 @@ public class Transaction {
             final boolean cloudTestWhileIdle = Boolean.parseBoolean(dbProps.getProperty("db.cloud.testWhileIdle"));
             final long cloudTimeBtwEvictionRunsMillis = Long.parseLong(dbProps.getProperty("db.cloud.timeBetweenEvictionRunsMillis"));
             final long cloudMinEvcitableIdleTimeMillis = Long.parseLong(dbProps.getProperty("db.cloud.minEvictableIdleTimeMillis"));
-            final boolean cloudRemoveAbandoned = Boolean.parseBoolean(dbProps.getProperty("db.cloud.removeAbandoned"));
-            final int cloudRemoveAbandonedTimeout = Integer.parseInt(dbProps.getProperty("db.cloud.removeAbandonedTimeout"));
-            final boolean cloudLogAbandoned = Boolean.parseBoolean(dbProps.getProperty("db.cloud.logAbandoned"));
             final boolean cloudPoolPreparedStatements = Boolean.parseBoolean(dbProps.getProperty("db.cloud.poolPreparedStatements"));
             final String url = dbProps.getProperty("db.cloud.url.params");
             final boolean useSSL = Boolean.parseBoolean(dbProps.getProperty("db.cloud.useSSL"));

@@ -108,7 +108,7 @@ public class VirtualMachineTO {
     public boolean getLimitCpuUse() {
     	return limitCpuUse;
     }
-    
+
     public long getMinRam() {
         return minRam;
     }
@@ -185,11 +185,11 @@ public class VirtualMachineTO {
     public void setNics(NicTO[] nics) {
         this.nics = nics;
     }
-    
+
     public String getVncPassword() {
     	return this.vncPassword;
     }
-    
+
     public void setVncPassword(String vncPassword) {
     	this.vncPassword = vncPassword;
     }
@@ -201,11 +201,11 @@ public class VirtualMachineTO {
     public void setVncAddr(String vncAddr) {
         this.vncAddr = vncAddr;
     }
-    
+
     public Map<String, String> getDetails() {
     	return params;
     }
-    
+
     public void setDetails(Map<String, String> params) {
     	this.params = params;
     }
@@ -217,6 +217,6 @@ public class VirtualMachineTO {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
-    
-    
+
+
 }

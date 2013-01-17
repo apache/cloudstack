@@ -441,13 +441,15 @@ body.login {
 div.list-view table tbody td span {
   display: block;
   float: left;
-  max-width: 210px;
+  max-width: 160px;
   word-wrap: break-word;
   text-indent: 0;
   margin-left: 12px;
   line-height: 15px;
-  overflow: auto;
+  overflow: hidden;
   overflow-x: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 div.list-view div.toolbar div.section-switcher div.section-select label {
@@ -656,41 +658,9 @@ div.list-view div.toolbar div.section-switcher div.section-select label {
   position: absolute;
 }
 
-/*** EULA*/
-.install-wizard .eula-copy {
-  width: 688px;
-  height: 480px;
-  background: #FFFFFF;
-  border: 1px solid #BCBCBC;
-  /*+box-shadow:0px 4px 10px #B9B9B9;*/
-  -moz-box-shadow: 0px 4px 10px #B9B9B9;
-  -webkit-box-shadow: 0px 4px 10px #B9B9B9;
-  -o-box-shadow: 0px 4px 10px #B9B9B9;
-  box-shadow: 0px 4px 10px #B9B9B9;
-  padding: 5px;
-  /*+border-radius:4px;*/
-  -moz-border-radius: 4px;
-  -webkit-border-radius: 4px;
-  -khtml-border-radius: 4px;
-  border-radius: 4px;
-  border-radius: 4px 4px 4px 4px;
-  overflow: auto;
-  overflow-x: hidden;
-}
-
-.install-wizard .eula-copy p {
-  font-size: 12px;
-  margin-top: 21px;
-}
-
 /*** Intro*/
 .install-wizard .step.intro.what-is-cloudstack p {
   background: url(../images/bg-what-is-cloudstack.png) no-repeat 50% 237px;
-  height: 540px;
-}
-
-.install-wizard .step.intro.what-is-cloudplatform p {
-  background: url(../images/bg-what-is-cloudplatform.png) no-repeat 50% 237px;
   height: 540px;
 }
 
@@ -1449,6 +1419,7 @@ div.list-view td.state.off span {
   -webkit-text-shadow: 0px 1px #EAEAEA;
   -o-text-shadow: 0px 1px #EAEAEA;
   text-shadow: 0px 1px #EAEAEA;
+  overflow: hidden;
 }
 
 .quick-view-tooltip .detail-view .detail-group table td.value input[type=text] {
@@ -1458,7 +1429,7 @@ div.list-view td.state.off span {
 }
 
 .quick-view-tooltip .detail-view .detail-group .main-groups table td.value span {
-  height: 15px;
+  height: 25px;
   top: 0px;
 }
 
@@ -2071,15 +2042,6 @@ div.detail-group.actions td {
   cursor: pointer;
 }
 
-#header div.logo {
-  width: 170px;
-  height: 47px;
-  position: relative;
-  float: left;
-  margin: 4px 0 0 19px;
-  background: url(../images/logo-cloudplatform.png) no-repeat 0 center;
-}
-
 #header.nologo div.logo {
   width: 170px;
   height: 47px;
@@ -2095,7 +2057,6 @@ div.detail-group.actions td {
   float: right;
   margin-top: 8px;
   display: inline-block;
-  background: url(../images/citrix-logo-darkbg.png) no-repeat 97% 8px;
   padding: 0 96px 0 0;
 }
 
@@ -3463,7 +3424,6 @@ Dialogs*/
   display: inline;
   padding: 0;
   float: right;
-  text-decoration: underline;
   color: #516374;
   /*+text-shadow:0px -1px 1px #FFFFFF;*/
   -moz-text-shadow: 0px -1px 1px #FFFFFF;
@@ -3560,6 +3520,11 @@ Dialogs*/
   -webkit-text-shadow: 0px -1px 1px #495968;
   -o-text-shadow: 0px -1px 1px #495968;
   text-shadow: 0px -1px 1px #495968;
+  background: url(../images/icons.png) no-repeat 0px -255px;
+}
+
+.notice .ui-dialog-title {
+  background-position: 0px -288px;
 }
 
 .ui-dialog.confirm .ui-dialog-title {
@@ -6385,11 +6350,16 @@ label.error {
 
 .multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .select-area label {
   font-size: 11px;
-  margin: 18px 0 0 11px;
+  margin: 24px 0 0 2px;
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .select-area input {
-  margin: 17px 0 0 39px;
+  margin: 26px 0 11px;
+}
+
+.multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .select-area input {
+  margin: 24px 8px 0 36px !important;
+  padding: 0 !important;
 }
 
 .multi-wizard.zone-wizard .select-network-model .select-area .isolation-mode .select-area .desc {
@@ -6398,7 +6368,7 @@ label.error {
   height: 9px;
   font-size: 11px;
   margin-right: 9px;
-  background: #E6E6E6;
+  background: #EFEFEF;
   float: right;
   /*+placement:shift -27px 12px;*/
   position: relative;
@@ -6492,7 +6462,7 @@ label.error {
 .multi-wizard.zone-wizard .select-container.multi .drop-container {
   background: #DAE2EC;
   width: 484px;
-  height: 100px;
+  height: 114px;
   clear: both;
   position: relative;
   /*+border-radius:4px;*/
@@ -6532,10 +6502,10 @@ label.error {
   text-align: center;
   color: #959BA0;
   font-size: 13px;
-  /*+placement:shift 0px 24px;*/
+  /*+placement:shift 0px 45px;*/
   position: relative;
   left: 0px;
-  top: 24px;
+  top: 45px;
 }
 
 /*** Add physical network -- traffic type drag area*/
@@ -6763,20 +6733,20 @@ label.error {
   border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   border-top: 1px solid #FFFFFF;
-  /*+placement:shift -15px 61px;*/
+  /*+placement:shift -16px 70px;*/
   position: relative;
-  left: -15px;
-  top: 61px;
+  left: -16px;
+  top: 70px;
 }
 
 .multi-wizard.zone-wizard .drop-container .traffic-type-draggable > .edit-traffic-type:hover {
   background-position: 0px -105px;
   color: #FFFFFF;
-  /*+box-shadow:inset 0px 2px 1px #727272;*/
-  -moz-box-shadow: inset 0px 2px 1px #727272;
-  -webkit-box-shadow: inset 0px 2px 1px #727272;
-  -o-box-shadow: inset 0px 2px 1px #727272;
-  box-shadow: inset 0px 2px 1px #727272;
+  /*+box-shadow:inset 0px -1px 1px #727272;*/
+  -moz-box-shadow: inset 0px -1px 1px #727272;
+  -webkit-box-shadow: inset 0px -1px 1px #727272;
+  -o-box-shadow: inset 0px -1px 1px #727272;
+  box-shadow: inset 0px -1px 1px #727272;
 }
 
 .multi-wizard.zone-wizard .drop-container .traffic-type-draggable > .edit-traffic-type:hover span {
@@ -6789,10 +6759,10 @@ label.error {
 }
 
 .multi-wizard.zone-wizard .drop-container .traffic-type-draggable:hover > .edit-traffic-type {
-  /*+placement:shift -7px 67px;*/
+  /*+placement:shift -7px 76px;*/
   position: relative;
   left: -7px;
-  top: 67px;
+  top: 76px;
 }
 
 .multi-wizard.zone-wizard .drop-container .traffic-type-draggable .edit-traffic-type span {
@@ -6811,6 +6781,36 @@ label.error {
   float: left;
   background: url(../images/sprites.png) -7px -4px;
   padding: 7px 11px 0 7px;
+}
+
+.multi-wizard.zone-wizard .traffic-type-draggable .edit-traffic-type span.name {
+  float: left;
+  width: 76px;
+  font-size: 10px;
+  padding: 2px;
+  color: #4E5F6F;
+  background: #DBE1E9;
+  /*+border-radius:4px 4px 0 0;*/
+  -moz-border-radius: 4px 4px 0 0;
+  -webkit-border-radius: 4px 4px 0 0;
+  -khtml-border-radius: 4px 4px 0 0;
+  border-radius: 4px 4px 0 0;
+  /*+placement:shift -13px -16px;*/
+  position: relative;
+  left: -13px;
+  top: -16px;
+  margin-bottom: -13px;
+  border: 1px solid #C3BCBC;
+  border-bottom: 1px solid #D1CDCD;
+  /*+box-shadow:inset 0px 1px 1px #F5F4F4;*/
+  -moz-box-shadow: inset 0px 1px 1px #F5F4F4;
+  -webkit-box-shadow: inset 0px 1px 1px #F5F4F4;
+  -o-box-shadow: inset 0px 1px 1px #F5F4F4;
+  box-shadow: inset 0px 1px 1px #F5F4F4;
+}
+
+.multi-wizard.zone-wizard .traffic-type-draggable .edit-traffic-type:hover span.name {
+  background: #C4C3C3;
 }
 
 /*** Configure guest network -- tabs*/
@@ -7217,6 +7217,20 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   min-width: 100px;
 }
 
+div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody tr.even td {
+  border-right: 1px solid #BFBFBF;
+  clear: none;
+  color: #495A76;
+  font-size: 10px;
+  margin-right: 25px;
+  min-width: -moz-available;
+  max-width: 90px;
+  overflow: hidden;
+  padding: 9px 5px 8px 0;
+  position: relative;
+  vertical-align: middle;
+}
+
 .multi-edit {
 }
 
@@ -7355,7 +7369,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   text-shadow: 0px 1px #FFFFFF;
 }
 
-.multi-edit .disabled .button.add-vm {
+.multi-edit .disabled .button.add-vm .button.custom-action {
   /*+opacity:50%;*/
   filter: alpha(opacity=50);
   -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
@@ -7453,11 +7467,12 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 }
 
 .multi-edit .data .data-body .data-item > table tbody tr td span {
-  overflow-x: auto;
-  overflow-y: hidden;
-  max-width: 88px;
+  overflow: hidden;
+  max-width: 78px;
   display: block;
   float: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .multi-edit .data .data-body .data-item table tbody tr td.blank {
@@ -8777,6 +8792,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 .project-selector .listing .data ul li {
   padding: 10px 0 10px 7px;
   cursor: pointer;
+  font-size: 12px;
 }
 
 .project-selector .listing .data ul li.odd {
@@ -8800,8 +8816,8 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   text-shadow: 0px 1px 1px #FFFFFF;
   text-align: left;
   color: #4F6171;
-  font-size: 12px;
-  padding: 2px 2px 3px 7px;
+  font-size: 11px;
+  padding: 3px 2px 3px 7px;
   border-bottom: 1px solid #FFFFFF;
   position: absolute;
   left: 0;
@@ -8814,17 +8830,14 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   border-radius: 4px 4px 4px 4px;
   font-size: 13px;
   font-weight: bold;
+  padding: 8px 20px;
   float: none;
   cursor: pointer;
   color: #838181;
-  /*+placement:shift 488px 9px;*/
-  position: relative;
-  left: 488px;
-  top: 9px;
   left: 170px;
   top: -8px;
-  margin: 19px 0 0 0px;
   width: 54px;
+  margin: auto auto 17px;
 }
 
 .project-selector .button.cancel:hover {
@@ -9189,9 +9202,9 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 }
 
 .info-boxes .info-box ul li .date {
-  font-size: 13px;
+  font-size: 11px;
   text-align: center;
-  margin: 0;
+  margin: 1px 0 0;
 }
 
 .info-boxes .info-box ul li .date span {
@@ -9210,7 +9223,10 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   top: 8px;
   display: inline-block;
   padding-bottom: 13px;
-  max-width: 171px;
+  max-width: 153px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .info-boxes .info-box ul li .total span {
@@ -10553,23 +10569,23 @@ div.ui-dialog div.autoscaler div.scale-down-policy-title {
 }
 
 div.ui-dialog div.autoscaler div.scale-up-policy-title div.form-container div.form-item div.value input[type=text] {
-  margin-left: 195px;
+  margin-left: 729px;
   width: 30%;
-  margin-top: 1px;
+  margin-top: -17px;
 }
 
 div.ui-dialog div.autoscaler div.scale-up-policy-title div.form-container div.form-item div.name {
-  margin-left: 390px;
+  margin-left: 420px;
 }
 
 div.ui-dialog div.autoscaler div.scale-down-policy-title div.form-container div.form-item div.value input[type=text] {
-  margin-left: 670px;
+  margin-left: 698px;
   width: 30%;
   margin-top: -16px;
 }
 
 div.ui-dialog div.autoscaler div.scale-down-policy-title div.form-container div.form-item div.name {
-  margin-left: 390px;
+  margin-left: 420px;
 }
 
 div.ui-dialog div.autoscaler div.scale-up-policy div.multi-edit div.data div.data-body div.data-item {
@@ -10661,6 +10677,248 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .list-view .body tr.selected td.item-state-off {
   background-color: inherit;
   border-color: inherit;
+}
+
+/*Autoscaler*/
+.ui-dialog div.autoscaler {
+  overflow: auto;
+  max-height: 600px;
+}
+
+div.container div.panel div#details-tab-network.detail-group div div.multi-edit table.multi-edit tbody tr td,
+div.container div.panel div#details-tab-network.detail-group div div.multi-edit table.multi-edit thead tr th {
+  min-width: 72px;
+  font-size: 10px;
+}
+
+.ui-dialog div.autoscaler .detail-actions {
+}
+
+.ui-dialog div.autoscaler .detail-actions .buttons {
+  float: right;
+  margin-right: 6px;
+}
+
+.ui-dialog div.autoscaler .detail-actions .buttons .action {
+  width: 32px;
+  float: left;
+}
+
+.ui-dialog div.autoscaler div.form-container div.form-item[rel=securityGroups] {
+  display: block;
+  width: 370px;
+  float: left;
+}
+
+.ui-dialog div.autoscaler div.form-container div.form-item[rel=diskOfferingId] {
+  display: inline-block;
+  width: 370px;
+  float: left;
+  position: relative;
+  margin-top: 1px;
+}
+
+.ui-dialog div.autoscaler div.form-container div.form-item[rel=minInstance] {
+  display: block;
+  width: 50%;
+  float: left;
+}
+
+.ui-dialog div.autoscaler div.form-container div.form-item[rel=maxInstance] {
+  display: inline-block;
+  width: 50%;
+  float: left;
+  left: -30px;
+  position: relative;
+}
+
+.ui-dialog div.autoscaler div.form-container div.form-item[rel=interval] {
+  display: block;
+  width: 50%;
+  float: left;
+}
+
+.ui-dialog div.autoscaler div.form-container div.form-item[rel=quietTime] {
+  display: inline-block;
+  width: 50%;
+  float: left;
+  left: -15px;
+  position: relative;
+}
+
+.ui-dialog div.autoscaler div.form-container div.form-item[rel=snmpCommunity] {
+  display: block;
+  width: 50%;
+  float: left;
+}
+
+.ui-dialog div.autoscaler div.form-container div.form-item[rel=snmpPort] {
+  display: inline-block;
+  width: 50%;
+  float: left;
+  left: -15px;
+  position: relative;
+}
+
+.ui-dialog div.autoscaler div.form-container div.value select {
+  width: 88%;
+  float: left;
+}
+
+div.ui-dialog div.autoscaler div.scale-up-policy-title div.form-container {
+  height: 55px;
+}
+
+div.ui-dialog div.autoscaler div.scale-down-policy-title div.form-container {
+  height: 55px;
+}
+
+div.ui-dialog div.autoscaler div.scale-up-policy div.multi-edit {
+  margin-top: 0px;
+}
+
+div.ui-dialog div.autoscaler div.scale-down-policy div.multi-edit {
+  margin-top: 0px;
+}
+
+div.ui-dialog div.autoscaler div.scale-up-policy-title {
+  color: #0055BB;
+  margin-left: -650px;
+  margin-top: 40px;
+}
+
+div.ui-dialog div.autoscaler div.scale-up-policy-title label {
+  font-size: 13px;
+  margin-left: 200px;
+  margin-right: 10px;
+}
+
+div.ui-dialog div.autoscaler div.scale-up-policy-title hr.policy-divider {
+  border-left: 1px none #38546D;
+  border-right: 1px none #16222C;
+  border-top: 1px none #38546D;
+  margin-bottom: 12px;
+}
+
+div.ui-dialog div.autoscaler div.scale-down-policy-title hr.policy-divider {
+  border-left: 1px none #38546D;
+  border-right: 1px none #16222C;
+  border-top: 1px none #38546D;
+  margin-bottom: 12px;
+}
+
+div.ui-dialog div.autoscaler div.field-group.bottom-fields hr.policy-divider {
+  border-left: 1px none #38546D;
+  border-right: 1px none #16222C;
+  border-top: 1px none #38546D;
+  margin-top: 15px;
+  margin-bottom: -1px;
+}
+
+div.ui-dialog div.autoscaler div.scale-down-policy-title label {
+  font-size: 13px;
+  margin-left: 170px;
+  margin-right: 10px;
+}
+
+div.ui-dialog div.autoscaler div.scale-down-policy-title {
+  color: #0055BB;
+  margin-left: -620px;
+  margin-top: 10px;
+}
+
+div.ui-dialog div.autoscaler div.scale-up-policy-title div.form-container div.form-item div.value input[type=text] {
+  margin-left: 195px;
+  width: 30%;
+  margin-top: 1px;
+}
+
+div.ui-dialog div.autoscaler div.scale-up-policy-title div.form-container div.form-item div.name {
+  margin-left: 390px;
+}
+
+div.ui-dialog div.autoscaler div.scale-down-policy-title div.form-container div.form-item div.value input[type=text] {
+  margin-left: 670px;
+  width: 30%;
+  margin-top: -16px;
+}
+
+div.ui-dialog div.autoscaler div.scale-down-policy-title div.form-container div.form-item div.name {
+  margin-left: 390px;
+}
+
+div.ui-dialog div.autoscaler div.scale-up-policy div.multi-edit div.data div.data-body div.data-item {
+  margin-bottom: 0px;
+  margin-right: 22px;
+}
+
+div.ui-dialog div.autoscaler div.scale-down-policy div.multi-edit div.data div.data-body div.data-item {
+  margin-bottom: 0px;
+  margin-right: 22px;
+}
+
+div.ui-dialog div.autoscaler div.scale-up-policy div.slide-label {
+  color: #A5A3A7;
+  font-size: 14px;
+  margin-bottom: 3px;
+  margin-left: 755px;
+  width: 12px;
+}
+
+div.ui-dialog div.autoscaler div.scale-down-policy div.slide-label {
+  color: #A5A3A7;
+  font-size: 14px;
+  margin-bottom: 3px;
+  margin-left: 755px;
+  width: 12px;
+}
+
+div.ui-dialog div.autoscaler div.scale-up-policy div.hide {
+  background: #FFFFFF url("../images/minus.png") no-repeat 38% 59%;
+  border: 1px solid #D0D0D0;
+  border-radius: 9px 9px 9px 9px;
+  cursor: pointer;
+  float: right;
+  height: 15px;
+  margin: -20px 45px 0 11px;
+  width: 14px;
+}
+
+div.ui-dialog div.autoscaler div.scale-down-policy div.hide {
+  background: #FFFFFF url("../images/minus.png") no-repeat 31% 54%;
+  border: 1px solid #D0D0D0;
+  border-radius: 9px 9px 9px 9px;
+  cursor: pointer;
+  float: right;
+  height: 15px;
+  margin: -20px 45px 0 11px;
+  width: 14px;
+}
+
+div.ui-dialog div.autoscaler div.scale-up-policy div.expand {
+  background: #FFFFFF url("../images/sprites.png") repeat -541px -499px;
+  border: 1px solid #D0D0D0;
+  border-radius: 9px 9px 9px 9px;
+  cursor: pointer;
+  float: right;
+  height: 15px;
+  margin: -20px 45px 0 11px;
+  width: 14px;
+}
+
+div.ui-dialog div.autoscaler div.scale-down-policy div.expand {
+  background: #FFFFFF url("../images/sprites.png") repeat -541px -499px;
+  border: 1px solid #D0D0D0;
+  border-radius: 9px 9px 9px 9px;
+  cursor: pointer;
+  float: right;
+  height: 15px;
+  margin: -20px 45px 0 11px;
+  width: 14px;
+}
+
+div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-item div.name label {
+  font-size: 11px;
 }
 
 /*Action icons*/
@@ -10916,8 +11174,16 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -168px -31px;
 }
 
+.reset .icon {
+  background-position: -168px -31px;
+}
+
 .restoreVM:hover .icon,
 .restore:hover .icon {
+  background-position: -168px -613px;
+}
+
+.reset:hover .icon {
   background-position: -168px -613px;
 }
 

@@ -25,7 +25,7 @@ public class SetPortForwardingRulesCommand extends NetworkElementCommand {
 
     protected SetPortForwardingRulesCommand() {
     }
-    
+
     public SetPortForwardingRulesCommand(List<? extends PortForwardingRuleTO> pfRules) {
         rules = new PortForwardingRuleTO[pfRules.size()];
         int i = 0;
@@ -33,7 +33,7 @@ public class SetPortForwardingRulesCommand extends NetworkElementCommand {
             rules[i++] = rule;
         }
     }
-    
+
     public PortForwardingRuleTO[] getRules() {
         return rules;
     }

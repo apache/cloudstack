@@ -18,9 +18,11 @@ package com.cloud.user;
 
 import java.util.Date;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Account extends ControlledEntity {
+public interface Account extends ControlledEntity, InternalIdentity, Identity {
     public enum Type {
         Normal,
         Admin,
@@ -35,6 +37,7 @@ public interface Account extends ControlledEntity {
         locked
     }
 
+
     public static final short ACCOUNT_TYPE_NORMAL = 0;
     public static final short ACCOUNT_TYPE_ADMIN = 1;
     public static final short ACCOUNT_TYPE_DOMAIN_ADMIN = 2;
@@ -48,8 +51,6 @@ public interface Account extends ControlledEntity {
 
     public static final long ACCOUNT_ID_SYSTEM = 1;
 
-    public long getId();
-
     public String getAccountName();
 
     public short getType();
@@ -59,6 +60,7 @@ public interface Account extends ControlledEntity {
     public Date getRemoved();
 
     public String getNetworkDomain();
-    
+
     public Long getDefaultZoneId();
+
 }

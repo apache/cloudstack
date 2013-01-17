@@ -32,6 +32,8 @@
     <testSourceDirectory>test</testSourceDirectory>
   </build>
   <modules>
+    <module>api/discovery</module>
+    <module>acl/static-role-based</module>
     <module>deployment-planners/user-concentrated-pod</module>
     <module>deployment-planners/user-dispersing</module>
     <module>host-allocators/random</module>
@@ -39,6 +41,7 @@
     <module>hypervisors/xen</module>
     <module>hypervisors/kvm</module>
     <module>event-bus/rabbitmq</module>
+    <module>hypervisors/simulator</module>
     <module>network-elements/elastic-loadbalancer</module>
     <module>network-elements/ovs</module>
     <module>network-elements/nicira-nvp</module>
@@ -47,7 +50,7 @@
     <module>user-authenticators/md5</module>
     <module>user-authenticators/plain-text</module>
     <module>user-authenticators/sha256salted</module>
-    <module>services/event-notification</module>
+    <module>network-elements/dns-notifier</module>
   </modules>
 
   <dependencies>
@@ -125,6 +128,17 @@
         <module>hypervisors/vmware</module>
       </modules>
     </profile>
+    <profile>
+      <id>simulator</id>
+      <activation>
+        <property>
+          <name>simulator</name>
+        </property>
+      </activation>
+      <modules>
+        <module>hypervisors/simulator</module>
+      </modules>
+     </profile>
   </profiles>
 
 </project>

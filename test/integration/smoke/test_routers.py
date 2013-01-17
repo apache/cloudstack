@@ -41,7 +41,7 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "memory": 128, # In MBs
                                     },
                         "virtual_machine":
                                     {
@@ -61,7 +61,7 @@ class Services:
                                         "username": "testuser",
                                         "password": "password",
                                         },
-                         "ostypeid":'01853327-513e-4508-9628-f1f55db1946f',
+                         "ostype": "CentOS 5.3 (64-bit)",
                          "sleep": 60,
                          "timeout": 10,
                          "mode": 'advanced', #Networking mode: Basic, Advanced
@@ -84,7 +84,7 @@ class TestRouterServices(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 

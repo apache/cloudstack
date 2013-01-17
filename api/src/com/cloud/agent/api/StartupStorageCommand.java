@@ -26,7 +26,7 @@ import com.cloud.storage.template.TemplateInfo;
 
 
 public class StartupStorageCommand extends StartupCommand {
-	
+
 	String parent;
     Map<String, TemplateInfo> templateInfo;
     long totalSize;
@@ -39,7 +39,7 @@ public class StartupStorageCommand extends StartupCommand {
     public StartupStorageCommand() {
         super(Host.Type.Storage);
     }
-    
+
     public StartupStorageCommand(String parent, StoragePoolType fsType, long totalSize, Map<String, TemplateInfo> info) {
         super(Host.Type.Storage);
         this.parent = parent;
@@ -48,7 +48,7 @@ public class StartupStorageCommand extends StartupCommand {
         this.poolInfo = null;
         this.fsType = fsType;
     }
-    
+
 
     public StartupStorageCommand(String parent, StoragePoolType fsType, Map<String, TemplateInfo> templateInfo, StoragePoolInfo poolInfo) {
 		super(Host.Type.Storage);
@@ -62,7 +62,7 @@ public class StartupStorageCommand extends StartupCommand {
 	public String getParent() {
         return parent;
     }
-	
+
 	public void setParent(String parent) {
         this.parent = parent;
     }
@@ -70,15 +70,15 @@ public class StartupStorageCommand extends StartupCommand {
     public void setNfsShare(String nfsShare) {
 	    this.nfsShare = nfsShare;
 	}
-	
+
 	public String getNfsShare() {
 	    return nfsShare;
 	}
-    
+
     public long getTotalSize() {
         return totalSize;
     }
-    
+
 	public Map<String, TemplateInfo> getTemplateInfo() {
 		return templateInfo;
 	}

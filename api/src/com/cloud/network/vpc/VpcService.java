@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.api.commands.ListPrivateGatewaysCmd;
-import com.cloud.api.commands.ListStaticRoutesCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -37,20 +37,20 @@ import com.cloud.user.User;
 import com.cloud.utils.Pair;
 
 public interface VpcService {
-    
+
     public VpcOffering getVpcOffering(long vpcOfferingId);
-    
+
     public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices);
-    
+
     public Vpc getVpc(long vpcId);
-    
+
     public Vpc getActiveVpc(long vpcId);
-        
+
     public List<? extends Network> getVpcNetworks(long vpcId);
-    
+
     Map<Service, Set<Provider>> getVpcOffSvcProvidersMap(long vpcOffId);
-    
-    List<? extends VpcOffering> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, 
+
+    List<? extends VpcOffering> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr,
             Boolean isDefault, String keyword, String state, Long startIndex, Long pageSizeVal);
 
     /**
@@ -85,9 +85,9 @@ public interface VpcService {
     /**
      * @param vpcId
      * @return
-     * @throws InsufficientCapacityException 
-     * @throws ResourceUnavailableException 
-     * @throws ConcurrentOperationException 
+     * @throws InsufficientCapacityException
+     * @throws ResourceUnavailableException
+     * @throws ConcurrentOperationException
      */
     public boolean deleteVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException;
 
@@ -120,22 +120,22 @@ public interface VpcService {
      * @param vpc
      * @return
      */
-    public List<? extends Vpc> listVpcs(Long id, String vpcName, String displayText, 
+    public List<? extends Vpc> listVpcs(Long id, String vpcName, String displayText,
             List<String> supportedServicesStr, String cidr, Long vpcOffId, String state, String accountName, Long domainId,
-            String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, 
+            String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll,
             Boolean restartRequired, Map<String, String> tags, Long projectId);
 
     /**
      * @param vpcId
      * @param destroyOnFailure TODO
      * @return
-     * @throws InsufficientCapacityException 
-     * @throws ResourceUnavailableException 
-     * @throws ConcurrentOperationException 
+     * @throws InsufficientCapacityException
+     * @throws ResourceUnavailableException
+     * @throws ConcurrentOperationException
      */
-    boolean startVpc(long vpcId, boolean destroyOnFailure) throws ConcurrentOperationException, 
+    boolean startVpc(long vpcId, boolean destroyOnFailure) throws ConcurrentOperationException,
                                                         ResourceUnavailableException, InsufficientCapacityException;
-    
+
     /**
      * @param vpcId
      * @return
@@ -147,10 +147,10 @@ public interface VpcService {
     /**
      * @param id
      * @return
-     * @throws InsufficientCapacityException 
+     * @throws InsufficientCapacityException
      */
     boolean restartVpc(long id) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
-    
+
     PrivateGateway getVpcPrivateGateway(long id);
 
     /**
@@ -162,28 +162,28 @@ public interface VpcService {
      * @param netmask
      * @param gatewayOwnerId
      * @return
-     * @throws InsufficientCapacityException 
-     * @throws ConcurrentOperationException 
-     * @throws ResourceAllocationException 
+     * @throws InsufficientCapacityException
+     * @throws ConcurrentOperationException
+     * @throws ResourceAllocationException
      */
-    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, 
-            String gateway, String netmask, long gatewayOwnerId) throws ResourceAllocationException, 
+    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress,
+            String gateway, String netmask, long gatewayOwnerId) throws ResourceAllocationException,
             ConcurrentOperationException, InsufficientCapacityException;
 
     /**
      * @param gatewayId
      * @param destroyOnFailure TODO
      * @return
-     * @throws ResourceUnavailableException 
-     * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException
+     * @throws ConcurrentOperationException
      */
     public PrivateGateway applyVpcPrivateGateway(long gatewayId, boolean destroyOnFailure) throws ConcurrentOperationException, ResourceUnavailableException;
-    
+
     /**
      * @param id
      * @return
-     * @throws ResourceUnavailableException 
-     * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException
+     * @throws ConcurrentOperationException
      */
     boolean deleteVpcPrivateGateway(long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException;
 
@@ -202,14 +202,14 @@ public interface VpcService {
     /**
      * @param vpcId
      * @return
-     * @throws ResourceUnavailableException 
+     * @throws ResourceUnavailableException
      */
     public boolean applyStaticRoutes(long vpcId) throws ResourceUnavailableException;
 
     /**
      * @param routeId
      * @return TODO
-     * @throws ResourceUnavailableException 
+     * @throws ResourceUnavailableException
      */
     public boolean revokeStaticRoute(long routeId) throws ResourceUnavailableException;
 
@@ -231,7 +231,7 @@ public interface VpcService {
      * @return
      */
     VpcGateway getVpcGateway(long id);
-    
+
     /**
      * @param ipId
      * @param vpcId
@@ -243,7 +243,7 @@ public interface VpcService {
      */
     IpAddress associateIPToVpc(long ipId, long vpcId) throws ResourceAllocationException, ResourceUnavailableException,
         InsufficientAddressCapacityException, ConcurrentOperationException;
-    
-    public Network updateVpcGuestNetwork(long networkId, String name, String displayText, Account callerAccount, 
+
+    public Network updateVpcGuestNetwork(long networkId, String name, String displayText, Account callerAccount,
             User callerUser, String domainSuffix, Long ntwkOffId, Boolean changeCidr);
 }

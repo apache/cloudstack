@@ -21,9 +21,6 @@ import marvin
 import time
 from marvin.remoteSSHClient import remoteSSHClient
 from marvin.cloudstackAPI import *
-from marvin import cloudstackConnection
-#from cloudstackConnection import cloudConnection
-from marvin import configGenerator
 import logging
 import string
 import random
@@ -136,12 +133,12 @@ def format_volume_to_ext3(ssh_client, device="/dev/sda"):
 
 def fetch_api_client(config_file='datacenterCfg'):
     """Fetch the Cloudstack API Client"""
-    config = configGenerator.get_setup_config(config_file)
+    config = marvin.configGenerator.get_setup_config(config_file)
     mgt = config.mgtSvr[0]
     testClientLogger = logging.getLogger("testClient")
     asyncTimeout = 3600
     return cloudstackAPIClient.CloudStackAPIClient(
-            cloudstackConnection.cloudConnection(
+            marvin.cloudstackConnection.cloudConnection(
                                                 mgt.mgtSvrIp,
                                                 mgt.port,
                                                 mgt.apiKey,

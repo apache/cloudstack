@@ -20,6 +20,7 @@ under the License.
 <head>
 <script type="text/javascript" language="javascript" src="/resource/js/jquery.js"></script>
 <script type="text/javascript" language="javascript" src="/resource/js/ajaxviewer.js"></script>
+<script type="text/javascript" language="javascript" src="/resource/js/ajaxkeys.js"></script>
 <script type="text/javascript" language="javascript" src="/resource/js/handler.js"></script>
 <link rel="stylesheet" type="text/css" href="/resource/css/ajaxviewer.css"></link>
 <title>${title}</title>

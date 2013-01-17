@@ -16,25 +16,21 @@
 // under the License.
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Destroys console proxy", responseObject=SuccessResponse.class)
+//@APICommand(description="Destroys console proxy", responseObject=SuccessResponse.class)
 public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(DestroyConsoleProxyCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DestroyConsoleProxyCmd.class.getName());
 
     private static final String s_name = "destroyconsoleproxyresponse";
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -80,7 +76,7 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "destroying console proxy: " + getId();
     }
-	
+
     @Override
     public void execute(){
         boolean result = _consoleProxyService.destroyConsoleProxy(this);
@@ -88,7 +84,7 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to destroy console proxy");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy console proxy");
         }
     }
 }

@@ -1,4 +1,4 @@
-<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor
   license agreements. See the NOTICE file distributed with this work for additional 
   information regarding copyright ownership. The ASF licenses this file to 
   you under the Apache License, Version 2.0 (the "License"); you may not use 
@@ -9,6 +9,7 @@
   OF ANY KIND, either express or implied. See the License for the specific 
   language governing permissions and limitations under the License. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>cloud-developer</artifactId>
@@ -101,6 +102,7 @@
               </dependency>
             </dependencies>
             <configuration>
+
               <driver>org.gjt.mm.mysql.Driver</driver>
               <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}/cloud</url>
               <username>${db.cloud.username}</username>
@@ -109,7 +111,6 @@
               <skip>${maven.test.skip}</skip>
               <forceMojoExecution>true</forceMojoExecution>
             </configuration>
-
             <executions>
               <execution>
                 <id>drop-database</id>
@@ -288,6 +289,7 @@
                 <configuration>
                   <srcFiles>
                     <srcFile>${basedir}/target/db/create-schema.sql</srcFile>
+                    <srcFile>${basedir}/target/db/create-schema-view.sql</srcFile>
                     <srcFile>${basedir}/target/db/create-schema-premium.sql</srcFile>
                     <srcFile>${basedir}/target/db/templates.sql</srcFile>
                     <srcFile>${basedir}/target/db/create-index-fk.sql</srcFile>
@@ -310,15 +312,138 @@
                 </goals>
                 <configuration>
                   <autocommit>true</autocommit>
-                  <srcFiles>
-                    <srcFile>${basedir}/developer-prefill.sql</srcFile>
-                  </srcFiles>
+                    <srcFiles>
+                        <srcFile>${basedir}/developer-prefill.sql</srcFile>
+                    </srcFiles>
                 </configuration>
               </execution>
             </executions>
           </plugin>
         </plugins>
       </build>
+    </profile>
+
+      <!-- Simulator profile -->
+      <profile>
+          <id>simulator</id>
+          <activation>
+              <property><name>deploydb-simulator</name></property>
+          </activation>
+          <build>
+              <plugins>
+                  <plugin>
+                      <groupId>org.codehaus.mojo</groupId>
+                      <artifactId>properties-maven-plugin</artifactId>
+                      <version>1.0-alpha-2</version>
+                      <executions>
+                          <execution>
+                              <phase>initialize</phase>
+                              <goals>
+                                  <goal>read-project-properties</goal>
+                              </goals>
+                              <configuration>
+                                  <files>
+                                      <file>${project.parent.basedir}/utils/conf/db.properties</file>
+                                      <file>${project.parent.basedir}/utils/conf/db.properties.override</file>
+                                  </files>
+                                  <quiet>true</quiet>
+                              </configuration>
+                          </execution>
+                      </executions>
+                  </plugin>
+                  <plugin>
+                      <groupId>org.codehaus.mojo</groupId>
+                      <artifactId>sql-maven-plugin</artifactId>
+                      <version>1.5</version>
+                      <dependencies>
+                          <dependency>
+                              <groupId>mysql</groupId>
+                              <artifactId>mysql-connector-java</artifactId>
+                              <version>${cs.mysql.version}</version>
+                          </dependency>
+                      </dependencies>
+                      <configuration>
+                          <driver>org.gjt.mm.mysql.Driver</driver>
+                          <url>jdbc:mysql://${db.simulator.host}:3306/simulator</url>
+                          <username>${db.simulator.username}</username>
+                          <password>${db.simulator.password}</password>
+                          <skip>${maven.test.skip}</skip>
+                          <forceMojoExecution>true</forceMojoExecution>
+                      </configuration>
+                      <executions>
+                          <execution>
+                              <id>drop-database</id>
+                              <phase>process-test-resources</phase>
+                              <goals>
+                                  <goal>execute</goal>
+                              </goals>
+                              <configuration>
+                                  <username>root</username>
+                                  <password>${db.root.password}</password>
+                                  <url>jdbc:mysql://${db.simulator.host}:3306</url>
+                                  <sqlCommand>drop database if exists `simulator`</sqlCommand>
+                              </configuration>
+                          </execution>
+                          <execution>
+                              <id>create-database</id>
+                              <phase>process-test-resources</phase>
+                              <goals>
+                                  <goal>execute</goal>
+                              </goals>
+                              <configuration>
+                                  <username>root</username>
+                                  <password>${db.root.password}</password>
+                                  <url>jdbc:mysql://${db.simulator.host}:3306</url>
+                                  <sqlCommand>create database `simulator`</sqlCommand>
+                              </configuration>
+                          </execution>
+                          <execution>
+                              <id>grant-user-cloud</id>
+                              <phase>process-test-resources</phase>
+                              <goals>
+                                  <goal>execute</goal>
+                              </goals>
+                              <configuration>
+                                  <username>root</username>
+                                  <password>${db.root.password}</password>
+                                  <url>jdbc:mysql://${db.simulator.host}:3306</url>
+                                  <sqlCommand>GRANT ALL ON simulator.* to
+                                      ${db.simulator.username}@`localhost` identified by
+                                      '${db.simulator.password}';</sqlCommand>
+                              </configuration>
+                          </execution>
+                          <execution>
+                              <id>grant-user-cloud-all</id>
+                              <phase>process-test-resources</phase>
+                              <goals>
+                                  <goal>execute</goal>
+                              </goals>
+                              <configuration>
+                                  <username>root</username>
+                                  <password>${db.root.password}</password>
+                                  <url>jdbc:mysql://${db.simulator.host}:3306</url>
+                                  <sqlCommand>GRANT ALL ON simulator.* to
+                                      ${db.simulator.username}@`%` identified by
+                                      '${db.simulator.password}';</sqlCommand>
+                              </configuration>
+                          </execution>
+                          <execution>
+                              <id>create-schema</id>
+                              <phase>process-test-resources</phase>
+                              <goals>
+                                  <goal>execute</goal>
+                              </goals>
+                              <configuration>
+                                  <srcFiles>
+                                      <srcFile>${basedir}/target/db/create-schema-simulator.sql</srcFile>
+                                      <srcFile>${basedir}/target/db/templates.simulator.sql</srcFile>
+                                  </srcFiles>
+                              </configuration>
+                          </execution>
+                      </executions>
+                  </plugin>
+              </plugins>
+          </build>
     </profile>
   </profiles>
 </project>

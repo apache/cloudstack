@@ -26,10 +26,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="disk_offering")
-public class DiskOffering20VO {
+public class DiskOffering20VO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -64,7 +65,7 @@ public class DiskOffering20VO {
         this.mirrored = mirrored;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
     public void setId(Long id) {

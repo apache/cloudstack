@@ -17,16 +17,14 @@
 package com.cloud.hypervisor;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 
 /**
  *  HypervisorCapability represents one particular hypervisor version's capabilities.
  */
-public interface HypervisorCapabilities {
-    /**
-     * @return id of the host.
-     */
-    long getId();
+public interface HypervisorCapabilities extends Identity, InternalIdentity{
 
     /**
      * @return type of hypervisor

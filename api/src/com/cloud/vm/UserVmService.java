@@ -21,22 +21,21 @@ import java.util.Map;
 
 import javax.naming.InsufficientResourcesException;
 
-import com.cloud.api.commands.AssignVMCmd;
-import com.cloud.api.commands.AttachVolumeCmd;
-import com.cloud.api.commands.CreateTemplateCmd;
-import com.cloud.api.commands.CreateVMGroupCmd;
-import com.cloud.api.commands.DeleteVMGroupCmd;
-import com.cloud.api.commands.DeployVMCmd;
-import com.cloud.api.commands.DestroyVMCmd;
-import com.cloud.api.commands.DetachVolumeCmd;
-import com.cloud.api.commands.ListVMsCmd;
-import com.cloud.api.commands.RebootVMCmd;
-import com.cloud.api.commands.RecoverVMCmd;
-import com.cloud.api.commands.ResetVMPasswordCmd;
-import com.cloud.api.commands.RestoreVMCmd;
-import com.cloud.api.commands.StartVMCmd;
-import com.cloud.api.commands.UpdateVMCmd;
-import com.cloud.api.commands.UpgradeVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
+import org.apache.cloudstack.api.command.user.vm.*;
+import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
+import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -53,13 +52,12 @@ import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
 
 public interface UserVmService {
     /**
      * Destroys one virtual machine
-     * 
+     *
      * @param userId
      *            the id of the user performing the action
      * @param vmId
@@ -71,7 +69,7 @@ public interface UserVmService {
 
     /**
      * Destroys one virtual machine
-     * 
+     *
      * @param userId
      *            the id of the user performing the action
      * @param vmId
@@ -83,7 +81,7 @@ public interface UserVmService {
 
     /**
      * Resets the password of a virtual machine.
-     * 
+     *
      * @param cmd
      *            - the command specifying vmId, password
      * @return the VM if reset worked successfully, null otherwise
@@ -92,7 +90,7 @@ public interface UserVmService {
 
     /**
      * Attaches the specified volume to the specified VM
-     * 
+     *
      * @param cmd
      *            - the command specifying volumeId and vmId
      * @return the Volume object if attach worked successfully.
@@ -101,7 +99,7 @@ public interface UserVmService {
 
     /**
      * Detaches the specified volume from the VM it is currently attached to.
-     * 
+     *
      * @param cmd
      *            - the command specifying volumeId
      * @return the Volume object if detach worked successfully.
@@ -113,13 +111,13 @@ public interface UserVmService {
 
     UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
 
-    UserVm updateVirtualMachine(UpdateVMCmd cmd);
+    UserVm updateVirtualMachine(UpdateVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
 
     UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException;
 
     /**
      * Create a template database record in preparation for creating a private template.
-     * 
+     *
      * @param cmd
      *            the command object that defines the name, display text, snapshot/volume, bits, public/private, etc.
      *            for the
@@ -133,7 +131,7 @@ public interface UserVmService {
 
     /**
      * Creates a private template from a snapshot of a VM
-     * 
+     *
      * @param cmd
      *            - the command specifying snapshotId, name, description
      * @return a template if successfully created, null otherwise
@@ -142,7 +140,7 @@ public interface UserVmService {
 
     /**
      * Creates a Basic Zone User VM in the database and returns the VM to the caller.
-     * 
+     *
      * @param zone
      *            - availability zone for the virtual machine
      * @param serviceOffering
@@ -189,7 +187,7 @@ public interface UserVmService {
      *            - an optional domainId for the virtual machine. If the account parameter is used, domainId must also
      *            be used
      * @return UserVm object if successful.
-     * 
+     *
      * @throws InsufficientCapacityException
      *             if there is insufficient capacity to deploy the VM.
      * @throws ConcurrentOperationException
@@ -205,7 +203,7 @@ public interface UserVmService {
     /**
      * Creates a User VM in Advanced Zone (Security Group feature is enabled) in the database and returns the VM to the
      * caller.
-     * 
+     *
      * @param zone
      *            - availability zone for the virtual machine
      * @param serviceOffering
@@ -254,7 +252,7 @@ public interface UserVmService {
      *            - an optional domainId for the virtual machine. If the account parameter is used, domainId must also
      *            be used
      * @return UserVm object if successful.
-     * 
+     *
      * @throws InsufficientCapacityException
      *             if there is insufficient capacity to deploy the VM.
      * @throws ConcurrentOperationException
@@ -271,7 +269,7 @@ public interface UserVmService {
     /**
      * Creates a User VM in Advanced Zone (Security Group feature is disabled) in the database and returns the VM to the
      * caller.
-     * 
+     *
      * @param zone
      *            - availability zone for the virtual machine
      * @param serviceOffering
@@ -318,7 +316,7 @@ public interface UserVmService {
      *            - an optional domainId for the virtual machine. If the account parameter is used, domainId must also
      *            be used
      * @return UserVm object if successful.
-     * 
+     *
      * @throws InsufficientCapacityException
      *             if there is insufficient capacity to deploy the VM.
      * @throws ConcurrentOperationException
@@ -333,7 +331,7 @@ public interface UserVmService {
 
     /**
      * Starts the virtual machine created from createVirtualMachine.
-     * 
+     *
      * @param cmd
      *            Command to deploy.
      * @return UserVm object if successful.
@@ -348,7 +346,7 @@ public interface UserVmService {
 
     /**
      * Creates a vm group.
-     * 
+     *
      * @param name
      *            - name of the group
      * @param accountId
@@ -360,7 +358,7 @@ public interface UserVmService {
 
     /**
      * upgrade the service offering of the virtual machine
-     * 
+     *
      * @param cmd
      *            - the command specifying vmId and new serviceOfferingId
      * @return the vm
@@ -371,15 +369,6 @@ public interface UserVmService {
 
     void deletePrivateTemplateRecord(Long templateId);
 
-    /**
-     * Obtains a list of virtual machines by the specified search criteria. Can search by: "userId", "name", "state",
-     * "dataCenterId", "podId", "hostId"
-     * 
-     * @param cmd
-     *            the API command that wraps the search criteria
-     * @return List of UserVMs.
-     */
-    Pair<List<? extends UserVm>, Integer> searchForUserVMs(ListVMsCmd cmd);
 
     HypervisorType getHypervisorTypeOfUserVM(long vmid);
 
@@ -392,7 +381,7 @@ public interface UserVmService {
      * Migrate the given VM to the destination host provided. The API returns the migrated VM if migration succeeds.
      * Only Root
      * Admin can migrate a VM.
-     * 
+     *
      * @param destinationStorage
      *            TODO
      * @param Long
@@ -400,7 +389,7 @@ public interface UserVmService {
      *            vmId of The VM to migrate
      * @param Host
      *            destinationHost to migrate the VM
-     * 
+     *
      * @return VirtualMachine migrated VM
      * @throws ManagementServerException
      *             in case we get error finding the VM or host or access errors or other internal errors.

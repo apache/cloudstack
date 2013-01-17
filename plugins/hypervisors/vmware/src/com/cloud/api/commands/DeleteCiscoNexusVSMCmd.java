@@ -19,14 +19,15 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.PlugService;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -34,9 +35,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
-@Implementation(responseObject=SuccessResponse.class, description=" delete a Cisco Nexus VSM device")
+@APICommand(name = "deleteCiscoNexusVSM", responseObject=SuccessResponse.class, description=" delete a Cisco Nexus VSM device")
 public class DeleteCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteCiscoNexusVSMCmd.class.getName());
@@ -47,8 +47,8 @@ public class DeleteCiscoNexusVSMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="virtual_supervisor_module")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Id of the Cisco Nexus 1000v VSM device to be deleted")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = CiscoNexusVSMResponse.class,
+            required=true, description="Id of the Cisco Nexus 1000v VSM device to be deleted")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -71,7 +71,7 @@ public class DeleteCiscoNexusVSMCmd extends BaseAsyncCmd {
         	response.setResponseName(getCommandName());
         	this.setResponseObject(response);
         } else {
-        	throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to delete Cisco Nexus VSM device");
+        	throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Cisco Nexus VSM device");
         }
     }
 
@@ -84,7 +84,7 @@ public class DeleteCiscoNexusVSMCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public String getEventType() {
     	return EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DELETE;

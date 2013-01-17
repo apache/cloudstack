@@ -27,6 +27,6 @@
         <itemizedlist>
             <listitem><para>Each Zone can have one or more secondary storage servers. Multiple secondary storage servers provide increased scalability to the system.</para></listitem>
             <listitem><para>Secondary storage has a high read:write ratio and is expected to consist of larger drives with lower IOPS than primary storage.</para></listitem>
-            <listitem><para>Ensure that nothing is stored on the server. Adding the server to CloudPlatform will destroy any existing data.</para></listitem>            
+            <listitem><para>Ensure that nothing is stored on the server. Adding the server to &PRODUCT; will destroy any existing data.</para></listitem>            
         </itemizedlist>
     </section>

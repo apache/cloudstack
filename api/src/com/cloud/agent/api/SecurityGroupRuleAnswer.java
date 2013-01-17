@@ -26,24 +26,24 @@ public class SecurityGroupRuleAnswer extends Answer {
     Long logSequenceNumber = null;
     Long vmId = null;
     FailureReason reason = FailureReason.NONE;
-   
-    
+
+
     protected SecurityGroupRuleAnswer() {
     }
-    
+
     public SecurityGroupRuleAnswer(SecurityGroupRulesCmd cmd) {
     	super(cmd);
         this.logSequenceNumber = cmd.getSeqNum();
         this.vmId = cmd.getVmId();
     }
-    
+
     public SecurityGroupRuleAnswer(SecurityGroupRulesCmd cmd, boolean result, String detail) {
         super(cmd, result, detail);
         this.logSequenceNumber = cmd.getSeqNum();
         this.vmId = cmd.getVmId();
         reason = FailureReason.PROGRAMMING_FAILED;
     }
-    
+
     public SecurityGroupRuleAnswer(SecurityGroupRulesCmd cmd, boolean result, String detail, FailureReason r) {
         super(cmd, result, detail);
         this.logSequenceNumber = cmd.getSeqNum();

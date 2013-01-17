@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -24,6 +24,21 @@ import java.util.Map;
 import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.alert.AlertManagerImpl;
 import com.cloud.alert.dao.AlertDaoImpl;
+import com.cloud.api.query.QueryManagerImpl;
+import com.cloud.api.query.dao.AccountJoinDaoImpl;
+import com.cloud.api.query.dao.AsyncJobJoinDaoImpl;
+import com.cloud.api.query.dao.DomainRouterJoinDaoImpl;
+import com.cloud.api.query.dao.InstanceGroupJoinDaoImpl;
+import com.cloud.api.query.dao.ProjectAccountJoinDaoImpl;
+import com.cloud.api.query.dao.ProjectInvitationJoinDaoImpl;
+import com.cloud.api.query.dao.ProjectJoinDaoImpl;
+import com.cloud.api.query.dao.ResourceTagJoinDaoImpl;
+import com.cloud.api.query.dao.SecurityGroupJoinDaoImpl;
+import com.cloud.api.query.dao.StoragePoolJoinDaoImpl;
+import com.cloud.api.query.dao.UserAccountJoinDaoImpl;
+import com.cloud.api.query.dao.UserVmJoinDaoImpl;
+import com.cloud.api.query.dao.HostJoinDaoImpl;
+import com.cloud.api.query.dao.VolumeJoinDaoImpl;
 import com.cloud.async.AsyncJobExecutorContextImpl;
 import com.cloud.async.AsyncJobManagerImpl;
 import com.cloud.async.SyncQueueManagerImpl;
@@ -75,6 +90,14 @@ import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.ExternalLoadBalancerUsageManagerImpl;
 import com.cloud.network.NetworkManagerImpl;
 import com.cloud.network.StorageNetworkManagerImpl;
+import com.cloud.network.as.AutoScaleManagerImpl;
+import com.cloud.network.as.dao.AutoScalePolicyConditionMapDaoImpl;
+import com.cloud.network.as.dao.AutoScalePolicyDaoImpl;
+import com.cloud.network.as.dao.AutoScaleVmGroupDaoImpl;
+import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDaoImpl;
+import com.cloud.network.as.dao.AutoScaleVmProfileDaoImpl;
+import com.cloud.network.as.dao.ConditionDaoImpl;
+import com.cloud.network.as.dao.CounterDaoImpl;
 import com.cloud.network.dao.ExternalFirewallDeviceDaoImpl;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDaoImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
@@ -139,6 +162,7 @@ import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.dao.GuestOSCategoryDaoImpl;
 import com.cloud.storage.dao.GuestOSDaoImpl;
 import com.cloud.storage.dao.LaunchPermissionDaoImpl;
+import com.cloud.storage.dao.S3DaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.storage.dao.SnapshotPolicyDaoImpl;
 import com.cloud.storage.dao.SnapshotScheduleDaoImpl;
@@ -151,11 +175,13 @@ import com.cloud.storage.dao.VMTemplateDaoImpl;
 import com.cloud.storage.dao.VMTemplateDetailsDaoImpl;
 import com.cloud.storage.dao.VMTemplateHostDaoImpl;
 import com.cloud.storage.dao.VMTemplatePoolDaoImpl;
+import com.cloud.storage.dao.VMTemplateS3DaoImpl;
 import com.cloud.storage.dao.VMTemplateSwiftDaoImpl;
 import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
 import com.cloud.storage.dao.VolumeHostDaoImpl;
 import com.cloud.storage.download.DownloadMonitorImpl;
+import com.cloud.storage.s3.S3ManagerImpl;
 import com.cloud.storage.secondary.SecondaryStorageManagerImpl;
 import com.cloud.storage.snapshot.SnapshotManagerImpl;
 import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
@@ -197,6 +223,8 @@ import com.cloud.vm.dao.SecondaryStorageVmDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
 import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
+import com.cloud.event.dao.EventJoinDaoImpl;
+
 
 
 public class DefaultComponentLibrary extends ComponentLibraryBase implements ComponentLibrary {
@@ -238,6 +266,13 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("NetworkRuleConfigDao", NetworkRuleConfigDaoImpl.class);
         addDao("LoadBalancerVMMapDao", LoadBalancerVMMapDaoImpl.class);
         addDao("LBStickinessPolicyDao", LBStickinessPolicyDaoImpl.class);
+        addDao("CounterDao", CounterDaoImpl.class);
+        addDao("ConditionDao", ConditionDaoImpl.class);
+        addDao("AutoScalePolicyDao", AutoScalePolicyDaoImpl.class);
+        addDao("AutoScalePolicyConditionMapDao", AutoScalePolicyConditionMapDaoImpl.class);
+        addDao("AutoScaleVmProfileDao", AutoScaleVmProfileDaoImpl.class);
+        addDao("AutoScaleVmGroupDao", AutoScaleVmGroupDaoImpl.class);
+        addDao("AutoScaleVmGroupPolicyMapDao", AutoScaleVmGroupPolicyMapDaoImpl.class);
         addDao("DataCenterIpAddressDao", DataCenterIpAddressDaoImpl.class);
         addDao("SecurityGroupDao", SecurityGroupDaoImpl.class);
         addDao("SecurityGroupRuleDao", SecurityGroupRuleDaoImpl.class);
@@ -255,6 +290,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("VMTemplateHostDao", VMTemplateHostDaoImpl.class);
         addDao("VolumeHostDao", VolumeHostDaoImpl.class);
         addDao("VMTemplateSwiftDao", VMTemplateSwiftDaoImpl.class);
+        addDao("VMTemplateS3Dao", VMTemplateS3DaoImpl.class);
         addDao("UploadDao", UploadDaoImpl.class);
         addDao("VMTemplatePoolDao", VMTemplatePoolDaoImpl.class);
         addDao("LaunchPermissionDao", LaunchPermissionDaoImpl.class);
@@ -286,6 +322,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("NetworkOfferingDao", NetworkOfferingDaoImpl.class);
         addDao("NicDao", NicDaoImpl.class);
         addDao("InstanceGroupDao", InstanceGroupDaoImpl.class);
+        addDao("InstanceGroupJoinDao", InstanceGroupJoinDaoImpl.class);
         addDao("InstanceGroupVMMapDao", InstanceGroupVMMapDaoImpl.class);
         addDao("RemoteAccessVpnDao", RemoteAccessVpnDaoImpl.class);
         addDao("VpnUserDao", VpnUserDaoImpl.class);
@@ -303,6 +340,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("KeystoreDao", KeystoreDaoImpl.class);
         addDao("DcDetailsDao", DcDetailsDaoImpl.class);
         addDao("SwiftDao", SwiftDaoImpl.class);
+        addDao("S3Dao", S3DaoImpl.class);
         addDao("AgentTransferMapDao", HostTransferMapDaoImpl.class);
         addDao("ProjectDao", ProjectDaoImpl.class);
         addDao("InlineLoadBalancerNicMapDao", InlineLoadBalancerNicMapDaoImpl.class);
@@ -337,6 +375,21 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("Site2SiteVpnGatewayDao", Site2SiteVpnGatewayDaoImpl.class);
         addDao("Site2SiteCustomerGatewayDao", Site2SiteCustomerGatewayDaoImpl.class);
         addDao("Site2SiteVpnConnnectionDao", Site2SiteVpnConnectionDaoImpl.class);
+
+        addDao("UserVmJoinDao", UserVmJoinDaoImpl.class);
+        addDao("DomainRouterJoinDao", DomainRouterJoinDaoImpl.class);
+        addDao("SecurityGroupJoinDao", SecurityGroupJoinDaoImpl.class);
+        addDao("ResourceTagJoinDao", ResourceTagJoinDaoImpl.class);
+        addDao("EventJoinDao", EventJoinDaoImpl.class);
+        addDao("UserAccountJoinDao", UserAccountJoinDaoImpl.class);
+        addDao("ProjectJoinDao", ProjectJoinDaoImpl.class);
+        addDao("ProjectAccountJoinDao", ProjectAccountJoinDaoImpl.class);
+        addDao("ProjectInvitationJoinDao", ProjectInvitationJoinDaoImpl.class);
+        addDao("HostJoinDao", HostJoinDaoImpl.class);
+        addDao("VolumeJoinDao", VolumeJoinDaoImpl.class);
+        addDao("AccountJoinDao", AccountJoinDaoImpl.class);
+        addDao("AsyncJobJoinDao", AsyncJobJoinDaoImpl.class);
+        addDao("StoragePoolJoinDao", StoragePoolJoinDaoImpl.class);
     }
 
     @Override
@@ -344,6 +397,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         if (_daos.size() == 0) {
             populateDaos();
         }
+        //FIXME: Incorrect method return definition
         return _daos;
     }
 
@@ -374,6 +428,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("SecurityGroupManager", SecurityGroupManagerImpl2.class);
         addManager("EntityManager", EntityManagerImpl.class);
         addManager("LoadBalancingRulesManager", LoadBalancingRulesManagerImpl.class);
+        addManager("AutoScaleManager", AutoScaleManagerImpl.class);
         addManager("RulesManager", RulesManagerImpl.class);
         addManager("RemoteAccessVpnManager", RemoteAccessVpnManagerImpl.class);
         addManager("Capacity Manager", CapacityManagerImpl.class);
@@ -387,6 +442,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         info.addParameter("consoleproxy.sslEnabled", "true");
         addManager("ProjectManager", ProjectManagerImpl.class);
         addManager("SwiftManager", SwiftManagerImpl.class);
+        addManager("S3Manager", S3ManagerImpl.class);
         addManager("StorageNetworkManager", StorageNetworkManagerImpl.class);
         addManager("ExternalLoadBalancerUsageManager", ExternalLoadBalancerUsageManagerImpl.class);
         addManager("HA Manager", HighAvailabilityManagerImpl.class);
@@ -395,6 +451,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("NetworkACLManager", NetworkACLManagerImpl.class);
         addManager("TaggedResourcesManager", TaggedResourceManagerImpl.class);
         addManager("Site2SiteVpnManager", Site2SiteVpnManagerImpl.class);
+        addManager("QueryManager", QueryManagerImpl.class);
     }
 
     @Override

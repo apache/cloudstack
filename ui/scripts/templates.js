@@ -836,18 +836,22 @@
                 fields: {
                   name: {
                     label: 'label.name',
+                    docID: 'helpRegisterISOName',
                     validation: { required: true }
                   },
                   description: {
                     label: 'label.description',
+                    docID: 'helpRegisterISODescription',
                     validation: { required: true }
                   },
                   url: {
                     label: 'URL',
+                    docID: 'helpRegisterISOURL',
                     validation: { required: true }
                   },
                   zone: {
                     label: 'label.zone',
+                    docID: 'helpRegisterISOZone',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listZones&available=true"),
@@ -870,12 +874,14 @@
 
                   isBootable: {
                     label: "label.bootable",
+                    docID: 'helpRegisterISOBootable',
                     isBoolean: true,
                     isChecked: true
                   },
 
                   osTypeId: {
                     label: 'label.os.type',
+                    docID: 'helpRegisterISOOSType',
                     dependsOn: 'isBootable',
                     isHidden: false,
                     validation: { required: true },
@@ -899,17 +905,20 @@
 
                   isExtractable: {
                     label: "extractable",
+                    docID: 'helpRegisterISOExtractable',
                     isBoolean: true
                   },
 
                   isPublic: {
                     label: "label.public",
+                    docID: 'helpRegisterISOPublic',
                     isBoolean: true,
                     isHidden: true
                   },
 
                   isFeatured: {
                     label: "label.featured",
+                    docID: 'helpRegisterISOFeatured',
                     isBoolean: true,
                     isHidden: true
                   }
@@ -1404,21 +1413,21 @@
     var allowedActions = [];
 
     // "Edit Template", "Copy Template", "Create VM"
-    if ((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))  //if neither root-admin, nor item owner
+    if ((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id))  //if neither root-admin, nor the same account, nor the same project
         || jsonObj.templatetype == "SYSTEM" || jsonObj.isready == false) {
       //do nothing
     }
     else {
       allowedActions.push("edit");
 
-      if(havingSwift == false)
+      if(havingSwift == false && havingS3 == false)
         allowedActions.push("copyTemplate");
 
       //allowedActions.push("createVm"); // For Beta2, this simply doesn't work without a network.
     }
 
     // "Download Template"
-    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))  //if neither root-admin, nor item owner
+    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id)))  //if neither root-admin, nor the same account, nor the same project
         || (jsonObj.isready == false) || jsonObj.templatetype == "SYSTEM") {
       //do nothing
     }
@@ -1428,7 +1437,7 @@
 
     // "Delete Template"
     //if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))
-    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && jsonObj.projectid == cloudStack.context.projects[0].id)))  //if neither root-admin, nor the same account, nor the same project
+    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id)))  //if neither root-admin, nor the same account, nor the same project
         || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)
         || (jsonObj.account ==	"system")) {
       //do nothing
@@ -1444,7 +1453,7 @@
     var jsonObj = args.context.item;
     var allowedActions = [];
 
-    if ((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))  //if neither root-admin, nor item owner
+    if ((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id))  //if neither root-admin, nor the same account, nor the same project
         || (jsonObj.isready == false)
         || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
        ) {
@@ -1460,7 +1469,7 @@
     // "Create VM"
     // Commenting this out for Beta2 as it does not support the new network.
     /*
-     //if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))
+     //if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id))  //if neither root-admin, nor the same account, nor the same project
      if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))  //if neither root-admin, nor item owner
      || jsonObj.isready == false)
      || (jsonObj.bootable == false)
@@ -1475,7 +1484,7 @@
 
     // "Download ISO"
     //if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))
-    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))  //if neither root-admin, nor item owner
+    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id)))  //if neither root-admin, nor the same account, nor the same project
         || (jsonObj.isready == false)
         || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
        ) {
@@ -1487,7 +1496,7 @@
 
     // "Delete ISO"
     //if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))
-    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && jsonObj.projectid == cloudStack.context.projects[0].id)))  //if neither root-admin, nor the same account, nor the same project
+    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id)))  //if neither root-admin, nor the same account, nor the same project
         || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)
         || (jsonObj.account ==	"system")
        ) {

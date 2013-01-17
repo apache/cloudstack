@@ -27,6 +27,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import com.cloud.exception.InvalidParameterValueException;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * PortProfileVO contains information on portprofiles that are created on a Cisco Nexus 1000v VSM associated
@@ -35,7 +36,7 @@ import com.cloud.exception.InvalidParameterValueException;
 
 @Entity
 @Table(name="port_profile")
-public class PortProfileVO {
+public class PortProfileVO implements InternalIdentity {
 	
 	// We need to know what properties a VSM has. Put them here.
 	

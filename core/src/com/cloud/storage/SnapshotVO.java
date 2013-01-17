@@ -28,32 +28,33 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="snapshots")
-public class SnapshotVO implements Snapshot, Identity {
-	
+public class SnapshotVO implements Snapshot {
+
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id = -1;
-    
+
     @Column(name="data_center_id")
     long dataCenterId;
 
     @Column(name="account_id")
     long accountId;
-    
+
     @Column(name="domain_id")
     long domainId;
 
     @Column(name="volume_id")
     Long volumeId;
-    
+
     @Column(name="disk_offering_id")
     Long diskOfferingId;
 
@@ -64,7 +65,7 @@ public class SnapshotVO implements Snapshot, Identity {
     @Expose
     @Column(name="name")
     String name;
-    
+
     @Expose
     @Column(name="status", updatable = true, nullable=false)
     @Enumerated(value=EnumType.STRING)
@@ -75,10 +76,10 @@ public class SnapshotVO implements Snapshot, Identity {
 
     @Column(name="type_description")
     String typeDescription;
-    
+
     @Column(name="size")
     long size;
-    
+
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
 
@@ -87,10 +88,13 @@ public class SnapshotVO implements Snapshot, Identity {
 
     @Column(name="backup_snap_id")
     String backupSnapshotId;
-    
+
     @Column(name="swift_id")
     Long swiftId;
-    
+
+    @Column(name="s3_id")
+    Long s3Id;
+
     @Column(name="sechost_id")
     Long secHostId;
 
@@ -100,14 +104,14 @@ public class SnapshotVO implements Snapshot, Identity {
     @Column(name="hypervisor_type")
     @Enumerated(value=EnumType.STRING)
     HypervisorType  hypervisorType;
-    
+
     @Expose
     @Column(name="version")
     String version;
-    
+
     @Column(name="uuid")
     String uuid;
-    
+
     public SnapshotVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
@@ -129,9 +133,9 @@ public class SnapshotVO implements Snapshot, Identity {
         this.version = "2.2";
     	this.uuid = UUID.randomUUID().toString();
     }
-    
+
     @Override
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
@@ -165,7 +169,7 @@ public class SnapshotVO implements Snapshot, Identity {
     public String getPath() {
         return path;
     }
-    
+
     public void setPath(String path) {
     	this.path = path;
     }
@@ -178,7 +182,7 @@ public class SnapshotVO implements Snapshot, Identity {
     public short getsnapshotType() {
         return snapshotType;
     }
-    
+
     @Override
     public Type getType() {
         if (snapshotType < 0 || snapshotType >= Type.values().length) {
@@ -186,7 +190,7 @@ public class SnapshotVO implements Snapshot, Identity {
         }
         return Type.values()[snapshotType];
     }
-    
+
     public Long getSwiftId() {
         return swiftId;
     }
@@ -207,11 +211,11 @@ public class SnapshotVO implements Snapshot, Identity {
     public HypervisorType getHypervisorType() {
     	return hypervisorType;
     }
-    
+
     public void setSnapshotType(short snapshotType) {
         this.snapshotType = snapshotType;
     }
-    
+
     @Override
     public boolean isRecursive(){
         if ( snapshotType >= Type.HOURLY.ordinal() && snapshotType <= Type.MONTHLY.ordinal() ) {
@@ -246,32 +250,32 @@ public class SnapshotVO implements Snapshot, Identity {
     public Date getRemoved() {
         return removed;
     }
-    
+
 	@Override
     public Status getStatus() {
 		return status;
 	}
-	
+
 	public void setStatus(Status status) {
 		this.status = status;
 	}
-	
+
 	public String getBackupSnapshotId(){
 		return backupSnapshotId;
 	}
-	
+
     public long getPrevSnapshotId(){
 		return prevSnapshotId;
 	}
-	
+
 	public void setBackupSnapshotId(String backUpSnapshotId){
 		this.backupSnapshotId = backUpSnapshotId;
 	}
-	
+
 	public void setPrevSnapshotId(long prevSnapshotId){
 		this.prevSnapshotId = prevSnapshotId;
 	}
-	   
+
     public static Type getSnapshotType(String snapshotType) {
         for ( Type type : Type.values()) {
             if ( type.equals(snapshotType)) {
@@ -280,13 +284,22 @@ public class SnapshotVO implements Snapshot, Identity {
         }
         return null;
     }
-    
+
     @Override
     public String getUuid() {
     	return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
+
+    public Long getS3Id() {
+        return s3Id;
+    }
+
+    public void setS3Id(Long s3Id) {
+        this.s3Id = s3Id;
+    }
+
 }

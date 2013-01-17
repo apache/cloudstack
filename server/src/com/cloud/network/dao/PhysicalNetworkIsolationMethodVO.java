@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.dao;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -28,7 +30,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "physical_network_isolation_methods")
-public class PhysicalNetworkIsolationMethodVO {
+public class PhysicalNetworkIsolationMethodVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

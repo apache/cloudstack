@@ -350,7 +350,12 @@ public class Script implements Callable<String> {
          * Look in WEB-INF/classes of the webapp
          * URI workaround the URL encoding of url.getFile
          */
-        url = Script.class.getClassLoader().getResource(path + script);
+        if (path.endsWith(File.separator)) {
+        	url = Script.class.getClassLoader().getResource(path + script);
+        }
+        else {
+        	url = Script.class.getClassLoader().getResource(path + File.separator + script);
+        }
         s_logger.debug("Classpath resource: " + url);
         if (url != null) {
        	    try {

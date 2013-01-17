@@ -15,15 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.agent.api.to;
-  
+
 public class SwiftTO {
     Long id;
     String url;
     String account;
-        
+
     String userName;
     String key;
-            
+
     public SwiftTO() { }
 
     public SwiftTO(Long id, String url, String account, String userName, String key) {
@@ -33,7 +33,7 @@ public class SwiftTO {
         this.userName = userName;
         this.key = key;
     }
-    
+
     public Long getId() {
         return id;
     }
@@ -53,6 +53,6 @@ public class SwiftTO {
     public String getKey() {
         return key;
     }
-    
+
 
 }

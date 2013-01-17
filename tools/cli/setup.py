@@ -26,7 +26,9 @@ from cloudmonkey import __version__
 
 name = 'cloudmonkey'
 version = __version__
-requires = ['clint>=0.3.0',]
+requires = ['clint>=0.3.0',
+            'prettytable>=0.6',
+           ]
 
 try:
     import readline
@@ -43,7 +45,7 @@ setup(
     url = "http://incubator.apache.org/cloudstack",
     description = "Command Line Interface for Apache CloudStack",
     long_description = "cloudmonkey is a command line interface for Apache "
-                     "CloudStack powered by CloudStack Marvin testclient",
+                     "CloudStack powered by CloudStack Marvin",
     platforms = ("Any",),
     license = 'ASL 2.0',
     packages = find_packages(),

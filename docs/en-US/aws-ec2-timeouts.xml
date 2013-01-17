@@ -24,7 +24,7 @@
 
 <section id="aws-ec2-timeouts">
   <title>Using Timeouts to Ensure AWS API Command Completion</title>
-  <para>The Amazon EC2 command-line tools have a default connection timeout. When used with &PRODUCT;, a longer timeout might be needed for some commands. If you find that commands are not completing due to timeouts, you can gain more time for commands to finish by overriding the default timeouts on individual commands. You can add the following optional command-line parameters to any &PRODUCT;-supported EC2 command:</para>
+  <para>The Amazon EC2 command-line tools have a default connection timeout. When used with &PRODUCT;, a longer timeout might be needed for some commands. If you find that commands are not completing due to timeouts, you can specify a custom timeouts. You can add the following optional command-line parameters to any &PRODUCT;-supported EC2 command:</para>
   <informaltable frame="all">
     <tgroup cols="2" align="left" colsep="1" rowsep="1">
       <colspec colname="c1" />
@@ -47,4 +47,5 @@
   </informaltable>
   <para>Example:</para>
   <programlisting>ec2-run-instances 2 –z us-test1 –n 1-3 --connection-timeout 120 --request-timeout 120</programlisting>
+  <note><para>The timeouts optional arguments are not specific to &PRODUCT;.</para></note>
 </section>

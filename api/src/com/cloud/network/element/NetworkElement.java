@@ -41,25 +41,25 @@ import com.cloud.vm.VirtualMachineProfile;
  * Represents one network element that exists in a network.
  */
 public interface NetworkElement extends Adapter {
-    
+
     Map<Service, Map<Capability, String>> getCapabilities();
-    
+
     /**
-     * NOTE:  
+     * NOTE:
      * NetworkElement -> Network.Provider is a one-to-one mapping. While adding a new NetworkElement, one must add a new Provider name to Network.Provider.
      */
     Provider getProvider();
-    
+
     /**
-     * Implement the network configuration as specified. 
+     * Implement the network configuration as specified.
      * @param config fully specified network configuration.
      * @param offering network offering that originated the network configuration.
      * @return true if network configuration is now usable; false if not; null if not handled by this element.
      * @throws InsufficientNetworkCapacityException TODO
      */
-    boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) 
+    boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
-    
+
     /**
      * Prepare for a nic to be added into this network.
      * @param network
@@ -72,10 +72,10 @@ public interface NetworkElement extends Adapter {
      * @throws ResourceUnavailableException
      * @throws InsufficientNetworkCapacityException
      */
-    boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
-            DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, 
+    boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm,
+            DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException;
-    
+
     /**
      * A nic is released from this network.
      * @param network
@@ -86,9 +86,9 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
+    boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm,
             ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
-    
+
     /**
      * The network is being shutdown.
      * @param network
@@ -98,9 +98,9 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean shutdown(Network network, ReservationContext context, boolean cleanup) 
+    boolean shutdown(Network network, ReservationContext context, boolean cleanup)
             throws ConcurrentOperationException, ResourceUnavailableException;
-    
+
     /**
      * The network is being destroyed.
      * @param network
@@ -109,14 +109,14 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      */
     boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
-    
+
     /**
      * Check if the instances of this Element are configured to be used on the physical network referred by this provider.
      * @param provider
      * @return boolean true/false
      */
     boolean isReady(PhysicalNetworkServiceProvider provider);
-    
+
     /**
      * The network service provider is being shutdown. This should shutdown all instances of this element deployed for this provider.
      * @param context
@@ -125,15 +125,15 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) 
+    boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException;
-    
+
     /**
-     * This should return true if out of multiple services provided by this element, only some can be enabled. If all the services MUST be provided, this should return false. 
+     * This should return true if out of multiple services provided by this element, only some can be enabled. If all the services MUST be provided, this should return false.
      * @return true/false
      */
     boolean canEnableIndividualServices();
-    
+
     /**
      * Would return true if the service combination is supported by the provider
      * @param services

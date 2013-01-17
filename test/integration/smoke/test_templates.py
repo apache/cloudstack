@@ -52,7 +52,7 @@ class Services:
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
                                     "cpuspeed": 100,    # in MHz
-                                    "memory": 64,       # In MBs
+                                    "memory": 128,       # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
@@ -75,26 +75,24 @@ class Services:
                          "template_1": {
                                 "displaytext": "Cent OS Template",
                                 "name": "Cent OS Template",
-                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                                "ostype": "CentOS 5.3 (64-bit)",
                          },
                          "template_2": {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                                "ostype": "CentOS 5.3 (64-bit)",
                                 "isfeatured": True,
                                 "ispublic": True,
                                 "isextractable": True,
                                 "mode": "HTTP_DOWNLOAD",
                          },
                         "templatefilter": 'self',
-                        "destzoneid": 5,
-                        # For Copy template (Destination zone)
                         "isfeatured": True,
                         "ispublic": True,
                         "isextractable": False,
                         "bootable": True,
                         "passwordenabled": True,
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                        "ostype": "CentOS 5.3 (64-bit)",
                         "mode": 'advanced',
                         # Networking mode: Advanced, basic
                         "sleep": 30,
@@ -135,8 +133,12 @@ class TestCreateTemplate(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
+        cls.services["template_1"]["ostypeid"] = template.ostypeid
+        cls.services["template_2"]["ostypeid"] = template.ostypeid
+        cls.services["ostypeid"] = template.ostypeid
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["volume"]["diskoffering"] = cls.disk_offering.id
         cls.services["volume"]["zoneid"] = cls.zone.id
@@ -291,6 +293,14 @@ class TestTemplates(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
+        #populate second zone id for iso copy
+        cmd = listZones.listZonesCmd()
+        zones = cls.api_client.listZones(cmd)
+        if not isinstance(zones, list):
+            raise Exception("Failed to find zones.")
+        if len(zones) >= 2:
+            cls.services["destzoneid"] = zones[1].id
+
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
                                     cls.services["disk_offering"]
@@ -298,13 +308,17 @@ class TestTemplates(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["volume"]["diskoffering"] = cls.disk_offering.id
         cls.services["volume"]["zoneid"] = cls.zone.id
         cls.services["template_2"]["zoneid"] = cls.zone.id
         cls.services["sourcezoneid"] = cls.zone.id
+
+        cls.services["template_1"]["ostypeid"] = template.ostypeid
+        cls.services["template_2"]["ostypeid"] = template.ostypeid
+        cls.services["ostypeid"] = template.ostypeid
 
         cls.account = Account.create(
                             cls.api_client,
@@ -692,6 +706,36 @@ class TestTemplates(cloudstackTestCase):
                         )
 
         # Cleanup- Delete the copied template
+        timeout = self.services["timeout"]
+        while True:
+            time.sleep(self.services["sleep"])
+            list_template_response = list_templates(
+                                        self.apiclient,
+                                        templatefilter=\
+                                        self.services["templatefilter"],
+                                        id=self.template_2.id,
+                                        zoneid=self.services["destzoneid"]
+                                        )
+            self.assertEqual(
+                                isinstance(list_template_response, list),
+                                True,
+                                "Check list response returns a valid list"
+                            )
+            self.assertNotEqual(
+                                len(list_template_response),
+                                0,
+                                "Check template extracted in List Templates"
+                            )
+    
+            template_response = list_template_response[0]
+            if template_response.isready == True:
+                break
+
+            if timeout == 0:
+                raise Exception(
+                        "Failed to download copied template(ID: %s)" % template_response.id)
+
+            timeout = timeout - 1
         cmd = deleteTemplate.deleteTemplateCmd()
         cmd.id = template_response.id
         cmd.zoneid = self.services["destzoneid"]

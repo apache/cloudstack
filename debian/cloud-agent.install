@@ -21,4 +21,5 @@
 /etc/cloud/agent/log4j-cloud.xml
 /etc/init.d/cloud-agent
 /usr/bin/cloud-setup-agent
+/usr/bin/cloud-ssh
 /var/log/cloud/agent

@@ -224,6 +224,7 @@ Requires: jna
 Requires: ebtables
 Requires: jsvc
 Requires: jakarta-commons-daemon
+Requires: bridge-utils
 Group:     System Environment/Libraries
 
 Requires: kvm
@@ -575,6 +576,7 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/agent/log4j-%{name}.xml
 %attr(0755,root,root) %{_initrddir}/%{name}-agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
+%attr(0755,root,root) %{_bindir}/%{name}-ssh
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/agent
 %doc LICENSE
 %doc NOTICE
@@ -617,6 +619,9 @@ fi
 %doc NOTICE
 
 %changelog
+* Mon Nov 19 2012 Satoshi Kobayashi <satoshi-k@stratosphere.co.jp> 4.0.1
+- adding dependency bridge-utils to fix a system requirement
+
 * Fri Sep 14 2012 Marcus Sorensen <shadowsor@gmail.com> 4.0.1
 - adding dependency jakarta-commons-daemon to fix "cannot find daemon loader"
 

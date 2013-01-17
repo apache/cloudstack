@@ -24,7 +24,7 @@
 
 source /root/func.sh
 
-lock="biglock"
+lock="passwdlock"
 locked=$(getLockFile $lock)
 if [ "$locked" != "1" ]
 then

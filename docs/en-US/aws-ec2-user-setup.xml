@@ -22,76 +22,84 @@
  under the License.
 -->
 <section id="aws-ec2-user-setup">
-  <title>AWS API User Setup Steps</title>
+  <title>AWS API User Setup</title>
   <para>In general, users need not be aware that they are using a translation service provided by &PRODUCT;.
-    They need only send AWS API calls to &PRODUCT;'s endpoint, and it will translate the calls to the native API.
-    Users of the Amazon EC2 compatible interface will be able to keep their existing EC2 tools
+    They only need to send AWS API calls to &PRODUCT;'s endpoint, and it will translate the calls to the native &PRODUCT; API. Users of the Amazon EC2 compatible interface will be able to keep their existing EC2 tools
     and scripts and use them with their &PRODUCT; deployment, by specifying the endpoint of the
     management server and using the proper user credentials. In order to do this, each user must
     perform the following configuration steps: </para>
   <para>
     <itemizedlist>
       <listitem>
-        <para>Generate user credentials and register with the service.</para>
+        <para>Generate user credentials.</para>
       </listitem>
       <listitem>
-        <para>Set up the environment variables for the EC2 command-line tools.</para>
+        <para>Register with the service.</para>
       </listitem>
       <listitem>
-        <para>For SOAP access, use the endpoint http://<replaceable>&PRODUCT;-management-server</replaceable>:7080/awsapi.
-          The <replaceable>&PRODUCT;-management-server</replaceable> can be specified by a fully-qualified domain name or IP address.</para>
+        <para>For convenience, set up environment variables for the EC2 SOAP command-line tools.</para>
       </listitem>
     </itemizedlist>
   </para>
   <section id="aws-ec2-user-registration">
     <title>AWS API User Registration</title>
-  <para>Each user must perform a one-time registration.  The user follows these steps:</para>
-  <orderedlist>
-    <listitem>
-      <para>Obtain the following by looking in the &PRODUCT; UI, using the API, or asking the cloud administrator:</para>
-      <itemizedlist>
-        <listitem><para>The &PRODUCT; server's publicly available DNS name or IP address</para></listitem>
-        <listitem><para>The user account's API key and Secret key</para></listitem>
-      </itemizedlist>
-    </listitem>
-	<listitem>
-      <para>
-        Generate a private key and a self-signed X.509 certificate. The user substitutes their own desired storage location for /path/to/… below.
-      </para>
-      <para><programlisting>$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /path/to/private_key.pem -out /path/to/cert.pem</programlisting>
-      </para>
-    </listitem>
-    <listitem>
-      <para>
-        Register the mapping from the X.509 certificate to the API/Secret keys.
-        Download the following script from http://download.cloud.com/releases/3.0.3/cloudstack-aws-api-register and run it.
-        Substitute the values that were obtained in step 1 in the URL below.
-      </para>
-      <para>
-<programlisting>$ cloudstack-aws-api-register --apikey=<replaceable>User’s &PRODUCT; API key</replaceable> --secretkey=<replaceable>User’s &PRODUCT; Secret key</replaceable> --cert=<replaceable>/path/to/cert.pem</replaceable> --url=http://<replaceable>&PRODUCT;.server</replaceable>:7080/awsapi</programlisting>
-       </para>
-     </listitem>
-   </orderedlist>
+    <para>Each user must perform a one-time registration.  The user follows these steps:</para>
+    <orderedlist>
+      <listitem>
+          <para>Obtain the following by looking in the &PRODUCT; UI, using the API, or asking the cloud administrator:
+          </para>
+          <itemizedlist>
+              <listitem><para>The &PRODUCT; server's publicly available DNS name or IP address</para></listitem>
+              <listitem><para>The user account's Access key and Secret key</para></listitem>
+          </itemizedlist>
+      </listitem>
+      <listitem>
+          <para>Generate a private key and a self-signed X.509 certificate. The user substitutes their own desired storage location for /path/to/… below.
+          </para>
+          <para>
+              <programlisting>$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /path/to/private_key.pem -out /path/to/cert.pem</programlisting>
+          </para>
+      </listitem>
+      <listitem>
+          <para>Register the user X.509 certificate and Access/Secret keys with the AWS compatible service. 
+      If you have the source code of &PRODUCT; go to the awsapi-setup/setup directory and use the Python script 
+      cloudstack-aws-api-register. If you do not have the source then download the script using the following command.
+          </para>
+          <para>
+              <programlisting>wget -O cloudstack-aws-api-register <ulink url="https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=awsapi-setup/setup/cloudstack-aws-api-register;hb=HEAD">"https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=awsapi-setup/setup/cloudstack-aws-api-register;hb=HEAD"</ulink>
+              </programlisting>
+          </para>
+          <para> Then execute it, using the parameter values that were obtained in step 1. An example is shown below.</para>
+          <para>
+              <programlisting>$ cloudstack-aws-api-register --apikey=<replaceable>User’s &PRODUCT; API key</replaceable> --secretkey=<replaceable>User’s &PRODUCT; Secret key</replaceable> --cert=<replaceable>/path/to/cert.pem</replaceable> --url=http://<replaceable>&PRODUCT;.server</replaceable>:7080/awsapi</programlisting>
+          </para>
+      </listitem>
+    </orderedlist>
    <note>
      <para>
-       A user with an existing AWS certificate could choose to use the same certificate with &PRODUCT;, but the public key would be uploaded to the &PRODUCT; management server database.
+       A user with an existing AWS certificate could choose to use the same certificate with &PRODUCT;, but note that the       certificate would be uploaded to the &PRODUCT; management server database.
      </para>
    </note>
   </section>
   <section id="aws-api-tools-setup">
-    <title>AWS API Command-Line Tools Setup</title>
-    <para>To use the EC2 command-line tools, the user must perform these steps:</para>
-    <orderedlist>
-      <listitem><para>Be sure you have the right  version of EC2 Tools.
-        The supported version is available at <ulink url="http://s3.amazonaws.com/ec2-downloads/ec2-api-tools-1.3-62308.zip">http://s3.amazonaws.com/ec2-downloads/ec2-api-tools-1.3-62308.zip</ulink>.</para>
-      </listitem>
-      <listitem>
-        <para>Set up the environment variables that will direct the tools to the server.  As a best practice, you may wish to place these commands in a script that may be sourced before using the AWS API translation feature.</para>
-        <programlisting>$ export EC2_CERT=/path/to/cert.pem
-$ export EC2_PRIVATE_KEY=/path/to/private_key.pem
-$ export EC2_URL=http://<replaceable>&PRODUCT;.server</replaceable>:7080/awsapi
-$ export EC2_HOME=/path/to/EC2_tools_directory</programlisting>
-      </listitem>
-    </orderedlist>
+      <title>AWS API Command-Line Tools Setup</title>
+      <para>To use the EC2 command-line tools, the user must perform these steps:</para>
+      <orderedlist>
+          <listitem>
+              <para>Be sure you have the right  version of EC2 Tools.
+          The supported version is available at <ulink url="http://s3.amazonaws.com/ec2-downloads/ec2-api-tools-1.3-62308.zip">http://s3.amazonaws.com/ec2-downloads/ec2-api-tools-1.3-62308.zip</ulink>.
+              </para>
+          </listitem>
+          <listitem>
+              <para>Set up the EC2 environment variables.  This can be done every time you use the service or you can set them up in the proper shell profile. Replace the endpoint (i.e EC2_URL) with the proper address of your &PRODUCT; management server and port. In a bash shell do the following.
+              </para>
+              <programlisting>
+                  $ export EC2_CERT=/path/to/cert.pem
+                  $ export EC2_PRIVATE_KEY=/path/to/private_key.pem
+                  $ export EC2_URL=http://localhost:7080/awsapi
+                  $ export EC2_HOME=/path/to/EC2_tools_directory
+              </programlisting>
+          </listitem>
+      </orderedlist>
   </section>
 </section>

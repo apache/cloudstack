@@ -25,7 +25,7 @@
 <section id="roles">
     <title>Roles</title>
     <para>
-        The CloudPlatform API supports three access roles:</para>
+        The &PRODUCT; API supports three access roles:</para>
     <orderedlist>
         <listitem><para>Root Admin. Access to all features of the cloud, including both virtual and physical resource management.</para></listitem>
         <listitem><para>Domain Admin. Access to only the virtual resources of the clouds that belong to the administrator’s domain.</para></listitem>

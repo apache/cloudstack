@@ -18,8 +18,8 @@ package com.cloud.network.vpn;
 
 import java.util.List;
 
-import com.cloud.api.commands.ListRemoteAccessVpnsCmd;
-import com.cloud.api.commands.ListVpnUsersCmd;
+import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
+import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
@@ -29,7 +29,7 @@ import com.cloud.utils.Pair;
 
 public interface RemoteAccessVpnService {
 
-    RemoteAccessVpn createRemoteAccessVpn(long vpnServerAddressId, String ipRange, boolean openFirewall, long networkId) 
+    RemoteAccessVpn createRemoteAccessVpn(long vpnServerAddressId, String ipRange, boolean openFirewall, long networkId)
             throws NetworkRuleConflictException;
     void destroyRemoteAccessVpn(long vpnServerAddressId, Account caller) throws ResourceUnavailableException;
     RemoteAccessVpn startRemoteAccessVpn(long vpnServerAddressId, boolean openFirewall) throws ResourceUnavailableException;
@@ -38,12 +38,12 @@ public interface RemoteAccessVpnService {
     boolean removeVpnUser(long vpnOwnerId, String userName, Account caller);
     List<? extends VpnUser> listVpnUsers(long vpnOwnerId, String userName);
     boolean applyVpnUsers(long vpnOwnerId, String userName);
-    
+
     Pair<List<? extends RemoteAccessVpn>, Integer> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd);
     Pair<List<? extends VpnUser>, Integer> searchForVpnUsers(ListVpnUsersCmd cmd);
-    
+
     List<? extends RemoteAccessVpn> listRemoteAccessVpns(long networkId);
-    
+
     RemoteAccessVpn getRemoteAccessVpn(long vpnId);
 
 }

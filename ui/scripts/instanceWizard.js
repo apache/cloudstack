@@ -25,6 +25,12 @@
       return g_capabilities.customdiskofferingmaxsize;
     },
 
+    // Determines whether 'add new network' box is shown.
+    // -- return true to show, false to hide
+    showAddNetwork: function(args) {
+      return true;
+    },
+
     // Called in networks list, when VPC drop-down is changed
     // -- if vpcID given, return true if in network specified by vpcID
     // -- if vpcID == -1, return true if network is not associated with a VPC
@@ -271,11 +277,16 @@
 					$networkStep.find("#from_vpc_tier").show();					
 				}
 			  else { //from Instance page 
-          step5ContainerType = 'select-network';
-					$networkStep.find("#from_instance_page_1").show();		
-          $networkStep.find("#from_instance_page_2").show();
-					$networkStep.find("#from_vpc_tier").text("");			
-					$networkStep.find("#from_vpc_tier").hide();
+				  if(selectedZoneObj.securitygroupsenabled != true) { // Advanced SG-disabled zone
+						step5ContainerType = 'select-network';
+						$networkStep.find("#from_instance_page_1").show();		
+						$networkStep.find("#from_instance_page_2").show();
+						$networkStep.find("#from_vpc_tier").text("");			
+						$networkStep.find("#from_vpc_tier").hide();
+					}
+					else { // Advanced SG-enabled zone
+					  step5ContainerType = 'select-security-group';					
+					}
 				}
       }
       else { //Basic zone. Show securigy group list or nothing(when no SecurityGroup service in guest network)
@@ -314,7 +325,16 @@
         var networkData = {
           zoneId: args.currentData.zoneid
         };
-
+				
+				// step5ContainerType of Advanced SG-enabled zone is 'select-security-group', so won't come into this block
+				/*
+				if(selectedZoneObj.networktype == 'Advanced' && selectedZoneObj.securitygroupsenabled == true) {
+				  $.extend(networkData, {
+					  type: 'Shared'
+					});
+				}
+				*/
+				
         if (!(cloudStack.context.projects && cloudStack.context.projects[0])) {
           networkData.domainid = g_domainid;
           networkData.account = g_account;
@@ -388,8 +408,7 @@
             var items = json.listsecuritygroupsresponse.securitygroup;
             if (items != null && items.length > 0) {
               for (var i = 0; i < items.length; i++) {
-                if(items[i].name != "default") //exclude default security group because it is always applied
-                  securityGroupArray.push(items[i]);
+                securityGroupArray.push(items[i]);
               }
             }
           }
@@ -526,6 +545,41 @@
 
         if(checkedSecurityGroupIdArray.length > 0)
           array1.push("&securitygroupids=" + checkedSecurityGroupIdArray.join(","));
+				
+        /*				
+				if(selectedZoneObj.networktype ==	"Advanced" && selectedZoneObj.securitygroupsenabled == true) { // Advanced SG-enabled zone 		
+					var networkData = {
+						zoneId: selectedZoneObj.id,
+						type: 'Shared',
+						supportedServices: 'SecurityGroup'
+					};										
+					if (!(cloudStack.context.projects && cloudStack.context.projects[0])) {
+						networkData.domainid = g_domainid;
+						networkData.account = g_account;
+					}						
+					
+					var selectedNetworkObj = null;					
+					$.ajax({
+						url: createURL('listNetworks'),
+						data: networkData,
+						async: false,
+						success: function(json) {		              			
+							var networks = json.listnetworksresponse.network;
+							if(networks != null && networks.length > 0) {
+							  selectedNetworkObj = networks[0]; //each Advanced SG-enabled zone has only one guest network that is Shared and has SecurityGroup service
+							}
+						}
+					});				 
+					if(selectedNetworkObj != null) {
+				    array1.push("&networkIds=" + selectedNetworkObj.id);	
+					}
+					else {
+					  alert('unable to find any Shared network with SecurityGroup service. Therefore, unable to deploy VM in this Advanced SecurityGroup-enabled zone.');
+						return; 
+					}
+				}
+				*/
+				
       }
       else if (step5ContainerType == 'nothing-to-select') {	  
 				if(args.context.networks != null) { //from VPC tier

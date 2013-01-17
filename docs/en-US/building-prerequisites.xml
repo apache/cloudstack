@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+
+<section id="build-prerequisites">
+    <title>Build Procedure Prerequisites</title>
+    <para>In this section we will assume that you are using the Ubuntu Linux distribution with the Advanced Packaging Tool (APT). If you are using a different distribution or OS and a different packaging tool, adapt the following instructions to your environment. To build &PRODUCT; you will need:</para>
+    <itemizedlist>
+        <listitem>
+            <para>git, <ulink url="http://git-scm.com">http://git-scm.com</ulink></para>
+            <para><programlisting>sudo apt-get install git-core</programlisting></para>
+        </listitem>
+        <listitem>
+            <para>maven, <ulink url="http://maven.apache.org">http://maven.apache.org</ulink></para>
+            <para><programlisting>sudo apt-get install maven</programlisting></para>
+            <para>Make sure that you installed maven 3</para>
+            <para><programlisting>$ mvn --version
+Apache Maven 3.0.4
+Maven home: /usr/share/maven
+Java version: 1.6.0_24, vendor: Sun Microsystems Inc.
+Java home: /usr/lib/jvm/java-6-openjdk-amd64/jre
+Default locale: en_US, platform encoding: UTF-8
+OS name: "linux", version: "3.2.0-33-generic", arch: "amd64", family: "unix"</programlisting></para>
+        </listitem>
+        <listitem>
+            <para>java</para>
+            <para>set the JAVA_HOME environment variable</para>
+            <para><programlisting>$ export JAVA_HOME=/usr/lib/jvm/java-6-openjdk</programlisting></para>
+        </listitem>
+    </itemizedlist>
+    
+    <para>In addition, to deploy and run &PRODUCT; in a development environment you will need:</para>
+    <itemizedlist>
+        <listitem>
+            <para>Mysql</para>
+            <para><programlisting>sudo apt-get install mysql-server-5.5</programlisting></para>
+            <para>Start the mysqld service and create a cloud user with cloud as a password</para>
+        </listitem>
+        <listitem>
+            <para>Tomcat 6</para>
+            <para><programlisting>sudo apt-get install tomcat6</programlisting></para>
+        </listitem>
+    </itemizedlist>
+
+</section>

@@ -16,8 +16,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import sys
 from cloudutils.syscfg import sysConfigFactory
-from cloudutils.utilities import initLoging
+from cloudutils.utilities import initLoging, UnknownSystemException
 from cloudutils.cloudException import CloudRuntimeException, CloudInternalException
 from cloudutils.globalEnv import globalEnv
 from cloudutils.serviceConfigServer import cloudManagementConfig
@@ -35,7 +36,12 @@ if __name__ == '__main__':
     glbEnv.mode = "Server"
     
     print "Starting to configure CloudStack Management Server:"
-    syscfg = sysConfigFactory.getSysConfigFactory(glbEnv)
+    try:
+        syscfg = sysConfigFactory.getSysConfigFactory(glbEnv)
+    except UnknownSystemException:
+        print >>sys.stderr, ("Error: CloudStack failed to detect your "
+                "operating system. Exiting.")
+        sys.exit(1)
     try:
     	syscfg.registerService(cloudManagementConfig)
         syscfg.config()

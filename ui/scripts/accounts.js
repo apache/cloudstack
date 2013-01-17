@@ -229,6 +229,7 @@
 
                 $.ajax({
                   url: createURL('createAccount'),
+                  type: "POST",
                   data: data,
                   success: function(json) {
                     var item = json.createaccountresponse.account;
@@ -920,6 +921,7 @@
 								
                 $.ajax({
                   url: createURL('createUser'),
+                  type: "POST",
                   data: data,
                   success: function(json) {
                     var item = json.createuserresponse.user;
@@ -1248,22 +1250,20 @@
     if (jsonObj.state == 'Destroyed') return [];
 
     if(isAdmin()) {
-		  allowedActions.push("edit"); //updating networkdomain is allowed on any account, including system-generated default admin account 
-      if(!(jsonObj.domain == "ROOT" && jsonObj.name == "admin" && jsonObj.accounttype == 1)) { //if not system-generated default admin account    
-        if(jsonObj.state == "enabled") {
-          allowedActions.push("disable");
-          allowedActions.push("lock");
+        allowedActions.push("edit"); //updating networkdomain is allowed on any account, including system-generated default admin account 
+        if(!(jsonObj.domain == "ROOT" && jsonObj.name == "admin" && jsonObj.accounttype == 1)) { //if not system-generated default admin account    
+            if(jsonObj.state == "enabled") {
+                allowedActions.push("disable");
+                allowedActions.push("lock");
+            } else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {
+                allowedActions.push("enable");
+            }
+            allowedActions.push("remove");
         }
-        else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {
-          allowedActions.push("enable");
-        }
-        allowedActions.push("remove");
-      }
-			allowedActions.push("updateResourceCount");
-    }		
-		else if(isDomainAdmin()) {
-      allowedActions.push("updateResourceCount");
-		}	
+        allowedActions.push("updateResourceCount");
+    } else if(isDomainAdmin()) {
+        allowedActions.push("updateResourceCount");
+    }
     return allowedActions;
   }
 
@@ -1281,6 +1281,11 @@
           allowedActions.push("enable");
         allowedActions.push("remove");
       }
+    } else {
+        if(isSelfOrChildDomainUser(jsonObj.username, jsonObj.accounttype, jsonObj.domainid, jsonObj.iscallerchilddomain)) {
+            allowedActions.push("changePassword");
+            allowedActions.push("generateKeys");
+        }
     }
     return allowedActions;
   }

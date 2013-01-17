@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.async;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -29,7 +31,7 @@ import javax.persistence.TemporalType;
 
 @Entity
 @Table(name="sync_queue_item")
-public class SyncQueueItemVO implements SyncQueueItem{
+public class SyncQueueItemVO implements SyncQueueItem, InternalIdentity {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -58,7 +60,7 @@ public class SyncQueueItemVO implements SyncQueueItem{
     @Column(name="created")
     private Date created;
     
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

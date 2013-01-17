@@ -21,14 +21,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.serializer.Param;
 import com.cloud.user.Account;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public class SecurityGroupResultObject implements ControlledEntity{
+public class SecurityGroupResultObject implements ControlledEntity, InternalIdentity {
     @Param(name = "id")
     private Long id;
 
@@ -63,7 +64,7 @@ public class SecurityGroupResultObject implements ControlledEntity{
         this.securityGroupRules = ingressRules;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

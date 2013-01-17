@@ -24,14 +24,14 @@ import com.google.gson.annotations.SerializedName;
 public class LbStickinessMethod {
     public static class StickinessMethodType {
         private String _name;
-        
+
         public static final StickinessMethodType LBCookieBased = new StickinessMethodType("LbCookie");
         public static final StickinessMethodType AppCookieBased = new StickinessMethodType("AppCookie");
         public static final StickinessMethodType SourceBased = new StickinessMethodType("SourceBased");
         public StickinessMethodType(String name) {
             _name = name;
         }
-        
+
         public String getName() {
             return _name;
         }
@@ -40,13 +40,13 @@ public class LbStickinessMethod {
     public class LbStickinessMethodParam {
         @SerializedName("paramname")
         private String _paramName;
-        
+
         @SerializedName("required")
         private Boolean _required;
-        
+
         @SerializedName("isflag")
         private Boolean _isFlag;
-        
+
         @SerializedName("description")
         private String _description;
 
@@ -65,7 +65,7 @@ public class LbStickinessMethod {
         public void setParamName(String paramName) {
             this._paramName = paramName;
         }
-        
+
         public Boolean getIsflag() {
             return _isFlag;
         }
@@ -73,7 +73,7 @@ public class LbStickinessMethod {
         public void setIsflag(Boolean isFlag) {
             this._isFlag = isFlag;
         }
-        
+
         public Boolean getRequired() {
             return _required;
         }
@@ -94,10 +94,10 @@ public class LbStickinessMethod {
 
     @SerializedName("methodname")
     private String _methodName;
-    
+
     @SerializedName("paramlist")
     private List<LbStickinessMethodParam> _paramList;
-   
+
     @SerializedName("description")
     private String _description;
 
@@ -118,7 +118,7 @@ public class LbStickinessMethod {
     public String getMethodName() {
         return _methodName;
     }
-    
+
     public List<LbStickinessMethodParam> getParamList() {
         return _paramList;
     }

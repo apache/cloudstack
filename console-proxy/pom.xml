@@ -135,6 +135,8 @@
           </execution>
         </executions>
       </plugin>
+<!-- Leave this to the systemvm profile
+     Enable using the -P systemvm flag
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
@@ -161,6 +163,7 @@
           </arguments>
         </configuration>
       </plugin>
+-->
     </plugins>
   </build>
   <profiles>
@@ -186,6 +189,11 @@
     </profile>
     <profile>
       <id>systemvm</id>
+      <activation>
+        <property>
+          <name>systemvm</name>
+        </property>
+      </activation>
       <build>
       <plugins>
       <plugin>

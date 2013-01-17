@@ -1,0 +1,284 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="autoscale">
+  <title>Configuring AutoScale</title>
+  <para>AutoScaling allows you to scale your back-end services or application VMs up or down
+    seamlessly and automatically according to the conditions you define. With AutoScaling enabled,
+    you can ensure that the number of VMs you are using seamlessly scale up when demand increases,
+    and automatically decreases when demand subsides. Thus it helps you save compute costs by
+    terminating underused VMs automatically and launching new VMs when you need them, without the
+    need for manual intervention.</para>
+  <para>NetScaler AutoScaling is designed to seamlessly launch or terminate VMs based on
+    user-defined conditions. Conditions for triggering a scaleup or scaledown action can vary from a
+    simple use case like monitoring the CPU usage of a server to a complex use case of monitoring a
+    combination of server's responsiveness and its CPU usage. For example, you can configure
+    AutoScaling to launch an additional VM whenever CPU usage exceeds 80 percent for 15 minutes, or
+    to remove a VM whenever CPU usage is less than 20 percent for 30 minutes.</para>
+  <para>&PRODUCT; uses the NetScaler load balancer to monitor all aspects of a system's health and
+    work in unison with &PRODUCT; to initiate scale-up or scale-down actions. The supported
+    NetScaler version is 10.0.</para>
+  <formalpara>
+    <title>Prerequisites</title>
+    <para>Before you configure an AutoScale rule, consider the following:</para>
+  </formalpara>
+  <itemizedlist>
+    <listitem>
+      <para>Ensure that the necessary template is prepared before configuring AutoScale. When a VM
+        is deployed by using a template and when it comes up, the application should be up and
+        running.</para>
+      <note>
+        <para>If the application is not running, the NetScaler device considers the VM as
+          ineffective and continues provisioning the VMs unconditionally until the resource limit is
+          exhausted.</para>
+      </note>
+    </listitem>
+    <listitem>
+      <para>Deploy the templates you prepared. Ensure that the applications come up on the first
+        boot and is ready to take the traffic. Observe the time requires to deploy the template.
+        Consider this time when you specify the quiet time while configuring AutoScale.</para>
+    </listitem>
+    <listitem>
+      <para>The AutoScale feature supports the SNMP counters that can be used to define conditions
+        for taking scale up or scale down actions. To monitor the SNMP-based counter, ensure that
+        the SNMP agent is installed in the template used for creating the AutoScale VMs, and the
+        SNMP operations work with the configured SNMP community and port by using standard SNMP
+        managers. For example, see <xref linkend="configure-snmp-rhel"/> to configure SNMP on a RHEL
+        machine.</para>
+    </listitem>
+    <listitem>
+      <para>Ensure that the endpointe.url parameter present in the Global Settings is set to the
+        Management Server API URL. For example, http://10.102.102.22:8080/client/api. In a
+        multi-node Management Server deployment, use the virtual IP address configured in the load
+        balancer for the management server’s cluster. Additionally, ensure that the NetScaler device
+        has access to this IP address to provide AutoScale support.</para>
+      <para>If you update the endpointe.url, disable the AutoScale functionality of the load
+        balancer rules in the system, then enable them back to reflect the changes. For more
+        information see <xref linkend="update-autoscale"/></para>
+    </listitem>
+    <listitem>
+      <para>If the API Key and Secret Key are regenerated for an AutoScale user, ensure that the
+        AutoScale functionality of the load balancers that the user participates in are disabled and
+        then enabled to reflect the configuration changes in the NetScaler.</para>
+    </listitem>
+    <listitem>
+      <para>In an advanced Zone, ensure that at least one VM should be present before configuring a
+        load balancer rule with AutoScale. Having one VM in the network ensures that the network is
+        in implemented state for configuring AutoScale.</para>
+    </listitem>
+  </itemizedlist>
+  <formalpara>
+    <title>Configuration</title>
+    <para>Specify the following:</para>
+  </formalpara>
+  <mediaobject>
+    <imageobject>
+      <imagedata fileref="./images/autoscale-config.png"/>
+    </imageobject>
+    <textobject>
+      <phrase>autoscaleateconfig.png: Configuring AutoScale</phrase>
+    </textobject>
+  </mediaobject>
+  <itemizedlist>
+    <listitem>
+      <para><emphasis role="bold">Template</emphasis>: A template consists of a base OS image and
+        application. A template is used to provision the new instance of an application on a scaleup
+        action. When a VM is deployed from a template, the VM can start taking the traffic from the
+        load balancer without any admin intervention. For example, if the VM is deployed for a Web
+        service, it should have the Web server running, the database connected, and so on.</para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">Compute offering</emphasis>: A predefined set of virtual hardware
+        attributes, including CPU speed, number of CPUs, and RAM size, that the user can select when
+        creating a new virtual machine instance. Choose one of the compute offerings to be used
+        while provisioning a VM instance as part of scaleup action.</para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">Min Instance</emphasis>: The minimum number of active VM instances
+        that is assigned to a load balancing rule. The active VM instances are the application
+        instances that are up and serving the traffic, and are being load balanced. This parameter
+        ensures that a load balancing rule has at least the configured number of active VM instances
+        are available to serve the traffic.</para>
+      <note>
+        <para>If an application, such as SAP, running on a VM instance is down for some reason, the
+          VM is then not counted as part of Min Instance parameter, and the AutoScale feature
+          initiates a scaleup action if the number of active VM instances is below the configured
+          value. Similarly, when an application instance comes up from its earlier down state, this
+          application instance is counted as part of the active instance count and the AutoScale
+          process initiates a scaledown action when the active instance count breaches the Max
+          instance value.</para>
+      </note>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">Max Instance</emphasis>: Maximum number of active VM instances
+        that <emphasis role="bold">should be assigned to </emphasis>a load balancing rule. This
+        parameter defines the upper limit of active VM instances that can be assigned to a load
+        balancing rule.</para>
+      <para>Specifying a large value for the maximum instance parameter might result in provisioning
+        large number of VM instances, which in turn leads to a single load balancing rule exhausting
+        the VM instances limit specified at the account or domain level.</para>
+      <note>
+        <para>If an application, such as SAP, running on a VM instance is down for some reason, the
+          VM is not counted as part of Max Instance parameter. So there may be scenarios where the
+          number of VMs provisioned for a scaleup action might be more than the configured Max
+          Instance value. Once the application instances in the VMs are up from an earlier down
+          state, the AutoScale feature starts aligning to the configured Max Instance value.</para>
+      </note>
+    </listitem>
+  </itemizedlist>
+  <para>Specify the following scale-up and scale-down policies:</para>
+  <itemizedlist>
+    <listitem>
+      <para><emphasis role="bold">Duration</emphasis>: The duration, in seconds, for which the
+        conditions you specify must be true to trigger a scaleup action. The conditions defined
+        should hold true for the entire duration you specify for an AutoScale action to be invoked.
+      </para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">Counter</emphasis>: The performance counters expose the state of
+        the monitored instances. By default, &PRODUCT; offers four performance counters: Three SNMP
+        counters and one NetScaler counter. The SNMP counters are Linux User CPU, Linux System CPU,
+        and Linux CPU Idle. The NetScaler counter is ResponseTime. The root administrator can add
+        additional counters into &PRODUCT; by using the &PRODUCT; API. </para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">Operator</emphasis>: The following five relational operators are
+        supported in AutoScale feature: Greater than, Less than, Less than or equal to, Greater than
+        or equal to, and Equal to.</para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">Threshold</emphasis>: Threshold value to be used for the counter.
+        Once the counter defined above breaches the threshold value, the AutoScale feature initiates
+        a scaleup or scaledown action.</para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">Add</emphasis>: Click Add to add the condition.</para>
+    </listitem>
+  </itemizedlist>
+  <para>Additionally, if you want to configure the advanced settings, click Show advanced settings,
+    and specify the following:</para>
+  <itemizedlist>
+    <listitem>
+      <para><emphasis role="bold">Polling interval</emphasis>: Frequency in which the conditions,
+        combination of counter, operator and threshold, are to be evaluated before taking a scale up
+        or down action. The default polling interval is 30 seconds.</para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">Quiet Time</emphasis>: This is the cool down period after an
+        AutoScale action is initiated. The time includes the time taken to complete provisioning a
+        VM instance from its template and the time taken by an application to be ready to serve
+        traffic. This quiet time allows the fleet to come up to a stable state before any action can
+        take place. The default is 300 seconds.</para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">Destroy VM Grace Period</emphasis>: The duration in seconds, after
+        a scaledown action is initiated, to wait before the VM is destroyed as part of scaledown
+        action. This is to ensure graceful close of any pending sessions or transactions being
+        served by the VM marked for destroy. The default is 120 seconds.</para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">Security Groups</emphasis>: Security groups provide a way to
+        isolate traffic to the VM instances. A security group is a group of VMs that filter their
+        incoming and outgoing traffic according to a set of rules, called ingress and egress rules.
+        These rules filter network traffic according to the IP address that is attempting to
+        communicate with the VM.</para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">Disk Offerings</emphasis>: A predefined set of disk size for
+        primary data storage. </para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">SNMP Community</emphasis>: The SNMP community string to be used by
+        the NetScaler device to query the configured counter value from the provisioned VM
+        instances. Default is public.</para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">SNMP Port</emphasis>: The port number on which the SNMP agent that
+        run on the provisioned VMs is listening. Default port is 161. </para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">User</emphasis>: This is the user that the NetScaler device use to
+        invoke scaleup and scaledown API calls to the cloud. If no option is specified, the user who
+        configures AutoScaling is applied. Specify another user name to override.</para>
+    </listitem>
+    <listitem>
+      <para><emphasis role="bold">Apply</emphasis>: Click Apply to create the AutoScale
+        configuration.</para>
+    </listitem>
+  </itemizedlist>
+  <formalpara>
+    <title>Disabling and Enabling an AutoScale Configuration</title>
+    <para>If you want to perform any maintenance operation on the AutoScale VM instances, disable
+      the AutoScale configuration. When the AutoScale configuration is disabled, no scaleup or
+      scaledown action is performed. You can use this downtime for the maintenance activities. To
+      disable the AutoScale configuration, click the Disable AutoScale<inlinemediaobject>
+        <imageobject>
+          <imagedata fileref="./images/enable-disable-autoscale.png"/>
+        </imageobject>
+        <textobject>
+          <phrase>EnableDisable.png: button to enable or disable AutoScale.</phrase>
+        </textobject>
+      </inlinemediaobject>button.</para>
+  </formalpara>
+  <para>The button toggles between enable and disable, depending on whether AutoScale is currently
+    enabled or not. After the maintenance operations are done, you can enable the AutoScale
+    configuration back. To enable, open the AutoScale configuration page again, then click the
+    Enable AutoScale<inlinemediaobject>
+      <imageobject>
+        <imagedata fileref="./images/enable-disable-autoscale.png"/>
+      </imageobject>
+      <textobject>
+        <phrase>EnableDisable.png: button to enable or disable AutoScale.</phrase>
+      </textobject>
+    </inlinemediaobject>button.</para>
+  <formalpara id="update-autoscale">
+    <title>Updating an AutoScale Configuration</title>
+    <para>You can update the various parameters and add or delete the conditions in a scaleup or
+      scaledown rule. Before you update an AutoScale configuration, ensure that you disable the
+      AutoScale load balancer rule by clicking the Disable AutoScale button.</para>
+  </formalpara>
+  <para>After you modify the required AutoScale parameters, click Apply. To apply the new AutoScale
+    policies, open the AutoScale configuration page again, then click the Enable AutoScale
+    button.</para>
+  <formalpara>
+    <title>Runtime Considerations</title>
+    <para/>
+  </formalpara>
+  <itemizedlist>
+    <listitem>
+      <para>An administrator should not assign a VM to a load balancing rule which is configured for
+        AutoScale.</para>
+    </listitem>
+    <listitem>
+      <para>Before a VM provisioning is completed if NetScaler is shutdown or restarted, the
+        provisioned VM cannot be a part of the load balancing rule though the intent was to assign
+        it to a load balancing rule. To workaround, rename the AutoScale provisioned VMs based on
+        the rule name or ID so at any point of time the VMs can be reconciled to its load balancing
+        rule.</para>
+    </listitem>
+    <listitem>
+      <para>Making API calls outside the context of AutoScale, such as destroyVM, on an autoscaled
+        VM leaves the load balancing configuration in an inconsistent state. Though VM is destroyed
+        from the load balancer rule, NetScaler continues to show the VM as a service assigned to a
+        rule.</para>
+    </listitem>
+  </itemizedlist>
+</section>

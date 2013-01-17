@@ -48,7 +48,7 @@ public class CloudStartupServlet extends HttpServlet implements ServletContextLi
 	    	s_locator = ComponentLocator.getLocator(ManagementServer.Name);
 		    ManagementServer ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
 		    ms.enableAdminUser("password");
-		    ApiServer.initApiServer(ms.getApiConfig());
+		    ApiServer.initApiServer();
 	    } catch (InvalidParameterValueException ipve) {
 	    	s_logger.error("Exception starting management server ", ipve);
 	    	throw new ServletException (ipve.getMessage());

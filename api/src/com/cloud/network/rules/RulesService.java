@@ -18,7 +18,7 @@ package com.cloud.network.rules;
 
 import java.util.List;
 
-import com.cloud.api.commands.ListPortForwardingRulesCmd;
+import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -31,7 +31,7 @@ public interface RulesService {
     /**
      * Creates a port forwarding rule between two ip addresses or between
      * an ip address and a virtual machine.
-     * 
+     *
      * @param rule
      *            rule to be created.
      * @param vmId
@@ -46,7 +46,7 @@ public interface RulesService {
 
     /**
      * Revokes a port forwarding rule
-     * 
+     *
      * @param ruleId
      *            the id of the rule to revoke.
      * @param caller
@@ -56,7 +56,7 @@ public interface RulesService {
 
     /**
      * List port forwarding rules assigned to an ip address
-     * 
+     *
      * @param cmd
      *            the command object holding the criteria for listing port forwarding rules (the ipAddress)
      * @return list of port forwarding rules on the given address, empty list if no rules exist

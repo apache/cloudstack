@@ -21,6 +21,7 @@ import java.util.Set;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.PublicIpAddress;
 
@@ -33,4 +34,6 @@ public interface IpDeployer {
      * @throws ResourceUnavailableException
      */
     boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> services) throws ResourceUnavailableException;
+
+    Provider getProvider();
 }

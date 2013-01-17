@@ -19,7 +19,7 @@ package com.cloud.network.firewall;
 
 import java.util.List;
 
-import com.cloud.api.commands.ListFirewallRulesCmd;
+import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
@@ -33,7 +33,7 @@ public interface FirewallService {
 
     /**
      * Revokes a firewall rule
-     * 
+     *
      * @param ruleId
      *            the id of the rule to revoke.
      * @return

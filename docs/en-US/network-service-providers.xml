@@ -24,12 +24,12 @@
 
 <section id="network-service-providers">
     <title>Network Service Providers</title>
-    <note><para>For the most up-to-date list of supported network service providers, see the CloudPlatform UI or call listNetworkServiceProviders.</para></note>
+    <note><para>For the most up-to-date list of supported network service providers, see the &PRODUCT; UI or call listNetworkServiceProviders.</para></note>
     <para>A service provider (also called a network element) is hardware or virtual appliance that makes a network service possible; for example, a firewall appliance can be installed in the cloud to provide firewall service. On a single network, multiple providers can provide the same network service. For example, a firewall service may be provided by Cisco or Juniper devices in the same physical network.</para>
     <para>You can have multiple instances of the same service provider in a network (say, more than one Juniper SRX device).</para>
-    <para>If different providers are set up to provide the same service on the network, the administrator can create network offerings so users can specify which network service provider they prefer (along with the other choices offered in network offerings). Otherwise, CloudPlatform will choose which provider to use whenever the service is called for. </para>
+    <para>If different providers are set up to provide the same service on the network, the administrator can create network offerings so users can specify which network service provider they prefer (along with the other choices offered in network offerings). Otherwise, &PRODUCT; will choose which provider to use whenever the service is called for. </para>
     <formalpara>
         <title>Supported Network Service Providers</title>
-        <para>CloudPlatform ships with an internal list of the supported service providers, and you can choose from this list when creating a network offering.</para>
+        <para>&PRODUCT; ships with an internal list of the supported service providers, and you can choose from this list when creating a network offering.</para>
     </formalpara>
 </section>

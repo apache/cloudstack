@@ -16,10 +16,12 @@
 // under the License.
 package com.cloud.user;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
-public interface UserAccount {
-    Long getId();
+public interface UserAccount extends InternalIdentity {
+    long getId();
 
     String getUsername();
 

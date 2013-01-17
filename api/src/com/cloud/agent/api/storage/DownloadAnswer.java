@@ -33,40 +33,40 @@ public class DownloadAnswer extends Answer  {
 	private long templateSize = 0L;
 	private long templatePhySicalSize = 0L;
 	private String checkSum;
-	
+
 	public String getCheckSum() {
 		return checkSum;
 	}
-	
+
 	public int getDownloadPct() {
 		return downloadPct;
 	}
 	public String getErrorString() {
 		return errorString;
 	}
-	
+
 	public String getDownloadStatusString() {
 		return downloadStatus.toString();
 	}
-	
+
 	public VMTemplateStorageResourceAssoc.Status getDownloadStatus() {
 		return downloadStatus;
 	}
-	
+
 	public String getDownloadPath() {
 		return downloadPath;
 	}
 	protected DownloadAnswer() {
-		
+
 	}
-	
+
 	public String getJobId() {
 		return jobId;
 	}
 	public void setJobId(String jobId) {
 		this.jobId = jobId;
 	}
-	
+
     public DownloadAnswer(String errorString, Status status) {
         super();
         this.downloadPct = 0;
@@ -74,7 +74,7 @@ public class DownloadAnswer extends Answer  {
         this.downloadStatus = status;
         this.details = errorString;
     }
-	
+
 	public DownloadAnswer(String jobId, int downloadPct, String errorString,
 			Status downloadStatus, String fileSystemPath, String installPath, long templateSize, long templatePhySicalSize, String checkSum) {
 		super();
@@ -89,7 +89,7 @@ public class DownloadAnswer extends Answer  {
 		this.templatePhySicalSize = templatePhySicalSize;
 		this.checkSum = checkSum;
 	}
-	
+
    public DownloadAnswer(String jobId, int downloadPct, Command command,
             Status downloadStatus, String fileSystemPath, String installPath) {
         super(command);
@@ -99,7 +99,7 @@ public class DownloadAnswer extends Answer  {
         this.downloadPath = fileSystemPath;
         this.installPath = installPath;
     }
-		
+
 	private static String fixPath(String path){
 		if (path == null) {
             return path;
@@ -112,11 +112,11 @@ public class DownloadAnswer extends Answer  {
 		}
 		return path;
 	}
-	
+
 	public void setDownloadStatus(VMTemplateStorageResourceAssoc.Status downloadStatus) {
 		this.downloadStatus = downloadStatus;
 	}
-	
+
 	public String getInstallPath() {
 		return installPath;
 	}
@@ -127,7 +127,7 @@ public class DownloadAnswer extends Answer  {
 	public void setTemplateSize(long templateSize) {
 		this.templateSize = templateSize;
 	}
-	
+
 	public Long getTemplateSize() {
 		return templateSize;
 	}
@@ -137,5 +137,5 @@ public class DownloadAnswer extends Answer  {
     public long getTemplatePhySicalSize() {
         return templatePhySicalSize;
     }
-	
+
 }

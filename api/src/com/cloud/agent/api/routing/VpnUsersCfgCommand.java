@@ -23,12 +23,12 @@ import com.cloud.network.VpnUser;
 
 
 public class VpnUsersCfgCommand extends NetworkElementCommand {
-	public static class UsernamePassword{ 
+	public static class UsernamePassword{
 		private String username;
 	    @LogLevel(Log4jLevel.Off)
 		private String password;
 		boolean add = true;
-		
+
 		public boolean isAdd() {
 			return add;
 		}
@@ -66,11 +66,11 @@ public class VpnUsersCfgCommand extends NetworkElementCommand {
 		}
 	}
 	UsernamePassword [] userpwds;
-	
+
     protected VpnUsersCfgCommand() {
-    	
+
     }
-    
+
     public VpnUsersCfgCommand(List<VpnUser> addUsers, List<VpnUser> removeUsers) {
     	userpwds = new UsernamePassword[addUsers.size() + removeUsers.size()];
     	int i = 0;
@@ -86,7 +86,7 @@ public class VpnUsersCfgCommand extends NetworkElementCommand {
 	public boolean executeInSequence() {
 		return true;
 	}
-	
+
 	public UsernamePassword[] getUserpwds() {
 		return userpwds;
 	}

@@ -53,6 +53,7 @@ import com.cloud.agent.api.TransferAgentCommand;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Request.Version;
 import com.cloud.agent.transport.Response;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ClusteredAgentRebalanceService;
@@ -92,13 +93,13 @@ import com.cloud.utils.nio.Task;
 public class ClusteredAgentManagerImpl extends AgentManagerImpl implements ClusterManagerListener, ClusteredAgentRebalanceService {
     final static Logger s_logger = Logger.getLogger(ClusteredAgentManagerImpl.class);
     private static final ScheduledExecutorService s_transferExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Cluster-AgentTransferExecutor"));
-    private final long rebalanceTimeOut = 300000; // 5 mins - after this time remove the agent from the transfer list 
+    private final long rebalanceTimeOut = 300000; // 5 mins - after this time remove the agent from the transfer list
 
     public final static long STARTUP_DELAY = 5000;
     public final static long SCAN_INTERVAL = 90000; // 90 seconds, it takes 60 sec for xenserver to fail login
     public final static int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5; // 5 seconds
     public long _loadSize = 100;
-    protected Set<Long> _agentToTransferIds = new HashSet<Long>();  
+    protected Set<Long> _agentToTransferIds = new HashSet<Long>();
 
     @Inject
     protected ClusterManager _clusterMgr = null;
@@ -111,10 +112,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     protected ManagementServerHostDao _mshostDao;
     @Inject
     protected HostTransferMapDao _hostTransferDao;
-    
+
     @Inject(adapter = AgentLoadBalancerPlanner.class)
     protected Adapters<AgentLoadBalancerPlanner> _lbPlanners;
-    
+
     @Inject
     protected AgentManager _agentMgr;
 
@@ -127,7 +128,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         _peers = new HashMap<String, SocketChannel>(7);
         _sslEngines = new HashMap<String, SSLEngine>(7);
         _nodeId = _clusterMgr.getManagementNodeId();
-        
+
         s_logger.info("Configuring ClusterAgentManagerImpl. management server node id(msid): " + _nodeId);
 
         ConfigurationDao configDao = ComponentLocator.getCurrentLocator().getDao(ConfigurationDao.class);
@@ -138,7 +139,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         ClusteredAgentAttache.initialize(this);
 
         _clusterMgr.registerListener(this);
-        
+
         return super.configure(name, xmlParams);
     }
 
@@ -172,7 +173,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         List<HostVO> hosts = _hostDao.findAndUpdateDirectAgentToLoad(cutSeconds, _loadSize, _nodeId);
         List<HostVO> appliances = _hostDao.findAndUpdateApplianceToLoad(cutSeconds, _nodeId);
         hosts.addAll(appliances);
-        
+
         if (hosts != null && hosts.size() > 0) {
             s_logger.debug("Found " + hosts.size() + " unmanaged direct hosts, processing connect for them...");
             for (HostVO host : hosts) {
@@ -273,12 +274,12 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     protected boolean handleDisconnectWithoutInvestigation(AgentAttache attache, Status.Event event, boolean transitState) {
         return handleDisconnect(attache, event, false, true);
     }
-    
+
     @Override
     protected boolean handleDisconnectWithInvestigation(AgentAttache attache, Status.Event event) {
         return handleDisconnect(attache, event, true, true);
     }
-    
+
     protected boolean handleDisconnect(AgentAttache agent, Status.Event event, boolean investigate, boolean broadcast) {
         boolean res;
         if (!investigate) {
@@ -316,7 +317,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                         }
                     }
                 }
-                
+
                 //don't process disconnect if the disconnect came for the host via delayed cluster notification,
                 //but the host has already reconnected to the current management server
                 if (!attache.forForward()) {
@@ -324,7 +325,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                             + hostId +" as the host is directly connected to the current management server " + _nodeId);
                     return true;
                 }
-                
+
                 return super.handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, false);
             }
 
@@ -346,7 +347,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 	        s_logger.debug("cannot propagate agent reconnect because agent is not available", e);
 	        return false;
         }
-        
+
         return super.reconnect(hostId);
     }
 
@@ -408,7 +409,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     public String findPeer(long hostId) {
         return _clusterMgr.getPeerName(hostId);
     }
-    
+
     public SSLEngine getSSLEngine(String peerName) {
         return _sslEngines.get(peerName);
     }
@@ -516,7 +517,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
         if (agent == null) {
         	AgentUnavailableException ex = new AgentUnavailableException("Host with specified id is not in the right state: " + host.getStatus(), hostId);
-            ex.addProxyObject(host, hostId, "hostId");
+            ex.addProxyObject(ApiDBUtils.findHostById(hostId).getUuid());
             throw ex;
         }
 
@@ -535,11 +536,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
         }
         _timer.cancel();
-        
+
         //cancel all transfer tasks
         s_transferExecutor.shutdownNow();
         cleanupTransferMap(_nodeId);
-        
+
         return super.stop();
     }
 
@@ -705,7 +706,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
         return result;
     }
-    
+
     @Override
     public void scheduleRebalanceAgents() {
         _timer.schedule(new AgentLoadBalancerTask(), 30000);
@@ -743,7 +744,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         	}
         }
     }
-   
+
     public void startRebalanceAgents() {
         s_logger.debug("Management server " + _nodeId + " is asking other peers to rebalance their agents");
         List<ManagementServerHostVO> allMS = _mshostDao.listBy(ManagementServerHost.State.Up);
@@ -762,7 +763,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
             return;
         }
-        
+
         if (avLoad == 0L) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("As calculated average load is less than 1, rounding it to 1");
@@ -772,7 +773,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         for (ManagementServerHostVO node : allMS) {
             if (node.getMsid() != _nodeId) {
-                
+
                 List<HostVO> hostsToRebalance = new ArrayList<HostVO>();
                 for (AgentLoadBalancerPlanner lbPlanner : _lbPlanners) {
                     hostsToRebalance = lbPlanner.getHostsToRebalance(node.getMsid(), avLoad);
@@ -783,20 +784,20 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     }
                 }
 
-                
+
                 if (hostsToRebalance != null && !hostsToRebalance.isEmpty()) {
                     s_logger.debug("Found " + hostsToRebalance.size() + " hosts to rebalance from management server " + node.getMsid());
                     for (HostVO host : hostsToRebalance) {
                         long hostId = host.getId();
                         s_logger.debug("Asking management server " + node.getMsid() + " to give away host id=" + hostId);
                         boolean result = true;
-                        
+
                         if (_hostTransferDao.findById(hostId) != null) {
                             s_logger.warn("Somebody else is already rebalancing host id: " + hostId);
                             continue;
                         }
 
-                        HostTransferMapVO transfer = null; 
+                        HostTransferMapVO transfer = null;
                         try {
                             transfer = _hostTransferDao.startAgentTransfering(hostId, node.getMsid(), _nodeId);
                             Answer[] answer = sendRebalanceCommand(node.getMsid(), hostId, node.getMsid(), _nodeId, Event.RequestAgentRebalance);
@@ -862,7 +863,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                             for (Iterator<Long> iterator = _agentToTransferIds.iterator(); iterator.hasNext();) {
                                 Long hostId = iterator.next();
                                 AgentAttache attache = findAttache(hostId);
-                                
+
                                 // if the thread:
                                 // 1) timed out waiting for the host to reconnect
                                 // 2) recipient management server is not active any more
@@ -878,22 +879,22 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                                     _hostTransferDao.completeAgentTransfer(hostId);
                                     continue;
                                 }
-                                
+
                                 if (transferMap.getInitialOwner() != _nodeId || attache == null || attache.forForward()) {
                                     s_logger.debug("Management server " + _nodeId + " doesn't own host id=" + hostId + " any more, skipping rebalance for the host");
                                     iterator.remove();
                                     _hostTransferDao.completeAgentTransfer(hostId);
                                     continue;
                                 }
-   
+
                                 ManagementServerHostVO ms = _mshostDao.findByMsid(transferMap.getFutureOwner());
                                 if (ms != null && ms.getState() != ManagementServerHost.State.Up) {
                                     s_logger.debug("Can't transfer host " + hostId + " as it's future owner is not in UP state: " + ms + ", skipping rebalance for the host");
                                     iterator.remove();
                                     _hostTransferDao.completeAgentTransfer(hostId);
                                     continue;
-                                } 
-                                
+                                }
+
                                 if (attache.getQueueSize() == 0 && attache.getNonRecurringListenersSize() == 0) {
                                     iterator.remove();
                                     try {
@@ -902,9 +903,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                                         s_logger.warn("Failed to submit rebalance task for host id=" + hostId + "; postponing the execution");
                                         continue;
                                     }
-                                    
+
                                 } else {
-                                    s_logger.debug("Agent " + hostId + " can't be transfered yet as its request queue size is " + attache.getQueueSize() + " and listener queue size is " + attache.getNonRecurringListenersSize()); 
+                                    s_logger.debug("Agent " + hostId + " can't be transfered yet as its request queue size is " + attache.getQueueSize() + " and listener queue size is " + attache.getNonRecurringListenersSize());
                                 }
                             }
                         } else {
@@ -920,16 +921,16 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
         };
     }
-    
-    
+
+
     private boolean setToWaitForRebalance(final long hostId, long currentOwnerId, long futureOwnerId) {
         s_logger.debug("Adding agent " + hostId + " to the list of agents to transfer");
         synchronized (_agentToTransferIds) {
             return  _agentToTransferIds.add(hostId);
         }
     }
-    
-    
+
+
     protected boolean rebalanceHost(final long hostId, long currentOwnerId, long futureOwnerId) throws AgentUnavailableException{
 
         boolean result = true;
@@ -949,7 +950,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 s_logger.warn("Host " + hostId + " failed to connect to the management server " + futureOwnerId + " as a part of rebalance process", ex);
                 result = false;
             }
-            
+
             if (result) {
                 s_logger.debug("Successfully transfered host id=" + hostId + " to management server " + futureOwnerId);
                 finishRebalance(hostId, futureOwnerId, Event.RebalanceCompleted);
@@ -957,7 +958,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 s_logger.warn("Failed to transfer host id=" + hostId + " to management server " + futureOwnerId);
                 finishRebalance(hostId, futureOwnerId, Event.RebalanceFailed);
             }
-                
+
         } else if (futureOwnerId == _nodeId) {
             HostVO host = _hostDao.findById(hostId);
             try {
@@ -976,15 +977,15 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     }
                     result = loadDirectlyConnectedHost(host, true);
                 } else {
-                    s_logger.warn("Failed to disconnect " + host.getId() + "(" + host.getName() + 
+                    s_logger.warn("Failed to disconnect " + host.getId() + "(" + host.getName() +
                             " as a part of rebalance process without notification");
                 }
-                
+
             } catch (Exception ex) {
                 s_logger.warn("Failed to load directly connected host " + host.getId() + "(" + host.getName() + ") to the management server " + _nodeId + " as a part of rebalance process due to:", ex);
                 result = false;
             }
-            
+
             if (result) {
                 s_logger.debug("Successfully loaded directly connected host " + host.getId() + "(" + host.getName() + ") to the management server " + _nodeId + " as a part of rebalance process");
             } else {
@@ -994,7 +995,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         return result;
     }
-    
+
 
     protected void finishRebalance(final long hostId, long futureOwnerId, Event event){
 
@@ -1002,21 +1003,21 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Finishing rebalancing for the agent " + hostId + " with event " + event);
         }
-        
+
         AgentAttache attache = findAttache(hostId);
         if (attache == null || !(attache instanceof ClusteredAgentAttache)) {
             s_logger.debug("Unable to find forward attache for the host id=" + hostId + ", assuming that the agent disconnected already");
             _hostTransferDao.completeAgentTransfer(hostId);
             return;
-        } 
-        
+        }
+
         ClusteredAgentAttache forwardAttache = (ClusteredAgentAttache)attache;
-        
+
         if (success) {
 
             //1) Set transfer mode to false - so the agent can start processing requests normally
             forwardAttache.setTransferMode(false);
-            
+
             //2) Get all transfer requests and route them to peer
             Request requestToTransfer = forwardAttache.getRequestToTransfer();
             while (requestToTransfer != null) {
@@ -1025,20 +1026,20 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 if (!routeResult) {
                     logD(requestToTransfer.getBytes(), "Failed to route request to peer");
                 }
-                
+
                 requestToTransfer = forwardAttache.getRequestToTransfer();
             }
-            
+
             s_logger.debug("Management server " + _nodeId + " completed agent " + hostId + " rebalance to " + futureOwnerId);
-           
+
         } else {
             failRebalance(hostId);
         }
-        
+
         s_logger.debug("Management server " + _nodeId + " completed agent " + hostId + " rebalance");
         _hostTransferDao.completeAgentTransfer(hostId);
     }
-    
+
     protected void failRebalance(final long hostId){
         try {
             s_logger.debug("Management server " + _nodeId + " failed to rebalance agent " + hostId);
@@ -1048,15 +1049,15 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             s_logger.warn("Failed to reconnect host id=" + hostId + " as a part of failed rebalance task cleanup");
         }
     }
-    
+
     protected boolean startRebalance(final long hostId) {
         HostVO host = _hostDao.findById(hostId);
-        
+
         if (host == null || host.getRemoved() != null) {
             s_logger.warn("Unable to find host record, fail start rebalancing process");
             return false;
-        } 
-        
+        }
+
         synchronized (_agents) {
             ClusteredDirectAgentAttache attache = (ClusteredDirectAgentAttache)_agents.get(hostId);
             if (attache != null && attache.getQueueSize() == 0 && attache.getNonRecurringListenersSize() == 0) {
@@ -1081,27 +1082,27 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         _hostTransferDao.startAgentTransfer(hostId);
         return true;
     }
-    
+
     protected void cleanupTransferMap(long msId) {
         List<HostTransferMapVO> hostsJoingingCluster = _hostTransferDao.listHostsJoiningCluster(msId);
-        
+
         for (HostTransferMapVO hostJoingingCluster : hostsJoingingCluster) {
             _hostTransferDao.remove(hostJoingingCluster.getId());
         }
-        
+
         List<HostTransferMapVO> hostsLeavingCluster = _hostTransferDao.listHostsLeavingCluster(msId);
         for (HostTransferMapVO hostLeavingCluster : hostsLeavingCluster) {
             _hostTransferDao.remove(hostLeavingCluster.getId());
         }
     }
-    
-    
+
+
     protected class RebalanceTask implements Runnable {
         Long hostId = null;
         Long currentOwnerId = null;
         Long futureOwnerId = null;
-        
-        
+
+
         public RebalanceTask(long hostId, long currentOwnerId, long futureOwnerId) {
             this.hostId = hostId;
             this.currentOwnerId = currentOwnerId;
@@ -1122,5 +1123,5 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
         }
     }
-    
+
 }

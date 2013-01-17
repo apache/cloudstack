@@ -49,6 +49,9 @@ git-remote-https.exe.stackdump
 *.swp
 tools/devcloud/devcloudbox/.vagrant
 tools/cli/cloudmonkey/marvin/
+tools/cli/cloudmonkey/precache.py
+tools/marvin/marvin/cloudstackAPI/
+tools/cli/build/
 *.jar
 *.war
 *.mar
@@ -64,4 +67,10 @@ awsapi/modules/*
 .settings/
 db.properties.override
 awsapi/overlays/
+tools/marvin/marvin/cloudstackAPI/*
 *.egg-info/
+docs/tmp
+docs/publish
+docs/runbook/tmp
+docs/runbook/publish
+Gemfile.lock

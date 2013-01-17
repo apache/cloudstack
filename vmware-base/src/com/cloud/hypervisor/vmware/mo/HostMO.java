@@ -840,11 +840,9 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		
 		VmwareHypervisorHostResourceSummary summary = new VmwareHypervisorHostResourceSummary();
 		
-		HostConnectInfo hostInfo = _context.getService().queryHostConnectionInfo(_mor);
-		HostHardwareSummary hardwareSummary = hostInfo.getHost().getHardware();
-		
+        HostHardwareSummary hardwareSummary = getHostHardwareSummary();
 		// TODO: not sure how hyper-thread is counted in VMware resource pool
-		summary.setCpuCount(hardwareSummary.getNumCpuCores()*hardwareSummary.getNumCpuPkgs());
+        summary.setCpuCount(hardwareSummary.getNumCpuCores());
 		summary.setMemoryBytes(hardwareSummary.getMemorySize());
 		summary.setCpuSpeed(hardwareSummary.getCpuMhz());
 
@@ -922,14 +920,13 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		ComputeResourceSummary resourceSummary = new ComputeResourceSummary();
 		
 		// TODO: not sure how hyper-threading is counted in VMware
-		short totalCores = (short)(hardwareSummary.getNumCpuCores()*hardwareSummary.getNumCpuPkgs());
-		resourceSummary.setNumCpuCores(totalCores);
+        resourceSummary.setNumCpuCores(hardwareSummary.getNumCpuCores());
 		
 		// Note: memory here is in Byte unit
 		resourceSummary.setTotalMemory(hardwareSummary.getMemorySize());
 		
-		// Total CPU is based on socket x core x Mhz
-		int totalCpu = hardwareSummary.getCpuMhz() * totalCores;
+        // Total CPU is based on (# of cores) x Mhz
+        int totalCpu = hardwareSummary.getCpuMhz() * hardwareSummary.getNumCpuCores();
 		resourceSummary.setTotalCpu(totalCpu);
 
 		HostListSummaryQuickStats stats = getHostQuickStats();

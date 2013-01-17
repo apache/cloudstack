@@ -29,9 +29,9 @@
     <para>You cannot use port forwarding to open ports for an elastic IP address. When elastic IP is used, outside access is instead controlled through the use of security groups. See Security Groups.</para>
     <para>To set up port forwarding:</para>
     <orderedlist>
-        <listitem><para>Log in to the CloudPlatform UI as an administrator or end user.</para></listitem>
-        <listitem><para>If you have not already done so, add a public IP address range to a zone in CloudPlatform. See Adding a Zone and Pod in the Installation Guide.</para></listitem>
-        <listitem><para>Add one or more VM instances to CloudPlatform.</para></listitem>
+        <listitem><para>Log in to the &PRODUCT; UI as an administrator or end user.</para></listitem>
+        <listitem><para>If you have not already done so, add a public IP address range to a zone in &PRODUCT;. See Adding a Zone and Pod in the Installation Guide.</para></listitem>
+        <listitem><para>Add one or more VM instances to &PRODUCT;.</para></listitem>
         <listitem><para>In the left navigation bar, click Network.</para></listitem>
         <listitem><para>Click the name of the guest network where the VMs are running.</para>
         </listitem>

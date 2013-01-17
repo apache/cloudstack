@@ -27,6 +27,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * NetworkExternalFirewallVO contains information on the networks that are using external firewall
@@ -34,7 +35,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="network_external_firewall_device_map")
-public class NetworkExternalFirewallVO {
+public class NetworkExternalFirewallVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

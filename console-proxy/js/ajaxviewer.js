@@ -109,17 +109,17 @@ KeyboardMapper.prototype = {
 			// intialize keyboard mapping for RAW keyboard
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_CAPSLOCK] 		= AjaxViewer.X11_KEY_CAPSLOCK;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACKSPACE] 		= AjaxViewer.X11_KEY_BACKSPACE;
-			this.jsX11KeysymMap[AjaxViewer.JS_KEY_TAB] 				= AjaxViewer.X11_KEY_TAB;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_TAB]			= AjaxViewer.X11_KEY_TAB;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_ENTER] 			= AjaxViewer.X11_KEY_ENTER;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_ESCAPE] 			= AjaxViewer.X11_KEY_ESCAPE;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_INSERT] 			= AjaxViewer.X11_KEY_INSERT;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_DELETE] 			= AjaxViewer.X11_KEY_DELETE;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_HOME] 			= AjaxViewer.X11_KEY_HOME;
-			this.jsX11KeysymMap[AjaxViewer.JS_KEY_END] 				= AjaxViewer.X11_KEY_END;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_END] 			= AjaxViewer.X11_KEY_END;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEUP] 			= AjaxViewer.X11_KEY_PAGEUP;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_PAGEDOWN] 		= AjaxViewer.X11_KEY_PAGEDOWN;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_LEFT] 			= AjaxViewer.X11_KEY_LEFT;
-			this.jsX11KeysymMap[AjaxViewer.JS_KEY_UP] 				= AjaxViewer.X11_KEY_UP;
+			this.jsX11KeysymMap[AjaxViewer.JS_KEY_UP] 			= AjaxViewer.X11_KEY_UP;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_RIGHT] 			= AjaxViewer.X11_KEY_RIGHT;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_DOWN] 			= AjaxViewer.X11_KEY_DOWN;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_F1] 				= AjaxViewer.X11_KEY_F1;
@@ -218,7 +218,6 @@ KeyboardMapper.prototype = {
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_ALT] 				= AjaxViewer.X11_KEY_ALT;
 		}
 	},
-	
 	RawkeyboardInputHandler : function(eventType, code, modifiers, guestos, browser, browserVersion) {
 		if(eventType == AjaxViewer.KEY_DOWN || eventType == AjaxViewer.KEY_UP) {
 			
@@ -237,6 +236,7 @@ KeyboardMapper.prototype = {
 					return;
 				} else if($.isArray(X11Keysym)) {
 					for(var i = 0; i < X11Keysym.length; i++) {
+					// How to set the guestos, browser, version value??? add later
 						if(this.isConditionalEntryMatched(eventType, code, modifiers, X11Keysym[i], guestos, browser, browserVersion)) {
 							this.mappedInput.push(X11Keysym[i]);
 						}
@@ -442,8 +442,8 @@ function AjaxViewer(panelId, imageUrl, updateUrl, tileMap, width, height, tileWi
 		window.onStatusNotify = function(status) {};
 	
 	this.panel = this.generateCanvas(panelId, width, height, tileWidth, tileHeight);
-	
-	this.setupKeyboardTranslationTable();
+//	this.setupKeyboardTranslationle();
+	this.setupKeyboardTranslationTable(this.keyboardMappers);
 	this.setupUIController();
 }
 
@@ -726,18 +726,20 @@ AjaxViewer.prototype = {
 		});
 		this.checkEventQueue();
 	},
-	
+//NEW  insert the keyboard tables file here
+// ajaxKeys.js
+
 	setupKeyboardTranslationTable : function() {
 		this.keyboardMappers = [];
 		
 		var mapper = new KeyboardMapper();
 		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_ENGLISH] = mapper;
 		mapper.setKeyboardType(KeyboardMapper.KEYBOARD_TYPE_COOKED);
-		
+
 		mapper = new KeyboardMapper();
 		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE] = mapper;
 		mapper.setKeyboardType(KeyboardMapper.KEYBOARD_TYPE_RAW);
-		
+
 		// JP keyboard plugged in a English host OS
 /*		
 		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_COLON] = AjaxViewer.X11_KEY_COLON;
@@ -759,8 +761,9 @@ AjaxViewer.prototype = {
     	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_TILDE, modifiers: 0, shift: true },
     	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_TILDE, modifiers: 0, shift: true }
         ];
-*/		
-		
+*/
+
+/* Old
 		// JP keyboard plugged in a Japanese host OS
 		mapper.jsX11KeysymMap[222] = AjaxViewer.X11_KEY_CIRCUMFLEX_ACCENT;
 		mapper.jsX11KeysymMap[220] = AjaxViewer.X11_KEY_YEN_MARK;
@@ -789,7 +792,31 @@ AjaxViewer.prototype = {
        	    {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: true },
        	    {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_ADD, modifiers: 0, shift: true },
         ];
-	},
+
+*/
+	// create the mapping table based on the tables input
+	if (keyboardTables != undefined	) {
+
+	    for(var i = 0; i < keyboardTables.length; i++) {
+		var mappingTbl = keyboardTables[i];
+                var mappings = mappingTbl.mappingTable;
+		var x11Maps = mappings.X11;
+		for (var j = 0; j < x11Maps.length; j++) {
+			var code = x11Maps[j].keycode;
+			var mappedEntry = x11Maps[j].entry;
+			mapper.jsX11KeysymMap[code] = mappedEntry;
+		}
+		var keyPressMaps = mappings.keyPress;
+		for (var j = 0; j < keyPressMaps.length; j++) {
+			var code = keyPressMaps[j].keycode;
+			var mappedEntry = keyPressMaps[j].entry;
+			mapper.jsKeyPressX11KeysymMap[code] = mappedEntry;
+		}
+
+	    }
+	}
+
+	}, // end of the setupKeyboardTranslationTable function
 	
 	getCurrentKeyboardMapper : function() {
 		return this.keyboardMappers[this.currentKeyboard];

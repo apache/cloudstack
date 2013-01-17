@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.keystore;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,7 +27,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="keystore")
-public class KeystoreVO {
+public class KeystoreVO implements InternalIdentity {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	@Column(name="id")
@@ -49,7 +51,7 @@ public class KeystoreVO {
     public KeystoreVO() {
     }
     
-	public Long getId() {
+	public long getId() {
 		return id;
 	}
 

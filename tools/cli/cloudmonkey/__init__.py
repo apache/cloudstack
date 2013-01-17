@@ -16,6 +16,6 @@
 # under the License.
 
 try:
-    from version import __version__
+    from common import __version__
 except ImportError, e:
     print e

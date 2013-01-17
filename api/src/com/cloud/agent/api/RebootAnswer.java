@@ -18,24 +18,24 @@ package com.cloud.agent.api;
 
 public class RebootAnswer extends Answer {
     Integer vncPort;
-    
+
     protected RebootAnswer() {
     }
-    
+
     public RebootAnswer(RebootCommand cmd, String details, Integer vncport) {
         super(cmd, true, details);
         this.vncPort = vncport;
     }
-    
+
     public RebootAnswer(RebootCommand cmd, String details, boolean success) {
         super(cmd, success, details);
         this.vncPort = null;
     }
-    
+
     public RebootAnswer(RebootCommand cmd, Exception e) {
         super(cmd, e);
     }
-    
+
     public Integer getVncPort() {
     	return vncPort;
     }

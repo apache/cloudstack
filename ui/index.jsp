@@ -498,22 +498,13 @@ under the License.
                       <div class="title">
                         <fmt:message key="label.isolation.mode"/>
                       </div>
-                      
-                      <!-- VLAN -->
-                      <div class="select-area">
-                        <div class="desc">
-                          <fmt:message key="message.advanced.virtual"/>
-                        </div>
-                        <input type="radio" name="zone-isolation-mode" value="VLAN" disabled="disabled" checked="checked" />
-                        <label>VLAN</label>
-                      </div>
 
                       <!-- Security groups -->
                       <div class="select-area">
                         <div class="desc">
                           <fmt:message key="message.advanced.security.group"/>
                         </div>
-                        <input type="radio" name="zone-isolation-mode" value="SG" disabled="disabled" />
+                        <input type="checkbox" name="zone-advanced-sg-enabled" disabled="disabled" />
                         <label><fmt:message key="label.menu.security.groups"/></label>
                       </div>
                     </div>
@@ -561,6 +552,7 @@ under the License.
                         class="traffic-type-draggable management">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
+                        <span class="name"><fmt:message key="label.management"/></span>
                         <span class="icon">&nbsp;</span>
                         <span>Edit</span>
                       </div>
@@ -578,6 +570,7 @@ under the License.
                         class="traffic-type-draggable public">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
+                        <span class="name"><fmt:message key="label.public"/></span>
                         <span class="icon">&nbsp;</span>
                         <span>Edit</span>
                       </div>
@@ -595,6 +588,7 @@ under the License.
                         class="traffic-type-draggable guest">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
+                        <span class="name"><fmt:message key="label.guest"/></span>
                         <span class="icon">&nbsp;</span>
                         <span>Edit</span>
                       </div>
@@ -612,6 +606,7 @@ under the License.
                         class="traffic-type-draggable storage">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
+                        <span class="name"><fmt:message key="label.storage"/></span>
                         <span class="icon">&nbsp;</span>
                         <span>Edit</span>
                       </div>
@@ -1647,6 +1642,8 @@ under the License.
     <script type="text/javascript" src="scripts/ui-custom/projects.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloudStack.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/lbStickyPolicy.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/autoscaler.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/autoscaler.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/zoneChart.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/dashboard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/installWizard.js?t=<%=now%>"></script>

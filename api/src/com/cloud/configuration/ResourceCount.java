@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.configuration;
 
-public interface ResourceCount extends Resource {
+import org.apache.cloudstack.api.InternalIdentity;
 
-    public Long getId();
+public interface ResourceCount extends Resource, InternalIdentity {
 
     public long getCount();
 

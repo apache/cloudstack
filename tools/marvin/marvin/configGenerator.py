@@ -65,8 +65,6 @@ class zone():
         self.internaldns2 = None
         self.securitygroupenabled = None
         self.localstorageenabled = None
-        ''' Guest Vlan range - only advanced zone'''
-        self.vlan = None
         '''default public network, in advanced mode'''
         self.ipranges = []
         self.physical_networks = []
@@ -80,6 +78,7 @@ class traffictype():
             self.xen = labeldict['xen'] if 'xen' in labeldict.keys() else None
             self.kvm = labeldict['kvm'] if 'kvm' in labeldict.keys() else None
             self.vmware = labeldict['vmware'] if 'vmware' in labeldict.keys() else None
+            self.simulator = labeldict['simulator'] if 'simulator' in labeldict.keys() else None
         #{
         #    'xen' : 'cloud-xen',
         #    'kvm' : 'cloud-kvm',
@@ -179,6 +178,17 @@ class primaryStorage():
 class secondaryStorage():
     def __init__(self):
         self.url = None
+
+class s3():
+    def __init__(self):
+        self.accesskey = None
+        self.secretkey = None
+        self.bucket = None
+        self.endpoint = None
+        self.sockettimeout = None
+        self.connectiontimeout = None
+        self.maxerrorrety = None
+        self.usehttps = None
 
 class netscaler():
     def __init__(self, hostname=None, username='nsroot', password='nsroot'):

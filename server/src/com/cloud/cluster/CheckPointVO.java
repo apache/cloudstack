@@ -26,10 +26,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="stack_maid")
-public class CheckPointVO {
+public class CheckPointVO implements InternalIdentity {
 
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

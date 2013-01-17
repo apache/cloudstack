@@ -39,6 +39,7 @@ import java.util.UUID;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
 
@@ -61,6 +62,7 @@ import com.cloud.utils.script.Script;
 public class AgentShell implements IAgentShell {
     private static final Logger s_logger = Logger.getLogger(AgentShell.class
             .getName());
+    private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
     private final Properties _properties = new Properties();
     private final Map<String, Object> _cmdLineProperties = new HashMap<String, Object>();
@@ -224,11 +226,12 @@ public class AgentShell implements IAgentShell {
     }
 
     public static void wget(String url, File file) throws IOException {
-        final HttpClient client = new HttpClient();
+        final HttpClient client = new HttpClient(s_httpClientManager);
         final GetMethod method = new GetMethod(url);
         int response;
         response = client.executeMethod(method);
         if (response != HttpURLConnection.HTTP_OK) {
+            method.releaseConnection();
             s_logger.warn("Retrieving from " + url + " gives response code: "
                     + response);
             throw new CloudRuntimeException("Unable to download from " + url
@@ -251,6 +254,7 @@ public class AgentShell implements IAgentShell {
             s_logger.warn("Exception while closing download stream from  "
                     + url + ", ", e);
         }
+        method.releaseConnection();
     }
 
     private void loadProperties() throws ConfigurationException {

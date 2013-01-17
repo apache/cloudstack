@@ -20,13 +20,13 @@ import com.cloud.agent.api.Answer;
 
 public class IpAssocAnswer extends Answer{
     String[] results;
-    
+
     public static final String errorResult = "Failed";
-    
+
     protected IpAssocAnswer() {
         super();
     }
-    
+
     public IpAssocAnswer(IpAssocCommand cmd, String[] results) {
 
         boolean finalResult = true;
@@ -41,7 +41,7 @@ public class IpAssocAnswer extends Answer{
         assert(cmd.getIpAddresses().length == results.length) : "Shouldn't the results match the commands?";
         this.results = results;
     }
-    
+
     String[] getResults() {
         return results;
     }

@@ -20,11 +20,11 @@ import com.cloud.utils.SerialVersionUID;
 
 public class InsufficientNetworkCapacityException extends InsufficientCapacityException {
     private static final long serialVersionUID = SerialVersionUID.InsufficientAddressCapacityException;
-    
+
     protected InsufficientNetworkCapacityException() {
         super();
     }
-    
+
     public InsufficientNetworkCapacityException(String msg, Class<?> scope, Long id) {
         super(msg, scope, id);
     }

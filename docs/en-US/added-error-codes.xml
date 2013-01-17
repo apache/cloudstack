@@ -128,7 +128,7 @@
                     </row>
                     <row>
                         <entry><para>4535 : "com.cloud.exception.VirtualMachineMigrationException"</para></entry>
-                        <entry><para>9999 : "com.cloud.api.ServerApiException"</para></entry>
+                        <entry><para>9999 : "org.apache.cloudstack.api.ServerApiException"</para></entry>
                         <entry><para></para></entry>
                     </row>
                 </tbody>

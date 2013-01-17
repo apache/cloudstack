@@ -88,7 +88,7 @@ echo "0 $mac $ip $host *" >> $DHCP_LEASES
 
 #edit hosts file as well
 sed -i  /"$ip "/d $HOSTS
-sed -i  /"$host "/d $HOSTS
+sed -i  /" $host$"/d $HOSTS
 echo "$ip $host" >> $HOSTS
 
 if [ "$dflt" != "" ]

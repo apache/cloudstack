@@ -50,6 +50,10 @@ public class UserContext {
         return userId;
     }
 
+    public User getCallerUser() {
+        return _accountMgr.getActiveUser(userId);
+    }
+
     public void setCallerUserId(long userId) {
         this.userId = userId;
     }

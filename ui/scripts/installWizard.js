@@ -207,13 +207,6 @@
         });
       },
 
-      // EULA
-      eula: function(args) {
-        args.response.success({
-          text: '<iframe src="eula.html" />'
-        });
-      },
-
       whatIsAZone: function(args) {
         args.response.success({
           text: 'message.installWizard.copy.whatIsAZone'

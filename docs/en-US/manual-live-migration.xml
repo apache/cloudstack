@@ -24,7 +24,7 @@
 
 <section id="manual-live-migration">
     <title>Moving VMs Between Hosts (Manual Live Migration)</title>
-        <para>The CloudPlatform administrator can move a running VM from one host to another without interrupting service to users or going into maintenance mode. This is called manual live migration, and can be done under the following conditions:</para>
+        <para>The &PRODUCT; administrator can move a running VM from one host to another without interrupting service to users or going into maintenance mode. This is called manual live migration, and can be done under the following conditions:</para>
         <itemizedlist>
             <listitem><para>The root administrator is logged in. Domain admins and users can not perform manual live migration of VMs.</para></listitem>
             <listitem><para>The VM is running. Stopped VMs can not be live migrated.</para></listitem>
@@ -35,7 +35,7 @@
         </itemizedlist>
         <para>To manually live migrate a virtual machine</para>
         <orderedlist>
-            <listitem><para>Log in to the CloudPlatform UI as a user or admin.</para></listitem>
+            <listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
             <listitem><para>In the left navigation, click Instances.</para></listitem>
             <listitem><para>Choose the VM that you want to migrate.</para></listitem>
             <listitem><para>Click the Migrate Instance button <inlinemediaobject>

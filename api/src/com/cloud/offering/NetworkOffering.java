@@ -18,12 +18,15 @@ package com.cloud.offering;
 
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
+import org.apache.cloudstack.acl.InfrastructureEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Describes network offering
- * 
+ *
  */
-public interface NetworkOffering {
+public interface NetworkOffering extends InfrastructureEntity, InternalIdentity, Identity {
 
     public enum Availability {
         Required,
@@ -40,7 +43,7 @@ public interface NetworkOffering {
     public final static String SystemManagementNetwork = "System-Management-Network";
     public final static String SystemStorageNetwork = "System-Storage-Network";
     public final static String SystemPrivateGatewayNetworkOffering = "System-Private-Gateway-Network-Offering";
-    
+
     public final static String DefaultSharedNetworkOfferingWithSGService = "DefaultSharedNetworkOfferingWithSGService";
     public final static String DefaultIsolatedNetworkOfferingWithSourceNatService = "DefaultIsolatedNetworkOfferingWithSourceNatService";
     public final static String OvsIsolatedNetworkOfferingWithSourceNatService = "OvsIsolatedNetworkOfferingWithSourceNatService";
@@ -49,9 +52,6 @@ public interface NetworkOffering {
     public final static String DefaultSharedEIPandELBNetworkOffering = "DefaultSharedNetscalerEIPandELBNetworkOffering";
     public final static String DefaultIsolatedNetworkOfferingForVpcNetworks = "DefaultIsolatedNetworkOfferingForVpcNetworks";
     public final static String DefaultIsolatedNetworkOfferingForVpcNetworksNoLB = "DefaultIsolatedNetworkOfferingForVpcNetworksNoLB";
-
-
-    long getId();
 
     /**
      * @return name for the network offering.
@@ -109,4 +109,5 @@ public interface NetworkOffering {
 
     boolean getSpecifyIpRanges();
 
+    boolean isInline();
 }

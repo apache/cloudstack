@@ -23,9 +23,9 @@ import com.cloud.utils.SerialVersionUID;
  *  done with it.  Hence this special state.
  */
 public class HAStateException extends ManagementServerException {
-    
+
     private static final long serialVersionUID = SerialVersionUID.HAStateException;
-    
+
     public HAStateException(String msg) {
         super(msg);
     }

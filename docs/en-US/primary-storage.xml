@@ -24,7 +24,8 @@
 
 <section id="primary-storage">
     <title>Primary Storage</title>
-    <para>This section gives concepts and technical details about CloudPlatform primary storage. For information about how to install and configure primary storage through the CloudPlatform UI, see the Advanced Installation Guide.</para>
+    <para>This section gives concepts and technical details about &PRODUCT; primary storage. For information about how to install and configure primary storage through the &PRODUCT; UI, see the Installation Guide.</para>
+    <para><xref linkend="about-primary-storage"/></para> 
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="best-practices-primary-storage.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="runtime-behavior-of-primary-storage.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="hypervisor-support-for-primarystorage.xml"/>

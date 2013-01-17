@@ -27,9 +27,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.api.Identity;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.google.gson.annotations.Expose;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("security_group_rule"))

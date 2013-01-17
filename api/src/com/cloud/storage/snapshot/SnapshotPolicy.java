@@ -16,8 +16,10 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
-public interface SnapshotPolicy {
-    long getId();
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface SnapshotPolicy extends Identity, InternalIdentity {
 
     long getVolumeId();
 

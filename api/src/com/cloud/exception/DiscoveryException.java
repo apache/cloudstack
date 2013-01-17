@@ -19,13 +19,13 @@ package com.cloud.exception;
 import com.cloud.utils.SerialVersionUID;
 
 public class DiscoveryException extends CloudException {
-    
+
     private static final long serialVersionUID = SerialVersionUID.DiscoveryException;
 
     public DiscoveryException(String msg) {
         this(msg, null);
     }
-    
+
     public DiscoveryException(String msg, Throwable cause) {
         super(msg, cause);
     }

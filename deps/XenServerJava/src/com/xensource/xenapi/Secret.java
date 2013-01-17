@@ -1,18 +1,19 @@
-/* Copyright (c) Citrix Systems, Inc.
+/*
+ * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -26,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -51,7 +53,7 @@ import org.apache.xmlrpc.XmlRpcException;
 public class Secret extends XenAPIObject {
 
     /**
-     * The XenAPI reference to this object.
+     * The XenAPI reference (OpaqueRef) to this object.
      */
     protected final String ref;
 
@@ -62,6 +64,9 @@ public class Secret extends XenAPIObject {
        this.ref = ref;
     }
 
+    /**
+     * @return The XenAPI reference (OpaqueRef) to this object.
+     */
     public String toWireString() {
        return this.ref;
     }
@@ -97,6 +102,7 @@ public class Secret extends XenAPIObject {
             PrintWriter print = new PrintWriter(writer);
             print.printf("%1$20s: %2$s\n", "uuid", this.uuid);
             print.printf("%1$20s: %2$s\n", "value", this.value);
+            print.printf("%1$20s: %2$s\n", "otherConfig", this.otherConfig);
             return writer.toString();
         }
 
@@ -107,6 +113,7 @@ public class Secret extends XenAPIObject {
             Map<String,Object> map = new HashMap<String,Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("value", this.value == null ? "" : this.value);
+            map.put("other_config", this.otherConfig == null ? new HashMap<String, String>() : this.otherConfig);
             return map;
         }
 
@@ -118,6 +125,10 @@ public class Secret extends XenAPIObject {
          * the secret
          */
         public String value;
+        /**
+         * other_config
+         */
+        public Map<String, String> otherConfig;
     }
 
     /**
@@ -260,6 +271,23 @@ public class Secret extends XenAPIObject {
     }
 
     /**
+     * Get the other_config field of the given secret.
+     *
+     * @return value of the field
+     */
+    public Map<String, String> getOtherConfig(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "secret.get_other_config";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toMapOfStringString(result);
+    }
+
+    /**
      * Set the value field of the given secret.
      *
      * @param value New value to set
@@ -271,6 +299,55 @@ public class Secret extends XenAPIObject {
         String method_call = "secret.set_value";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Set the other_config field of the given secret.
+     *
+     * @param otherConfig New value to set
+     */
+    public void setOtherConfig(Connection c, Map<String, String> otherConfig) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "secret.set_other_config";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(otherConfig)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Add the given key-value pair to the other_config field of the given secret.
+     *
+     * @param key Key to add
+     * @param value Value to add
+     */
+    public void addToOtherConfig(Connection c, String key, String value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "secret.add_to_other_config";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Remove the given key and its corresponding value from the other_config field of the given secret.  If the key is not in that Map, then do nothing.
+     *
+     * @param key Key to remove
+     */
+    public void removeFromOtherConfig(Connection c, String key) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "secret.remove_from_other_config";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
         Map response = c.dispatch(method_call, method_params);
         return;
     }

@@ -18,19 +18,16 @@ package com.cloud.api.commands;
 
 import java.util.Date;
 
+import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.server.ManagementServerExt;
 import com.cloud.user.Account;
 
-@Implementation(description="Generates usage records. This will generate records only if there any records to be generated, i.e if the scheduled usage job was not run or failed", responseObject=SuccessResponse.class)
+@APICommand(name = "generateUsageRecords", description="Generates usage records. This will generate records only if there any records to be generated, i.e if the scheduled usage job was not run or failed", responseObject=SuccessResponse.class)
 public class GenerateUsageRecordsCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GenerateUsageRecordsCmd.class.getName());
 
@@ -40,8 +37,8 @@ public class GenerateUsageRecordsCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="List events for the specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
+            description="List events for the specified domain.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.END_DATE, type=CommandType.DATE, required=true, description="End date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
@@ -88,7 +85,7 @@ public class GenerateUsageRecordsCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to generate usage records");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate usage records");
         }
     }
 }
