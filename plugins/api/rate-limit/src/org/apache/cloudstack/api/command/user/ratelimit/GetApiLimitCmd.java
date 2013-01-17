@@ -46,7 +46,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "getApiLimit", responseObject=ApiLimitResponse.class, description="Get API limit count for the caller")
-public class GetApiLimitCmd extends BaseListCmd {
+public class GetApiLimitCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(GetApiLimitCmd.class.getName());
 
     private static final String s_name = "getapilimitresponse";
@@ -81,6 +81,7 @@ public class GetApiLimitCmd extends BaseListCmd {
         Account caller = UserContext.current().getCaller();
         ApiLimitResponse response = _apiLimitService.searchApiLimit(caller);
         response.setResponseName(getCommandName());
+        response.setObjectName("apilimit");
         this.setResponseObject(response);
     }
 }

@@ -185,7 +185,7 @@ under the License.
         <pluggableservice name="ApiDiscoveryService" key="org.apache.cloudstack.discovery.ApiDiscoveryService" class="org.apache.cloudstack.discovery.ApiDiscoveryServiceImpl"/>
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
         <pluggableservice name="NiciraNvpElementService" key="com.cloud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/>
-        <pluggableservice name="ApiRateLimitService" key="org.apache.cloudstack.api.ratelimit.ApiRateLimitService" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
+        <pluggableservice name="ApiRateLimitService" key="org.apache.cloudstack.ratelimit.ApiRateLimitService" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
         <dao name="OvsTunnelInterfaceDao" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" singleton="false"/>
         <dao name="OvsTunnelAccountDao" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" singleton="false"/>
         <dao name="NiciraNvpDao" class="com.cloud.network.dao.NiciraNvpDaoImpl" singleton="false"/>
