@@ -15,28 +15,51 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api;
+import java.util.ArrayList;
+
+import com.cloud.exception.CloudException;
+import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @SuppressWarnings("serial")
 public class ServerApiException extends CloudRuntimeException {
-    private int _errorCode;
+    private ApiErrorCode _errorCode;
     private String _description;
 
     public ServerApiException() {
-        _errorCode = 0;
+        _errorCode = ApiErrorCode.INTERNAL_ERROR;
         _description = null;
+        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(ServerApiException.class.getName()));
     }
 
-    public ServerApiException(int errorCode, String description) {
+    public ServerApiException(ApiErrorCode errorCode, String description) {
         _errorCode = errorCode;
         _description = description;
+        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(ServerApiException.class.getName()));
     }
 
-    public int getErrorCode() {
+    // wrap a specific CloudRuntimeException to a ServerApiException
+    public ServerApiException(ApiErrorCode errorCode, String description, Throwable cause){
+        super(description, cause);
+        _errorCode = errorCode;
+        _description = description;
+        if (cause instanceof CloudRuntimeException || cause instanceof CloudException ) {
+            CloudRuntimeException rt = (CloudRuntimeException) cause;
+            ArrayList<String> idList = rt.getIdProxyList();
+            if (idList != null) {
+                for (int i = 0; i < idList.size(); i++) {
+                    addProxyObject(idList.get(i));
+                }
+            }
+            setCSErrorCode(rt.getCSErrorCode());
+        }
+    }
+
+    public ApiErrorCode getErrorCode() {
         return _errorCode;
     }
 
-    public void setErrorCode(int errorCode) {
+    public void setErrorCode(ApiErrorCode errorCode) {
         _errorCode = errorCode;
     }
 

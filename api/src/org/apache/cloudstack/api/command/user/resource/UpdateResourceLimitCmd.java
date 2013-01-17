@@ -100,7 +100,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update resource limit");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update resource limit");
         }
     }
 }

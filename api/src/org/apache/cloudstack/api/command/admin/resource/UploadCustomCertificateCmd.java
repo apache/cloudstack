@@ -99,7 +99,7 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
             response.setObjectName("customcertificate");
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to upload custom certificate");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upload custom certificate");
         }
     }
 

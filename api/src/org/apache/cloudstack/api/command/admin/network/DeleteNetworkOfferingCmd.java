@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.network;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -70,7 +71,7 @@ public class DeleteNetworkOfferingCmd extends BaseCmd{
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete service offering");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete service offering");
         }
     }
 }

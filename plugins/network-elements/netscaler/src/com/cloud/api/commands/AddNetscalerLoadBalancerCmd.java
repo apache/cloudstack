@@ -51,7 +51,7 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to reach netscaler load balancer device")
     private String username;
-    
+
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to reach netscaler load balancer device")
     private String password;
 
@@ -96,12 +96,12 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to add netscaler load balancer due to internal error.");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add netscaler load balancer due to internal error.");
             }
         }  catch (InvalidParameterValueException invalidParamExcp) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
 
@@ -114,7 +114,7 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     public String getEventType() {
         return EventTypes.EVENT_EXTERNAL_LB_DEVICE_ADD;
     }
- 
+
     @Override
     public String getCommandName() {
         return s_name;

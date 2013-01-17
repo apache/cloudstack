@@ -18,6 +18,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -72,12 +73,12 @@ public class DeleteNetscalerLoadBalancerCmd extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete netscaler load balancer.");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete netscaler load balancer.");
             }
         }  catch (InvalidParameterValueException invalidParamExcp) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
 

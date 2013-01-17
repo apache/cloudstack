@@ -84,7 +84,7 @@ public class LockAccountCmd extends BaseCmd {
 //            response.setResponseName(getCommandName());
 //            this.setResponseObject(response);
 //        } else {
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to lock account");
+//            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to lock account");
 //        }
     }
 }

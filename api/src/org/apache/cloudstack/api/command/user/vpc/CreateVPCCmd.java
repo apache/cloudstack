@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -126,7 +127,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
             this.setEntityId(vpc.getId());
             this.setEntityUuid(vpc.getUuid());
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a VPC");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a VPC");
         }
     }
 
@@ -139,14 +140,14 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
              }
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);
             s_logger.trace(ex);
-            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         }
 
         if (vpc != null) {
@@ -154,7 +155,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create VPC");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create VPC");
         }
     }
 

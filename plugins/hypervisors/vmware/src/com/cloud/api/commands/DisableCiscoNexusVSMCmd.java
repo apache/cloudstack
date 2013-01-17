@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -70,7 +71,7 @@ public class DisableCiscoNexusVSMCmd extends BaseAsyncCmd {
         	response.setResponseName(getCommandName());
         	this.setResponseObject(response);
         } else {
-        	throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to disable Cisco Nexus VSM device");
+        	throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to disable Cisco Nexus VSM device");
         }
     }
 
@@ -92,5 +93,5 @@ public class DisableCiscoNexusVSMCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
     	return EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DISABLE;
-    }    
+    }
 }

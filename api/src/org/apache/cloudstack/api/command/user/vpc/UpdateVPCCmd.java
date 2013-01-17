@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.vpc;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -92,7 +93,7 @@ public class UpdateVPCCmd extends BaseAsyncCmd{
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update VPC");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update VPC");
         }
     }
 

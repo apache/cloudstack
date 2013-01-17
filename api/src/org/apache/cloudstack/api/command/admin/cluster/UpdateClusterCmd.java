@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.cluster;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -112,7 +113,7 @@ public class UpdateClusterCmd extends BaseCmd {
                 clusterResponse.setResponseName(getCommandName());
                 this.setResponseObject(clusterResponse);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update cluster");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update cluster");
         }
     }
 }

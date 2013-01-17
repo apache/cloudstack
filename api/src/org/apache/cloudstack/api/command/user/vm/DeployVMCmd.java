@@ -364,14 +364,14 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                 }
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Exception: ", ex);
-                throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+                throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
             } catch (ConcurrentOperationException ex) {
                 s_logger.warn("Exception: ", ex);
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
             } catch (InsufficientCapacityException ex) {
                 s_logger.info(ex);
                 s_logger.trace(ex);
-                throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+                throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
             }
         } else {
             result = _userVmService.getUserVm(getEntityId());
@@ -382,7 +382,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy vm");
         }
     }
 
@@ -454,18 +454,18 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                 setEntityId(vm.getId());
                 setEntityUuid(vm.getUuid());
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy vm");
             }
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);
             s_logger.trace(ex);
-            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }  catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }
 }

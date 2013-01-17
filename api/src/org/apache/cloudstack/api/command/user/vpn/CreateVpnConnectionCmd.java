@@ -94,12 +94,12 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
                 this.setEntityId(conn.getId());
                 this.setEntityUuid(conn.getUuid());
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create site to site vpn connection");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create site to site vpn connection");
             }
         } catch (NetworkRuleConflictException e) {
             s_logger.info("Network rule conflict: " + e.getMessage());
             s_logger.trace("Network Rule Conflict: ", e);
-            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
+            throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }
     }
 
@@ -112,11 +112,11 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create site to site vpn connection");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create site to site vpn connection");
             }
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }
     }
 

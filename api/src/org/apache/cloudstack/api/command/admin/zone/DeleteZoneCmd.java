@@ -71,7 +71,7 @@ public class DeleteZoneCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete zone");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete zone");
         }
     }
 }

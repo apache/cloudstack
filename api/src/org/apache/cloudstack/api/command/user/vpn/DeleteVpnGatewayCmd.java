@@ -85,7 +85,7 @@ public class DeleteVpnGatewayCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete customer VPN gateway");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete customer VPN gateway");
         }
     }
 }

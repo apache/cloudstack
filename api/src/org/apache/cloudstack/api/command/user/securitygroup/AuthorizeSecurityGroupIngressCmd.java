@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -210,7 +211,7 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
         if(cidrList != null){
             for(String cidr : cidrList ){
                 if (!NetUtils.isValidCIDR(cidr)){
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR,  cidr + " is an Invalid CIDR ");
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR,  cidr + " is an Invalid CIDR ");
                 }
             }
         }
@@ -219,7 +220,7 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
             SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponseFromSecurityGroupRule(ingressRules);
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to authorize security group ingress rule(s)");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to authorize security group ingress rule(s)");
         }
     }
 

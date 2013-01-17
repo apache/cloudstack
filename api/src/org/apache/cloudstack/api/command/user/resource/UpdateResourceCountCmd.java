@@ -123,7 +123,7 @@ public class UpdateResourceCountCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to recalculate resource counts");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to recalculate resource counts");
         }
     }
 }

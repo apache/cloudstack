@@ -148,12 +148,12 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
                     this.setEntityUuid(ipAddr.getUuid());
                 }
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create remote access vpn");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create remote access vpn");
             }
         } catch (NetworkRuleConflictException e) {
             s_logger.info("Network rule conflict: " + e.getMessage());
             s_logger.trace("Network Rule Conflict: ", e);
-            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
+            throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }
     }
 
@@ -166,11 +166,11 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create remote access vpn");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create remote access vpn");
             }
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }
     }
 

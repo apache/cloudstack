@@ -73,7 +73,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update autoscale vm profile");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update autoscale vm profile");
         }
     }
 

@@ -720,7 +720,7 @@ public class VirtualRoutingResource implements Manager {
             args += " -N ";
             args += cmd.getPeerGuestCidrList();
         }
-        String result = routerProxy("ipsectunnel", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
+        String result = routerProxy("ipsectunnel.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
         if (result != null) {
             return new Answer(cmd, false, "Configure site to site VPN failed due to " + result);
         }

@@ -21,6 +21,7 @@ import java.rmi.ServerException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -39,21 +40,21 @@ import com.cloud.utils.component.ComponentLocator;
 public class CreateLunCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateLunCmd.class.getName());
     private static final String s_name = "createlunresponse";
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required = true, description="pool name.")
 	private String poolName;
-    
+
     @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, required = true, description="LUN size.")
     private long size;
-    
+
     public String getPoolName() {
     	return poolName;
     }
-    
+
     public long getLunSize() {
     	return size;
     }
@@ -64,7 +65,7 @@ public class CreateLunCmd extends BaseCmd {
 			ConcurrentOperationException, ResourceAllocationException {
 		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
     	NetappManager netappMgr = locator.getManager(NetappManager.class);
-    	
+
     	try {
     		CreateLunCmdResponse response = new CreateLunCmdResponse();
     		String returnVals[] = null;
@@ -76,11 +77,11 @@ public class CreateLunCmd extends BaseCmd {
     		response.setResponseName(getCommandName());
     		this.setResponseObject(response);
     	} catch (ServerException e) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
     	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
     	}
-		
+
 	}
 
 	@Override
@@ -94,5 +95,5 @@ public class CreateLunCmd extends BaseCmd {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-    
+
 }

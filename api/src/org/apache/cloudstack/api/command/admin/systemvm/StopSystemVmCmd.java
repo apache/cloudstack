@@ -112,7 +112,7 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Fail to stop system vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Fail to stop system vm");
         }
     }
 }
