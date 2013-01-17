@@ -16,23 +16,52 @@
 // under the License.
 package com.cloud.vpc;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+import org.apache.log4j.Logger;
+
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.exception.*;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.*;
-import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestType;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IPAddressVO;
+import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkProfile;
+import com.cloud.network.NetworkRuleApplier;
+import com.cloud.network.NetworkService;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PhysicalNetworkTrafficType;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.element.*;
+import com.cloud.network.element.LoadBalancingServiceProvider;
+import com.cloud.network.element.NetworkElement;
+import com.cloud.network.element.StaticNatServiceProvider;
+import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -47,18 +76,13 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.*;
-import com.cloud.vpc.dao.MockVpcVirtualRouterElement;
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
-import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.util.*;
+import com.cloud.vm.Nic;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 
 @Local(value = { NetworkManager.class, NetworkService.class })
 public class MockNetworkManagerImpl implements NetworkManager, NetworkService, Manager{
@@ -155,7 +179,7 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
      * @see com.cloud.network.NetworkService#allocateIP(com.cloud.user.Account, long, java.lang.Long)
      */
     @Override
-    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId) throws ResourceAllocationException,
+    public IpAddress allocateIP(Account ipOwner, boolean isSystem, long networkId) throws ResourceAllocationException,
             InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
@@ -1240,7 +1264,7 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
      * @see com.cloud.network.NetworkManager#allocateIp(com.cloud.user.Account, boolean, com.cloud.user.Account, com.cloud.dc.DataCenter)
      */
     @Override
-    public IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, DataCenter zone)
+    public IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone)
             throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         return null;
@@ -1285,6 +1309,19 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
 
     @Override
     public LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+
+
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkService#getNetwork(java.lang.String)
+     */
+    @Override
+    public Network getNetwork(String networkUuid) {
         // TODO Auto-generated method stub
         return null;
     }

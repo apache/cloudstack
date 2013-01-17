@@ -745,7 +745,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     };
     
     private MappingNic getLoadBalancingIpNic(DataCenterVO zone, Network network, long sourceIpId, boolean revoked, String existedGuestIp) throws ResourceUnavailableException {
-        String srcIp = _networkMgr.getIp(sourceIpId).getAddress().addr();
+        String srcIp = _networkModel.getIp(sourceIpId).getAddress().addr();
         InlineLoadBalancerNicMapVO mapping = _inlineLoadBalancerNicMapDao.findByPublicIpAddress(srcIp);
         NicVO loadBalancingIpNic = null;
         MappingNic nic = new MappingNic();
@@ -1096,7 +1096,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             return null;
         }
 
-        NetworkElement element = _networkMgr.getElementImplementingProvider(providers.get(0).getName());
+        NetworkElement element = _networkModel.getElementImplementingProvider(providers.get(0).getName());
         if (!(element instanceof IpDeployer)) {
             s_logger.error("The firewall provider for network " + network.getName() + " don't have ability to deploy IP address!");
             return null;

@@ -16,13 +16,20 @@
 // under the License.
 package com.cloud.network;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
@@ -33,17 +40,11 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.element.LoadBalancingServiceProvider;
-import com.cloud.network.element.NetworkElement;
-import com.cloud.network.element.RemoteAccessVPNServiceProvider;
-import com.cloud.network.element.Site2SiteVpnServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
@@ -439,20 +440,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-   
-
-   
-
-    
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#getNetworkLockTimeout()
-     */
-    @Override
-    public int getNetworkLockTimeout() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
+ 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#applyRules(java.util.List, com.cloud.network.rules.FirewallRule.Purpose, com.cloud.network.NetworkRuleApplier, boolean)
      */
@@ -516,7 +504,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      * @see com.cloud.network.NetworkManager#allocateIp(com.cloud.user.Account, boolean, com.cloud.user.Account, com.cloud.dc.DataCenter)
      */
     @Override
-    public IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, DataCenter zone)
+    public IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone)
             throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         return null;
@@ -559,15 +547,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#allocateIP(com.cloud.user.Account, long, java.lang.Long)
-     */
-    @Override
-    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId) throws ResourceAllocationException,
-            InsufficientAddressCapacityException, ConcurrentOperationException {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkService#restartNetwork(com.cloud.api.commands.RestartNetworkCmd, boolean)
@@ -826,6 +805,16 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkService#allocateIP(com.cloud.user.Account, boolean, long)
+     */
+    @Override
+    public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws ResourceAllocationException,
+            InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }

@@ -24,21 +24,15 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
+import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
+import org.apache.cloudstack.api.command.admin.host.*;
+import org.apache.cloudstack.api.command.admin.storage.*;
+import org.apache.cloudstack.api.command.admin.swift.*;
+
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.api.commands.AddClusterCmd;
-import com.cloud.api.commands.AddHostCmd;
-import com.cloud.api.commands.AddS3Cmd;
-import com.cloud.api.commands.AddSecondaryStorageCmd;
-import com.cloud.api.commands.AddSwiftCmd;
-import com.cloud.api.commands.CancelMaintenanceCmd;
-import com.cloud.api.commands.DeleteClusterCmd;
-import com.cloud.api.commands.ListS3sCmd;
-import com.cloud.api.commands.ListSwiftsCmd;
-import com.cloud.api.commands.PrepareForMaintenanceCmd;
-import com.cloud.api.commands.ReconnectHostCmd;
-import com.cloud.api.commands.UpdateHostCmd;
-import com.cloud.api.commands.UpdateHostPasswordCmd;
+
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;

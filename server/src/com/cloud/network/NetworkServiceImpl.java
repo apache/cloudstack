@@ -34,12 +34,13 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.ControlledEntity.ACLType;
-import com.cloud.acl.SecurityChecker.AccessType;
-import com.cloud.api.commands.CreateNetworkCmd;
-import com.cloud.api.commands.ListNetworksCmd;
-import com.cloud.api.commands.ListTrafficTypeImplementorsCmd;
-import com.cloud.api.commands.RestartNetworkCmd;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -419,50 +420,20 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         return _networksDao.listSourceNATEnabledNetworks(owner.getId(), zoneId, Network.GuestType.Isolated);
     }
 
+    
+    
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "allocating Ip", create = true)
-    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId)
-            throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
-
-        if (networkId != null) {
-            Network network = _networksDao.findById(networkId);
-            if (network == null) {
-                throw new InvalidParameterValueException("Invalid network id is given");
-            }
-            if (network.getGuestType() == Network.GuestType.Shared) {
-                DataCenter zone = _configMgr.getZone(zoneId);
-                if (zone == null) {
-                    throw new InvalidParameterValueException("Invalid zone Id is given");
-                }
-
-                // if shared network in the advanced zone, then check the caller against the network for 'AccessType.UseNetwork'
-                if (isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && zone.getNetworkType() == NetworkType.Advanced) {
-                    Account caller = UserContext.current().getCaller();
-                    long callerUserId = UserContext.current().getCallerUserId();
-                    _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
-                    }
-                    return _networkMgr.allocateIp(ipOwner, false, caller, zone);
-                } else {
-                    throw new InvalidParameterValueException("Associate IP address can only be called on the shared networks in the advanced zone" +
-                            " with Firewall/Source Nat/Static Nat/Port Forwarding/Load balancing services enabled");
-                }
-            }
-        }
-
-        return allocateIP(ipOwner, false,  zoneId);
-    }
-
-    protected IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) 
+    public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) 
             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         // check permissions
         _accountMgr.checkAccess(caller, null, false, ipOwner);
-        
+        long callerUserId = UserContext.current().getCallerUserId();
         DataCenter zone = _configMgr.getZone(zoneId);
         
-        return _networkMgr.allocateIp(ipOwner, isSystem, caller, zone);
+        return _networkMgr.allocateIp(ipOwner, isSystem, caller, callerUserId, zone);
     }
 
     @Override
@@ -2903,6 +2874,12 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
             }
         }
         return null;
+    }
+
+
+    @Override
+    public Network getNetwork(String networkUuid) {
+       return _networksDao.findByUuid(networkUuid);
     }
 
 }

@@ -23,7 +23,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.api.commands.UpgradeRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
+
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;

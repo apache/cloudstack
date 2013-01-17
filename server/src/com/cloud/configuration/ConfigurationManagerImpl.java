@@ -3256,7 +3256,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 
                 String inlineMode = lbServiceCapabilityMap.get(Capability.InlineMode);
                 if (inlineMode != null) {
-                    _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.Lb), Service.Lb, Capability.InlineMode, inlineMode);
+                    _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.Lb), Service.Lb, Capability.InlineMode, inlineMode);
                     inline = inlineMode.contains("true");
                 } else {
                     inline = false;
