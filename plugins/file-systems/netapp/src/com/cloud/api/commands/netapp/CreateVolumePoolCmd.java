@@ -18,11 +18,11 @@ package com.cloud.api.commands.netapp;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -33,7 +33,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.CreateVolumePoolCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="Create a pool", responseObject = CreateVolumePoolCmdResponse.class)
+@APICommand(name = "createPool", description="Create a pool", responseObject = CreateVolumePoolCmdResponse.class)
 public class CreateVolumePoolCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateVolumePoolCmd.class.getName());
     private static final String s_name = "createpoolresponse";

@@ -19,7 +19,7 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DataCenterDeployment;
@@ -32,7 +32,10 @@ import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.element.LoadBalancingServiceProvider;
+import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
@@ -308,7 +311,7 @@ public interface NetworkManager  {
 			NetworkOfferingVO findById) throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException;
 
 
-	IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller,
+	IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId,
 			DataCenter zone) throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException;
 
 
@@ -316,4 +319,12 @@ public interface NetworkManager  {
 			Long physicalNetworkId);
 
 
+    List<Provider> getProvidersForServiceInNetwork(Network network, Service service);
+
+    StaticNatServiceProvider getStaticNatProviderForNetwork(Network network);
+    boolean isNetworkInlineMode(Network network);
+
+    int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
+
+    LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network);
 }

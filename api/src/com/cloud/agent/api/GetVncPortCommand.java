@@ -22,21 +22,21 @@ public class GetVncPortCommand extends Command {
 
     public GetVncPortCommand() {
     }
-    
+
     public GetVncPortCommand(long id, String name) {
         this.id = id;
         this.name = name;
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return false;
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     public long getId() {
         return id;
     }

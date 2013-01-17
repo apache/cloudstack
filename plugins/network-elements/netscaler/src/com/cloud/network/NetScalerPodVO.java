@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -31,7 +33,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name="netscaler_pod_ref")
-public class NetScalerPodVO {
+public class NetScalerPodVO implements InternalIdentity {
  
     @Column(name="external_load_balancer_device_id")
     private long netscalerDeviceId;

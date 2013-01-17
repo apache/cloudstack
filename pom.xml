@@ -65,9 +65,10 @@
     <cs.trilead.version>build213-svnkit-1.3-patch</cs.trilead.version>
     <cs.ehcache.version>1.5.0</cs.ehcache.version>
     <cs.gson.version>1.7.1</cs.gson.version>
+    <cs.guava.version>14.0-rc1</cs.guava.version>
     <cs.xapi.version>5.6.100-1-SNAPSHOT</cs.xapi.version>
     <cs.httpclient.version>3.1</cs.httpclient.version>
-    <cs.httpcore.version>4.1</cs.httpcore.version>
+    <cs.httpcore.version>4.2.1</cs.httpcore.version>
     <cs.mysql.version>5.1.21</cs.mysql.version>
     <cs.xstream.version>1.3.1</cs.xstream.version>
     <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
@@ -85,6 +86,7 @@
     <cs.aws.sdk.version>1.3.21.1</cs.aws.sdk.version>
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-io.version>1.4</cs.commons-io.version>
+    <cs.reflections.version>0.9.8</cs.reflections.version>
   </properties>
 
   <distributionManagement>
@@ -242,7 +244,6 @@
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
-              <exclude>tools/devcloud/devcloud.cfg</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>
@@ -369,6 +370,7 @@
         <module>developer</module>
         <module>tools/apidoc</module>
         <module>tools/devcloud</module>
+        <module>tools/devcloud-kvm</module>
         <module>tools/marvin</module>
         <module>tools/cli</module>
       </modules>

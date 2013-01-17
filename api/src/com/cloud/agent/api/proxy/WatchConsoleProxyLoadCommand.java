@@ -25,7 +25,7 @@ public class WatchConsoleProxyLoadCommand extends ProxyCommand implements CronCo
 	private String proxyManagementIp;
 	private int proxyCmdPort;
 	int interval;
-	
+
     public WatchConsoleProxyLoadCommand(int interval, long proxyVmId, String proxyVmName,
     	String proxyManagementIp, int proxyCmdPort) {
         this.interval = interval;
@@ -34,30 +34,30 @@ public class WatchConsoleProxyLoadCommand extends ProxyCommand implements CronCo
 		this.proxyManagementIp = proxyManagementIp;
 		this.proxyCmdPort = proxyCmdPort;
     }
-	
+
 	protected WatchConsoleProxyLoadCommand() {
 	}
-	
+
 	public long getProxyVmId() {
 		return proxyVmId;
 	}
-	
+
 	public String getProxyVmName() {
 		return proxyVmName;
 	}
-	
+
 	public String getProxyManagementIp() {
 		return proxyManagementIp;
 	}
-	
+
 	public int getProxyCmdPort() {
 		return proxyCmdPort;
 	}
-	
+
 	public int getInterval() {
 	    return interval;
 	}
-	
+
 	@Override
     public boolean executeInSequence() {
 	    return false;

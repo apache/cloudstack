@@ -26,26 +26,26 @@ public interface PortForwardingRule extends FirewallRule {
      * @return destination ip address.
      */
     Ip getDestinationIpAddress();
-    
-    
+
+
     /**
      * updates the destination ip address.
      */
     void setDestinationIpAddress(Ip destinationIpAddress);
-    
+
     /**
      * @return start of destination port.
      */
     int getDestinationPortStart();
-    
+
     /**
      * @return end of destination port range
      */
     int getDestinationPortEnd();
-    
+
     /**
      * @return destination ip address.
      */
-    long getVirtualMachineId();  
-    
+    long getVirtualMachineId();
+
 }

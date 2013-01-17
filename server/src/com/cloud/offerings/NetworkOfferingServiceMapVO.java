@@ -28,10 +28,11 @@ import javax.persistence.Table;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="ntwk_offering_service_map")
-public class NetworkOfferingServiceMapVO {
+public class NetworkOfferingServiceMapVO implements InternalIdentity {
    
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

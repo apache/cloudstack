@@ -17,20 +17,19 @@
 package com.cloud.api;
 
 import com.google.gson.GsonBuilder;
-import com.cloud.utils.IdentityProxy;
+import org.apache.cloudstack.api.ResponseObject;
 
 /**
  * The ApiResonseGsonHelper is different from ApiGsonHelper - it registeres one more adapter for String type required for api response encoding
  */
 public class ApiResponseGsonHelper {
     private static final GsonBuilder s_gBuilder;
-    
+
     static {
         s_gBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
         s_gBuilder.setVersion(1.3);
         s_gBuilder.registerTypeAdapter(ResponseObject.class, new ResponseObjectTypeAdapter());
         s_gBuilder.registerTypeAdapter(String.class, new EncodedStringTypeAdapter());
-        s_gBuilder.registerTypeAdapter(IdentityProxy.class, new IdentityTypeAdapter());
     }
 
     public static GsonBuilder getBuilder() {

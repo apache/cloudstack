@@ -17,7 +17,7 @@
 package com.cloud.agent.api;
 
 /**
- * 
+ *
  *
  */
 public class CheckStateCommand extends Command {
@@ -28,12 +28,12 @@ public class CheckStateCommand extends Command {
     public CheckStateCommand(String vmName) {
         this.vmName = vmName;
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return true;
     }
-    
+
     public String getVmName() {
         return vmName;
     }

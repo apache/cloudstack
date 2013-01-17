@@ -30,15 +30,13 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.loadbalancer.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.CreateLBStickinessPolicyCmd;
-import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
-import com.cloud.api.commands.ListLBStickinessPoliciesCmd;
-import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
-import com.cloud.api.commands.ListLoadBalancerRulesCmd;
-import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
-import com.cloud.api.response.ServiceResponse;
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleInstancesCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
+import org.apache.cloudstack.api.response.ServiceResponse;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -600,8 +598,14 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
     private boolean isRollBackAllowedForProvider(LoadBalancerVO loadBalancer) {
         Network network = _networkDao.findById(loadBalancer.getNetworkId());
-        Provider provider = Network.Provider.Netscaler;
-        return _ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), Service.Lb, provider);
+        List<Provider> provider = _networkMgr.getProvidersForServiceInNetwork(network, Service.Lb);
+        if (provider == null || provider.size() == 0) {
+            return false;
+        }
+        if (provider.get(0) == Provider.Netscaler || provider.get(0) == Provider.F5BigIp) {
+            return true;
+        }
+        return false;
     }
     @Override
     @DB
@@ -1077,6 +1081,12 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         LoadBalancerVO newRule = new LoadBalancerVO(lb.getXid(), lb.getName(), lb.getDescription(), lb.getSourceIpAddressId(), lb.getSourcePortEnd(), lb.getDefaultPortStart(),
                 lb.getAlgorithm(), network.getId(), ipAddr.getAllocatedToAccountId(), ipAddr.getAllocatedInDomainId());
 
+        // verify rule is supported by Lb provider of the network
+        LoadBalancingRule loadBalancing = new LoadBalancingRule(newRule, new ArrayList<LbDestination>(), new ArrayList<LbStickinessPolicy>());
+        if (!_networkMgr.validateRule(loadBalancing)) {
+            throw new InvalidParameterValueException("LB service provider cannot support this rule");
+        }
+        
         newRule = _lbDao.persist(newRule);
 
         if (openFirewall) {

@@ -24,11 +24,12 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.vm.VirtualMachine.State;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="mockvm")
 
-public class MockVMVO implements MockVm{
+public class MockVMVO implements MockVm, InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

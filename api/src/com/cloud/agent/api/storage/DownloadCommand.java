@@ -21,14 +21,15 @@ import java.net.URI;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
+import org.apache.cloudstack.api.InternalIdentity;
 
 
-public class DownloadCommand extends AbstractDownloadCommand {
+public class DownloadCommand extends AbstractDownloadCommand implements InternalIdentity {
 	public static class PasswordAuth {
 		String userName;
 		String password;
 		public PasswordAuth() {
-			
+
 		}
 		public PasswordAuth(String user, String password) {
 			this.userName = user;
@@ -41,28 +42,28 @@ public class DownloadCommand extends AbstractDownloadCommand {
 			return password;
 		}
 	}
-	
+
     public static enum ResourceType {
         VOLUME, TEMPLATE
     }
-	
+
 	public static class Proxy {
 		private String _host;
 		private int _port;
 		private String _userName;
 		private String _password;
-		
+
 		public Proxy() {
-			
+
 		}
-		
+
 		public Proxy(String host, int port, String userName, String password) {
 			this._host = host;
 			this._port = port;
 			this._userName = userName;
 			this._password = password;
 		}
-		
+
 		public Proxy(URI uri) {
 			this._host = uri.getHost();
 			this._port = uri.getPort() == -1 ? 3128 : uri.getPort();
@@ -78,19 +79,19 @@ public class DownloadCommand extends AbstractDownloadCommand {
 				}
 			}
 		}
-		
+
 		public String getHost() {
 			return _host;
 		}
-		
+
 		public int getPort() {
 			return _port;
 		}
-		
+
 		public String getUserName() {
 			return _userName;
 		}
-		
+
 		public String getPassword() {
 			return _password;
 		}
@@ -103,11 +104,11 @@ public class DownloadCommand extends AbstractDownloadCommand {
 	private Long maxDownloadSizeInBytes = null;
 	private long id;
 	private ResourceType resourceType = ResourceType.TEMPLATE;
-	
+
 	protected DownloadCommand() {
 	}
-	
-	
+
+
 	public DownloadCommand(DownloadCommand that) {
 	    super(that);
 	    this.hvm = that.hvm;
@@ -119,7 +120,7 @@ public class DownloadCommand extends AbstractDownloadCommand {
 	    this.maxDownloadSizeInBytes = that.getMaxDownloadSizeInBytes();
 	    this.resourceType = that.resourceType;
 	}
-	
+
 	public DownloadCommand(String secUrl, VirtualMachineTemplate template, Long maxDownloadSizeInBytes) {
 	    super(template.getUniqueName(), template.getUrl(), template.getFormat(), template.getAccountId());
 	    this.hvm = template.isRequiresHvm();
@@ -129,7 +130,7 @@ public class DownloadCommand extends AbstractDownloadCommand {
 	    this.setSecUrl(secUrl);
 	    this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
 	}
-	
+
 	public DownloadCommand(String secUrl, Volume volume, Long maxDownloadSizeInBytes, String checkSum, String url, ImageFormat format) {
 	    super(volume.getName(), url, format, volume.getAccountId());
 	    //this.hvm = volume.isRequiresHvm();
@@ -150,11 +151,11 @@ public class DownloadCommand extends AbstractDownloadCommand {
         this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
 		auth = new PasswordAuth(user, passwd);
 	}
-	
+
 	public long getId() {
 	    return id;
 	}
-	
+
 	public void setHvm(boolean hvm) {
 		this.hvm = hvm;
 	}
@@ -188,19 +189,19 @@ public class DownloadCommand extends AbstractDownloadCommand {
 	public PasswordAuth getAuth() {
 		return auth;
 	}
-	
+
 	public void setCreds(String userName, String passwd) {
 		auth = new PasswordAuth(userName, passwd);
 	}
-	
+
 	public Proxy getProxy() {
 		return _proxy;
 	}
-	
+
 	public void setProxy(Proxy proxy) {
 		_proxy = proxy;
 	}
-	
+
 	public Long getMaxDownloadSizeInBytes() {
 		return maxDownloadSizeInBytes;
 	}

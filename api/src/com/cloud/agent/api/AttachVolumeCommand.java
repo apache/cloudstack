@@ -19,7 +19,7 @@ package com.cloud.agent.api;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public class AttachVolumeCommand extends Command {
-	
+
 	boolean attach;
 	String vmName;
 	StoragePoolType pooltype;
@@ -29,10 +29,10 @@ public class AttachVolumeCommand extends Command {
 	String volumeName;
 	Long deviceId;
 	String chainInfo;
-	
+
 	protected AttachVolumeCommand() {
 	}
-	
+
 	public AttachVolumeCommand(boolean attach, String vmName, StoragePoolType pooltype, String volumeFolder, String volumePath, String volumeName, Long deviceId, String chainInfo) {
 		this.attach = attach;
 		this.vmName = vmName;
@@ -43,20 +43,20 @@ public class AttachVolumeCommand extends Command {
 		this.deviceId = deviceId;
 		this.chainInfo = chainInfo;
 	}
-	
+
 	@Override
     public boolean executeInSequence() {
         return true;
     }
-	
+
 	public boolean getAttach() {
 		return attach;
 	}
-	
+
 	public String getVmName() {
 		return vmName;
 	}
-	
+
 	public StoragePoolType getPooltype() {
         return pooltype;
     }
@@ -68,11 +68,11 @@ public class AttachVolumeCommand extends Command {
     public String getVolumeFolder() {
 		return volumeFolder;
 	}
-	
+
 	public String getVolumePath() {
 		return volumePath;
 	}
-	
+
 	public String getVolumeName() {
 		return volumeName;
 	}
@@ -84,15 +84,15 @@ public class AttachVolumeCommand extends Command {
     public void setDeviceId(Long deviceId) {
         this.deviceId = deviceId;
     }
-    
+
     public String getPoolUuid() {
     	return poolUuid;
     }
-    
+
     public void setPoolUuid(String poolUuid) {
     	this.poolUuid = poolUuid;
     }
-    
+
     public String getChainInfo() {
     	return chainInfo;
     }

@@ -91,7 +91,7 @@
 
     <!-- Listen on 6443 instead of 8443 because tomcat6 will change 8443 to a random one when CATALINA_HOME is not /usr/share/tomcat6 -->
     <Connector port="6443" protocol="org.apache.coyote.http11.Http11NioProtocol" SSLEnabled="true"
-               maxThreads="150" scheme="https" secure="true"
+               maxThreads="150" scheme="https" secure="true" URIEncoding="UTF-8"
                clientAuth="false" sslProtocol="TLS" 
                keystoreType="JKS"
                keystoreFile="/etc/cloud/management/cloudmanagementserver.keystore"

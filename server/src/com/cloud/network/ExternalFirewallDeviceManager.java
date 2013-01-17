@@ -22,6 +22,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Manager;
 
@@ -94,4 +95,12 @@ public interface ExternalFirewallDeviceManager extends Manager {
      */
     public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network guestConfig) throws ResourceUnavailableException, InsufficientCapacityException;
 
+    /**
+     * applies port forwarding rules
+     * @param network guest network if
+     * @param rules load balancer rules
+     * @return true if successfully applied rules
+     * @throws ResourceUnavailableException
+     */
+    public boolean applyPortForwardingRules(Network network, List<? extends PortForwardingRule> rules) throws ResourceUnavailableException;
 }

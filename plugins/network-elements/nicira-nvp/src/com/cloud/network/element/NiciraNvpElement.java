@@ -27,6 +27,7 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.PropertiesUtil;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -48,10 +49,10 @@ import com.cloud.agent.api.FindLogicalSwitchPortAnswer;
 import com.cloud.agent.api.FindLogicalSwitchPortCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupNiciraNvpCommand;
-import com.cloud.agent.api.UpdateLogicalSwitchPortAnswer;
 import com.cloud.agent.api.UpdateLogicalSwitchPortCommand;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddNiciraNvpDeviceCmd;
 import com.cloud.api.commands.DeleteNiciraNvpDeviceCmd;
 import com.cloud.api.commands.ListNiciraNvpDeviceNetworksCmd;
@@ -71,7 +72,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network;
-import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -84,6 +85,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.network.NiciraNvpNicMappingVO;
 import com.cloud.network.NiciraNvpRouterMappingVO;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.PublicIpAddress;
@@ -96,13 +98,9 @@ import com.cloud.network.dao.NiciraNvpRouterMappingDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
-import com.cloud.network.guru.NiciraNvpGuestNetworkGuru;
 import com.cloud.network.resource.NiciraNvpResource;
-import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
@@ -457,14 +455,14 @@ public class NiciraNvpElement extends AdapterBase implements
 			}
 
 			DeleteLogicalRouterCommand cmd = new DeleteLogicalRouterCommand(routermapping.getLogicalRouterUuid());
-			DeleteLogicalRouterAnswer answer = 
+			DeleteLogicalRouterAnswer answer =
 					(DeleteLogicalRouterAnswer) _agentMgr.easySend(niciraNvpHost.getId(), cmd);
 			if (answer.getResult() == false) {
 				s_logger.error("Failed to delete LogicalRouter for network "
 						+ network.getDisplayText());
 				return false;
 			}
-			
+
 			_niciraNvpRouterMappingDao.remove(routermapping.getId());
 		}
 
@@ -522,7 +520,7 @@ public class NiciraNvpElement extends AdapterBase implements
 
 		// L3 Support : Generic?
 		capabilities.put(Service.Gateway, null);
-		
+
 		// L3 Support : SourceNat
 		Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
 		sourceNatCapabilities.put(Capability.SupportedSourceNatTypes,
@@ -532,16 +530,21 @@ public class NiciraNvpElement extends AdapterBase implements
 
 		// L3 Support : Port Forwarding
 		capabilities.put(Service.PortForwarding, null);
-		
+
 		// L3 support : StaticNat
 		capabilities.put(Service.StaticNat, null);
-		
+
 		return capabilities;
 	}
 
 	@Override
-	public String getPropertiesFile() {
-		return "nicira-nvp_commands.properties";
+	public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(AddNiciraNvpDeviceCmd.class);
+        cmdList.add(DeleteNiciraNvpDeviceCmd.class);
+        cmdList.add(ListNiciraNvpDeviceNetworksCmd.class);
+        cmdList.add(ListNiciraNvpDevicesCmd.class);
+        return cmdList;
 	}
 
 	@Override
@@ -593,8 +596,8 @@ public class NiciraNvpElement extends AdapterBase implements
 		params.put("adminpass", cmd.getPassword());
 		params.put("transportzoneuuid", cmd.getTransportzoneUuid());
 		// FIXME What to do with multiple isolation types
-		params.put("transportzoneisotype", 
-				physicalNetwork.getIsolationMethods().get(0).toLowerCase()); 
+		params.put("transportzoneisotype",
+				physicalNetwork.getIsolationMethods().get(0).toLowerCase());
 		if (cmd.getL3GatewayServiceUuid() != null) {
 			params.put("l3gatewayserviceuuid", cmd.getL3GatewayServiceUuid());
 		}
@@ -638,11 +641,14 @@ public class NiciraNvpElement extends AdapterBase implements
 			NiciraNvpDeviceVO niciraNvpDeviceVO) {
 		HostVO niciraNvpHost = _hostDao.findById(niciraNvpDeviceVO.getHostId());
 		_hostDao.loadDetails(niciraNvpHost);
-		
+
 		NiciraNvpDeviceResponse response = new NiciraNvpDeviceResponse();
 		response.setDeviceName(niciraNvpDeviceVO.getDeviceName());
-		response.setPhysicalNetworkId(niciraNvpDeviceVO.getPhysicalNetworkId());
-		response.setId(niciraNvpDeviceVO.getId());
+        PhysicalNetwork pnw = ApiDBUtils.findPhysicalNetworkById(niciraNvpDeviceVO.getPhysicalNetworkId());
+        if (pnw != null) {
+            response.setPhysicalNetworkId(pnw.getUuid());
+        }
+		response.setId(niciraNvpDeviceVO.getUuid());
 		response.setProviderName(niciraNvpDeviceVO.getProviderName());
 		response.setHostName(niciraNvpHost.getDetail("ip"));
 		response.setTransportZoneUuid(niciraNvpHost.getDetail("transportzoneuuid"));
@@ -802,7 +808,7 @@ public class NiciraNvpElement extends AdapterBase implements
 
 	/**
 	 * From interface IpDeployer
-	 * 
+	 *
 	 * @param network
 	 * @param ipAddress
 	 * @param services
@@ -826,7 +832,7 @@ public class NiciraNvpElement extends AdapterBase implements
 			NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
 			HostVO niciraNvpHost = _hostDao.findById(niciraNvpDevice.getHostId());
 			_hostDao.loadDetails(niciraNvpHost);
-	        	
+
 			NiciraNvpRouterMappingVO routermapping = _niciraNvpRouterMappingDao
 					.findByNetworkId(network.getId());
 			if (routermapping == null) {
@@ -834,12 +840,12 @@ public class NiciraNvpElement extends AdapterBase implements
 						+ network.getDisplayText());
 				return false;
 			}
-	
+
 			List<String> cidrs = new ArrayList<String>();
 			for (PublicIpAddress ip : ipAddress) {
 				cidrs.add(ip.getAddress().addr() + "/" + NetUtils.getCidrSize(ip.getNetmask()));
 			}
-			ConfigurePublicIpsOnLogicalRouterCommand cmd = new ConfigurePublicIpsOnLogicalRouterCommand(routermapping.getLogicalRouterUuid(), 
+			ConfigurePublicIpsOnLogicalRouterCommand cmd = new ConfigurePublicIpsOnLogicalRouterCommand(routermapping.getLogicalRouterUuid(),
 					niciraNvpHost.getDetail("l3gatewayserviceuuid"), cidrs);
 			ConfigurePublicIpsOnLogicalRouterAnswer answer = (ConfigurePublicIpsOnLogicalRouterAnswer) _agentMgr.easySend(niciraNvpHost.getId(), cmd);
 			//FIXME answer can be null if the host is down
@@ -848,7 +854,7 @@ public class NiciraNvpElement extends AdapterBase implements
 		else {
 			s_logger.debug("No need to provision ip addresses as we are not providing L3 services.");
 		}
-		
+
 		return true;
 	}
 
@@ -872,7 +878,7 @@ public class NiciraNvpElement extends AdapterBase implements
 		}
 		NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
 		HostVO niciraNvpHost = _hostDao.findById(niciraNvpDevice.getHostId());
-        	
+
 		NiciraNvpRouterMappingVO routermapping = _niciraNvpRouterMappingDao
 				.findByNetworkId(network.getId());
 		if (routermapping == null) {
@@ -881,23 +887,23 @@ public class NiciraNvpElement extends AdapterBase implements
 			return false;
 		}
 
-		List<StaticNatRuleTO> staticNatRules = new ArrayList<StaticNatRuleTO>(); 
+		List<StaticNatRuleTO> staticNatRules = new ArrayList<StaticNatRuleTO>();
         for (StaticNat rule : rules) {
             IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
             // Force the nat rule into the StaticNatRuleTO, no use making a new TO object
             // we only need the source and destination ip. Unfortunately no mention if a rule
             // is new.
-            StaticNatRuleTO ruleTO = new StaticNatRuleTO(1, 
-            		sourceIp.getAddress().addr(), 0, 65535, 
+            StaticNatRuleTO ruleTO = new StaticNatRuleTO(1,
+            		sourceIp.getAddress().addr(), 0, 65535,
             		rule.getDestIpAddress(), 0, 65535,
             		"any", rule.isForRevoke(), false);
             staticNatRules.add(ruleTO);
         }
-        
-        ConfigureStaticNatRulesOnLogicalRouterCommand cmd = 
+
+        ConfigureStaticNatRulesOnLogicalRouterCommand cmd =
         		new ConfigureStaticNatRulesOnLogicalRouterCommand(routermapping.getLogicalRouterUuid(), staticNatRules);
         ConfigureStaticNatRulesOnLogicalRouterAnswer answer = (ConfigureStaticNatRulesOnLogicalRouterAnswer) _agentMgr.easySend(niciraNvpHost.getId(), cmd);
-        
+
         return answer.getResult();
 	}
 
@@ -910,7 +916,7 @@ public class NiciraNvpElement extends AdapterBase implements
         if (!canHandle(network, Service.PortForwarding)) {
             return false;
         }
-        
+
 		List<NiciraNvpDeviceVO> devices = _niciraNvpDao
 				.listByPhysicalNetwork(network.getPhysicalNetworkId());
 		if (devices.isEmpty()) {
@@ -920,7 +926,7 @@ public class NiciraNvpElement extends AdapterBase implements
 		}
 		NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
 		HostVO niciraNvpHost = _hostDao.findById(niciraNvpDevice.getHostId());
-        	
+
 		NiciraNvpRouterMappingVO routermapping = _niciraNvpRouterMappingDao
 				.findByNetworkId(network.getId());
 		if (routermapping == null) {
@@ -928,19 +934,19 @@ public class NiciraNvpElement extends AdapterBase implements
 					+ network.getDisplayText());
 			return false;
 		}
-		
-		List<PortForwardingRuleTO> portForwardingRules = new ArrayList<PortForwardingRuleTO>(); 
+
+		List<PortForwardingRuleTO> portForwardingRules = new ArrayList<PortForwardingRuleTO>();
         for (PortForwardingRule rule : rules) {
             IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
             Vlan vlan = _vlanDao.findById(sourceIp.getVlanId());
             PortForwardingRuleTO ruleTO = new PortForwardingRuleTO((PortForwardingRule) rule, vlan.getVlanTag(), sourceIp.getAddress().addr());
             portForwardingRules.add(ruleTO);
         }
-        
-        ConfigurePortForwardingRulesOnLogicalRouterCommand cmd = 
+
+        ConfigurePortForwardingRulesOnLogicalRouterCommand cmd =
         		new ConfigurePortForwardingRulesOnLogicalRouterCommand(routermapping.getLogicalRouterUuid(), portForwardingRules);
         ConfigurePortForwardingRulesOnLogicalRouterAnswer answer = (ConfigurePortForwardingRulesOnLogicalRouterAnswer) _agentMgr.easySend(niciraNvpHost.getId(), cmd);
-        
+
         return answer.getResult();
 	}
 

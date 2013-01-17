@@ -17,7 +17,10 @@
 
 package com.cloud.network.as;
 
-public interface Counter {
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface Counter extends InternalIdentity, Identity {
 
     public static enum Source {
         netscaler,
@@ -29,8 +32,4 @@ public interface Counter {
     String getValue();
 
     Source getSource();
-
-    String getUuid();
-
-    long getId();
 }

@@ -86,7 +86,7 @@ import com.cloud.agent.api.to.LoadBalancerTO.CounterTO;
 import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
 import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
-import com.cloud.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;

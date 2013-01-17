@@ -27,45 +27,46 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="vlan")
-public class VlanVO implements Vlan, Identity {
-	    
+public class VlanVO implements Vlan {
+
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(name="id") 
+	@Column(name="id")
 	Long id;
-	
-	@Column(name="vlan_id") 
+
+	@Column(name="vlan_id")
 	String vlanTag;
-	
-	@Column(name="vlan_gateway") 
+
+	@Column(name="vlan_gateway")
 	String vlanGateway;
-	
-	@Column(name="vlan_netmask") 
+
+	@Column(name="vlan_netmask")
 	String vlanNetmask;
-	
-	@Column(name="data_center_id") 
+
+	@Column(name="data_center_id")
 	long dataCenterId;
-	
-	@Column(name="description") 
+
+	@Column(name="description")
 	String ipRange;
-	
+
     @Column(name="network_id")
     Long networkId;
-	
+
     @Column(name="physical_network_id")
     Long physicalNetworkId;
-    
+
 	@Column(name="vlan_type")
-	@Enumerated(EnumType.STRING) 
+	@Enumerated(EnumType.STRING)
 	VlanType vlanType;
 
     @Column(name="uuid")
     String uuid;
-	
+
 	public VlanVO(VlanType vlanType, String vlanTag, String vlanGateway, String vlanNetmask, long dataCenterId, String ipRange, Long networkId, Long physicalNetworkId) {
 		this.vlanType = vlanType;
 		this.vlanTag = vlanTag;
@@ -77,16 +78,16 @@ public class VlanVO implements Vlan, Identity {
 		this.uuid = UUID.randomUUID().toString();
 		this.physicalNetworkId = physicalNetworkId;
 	}
-	
+
 	public VlanVO() {
 		this.uuid = UUID.randomUUID().toString();
 	}
-	
+
 	@Override
     public long getId() {
 		return id;
 	}
-	
+
 	@Override
     public String getVlanTag() {
 		return vlanTag;
@@ -96,12 +97,12 @@ public class VlanVO implements Vlan, Identity {
     public String getVlanGateway() {
 		return vlanGateway;
 	}
-    
+
 	@Override
     public String getVlanNetmask() {
         return vlanNetmask;
     }
-	
+
 	@Override
     public long getDataCenterId() {
 		return dataCenterId;
@@ -125,12 +126,12 @@ public class VlanVO implements Vlan, Identity {
     public void setNetworkId(Long networkId) {
         this.networkId = networkId;
     }
-    
+
     @Override
     public String getUuid() {
     	return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
@@ -142,7 +143,7 @@ public class VlanVO implements Vlan, Identity {
     public void setPhysicalNetworkId(Long physicalNetworkId) {
         this.physicalNetworkId = physicalNetworkId;
     }
-    
+
     transient String toString;
     @Override
     public String toString() {
@@ -152,5 +153,5 @@ public class VlanVO implements Vlan, Identity {
         }
         return toString;
     }
-    
+
 }

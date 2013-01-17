@@ -22,7 +22,7 @@ import com.cloud.agent.api.Command;
 
 public abstract class NetworkElementCommand extends Command {
     HashMap<String, String> accessDetails = new HashMap<String, String>(0);
-    
+
     public static final String ACCOUNT_ID = "account.id";
     public static final String GUEST_NETWORK_CIDR = "guest.network.cidr";
     public static final String GUEST_NETWORK_GATEWAY = "guest.network.gateway";
@@ -32,19 +32,19 @@ public abstract class NetworkElementCommand extends Command {
     public static final String ROUTER_GUEST_IP = "router.guest.ip";
     public static final String ZONE_NETWORK_TYPE = "zone.network.type";
     public static final String GUEST_BRIDGE = "guest.bridge";
-    
+
     protected NetworkElementCommand() {
         super();
     }
-    
+
     public void setAccessDetail(String name, String value) {
         accessDetails.put(name, value);
     }
-    
+
     public String getAccessDetail(String name) {
         return accessDetails.get(name);
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return false;

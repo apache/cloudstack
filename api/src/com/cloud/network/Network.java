@@ -16,12 +16,14 @@
 // under the License.
 package com.cloud.network;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -31,7 +33,7 @@ import java.util.Set;
 /**
  * owned by an account.
  */
-public interface Network extends ControlledEntity {
+public interface Network extends ControlledEntity, InternalIdentity, Identity {
 
     public enum GuestType {
         Shared,
@@ -45,10 +47,10 @@ public interface Network extends ControlledEntity {
         public static final Service Dhcp = new Service("Dhcp");
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
         public static final Service Gateway = new Service("Gateway");
-        public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, 
+        public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols,
                 Capability.MultipleIps, Capability.TrafficStatistics);
         public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation,
-                Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps, 
+                Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps,
                 Capability.SupportedStickinessMethods, Capability.ElasticLb);
         public static final Service UserData = new Service("UserData");
         public static final Service SourceNat = new Service("SourceNat", Capability.SupportedSourceNatTypes, Capability.RedundantRouter);
@@ -168,9 +170,9 @@ public interface Network extends ControlledEntity {
         public static final Capability AllowDnsSuffixModification = new Capability("AllowDnsSuffixModification");
         public static final Capability RedundantRouter = new Capability("RedundantRouter");
         public static final Capability ElasticIp = new Capability("ElasticIp");
-        public static final Capability AssociatePublicIP = new Capability("AssociatePublicIP");
         public static final Capability ElasticLb = new Capability("ElasticLb");
         public static final Capability AutoScaleCounters = new Capability("AutoScaleCounters");
+        public static final Capability InlineMode = new Capability("InlineMode");
 
         private String name;
 
@@ -251,11 +253,6 @@ public interface Network extends ControlledEntity {
         }
     }
 
-    /**
-     * @return id of the network profile.  Null means the network profile is not from the database.
-     */
-    long getId();
-
     String getName();
 
     Mode getMode();
@@ -300,5 +297,5 @@ public interface Network extends ControlledEntity {
      * @return
      */
     Long getVpcId();
-    
+
 }

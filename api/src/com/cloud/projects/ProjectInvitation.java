@@ -18,14 +18,14 @@ package com.cloud.projects;
 
 import java.util.Date;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface ProjectInvitation extends ControlledEntity {
+public interface ProjectInvitation extends ControlledEntity, Identity, InternalIdentity {
     public enum State {
         Pending, Completed, Expired, Declined
     }
-
-    long getId();
 
     long getProjectId();
 

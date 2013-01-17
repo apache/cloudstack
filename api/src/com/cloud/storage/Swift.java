@@ -17,9 +17,12 @@
 package com.cloud.storage;
 
 import com.cloud.agent.api.to.SwiftTO;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Swift {
+public interface Swift extends InternalIdentity {
     public long getId();
+
+    public String getUuid();
 
     public String getUrl();
 

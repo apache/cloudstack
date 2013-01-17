@@ -11,11 +11,12 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.element;
 
+import java.lang.Class;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import java.util.Set;
 
 import javax.ejb.Local;
 
+import com.cloud.utils.PropertiesUtil;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -35,7 +37,9 @@ import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
-import com.cloud.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants;
+
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;
@@ -65,7 +69,7 @@ import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
-import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.IpAddress;
 import com.cloud.network.NetScalerPodVO;
 import com.cloud.network.Network;
@@ -76,6 +80,7 @@ import com.cloud.network.NetworkExternalLoadBalancerVO;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.PublicIpAddress;
@@ -149,8 +154,7 @@ StaticNatServiceProvider {
 
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
-        boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced &&
-                (config.getGuestType() == Network.GuestType.Isolated || config.getGuestType() == Network.GuestType.Shared) && config.getTrafficType() == TrafficType.Guest);
+        boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced && config.getGuestType() == Network.GuestType.Isolated && config.getTrafficType() == TrafficType.Guest);
         boolean handleInBasicZone = (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() == Network.GuestType.Shared && config.getTrafficType() == TrafficType.Guest);
 
         if (!(handleInAdvanceZone || handleInBasicZone)) {
@@ -353,18 +357,17 @@ StaticNatServiceProvider {
     public ExternalLoadBalancerDeviceVO configureNetscalerLoadBalancer(ConfigureNetscalerLoadBalancerCmd cmd) {
         Long lbDeviceId = cmd.getLoadBalancerDeviceId();
         Boolean dedicatedUse = cmd.getLoadBalancerDedicated();
-        Boolean inline = cmd.getLoadBalancerInline();
         Long capacity = cmd.getLoadBalancerCapacity();
         List<Long> podIds = cmd.getPodIds();
         try {
-            return configureNetscalerLoadBalancer(lbDeviceId, capacity, inline, dedicatedUse, podIds);
+            return configureNetscalerLoadBalancer(lbDeviceId, capacity, dedicatedUse, podIds);
         } catch (Exception e) {
             throw new CloudRuntimeException("failed to configure netscaler device due to " + e.getMessage());
         }
     }
 
     @DB
-    private ExternalLoadBalancerDeviceVO configureNetscalerLoadBalancer(long lbDeviceId, Long capacity, Boolean inline, Boolean dedicatedUse, List<Long> newPodsConfig) {
+    private ExternalLoadBalancerDeviceVO configureNetscalerLoadBalancer(long lbDeviceId, Long capacity, Boolean dedicatedUse, List<Long> newPodsConfig) {
         ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
         Map<String, String> lbDetails = _detailsDao.findDetails(lbDeviceVo.getHostId());
 
@@ -404,7 +407,7 @@ StaticNatServiceProvider {
         }
 
         String deviceName = lbDeviceVo.getDeviceName();
-        if (dedicatedUse != null || capacity != null || inline != null) {
+        if (dedicatedUse != null || capacity != null) {
             if (NetworkDevice.NetscalerSDXLoadBalancer.getName().equalsIgnoreCase(deviceName) ||
                     NetworkDevice.NetscalerMPXLoadBalancer.getName().equalsIgnoreCase(deviceName)) {
                 if (dedicatedUse != null && dedicatedUse == true) {
@@ -422,13 +425,6 @@ StaticNatServiceProvider {
                 if (dedicatedUse != null && dedicatedUse == true) {
                     throw new CloudRuntimeException("There are networks already using this netscaler device to make device dedicated");
                 }
-
-                if (inline != null) {
-                    boolean _setInline = Boolean.parseBoolean(lbDetails.get("inline"));
-                    if (inline != _setInline) {
-                        throw new CloudRuntimeException("There are networks already using this netscaler device to change the device inline or side-by-side configuration");
-                    }
-                }
             }
         }
 
@@ -442,14 +438,6 @@ StaticNatServiceProvider {
 
         if (dedicatedUse != null) {
             lbDeviceVo.setIsDedicatedDevice(dedicatedUse);
-        }
-
-        if (inline != null && inline == true) {
-            lbDeviceVo.setIsInlineMode(true);
-            lbDetails.put("inline", "true");
-        } else {
-            lbDeviceVo.setIsInlineMode(false);
-            lbDetails.put("inline", "false");
         }
 
         Transaction txn = Transaction.currentTxn();
@@ -477,8 +465,14 @@ StaticNatServiceProvider {
     }
 
     @Override
-    public String getPropertiesFile() {
-        return "netscalerloadbalancer_commands.properties";
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(AddNetscalerLoadBalancerCmd.class);
+        cmdList.add(ConfigureNetscalerLoadBalancerCmd.class);
+        cmdList.add(DeleteNetscalerLoadBalancerCmd.class);
+        cmdList.add(ListNetscalerLoadBalancerNetworksCmd.class);
+        cmdList.add(ListNetscalerLoadBalancersCmd.class);
+        return cmdList;
     }
 
     @Override
@@ -540,9 +534,12 @@ StaticNatServiceProvider {
         Host lbHost = _hostDao.findById(lbDeviceVO.getHostId());
         Map<String, String> lbDetails = _detailsDao.findDetails(lbDeviceVO.getHostId());
 
-        response.setId(lbDeviceVO.getId());
+        response.setId(lbDeviceVO.getUuid());
         response.setIpAddress(lbHost.getPrivateIpAddress());
-        response.setPhysicalNetworkId(lbDeviceVO.getPhysicalNetworkId());
+        PhysicalNetwork pnw = ApiDBUtils.findPhysicalNetworkById(lbDeviceVO.getPhysicalNetworkId());
+        if (pnw != null) {
+            response.setPhysicalNetworkId(pnw.getUuid());
+        }
         response.setPublicInterface(lbDetails.get("publicInterface"));
         response.setPrivateInterface(lbDetails.get("privateInterface"));
         response.setDeviceName(lbDeviceVO.getDeviceName());
@@ -552,7 +549,6 @@ StaticNatServiceProvider {
         } else {
             response.setDeviceCapacity(lbDeviceVO.getCapacity());
         }
-        response.setInlineMode(lbDeviceVO.getIsInLineMode());
         response.setDedicatedLoadBalancer(lbDeviceVO.getIsDedicatedDevice());
         response.setProvider(lbDeviceVO.getProviderName());
         response.setDeviceState(lbDeviceVO.getState().name());
@@ -620,13 +616,13 @@ StaticNatServiceProvider {
 
         // NetScaler can only act as Lb and Static Nat service provider
         if (services != null && !services.isEmpty() && !netscalerServices.containsAll(services)) {
-            s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination " 
+            s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination "
                 + services + " is not supported.");
             String servicesList = "";
             for (Service service : services) {
                 servicesList += service.getName() + " ";
             }
-            s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination " 
+            s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination "
                 + servicesList + " is not supported.");
             s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination "
                     + services + " is not supported.");
@@ -644,6 +640,14 @@ StaticNatServiceProvider {
 
     @Override
     public IpDeployer getIpDeployer(Network network) {
+        ExternalLoadBalancerDeviceVO lbDevice = getExternalLoadBalancerForNetwork(network);
+        if (lbDevice == null) {
+            s_logger.error("Cannot find external load balanacer for network " + network.getName());
+            return null;
+        }
+        if (_networkMgr.isNetworkInlineMode(network)) {
+            return getIpDeployerForInlineMode(network);
+        }
         return this;
     }
 
@@ -690,7 +694,7 @@ StaticNatServiceProvider {
             List<LbDestination> destinations = rule.getDestinations();
 
             if ((destinations != null && !destinations.isEmpty()) || rule.isAutoScaleConfig()) {
-                LoadBalancerTO loadBalancer = new LoadBalancerTO(lbUuid, srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
+                LoadBalancerTO loadBalancer = new LoadBalancerTO(lbUuid, srcIp, srcPort, protocol, algorithm, revoked, false, false, destinations, rule.getStickinessPolicies());
                 if (rule.isAutoScaleConfig()) {
                     loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
                 }

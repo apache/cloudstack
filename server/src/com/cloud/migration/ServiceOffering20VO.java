@@ -30,10 +30,11 @@ import javax.persistence.Table;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="service_offering")
-public class ServiceOffering20VO {
+public class ServiceOffering20VO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -108,7 +109,7 @@ public class ServiceOffering20VO {
 		this.offerHA = offerHA;
 	}
 	
-	public Long getId() {
+	public long getId() {
 		return id;
 	}
 	

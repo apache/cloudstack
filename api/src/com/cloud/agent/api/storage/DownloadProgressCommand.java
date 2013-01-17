@@ -26,7 +26,7 @@ public class DownloadProgressCommand extends DownloadCommand {
 	protected DownloadProgressCommand() {
 		super();
 	}
-	
+
 	public DownloadProgressCommand(DownloadCommand cmd, String jobId, RequestType req) {
 	    super(cmd);
 

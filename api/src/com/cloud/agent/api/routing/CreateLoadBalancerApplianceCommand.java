@@ -27,7 +27,7 @@ public class CreateLoadBalancerApplianceCommand extends NetworkElementCommand {
     String password;
     String publicInterface;
     String privateInterface;
-    
+
     public CreateLoadBalancerApplianceCommand(String ip, String netmask, String gateway) {
         this.ip = ip;
         this.netmask = netmask;

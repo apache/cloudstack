@@ -16,11 +16,6 @@
 // under the License.
 package com.cloud.vpc;
 
-import com.cloud.acl.ControlledEntity.ACLType;
-import com.cloud.api.commands.CreateNetworkCmd;
-import com.cloud.api.commands.ListNetworksCmd;
-import com.cloud.api.commands.ListTrafficTypeImplementorsCmd;
-import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
@@ -37,13 +32,11 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.element.NetworkElement;
-import com.cloud.network.element.RemoteAccessVPNServiceProvider;
-import com.cloud.network.element.Site2SiteVpnServiceProvider;
-import com.cloud.network.element.UserDataServiceProvider;
+import com.cloud.network.element.*;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -56,6 +49,11 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.*;
 import com.cloud.vpc.dao.MockVpcVirtualRouterElement;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
@@ -558,7 +556,7 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
 
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#listTrafficTypeImplementor(com.cloud.api.commands.ListTrafficTypeImplementorsCmd)
+     * @see com.cloud.network.NetworkService#listTrafficTypeImplementor(org.apache.cloudstack.api.commands.ListTrafficTypeImplementorsCmd)
      */
     @Override
     public List<Pair<TrafficType, String>> listTrafficTypeImplementor(ListTrafficTypeImplementorsCmd cmd) {
@@ -654,7 +652,7 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
 
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#setupNetwork(com.cloud.user.Account, com.cloud.offerings.NetworkOfferingVO, com.cloud.network.Network, com.cloud.deploy.DeploymentPlan, java.lang.String, java.lang.String, boolean, java.lang.Long, com.cloud.acl.ControlledEntity.ACLType, java.lang.Boolean, java.lang.Long)
+     * @see com.cloud.network.NetworkManager#setupNetwork(com.cloud.user.Account, com.cloud.offerings.NetworkOfferingVO, com.cloud.network.Network, com.cloud.deploy.DeploymentPlan, java.lang.String, java.lang.String, boolean, java.lang.Long, org.apache.cloudstack.acl.ControlledEntity.ACLType, java.lang.Boolean, java.lang.Long)
      */
     @Override
     public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, Network predefined,
@@ -819,7 +817,7 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
 
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#createGuestNetwork(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, com.cloud.user.Account, java.lang.Long, com.cloud.network.PhysicalNetwork, long, com.cloud.acl.ControlledEntity.ACLType, java.lang.Boolean, java.lang.Long)
+     * @see com.cloud.network.NetworkManager#createGuestNetwork(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, com.cloud.user.Account, java.lang.Long, com.cloud.network.PhysicalNetwork, long, org.apache.cloudstack.acl.ControlledEntity.ACLType, java.lang.Boolean, java.lang.Long)
      */
     @Override
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway,
@@ -1261,6 +1259,33 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
         return null;
     }
 
-    
+    @Override
+    public boolean isNetworkInlineMode(Network network) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
+    @Override
+    public List<Provider> getProvidersForServiceInNetwork(Network network, Service service) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public StaticNatServiceProvider getStaticNatProviderForNetwork(Network network) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public int getRuleCountForIp(Long addressId, Purpose purpose, State state) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

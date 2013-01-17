@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.maint;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -26,7 +28,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="op_host_upgrade")
-public class AgentUpgradeVO {
+public class AgentUpgradeVO implements InternalIdentity {
     @Id
     @Column(name="host_id")
     private long id;

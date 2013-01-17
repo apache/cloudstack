@@ -560,8 +560,8 @@
           return $(this).index() == index;
         });
 
-        if ($target.index() > $tr.index()) $target.after($tr);
-        else $target.before($tr);
+    //    if ($target.index() > $tr.index()) $target.after($tr);
+      //  else $target.before($tr);
 
         $tr.closest('.list-view').scrollTop($tr.position().top - $tr.height() * 2);
 

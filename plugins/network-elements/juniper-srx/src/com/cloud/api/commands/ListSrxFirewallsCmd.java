@@ -19,17 +19,12 @@ package com.cloud.api.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseListCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.api.response.SrxFirewallResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -40,7 +35,7 @@ import com.cloud.network.ExternalFirewallDeviceVO;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=SrxFirewallResponse.class, description="lists SRX firewall devices in a physical network")
+@APICommand(name = "listSrxFirewalls", responseObject=SrxFirewallResponse.class, description="lists SRX firewall devices in a physical network")
 public class ListSrxFirewallsCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListSrxFirewallsCmd.class.getName());
@@ -51,12 +46,12 @@ public class ListSrxFirewallsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
+            description="the Physical Network ID")
     private Long physicalNetworkId;
 
-    @IdentityMapper(entityTableName="external_firewall_devices")
-    @Parameter(name=ApiConstants.FIREWALL_DEVICE_ID, type=CommandType.LONG,  description="SRX firewall device ID")
+    @Parameter(name=ApiConstants.FIREWALL_DEVICE_ID, type=CommandType.UUID, entityType = SrxFirewallResponse.class,
+            description="SRX firewall device ID")
     private Long fwDeviceId;
 
     /////////////////////////////////////////////////////

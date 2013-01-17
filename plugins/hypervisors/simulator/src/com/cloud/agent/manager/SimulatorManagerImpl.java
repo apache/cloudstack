@@ -16,27 +16,12 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-
 import com.cloud.agent.api.*;
-import com.cloud.agent.api.storage.*;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
-import com.cloud.agent.api.routing.DhcpEntryCommand;
-import com.cloud.agent.api.routing.IpAssocCommand;
-import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
-import com.cloud.agent.api.routing.SavePasswordCommand;
-import com.cloud.agent.api.routing.SetFirewallRulesCommand;
-import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
-import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
-import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.routing.*;
+import com.cloud.agent.api.storage.*;
 import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockVMVO;
@@ -49,6 +34,12 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Local(value = { SimulatorManager.class })
 public class SimulatorManagerImpl implements SimulatorManager {
@@ -112,14 +103,12 @@ public class SimulatorManagerImpl implements SimulatorManager {
     @Override
     public Answer simulate(Command cmd, String hostGuid) {
         Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
- //       txn.transitToUserManagedConnection(_concierge.conn());
-
         try {
             MockHost host = _mockHost.findByGuid(hostGuid);
             String cmdName = cmd.toString();
             int index = cmdName.lastIndexOf(".");
             if (index != -1) {
-		cmdName = cmdName.substring(index + 1);
+                cmdName = cmdName.substring(index + 1);
             }
             MockConfigurationVO config = _mockConfigDao.findByNameBottomUP(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), cmdName);
 
@@ -129,24 +118,24 @@ public class SimulatorManagerImpl implements SimulatorManager {
             if (config != null) {
                 Map<String, String> configParameters = config.getParameters();
                 for (Map.Entry<String, String> entry : configParameters.entrySet()) {
-			if (entry.getKey().equalsIgnoreCase("enabled")) {
-				info.setEnabled(Boolean.parseBoolean(entry.getValue()));
-			} else if (entry.getKey().equalsIgnoreCase("timeout")) {
-				try {
-					info.setTimeout(Integer.valueOf(entry.getValue()));
-				} catch (NumberFormatException e) {
-					s_logger.debug("invalid timeout parameter: " + e.toString());
-				}
-			} else if (entry.getKey().equalsIgnoreCase("wait")) {
-				try {
-					int wait = Integer.valueOf(entry.getValue());
-					Thread.sleep(wait * 1000);
-				} catch (NumberFormatException e) {
-					s_logger.debug("invalid timeout parameter: " + e.toString());
-				} catch (InterruptedException e) {
-					s_logger.debug("thread is interrupted: " + e.toString());
-				}
-			}
+                    if (entry.getKey().equalsIgnoreCase("enabled")) {
+                        info.setEnabled(Boolean.parseBoolean(entry.getValue()));
+                    } else if (entry.getKey().equalsIgnoreCase("timeout")) {
+                        try {
+                            info.setTimeout(Integer.valueOf(entry.getValue()));
+                        } catch (NumberFormatException e) {
+                            s_logger.debug("invalid timeout parameter: " + e.toString());
+                        }
+                    } else if (entry.getKey().equalsIgnoreCase("wait")) {
+                        try {
+                            int wait = Integer.valueOf(entry.getValue());
+                            Thread.sleep(wait);
+                        } catch (NumberFormatException e) {
+                            s_logger.debug("invalid timeout parameter: " + e.toString());
+                        } catch (InterruptedException e) {
+                            s_logger.debug("thread is interrupted: " + e.toString());
+                        }
+                    }
                 }
             }
 

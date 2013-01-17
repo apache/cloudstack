@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.dc;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -33,7 +35,7 @@ import javax.persistence.TemporalType;
 @Entity
 @Table(name="op_dc_storage_network_ip_address")
 @SecondaryTables({@SecondaryTable(name = "dc_storage_network_ip_range", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "range_id", referencedColumnName = "id")})})
-public class StorageNetworkIpAddressVO {
+public class StorageNetworkIpAddressVO implements InternalIdentity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
@@ -64,7 +66,7 @@ public class StorageNetworkIpAddressVO {
 	protected StorageNetworkIpAddressVO() {
 	}
 
-	public Long getId() {
+	public long getId() {
 		return id;
 	}
 

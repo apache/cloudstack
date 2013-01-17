@@ -27,13 +27,14 @@ import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
 
 import com.cloud.vm.VirtualMachine.State;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("security_group_vm_map"))
 @SecondaryTables({ @SecondaryTable(name = "nics", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "instance_id") }),
         @SecondaryTable(name = "vm_instance", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "id") }),
         @SecondaryTable(name = "security_group", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "security_group_id", referencedColumnName = "id") }) })
-public class SecurityGroupVMMapVO {
+public class SecurityGroupVMMapVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -62,7 +63,7 @@ public class SecurityGroupVMMapVO {
         this.instanceId = instanceId;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

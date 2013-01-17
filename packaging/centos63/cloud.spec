@@ -103,6 +103,18 @@ Group:     System Environment/Libraries
 The CloudStack Python library contains a few Python modules that the
 CloudStack uses.
 
+%package agent
+Summary: CloudStack Agent for KVM hypervisors
+Requires: java >= 1.6.0
+Requires: %{name}-python = %{_ver}
+Requires: libvirt
+Requires: bridge-utils
+Requires: ebtables
+Requires: jsvc
+Requires: jna
+Group: System Environment/Libraries
+%description agent
+The CloudStack agent for KVM hypervisors
 
 %prep
 echo Doing CloudStack build
@@ -183,8 +195,22 @@ chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/temp
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 chmod -R ugo+x ${RPM_BUILD_ROOT}/usr/share/%{name}/management/webapps/client/WEB-INF/classes/scripts
-%clean
 
+mkdir -p ${RPM_BUILD_ROOT}/etc/cloud/agent
+mkdir -p ${RPM_BUILD_ROOT}/var/log/cloud/agent
+install -D packaging/centos63/cloud-agent.rc ${RPM_BUILD_ROOT}/etc/init.d/%{name}-agent
+install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}/etc/cloud/agent/agent.properties
+install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}/etc/cloud/agent/environment.properties
+install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}/etc/cloud/agent/log4j-cloud.xml
+install -D agent/target/transformed/cloud-setup-agent ${RPM_BUILD_ROOT}/usr/bin/cloud-setup-agent
+install -D agent/target/transformed/cloud-ssh ${RPM_BUILD_ROOT}/usr/bin/cloud-ssh
+
+install -D plugins/hypervisors/kvm/target/%{name}-plugin-hypervisor-kvm-%{_maventag}.jar ${RPM_BUILD_ROOT}/usr/share/cloud/java/%{name}-plugin-hypervisor-kvm-%{_maventag}.jar
+cp plugins/hypervisors/kvm/target/dependencies/*  ${RPM_BUILD_ROOT}/usr/share/cloud/java
+mkdir -p ${RPM_BUILD_ROOT}/usr/share/cloud/scripts
+cp -r scripts/* ${RPM_BUILD_ROOT}/usr/share/cloud/scripts
+
+%clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
 
@@ -271,6 +297,14 @@ fi
 %doc LICENSE
 %doc NOTICE
 
+%files agent
+%attr(0755,root,root) %{_bindir}/%{name}-setup-agent
+%attr(0755,root,root) %{_bindir}/%{name}-ssh
+%attr(0755,root,root) %{_sysconfdir}/init.d/cloud-agent
+%config(noreplace) %{_sysconfdir}/cloud/agent
+%dir /var/log/cloud/agent
+%attr(0644,root,root) /usr/share/cloud/java/*.jar
+%attr(0755,root,root) /usr/share/cloud/scripts
 
 %changelog
 * Fri Oct 03 2012 Hugo Trippaers <hugo@apache.org> 4.1.0

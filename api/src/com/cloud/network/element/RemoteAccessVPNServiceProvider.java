@@ -28,6 +28,6 @@ public interface RemoteAccessVPNServiceProvider extends Adapter {
     String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException;
 
     boolean startVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
-    
+
     boolean stopVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
 }

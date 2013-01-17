@@ -24,8 +24,9 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.vm.Nic.ReservationStrategy;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public class NicProfile {
+public class NicProfile implements InternalIdentity {
     long id;
     long networkId;
     BroadcastDomainType broadcastType;
@@ -207,7 +208,7 @@ public class NicProfile {
         return strategy;
     }
 
-    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate, 
+    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate,
             boolean isSecurityGroupEnabled, String name) {
         this.id = nic.getId();
         this.networkId = network.getId();

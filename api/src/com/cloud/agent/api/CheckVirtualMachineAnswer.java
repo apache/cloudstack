@@ -19,33 +19,33 @@ package com.cloud.agent.api;
 import com.cloud.vm.VirtualMachine.State;
 
 public class CheckVirtualMachineAnswer extends Answer {
-    
+
     Integer vncPort;
     State state;
-    
-    
+
+
     protected CheckVirtualMachineAnswer() {
     }
-    
+
     public CheckVirtualMachineAnswer(CheckVirtualMachineCommand cmd, State state, Integer vncPort, String detail) {
         super(cmd, true, detail);
         this.state = state;
         this.vncPort = vncPort;
     }
-    
+
     public CheckVirtualMachineAnswer(CheckVirtualMachineCommand cmd, State state, Integer vncPort) {
         this(cmd, state, vncPort, null);
     }
-    
+
     public CheckVirtualMachineAnswer(CheckVirtualMachineCommand cmd, String detail) {
         super(cmd, false, detail);
     }
 
-    
+
     public Integer getVncPort() {
         return vncPort;
     }
-    
+
     public State getState() {
         return state;
     }

@@ -20,8 +20,8 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.to.SwiftTO;
 
 /**
- * 
- * 
+ *
+ *
  */
 
 public class uploadTemplateToSwiftFromSecondaryStorageCommand extends Command {
@@ -34,9 +34,9 @@ public class uploadTemplateToSwiftFromSecondaryStorageCommand extends Command {
     private Long templateId;
 
     protected uploadTemplateToSwiftFromSecondaryStorageCommand() {
-        
+
     }
-   
+
     public uploadTemplateToSwiftFromSecondaryStorageCommand(SwiftTO swift, String secondaryStorageUrl, Long dcId, Long accountId, Long templateId, int wait) {
 
         this.swift = swift;

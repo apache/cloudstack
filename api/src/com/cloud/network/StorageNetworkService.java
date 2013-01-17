@@ -19,18 +19,18 @@ package com.cloud.network;
 import java.sql.SQLException;
 import java.util.List;
 
-import com.cloud.api.commands.CreateStorageNetworkIpRangeCmd;
-import com.cloud.api.commands.DeleteStorageNetworkIpRangeCmd;
-import com.cloud.api.commands.UpdateStorageNetworkIpRangeCmd;
-import com.cloud.api.commands.listStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.*;
+import org.apache.cloudstack.api.command.admin.network.UpdateStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteStorageNetworkIpRangeCmd;
 import com.cloud.dc.StorageNetworkIpRange;
+import org.apache.cloudstack.api.command.admin.network.CreateStorageNetworkIpRangeCmd;
 
 public interface StorageNetworkService {
     StorageNetworkIpRange createIpRange(CreateStorageNetworkIpRangeCmd cmd) throws SQLException;
 
     void deleteIpRange(DeleteStorageNetworkIpRangeCmd cmd);
 
-    List<StorageNetworkIpRange> listIpRange(listStorageNetworkIpRangeCmd cmd);
+    List<StorageNetworkIpRange> listIpRange(ListStorageNetworkIpRangeCmd cmd);
 
     StorageNetworkIpRange updateIpRange(UpdateStorageNetworkIpRangeCmd cmd);
 }

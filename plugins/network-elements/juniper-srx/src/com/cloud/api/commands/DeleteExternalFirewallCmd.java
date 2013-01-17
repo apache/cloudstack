@@ -16,21 +16,21 @@
 // under the License.
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.PlugService;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.user.Account;
 
-@Implementation(description="Deletes an external firewall appliance.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteExternalFirewall", description="Deletes an external firewall appliance.", responseObject = SuccessResponse.class)
 public class DeleteExternalFirewallCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteExternalFirewallCmd.class.getName());    
     private static final String s_name = "deleteexternalfirewallresponse";    
@@ -39,8 +39,8 @@ public class DeleteExternalFirewallCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="host")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required = true, description="Id of the external firewall appliance.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = HostResponse.class,
+            required = true, description="Id of the external firewall appliance.")
     private Long id;
     
     ///////////////////////////////////////////////////

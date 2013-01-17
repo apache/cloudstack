@@ -24,48 +24,36 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Properties;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import com.cloud.utils.ReflectUtil;
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseAsyncCreateCmd;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.response.AsyncJobResponse;
-import com.cloud.api.response.BaseResponse;
-import com.cloud.api.response.HostResponse;
-import com.cloud.api.response.IPAddressResponse;
-import com.cloud.api.response.LoadBalancerResponse;
-import com.cloud.api.response.SecurityGroupResponse;
-import com.cloud.api.response.SnapshotResponse;
-import com.cloud.api.response.StoragePoolResponse;
-import com.cloud.api.response.TemplateResponse;
-import com.cloud.api.response.UserVmResponse;
-import com.cloud.api.response.VolumeResponse;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import com.cloud.serializer.Param;
-import com.cloud.server.api.response.ExternalLoadBalancerResponse;
 import com.google.gson.annotations.SerializedName;
 import com.thoughtworks.xstream.XStream;
+import org.reflections.Reflections;
 
 public class ApiXmlDocWriter {
     public static final Logger s_logger = Logger.getLogger(ApiXmlDocWriter.class.getName());
 
     private static final short DOMAIN_ADMIN_COMMAND = 4;
     private static final short USER_COMMAND = 8;
+    private static Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
     private static LinkedHashMap<Object, String> all_api_commands = new LinkedHashMap<Object, String>();
     private static LinkedHashMap<Object, String> domain_admin_api_commands = new LinkedHashMap<Object, String>();
     private static LinkedHashMap<Object, String> regular_user_api_commands = new LinkedHashMap<Object, String>();
@@ -92,6 +80,18 @@ public class ApiXmlDocWriter {
     }
 
     public static void main(String[] args) {
+
+        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class, new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
+
+        for(Class<?> cmdClass: cmdClasses) {
+            String apiName = cmdClass.getAnnotation(APICommand.class).name();
+            if (_apiNameCmdClassMap.containsKey(apiName)) {
+                System.out.println("Warning, API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
+                continue;
+            }
+            _apiNameCmdClassMap.put(apiName, cmdClass);
+        }
+
         LinkedProperties preProcessedCommands = new LinkedProperties();
         String[] fileNames = null;
 
@@ -131,13 +131,19 @@ public class ApiXmlDocWriter {
         while (propertiesIterator.hasNext()) {
             String key = (String) propertiesIterator.next();
             String preProcessedCommand = preProcessedCommands.getProperty(key);
-            String[] commandParts = preProcessedCommand.split(";");
-            String commandName = commandParts[0];
+            int splitIndex = preProcessedCommand.lastIndexOf(";");
+            String commandRoleMask = preProcessedCommand.substring(splitIndex + 1);
+            Class<?> cmdClass = _apiNameCmdClassMap.get(key);
+            if (cmdClass == null) {
+                System.out.println("Check, Null Value for key: " + key + " preProcessedCommand=" + preProcessedCommand);
+                continue;
+            }
+            String commandName = cmdClass.getName();
             all_api_commands.put(key, commandName);
 
             short cmdPermissions = 1;
-            if (commandParts.length > 1 && commandParts[1] != null) {
-                cmdPermissions = Short.parseShort(commandParts[1]);
+            if (commandRoleMask != null) {
+                cmdPermissions = Short.parseShort(commandRoleMask);
             }
 
             if ((cmdPermissions & DOMAIN_ADMIN_COMMAND) != 0) {
@@ -309,14 +315,14 @@ public class ApiXmlDocWriter {
         Command apiCommand = new Command();
         apiCommand.setName(command);
 
-        Implementation impl = clas.getAnnotation(Implementation.class);
+        APICommand impl = clas.getAnnotation(APICommand.class);
         if (impl == null) {
-            impl = clas.getSuperclass().getAnnotation(Implementation.class);
+            impl = clas.getSuperclass().getAnnotation(APICommand.class);
         }
 
         if (impl == null) {
             throw new IllegalStateException(String.format("An %1$s annotation is required for class %2$s.", 
-                    Implementation.class.getCanonicalName(), clas.getCanonicalName()));
+                    APICommand.class.getCanonicalName(), clas.getCanonicalName()));
         }
 
         if (impl.includeInApiDoc()) {
@@ -337,33 +343,15 @@ public class ApiXmlDocWriter {
             if(!impl.since().isEmpty()){
             	apiCommand.setSinceVersion(impl.since());
             }
-            
-            // Set request parameters
-            Field[] fields = clas.getDeclaredFields();
 
-            // Get fields from superclass
-            Class<?> superClass = clas.getSuperclass();
-            boolean isAsync = false;
-            while (superClass != null && superClass != Object.class) {
-                String superName = superClass.getName();
-                if (!superName.equals(BaseCmd.class.getName()) && !superName.equals(BaseAsyncCmd.class.getName()) && !superName.equals(BaseAsyncCreateCmd.class.getName())) {
-                    Field[] superClassFields = superClass.getDeclaredFields();
-                    if (superClassFields != null) {
-                        Field[] tmpFields = new Field[fields.length + superClassFields.length];
-                        System.arraycopy(fields, 0, tmpFields, 0, fields.length);
-                        System.arraycopy(superClassFields, 0, tmpFields, fields.length, superClassFields.length);
-                        fields = tmpFields;
-                    }
-                }
-                superClass = superClass.getSuperclass();
-                // Set Async information for the command
-                if (superName.equals(BaseAsyncCmd.class.getName()) || superName.equals(BaseAsyncCreateCmd.class.getName())) {
-                    isAsync = true;
-                }
-            }
-           
+            boolean isAsync = ReflectUtil.isCmdClassAsync(clas,
+                    new Class<?>[] {BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
+
             apiCommand.setAsync(isAsync);
-            
+
+            Field[] fields = ReflectUtil.getAllFieldsForClass(clas,
+                    new Class<?>[] {BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
+
             request = setRequestFields(fields);
 
             // Get response parameters

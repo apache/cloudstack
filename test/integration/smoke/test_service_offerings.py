@@ -39,7 +39,7 @@ class Services:
                                 "displaytext": "Service Offering",
                                 "cpunumber": 1,
                                 "cpuspeed": 100, # MHz
-                                "memory": 64, # in MBs
+                                "memory": 128, # in MBs
                             },
                      }
 

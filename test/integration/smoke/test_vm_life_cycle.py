@@ -80,7 +80,7 @@ class Services:
                         "displaytext": "Tiny Instance",
                         "cpunumber": 1,
                         "cpuspeed": 100, # in MHz
-                        "memory": 64, # In MBs
+                        "memory": 128, # In MBs
                     },
                  "small":
                     {
@@ -227,9 +227,9 @@ class TestDeployVM(cloudstackTestCase):
                         )
 
         self.assertEqual(
-                    vm_response.displayname,
-                    self.virtual_machine.displayname,
-                    "Check virtual machine displayname in listVirtualMachines"
+                    vm_response.name,
+                    self.virtual_machine.name,
+                    "Check virtual machine name in listVirtualMachines"
                     )
         return
 

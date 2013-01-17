@@ -23,10 +23,10 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.SecurityChecker.AccessType;
-import com.cloud.api.commands.ListNetworkACLsCmd;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -51,7 +51,6 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;

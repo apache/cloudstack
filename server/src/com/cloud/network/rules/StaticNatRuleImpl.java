@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -19,9 +19,10 @@ package com.cloud.network.rules;
 import java.util.List;
 
 
-public class StaticNatRuleImpl implements StaticNatRule{
+public class StaticNatRuleImpl implements StaticNatRule {
     long id;
     String xid;
+    String uuid;
     String protocol;
     int portStart;
     int portEnd;
@@ -32,9 +33,10 @@ public class StaticNatRuleImpl implements StaticNatRule{
     long sourceIpAddressId;
     String destIpAddress;
 
-    public StaticNatRuleImpl(FirewallRuleVO rule, String dstIp) {  
+    public StaticNatRuleImpl(FirewallRuleVO rule, String dstIp) {
         this.id = rule.getId();
         this.xid = rule.getXid();
+        this.uuid = rule.getUuid();
         this.protocol = rule.getProtocol();
         this.portStart = rule.getSourcePortStart();
         this.portEnd = rule.getSourcePortEnd();
@@ -55,7 +57,7 @@ public class StaticNatRuleImpl implements StaticNatRule{
     public Integer getSourcePortEnd() {
         return portEnd;
     }
-    
+
     @Override
     public Purpose getPurpose() {
         return Purpose.StaticNat;
@@ -65,17 +67,17 @@ public class StaticNatRuleImpl implements StaticNatRule{
     public State getState() {
         return state;
     }
-    
+
     @Override
     public long getAccountId() {
         return accountId;
     }
-    
+
     @Override
     public long getDomainId() {
         return domainId;
     }
-    
+
     @Override
     public long getNetworkId() {
         return networkId;
@@ -105,12 +107,18 @@ public class StaticNatRuleImpl implements StaticNatRule{
     public String getXid() {
         return xid;
     }
-    
+
+
+    @Override
+    public String getUuid() {
+        return uuid;
+    }
+
     @Override
     public Integer getIcmpCode() {
         return null;
     }
-    
+
     @Override
     public Integer getIcmpType() {
         return null;
@@ -130,7 +138,7 @@ public class StaticNatRuleImpl implements StaticNatRule{
 	public FirewallRuleType getType() {
 		return FirewallRuleType.User;
 	}
-	
+
     @Override
     public TrafficType getTrafficType() {
         return null;

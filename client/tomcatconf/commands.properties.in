@@ -19,412 +19,493 @@
 ### Please standardize naming conventions to camel-case (even for acronyms).
 
 ### Account commands
-createAccount=com.cloud.api.commands.CreateAccountCmd;3
-deleteAccount=com.cloud.api.commands.DeleteAccountCmd;3
-updateAccount=com.cloud.api.commands.UpdateAccountCmd;3
-disableAccount=com.cloud.api.commands.DisableAccountCmd;7
-enableAccount=com.cloud.api.commands.EnableAccountCmd;7
-###lockAccount=com.cloud.api.commands.LockAccountCmd;7
-listAccounts=com.cloud.api.commands.ListAccountsCmd;15
-markDefaultZoneForAccount=com.cloud.api.commands.MarkDefaultZoneForAccountCmd;1
+createAccount=3
+deleteAccount=3
+updateAccount=3
+disableAccount=7
+enableAccount=7
+lockAccount=7
+listAccounts=15
+markDefaultZoneForAccount=1
 
 #### User commands
-createUser=com.cloud.api.commands.CreateUserCmd;3
-deleteUser=com.cloud.api.commands.DeleteUserCmd;3
-updateUser=com.cloud.api.commands.UpdateUserCmd;15
-listUsers=com.cloud.api.commands.ListUsersCmd;7
-####lockUser=com.cloud.api.commands.LockUserCmd;7
-disableUser=com.cloud.api.commands.DisableUserCmd;7
-enableUser=com.cloud.api.commands.EnableUserCmd;7
-getUser=com.cloud.api.commands.GetUserCmd;1
+createUser=3
+deleteUser=3
+updateUser=15
+listUsers=7
+lockUser=7
+disableUser=7
+enableUser=7
+getUser=1
 
 #### Domain commands
-createDomain=com.cloud.api.commands.CreateDomainCmd;1
-updateDomain=com.cloud.api.commands.UpdateDomainCmd;1
-deleteDomain=com.cloud.api.commands.DeleteDomainCmd;1
-listDomains=com.cloud.api.commands.ListDomainsCmd;7
-listDomainChildren=com.cloud.api.commands.ListDomainChildrenCmd;7
+createDomain=1
+updateDomain=1
+deleteDomain=1
+listDomains=7
+listDomainChildren=7
 
 ####Cloud Identifier commands
-getCloudIdentifier=com.cloud.api.commands.GetCloudIdentifierCmd;15
+getCloudIdentifier=15
 
 #### Limit commands
-updateResourceLimit=com.cloud.api.commands.UpdateResourceLimitCmd;7
-updateResourceCount=com.cloud.api.commands.UpdateResourceCountCmd;7
-listResourceLimits=com.cloud.api.commands.ListResourceLimitsCmd;15
+updateResourceLimit=7
+updateResourceCount=7
+listResourceLimits=15
 
 #### VM commands
-deployVirtualMachine=com.cloud.api.commands.DeployVMCmd;15
-destroyVirtualMachine=com.cloud.api.commands.DestroyVMCmd;15
-rebootVirtualMachine=com.cloud.api.commands.RebootVMCmd;15
-startVirtualMachine=com.cloud.api.commands.StartVMCmd;15
-stopVirtualMachine=com.cloud.api.commands.StopVMCmd;15
-resetPasswordForVirtualMachine=com.cloud.api.commands.ResetVMPasswordCmd;15
-changeServiceForVirtualMachine=com.cloud.api.commands.UpgradeVMCmd;15
-updateVirtualMachine=com.cloud.api.commands.UpdateVMCmd;15
-recoverVirtualMachine=com.cloud.api.commands.RecoverVMCmd;7
-listVirtualMachines=com.cloud.api.commands.ListVMsCmd;15
-getVMPassword=com.cloud.api.commands.GetVMPasswordCmd;15
-migrateVirtualMachine=com.cloud.api.commands.MigrateVMCmd;1
-assignVirtualMachine=com.cloud.api.commands.AssignVMCmd;1
-restoreVirtualMachine=com.cloud.api.commands.RestoreVMCmd;15
+deployVirtualMachine=15
+destroyVirtualMachine=15
+rebootVirtualMachine=15
+startVirtualMachine=15
+stopVirtualMachine=15
+resetPasswordForVirtualMachine=15
+updateVirtualMachine=15
+listVirtualMachines=15
+getVMPassword=15
+restoreVirtualMachine=15
+changeServiceForVirtualMachine=15
+assignVirtualMachine=1
+migrateVirtualMachine=1
+recoverVirtualMachine=7
 
 #### snapshot commands
-createSnapshot=com.cloud.api.commands.CreateSnapshotCmd;15
-listSnapshots=com.cloud.api.commands.ListSnapshotsCmd;15
-deleteSnapshot=com.cloud.api.commands.DeleteSnapshotCmd;15
-createSnapshotPolicy=com.cloud.api.commands.CreateSnapshotPolicyCmd;15
-deleteSnapshotPolicies=com.cloud.api.commands.DeleteSnapshotPoliciesCmd;15
-listSnapshotPolicies=com.cloud.api.commands.ListSnapshotPoliciesCmd;15
+createSnapshot=15
+listSnapshots=15
+deleteSnapshot=15
+createSnapshotPolicy=15
+deleteSnapshotPolicies=15
+listSnapshotPolicies=15
 
 
 #### template commands
-createTemplate=com.cloud.api.commands.CreateTemplateCmd;15
-registerTemplate=com.cloud.api.commands.RegisterTemplateCmd;15
-updateTemplate=com.cloud.api.commands.UpdateTemplateCmd;15
-copyTemplate=com.cloud.api.commands.CopyTemplateCmd;15
-deleteTemplate=com.cloud.api.commands.DeleteTemplateCmd;15
-listTemplates=com.cloud.api.commands.ListTemplatesCmd;15
-updateTemplatePermissions=com.cloud.api.commands.UpdateTemplatePermissionsCmd;15
-listTemplatePermissions=com.cloud.api.commands.ListTemplatePermissionsCmd;15
-extractTemplate=com.cloud.api.commands.ExtractTemplateCmd;15
-prepareTemplate=com.cloud.api.commands.PrepareTemplateCmd;1
+createTemplate=15
+registerTemplate=15
+updateTemplate=15
+copyTemplate=15
+deleteTemplate=15
+listTemplates=15
+updateTemplatePermissions=15
+listTemplatePermissions=15
+extractTemplate=15
+prepareTemplate=1
 
 #### iso commands
-attachIso=com.cloud.api.commands.AttachIsoCmd;15
-detachIso=com.cloud.api.commands.DetachIsoCmd;15
-listIsos=com.cloud.api.commands.ListIsosCmd;15
-registerIso=com.cloud.api.commands.RegisterIsoCmd;15
-updateIso=com.cloud.api.commands.UpdateIsoCmd;15
-deleteIso=com.cloud.api.commands.DeleteIsoCmd;15
-copyIso=com.cloud.api.commands.CopyTemplateCmd;15
-updateIsoPermissions=com.cloud.api.commands.UpdateIsoPermissionsCmd;15
-listIsoPermissions=com.cloud.api.commands.ListIsoPermissionsCmd;15
-extractIso=com.cloud.api.commands.ExtractIsoCmd;15
+attachIso=15
+detachIso=15
+listIsos=15
+registerIso=15
+updateIso=15
+deleteIso=15
+copyIso=15
+updateIsoPermissions=15
+listIsoPermissions=15
+extractIso=15
 
 #### guest OS commands
-listOsTypes=com.cloud.api.commands.ListGuestOsCmd;15
-listOsCategories=com.cloud.api.commands.ListGuestOsCategoriesCmd;15
+listOsTypes=15
+listOsCategories=15
 
 #### service offering commands
-createServiceOffering=com.cloud.api.commands.CreateServiceOfferingCmd;1
-deleteServiceOffering=com.cloud.api.commands.DeleteServiceOfferingCmd;1
-updateServiceOffering=com.cloud.api.commands.UpdateServiceOfferingCmd;1
-listServiceOfferings=com.cloud.api.commands.ListServiceOfferingsCmd;15
+createServiceOffering=1
+deleteServiceOffering=1
+updateServiceOffering=1
+listServiceOfferings=15
 
 #### disk offering commands
-createDiskOffering=com.cloud.api.commands.CreateDiskOfferingCmd;1
-updateDiskOffering=com.cloud.api.commands.UpdateDiskOfferingCmd;1
-deleteDiskOffering=com.cloud.api.commands.DeleteDiskOfferingCmd;1
-listDiskOfferings=com.cloud.api.commands.ListDiskOfferingsCmd;15
+createDiskOffering=1
+updateDiskOffering=1
+deleteDiskOffering=1
+listDiskOfferings=15
 
 #### vlan commands
-createVlanIpRange=com.cloud.api.commands.CreateVlanIpRangeCmd;1
-deleteVlanIpRange=com.cloud.api.commands.DeleteVlanIpRangeCmd;1
-listVlanIpRanges=com.cloud.api.commands.ListVlanIpRangesCmd;1
+createVlanIpRange=1
+deleteVlanIpRange=1
+listVlanIpRanges=1
 
 #### address commands
-associateIpAddress=com.cloud.api.commands.AssociateIPAddrCmd;15
-disassociateIpAddress=com.cloud.api.commands.DisassociateIPAddrCmd;15
-listPublicIpAddresses=com.cloud.api.commands.ListPublicIpAddressesCmd;15
+associateIpAddress=15
+disassociateIpAddress=15
+listPublicIpAddresses=15
 
 #### firewall commands
-listPortForwardingRules=com.cloud.api.commands.ListPortForwardingRulesCmd;15
-createPortForwardingRule=com.cloud.api.commands.CreatePortForwardingRuleCmd;15
-deletePortForwardingRule=com.cloud.api.commands.DeletePortForwardingRuleCmd;15
-#### updatePortForwardingRule=com.cloud.api.commands.UpdatePortForwardingRuleCmd;15
+listPortForwardingRules=15
+createPortForwardingRule=15
+deletePortForwardingRule=15
+updatePortForwardingRule=15
 
 #### NAT commands
-enableStaticNat=com.cloud.api.commands.EnableStaticNatCmd;15
-createIpForwardingRule=com.cloud.api.commands.CreateIpForwardingRuleCmd;15
-deleteIpForwardingRule=com.cloud.api.commands.DeleteIpForwardingRuleCmd;15
-listIpForwardingRules=com.cloud.api.commands.ListIpForwardingRulesCmd;15
-disableStaticNat=com.cloud.api.commands.DisableStaticNatCmd;15
+enableStaticNat=15
+createIpForwardingRule=15
+deleteIpForwardingRule=15
+listIpForwardingRules=15
+disableStaticNat=15
 
 #### load balancer commands
-createLoadBalancerRule=com.cloud.api.commands.CreateLoadBalancerRuleCmd;15
-deleteLoadBalancerRule=com.cloud.api.commands.DeleteLoadBalancerRuleCmd;15
-removeFromLoadBalancerRule=com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;15
-assignToLoadBalancerRule=com.cloud.api.commands.AssignToLoadBalancerRuleCmd;15
-createLBStickinessPolicy=com.cloud.api.commands.CreateLBStickinessPolicyCmd;15
-deleteLBStickinessPolicy=com.cloud.api.commands.DeleteLBStickinessPolicyCmd;15
-listLoadBalancerRules=com.cloud.api.commands.ListLoadBalancerRulesCmd;15
-listLBStickinessPolicies=com.cloud.api.commands.ListLBStickinessPoliciesCmd;15
-listLoadBalancerRuleInstances=com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;15
-updateLoadBalancerRule=com.cloud.api.commands.UpdateLoadBalancerRuleCmd;15
+createLoadBalancerRule=15
+deleteLoadBalancerRule=15
+removeFromLoadBalancerRule=15
+assignToLoadBalancerRule=15
+createLBStickinessPolicy=15
+deleteLBStickinessPolicy=15
+listLoadBalancerRules=15
+listLBStickinessPolicies=15
+listLoadBalancerRuleInstances=15
+updateLoadBalancerRule=15
 
 #### autoscale commands
-createCounter = com.cloud.api.commands.CreateCounterCmd;1
-createCondition = com.cloud.api.commands.CreateConditionCmd;15
-createAutoScalePolicy=com.cloud.api.commands.CreateAutoScalePolicyCmd;15
-createAutoScaleVmProfile=com.cloud.api.commands.CreateAutoScaleVmProfileCmd;15
-createAutoScaleVmGroup=com.cloud.api.commands.CreateAutoScaleVmGroupCmd;15
-deleteCounter = com.cloud.api.commands.DeleteCounterCmd;1
-deleteCondition = com.cloud.api.commands.DeleteConditionCmd;15
-deleteAutoScalePolicy=com.cloud.api.commands.DeleteAutoScalePolicyCmd;15
-deleteAutoScaleVmProfile=com.cloud.api.commands.DeleteAutoScaleVmProfileCmd;15
-deleteAutoScaleVmGroup=com.cloud.api.commands.DeleteAutoScaleVmGroupCmd;15
-listCounters = com.cloud.api.commands.ListCountersCmd;15
-listConditions = com.cloud.api.commands.ListConditionsCmd;15
-listAutoScalePolicies=com.cloud.api.commands.ListAutoScalePoliciesCmd;15
-listAutoScaleVmProfiles=com.cloud.api.commands.ListAutoScaleVmProfilesCmd;15
-listAutoScaleVmGroups=com.cloud.api.commands.ListAutoScaleVmGroupsCmd;15
-enableAutoScaleVmGroup=com.cloud.api.commands.EnableAutoScaleVmGroupCmd;15
-disableAutoScaleVmGroup=com.cloud.api.commands.DisableAutoScaleVmGroupCmd;15
-updateAutoScalePolicy=com.cloud.api.commands.UpdateAutoScalePolicyCmd;15
-updateAutoScaleVmProfile=com.cloud.api.commands.UpdateAutoScaleVmProfileCmd;15
-updateAutoScaleVmGroup=com.cloud.api.commands.UpdateAutoScaleVmGroupCmd;15
+createCounter=1
+createCondition=15
+createAutoScalePolicy=15
+createAutoScaleVmProfile=15
+createAutoScaleVmGroup=15
+deleteCounter=1
+deleteCondition=15
+deleteAutoScalePolicy=15
+deleteAutoScaleVmProfile=15
+deleteAutoScaleVmGroup=15
+listCounters=15
+listConditions=15
+listAutoScalePolicies=15
+listAutoScaleVmProfiles=15
+listAutoScaleVmGroups=15
+enableAutoScaleVmGroup=15
+disableAutoScaleVmGroup=15
+updateAutoScalePolicy=15
+updateAutoScaleVmProfile=15
+updateAutoScaleVmGroup=15
 
 #### router commands
-startRouter=com.cloud.api.commands.StartRouterCmd;7
-rebootRouter=com.cloud.api.commands.RebootRouterCmd;7
-stopRouter=com.cloud.api.commands.StopRouterCmd;7
-destroyRouter=com.cloud.api.commands.DestroyRouterCmd;7
-changeServiceForRouter=com.cloud.api.commands.UpgradeRouterCmd;7
-listRouters=com.cloud.api.commands.ListRoutersCmd;7
-listVirtualRouterElements=com.cloud.api.commands.ListVirtualRouterElementsCmd;7
-configureVirtualRouterElement=com.cloud.api.commands.ConfigureVirtualRouterElementCmd;7
+startRouter=7
+rebootRouter=7
+stopRouter=7
+destroyRouter=7
+changeServiceForRouter=7
+listRouters=7
+listVirtualRouterElements=7
+configureVirtualRouterElement=7
+createVirtualRouterElement=7
 
 #### system vm commands
-startSystemVm=com.cloud.api.commands.StartSystemVMCmd;1
-rebootSystemVm=com.cloud.api.commands.RebootSystemVmCmd;1
-stopSystemVm=com.cloud.api.commands.StopSystemVmCmd;1
-destroySystemVm=com.cloud.api.commands.DestroySystemVmCmd;1
-listSystemVms=com.cloud.api.commands.ListSystemVMsCmd;3
-migrateSystemVm=com.cloud.api.commands.MigrateSystemVMCmd;1
-changeServiceForSystemVm=com.cloud.api.commands.UpgradeSystemVMCmd;1
+startSystemVm=1
+rebootSystemVm=1
+stopSystemVm=1
+destroySystemVm=1
+listSystemVms=3
+migrateSystemVm=1
+changeServiceForSystemVm=1
 
 #### configuration commands
-updateConfiguration=com.cloud.api.commands.UpdateCfgCmd;1
-listConfigurations=com.cloud.api.commands.ListCfgsByCmd;1
-ldapConfig=com.cloud.api.commands.LDAPConfigCmd;1
-ldapRemove=com.cloud.api.commands.LDAPRemoveCmd;1
-listCapabilities=com.cloud.api.commands.ListCapabilitiesCmd;15
+updateConfiguration=1
+listConfigurations=1
+ldapConfig=1
+ldapRemove=1
+listCapabilities=15
 
 #### pod commands
-createPod=com.cloud.api.commands.CreatePodCmd;1
-updatePod=com.cloud.api.commands.UpdatePodCmd;1
-deletePod=com.cloud.api.commands.DeletePodCmd;1
-listPods=com.cloud.api.commands.ListPodsByCmd;3
+createPod=1
+updatePod=1
+deletePod=1
+listPods=3
 
 #### zone commands
-createZone=com.cloud.api.commands.CreateZoneCmd;1
-updateZone=com.cloud.api.commands.UpdateZoneCmd;1
-deleteZone=com.cloud.api.commands.DeleteZoneCmd;1
-listZones=com.cloud.api.commands.ListZonesByCmd;15
+createZone=1
+updateZone=1
+deleteZone=1
+listZones=15
 
 #### events commands
-listEvents=com.cloud.api.commands.ListEventsCmd;15
-listEventTypes=com.cloud.api.commands.ListEventTypesCmd;15
+listEvents=15
+listEventTypes=15
 
 #### alerts commands
-listAlerts=com.cloud.api.commands.ListAlertsCmd;3
+listAlerts=3
 
 #### system capacity commands
-listCapacity=com.cloud.api.commands.ListCapacityCmd;3
+listCapacity=3
 
-#### swift commands^M
-addSwift=com.cloud.api.commands.AddSwiftCmd;1
-listSwifts=com.cloud.api.commands.ListSwiftsCmd;1
+#### swift commands
+addSwift=1
+listSwifts=1
 
 #### s3 commands
-addS3=com.cloud.api.commands.AddS3Cmd;1
-listS3s=com.cloud.api.commands.ListS3sCmd;1
+addS3=1
+listS3s=1
 
 #### host commands
-addHost=com.cloud.api.commands.AddHostCmd;3
-addCluster=com.cloud.api.commands.AddClusterCmd;1
-deleteCluster=com.cloud.api.commands.DeleteClusterCmd;1
-updateCluster=com.cloud.api.commands.UpdateClusterCmd;1
-reconnectHost=com.cloud.api.commands.ReconnectHostCmd;1
-updateHost=com.cloud.api.commands.UpdateHostCmd;1
-deleteHost=com.cloud.api.commands.DeleteHostCmd;3
-prepareHostForMaintenance=com.cloud.api.commands.PrepareForMaintenanceCmd;1
-cancelHostMaintenance=com.cloud.api.commands.CancelMaintenanceCmd;1
-listHosts=com.cloud.api.commands.ListHostsCmd;3
-addSecondaryStorage=com.cloud.api.commands.AddSecondaryStorageCmd;1
-updateHostPassword=com.cloud.api.commands.UpdateHostPasswordCmd;1
+addHost=3
+addCluster=1
+deleteCluster=1
+updateCluster=1
+reconnectHost=1
+updateHost=1
+deleteHost=3
+prepareHostForMaintenance=1
+cancelHostMaintenance=1
+listHosts=3
+addSecondaryStorage=1
+updateHostPassword=1
 
 #### volume commands
-attachVolume=com.cloud.api.commands.AttachVolumeCmd;15
-uploadVolume=com.cloud.api.commands.UploadVolumeCmd;15
-detachVolume=com.cloud.api.commands.DetachVolumeCmd;15
-createVolume=com.cloud.api.commands.CreateVolumeCmd;15
-deleteVolume=com.cloud.api.commands.DeleteVolumeCmd;15
-listVolumes=com.cloud.api.commands.ListVolumesCmd;15
-extractVolume=com.cloud.api.commands.ExtractVolumeCmd;15
-migrateVolume=com.cloud.api.commands.MigrateVolumeCmd;15
+attachVolume=15
+uploadVolume=15
+detachVolume=15
+createVolume=15
+deleteVolume=15
+listVolumes=15
+extractVolume=15
+migrateVolume=15
+resizeVolume=15
 
 #### registration command:  FIXME -- this really should be something in management server that
 ####                                 generates a new key for the user and they just have to
 ####                                 use that key...the key is stored in the db associated w/
 ####                                 the userId...every request to the developer API should be
 ####                                 checked against the key
-registerUserKeys=com.cloud.api.commands.RegisterCmd;15
+registerUserKeys=15
 
 ### async-query command
-queryAsyncJobResult=com.cloud.api.commands.QueryAsyncJobResultCmd;15
-listAsyncJobs=com.cloud.api.commands.ListAsyncJobsCmd;15
+queryAsyncJobResult=15
+listAsyncJobs=15
 
 #### storage pools commands
-listStoragePools=com.cloud.api.commands.ListStoragePoolsCmd;3
-createStoragePool=com.cloud.api.commands.CreateStoragePoolCmd;1
-updateStoragePool=com.cloud.api.commands.UpdateStoragePoolCmd;1
-deleteStoragePool=com.cloud.api.commands.DeletePoolCmd;1
-listClusters=com.cloud.api.commands.ListClustersCmd;3
-enableStorageMaintenance=com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;1
-cancelStorageMaintenance=com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;1
+listStoragePools=3
+createStoragePool=1
+updateStoragePool=1
+deleteStoragePool=1
+listClusters=3
+enableStorageMaintenance=1
+cancelStorageMaintenance=1
 
 #### security group commands
-createSecurityGroup=com.cloud.api.commands.CreateSecurityGroupCmd;15
-deleteSecurityGroup=com.cloud.api.commands.DeleteSecurityGroupCmd;15
-authorizeSecurityGroupIngress=com.cloud.api.commands.AuthorizeSecurityGroupIngressCmd;15
-revokeSecurityGroupIngress=com.cloud.api.commands.RevokeSecurityGroupIngressCmd;15
-authorizeSecurityGroupEgress=com.cloud.api.commands.AuthorizeSecurityGroupEgressCmd;15
-revokeSecurityGroupEgress=com.cloud.api.commands.RevokeSecurityGroupEgressCmd;15
-listSecurityGroups=com.cloud.api.commands.ListSecurityGroupsCmd;15
+createSecurityGroup=15
+deleteSecurityGroup=15
+authorizeSecurityGroupIngress=15
+revokeSecurityGroupIngress=15
+authorizeSecurityGroupEgress=15
+revokeSecurityGroupEgress=15
+listSecurityGroups=15
 
 #### vm group commands
-createInstanceGroup=com.cloud.api.commands.CreateVMGroupCmd;15
-deleteInstanceGroup=com.cloud.api.commands.DeleteVMGroupCmd;15
-updateInstanceGroup=com.cloud.api.commands.UpdateVMGroupCmd;15
-listInstanceGroups=com.cloud.api.commands.ListVMGroupsCmd;15
+createInstanceGroup=15
+deleteInstanceGroup=15
+updateInstanceGroup=15
+listInstanceGroups=15
 
 ### Certificate commands
-uploadCustomCertificate=com.cloud.api.commands.UploadCustomCertificateCmd;1
+uploadCustomCertificate=1
 
 ### other commands
-listHypervisors=com.cloud.api.commands.ListHypervisorsCmd;15
+listHypervisors=15
 
 ### VPN
-createRemoteAccessVpn=com.cloud.api.commands.CreateRemoteAccessVpnCmd;15
-deleteRemoteAccessVpn=com.cloud.api.commands.DeleteRemoteAccessVpnCmd;15
-listRemoteAccessVpns=com.cloud.api.commands.ListRemoteAccessVpnsCmd;15
+createRemoteAccessVpn=15
+deleteRemoteAccessVpn=15
+listRemoteAccessVpns=15
 
-addVpnUser=com.cloud.api.commands.AddVpnUserCmd;15
-removeVpnUser=com.cloud.api.commands.RemoveVpnUserCmd;15
-listVpnUsers=com.cloud.api.commands.ListVpnUsersCmd;15
+addVpnUser=15
+removeVpnUser=15
+listVpnUsers=15
 
 #### network offering commands
-createNetworkOffering=com.cloud.api.commands.CreateNetworkOfferingCmd;1
-updateNetworkOffering=com.cloud.api.commands.UpdateNetworkOfferingCmd;1
-deleteNetworkOffering=com.cloud.api.commands.DeleteNetworkOfferingCmd;1
-listNetworkOfferings=com.cloud.api.commands.ListNetworkOfferingsCmd;15
+createNetworkOffering=1
+updateNetworkOffering=1
+deleteNetworkOffering=1
+listNetworkOfferings=15
 
 #### network commands
-createNetwork=com.cloud.api.commands.CreateNetworkCmd;15
-deleteNetwork=com.cloud.api.commands.DeleteNetworkCmd;15
-listNetworks=com.cloud.api.commands.ListNetworksCmd;15
-restartNetwork=com.cloud.api.commands.RestartNetworkCmd;15
-updateNetwork=com.cloud.api.commands.UpdateNetworkCmd;15
+createNetwork=15
+deleteNetwork=15
+listNetworks=15
+restartNetwork=15
+updateNetwork=15
 
 #### SSH key pair commands
-registerSSHKeyPair=com.cloud.api.commands.RegisterSSHKeyPairCmd;15
-createSSHKeyPair=com.cloud.api.commands.CreateSSHKeyPairCmd;15
-deleteSSHKeyPair=com.cloud.api.commands.DeleteSSHKeyPairCmd;15
-listSSHKeyPairs=com.cloud.api.commands.ListSSHKeyPairsCmd;15
+registerSSHKeyPair=15
+createSSHKeyPair=15
+deleteSSHKeyPair=15
+listSSHKeyPairs=15
 
 #### Projects commands
-createProject=com.cloud.api.commands.CreateProjectCmd;15
-deleteProject=com.cloud.api.commands.DeleteProjectCmd;15
-updateProject=com.cloud.api.commands.UpdateProjectCmd;15
-activateProject=com.cloud.api.commands.ActivateProjectCmd;15
-suspendProject=com.cloud.api.commands.SuspendProjectCmd;15
-listProjects=com.cloud.api.commands.ListProjectsCmd;15
-addAccountToProject=com.cloud.api.commands.AddAccountToProjectCmd;15
-deleteAccountFromProject=com.cloud.api.commands.DeleteAccountFromProjectCmd;15
-listProjectAccounts=com.cloud.api.commands.ListProjectAccountsCmd;15
-listProjectInvitations=com.cloud.api.commands.ListProjectInvitationsCmd;15
-updateProjectInvitation=com.cloud.api.commands.UpdateProjectInvitationCmd;15
-deleteProjectInvitation=com.cloud.api.commands.DeleteProjectInvitationCmd;15
+createProject=15
+deleteProject=15
+updateProject=15
+activateProject=15
+suspendProject=15
+listProjects=15
+addAccountToProject=15
+deleteAccountFromProject=15
+listProjectAccounts=15
+listProjectInvitations=15
+updateProjectInvitation=15
+deleteProjectInvitation=15
 
 #### 
-createFirewallRule=com.cloud.api.commands.CreateFirewallRuleCmd;15
-deleteFirewallRule=com.cloud.api.commands.DeleteFirewallRuleCmd;15
-listFirewallRules=com.cloud.api.commands.ListFirewallRulesCmd;15
+createFirewallRule=15
+deleteFirewallRule=15
+listFirewallRules=15
 
 #### hypervisor capabilities commands
-updateHypervisorCapabilities=com.cloud.api.commands.UpdateHypervisorCapabilitiesCmd;1
-listHypervisorCapabilities=com.cloud.api.commands.ListHypervisorCapabilitiesCmd;1
+updateHypervisorCapabilities=1
+listHypervisorCapabilities=1
 
 #### Physical Network commands
-createPhysicalNetwork=com.cloud.api.commands.CreatePhysicalNetworkCmd;1
-deletePhysicalNetwork=com.cloud.api.commands.DeletePhysicalNetworkCmd;1
-listPhysicalNetworks=com.cloud.api.commands.ListPhysicalNetworksCmd;1
-updatePhysicalNetwork=com.cloud.api.commands.UpdatePhysicalNetworkCmd;1
+createPhysicalNetwork=1
+deletePhysicalNetwork=1
+listPhysicalNetworks=1
+updatePhysicalNetwork=1
 
 #### Physical Network Service Provider commands
-listSupportedNetworkServices=com.cloud.api.commands.ListSupportedNetworkServicesCmd;1
-addNetworkServiceProvider=com.cloud.api.commands.AddNetworkServiceProviderCmd;1
-deleteNetworkServiceProvider=com.cloud.api.commands.DeleteNetworkServiceProviderCmd;1
-listNetworkServiceProviders=com.cloud.api.commands.ListNetworkServiceProvidersCmd;1
-updateNetworkServiceProvider=com.cloud.api.commands.UpdateNetworkServiceProviderCmd;1
+listSupportedNetworkServices=1
+addNetworkServiceProvider=1
+deleteNetworkServiceProvider=1
+listNetworkServiceProviders=1
+updateNetworkServiceProvider=1
 
 #### Physical Network Traffic Type commands
-addTrafficType=com.cloud.api.commands.AddTrafficTypeCmd;1
-deleteTrafficType=com.cloud.api.commands.DeleteTrafficTypeCmd;1
-listTrafficTypes=com.cloud.api.commands.ListTrafficTypesCmd;1
-updateTrafficType=com.cloud.api.commands.UpdateTrafficTypeCmd;1
-listTrafficTypeImplementors=com.cloud.api.commands.ListTrafficTypeImplementorsCmd;1
+addTrafficType=1
+deleteTrafficType=1
+listTrafficTypes=1
+updateTrafficType=1
+listTrafficTypeImplementors=1
 
 #### Storage Network commands
-createStorageNetworkIpRange=com.cloud.api.commands.CreateStorageNetworkIpRangeCmd;1
-deleteStorageNetworkIpRange=com.cloud.api.commands.DeleteStorageNetworkIpRangeCmd;1
-listStorageNetworkIpRange=com.cloud.api.commands.listStorageNetworkIpRangeCmd;1
-updateStorageNetworkIpRange=com.cloud.api.commands.UpdateStorageNetworkIpRangeCmd;1
+createStorageNetworkIpRange=1
+deleteStorageNetworkIpRange=1
+listStorageNetworkIpRange=1
+updateStorageNetworkIpRange=1
 
 ### Network Devices commands
-addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
-listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
-deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1
-
-### Network Devices commands
-addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
-listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
-deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1
+addNetworkDevice=1
+listNetworkDevice=1
+deleteNetworkDevice=1
 
 ### VPC commands
-createVPC=com.cloud.api.commands.CreateVPCCmd;15
-listVPCs=com.cloud.api.commands.ListVPCsCmd;15
-deleteVPC=com.cloud.api.commands.DeleteVPCCmd;15
-updateVPC=com.cloud.api.commands.UpdateVPCCmd;15
-restartVPC=com.cloud.api.commands.RestartVPCCmd;15
+createVPC=15
+listVPCs=15
+deleteVPC=15
+updateVPC=15
+restartVPC=15
 
 #### VPC offering commands
-createVPCOffering=com.cloud.api.commands.CreateVPCOfferingCmd;1
-updateVPCOffering=com.cloud.api.commands.UpdateVPCOfferingCmd;1
-deleteVPCOffering=com.cloud.api.commands.DeleteVPCOfferingCmd;1
-listVPCOfferings=com.cloud.api.commands.ListVPCOfferingsCmd;15
+createVPCOffering=1
+updateVPCOffering=1
+deleteVPCOffering=1
+listVPCOfferings=15
 
 #### Private gateway commands
-createPrivateGateway=com.cloud.api.commands.CreatePrivateGatewayCmd;1
-listPrivateGateways=com.cloud.api.commands.ListPrivateGatewaysCmd;15
-deletePrivateGateway=com.cloud.api.commands.DeletePrivateGatewayCmd;1
+createPrivateGateway=1
+listPrivateGateways=15
+deletePrivateGateway=1
 
 #### Network ACL commands
-createNetworkACL=com.cloud.api.commands.CreateNetworkACLCmd;15
-deleteNetworkACL=com.cloud.api.commands.DeleteNetworkACLCmd;15
-listNetworkACLs=com.cloud.api.commands.ListNetworkACLsCmd;15
+createNetworkACL=15
+deleteNetworkACL=15
+listNetworkACLs=15
 
 #### Static route commands
-createStaticRoute=com.cloud.api.commands.CreateStaticRouteCmd;15
-deleteStaticRoute=com.cloud.api.commands.DeleteStaticRouteCmd;15
-listStaticRoutes=com.cloud.api.commands.ListStaticRoutesCmd;15
+createStaticRoute=15
+deleteStaticRoute=15
+listStaticRoutes=15
 
 #### Tags commands
-createTags=com.cloud.api.commands.CreateTagsCmd;15
-deleteTags=com.cloud.api.commands.DeleteTagsCmd;15
-listTags=com.cloud.api.commands.ListTagsCmd;15
+createTags=15
+deleteTags=15
+listTags=15
 
 ### Site-to-site VPN commands
-createVpnCustomerGateway=com.cloud.api.commands.CreateVpnCustomerGatewayCmd;15
-createVpnGateway=com.cloud.api.commands.CreateVpnGatewayCmd;15
-createVpnConnection=com.cloud.api.commands.CreateVpnConnectionCmd;15
-deleteVpnCustomerGateway=com.cloud.api.commands.DeleteVpnCustomerGatewayCmd;15
-deleteVpnGateway=com.cloud.api.commands.DeleteVpnGatewayCmd;15
-deleteVpnConnection=com.cloud.api.commands.DeleteVpnConnectionCmd;15
-updateVpnCustomerGateway=com.cloud.api.commands.UpdateVpnCustomerGatewayCmd;15
-resetVpnConnection=com.cloud.api.commands.ResetVpnConnectionCmd;15
-listVpnCustomerGateways=com.cloud.api.commands.ListVpnCustomerGatewaysCmd;15
-listVpnGateways=com.cloud.api.commands.ListVpnGatewaysCmd;15
-listVpnConnections=com.cloud.api.commands.ListVpnConnectionsCmd;15
+createVpnCustomerGateway=15
+createVpnGateway=15
+createVpnConnection=15
+deleteVpnCustomerGateway=15
+deleteVpnGateway=15
+deleteVpnConnection=15
+updateVpnCustomerGateway=15
+resetVpnConnection=15
+listVpnCustomerGateways=15
+listVpnGateways=15
+listVpnConnections=15
+
+#### router commands
+createVirtualRouterElement=7
+configureVirtualRouterElement=7
+listVirtualRouterElements=7
+
+#### usage commands
+generateUsageRecords=1
+listUsageRecords=1
+listUsageTypes=1
+
+#### traffic monitor commands
+addTrafficMonitor=1
+deleteTrafficMonitor=1
+listTrafficMonitors=1
+
+#### Cisco Nexus 1000v Virtual Supervisor Module (VSM) commands
+deleteCiscoNexusVSM=1
+enableCiscoNexusVSM=1
+disableCiscoNexusVSM=1
+listCiscoNexusVSMs=1
+
+#### f5 big ip load balancer commands
+
+#Deprecated commands
+addExternalLoadBalancer=1
+deleteExternalLoadBalancer=1
+listExternalLoadBalancers=1
+
+addF5LoadBalancer=1
+configureF5LoadBalancer=1
+deleteF5LoadBalancer=1
+listF5LoadBalancers=1
+listF5LoadBalancerNetworks=1
+
+#### juniper srx firewall commands
+addExternalFirewall=1
+deleteExternalFirewall=1
+listExternalFirewalls=1
+
+addSrxFirewall=1
+deleteSrxFirewall=1
+configureSrxFirewall=1
+listSrxFirewalls=1
+listSrxFirewallNetworks=1
+
+####Netapp integration commands
+createVolumeOnFiler=15
+destroyVolumeOnFiler=15
+listVolumesOnFiler=15
+createLunOnFiler=15
+destroyLunOnFiler=15
+listLunsOnFiler=15
+associateLun=15
+dissociateLun=15
+createPool=15
+deletePool=15
+modifyPool=15
+listPools=15
+
+#### netscaler load balancer commands
+addNetscalerLoadBalancer=1
+deleteNetscalerLoadBalancer=1
+configureNetscalerLoadBalancer=1
+listNetscalerLoadBalancers=1
+listNetscalerLoadBalancerNetworks=1
+
+#### nicira nvp commands
+
+addNiciraNvpDevice=1
+deleteNiciraNvpDevice=1
+listNiciraNvpDevices=1
+listNiciraNvpDeviceNetworks=1
+
+# Not implemented (yet)
+#configureNiciraNvpDevice=1
+
+#### host simulator commands
+
+configureSimulator=1
+
+#### api discovery commands
+
+listApis=15

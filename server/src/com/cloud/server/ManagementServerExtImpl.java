@@ -29,7 +29,8 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.projects.Project;
-import com.cloud.server.api.response.UsageTypeResponse;
+import com.cloud.utils.PropertiesUtil;
+import org.apache.cloudstack.api.response.UsageTypeResponse;
 import com.cloud.usage.UsageJobVO;
 import com.cloud.usage.UsageTypes;
 import com.cloud.usage.UsageVO;
@@ -206,8 +207,9 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
     }
 
     @Override
-    public String[] getApiConfig() {
-        return new String[] { "commands.properties", "commands-ext.properties" };
+    public List<Class<?>> getCommands() {
+        //TODO: Add api cmd classes
+        return null;
     }
 
     private Date computeAdjustedTime(Date initialDate, TimeZone targetTZ, boolean adjustToDayStart) {

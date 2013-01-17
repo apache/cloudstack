@@ -17,9 +17,11 @@
 
 package com.cloud.network.as;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Condition extends ControlledEntity {
+public interface Condition extends ControlledEntity, Identity, InternalIdentity {
 
     static enum Operator {
         EQ, GT, LT, GE, LE
@@ -30,8 +32,4 @@ public interface Condition extends ControlledEntity {
     long getThreshold();
 
     Operator getRelationalOperator();
-
-    String getUuid();
-
-    long getId();
 }

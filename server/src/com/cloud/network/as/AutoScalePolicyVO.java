@@ -29,11 +29,12 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "autoscale_policies")
 @Inheritance(strategy = InheritanceType.JOINED)
-public class AutoScalePolicyVO implements AutoScalePolicy {
+public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

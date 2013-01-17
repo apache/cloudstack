@@ -219,14 +219,14 @@ class TestISO(cloudstackTestCase):
         # Finding the OsTypeId from Ostype
         ostypes = list_os_types(
                     cls.api_client,
-                    description=self.services["ostype"]
+                    description=cls.services["ostype"]
                     )
         if not isinstance(ostypes, list):
             raise unittest.SkipTest("OSTypeId for given description not found")
 
-        self.services["iso_1"]["ostypeid"] = ostypes[0].id
-        self.services["iso_2"]["ostypeid"] = ostypes[0].id
-        self.services["ostypeid"] = ostypes[0].id
+        cls.services["iso_1"]["ostypeid"] = ostypes[0].id
+        cls.services["iso_2"]["ostypeid"] = ostypes[0].id
+        cls.services["ostypeid"] = ostypes[0].id
 
         cls.iso_1 = Iso.create(
                                cls.api_client, 

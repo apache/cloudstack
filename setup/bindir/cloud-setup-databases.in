@@ -212,7 +212,7 @@ for full help
                     ""),
             )
 
-        for f in ["create-database","create-schema","create-database-premium","create-schema-premium"]:
+        for f in ["create-database","create-schema", "create-database-premium","create-schema-premium", "create-schema-view"]:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             if not os.path.exists(p): continue
             text = file(p).read()
@@ -359,7 +359,7 @@ for example:
                 if not os.path.exists(dbf):
                     self.errorAndExit("Cannot find %s"%dbf)
 
-            coreSchemas = ['create-database.sql', 'create-schema.sql', 'templates.sql', 'create-index-fk.sql']
+            coreSchemas = ['create-database.sql', 'create-schema.sql', 'create-schema-view.sql', 'templates.sql', 'create-index-fk.sql']
             if not self.serversetup:
                 coreSchemas.append('server-setup.sql')
 

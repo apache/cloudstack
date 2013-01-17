@@ -19,13 +19,12 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.PlugService;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -36,7 +35,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.network.CiscoNexusVSMDevice;
 
-@Implementation(responseObject=CiscoNexusVSMResponse.class, description="disable a Cisco Nexus VSM device")
+@APICommand(name = "disableCiscoNexusVSM", responseObject=CiscoNexusVSMResponse.class, description="disable a Cisco Nexus VSM device")
 public class DisableCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(DisableCiscoNexusVSMCmd.class.getName());
@@ -47,8 +46,8 @@ public class DisableCiscoNexusVSMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="virtual_supervisor_module")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Id of the Cisco Nexus 1000v VSM device to be deleted")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = CiscoNexusVSMResponse.class,
+            required=true, description="Id of the Cisco Nexus 1000v VSM device to be deleted")
     private Long id;
 
     /////////////////////////////////////////////////////

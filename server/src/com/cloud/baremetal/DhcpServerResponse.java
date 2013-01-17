@@ -16,21 +16,20 @@
 // under the License.
 package com.cloud.baremetal;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
-import com.cloud.api.response.BaseResponse;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class DhcpServerResponse extends BaseResponse {
 	@SerializedName(ApiConstants.ID) @Param(description="the ID of the Dhcp server")
-    private IdentityProxy id = new IdentityProxy("host");
-	
-	public Long getId() {
-    	return id.getValue();
+    private String id;
+
+	public String getId() {
+    	return id;
     }
-    
-    public void setId(Long id) {
-    	this.id.setValue(id);
+
+    public void setId(String id) {
+    	this.id = id;
     }
 }

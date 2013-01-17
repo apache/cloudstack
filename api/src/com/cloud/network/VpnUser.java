@@ -16,16 +16,16 @@
 // under the License.
 package com.cloud.network;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface VpnUser extends ControlledEntity {
+public interface VpnUser extends ControlledEntity, InternalIdentity, Identity {
     enum State {
         Add,
         Revoke,
         Active
     }
-
-    long getId();
 
     String getUsername();
 

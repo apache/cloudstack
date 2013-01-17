@@ -38,6 +38,11 @@ CATALINA_HOME=@MSENVIRON@
 DEFAULT=@MSCONF@/tomcat6.conf
 JVM_TMP=/tmp/$NAME-temp
 
+# We have to explicitly set the HOME variable to the homedir from the user "cloud"
+# This is because various scripts run by the management server read the HOME variable
+# and fail when this init script is run manually.
+HOME=$(echo ~cloud)
+
 if [ `id -u` -ne 0 ]; then
 	echo "You need root privileges to run this script"
 	exit 1

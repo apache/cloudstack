@@ -23,7 +23,7 @@ public class SetupCommand extends Command {
     HostEnvironment env;
     boolean multipath;
     boolean needSetup;
-    
+
     public boolean needSetup() {
         return needSetup;
     }
@@ -37,18 +37,18 @@ public class SetupCommand extends Command {
         this.multipath = false;
         this.needSetup = false;
     }
-    
+
     public HostEnvironment getEnvironment() {
         return env;
     }
-    
+
     protected SetupCommand() {
     }
-    
+
     public void setMultipathOn() {
         this.multipath = true;
     }
-    
+
     public boolean useMultipath() {
         return multipath;
     }

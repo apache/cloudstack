@@ -126,7 +126,7 @@ public class SecurityGroupRulesCmd extends Command {
     public void setEgressRuleSet(IpPortAndProto[] egressRuleSet) {
         this.egressRuleSet = egressRuleSet;
     }
-    
+
     public String getGuestIp() {
         return guestIp;
     }
@@ -156,15 +156,15 @@ public class SecurityGroupRulesCmd extends Command {
         }
         return ruleBuilder.toString();
     }
-    
+
     //convert cidrs in the form "a.b.c.d/e" to "hexvalue of 32bit ip/e"
     private String compressCidr(String cidr) {
         String [] toks = cidr.split("/");
         long ipnum = NetUtils.ip2Long(toks[0]);
         return Long.toHexString(ipnum) + "/" + toks[1];
     }
-    
-    
+
+
     public String stringifyCompressedRules() {
         StringBuilder ruleBuilder = new StringBuilder();
         for (SecurityGroupRulesCmd.IpPortAndProto ipPandP : getIngressRuleSet()) {
@@ -187,7 +187,7 @@ public class SecurityGroupRulesCmd extends Command {
         }
         return ruleBuilder.toString();
     }
-    
+
     /*
      * Compress the security group rules using zlib compression to allow the call to the hypervisor
      * to scale beyond 8k cidrs.
@@ -243,7 +243,7 @@ public class SecurityGroupRulesCmd extends Command {
     public Long getVmId() {
         return vmId;
     }
-    
+
     public int getTotalNumCidrs() {
         //useful for logging
         int count = 0;
@@ -255,11 +255,11 @@ public class SecurityGroupRulesCmd extends Command {
         }
         return count;
     }
-    
+
     public void setMsId(long msId) {
         this.msId = msId;
     }
-    
+
     public Long getMsId() {
         return msId;
     }

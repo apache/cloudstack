@@ -26,12 +26,12 @@ public class ComputeChecksumCommand extends ssCommand {
     public ComputeChecksumCommand() {
         super();
     }
-    
+
     public ComputeChecksumCommand(String secUrl, String templatePath) {
         super(secUrl);
         this.templatePath = templatePath;
-    }    
-    
+    }
+
     public String getTemplatePath() {
         return templatePath;
     }

@@ -27,12 +27,13 @@ import javax.persistence.Table;
 
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import org.apache.cloudstack.api.InternalIdentity;
 
 
 @Entity
 @Table(name="mockvolume")
 
-public class MockVolumeVO {
+public class MockVolumeVO implements InternalIdentity {
     public enum MockVolumeType {
         VOLUME,
         TEMPLATE,

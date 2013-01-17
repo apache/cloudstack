@@ -18,28 +18,29 @@ package com.cloud.api.response;
 
 import java.util.List;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.CommandType;
-import com.cloud.utils.IdentityProxy;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.BaseResponse;
+import com.cloud.network.ExternalLoadBalancerDeviceVO;
 
+@EntityReference(value=ExternalLoadBalancerDeviceVO.class)
 @SuppressWarnings("unused")
 public class NetscalerLoadBalancerResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_ID) @Param(description="device id of the netscaler load balancer")
-    private IdentityProxy id = new IdentityProxy("external_load_balancer_devices");
+    private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network to which this netscaler device belongs to")
-    private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
+    private String physicalNetworkId;
 
     @SerializedName(ApiConstants.PROVIDER) @Param(description="name of the provider")
     private String providerName;
-    
+
     @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_NAME) @Param(description="device name")
-    private String deviceName; 
-    
+    private String deviceName;
+
     @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_STATE) @Param(description="device state")
     private String deviceState;
 
@@ -49,12 +50,9 @@ public class NetscalerLoadBalancerResponse extends BaseResponse {
     @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED) @Param(description="true if device is dedicated for an account")
     private Boolean dedicatedLoadBalancer;
 
-    @SerializedName(ApiConstants.INLINE) @Param(description="true if device is inline with firewall device")
-    private Boolean inlineLoadBalancer;
-
     @SerializedName(ApiConstants.PUBLIC_INTERFACE) @Param(description="the public interface of the load balancer")
     private String publicInterface;
-    
+
     @SerializedName(ApiConstants.PRIVATE_INTERFACE) @Param(description="the private interface of the load balancer")
     private String privateInterface;
 
@@ -65,13 +63,13 @@ public class NetscalerLoadBalancerResponse extends BaseResponse {
             " This parameter represents the list of pod's, for which there exists a policy based route on datacenter L3 router to " +
             "route pod's subnet IP to a NetScaler device.")
     private List<Long> podIds;
-    
-    public void setId(long lbDeviceId) {
-        this.id.setValue(lbDeviceId);
+
+    public void setId(String lbDeviceId) {
+        this.id = lbDeviceId;
     }
 
-    public void setPhysicalNetworkId(long physicalNetworkId) {
-        this.physicalNetworkId.setValue(physicalNetworkId);
+    public void setPhysicalNetworkId(String physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
     }
 
     public void setProvider(String provider) {
@@ -92,10 +90,6 @@ public class NetscalerLoadBalancerResponse extends BaseResponse {
 
     public void setDeviceState(String deviceState) {
         this.deviceState = deviceState;
-    }
-
-    public void setInlineMode(boolean inline) {
-        this.inlineLoadBalancer = inline;
     }
 
     public void setPublicInterface(String publicInterface) {

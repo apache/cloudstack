@@ -16,14 +16,10 @@
 // under the License.
 package com.cloud.user;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface SSHKeyPair extends ControlledEntity {
-
-    /**
-     * @return The id of the key pair.
-     */
-    public long getId();
+public interface SSHKeyPair extends ControlledEntity, InternalIdentity {
 
     /**
      * @return The given name of the key pair.

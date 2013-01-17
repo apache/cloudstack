@@ -44,6 +44,7 @@ import java.util.concurrent.Callable;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -52,8 +53,7 @@ import com.cloud.agent.api.DeleteTemplateFromS3Command;
 import com.cloud.agent.api.DownloadTemplateFromS3ToSecondaryStorageCommand;
 import com.cloud.agent.api.UploadTemplateToS3FromSecondaryStorageCommand;
 import com.cloud.agent.api.to.S3TO;
-import com.cloud.api.commands.AddS3Cmd;
-import com.cloud.api.commands.ListS3sCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;

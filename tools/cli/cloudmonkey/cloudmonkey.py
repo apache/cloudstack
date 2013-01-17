@@ -84,6 +84,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
             config = self.write_config()
             print "Welcome! Using `set` configure the necessary settings:"
             print " ".join(sorted(self.config_fields.keys()))
+            print "Config file:", self.config_file
             print "For debugging, tail -f", self.log_file, "\n"
 
         for key in self.config_fields.keys():
@@ -94,7 +95,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
                 print "Please fix `%s` config in %s" % (key, self.config_file)
                 sys.exit()
 
-        self.prompt += " "  # Cosmetic fix for prompt
+        self.prompt = self.prompt.strip() + " "  # Cosmetic fix for prompt
         logging.basicConfig(filename=self.log_file,
                             level=logging.DEBUG, format=log_fmt)
         logger.debug("Loaded config fields:\n%s" % self.config_fields)
@@ -160,11 +161,11 @@ class CloudMonkeyShell(cmd.Cmd, object):
                     elif 'type' in arg:
                         print colored.green(arg),
                     elif 'state' in arg or 'count' in arg:
-                        print colored.yellow(arg),
-                    elif 'id =' in arg:
-                        print colored.cyan(arg),
-                    elif 'name =' in arg:
                         print colored.magenta(arg),
+                    elif 'id =' in arg:
+                        print colored.yellow(arg),
+                    elif 'name =' in arg:
+                        print colored.cyan(arg),
                     else:
                         print arg,
                 else:
@@ -203,7 +204,8 @@ class CloudMonkeyShell(cmd.Cmd, object):
                 print printer
 
         def print_result_as_dict(result, result_filter=None):
-            for key in result.keys():
+            for key in sorted(result.keys(),
+                              key=lambda x: x != 'id' and x != 'count' and x):
                 if not (isinstance(result[key], list) or
                         isinstance(result[key], dict)):
                     self.print_shell("%s = %s" % (key, result[key]))
@@ -265,10 +267,18 @@ class CloudMonkeyShell(cmd.Cmd, object):
             command = "queryAsyncJobResult"
             requests = {'jobid': jobId}
             timeout = int(self.timeout)
+            pollperiod = 3
+            progress = 1
             while timeout > 0:
+                print '\r' + '.' * progress,
+                sys.stdout.flush()
                 response = process_json(conn.make_request_with_auth(command,
                                                                     requests))
-                result = response[response.keys()[0]]
+                responsekeys = filter(lambda x: 'response' in x,
+                                      response.keys())
+                if len(responsekeys) < 1:
+                    continue
+                result = response[responsekeys[0]]
                 jobstatus = result['jobstatus']
                 if jobstatus == 2:
                     jobresult = result["jobresult"]
@@ -277,9 +287,11 @@ class CloudMonkeyShell(cmd.Cmd, object):
                                      jobresult["errortext"])
                     return
                 elif jobstatus == 1:
+                    print '\r',
                     return response
-                time.sleep(4)
-                timeout = timeout - 4
+                time.sleep(pollperiod)
+                timeout = timeout - pollperiod
+                progress += 1
                 logger.debug("job: %s to timeout in %ds" % (jobId, timeout))
             self.print_shell("Error:", "Async query timeout for jobid=", jobId)
 
@@ -346,36 +358,12 @@ class CloudMonkeyShell(cmd.Cmd, object):
         if result is None:
             return
         try:
-            # Response is in the key "apiname+response" (lowercase)
-            self.print_result(result[api_name.lower() + 'response'],
-                              field_filter)
+            responsekeys = filter(lambda x: 'response' in x, result.keys())
+            for responsekey in responsekeys:
+                self.print_result(result[responsekey], field_filter)
             print
         except Exception as e:
             self.print_shell("🙈  Error on parsing and printing", e)
-
-    def cache_verb_miss(self, verb):
-        self.print_shell("Oops: Verb %s should have been precached" % verb)
-        completions_found = filter(lambda x: x.startswith(verb), completions)
-        self.cache_verbs[verb] = {}
-        for api_name in completions_found:
-            api_cmd_str = "%sCmd" % api_name
-            api_mod = self.get_api_module(api_name, [api_cmd_str])
-            if api_mod is None:
-                continue
-            try:
-                api_cmd = getattr(api_mod, api_cmd_str)()
-                required = api_cmd.required
-                doc = api_mod.__doc__
-            except AttributeError, e:
-                self.print_shell("Error: API attribute %s not found!" % e)
-            params = filter(lambda x: '__' not in x and 'required' not in x,
-                            dir(api_cmd))
-            if len(required) > 0:
-                doc += "\nRequired args: %s" % " ".join(required)
-            doc += "\nArgs: %s" % " ".join(params)
-            api_name_lower = api_name.replace(verb, '').lower()
-            self.cache_verbs[verb][api_name_lower] = [api_name, params, doc,
-                                                      required]
 
     def completedefault(self, text, line, begidx, endidx):
         partitions = line.partition(" ")
@@ -390,9 +378,6 @@ class CloudMonkeyShell(cmd.Cmd, object):
 
         autocompletions = []
         search_string = ""
-
-        if verb not in self.cache_verbs:
-            self.cache_verb_miss(verb)
 
         if separator != " ":   # Complete verb subjects
             autocompletions = self.cache_verbs[verb].keys()
@@ -435,8 +420,8 @@ class CloudMonkeyShell(cmd.Cmd, object):
         """
         args = args.strip().partition(" ")
         key, value = (args[0], args[2])
-        # Note: keys and class attributes should have same names
-        setattr(self, key, value)
+        setattr(self, key, value)  # keys and attributes should have same names
+        self.prompt = self.prompt.strip() + " " # prompt fix
         self.write_config()
 
     def complete_set(self, text, line, begidx, endidx):
@@ -474,8 +459,6 @@ class CloudMonkeyShell(cmd.Cmd, object):
         else:
             verb = fields[0]
             subject = fields[2].partition(" ")[0]
-            if verb not in self.cache_verbs:
-                self.cache_verb_miss(verb)
 
             if subject in self.cache_verbs[verb]:
                 self.print_shell(self.cache_verbs[verb][subject][2])
@@ -527,8 +510,6 @@ def main():
                         prog_name = "python " + prog_name
                     self.do_shell("%s %s %s" % (prog_name, rule, args))
                     return
-                if not rule in self.cache_verbs:
-                    self.cache_verb_miss(rule)
                 try:
                     args_partition = args.partition(" ")
                     res = self.cache_verbs[rule][args_partition[0]]

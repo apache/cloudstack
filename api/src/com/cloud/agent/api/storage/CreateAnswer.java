@@ -24,29 +24,29 @@ public class CreateAnswer extends Answer {
     boolean requestTemplateReload = false;
     protected CreateAnswer() {
     }
-    
+
     public CreateAnswer(CreateCommand cmd, VolumeTO volume) {
         super(cmd, true, null);
         this.volume = volume;
     }
-    
+
     public CreateAnswer(CreateCommand cmd, String details) {
         super(cmd, false, details);
     }
-    
+
     public CreateAnswer(CreateCommand cmd, String details, boolean requestTemplateReload) {
         super(cmd, false, details);
         this.requestTemplateReload = requestTemplateReload;
     }
-    
+
     public CreateAnswer(CreateCommand cmd, Exception e) {
         super(cmd, e);
     }
-    
+
     public VolumeTO getVolume() {
         return volume;
     }
-    
+
     public boolean templateReloadRequested() {
     	return requestTemplateReload;
     }

@@ -67,7 +67,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.server.api.response.TrafficMonitorResponse;
+import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -211,7 +211,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
     public TrafficMonitorResponse getApiResponse(Host trafficMonitor) {
         Map<String, String> tmDetails = _detailsDao.findDetails(trafficMonitor.getId());
         TrafficMonitorResponse response = new TrafficMonitorResponse();
-        response.setId(trafficMonitor.getId());
+        response.setId(trafficMonitor.getUuid());
         response.setIpAddress(trafficMonitor.getPrivateIpAddress());
         response.setNumRetries(tmDetails.get("numRetries"));
         response.setTimeout(tmDetails.get("timeout"));
@@ -229,7 +229,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
         networkJoin.and("guestType", networkJoin.entity().getGuestType(), Op.EQ);
         AllocatedIpSearch.join("network", networkJoin, AllocatedIpSearch.entity().getSourceNetworkId(), networkJoin.entity().getId(), JoinBuilder.JoinType.INNER);
         AllocatedIpSearch.done();
-        
+
         _networkStatsInterval = NumbersUtil.parseInt(_configDao.getValue(Config.DirectNetworkStatsInterval.key()), 86400);
         _TSinclZones = _configDao.getValue(Config.TrafficSentinelIncludeZones.key());
         _TSexclZones = _configDao.getValue(Config.TrafficSentinelExcludeZones.key());
@@ -327,8 +327,8 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
             // This coule be made configurable
 
             rightNow.add(Calendar.HOUR_OF_DAY, -2);
-            Date now = rightNow.getTime();  
-            
+            Date now = rightNow.getTime();
+
             if(lastCollection.after(now)){
                 s_logger.debug("Current time is less than 2 hours after last collection time : " + lastCollection.toString() + ". Skipping direct network usage collection");
                 return false;
@@ -380,7 +380,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
             }
 
             List<UserStatisticsVO> collectedStats = new ArrayList<UserStatisticsVO>();
-            
+
             //Get usage for Ips which were assigned for the entire duration
             if(fullDurationIpUsage.size() > 0){
                 DirectNetworkUsageCommand cmd = new DirectNetworkUsageCommand(IpList, lastCollection, now, _TSinclZones, _TSexclZones);
@@ -520,7 +520,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
 
         protected DirectNetworkStatsListener() {
         }
-        
+
 
     }
 
@@ -536,7 +536,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
         if (!(startup[0] instanceof StartupTrafficMonitorCommand)) {
             return null;
         }
-        
+
         host.setType(Host.Type.TrafficMonitor);
         return host;
     }

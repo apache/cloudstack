@@ -23,31 +23,31 @@ public class UserDataCommand extends NetworkElementCommand {
     String vmIpAddress;
     String routerPrivateIpAddress;
     String vmName;
-    
+
     protected UserDataCommand() {
-    	
+
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return true;
     }
-    
+
     public UserDataCommand(String userData, String vmIpAddress, String routerPrivateIpAddress, String vmName) {
         this.userData = userData;
         this.vmIpAddress = vmIpAddress;
         this.routerPrivateIpAddress = routerPrivateIpAddress;
         this.vmName = vmName;
     }
-	
+
 	public String getRouterPrivateIpAddress() {
 		return routerPrivateIpAddress;
 	}
-	
+
 	public String getVmIpAddress() {
 		return vmIpAddress;
 	}
-	
+
 	public String getVmName() {
 		return vmName;
 	}
@@ -59,5 +59,5 @@ public class UserDataCommand extends NetworkElementCommand {
 	public void setUserData(String userData) {
 		this.userData = userData;
 	}
-	
+
 }

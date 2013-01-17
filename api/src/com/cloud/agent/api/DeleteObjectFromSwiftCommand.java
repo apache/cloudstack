@@ -20,8 +20,8 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.to.SwiftTO;
 
 /**
- * 
- * 
+ *
+ *
  */
 
 public class DeleteObjectFromSwiftCommand extends Command {
@@ -31,9 +31,9 @@ public class DeleteObjectFromSwiftCommand extends Command {
     private String object;
 
     protected DeleteObjectFromSwiftCommand() {
-        
+
     }
-   
+
     public DeleteObjectFromSwiftCommand(SwiftTO swift, String container, String object) {
         this.swift = swift;
         this.container = container;

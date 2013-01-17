@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.rules;
 
-import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -65,6 +64,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
@@ -1176,12 +1176,11 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Network guestNetwork = _networkModel.getNetwork(ipAddress.getAssociatedWithNetworkId());
         NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
         if (offering.getElasticIp()) {
-            if (offering.getAssociatePublicIP()) {
-                getSystemIpAndEnableStaticNatForVm(_vmDao.findById(vmId), true);
-                return true;
-            }
+            getSystemIpAndEnableStaticNatForVm(_vmDao.findById(vmId), true);
+            return true;
+        } else {
+            return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
         }
-        return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
     }
 
     @Override
@@ -1367,11 +1366,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             Network guestNetwork = _networkModel.getNetwork(nic.getNetworkId());
             NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
             if (offering.getElasticIp()) {
-                boolean isSystemVM = (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm);
-                // for user VM's associate public IP only if offering is marked to associate a public IP by default on start of VM
-                if (!isSystemVM && !offering.getAssociatePublicIP()) {
-                    continue;
-                }
                 // check if there is already static nat enabled
                 if (_ipAddressDao.findByAssociatedVmId(vm.getId()) != null && !getNewIp) {
                     s_logger.debug("Vm " + vm + " already has ip associated with it in guest network " + guestNetwork);
@@ -1386,6 +1380,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
                 s_logger.debug("Allocated system ip " + ip + ", now enabling static nat on it for vm " + vm);
 
+                boolean isSystemVM = (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm);
                 try {
                     success = enableStaticNat(ip.getId(), vm.getId(), guestNetwork.getId(), isSystemVM);
                 } catch (NetworkRuleConflictException ex) {

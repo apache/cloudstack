@@ -24,10 +24,10 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.ListDomainChildrenCmd;
-import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.domain.Domain;
@@ -83,6 +83,11 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
     @Override
     public Domain getDomain(long domainId) {
         return _domainDao.findById(domainId);
+    }
+
+    @Override
+    public Domain getDomain(String domainUuid) {
+        return _domainDao.findByUuid(domainUuid);
     }
 
     @Override

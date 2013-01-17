@@ -22,6 +22,10 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+
+import com.cloud.api.query.vo.ProjectAccountJoinVO;
+import com.cloud.api.query.vo.ProjectInvitationJoinVO;
+import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -105,21 +109,6 @@ public class MockProjectManagerImpl implements ProjectManager, Manager {
         return false;
     }
 
-    @Override
-    public Pair<List<? extends ProjectAccount>, Integer> listProjectAccounts(long projectId,
-            String accountName, String role, Long startIndex, Long pageSizeVal) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Pair<List<? extends ProjectInvitation>, Integer> listProjectInvitations(Long id,
-            Long projectId, String accountName, Long domainId, String state,
-            boolean activeOnly, Long startIndex, Long pageSizeVal,
-            boolean isRecursive, boolean listAll) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     @Override
     public boolean updateInvitation(long projectId, String accountName,
@@ -221,16 +210,16 @@ public class MockProjectManagerImpl implements ProjectManager, Manager {
         return false;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.projects.ProjectService#listProjects(java.lang.Long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.Long, java.lang.String, java.lang.Long, java.lang.Long, boolean, boolean, java.util.Map)
-     */
+
+
     @Override
-    public Pair<List<? extends Project>, Integer> listProjects(Long id, String name, String displayText, String state, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll,
-            boolean isRecursive, Map<String, String> tags) {
+    public long getInvitationTimeout() {
         // TODO Auto-generated method stub
-        return null;
+        return 0;
     }
-    
+
+
+
     @Override
     public Project findByProjectAccountIdIncludingRemoved(long projectAccountId) {
         return null;

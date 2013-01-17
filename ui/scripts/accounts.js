@@ -229,6 +229,7 @@
 
                 $.ajax({
                   url: createURL('createAccount'),
+                  type: "POST",
                   data: data,
                   success: function(json) {
                     var item = json.createaccountresponse.account;
@@ -920,6 +921,7 @@
 								
                 $.ajax({
                   url: createURL('createUser'),
+                  type: "POST",
                   data: data,
                   success: function(json) {
                     var item = json.createuserresponse.user;

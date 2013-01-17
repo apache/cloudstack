@@ -22,18 +22,18 @@ package com.cloud.agent.api;
 public class UpgradeCommand extends Command {
 
     String url;
-    
+
     protected UpgradeCommand() {
     }
-    
+
     public UpgradeCommand(String url) {
         this.url = url;
     }
-    
+
     public String getUpgradeUrl() {
         return url;
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return true;

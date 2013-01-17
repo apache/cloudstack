@@ -29,7 +29,7 @@
         <orderedlist>
             <listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
             <listitem><para>Click Instances, then click the name of a running VM.</para></listitem>
-            <listitem><para>Click the View Console button <inlinegraphic format="PNG" fileref="images/icon.png"/>.</para></listitem>
+            <listitem><para>Click the View Console button <inlinegraphic format="PNG" fileref="images/view-console-button.png"/>.</para></listitem>
         </orderedlist>
         <para>To access a VM directly over the network:</para>
         <orderedlist>

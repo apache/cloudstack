@@ -44,6 +44,10 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.storage.*;
+import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -66,18 +70,14 @@ import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
-import com.cloud.api.commands.CreateStoragePoolCmd;
-import com.cloud.api.commands.CreateVolumeCmd;
-import com.cloud.api.commands.DeletePoolCmd;
-import com.cloud.api.commands.ListVolumesCmd;
-import com.cloud.api.commands.UpdateStoragePoolCmd;
-import com.cloud.api.commands.UploadVolumeCmd;
+import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
@@ -129,11 +129,9 @@ import com.cloud.network.NetworkModel;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
-import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementServer;
-import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.StatsCollector;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -161,7 +159,6 @@ import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.snapshot.SnapshotScheduler;
-import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
@@ -175,7 +172,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
@@ -183,7 +179,6 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
@@ -437,8 +432,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     }
 
     @Override
-    public boolean isLocalStorageActiveOnHost(Host host) {
-        List<StoragePoolHostVO> storagePoolHostRefs = _storagePoolHostDao.listByHostId(host.getId());
+    public boolean isLocalStorageActiveOnHost(Long hostId) {
+        List<StoragePoolHostVO> storagePoolHostRefs = _storagePoolHostDao.listByHostId(hostId);
         for (StoragePoolHostVO storagePoolHostRef : storagePoolHostRefs) {
             StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolHostRef.getPoolId());
             if (storagePool.getPoolType() == StoragePoolType.LVM || storagePool.getPoolType() == StoragePoolType.EXT) {
@@ -658,7 +653,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot);
         if (volumeDetails != null) {
             createdVolume = volumeDetails.first();
-        	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(), createdVolume.getName(), 
+        	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(), createdVolume.getName(),
         			                                   createdVolume.getDiskOfferingId(), null, createdVolume.getSize());
         	_usageEventDao.persist(usageEvent);
         }
@@ -744,21 +739,21 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @DB
     public VolumeVO copyVolumeFromSecToPrimary(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId, ServiceOfferingVO offering, DiskOfferingVO diskOffering,
             List<StoragePoolVO> avoids, long size, HypervisorType hyperType) throws NoTransitionException {
-    	
+
     	final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
     	DiskProfile dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
     	dskCh.setHyperType(vm.getHypervisorType());
-    	// Find a suitable storage to create volume on 
+    	// Find a suitable storage to create volume on
 	StoragePoolVO destPool = findStoragePool(dskCh, dc, pod, clusterId, null, vm, avoidPools);
-    	
-    	// Copy the volume from secondary storage to the destination storage pool    	  	
+
+    	// Copy the volume from secondary storage to the destination storage pool
     	stateTransitTo(volume, Event.CopyRequested);
     	VolumeHostVO volumeHostVO = _volumeHostDao.findByVolumeId(volume.getId());
     	HostVO secStorage = _hostDao.findById(volumeHostVO.getHostId());
     	String secondaryStorageURL = secStorage.getStorageUrl();
     	String[] volumePath = volumeHostVO.getInstallPath().split("/");
     	String volumeUUID = volumePath[volumePath.length - 1].split("\\.")[0];
-    	
+
         CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volumeUUID, destPool, secondaryStorageURL, false, _copyvolumewait);
         CopyVolumeAnswer cvAnswer;
 		try {
@@ -771,23 +766,23 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         if (cvAnswer == null || !cvAnswer.getResult()) {
         	stateTransitTo(volume, Event.CopyFailed);
             throw new CloudRuntimeException("Failed to copy the volume from secondary storage to the destination primary storage pool.");
-        }        
+        }
         Transaction txn = Transaction.currentTxn();
-        txn.start();        
+        txn.start();
         volume.setPath(cvAnswer.getVolumePath());
         volume.setFolder(destPool.getPath());
         volume.setPodId(destPool.getPodId());
-        volume.setPoolId(destPool.getId());        
+        volume.setPoolId(destPool.getId());
         volume.setPodId(destPool.getPodId());
-        stateTransitTo(volume, Event.CopySucceeded); 
+        stateTransitTo(volume, Event.CopySucceeded);
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(), null, volume.getSize());
         _usageEventDao.persist(usageEvent);
         _volumeHostDao.remove(volumeHostVO.getId());
     	txn.commit();
 		return volume;
-    	
+
     }
-    
+
     @Override
     @DB
     public VolumeVO createVolume(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId, ServiceOfferingVO offering, DiskOfferingVO diskOffering,
@@ -982,7 +977,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         value = configDao.getValue(Config.RecreateSystemVmEnabled.key());
         _recreateSystemVmEnabled = Boolean.parseBoolean(value);
-        
+
         value = configDao.getValue(Config.StorageTemplateCleanupEnabled.key());
         _templateCleanupEnabled = (value == null ? true : Boolean.parseBoolean(value));
 
@@ -1524,7 +1519,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         }
         if(sPool.getStatus() != StoragePoolStatus.Maintenance){
             s_logger.warn("Unable to delete storage id: " + id +" due to it is not in Maintenance state");
-            throw new InvalidParameterValueException("Unable to delete storage due to it is not in Maintenance state, id: " + id);           
+            throw new InvalidParameterValueException("Unable to delete storage due to it is not in Maintenance state, id: " + id);
         }
         if (sPool.getPoolType().equals(StoragePoolType.LVM) || sPool.getPoolType().equals(StoragePoolType.EXT)) {
             s_logger.warn("Unable to delete local storage id:" + id);
@@ -1553,7 +1548,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                 		" for this pool");
             }
         }
-        
+
 
         // First get the host_id from storage_pool_host_ref for given pool id
         StoragePoolVO lock = _storagePoolDao.acquireInLockTable(sPool.getId());
@@ -1747,10 +1742,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         return _volsDao.findById(volume.getId());
     }
 
-    
+
     /*
      * Upload the volume to secondary storage.
-     * 
+     *
      */
     @Override
     @DB
@@ -1762,13 +1757,13 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         String volumeName = cmd.getVolumeName();
         String url = cmd.getUrl();
         String format = cmd.getFormat();
-        
+
     	validateVolume(caller, ownerId, zoneId, volumeName, url, format);
     	VolumeVO volume = persistVolume(caller, ownerId, zoneId, volumeName, url, cmd.getFormat());
     	_downloadMonitor.downloadVolumeToStorage(volume, zoneId, url, cmd.getChecksum(), ImageFormat.valueOf(format.toUpperCase()));
-		return volume;    	
+		return volume;
     }
-    
+
     private boolean validateVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url, String format) throws ResourceAllocationException{
 
         // permission check
@@ -1776,7 +1771,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         // Check that the resource limit for volumes won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.volume);
-        
+
 
         // Verify that zone exists
         DataCenterVO zone = _dcDao.findById(zoneId);
@@ -1788,22 +1783,22 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
-        
+
 		if (url.toLowerCase().contains("file://")) {
 			throw new InvalidParameterValueException("File:// type urls are currently unsupported");
 		}
-		
+
 		ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
 		if (imgfmt == null) {
 			throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
 		}
-		
+
         String userSpecifiedName = volumeName;
         if (userSpecifiedName == null) {
             userSpecifiedName = getRandomVolumeName();
         }
 		if((!url.toLowerCase().endsWith("vhd"))&&(!url.toLowerCase().endsWith("vhd.zip"))
-		        &&(!url.toLowerCase().endsWith("vhd.bz2"))&&(!url.toLowerCase().endsWith("vhd.gz")) 
+		        &&(!url.toLowerCase().endsWith("vhd.bz2"))&&(!url.toLowerCase().endsWith("vhd.gz"))
 		        &&(!url.toLowerCase().endsWith("qcow2"))&&(!url.toLowerCase().endsWith("qcow2.zip"))
 		        &&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz"))
 		        &&(!url.toLowerCase().endsWith("ova"))&&(!url.toLowerCase().endsWith("ova.zip"))
@@ -1811,7 +1806,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 		        &&(!url.toLowerCase().endsWith("img"))&&(!url.toLowerCase().endsWith("raw"))){
 		        throw new InvalidParameterValueException("Please specify a valid " + format.toLowerCase());
 		    }
-			
+
 			if ((format.equalsIgnoreCase("vhd") && (!url.toLowerCase().endsWith(".vhd") && !url.toLowerCase().endsWith("vhd.zip") && !url.toLowerCase().endsWith("vhd.bz2") && !url.toLowerCase().endsWith("vhd.gz") ))
 				|| (format.equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith(".qcow2") && !url.toLowerCase().endsWith("qcow2.zip") && !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz") ))
 				|| (format.equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith(".ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url.toLowerCase().endsWith("ova.gz")))
@@ -1819,14 +1814,14 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 		        throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is an invalid for the format " + format.toLowerCase());
 			}
         validateUrl(url);
-               
+
     	return false;
     }
-    
+
     private String validateUrl(String url){
 		try {
 			URI uri = new URI(url);
-			if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") 
+			if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http")
 				&& !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
 				throw new IllegalArgumentException("Unsupported scheme for url: " + url);
 			}
@@ -1847,16 +1842,16 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 			} catch (UnknownHostException uhe) {
 				throw new IllegalArgumentException("Unable to resolve " + host);
 			}
-			
+
 			return uri.toString();
 		} catch (URISyntaxException e) {
 			throw new IllegalArgumentException("Invalid URL " + url);
 		}
-    	
+
     }
-    
+
     private VolumeVO persistVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url, String format) {
-    	
+
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
@@ -1867,7 +1862,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         volume.setAccountId(ownerId);
         volume.setDomainId(((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId()));
         long diskOfferingId = _diskOfferingDao.findByUniqueName("Cloud.com-Custom").getId();
-        volume.setDiskOfferingId(diskOfferingId);        
+        volume.setDiskOfferingId(diskOfferingId);
         //volume.setSize(size);
         volume.setInstanceId(null);
         volume.setUpdated(new Date());
@@ -1888,8 +1883,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         txn.commit();
 		return volume;
 	}
-    	    
-    
+
+
     /*
      * Just allocate a volume in the database, don't send the createvolume cmd to hypervisor. The volume will be finally
      * created
@@ -1991,7 +1986,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
              * throw new UnsupportedServiceException("operation not supported, snapshot with id " + snapshotId +
              * " is created from ROOT volume");
              * }
-             * 
+             *
              */
         }
 
@@ -2108,6 +2103,183 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_RESIZE, eventDescription = "resizing volume", async = true)
+    public VolumeVO resizeVolume(ResizeVolumeCmd cmd) {
+        VolumeVO volume = _volsDao.findById(cmd.getEntityId());
+        Long newSize = null;
+        boolean shrinkOk = cmd.getShrinkOk();
+        boolean success = false;
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        DiskOfferingVO newDiskOffering = null;
+
+        newDiskOffering = _diskOfferingDao.findById(cmd.getNewDiskOfferingId());
+
+        /* Volumes with no hypervisor have never been assigned, and can be resized by recreating.
+           perhaps in the future we can just update the db entry for the volume */
+        if(_volsDao.getHypervisorType(volume.getId()) == HypervisorType.None){
+            throw new InvalidParameterValueException("Can't resize a volume that has never been attached, not sure which hypervisor type. Recreate volume to resize.");
+        }
+
+        /* Only works for KVM/Xen for now */
+        if(_volsDao.getHypervisorType(volume.getId()) != HypervisorType.KVM 
+           && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.XenServer){
+            throw new InvalidParameterValueException("Cloudstack currently only supports volumes marked as KVM or XenServer hypervisor for resize");
+        }
+
+        if (volume == null) {
+            throw new InvalidParameterValueException("No such volume");
+        }
+
+        if (volume.getState() != Volume.State.Ready) {
+            throw new InvalidParameterValueException("Volume should be in ready state before attempting a resize");
+        }
+
+        if (!volume.getVolumeType().equals(Volume.Type.DATADISK)) {
+            throw new InvalidParameterValueException("Can only resize DATA volumes");
+        }
+
+        /* figure out whether or not a new disk offering or size parameter is required, get the correct size value */
+        if (newDiskOffering == null) {
+            if (diskOffering.isCustomized()) {
+                newSize = cmd.getSize();
+
+                if (newSize == null) {
+                    throw new InvalidParameterValueException("new offering is of custom size, need to specify a size");
+                }
+
+                newSize = ( newSize << 30 );
+            } else {
+                throw new InvalidParameterValueException("current offering" + volume.getDiskOfferingId()  + " cannot be resized, need to specify a disk offering");
+            }
+        } else {
+
+            if (newDiskOffering.getRemoved() != null || !DiskOfferingVO.Type.Disk.equals(newDiskOffering.getType())) {
+                throw new InvalidParameterValueException("Disk offering ID is missing or invalid");
+            }
+
+            if(diskOffering.getTags() != null) {
+                if(!newDiskOffering.getTags().equals(diskOffering.getTags())){
+                    throw new InvalidParameterValueException("Tags on new and old disk offerings must match");
+                }
+            } else if (newDiskOffering.getTags() != null ){
+                throw new InvalidParameterValueException("There are no tags on current disk offering, new disk offering needs to have no tags");
+            }
+
+            if (newDiskOffering.getDomainId() == null) {
+                // do nothing as offering is public
+            } else {
+                _configMgr.checkDiskOfferingAccess(UserContext.current().getCaller(), newDiskOffering);
+            }
+ 
+            if (newDiskOffering.isCustomized()) {
+                newSize = cmd.getSize();
+
+                if (newSize == null) {
+                    throw new InvalidParameterValueException("new offering is of custom size, need to specify a size");
+                }
+
+                newSize = ( newSize << 30 );
+            } else {
+                newSize = newDiskOffering.getDiskSize();
+            }
+        }
+
+        if (newSize == null) {
+            throw new InvalidParameterValueException("could not detect a size parameter or fetch one from the diskofferingid parameter");
+        }
+
+        if (!validateVolumeSizeRange(newSize)) {
+            throw new InvalidParameterValueException("Requested size out of range");
+        }
+
+        /* does the caller have the authority to act on this volume? */
+        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, volume);
+
+        UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
+
+        StoragePool pool = _storagePoolDao.findById(volume.getPoolId());
+        long currentSize = volume.getSize();
+
+        /* lets make certain they (think they) know what they're doing if they 
+        want to shrink, by forcing them to provide the shrinkok parameter. This will
+        be checked again at the hypervisor level where we can see the actual disk size */
+        if (currentSize > newSize && !shrinkOk) {
+            throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " 
+                      + newSize + " would shrink the volume, need to sign off by supplying the shrinkok parameter with value of true");
+        }
+
+        /* get a list of hosts to send the commands to, try the system the 
+        associated vm is running on first, then the last known place it ran.
+        If not attached to a userVm, we pass 'none' and resizevolume.sh is
+        ok with that since it only needs the vm name to live resize */
+        long[] hosts = null;
+        String instanceName = "none";
+        if (userVm != null) {
+            instanceName = userVm.getInstanceName();
+            if(userVm.getHostId() != null) {
+                hosts = new long[] { userVm.getHostId() };
+            } else if(userVm.getLastHostId() != null) {
+                hosts = new long[] { userVm.getLastHostId() };
+            }
+
+            /*Xen only works offline, SR does not support VDI.resizeOnline*/
+            if(_volsDao.getHypervisorType(volume.getId()) == HypervisorType.XenServer
+               && ! userVm.getState().equals(State.Stopped)) {
+                throw new InvalidParameterValueException("VM must be stopped or disk detached in order to resize with the Xen HV");
+            }
+        }
+
+        try {
+            try {
+                    stateTransitTo(volume, Volume.Event.ResizeRequested);
+            } catch (NoTransitionException etrans) {
+                    throw new CloudRuntimeException("Unable to change volume state for resize: " + etrans.toString());
+            }
+
+            ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(volume.getPath(), new StorageFilerTO(pool), 
+                                                    currentSize, newSize, shrinkOk, instanceName);
+            ResizeVolumeAnswer answer = (ResizeVolumeAnswer) sendToPool(pool, hosts, resizeCmd);
+
+            /* need to fetch/store new volume size in database. This value comes from 
+            hypervisor rather than trusting that a success means we have a volume of the 
+            size we requested */
+            if (answer != null && answer.getResult()) {
+                long finalSize = answer.getNewSize();
+                s_logger.debug("Resize: volume started at size " + currentSize + " and ended at size " + finalSize);
+                volume.setSize(finalSize);
+                if (newDiskOffering != null) {
+                    volume.setDiskOfferingId(cmd.getNewDiskOfferingId());
+                }
+                _volsDao.update(volume.getId(), volume);
+
+                success  = true;
+                return volume;
+            } else if (answer != null) {
+                s_logger.debug("Resize: returned '" + answer.getDetails() + "'");
+            }
+        } catch (StorageUnavailableException e) {
+            s_logger.debug("volume failed to resize: "+e);
+            return null;
+        } finally {
+            if(success) {
+                try {
+                    stateTransitTo(volume, Volume.Event.OperationSucceeded);
+                } catch (NoTransitionException etrans) {
+                    throw new CloudRuntimeException("Failed to change volume state: " + etrans.toString());
+                }
+            } else {
+                try {
+                    stateTransitTo(volume, Volume.Event.OperationFailed);
+                } catch (NoTransitionException etrans) {
+                    throw new CloudRuntimeException("Failed to change volume state: " + etrans.toString());
+                }
+            } 
+        }
+        return null;
+    }
+
+    @Override
+    @DB
     public boolean destroyVolume(VolumeVO volume) throws ConcurrentOperationException {
         try {
             if (!stateTransitTo(volume, Volume.Event.DestroyRequested)) {
@@ -2196,7 +2368,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         s_logger.debug("Successfully set Capacity - " + totalOverProvCapacity + " for capacity type - " + capacityType + " , DataCenterId - "
                 + storagePool.getDataCenterId() + ", HostOrPoolId - " + storagePool.getId() + ", PodId " + storagePool.getPodId());
     }
-    
+
     @Override
     public List<Long> getUpHostsInPool(long poolId) {
         SearchCriteria<Long> sc = UpHostsInPoolSearch.create();
@@ -2297,7 +2469,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                             s_logger.warn("Unable to destroy " + vol.getId(), e);
                         }
                     }
-                    
+
                     // remove snapshots in Error state
                     List<SnapshotVO> snapshots = _snapshotDao.listAllByStatus(Snapshot.Status.Error);
                     for (SnapshotVO snapshotVO : snapshots) {
@@ -2307,7 +2479,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                             s_logger.warn("Unable to destroy " + snapshotVO.getId(), e);
                         }
                     }
-                    
+
                 } finally {
                     scanLock.unlock();
                 }
@@ -2446,7 +2618,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                     s_logger.warn("problem cleaning up snapshots in secondary storage " + secondaryStorageHost, e2);
                 }
             }
-            
+
             //CleanUp volumes on Secondary Storage.
             for (HostVO secondaryStorageHost : secondaryStorageHosts) {
                 try {
@@ -2474,7 +2646,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                             _volumeHostDao.remove(destroyedVolumeHostVO.getId());
                         }
                     }
-                
+
                 }catch (Exception e2) {
                     s_logger.warn("problem cleaning up volumes in secondary storage " + secondaryStorageHost, e2);
                 }
@@ -2906,14 +3078,14 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
         }
 
-        // Check that volume is completely Uploaded 
+        // Check that volume is completely Uploaded
         if (volume.getState() == Volume.State.UploadOp){
         	VolumeHostVO volumeHost = _volumeHostDao.findByVolumeId(volume.getId());
             if (volumeHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS){
             	throw new InvalidParameterValueException("Please specify a volume that is not uploading");
-            }            
+            }
         }
-        
+
         // Check that the volume is not already destroyed
         if (volume.getState() != Volume.State.Destroy) {
             if (!destroyVolume(volume)) {
@@ -3273,7 +3445,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking if we need to prepare " + vols.size() + " volumes for " + vm);
         }
-        
+
         boolean recreate = _recreateSystemVmEnabled;
 
         List<VolumeVO> recreateVols = new ArrayList<VolumeVO>(vols.size());
@@ -3285,7 +3457,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             }
             if (assignedPool == null && recreate) {
             	assignedPool = _storagePoolDao.findById(vol.getPoolId());
-            	
+
             }
             if (assignedPool != null || recreate) {
                 Volume.State state = vol.getState();
@@ -3326,7 +3498,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                             StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
                             vm.addDisk(new VolumeTO(vol, pool));
                         }
-                        
+
                     }
                 }
             } else {
@@ -3348,7 +3520,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             	existingPool = _storagePoolDao.findById(vol.getPoolId());
             	s_logger.debug("existing pool: " + existingPool.getId());
             }
-            
+
             if (vol.getState() == Volume.State.Allocated || vol.getState() == Volume.State.Creating) {
                 newVol = vol;
             } else {
@@ -3404,12 +3576,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @DB
     protected VolumeVO switchVolume(VolumeVO existingVolume, VirtualMachineProfile<? extends VirtualMachine> vm) throws StorageUnavailableException {
         Transaction txn = Transaction.currentTxn();
-        txn.start();
-        try {
-            stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
-        } catch (NoTransitionException e) {
-            s_logger.debug("Unable to destroy existing volume: " + e.toString());
-        }
 
         Long templateIdToUse = null;
         Long volTemplateId = existingVolume.getTemplateId();
@@ -3420,7 +3586,19 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             }
             templateIdToUse = vmTemplateId;
         }
+
+        txn.start();
         VolumeVO newVolume = allocateDuplicateVolume(existingVolume, templateIdToUse);
+        // In case of Vmware if vm reference is not removed then during root disk cleanup
+        // the vm also gets deleted, so remove the reference
+        if (vm.getHypervisorType() == HypervisorType.VMware) {
+            _volsDao.detachVolume(existingVolume.getId());
+        }
+        try {
+            stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
+        } catch (NoTransitionException e) {
+            s_logger.debug("Unable to destroy existing volume: " + e.toString());
+        }
         txn.commit();
         return newVolume;
 
@@ -3437,7 +3615,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         if (toBeCreated.getTemplateId() != null) {
             template = _templateDao.findById(toBeCreated.getTemplateId());
         }
-        
+
         StoragePool pool = null;
         if (sPool != null) {
         	pool = sPool;
@@ -3521,27 +3699,27 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Expunging " + vol);
         }
-        
+
         //Find out if the volume is present on secondary storage
         VolumeHostVO volumeHost = _volumeHostDao.findByVolumeId(vol.getId());
         if(volumeHost != null){
         	if (volumeHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED){
         		HostVO ssHost = _hostDao.findById(volumeHost.getHostId());
-        		DeleteVolumeCommand dtCommand = new DeleteVolumeCommand(ssHost.getStorageUrl(), volumeHost.getInstallPath());            
+        		DeleteVolumeCommand dtCommand = new DeleteVolumeCommand(ssHost.getStorageUrl(), volumeHost.getInstallPath());
         		Answer answer = _agentMgr.sendToSecStorage(ssHost, dtCommand);
         		if (answer == null || !answer.getResult()) {
         			s_logger.debug("Failed to delete " + volumeHost + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
         			return;
         		}
-        	}else if(volumeHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS){									
+        	}else if(volumeHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS){
 					s_logger.debug("Volume: " + vol.getName() + " is currently being uploaded; cant' delete it.");
 					throw new CloudRuntimeException("Please specify a volume that is not currently being uploaded.");
         	}
             _volumeHostDao.remove(volumeHost.getId());
             _volumeDao.remove(vol.getId());
-            return;             
+            return;
         }
-        
+
         String vmName = null;
         if (vol.getVolumeType() == Type.ROOT && vol.getInstanceId() != null) {
             VirtualMachine vm = _vmInstanceDao.findByIdIncludingRemoved(vol.getInstanceId());
@@ -3859,124 +4037,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         return secHost;
     }
 
-    @Override
-    public Pair<List<? extends Volume>, Integer> searchForVolumes(ListVolumesCmd cmd) {
-        Account caller = UserContext.current().getCaller();
-        List<Long> permittedAccounts = new ArrayList<Long>();
 
-        Long id = cmd.getId();
-        Long vmInstanceId = cmd.getVirtualMachineId();
-        String name = cmd.getVolumeName();
-        String keyword = cmd.getKeyword();
-        String type = cmd.getType();
-        Map<String, String> tags = cmd.getTags();
-
-        Long zoneId = cmd.getZoneId();
-        Long podId = null;
-        // Object host = null; TODO
-        if (_accountMgr.isAdmin(caller.getType())) {
-            podId = cmd.getPodId();
-            // host = cmd.getHostId(); TODO
-        }
-
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        Filter searchFilter = new Filter(VolumeVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        // hack for now, this should be done better but due to needing a join I opted to
-        // do this quickly and worry about making it pretty later
-        SearchBuilder<VolumeVO> sb = _volumeDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("volumeType", sb.entity().getVolumeType(), SearchCriteria.Op.LIKE);
-        sb.and("instanceId", sb.entity().getInstanceId(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        // Only return volumes that are not destroyed
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
-
-        SearchBuilder<DiskOfferingVO> diskOfferingSearch = _diskOfferingDao.createSearchBuilder();
-        diskOfferingSearch.and("systemUse", diskOfferingSearch.entity().getSystemUse(), SearchCriteria.Op.NEQ);
-        sb.join("diskOfferingSearch", diskOfferingSearch, sb.entity().getDiskOfferingId(), diskOfferingSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
-
-        // display UserVM volumes only
-        SearchBuilder<VMInstanceVO> vmSearch = _vmInstanceDao.createSearchBuilder();
-        vmSearch.and("type", vmSearch.entity().getType(), SearchCriteria.Op.NIN);
-        vmSearch.or("nulltype", vmSearch.entity().getType(), SearchCriteria.Op.NULL);
-        sb.join("vmSearch", vmSearch, sb.entity().getInstanceId(), vmSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
-        
-        if (tags != null && !tags.isEmpty()) {
-            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
-            for (int count=0; count < tags.size(); count++) {
-                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
-                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
-                tagSearch.cp();
-            }
-            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
-            sb.groupBy(sb.entity().getId());
-            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
-        }
-
-        // now set the SC criteria...
-        SearchCriteria<VolumeVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
-        if (keyword != null) {
-            SearchCriteria<VolumeVO> ssc = _volumeDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("volumeType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
-        }
-
-        sc.setJoinParameters("diskOfferingSearch", "systemUse", 1);
-        
-        if (tags != null && !tags.isEmpty()) {
-            int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.Volume.toString());
-            for (String key : tags.keySet()) {
-                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
-                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
-                count++;
-            }
-        }
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-
-        if (type != null) {
-            sc.setParameters("volumeType", "%" + type + "%");
-        }
-        if (vmInstanceId != null) {
-            sc.setParameters("instanceId", vmInstanceId);
-        }
-        if (zoneId != null) {
-            sc.setParameters("dataCenterId", zoneId);
-        }
-        if (podId != null) {
-            sc.setParameters("podId", podId);
-        }
-
-        // Don't return DomR and ConsoleProxy volumes
-        sc.setJoinParameters("vmSearch", "type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
-
-        // Only return volumes that are not destroyed
-        sc.setParameters("state", Volume.State.Destroy);
-        
-        Pair<List<VolumeVO>, Integer> volumes = _volumeDao.searchAndCount(sc, searchFilter);
-
-        return new Pair<List<? extends Volume>, Integer>(volumes.first(), volumes.second());
-    }
 
     @Override
     public String getSupportedImageFormatForCluster(Long clusterId) {
@@ -3994,14 +4055,14 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             return null;
         }
     }
-    
+
     @Override
     public HypervisorType getHypervisorTypeFromFormat(ImageFormat format) {
-        
+
     	if(format == null) {
             return HypervisorType.None;
     	}
-    	
+
         if (format == ImageFormat.VHD) {
             return HypervisorType.XenServer;
         } else if (format == ImageFormat.OVA) {
@@ -4090,5 +4151,5 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         }
         return true;
     }
-    
+
 }

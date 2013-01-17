@@ -32,25 +32,25 @@ public enum Status {
     Removed(true, false, true),
     Error(true, false, true),
     Rebalancing(true, false, true);
-    
+
     private final boolean updateManagementServer;
     private final boolean checkManagementServer;
     private final boolean lostConnection;
-    
+
     private Status(boolean updateConnection, boolean checkManagementServer, boolean lostConnection) {
     	this.updateManagementServer = updateConnection;
     	this.checkManagementServer = checkManagementServer;
     	this.lostConnection = lostConnection;
     }
-    
+
     public boolean updateManagementServer() {
     	return updateManagementServer;
     }
-    
+
     public boolean checkManagementServer() {
     	return checkManagementServer;
     }
-    
+
     public boolean lostConnection() {
         return lostConnection;
     }
@@ -82,16 +82,16 @@ public enum Status {
         public String getDescription() {
             return comment;
         }
-        
+
         public boolean isUserRequest() {
         	return isUserRequest;
         }
     }
-    
+
     public static StateMachine2<Status, Event, Host> getStateMachine() {
         return s_fsm;
     }
-    
+
     public Status getNextStatus(Event e) throws NoTransitionException {
         return s_fsm.getNextState(this, e);
     }
@@ -100,7 +100,7 @@ public enum Status {
         List<Status> from = s_fsm.getFromStates(this, e);
         return from.toArray(new Status[from.size()]);
     }
-    
+
     public Set<Event> getPossibleEvents() {
         return s_fsm.getPossibleEvents(this);
     }

@@ -26,45 +26,45 @@ public class NicTO extends NetworkTO {
     public NicTO() {
         super();
     }
-    
+
     public void setDeviceId(int deviceId) {
         this.deviceId = deviceId;
     }
-    
+
     public int getDeviceId() {
         return deviceId;
     }
-    
+
     public Integer getNetworkRateMbps() {
         return networkRateMbps;
     }
-    
+
     public void setNetworkRateMbps(Integer networkRateMbps) {
         this.networkRateMbps = networkRateMbps;
     }
-    
+
     public Integer getNetworkRateMulticastMbps() {
         return networkRateMulticastMbps;
     }
-    
+
     public boolean isDefaultNic() {
         return defaultNic;
     }
-    
+
     public void setDefaultNic(boolean defaultNic) {
         this.defaultNic = defaultNic;
     }
-    
+
     @Override
     public String getUuid() {
         return uuid;
     }
-    
+
     @Override
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
-    
+
     @Override
     public String toString() {
         return new StringBuilder("[Nic:").append(type).append("-").append(ip).append("-").append(broadcastUri).append("]").toString();

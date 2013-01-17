@@ -26,14 +26,14 @@ public class CreateCommand extends Command {
     private StorageFilerTO pool;
     private DiskProfile diskCharacteristics;
     private String templateUrl;
-    
+
     protected CreateCommand() {
         super();
     }
 
     /**
      * Construction for template based volumes.
-     * 
+     *
      * @param vol
      * @param vm
      * @param diskCharacteristics
@@ -47,7 +47,7 @@ public class CreateCommand extends Command {
 
     /**
      * Construction for regular volumes.
-     * 
+     *
      * @param vol
      * @param vm
      * @param diskCharacteristics
@@ -55,19 +55,19 @@ public class CreateCommand extends Command {
      */
     public CreateCommand(DiskProfile diskCharacteristics, StorageFilerTO pool) {
         this.volId = diskCharacteristics.getVolumeId();
-        this.diskCharacteristics = diskCharacteristics;        
+        this.diskCharacteristics = diskCharacteristics;
         this.pool = pool;
         this.templateUrl = null;
     }
-    
+
     public CreateCommand(DiskProfile diskCharacteristics, String templateUrl, StoragePool pool) {
         this(diskCharacteristics, templateUrl, new StorageFilerTO(pool));
     }
-    
+
     public CreateCommand(DiskProfile diskCharacteristics, StoragePool pool) {
         this(diskCharacteristics, new StorageFilerTO(pool));
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return true;
@@ -76,19 +76,19 @@ public class CreateCommand extends Command {
     public String getTemplateUrl() {
         return templateUrl;
     }
-    
+
     public StorageFilerTO getPool() {
         return pool;
     }
-    
+
     public DiskProfile getDiskCharacteristics() {
         return diskCharacteristics;
     }
-    
+
     public long getVolumeId() {
         return volId;
     }
-    
+
     @Deprecated
     public String getInstanceName() {
         return null;

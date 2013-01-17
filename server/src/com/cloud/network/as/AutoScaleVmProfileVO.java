@@ -33,15 +33,16 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "autoscale_vmprofiles")
 @Inheritance(strategy = InheritanceType.JOINED)
-public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
+public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

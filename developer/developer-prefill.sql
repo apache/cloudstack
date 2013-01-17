@@ -18,24 +18,24 @@
 -- Add a default ROOT domain
 use cloud;
 
-INSERT INTO `cloud`.`domain` (id, name, parent, path, owner) VALUES
-            (1, 'ROOT', NULL, '/', 2);
+INSERT INTO `cloud`.`domain` (id, uuid, name, parent, path, owner) VALUES
+            (1, UUID(), 'ROOT', NULL, '/', 2);
 
 -- Add system and admin accounts
-INSERT INTO `cloud`.`account` (id, account_name, type, domain_id, state) VALUES
-            (1, 'system', 1, 1, 'enabled');
+INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, state) VALUES
+            (1, UUID(), 'system', 1, 1, 'enabled');
 
-INSERT INTO `cloud`.`account` (id, account_name, type, domain_id, state) VALUES
-            (2, 'admin', 1, 1, 'enabled');
+INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, state) VALUES
+            (2, UUID(), 'admin', 1, 1, 'enabled');
 
 -- Add system user
-INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname,
-            lastname, email, state, created) VALUES (1, 'system', RAND(),
+INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname,
+            lastname, email, state, created) VALUES (1, UUID(), 'system', RAND(),
             '1', 'system', 'cloud', NULL, 'enabled', NOW());
 
 -- Add system user with encrypted password=password
-INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname,
-            lastname, email, state, created) VALUES (2, 'admin', '5f4dcc3b5aa765d61d8327deb882cf99',
+INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname,
+            lastname, email, state, created) VALUES (2, UUID(), 'admin', '5f4dcc3b5aa765d61d8327deb882cf99',
             '2', 'Admin', 'User', 'admin@mailprovider.com', 'enabled', NOW());
 
 -- Add configurations

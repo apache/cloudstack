@@ -19,11 +19,11 @@ package com.cloud.agent.api;
 public class AgentControlAnswer extends Answer {
 	public AgentControlAnswer() {
 	}
-	
+
     public AgentControlAnswer(Command command) {
         super(command);
     }
-    
+
     public AgentControlAnswer(Command command, boolean success, String details) {
     	super(command, success, details);
     }

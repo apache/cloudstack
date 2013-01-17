@@ -17,7 +17,8 @@
 package com.cloud.api;
 
 import com.google.gson.GsonBuilder;
-import com.cloud.utils.IdentityProxy;
+import org.apache.cloudstack.api.ResponseObject;
+
 import java.util.Map;
 
 public class ApiGsonHelper {
@@ -26,7 +27,6 @@ public class ApiGsonHelper {
         s_gBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
         s_gBuilder.setVersion(1.3);
         s_gBuilder.registerTypeAdapter(ResponseObject.class, new ResponseObjectTypeAdapter());
-        s_gBuilder.registerTypeAdapter(IdentityProxy.class, new IdentityTypeAdapter());
         s_gBuilder.registerTypeAdapter(Map.class, new StringMapTypeAdapter());
     }
 

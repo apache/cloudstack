@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -70,7 +70,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
-import com.cloud.uuididentity.dao.IdentityDao;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -103,7 +102,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final AccountDao _accountDao;
     private final ResourceCountDao _resourceCountDao;
     private final NetworkOfferingServiceMapDao _ntwkOfferingServiceMapDao;
-    private final IdentityDao _identityDao;
 
     public ConfigurationServerImpl() {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
@@ -120,7 +118,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _accountDao = locator.getDao(AccountDao.class);
         _resourceCountDao = locator.getDao(ResourceCountDao.class);
         _ntwkOfferingServiceMapDao = locator.getDao(NetworkOfferingServiceMapDao.class);
-        _identityDao = locator.getDao(IdentityDao.class);
     }
 
     @Override
@@ -254,12 +251,14 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         // Update the cloud identifier
         updateCloudIdentifier();
 
-        updateUuids();
+        // We should not update seed data UUID column here since this will be invoked in upgrade case as well.
+        //updateUuids();
 
         // Set init to true
         _configDao.update("init", "Hidden", "true");
     }
 
+    /*
     private void updateUuids() {
         _identityDao.initializeDefaultUuid("disk_offering");
         _identityDao.initializeDefaultUuid("network_offerings");
@@ -281,6 +280,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _identityDao.initializeDefaultUuid("user_ip_address");
         _identityDao.initializeDefaultUuid("counter");
     }
+    */
 
     private String getMountParent() {
         return getEnvironmentProperty("mount.parent");
@@ -307,7 +307,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     @DB
     protected void saveUser() {
         // insert system account
-        String insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (1, 'system', '1', '1')";
+        String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id) VALUES (1, UUID(), 'system', '1', '1')";
         Transaction txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -315,8 +315,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         } catch (SQLException ex) {
         }
         // insert system user
-        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created)" +
-                " VALUES (1, 'system', RAND(), 1, 'system', 'cloud', now())";
+        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created)" +
+                " VALUES (1, UUID(), 'system', RAND(), 1, 'system', 'cloud', now())";
         txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -332,7 +332,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         String lastname = "cloud";
 
         // create an account for the admin user first
-        insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (" + id + ", '" + username + "', '1', '1')";
+        insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id) VALUES (" + id + ", UUID(), '" + username + "', '1', '1')";
         txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -341,8 +341,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
         // now insert the user
-        insertSql = "INSERT INTO `cloud`.`user` (id, username, account_id, firstname, lastname, created, state) " +
-                "VALUES (" + id + ",'" + username + "', 2, '" + firstname + "','" + lastname + "',now(), 'disabled')";
+        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, account_id, firstname, lastname, created, state) " +
+                "VALUES (" + id + ", UUID(), '" + username + "', 2, '" + firstname + "','" + lastname + "',now(), 'disabled')";
 
         txn = Transaction.currentTxn();
         try {
@@ -368,8 +368,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             if (!rs.next()) {
                 // save default security group
                 if (tableName.equals("security_group")) {
-                    insertSql = "INSERT INTO " + tableName + " (name, description, account_id, domain_id) " +
-                            "VALUES ('default', 'Default Security Group', 2, 1)";
+                    insertSql = "INSERT INTO " + tableName + " (uuid, name, description, account_id, domain_id) " +
+                            "VALUES (UUID(), 'default', 'Default Security Group', 2, 1)";
                 } else {
                     insertSql = "INSERT INTO " + tableName + " (name, description, account_id, domain_id, account_name) " +
                             "VALUES ('default', 'Default Security Group', 2, 1, 'admin')";
@@ -548,7 +548,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         String username = System.getProperty("user.name");
         Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
-        if (!username.equalsIgnoreCase("cloud") || !devel) {
+        if (!username.equalsIgnoreCase("cloud") && !devel) {
             s_logger.warn("Systemvm keypairs could not be set. Management server should be run as cloud user, or in development mode.");
             return;
         }
@@ -842,16 +842,16 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     @DB
     protected void createDefaultNetworkOfferings() {
 
-        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, 
+        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork,
                 TrafficType.Public, true);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
-        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork, 
+        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork,
                 TrafficType.Management, false);
         managementNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(managementNetworkOffering);
-        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork, 
+        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork,
                 TrafficType.Control, false);
         controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
-        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, 
+        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork,
                 TrafficType.Storage, true);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
         NetworkOfferingVO privateGatewayNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering, GuestType.Isolated);
@@ -971,7 +971,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Shared networks with Elastic IP and Elastic LB capabilities",
                 TrafficType.Guest,
                 false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Shared, true, false, false, false, true, true, true, true);
+                null, Network.GuestType.Shared, true, false, false, false, true, true, true, false);
 
         defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);

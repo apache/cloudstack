@@ -19,7 +19,7 @@ package com.cloud.agent.api;
 import com.cloud.host.HostStats;
 
 public class HostStatsEntry implements HostStats {
-	
+
 	long hostId;
 	String entityType;
 	double cpuUtilization;
@@ -27,12 +27,12 @@ public class HostStatsEntry implements HostStats {
 	double networkWriteKBs;
     double totalMemoryKBs;
     double freeMemoryKBs;
-    
+
     public HostStatsEntry() {
     }
-    
+
     public HostStatsEntry(long hostId,double cpuUtilization, double networkReadKBs, double networkWriteKBs, String entityType,
-		double totalMemoryKBs, double freeMemoryKBs, double xapiMemoryUsageKBs, double averageLoad) 
+		double totalMemoryKBs, double freeMemoryKBs, double xapiMemoryUsageKBs, double averageLoad)
     {
         this.hostId = hostId;
         this.entityType = entityType;
@@ -47,16 +47,16 @@ public class HostStatsEntry implements HostStats {
     public double getNetworkReadKBs() {
     	return networkReadKBs;
     }
-    
+
     public void setNetworkReadKBs(double networkReadKBs) {
     	this.networkReadKBs = networkReadKBs;
     }
-    
+
 	@Override
     public double getNetworkWriteKBs() {
     	return networkWriteKBs;
     }
-    
+
     public void setNetworkWriteKBs(double networkWriteKBs) {
     	this.networkWriteKBs = networkWriteKBs;
     }
@@ -65,16 +65,16 @@ public class HostStatsEntry implements HostStats {
     public String getEntityType(){
     	return this.entityType;
     }
-    
+
     public void setEntityType(String entityType){
     	this.entityType = entityType;
     }
-        
+
 	@Override
     public double getTotalMemoryKBs(){
     	return this.totalMemoryKBs;
     }
-    
+
     public void setTotalMemoryKBs(double totalMemoryKBs){
     	this.totalMemoryKBs = totalMemoryKBs;
     }
@@ -83,11 +83,11 @@ public class HostStatsEntry implements HostStats {
     public double getFreeMemoryKBs(){
     	return this.freeMemoryKBs;
     }
-    
+
     public void setFreeMemoryKBs(double freeMemoryKBs){
     	this.freeMemoryKBs = freeMemoryKBs;
     }
-    
+
 	@Override
 	public double getCpuUtilization() {
 		return this.cpuUtilization;
@@ -106,7 +106,7 @@ public class HostStatsEntry implements HostStats {
 	public HostStats getHostStats() {
 		return this;
 	}
-	
+
 	public void setHostId(long hostId) {
 		this.hostId = hostId;
 	}

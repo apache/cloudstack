@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.network;
 
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
+
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -33,7 +37,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="external_load_balancer_devices")
-public class ExternalLoadBalancerDeviceVO {
+public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -66,9 +70,6 @@ public class ExternalLoadBalancerDeviceVO {
     @Column(name="is_managed")
     private boolean isManagedDevice;
 
-    @Column(name="is_inline")
-    private boolean isInlineMode;
-
     @Column(name="is_dedicated")
     private boolean isDedicatedDevice;
 
@@ -92,7 +93,7 @@ public class ExternalLoadBalancerDeviceVO {
     }
 
     public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name,
-            long capacity, boolean dedicated, boolean inline) {
+            long capacity, boolean dedicated) {
         this.physicalNetworkId = physicalNetworkId;
         this.providerName = provider_name;
         this.deviceName = device_name;
@@ -101,7 +102,6 @@ public class ExternalLoadBalancerDeviceVO {
         this.allocationState = LBDeviceAllocationState.Free;
         this.capacity = capacity;
         this.isDedicatedDevice = dedicated;
-        this.isInlineMode = inline;
         this.isManagedDevice = false;
         this.state = LBDeviceState.Enabled;
         this.uuid = UUID.randomUUID().toString();
@@ -112,8 +112,8 @@ public class ExternalLoadBalancerDeviceVO {
     }
 
     public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name,
-            long capacity, boolean dedicated, boolean inline, boolean managed, long parentHostId) {
-        this(hostId, physicalNetworkId, provider_name, device_name, capacity, dedicated, inline);
+            long capacity, boolean dedicated, boolean managed, long parentHostId) {
+        this(hostId, physicalNetworkId, provider_name, device_name, capacity, dedicated);
         this.isManagedDevice = managed;
         this.parentHostId = parentHostId;
     }
@@ -180,14 +180,6 @@ public class ExternalLoadBalancerDeviceVO {
 
     public void setIsManagedDevice(boolean managed) {
         this.isManagedDevice = managed;
-    }
-
-    public boolean getIsInLineMode () {
-        return isInlineMode;
-    }
-
-    public void  setIsInlineMode(boolean inline) {
-        this.isInlineMode = inline;
     }
 
     public boolean getIsDedicatedDevice() {

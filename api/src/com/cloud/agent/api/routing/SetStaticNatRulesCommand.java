@@ -21,13 +21,13 @@ import java.util.List;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 
 public class SetStaticNatRulesCommand extends NetworkElementCommand{
-    
+
     StaticNatRuleTO[] rules;
     Long vpcId;
 
     protected SetStaticNatRulesCommand() {
     }
-    
+
     public SetStaticNatRulesCommand(List<? extends StaticNatRuleTO> staticNatRules, Long vpcId) {
         rules = new StaticNatRuleTO[staticNatRules.size()];
         int i = 0;
@@ -36,7 +36,7 @@ public class SetStaticNatRulesCommand extends NetworkElementCommand{
         }
         this.vpcId = vpcId;
     }
-    
+
     public StaticNatRuleTO[] getRules() {
         return rules;
     }

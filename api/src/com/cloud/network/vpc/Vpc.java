@@ -16,23 +16,21 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.network.Network;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Vpc extends ControlledEntity{
+public interface Vpc extends ControlledEntity, Identity, InternalIdentity {
     public enum State {
         Enabled,
         Inactive
     }
-    
+
    public static final String _supportedProviders = Network.Provider.VPCVirtualRouter.getName();
 
    boolean readyToUse();
 
-   long getId();
-
-   String getUuid();
-   
    String getName();
 
    long getZoneId();
@@ -42,11 +40,11 @@ public interface Vpc extends ControlledEntity{
    State getState();
 
    long getVpcOfferingId();
-   
+
    String getDisplayText();
 
    String getNetworkDomain();
 
    boolean isRestartRequired();
-   
+
 }
