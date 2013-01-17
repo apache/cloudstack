@@ -138,7 +138,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CSExceptionErrorCode;
+
 
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
@@ -386,6 +386,7 @@ public class ApiServer implements HttpRequestHandler {
             if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
+
             }
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, errorMsg, ex);
         }

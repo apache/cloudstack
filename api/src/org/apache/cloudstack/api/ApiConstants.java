@@ -387,6 +387,7 @@ public class ApiConstants {
     public static final String ESP_LIFETIME = "esplifetime";
     public static final String DPD = "dpd";
     public static final String FOR_VPC = "forvpc";
+    public static final String SHRINK_OK = "shrinkok";
     public static final String NICIRA_NVP_DEVICE_ID = "nvpdeviceid";
     public static final String NICIRA_NVP_TRANSPORT_ZONE_UUID = "transportzoneuuid";
     public static final String NICIRA_NVP_DEVICE_NAME = "niciradevicename";

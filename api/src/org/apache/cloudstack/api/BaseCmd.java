@@ -81,7 +81,6 @@ public abstract class BaseCmd {
         BOOLEAN, DATE, FLOAT, INTEGER, SHORT, LIST, LONG, OBJECT, MAP, STRING, TZDATE, UUID
     }
 
-
     public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     public static final DateFormat NEW_INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public static Pattern newInputDateFormat = Pattern.compile("[\\d]+-[\\d]+-[\\d]+ [\\d]+:[\\d]+:[\\d]+");
