@@ -16,13 +16,10 @@
 // under the License.
 package com.cloud.network.guru;
 
-import java.util.List;
-
 import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -31,7 +28,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
@@ -40,18 +36,13 @@ import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.vm.Nic.ReservationStrategy;
-import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
 
-@Component
 @Local(value=NetworkGuru.class)
 public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 	private static final Logger s_logger = Logger.getLogger(OvsGuestNetworkGuru.class);

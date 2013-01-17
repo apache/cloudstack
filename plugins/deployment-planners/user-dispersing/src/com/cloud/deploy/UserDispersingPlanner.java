@@ -27,7 +27,6 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -36,7 +35,6 @@ import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Component
 @Local(value=DeploymentPlanner.class)
 public class UserDispersingPlanner extends FirstFitPlanner implements DeploymentPlanner {
 

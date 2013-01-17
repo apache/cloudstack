@@ -22,7 +22,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostAnswer;
@@ -36,7 +35,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VMInstanceVO;
 
-@Component
 @Local(value=Investigator.class)
 public class XenServerInvestigator extends AdapterBase implements Investigator {
     private final static Logger s_logger = Logger.getLogger(XenServerInvestigator.class);

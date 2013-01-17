@@ -33,6 +33,9 @@ public class AdapterBase implements Adapter {
 
     @Override
     public String getName() {
+    	if(_name == null)
+    		return this.getClass().getSimpleName();
+    	
         return _name;
     }
     

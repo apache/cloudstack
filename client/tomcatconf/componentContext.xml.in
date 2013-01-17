@@ -65,12 +65,173 @@
   <!--
      Adapters
   -->
-  <bean id="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
-  
+  <bean id="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator">
+    <property name="name" value="FirstFitRouting"/>
+  </bean>
   
   <!--
-    Gurus
+    Storage pool allocators
   -->
+  <bean id="LocalStoragePoolAllocator" class="com.cloud.storage.allocator.LocalStoragePoolAllocator">
+    <property name="name" value="LocalStorage"/>
+  </bean>
+  <bean id="FirstFitStoragePoolAllocator" class="com.cloud.storage.allocator.FirstFitStoragePoolAllocator">
+    <property name="name" value="Storage"/>
+  </bean>
+
+  <bean id="UserConcentratedAllocator" class="com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator">
+    <property name="name" value="User First"/>
+  </bean>
+
+  <bean id="ConsoleProxyAllocator" class="com.cloud.consoleproxy.ConsoleProxyBalanceAllocator">
+    <property name="name" value="Balance"/>
+  </bean>
+
+  <bean id="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
+
+  <bean id="ExteralIpAddressAllocator" class="com.cloud.network.ExteralIpAddressAllocator">
+    <property name="name" value="Basic"/>
+  </bean>
+
+  <!--
+    Authenticators
+  -->
+  <bean id="MD5UserAuthenticator" class="com.cloud.server.auth.MD5UserAuthenticator">
+    <property name="name" value="MD5"/>
+  </bean>
+
+  <bean id="LDAPUserAuthenticator" class="com.cloud.server.auth.LDAPUserAuthenticator">
+    <property name="name" value="LDAP"/>
+  </bean>
+
+  <!--
+    Investigators
+  -->
+  <bean id="CheckOnAgentInvestigator" class="com.cloud.ha.CheckOnAgentInvestigator">
+    <property name="name" value="SimpleInvestigator"/>
+  </bean>
+
+  <bean id="XenServerInvestigator" class="com.cloud.ha.XenServerInvestigator">
+    <property name="name" value="XenServerInvestigator"/>
+  </bean>
   
+  <bean id="UserVmDomRInvestigator" class="com.cloud.ha.UserVmDomRInvestigator">
+    <property name="name" value="PingInvestigator"/>
+  </bean>
+
+  <bean id="ManagementIPSystemVMInvestigator" class="com.cloud.ha.ManagementIPSystemVMInvestigator">
+    <property name="name" value="ManagementIPSysVMInvestigator"/>
+  </bean>
+
+  <!--
+    Fencers
+  -->
+  <bean id="XenServerFencer" class="com.cloud.ha.XenServerFencer">
+    <property name="name" value="XenServerFenceBuilder"/>
+  </bean>
+  <bean id="KVMFencer" class="com.cloud.ha.KVMFencer">
+    <property name="name" value="KVMFenceBuilder"/>
+  </bean>
+  <bean id="OvmFencer" class="com.cloud.ovm.hypervisor.OvmFencer">
+    <property name="name" value="OvmFenceBuilder"/>
+  </bean>
+
+  <bean id="XcpServerDiscoverer" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer">
+    <property name="name" value="XCP Agent"/>
+  </bean>
+
+  <bean id="SecondaryStorageDiscoverer" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer">
+    <property name="name" value="SecondaryStorage"/>
+  </bean>
+
+  <bean id="KvmServerDiscoverer" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer">
+    <property name="name" value="KVM Agent"/>
+  </bean>
+
+  <bean id="BareMetalDiscoverer" class="com.cloud.baremetal.BareMetalDiscoverer">
+    <property name="name" value="Bare Metal Agent"/>
+  </bean>
+
+  <bean id="HypervServerDiscoverer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer">
+    <property name="name" value="SCVMMServer"/>
+  </bean>
+
+  <bean id="OvmDiscoverer" class="com.cloud.ovm.hypervisor.OvmDiscoverer">
+    <property name="name" value="Ovm Discover"/>
+  </bean>
+
+  <bean id="FirstFitPlanner" class="com.cloud.deploy.FirstFitPlanner">
+    <property name="name" value="First Fit"/>
+  </bean>
+
+  <bean id="UserDispersingPlanner" class="com.cloud.deploy.UserDispersingPlanner">
+    <property name="name" value="UserDispersing"/>
+  </bean>
+  
+  <bean id="UserConcentratedPodPlanner" class="com.cloud.deploy.UserConcentratedPodPlanner">
+    <property name="name" value="UserConcentratedPod"/>
+  </bean>
+
+  <bean id="BareMetalPlanner" class="com.cloud.deploy.BareMetalPlanner">
+    <property name="name" value="BareMetal Fit"/>
+  </bean>
+    
+   
+  <!--
+    Network Gurus
+  -->
+  <bean id="StorageNetworkGuru" class="com.cloud.network.guru.StorageNetworkGuru">
+    <property name="name" value="StorageNetworkGuru"/>
+  </bean>
+  <bean id="ExternalGuestNetworkGuru" class="com.cloud.network.guru.ExternalGuestNetworkGuru">
+    <property name="name" value="ExternalGuestNetworkGuru"/>
+  </bean>
+  <bean id="PublicNetworkGuru" class="com.cloud.network.guru.PublicNetworkGuru">
+    <property name="name" value="PublicNetworkGuru"/>
+  </bean>
+  <bean id="PodBasedNetworkGuru" class="com.cloud.network.guru.PodBasedNetworkGuru">
+    <property name="name" value="PodBasedNetworkGuru"/>
+  </bean>
+  <bean id="ControlNetworkGuru" class="com.cloud.network.guru.ControlNetworkGuru">
+    <property name="name" value="ControlNetworkGuru"/>
+  </bean>
+  <bean id="DirectNetworkGuru" class="com.cloud.network.guru.DirectNetworkGuru">
+    <property name="name" value="DirectNetworkGuru"/>
+  </bean>
+  <bean id="DirectPodBasedNetworkGuru" class="com.cloud.network.guru.DirectPodBasedNetworkGuru">
+    <property name="name" value="DirectPodBasedNetworkGuru"/>
+  </bean>
+  <bean id="OvsGuestNetworkGuru" class="com.cloud.network.guru.OvsGuestNetworkGuru">
+    <property name="name" value="OvsGuestNetworkGuru"/>
+  </bean>
+  <bean id="PrivateNetworkGuru" class="com.cloud.network.guru.PrivateNetworkGuru">
+    <property name="name" value="PrivateNetworkGuru"/>
+  </bean>
+  <bean id="NiciraNvpGuestNetworkGuru" class="com.cloud.network.guru.NiciraNvpGuestNetworkGuru">
+    <property name="name" value="NiciraNvpGuestNetworkGuru"/>
+  </bean>
+ 
+  <!--
+   Hypervisor Gurus
+  -->
+  <bean id="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru">
+    <property name="name" value="XenServerGuru"/>
+  </bean>
+  
+  <bean id="KVMGuru" class="com.cloud.hypervisor.KVMGuru">
+    <property name="name" value="KVMGuru"/>
+  </bean>
+  
+  <bean id="BareMetalGuru" class="com.cloud.baremetal.BareMetalGuru">
+    <property name="name" value="BareMetalGuru"/>
+  </bean>
+
+  <bean id="HypervGuru" class="com.cloud.hypervisor.guru.HypervGuru">
+    <property name="name" value="HypervGuru"/>
+  </bean>
+
+  <bean id="OvmGuru" class="com.cloud.ovm.hypervisor.OvmGuru">
+    <property name="name" value="OvmGuru"/>
+  </bean>
   
 </beans>

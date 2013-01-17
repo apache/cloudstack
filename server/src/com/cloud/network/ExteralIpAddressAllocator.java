@@ -29,16 +29,15 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Component
 @Local(value=IpAddrAllocator.class)
-public class ExteralIpAddressAllocator implements IpAddrAllocator{
+public class ExteralIpAddressAllocator extends AdapterBase implements IpAddrAllocator{
     private static final Logger s_logger = Logger.getLogger(ExteralIpAddressAllocator.class);
     String _name;
     @Inject ConfigurationDao _configDao = null;

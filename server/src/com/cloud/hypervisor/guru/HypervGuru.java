@@ -21,7 +21,6 @@ import javax.inject.Inject;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;

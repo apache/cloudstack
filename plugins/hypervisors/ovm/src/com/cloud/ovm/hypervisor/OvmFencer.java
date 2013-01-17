@@ -24,7 +24,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.FenceAnswer;
@@ -34,29 +33,20 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.ha.FenceBuilder;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.resource.ResourceManager;
 
-@Component
 @Local(value=FenceBuilder.class)
-public class OvmFencer implements FenceBuilder {
+public class OvmFencer extends AdapterBase implements FenceBuilder {
 	private static final Logger s_logger = Logger.getLogger(OvmFencer.class);
-	String _name;
 	@Inject AgentManager _agentMgr;
     @Inject ResourceManager _resourceMgr;
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		_name = name;
 		return true;
-	}
-
-	@Override
-	public String getName() {
-		// TODO Auto-generated method stub
-		return _name;
 	}
 
 	@Override
