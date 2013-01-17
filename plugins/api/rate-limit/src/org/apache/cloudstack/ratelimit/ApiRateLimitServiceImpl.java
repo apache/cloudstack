@@ -158,7 +158,7 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
         int current = entry.incrementAndGet();
 
         if (current <= maxAllowed) {
-            s_logger.info("current count = " + current);
+            s_logger.trace("account (" + account.getAccountId() + "," + account.getAccountName() + ") has current count = " + current);
             return true;
         } else {
             long expireAfter = entry.getExpireDuration();
