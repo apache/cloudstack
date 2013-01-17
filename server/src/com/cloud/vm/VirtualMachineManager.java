@@ -155,6 +155,18 @@ public interface VirtualMachineManager extends Manager {
     /**
      * @param vm
      * @param network
+     * @param requested TODO
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     * @throws InsufficientCapacityException
+     */
+    NicProfile addUserVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException,
+                ResourceUnavailableException, InsufficientCapacityException;
+
+    /**
+     * @param vm
+     * @param network
      * @param broadcastUri TODO
      * @return
      * @throws ResourceUnavailableException 

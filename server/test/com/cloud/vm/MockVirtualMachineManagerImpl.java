@@ -271,6 +271,15 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.vm.VirtualMachineManager#addVmToNetwork(com.cloud.vm.VirtualMachine, com.cloud.network.Network, com.cloud.vm.NicProfile)
+     */
+    @Override
+    public NicProfile addUserVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.vm.VirtualMachineManager#removeVmFromNetwork(com.cloud.vm.VirtualMachine, com.cloud.network.Network, java.net.URI)
      */
     @Override

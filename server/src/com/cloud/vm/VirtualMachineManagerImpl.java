@@ -2503,6 +2503,27 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
     }
 
+    @Override
+    public NicProfile addUserVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException,
+                                                    ResourceUnavailableException, InsufficientCapacityException {
+
+        s_logger.debug("Adding vm " + vm + " to network " + network + "; requested nic profile " + requested);
+        VMInstanceVO vmVO = _vmDao.findById(vm.getId());
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM),
+                _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
+
+        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null,
+                null, null, null);
+
+        if (vm.getState() == State.Stopped) {
+            //1) allocate nic
+            return _networkMgr.createNicForVm(network, requested, context, vmProfile, false);
+        } else {
+            s_logger.warn("Unable to add vm " + vm + " to network  " + network);
+            throw new ResourceUnavailableException("Unable to add vm " + vm + " to network, is not in the right state",
+                    DataCenter.class, vm.getDataCenterIdToDeployIn());
+        }
+    }
 
     @Override
     public NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType) {
@@ -2535,21 +2556,38 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         } else {
             nic = _networkMgr.getNicInNetwork(vm.getId(), network.getId());
         }
+
+        if (nic == null){
+            s_logger.warn("Could not get a nic with " + network);
+            return false;
+        }
         
+        // don't delete default NIC on a user VM
+        if (nic.isDefaultNic() && vm.getType() == VirtualMachine.Type.User ) {
+            s_logger.warn("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
+            throw new CloudRuntimeException("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
+        }
+
         NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
                 _networkMgr.getNetworkRate(network.getId(), vm.getId()), 
                 _networkMgr.isSecurityGroupSupportedInNetwork(network), 
                 _networkMgr.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
         
         //1) Unplug the nic
-        NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
-        s_logger.debug("Un-plugging nic for vm " + vm + " from network " + network);
-        boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
-        if (result) {
-            s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
-        } else {
-            s_logger.warn("Failed to unplug nic for the vm " + vm + " from network " + network);
-            return false;
+        if (vm.getState() == State.Running) {
+            NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
+            s_logger.debug("Un-plugging nic for vm " + vm + " from network " + network);
+            boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
+            if (result) {
+                s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
+            } else {
+                s_logger.warn("Failed to unplug nic for the vm " + vm + " from network " + network);
+                return false;
+            }
+        } else if (vm.getState() != State.Stopped) {
+            s_logger.warn("Unable to remove vm " + vm + " from network  " + network);
+            throw new ResourceUnavailableException("Unable to remove vm " + vm + " from network, is not in the right state",
+                    DataCenter.class, vm.getDataCenterIdToDeployIn());
         }
         
         //2) Release the nic
@@ -2558,7 +2596,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         
         //3) Remove the nic
         _networkMgr.removeNic(vmProfile, nic);
-        return result;
+        _nicsDao.expunge(nic.getId());
+        return true;
     }
    
 }
