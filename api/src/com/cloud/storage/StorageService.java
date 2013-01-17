@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaint
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.PermissionDeniedException;
@@ -69,6 +70,15 @@ public interface StorageService{
      */
     Volume createVolume(CreateVolumeCmd cmd);
 
+
+    /**
+     * Resizes the volume based on the given criteria
+     * 
+     * @param cmd
+     *            the API command wrapping the criteria
+     * @return the volume object
+     */
+    Volume resizeVolume(ResizeVolumeCmd cmd);
 
     /**
      * Delete the storage pool

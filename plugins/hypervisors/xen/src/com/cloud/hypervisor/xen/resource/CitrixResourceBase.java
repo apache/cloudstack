@@ -182,6 +182,8 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
@@ -468,6 +470,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((DeleteStoragePoolCommand) cmd);
         } else if (clazz == CopyVolumeCommand.class) {
             return execute((CopyVolumeCommand) cmd);
+        } else if (clazz == ResizeVolumeCommand.class) {
+            return execute((ResizeVolumeCommand) cmd);
         } else if (clazz == AttachVolumeCommand.class) {
             return execute((AttachVolumeCommand) cmd);
         } else if (clazz == AttachIsoCommand.class) {
@@ -5618,6 +5622,23 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    public Answer execute(ResizeVolumeCommand cmd) {
+        Connection conn = getConnection();
+        StorageFilerTO pool = cmd.getPool();
+        String volid = cmd.getPath();
+        long newSize = cmd.getNewSize();
+
+        try {
+            VDI vdi = getVDIbyUuid(conn, volid);
+            vdi.resize(conn, newSize);
+            return new ResizeVolumeAnswer(cmd, true, "success", newSize);
+        } catch (Exception e) {
+            s_logger.warn("Unable to resize volume",e);
+            String error = "failed to resize volume:"  +e;
+            return new ResizeVolumeAnswer(cmd, false, error );
+        }
+    }
+
     protected SR getISOSRbyVmName(Connection conn, String vmName) {
         try {
             Set<SR> srs = SR.getByNameLabel(conn, vmName + "-ISO");
@@ -7684,4 +7705,5 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return new SetStaticRouteAnswer(cmd, false, null);
         }
     }
+
 }
