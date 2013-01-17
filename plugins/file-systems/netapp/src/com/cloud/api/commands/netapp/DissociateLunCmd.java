@@ -39,10 +39,10 @@ public class DissociateLunCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.PATH, type=CommandType.STRING, required = true, description="LUN path.")
 	private String path;
-    
+
     @Parameter(name=ApiConstants.IQN, type=CommandType.STRING, required = true, description="Guest IQN.")
 	private String guestIQN;
-    
+
 	@Override
 	public void execute() throws ResourceUnavailableException,
 			InsufficientCapacityException, ServerApiException,
@@ -55,9 +55,9 @@ public class DissociateLunCmd extends BaseCmd {
     		response.setResponseName(getCommandName());
     		this.setResponseObject(response);
     	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
     	} catch (ServerException e) {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
 		}
 	}
 

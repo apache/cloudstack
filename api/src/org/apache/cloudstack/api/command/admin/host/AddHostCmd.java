@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -148,7 +149,7 @@ public class AddHostCmd extends BaseCmd {
                     hostResponses.add(hostResponse);
                 }
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add host");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add host");
             }
 
             response.setResponses(hostResponses);
@@ -157,7 +158,7 @@ public class AddHostCmd extends BaseCmd {
             this.setResponseObject(response);
         } catch (DiscoveryException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }
 }

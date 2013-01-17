@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.nat;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -114,12 +115,12 @@ public class EnableStaticNatCmd extends BaseCmd{
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to enable static nat");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable static nat");
             }
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " + ex.getMessage());
             s_logger.trace("Network Rule Conflict: ", ex);
-            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
     }
 

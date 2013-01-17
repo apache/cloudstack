@@ -71,14 +71,14 @@ public class DeleteVPCCmd extends BaseAsyncCmd{
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete VPC");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete VPC");
             }
         }catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }
 

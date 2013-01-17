@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.zone;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -109,7 +110,7 @@ public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
             this.setResponseObject(response);
         }
         else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to mark the account with the default zone");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to mark the account with the default zone");
         }
     }
 }

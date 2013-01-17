@@ -21,6 +21,7 @@ import java.rmi.ServerException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -37,7 +38,7 @@ import com.cloud.utils.component.ComponentLocator;
 
 @APICommand(name = "destroyLunOnFiler", description="Destroy a LUN", responseObject = DeleteLUNCmdResponse.class)
 public class DestroyLunCmd extends BaseCmd {
-    
+
 	public static final Logger s_logger = Logger.getLogger(DestroyLunCmd.class.getName());
     private static final String s_name = "destroylunresponse";
 
@@ -56,9 +57,9 @@ public class DestroyLunCmd extends BaseCmd {
     		response.setResponseName(getCommandName());
     		this.setResponseObject(response);
     	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
     	} catch (ServerException e) {
-    		throw new ServerApiException(BaseCmd.RESOURCE_IN_USE_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, e.toString());
     	}
     }
 
@@ -73,5 +74,5 @@ public class DestroyLunCmd extends BaseCmd {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-    
+
 }

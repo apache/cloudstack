@@ -38,7 +38,7 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     private static final Logger s_logger = Logger.getLogger(AddNiciraNvpDeviceCmd.class.getName());
     private static final String s_name = "addniciranvpdeviceresponse";
     @PlugService NiciraNvpElementService _niciraNvpElementService;
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -52,16 +52,16 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to access the Nicira Controller API")
     private String username;
-    
+
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to access the Nicira Controller API")
     private String password;
-    
+
     @Parameter(name=ApiConstants.NICIRA_NVP_TRANSPORT_ZONE_UUID, type=CommandType.STRING, required = true, description="The Transportzone UUID configured on the Nicira Controller")
     private String transportzoneuuid;
-    
+
     @Parameter(name=ApiConstants.NICIRA_NVP_GATEWAYSERVICE_UUID, type=CommandType.STRING, required = false, description="The L3 Gateway Service UUID configured on the Nicira Controller")
     private String l3gatewayserviceuuid;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -81,11 +81,11 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     public String getPassword() {
         return password;
     }
-    
+
     public String getTransportzoneUuid() {
         return transportzoneuuid;
     }
-    
+
     public String getL3GatewayServiceUuid() {
     	return l3gatewayserviceuuid;
     }
@@ -104,15 +104,15 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to add Nicira NVP device due to internal error.");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Nicira NVP device due to internal error.");
             }
         }  catch (InvalidParameterValueException invalidParamExcp) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
- 
+
     @Override
     public String getCommandName() {
         return s_name;

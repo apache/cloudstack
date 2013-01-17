@@ -96,7 +96,7 @@ public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
             this.setResponseObject(response);
         } catch (Exception e) {
             s_logger.warn("Update storage network IP range failed", e);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
 
     }

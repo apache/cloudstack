@@ -20,6 +20,7 @@ import org.apache.cloudstack.api.response.*;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -64,7 +65,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.DISK_OFFERING_ID, entityType=DiskOfferingResponse.class, type=CommandType.UUID, required=false, description="new disk offering id")
     private Long newDiskOfferingId;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -72,7 +73,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
     public Long getEntityId() {
         return id;
     }
-    
+
     public Long getSize() {
         return size;
     }
@@ -85,7 +86,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
         return newDiskOfferingId;
     }
 
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -94,7 +95,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
     	return AsyncJob.Type.Volume;
@@ -136,7 +137,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return "Volume Id: " + getEntityId() + " to size " + getSize() + "G" ;
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Volume Id: " + getEntityId() + " to size " + getSize() + "G");
@@ -147,7 +148,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to resize volume");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to resize volume");
         }
     }
 }

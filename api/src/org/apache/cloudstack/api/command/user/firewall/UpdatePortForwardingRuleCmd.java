@@ -124,7 +124,7 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
 //            response.setResponseName(getName());
 //            this.setResponseObject(response);
 //        } else {
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update port forwarding rule");
+//            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update port forwarding rule");
 //        }
     }
 }

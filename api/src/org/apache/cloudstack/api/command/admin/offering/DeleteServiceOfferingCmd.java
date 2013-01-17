@@ -68,7 +68,7 @@ public class DeleteServiceOfferingCmd extends BaseCmd{
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete service offering");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete service offering");
         }
     }
 }

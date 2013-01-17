@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.vpn;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -110,11 +111,11 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
         Account owner = _accountService.getAccount(getEntityOwnerId());
         boolean result = _ravService.removeVpnUser(owner.getId(), userName, UserContext.current().getCaller());
         if (!result) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to remove vpn user");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove vpn user");
         }
 
         if (!_ravService.applyVpnUsers(owner.getId(), userName)) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to apply vpn user removal");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to apply vpn user removal");
         }
         SuccessResponse response = new SuccessResponse(getCommandName());
         setResponseObject(response);

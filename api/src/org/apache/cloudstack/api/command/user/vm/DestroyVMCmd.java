@@ -104,7 +104,7 @@ public class DestroyVMCmd extends BaseAsyncCmd {
             response.setResponseName("virtualmachine");
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to destroy vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy vm");
         }
     }
 }
