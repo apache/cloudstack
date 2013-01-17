@@ -263,6 +263,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         // Set init to true
         _configDao.update("init", "Hidden", "true");
+        
+        // invalidate cache in DAO as we have changed DB status
+        _configDao.invalidateCache();
     }
 
     /*

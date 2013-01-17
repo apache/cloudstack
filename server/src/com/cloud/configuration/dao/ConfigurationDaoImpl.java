@@ -61,6 +61,11 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     public boolean isPremium() {
         return _premium;
     }
+    
+    @Override
+    public void invalidateCache() {
+    	_configs = null;
+    }
 
     @Override
     public Map<String, String> getConfiguration(String instance, Map<String, ? extends Object> params) {

@@ -466,6 +466,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     private void startManagers() {
  		Map<String, Object> params = new HashMap<String, Object>();
+ 		
 		for(Manager manager : _componentRegistry.getManagers()) {
 			s_logger.info("Start manager: " + ComponentContext.getTargetClass(manager).getName() + "...");
 			try {
@@ -492,7 +493,8 @@ public class ManagementServerImpl implements ManagementServer {
 		Map<String, Adapter> adapters = ComponentContext.getApplicationContext().getBeansOfType(
 				Adapter.class);
 			
-		Map<String, Object> params = new HashMap<String, Object>();
+ 		Map<String, Object> params = new HashMap<String, Object>();
+		
 		for(Adapter adapter : adapters.values()) {
 			try {
 				// we also skip Adapter class that is both a manager class and a adapter class

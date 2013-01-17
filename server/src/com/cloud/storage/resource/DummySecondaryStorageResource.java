@@ -63,7 +63,10 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
     @Inject VMTemplateDao _tmpltDao;
     private boolean _useServiceVm;
 
-
+    public DummySecondaryStorageResource() {
+        setUseServiceVm(true);
+    }
+    
     public DummySecondaryStorageResource(boolean useServiceVM) {
         setUseServiceVm(useServiceVM);
     }
