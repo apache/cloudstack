@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.utils.exception;
 
+import java.io.FileNotFoundException;
+
 import com.cloud.utils.SerialVersionUID;
 
 /**
@@ -35,5 +37,9 @@ public class CloudRuntimeException extends RuntimeCloudException {
     
     protected CloudRuntimeException() {
         super();
+    }
+
+    public CloudRuntimeException(Throwable t) {
+        super(t);
     }
 }

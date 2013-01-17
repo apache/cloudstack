@@ -64,6 +64,10 @@ public class RuntimeCloudException extends RuntimeException {
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
+    public RuntimeCloudException(Throwable t) {
+        super(t);
+    }
+
     public ArrayList<String> getIdProxyList() {
         return idList;
     }
