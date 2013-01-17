@@ -341,8 +341,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
         // now insert the user
-        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, account_id, firstname, lastname, created, state) " +
-                "VALUES (" + id + ", UUID(), '" + username + "', 2, '" + firstname + "','" + lastname + "',now(), 'disabled')";
+        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created, state) " +
+                "VALUES (" + id + ",'" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled')";
 
         txn = Transaction.currentTxn();
         try {
