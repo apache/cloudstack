@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api.commands;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
@@ -37,7 +39,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     private static final Logger s_logger = Logger.getLogger(AddNiciraNvpDeviceCmd.class.getName());
     private static final String s_name = "addniciranvpdeviceresponse";
-    @PlugService NiciraNvpElementService _niciraNvpElementService;
+    @Inject NiciraNvpElementService _niciraNvpElementService;
     
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

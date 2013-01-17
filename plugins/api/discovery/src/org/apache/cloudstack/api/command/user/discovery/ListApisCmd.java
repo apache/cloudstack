@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.discovery;
 
+import javax.inject.Inject;
+
 import com.cloud.user.UserContext;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.discovery.ApiDiscoveryService;
@@ -36,7 +37,7 @@ public class ListApisCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListApisCmd.class.getName());
     private static final String s_name = "listapisresponse";
 
-    @PlugService
+    @Inject
     ApiDiscoveryService _apiDiscoveryService;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="API name")

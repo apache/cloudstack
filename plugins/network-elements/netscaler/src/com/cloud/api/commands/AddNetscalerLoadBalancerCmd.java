@@ -15,6 +15,8 @@
 
 package com.cloud.api.commands;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
@@ -36,7 +38,7 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(AddNetscalerLoadBalancerCmd.class.getName());
     private static final String s_name = "addnetscalerloadbalancerresponse";
-    @PlugService NetscalerLoadBalancerElementService _netsclarLbService;
+    @Inject NetscalerLoadBalancerElementService _netsclarLbService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

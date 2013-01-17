@@ -16,6 +16,8 @@ package com.cloud.api.commands;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.log4j.Logger;
@@ -38,7 +40,7 @@ public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigureNetscalerLoadBalancerCmd.class.getName());
     private static final String s_name = "configurenetscalerloadbalancerresponse";
-    @PlugService NetscalerLoadBalancerElementService _netsclarLbService;
+    @Inject NetscalerLoadBalancerElementService _netsclarLbService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

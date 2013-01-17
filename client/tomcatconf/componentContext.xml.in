@@ -40,9 +40,6 @@
   <!--
       Network Elements
   -->
-  <bean id="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement">
-    <property name="name" value="VirtualRouter"/>
-  </bean>
   <bean id="Ovs" class="com.cloud.network.element.OvsElement">
     <property name="name" value="Ovs"/>
   </bean>
@@ -54,6 +51,9 @@
   </bean>
   <bean id="SecurityGroupProvider" class="com.cloud.network.element.SecurityGroupElement">
     <property name="name" value="SecurityGroupProvider"/>
+  </bean>
+  <bean id="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement">
+    <property name="name" value="VirtualRouter"/>
   </bean>
   <bean id="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement">
     <property name="name" value="VpcVirtualRouter"/>

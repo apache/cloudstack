@@ -63,6 +63,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -409,6 +410,8 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 
                         Class<?> cmdClass = Class.forName(job.getCmd());
                         cmdObj = (BaseAsyncCmd)cmdClass.newInstance();
+                        cmdObj = ComponentContext.inject(cmdObj);
+                        cmdObj.configure();
                         cmdObj.setJob(job);
 
                         Type mapType = new TypeToken<Map<String, String>>() {}.getType();

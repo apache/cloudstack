@@ -44,7 +44,6 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.Validate;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
@@ -348,11 +347,6 @@ public class ApiDispatcher {
                 new Class<?>[] {BaseCmd.class});
 
         for (Field field : fields) {
-            PlugService plugServiceAnnotation = field.getAnnotation(PlugService.class);
-            if(plugServiceAnnotation != null){
-                plugService(field, cmd);
-            }
-
             Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
             if ((parameterAnnotation == null) || !parameterAnnotation.expose()) {
                 continue;

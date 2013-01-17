@@ -23,11 +23,10 @@ import javax.naming.ConfigurationException;
 
 // Typical Adapter implementation.
 public class AdapterBase implements Adapter {
-    String _name;
+    protected String _name;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
         return true;
     }
 
