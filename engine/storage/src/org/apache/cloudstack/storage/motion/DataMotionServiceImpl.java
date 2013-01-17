@@ -23,7 +23,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +35,7 @@ public class DataMotionServiceImpl implements DataMotionService {
     List<DataMotionStrategy> strategies;
 
     @Override
-    public void copyAsync(DataStream srcData, DataStream destData,
+    public void copyAsync(DataObject srcData, DataObject destData,
             AsyncCompletionCallback<CopyCommandResult> callback) {
 
         if (srcData.getDataStore().getDriver().canCopy(srcData, destData)) {

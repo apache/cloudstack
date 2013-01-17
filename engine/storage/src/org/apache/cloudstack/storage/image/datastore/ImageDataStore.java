@@ -20,7 +20,7 @@ package org.apache.cloudstack.storage.image.datastore;
 
 import java.util.Set;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.image.TemplateInfo;
@@ -30,6 +30,6 @@ public interface ImageDataStore extends DataStore {
     TemplateInfo getTemplate(long templateId);
     VolumeInfo getVolume(long volumeId);
     SnapshotInfo getSnapshot(long snapshotId);
-    boolean exists(DataStream object);
+    boolean exists(DataObject object);
     Set<TemplateInfo> listTemplates();
 }

@@ -21,7 +21,7 @@ package org.apache.cloudstack.storage.image.motion;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -85,7 +85,7 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
     }*/
 
     @Override
-    public boolean canHandle(DataStream srcData, DataStream destData) {
+    public boolean canHandle(DataObject srcData, DataObject destData) {
         DataStore destStore = destData.getDataStore();
         DataStore srcStore = srcData.getDataStore();
         if (destStore.getRole() == DataStoreRole.Image || destStore.getRole() == DataStoreRole.ImageCache 
@@ -97,7 +97,7 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
     }
 
     @Override
-    public Void copyAsync(DataStream srcData, DataStream destData,
+    public Void copyAsync(DataObject srcData, DataObject destData,
             AsyncCompletionCallback<CopyCommandResult> callback) {
         DataStore destStore = destData.getDataStore();
         DataStore srcStore = srcData.getDataStore();

@@ -19,10 +19,10 @@
 package org.apache.cloudstack.storage.motion;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 public interface DataMotionService {
-    public void copyAsync(DataStream srcData, DataStream destData,
+    public void copyAsync(DataObject srcData, DataObject destData,
             AsyncCompletionCallback<CopyCommandResult> callback);
 }

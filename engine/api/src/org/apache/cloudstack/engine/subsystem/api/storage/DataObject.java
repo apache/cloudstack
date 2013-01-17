@@ -20,7 +20,7 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 
-public interface DataStream {
+public interface DataObject {
     public long getId();
     public String getUri();
     public DataStore getDataStore();

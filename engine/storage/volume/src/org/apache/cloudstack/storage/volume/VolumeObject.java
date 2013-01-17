@@ -105,8 +105,7 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public long getId() {
-        // TODO Auto-generated method stub
-        return 0;
+        return this.volumeVO.getId();
     }
 
     @Override

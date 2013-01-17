@@ -23,57 +23,64 @@ import java.util.Set;
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
 
+//http-read-only based image store
 public class DefaultImageDataStoreDriverImpl implements ImageDataStoreDriver {
 
     public DefaultImageDataStoreDriverImpl() {
     }
 
     @Override
-    public String grantAccess(DataStream data, EndPoint ep) {
+    public String grantAccess(DataObject data, EndPoint ep) {
+        return data.getUri();
+    }
+
+    @Override
+    public boolean revokeAccess(DataObject data, EndPoint ep) {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    public Set<DataObject> listObjects(DataStore store) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean revokeAccess(DataStream data, EndPoint ep) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public Set<DataStream> listObjects(DataStore store) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void createAsync(DataStream data,
+    public void createAsync(DataObject data,
             AsyncCompletionCallback<CreateCmdResult> callback) {
-        // TODO Auto-generated method stub
+        //for default http data store, can create http based template/iso
+        CreateCmdResult result = new CreateCmdResult("");
+        if (!data.getUri().startsWith("http")) {
+            result.setResult("can't register an image which is not a http link");
+            callback.complete(result);
+        }
         
+        callback.complete(result);
     }
 
     @Override
-    public void deleteAsync(DataStream data,
+    public void deleteAsync(DataObject data,
             AsyncCompletionCallback<CommandResult> callback) {
-        // TODO Auto-generated method stub
-        
+        CommandResult result = new CommandResult();
+        callback.complete(result);
     }
 
     @Override
-    public boolean canCopy(DataStream srcData, DataStream destData) {
+    public boolean canCopy(DataObject srcData, DataObject destData) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public void copyAsync(DataStream srcdata, DataStream destData,
+    public void copyAsync(DataObject srcdata, DataObject destData,
             AsyncCompletionCallback<CopyCommandResult> callback) {
         // TODO Auto-generated method stub
         

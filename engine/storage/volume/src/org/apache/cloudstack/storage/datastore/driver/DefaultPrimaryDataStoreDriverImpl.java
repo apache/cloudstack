@@ -22,7 +22,7 @@ import java.util.Set;
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
@@ -51,16 +51,16 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     }
     
     private class CreateVolumeContext<T> extends AsyncRpcConext<T> {
-        private final DataStream volume;
+        private final DataObject volume;
         /**
          * @param callback
          */
-        public CreateVolumeContext(AsyncCompletionCallback<T> callback, DataStream volume) {
+        public CreateVolumeContext(AsyncCompletionCallback<T> callback, DataObject volume) {
             super(callback);
             this.volume = volume;
         }
         
-        public DataStream getVolume() {
+        public DataObject getVolume() {
             return this.volume;
         }
         
@@ -70,7 +70,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         CommandResult result = new CommandResult();
         CreateVolumeAnswer volAnswer = (CreateVolumeAnswer) callback.getResult();
         if (volAnswer.getResult()) {
-            DataStream volume = context.getVolume();
+            DataObject volume = context.getVolume();
             //volume.setPath(volAnswer.getVolumeUuid());
         } else {
             result.setResult(volAnswer.getDetails());
@@ -81,7 +81,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     }
   
     @Override
-    public void deleteAsync(DataStream vo, AsyncCompletionCallback<CommandResult> callback) {
+    public void deleteAsync(DataObject vo, AsyncCompletionCallback<CommandResult> callback) {
         DeleteCommand cmd = new DeleteCommand(vo.getUri());
         List<EndPoint> endPoints = null;
         EndPoint ep = endPoints.get(0);
@@ -151,7 +151,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     }*/
 
     @Override
-    public void createAsync(DataStream vol,
+    public void createAsync(DataObject vol,
             AsyncCompletionCallback<CreateCmdResult> callback) {
         List<EndPoint> endPoints = null;
         EndPoint ep = endPoints.get(0);
@@ -167,19 +167,19 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     }
 
     @Override
-    public String grantAccess(DataStream vol, EndPoint ep) {
+    public String grantAccess(DataObject vol, EndPoint ep) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean revokeAccess(DataStream vol, EndPoint ep) {
+    public boolean revokeAccess(DataObject vol, EndPoint ep) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Set<DataStream> listObjects(DataStore store) {
+    public Set<DataObject> listObjects(DataStore store) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -201,13 +201,13 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     
 
     @Override
-    public boolean canCopy(DataStream srcData, DataStream destData) {
+    public boolean canCopy(DataObject srcData, DataObject destData) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public void copyAsync(DataStream srcdata, DataStream destData,
+    public void copyAsync(DataObject srcdata, DataObject destData,
             AsyncCompletionCallback<CopyCommandResult> callback) {
         // TODO Auto-generated method stub
         

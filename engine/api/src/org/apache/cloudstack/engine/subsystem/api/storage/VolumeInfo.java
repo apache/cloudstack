@@ -18,6 +18,6 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-public interface VolumeInfo extends DataStream {
+public interface VolumeInfo extends DataObject {
 	public boolean isAttachedVM();
 }

@@ -24,7 +24,7 @@ import java.sql.SQLException;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -133,7 +133,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     @Override
-    public EndPoint select(DataStream srcData, DataStream destData) {
+    public EndPoint select(DataObject srcData, DataObject destData) {
         DataStore srcStore = srcData.getDataStore();
         DataStore destStore = destData.getDataStore();
         if (srcData.getFormat() == DiskFormat.VMDK
