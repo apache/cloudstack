@@ -35,10 +35,10 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.NetworkManager;
 
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.net.UrlUtil;
 
-public abstract class DiscovererBase implements Discoverer {
-    protected String _name;
+public abstract class DiscovererBase extends AdapterBase implements Discoverer {
     protected Map<String, String> _params;
     private static final Logger s_logger = Logger.getLogger(DiscovererBase.class);
     @Inject protected ClusterDao _clusterDao;
@@ -49,7 +49,6 @@ public abstract class DiscovererBase implements Discoverer {
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _params = _configDao.getConfiguration(params);
-        _name = name;
         
         return true;
     }
@@ -66,11 +65,6 @@ public abstract class DiscovererBase implements Discoverer {
     		_params = new HashMap<String, String>();
     	}
     	_params.putAll(params);
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

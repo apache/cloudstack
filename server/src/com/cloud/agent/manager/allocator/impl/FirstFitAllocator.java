@@ -50,6 +50,7 @@ import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
@@ -63,9 +64,8 @@ import com.cloud.vm.dao.VMInstanceDao;
  */
 @Component
 @Local(value={HostAllocator.class})
-public class FirstFitAllocator implements HostAllocator {
+public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     private static final Logger s_logger = Logger.getLogger(FirstFitAllocator.class);
-    private String _name;
     @Inject HostDao _hostDao = null;
     @Inject HostDetailsDao _hostDetailsDao = null;
     @Inject UserVmDao _vmDao = null;
@@ -392,7 +392,6 @@ public class FirstFitAllocator implements HostAllocator {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
     	if (_configDao != null) {
     		Map<String, String> configs = _configDao.getConfiguration(params);
             String opFactor = configs.get("cpu.overprovisioning.factor");
@@ -406,11 +405,6 @@ public class FirstFitAllocator implements HostAllocator {
             _checkHvm = value == null ? true : Boolean.parseBoolean(value);
         }
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

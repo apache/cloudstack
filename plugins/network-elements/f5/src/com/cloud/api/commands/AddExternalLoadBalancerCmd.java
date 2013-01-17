@@ -17,6 +17,8 @@
 
 package com.cloud.api.commands;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
@@ -24,7 +26,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
@@ -76,7 +77,7 @@ public class AddExternalLoadBalancerCmd extends BaseCmd {
         return password;
     }
 
-    @PlugService
+    @Inject
     F5ExternalLoadBalancerElementService _f5DeviceManagerService;
 
     /////////////////////////////////////////////////////

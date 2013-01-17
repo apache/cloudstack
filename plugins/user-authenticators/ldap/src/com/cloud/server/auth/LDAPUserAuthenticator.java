@@ -34,15 +34,12 @@ import javax.naming.directory.SearchResult;
 import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-
-@Component
 @Local(value={UserAuthenticator.class})
 public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
     public static final Logger s_logger = Logger.getLogger(LDAPUserAuthenticator.class);

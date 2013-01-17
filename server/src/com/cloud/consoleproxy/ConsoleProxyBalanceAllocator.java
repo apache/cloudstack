@@ -25,17 +25,14 @@ import java.util.Random;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.springframework.stereotype.Component;
-
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.ConsoleProxyVO;
 
 import edu.emory.mathcs.backport.java.util.Collections;
 
-@Component
 @Local(value={ConsoleProxyAllocator.class})
-public class ConsoleProxyBalanceAllocator implements ConsoleProxyAllocator {
+public class ConsoleProxyBalanceAllocator extends AdapterBase implements ConsoleProxyAllocator {
 
-    private String _name;
     private final Random _rand = new Random(System.currentTimeMillis());
 
     @Override
@@ -77,13 +74,7 @@ public class ConsoleProxyBalanceAllocator implements ConsoleProxyAllocator {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override
