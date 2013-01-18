@@ -31,17 +31,15 @@ import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.Transaction;
 
-/**
- * Creates the CloudStack Database by using the 4.0 schema and apply 
- * upgrade steps to it.
- */
+// Creates the CloudStack Database by using the 4.0 schema and apply
+// upgrade steps to it.
 public class DatabaseCreator {
     protected static void printHelp(String cmd) {
         System.out.println(
-                "DatabaseCreator creates the database schema by removing the \n" + 
-                        "previous schema, creating the schema, and running \n" +
+                "DatabaseCreator creates the database schema by removing the \n" +
+                "previous schema, creating the schema, and running \n" +
                 "through the database updaters.");
-        System.out.println("Usage: " + cmd + " [initial schema file] [database upgrade class]");
+        System.out.println("Usage: " + cmd + " [schema files] [database upgrade class]");
     }
 
     public static void main(String[] args) {
@@ -73,7 +71,7 @@ public class DatabaseCreator {
                     } catch (FileNotFoundException e) {
                         System.err.println("Unable to read " + args[i] + ": " + e.getMessage());
                         System.exit(1);
-                    } 
+                    }
                     try {
                         runner.runScript(reader);
                     } catch (IOException e) {

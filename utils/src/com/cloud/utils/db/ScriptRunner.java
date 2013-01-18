@@ -46,7 +46,7 @@ public class ScriptRunner {
 
     private String delimiter = DEFAULT_DELIMITER;
     private boolean fullLineDelimiter = false;
-    
+
     private StringBuffer _logBuffer = new StringBuffer();
 
     /**
@@ -170,7 +170,11 @@ public class ScriptRunner {
                     }
                     Thread.yield();
                 } else {
-                    command.append(line);
+                    int idx = line.indexOf("--");
+                    if (idx != -1)
+                        command.append(line.substring(0, idx));
+                    else
+                        command.append(line);
                     command.append(" ");
                 }
             }
