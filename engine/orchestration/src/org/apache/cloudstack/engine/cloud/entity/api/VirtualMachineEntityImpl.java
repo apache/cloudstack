@@ -23,20 +23,36 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-
-
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
-import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 
-@Component
 public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 	
 	@Inject private VMEntityManager manager;
 
 	private VMEntityVO vmEntityVO;
+	
+	public VirtualMachineEntityImpl() {
+	}
+	
+	public void init(String vmId) {
+    	this.vmEntityVO = this.manager.loadVirtualMachine(vmId);
+	}
+	
+	public void init(String vmId, String owner, String hostName, String displayName, int cpu, int speed, long memory, List<String> computeTags, List<String> rootDiskTags, List<String> networks) {
+		init(vmId);
+		this.vmEntityVO.setOwner(owner);
+		this.vmEntityVO.setHostname(hostName);
+		this.vmEntityVO.setDisplayname(displayName);
+		this.vmEntityVO.setSpeed(speed);
+		this.vmEntityVO.setComputeTags(computeTags);
+		this.vmEntityVO.setRootDiskTags(rootDiskTags);
+		this.vmEntityVO.setNetworkIds(networks);
+		
+		manager.saveVirtualMachine(vmEntityVO);
+	}
 	
 	public VirtualMachineEntityImpl(String vmId, VMEntityManager manager) {
 		this.manager = manager;

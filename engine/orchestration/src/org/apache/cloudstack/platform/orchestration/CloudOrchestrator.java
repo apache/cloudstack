@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.cloud.entity.api.NetworkEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
+import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityFactory;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl;
 import org.apache.cloudstack.engine.cloud.entity.api.VMEntityManager;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
@@ -70,6 +71,9 @@ public class CloudOrchestrator implements OrchestrationService {
 	
 	@Inject
 	protected DiskOfferingDao _diskOfferingDao = null;
+	
+	@Inject 
+	protected VirtualMachineEntityFactory _vmEntityFactory;
 	
     public VirtualMachineEntity createFromScratch(String uuid, String iso, String os, String hypervisor, String hostName, int cpu, int speed, long memory, List<String> networks, List<String> computeTags,
             Map<String, String> details, String owner) {
@@ -141,7 +145,15 @@ public class CloudOrchestrator implements OrchestrationService {
             List<String> rootDiskTags,
             List<String> networks, DeploymentPlan plan) throws InsufficientCapacityException {
 
-    	VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
+    	// VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
+    	
+    	VirtualMachineEntityImpl vmEntity = null;
+		try {
+			vmEntity = _vmEntityFactory.getObject();
+		} catch (Exception e) {
+			// add error handling here
+		}
+    	vmEntity.init(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks);
     	
     	HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
 
@@ -185,7 +197,14 @@ public class CloudOrchestrator implements OrchestrationService {
     public VirtualMachineEntity createVirtualMachineFromScratch(String id, String owner, String isoId, String hostName, String displayName, String hypervisor, String os, int cpu, int speed, long memory,Long diskSize,
             List<String> computeTags, List<String> rootDiskTags, List<String> networks, DeploymentPlan plan)  throws InsufficientCapacityException {
 		
-    	VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
+    	// VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
+    	VirtualMachineEntityImpl vmEntity = null;
+		try {
+			vmEntity = _vmEntityFactory.getObject();
+		} catch (Exception e) {
+			// add error handling here
+		}
+    	vmEntity.init(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks);
 
     	//load vm instance and offerings and call virtualMachineManagerImpl
     	VMInstanceVO vm = _vmDao.findByUUID(id);
