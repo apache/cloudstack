@@ -33,6 +33,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -48,6 +49,7 @@ public class NiciraNvpElementTest {
 	
 	NiciraNvpElement _element = new NiciraNvpElement();
 	NetworkManager _networkManager = mock(NetworkManager.class);
+	NetworkModel _networkModel = mock(NetworkModel.class);
 	NetworkServiceMapDao _ntwkSrvcDao = mock (NetworkServiceMapDao.class);
 	
 	@Before
@@ -55,9 +57,10 @@ public class NiciraNvpElementTest {
 		_element._resourceMgr = mock(ResourceManager.class);
 		_element._networkManager = _networkManager;
 		_element._ntwkSrvcDao = _ntwkSrvcDao;
+		_element._networkModel = _networkModel;
 		
 		// Standard responses
-		when(_networkManager.isProviderForNetwork(Provider.NiciraNvp, 42L)).thenReturn(true);
+		when(_networkModel.isProviderForNetwork(Provider.NiciraNvp, 42L)).thenReturn(true);
 		
 		_element.configure("NiciraNvpTestElement", Collections.<String, Object> emptyMap());
 	}
@@ -81,12 +84,12 @@ public class NiciraNvpElementTest {
 		// No nvp provider in the network
 		assertFalse(_element.canHandle(net, Service.Connectivity));
 		
-		when(_networkManager.isProviderForNetwork(Provider.NiciraNvp, 42L)).thenReturn(false);
+		when(_networkModel.isProviderForNetwork(Provider.NiciraNvp, 42L)).thenReturn(false);
 		when(_ntwkSrvcDao.canProviderSupportServiceInNetwork(42L, Service.Connectivity, Provider.NiciraNvp)).thenReturn(true);
 		// NVP provider does not provide Connectivity for this network
 		assertFalse(_element.canHandle(net, Service.Connectivity));
 		
-		when(_networkManager.isProviderForNetwork(Provider.NiciraNvp, 42L)).thenReturn(true);
+		when(_networkModel.isProviderForNetwork(Provider.NiciraNvp, 42L)).thenReturn(true);
 		// Only service Connectivity is supported
 		assertFalse(_element.canHandle(net, Service.Dhcp));
 		

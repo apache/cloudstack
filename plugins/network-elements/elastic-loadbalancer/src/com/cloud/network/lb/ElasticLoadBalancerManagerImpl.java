@@ -79,6 +79,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
@@ -100,8 +101,8 @@ import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -146,6 +147,8 @@ ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
     IPAddressDao _ipAddressDao;
     @Inject
     AgentManager _agentMgr;
+    @Inject
+    NetworkModel _networkModel;
     @Inject
     NetworkManager _networkMgr;
     @Inject
@@ -291,7 +294,7 @@ ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
             String protocol = rule.getProtocol();
             String algorithm = rule.getAlgorithm();
 
-            String elbIp = _networkMgr.getIp(rule.getSourceIpAddressId()).getAddress()
+            String elbIp = _networkModel.getIp(rule.getSourceIpAddressId()).getAddress()
                     .addr();
             int srcPort = rule.getSourcePortStart();
             String uuid = rule.getUuid();
@@ -472,7 +475,7 @@ ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
 
         try {
 
-            if (_networkMgr.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
+            if (_networkModel.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
                 owner = _accountService.getSystemAccount();
             }
 
@@ -494,8 +497,8 @@ ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
                     s_logger.debug("Creating the ELB vm " + id);
                 }
 
-                List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
-                NetworkOfferingVO controlOffering = offerings.get(0);
+                List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
+                NetworkOffering controlOffering = offerings.get(0);
                 NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
 
                 List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(2);
@@ -507,7 +510,7 @@ ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
                 VMTemplateVO template = _templateDao.findSystemVMTemplate(dcId);
 
                 String typeString = "ElasticLoadBalancerVm";
-                Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(guestNetwork);
+                Long physicalNetworkId = _networkModel.getPhysicalNetworkId(guestNetwork);
                 PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, typeString);
                 if (provider == null) {
                     throw new CloudRuntimeException("Cannot find service provider " + typeString + " in physical network " + physicalNetworkId);
@@ -593,7 +596,7 @@ ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
 
     @DB
     public PublicIp allocDirectIp(Account account, long guestNetworkId) throws InsufficientAddressCapacityException {
-        Network frontEndNetwork = _networkMgr.getNetwork(guestNetworkId);
+        Network frontEndNetwork = _networkModel.getNetwork(guestNetworkId);
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
@@ -620,7 +623,7 @@ ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
     @DB
     public LoadBalancer handleCreateLoadBalancerRule(CreateLoadBalancerRuleCmd lb, Account account, long networkId) throws InsufficientAddressCapacityException, NetworkRuleConflictException  {
         //this part of code is executed when the LB provider is Elastic Load Balancer vm
-        if (!_networkMgr.isProviderSupportServiceInNetwork(lb.getNetworkId(), Service.Lb, Provider.ElasticLoadBalancerVm)) {
+        if (!_networkModel.isProviderSupportServiceInNetwork(lb.getNetworkId(), Service.Lb, Provider.ElasticLoadBalancerVm)) {
             return null;
         }
 
@@ -659,7 +662,7 @@ ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
                 throw new NetworkRuleConflictException("ELB: Found existing load balancers matching requested new LB");
             }
 
-            Network network = _networkMgr.getNetwork(networkId);
+            Network network = _networkModel.getNetwork(networkId);
             IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
 
             LoadBalancer result = null;

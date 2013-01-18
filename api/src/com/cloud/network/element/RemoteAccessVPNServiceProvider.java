@@ -22,8 +22,9 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
+import com.cloud.utils.component.Adapter;
 
-public interface RemoteAccessVPNServiceProvider extends NetworkElement, IpDeployingRequester {
+public interface RemoteAccessVPNServiceProvider extends Adapter {
     String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException;
 
     boolean startVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;

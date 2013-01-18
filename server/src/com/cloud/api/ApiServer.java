@@ -260,7 +260,7 @@ public class ApiServer implements HttpRequestHandler {
             // (Immutable)Multimap<String, String> paramMultiMap = HashMultimap.create();
             // Map<String, Collection<String>> parameterMap = paramMultiMap.asMap();
             Map parameterMap = new HashMap<String, String[]>();
-            String responseType = BaseCmd.RESPONSE_TYPE_JSON;
+            String responseType = BaseCmd.RESPONSE_TYPE_XML;
             for (NameValuePair param : paramList) {
                 if (param.getName().equalsIgnoreCase("response")) {
                     responseType = param.getValue();
@@ -271,7 +271,7 @@ public class ApiServer implements HttpRequestHandler {
 
             // Check responseType, if not among valid types, fallback to JSON
             if (!(responseType.equals(BaseCmd.RESPONSE_TYPE_JSON) || responseType.equals(BaseCmd.RESPONSE_TYPE_XML)))
-                responseType = BaseCmd.RESPONSE_TYPE_JSON;
+                responseType = BaseCmd.RESPONSE_TYPE_XML;
 
             try {
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM

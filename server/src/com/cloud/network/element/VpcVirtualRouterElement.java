@@ -36,7 +36,6 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkService;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
@@ -61,11 +60,13 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
-@Local(value = NetworkElement.class)
+@Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
+        DhcpServiceProvider.class, UserDataServiceProvider.class, 
+        StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
+        PortForwardingServiceProvider.class, IpDeployer.class, VpcProvider.class,
+        Site2SiteVpnServiceProvider.class, NetworkACLServiceProvider.class})
 public class VpcVirtualRouterElement extends VirtualRouterElement implements VpcProvider, Site2SiteVpnServiceProvider, NetworkACLServiceProvider{
     private static final Logger s_logger = Logger.getLogger(VpcVirtualRouterElement.class);
-    @Inject 
-    NetworkService _ntwkService;
     @Inject
     VpcManager _vpcMgr;
     @Inject
@@ -234,7 +235,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         List<? extends VirtualRouter> routers = _routerDao.listByVpcId(vpcId);
         for (VirtualRouter router : routers) {
             //1) Check if router is already a part of the network
-            if (!_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
+            if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
                 s_logger.debug("Router " + router + " is not a part the network " + network);
                 continue;
             }
@@ -262,7 +263,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         List<? extends VirtualRouter> routers = _routerDao.listByVpcId(vpcId);
         for (VirtualRouter router : routers) {
             //1) Check if router is already a part of the network
-            if (!_ntwkService.isVmPartOfNetwork(router.getId(), config.getId())) {
+            if (!_networkMgr.isVmPartOfNetwork(router.getId(), config.getId())) {
                 s_logger.debug("Router " + router + " is not a part the network " + config);
                 continue;
             }

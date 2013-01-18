@@ -125,7 +125,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
@@ -235,7 +235,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @Inject
     protected SecondaryStorageVmManager _secStorageMgr;
     @Inject
-    protected NetworkManager _networkMgr;
+    protected NetworkModel _networkMgr;
     @Inject
     protected VolumeDao _volsDao;
     @Inject

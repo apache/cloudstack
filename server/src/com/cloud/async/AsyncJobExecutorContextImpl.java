@@ -25,6 +25,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.event.dao.EventDao;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
@@ -44,7 +45,7 @@ public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
 	private String _name;
 	
     private AgentManager _agentMgr;
-	private NetworkManager _networkMgr;
+	private NetworkModel _networkMgr;
 	private UserVmManager _vmMgr;
     private SnapshotManager _snapMgr;
 	private AccountManager _accountMgr;
@@ -72,7 +73,7 @@ public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
 	}
 	
 	@Override
-	public NetworkManager getNetworkMgr() {
+	public NetworkModel getNetworkMgr() {
 		return _networkMgr;
 	}
 	
@@ -159,9 +160,9 @@ public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
             throw new ConfigurationException("unable to get " + AgentManager.class.getName());
         }
         
-        _networkMgr = locator.getManager(NetworkManager.class);
+        _networkMgr = locator.getManager(NetworkModel.class);
         if (_networkMgr == null) {
-            throw new ConfigurationException("unable to get " + NetworkManager.class.getName());
+            throw new ConfigurationException("unable to get " + NetworkModel.class.getName());
         }
         
         _vmMgr = locator.getManager(UserVmManager.class);
