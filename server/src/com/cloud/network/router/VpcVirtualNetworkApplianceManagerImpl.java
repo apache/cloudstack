@@ -91,6 +91,8 @@ import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.PrivateIpAddress;
@@ -733,6 +735,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             rulesTO = new ArrayList<NetworkACLTO>();
             
             for (FirewallRule rule : rules) {
+                if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
+                    _firewallDao.loadSourceCidrs((FirewallRuleVO)rule);
+                }
                 NetworkACLTO ruleTO = new NetworkACLTO(rule, guestVlan, rule.getTrafficType());
                 rulesTO.add(ruleTO);
             }

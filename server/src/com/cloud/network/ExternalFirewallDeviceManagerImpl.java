@@ -80,8 +80,10 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -536,6 +538,9 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
 
         for (FirewallRule rule : rules) {
+            if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
+                _fwRulesDao.loadSourceCidrs((FirewallRuleVO)rule);
+            }
             IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
             FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr());
             rulesTO.add(ruleTO);

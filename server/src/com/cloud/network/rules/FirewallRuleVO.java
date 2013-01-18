@@ -44,7 +44,6 @@ import com.cloud.utils.net.NetUtils;
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="purpose", discriminatorType=DiscriminatorType.STRING, length=32)
 public class FirewallRuleVO implements FirewallRule {
-    @Inject protected FirewallRulesCidrsDao _firewallRulesCidrsDao;
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -121,9 +120,6 @@ public class FirewallRuleVO implements FirewallRule {
 
     @Override
     public List<String> getSourceCidrList() {
-        if (sourceCidrs == null && (purpose == Purpose.Firewall || purpose == Purpose.NetworkACL)) {
-            return _firewallRulesCidrsDao.getSourceCidrs(id);
-        }   
         return sourceCidrs;
     }
 

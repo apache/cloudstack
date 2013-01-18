@@ -164,6 +164,10 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
     @Override
     public FirewallRule createFirewallRule(FirewallRule rule) throws NetworkRuleConflictException {
         Account caller = UserContext.current().getCaller();
+        
+        if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
+            _firewallDao.loadSourceCidrs((FirewallRuleVO)rule);
+        }
 
         return createFirewallRule(rule.getSourceIpAddressId(), caller, rule.getXid(), rule.getSourcePortStart(), 
                 rule.getSourcePortEnd(), rule.getProtocol(), rule.getSourceCidrList(), rule.getIcmpCode(),
@@ -318,6 +322,9 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
             boolean duplicatedCidrs = false;
             if (bothRulesFirewall) {
                 // Verify that the rules have different cidrs
+                _firewallDao.loadSourceCidrs(rule);
+                _firewallDao.loadSourceCidrs((FirewallRuleVO)newRule);
+                
                 List<String> ruleCidrList = rule.getSourceCidrList();
                 List<String> newRuleCidrList = newRule.getSourceCidrList();
 
@@ -789,6 +796,9 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
         List<FirewallRuleVO> systemRules = _firewallDao.listSystemRules();
         for (FirewallRuleVO rule : systemRules) {
             try {
+                if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
+                    _firewallDao.loadSourceCidrs(rule);
+                } 
                 this.createFirewallRule(ip.getId(), acct, rule.getXid(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(),
                         rule.getSourceCidrList(), rule.getIcmpCode(), rule.getIcmpType(), rule.getRelated(), FirewallRuleType.System, rule.getNetworkId());
             } catch (Exception e) {

@@ -117,6 +117,9 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
 
     @Override
     public FirewallRule createNetworkACL(FirewallRule acl) throws NetworkRuleConflictException {
+        if (acl.getSourceCidrList() == null && (acl.getPurpose() == Purpose.Firewall || acl.getPurpose() == Purpose.NetworkACL)) {
+            _firewallDao.loadSourceCidrs((FirewallRuleVO)acl);
+        }
         return createNetworkACL(UserContext.current().getCaller(), acl.getXid(), acl.getSourcePortStart(), 
                 acl.getSourcePortEnd(), acl.getProtocol(), acl.getSourceCidrList(), acl.getIcmpCode(),
                 acl.getIcmpType(), null, acl.getType(), acl.getNetworkId(), acl.getTrafficType());
@@ -249,6 +252,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
             // if one cidr overlaps another, do port veirficatino
             boolean duplicatedCidrs = false;
             // Verify that the rules have different cidrs
+            _firewallDao.loadSourceCidrs(rule);
             List<String> ruleCidrList = rule.getSourceCidrList();
             List<String> newRuleCidrList = newRule.getSourceCidrList();
 

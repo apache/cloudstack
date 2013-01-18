@@ -172,6 +172,7 @@ import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
@@ -3253,7 +3254,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (rules != null) {
             rulesTO = new ArrayList<FirewallRuleTO>();
             for (FirewallRule rule : rules) {
-                IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
+                IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+                if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
+                    _rulesDao.loadSourceCidrs((FirewallRuleVO)rule);
+                }
                 FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr());
                 rulesTO.add(ruleTO);
             }

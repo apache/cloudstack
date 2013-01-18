@@ -209,6 +209,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
         FirewallRuleVO dbfirewallRule = super.persist(firewallRule);
         saveSourceCidrs(firewallRule, firewallRule.getSourceCidrList());
+        loadSourceCidrs(dbfirewallRule);
 
         txn.commit();
         return dbfirewallRule;
@@ -325,5 +326,11 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         }
 
         return listBy(sc);
+    }
+
+    @Override
+    public void loadSourceCidrs(FirewallRuleVO rule) {
+        List<String> sourceCidrs = _firewallRulesCidrsDao.getSourceCidrs(rule.getId());
+        rule.setSourceCidrList(sourceCidrs);
     }
 }
