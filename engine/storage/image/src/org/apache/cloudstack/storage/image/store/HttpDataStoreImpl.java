@@ -25,32 +25,43 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.datastore.provider.ImageDataStoreProvider;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStore;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
-import org.apache.cloudstack.storage.image.db.ImageDataVO;
 import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
 
+import com.cloud.utils.component.ComponentContext;
 
-public class ImageDataStoreImpl implements ImageDataStore {
+
+public class HttpDataStoreImpl implements ImageDataStore {
     @Inject
     ImageDataDao imageDao;
+    @Inject
+    private ObjectInDataStoreManager objectInStoreMgr;
     ImageDataStoreDriver driver;
     ImageDataStoreVO imageDataStoreVO;
+    ImageDataStoreProvider provider;
     boolean needDownloadToCacheStorage = false;
 
-    public ImageDataStoreImpl(ImageDataStoreVO dataStoreVO, ImageDataStoreDriver imageDataStoreDriver) {
+    private HttpDataStoreImpl(ImageDataStoreVO dataStoreVO, ImageDataStoreDriver imageDataStoreDriver,
+            ImageDataStoreProvider provider) {
         this.driver = imageDataStoreDriver;
         this.imageDataStoreVO = dataStoreVO;
+        this.provider = provider;
     }
 
-   
+    public static HttpDataStoreImpl getDataStore(ImageDataStoreVO dataStoreVO, ImageDataStoreDriver imageDataStoreDriver,
+            ImageDataStoreProvider provider) {
+        HttpDataStoreImpl instance = new HttpDataStoreImpl(dataStoreVO, imageDataStoreDriver, provider);
+        return ComponentContext.inject(instance);
+    }
 
     @Override
     public Set<TemplateInfo> listTemplates() {
@@ -58,12 +69,10 @@ public class ImageDataStoreImpl implements ImageDataStore {
         return null;
     }
 
-
-
     @Override
     public DataStoreDriver getDriver() {
         // TODO Auto-generated method stub
-        return null;
+        return this.driver;
     }
 
 
@@ -71,7 +80,7 @@ public class ImageDataStoreImpl implements ImageDataStore {
     @Override
     public DataStoreRole getRole() {
         // TODO Auto-generated method stub
-        return null;
+        return DataStoreRole.Image;
     }
 
 
@@ -79,15 +88,14 @@ public class ImageDataStoreImpl implements ImageDataStore {
     @Override
     public long getId() {
         // TODO Auto-generated method stub
-        return 0;
+        return this.imageDataStoreVO.getId();
     }
 
 
 
     @Override
     public String getUri() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.imageDataStoreVO.getProtocol() + "://" + "?role=" + this.getRole();
     }
 
 
@@ -95,7 +103,7 @@ public class ImageDataStoreImpl implements ImageDataStore {
     @Override
     public Scope getScope() {
         // TODO Auto-generated method stub
-        return null;
+        return new ZoneScope(imageDataStoreVO.getDcId());
     }
 
 
@@ -126,7 +134,7 @@ public class ImageDataStoreImpl implements ImageDataStore {
 
     @Override
     public boolean exists(DataObject object) {
-        // TODO Auto-generated method stub
-        return false;
+        return (objectInStoreMgr.findObject(object.getId(), object.getType(),
+                this.getId(), this.getRole()) != null) ? true : false;
     }
 }

@@ -18,10 +18,12 @@ package org.apache.cloudstack.storage.datastore.driver;
 
 import java.util.Set;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStream;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
 import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
@@ -29,70 +31,58 @@ import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
 public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
-    public String grantAccess(DataStream data,
-            org.apache.cloudstack.engine.subsystem.api.storage.EndPoint ep) {
+    public String grantAccess(DataObject data, EndPoint ep) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean revokeAccess(DataStream data,
-            org.apache.cloudstack.engine.subsystem.api.storage.EndPoint ep) {
+    public boolean revokeAccess(DataObject data, EndPoint ep) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Set<DataStream> listObjects(DataStore store) {
+    public Set<DataObject> listObjects(DataStore store) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public void createAsync(DataStream data,
-            AsyncCompletionCallback<CreateCmdResult> callback) {
+    public void createAsync(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         // TODO Auto-generated method stub
         
     }
 
     @Override
-    public void deleteAsync(
-            DataStream data,
-            AsyncCompletionCallback<org.apache.cloudstack.engine.subsystem.api.storage.CommandResult> callback) {
+    public void deleteAsync(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
         // TODO Auto-generated method stub
         
     }
 
     @Override
-    public void copyAsync(DataStream srcdata, DataStream destData,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
+    public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
         // TODO Auto-generated method stub
         
     }
 
     @Override
-    public boolean canCopy(DataStream srcData, DataStream destData) {
+    public boolean canCopy(DataObject srcData, DataObject destData) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public void takeSnapshot(
-            SnapshotInfo snapshot,
-            AsyncCompletionCallback<org.apache.cloudstack.engine.subsystem.api.storage.CommandResult> callback) {
+    public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback) {
         // TODO Auto-generated method stub
         
     }
 
     @Override
-    public void revertSnapshot(
-            SnapshotInfo snapshot,
-            AsyncCompletionCallback<org.apache.cloudstack.engine.subsystem.api.storage.CommandResult> callback) {
+    public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback) {
         // TODO Auto-generated method stub
         
     }
 
-
-	
 
 }

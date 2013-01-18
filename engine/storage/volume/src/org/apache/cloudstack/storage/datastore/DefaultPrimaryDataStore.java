@@ -54,6 +54,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     protected PrimaryDataStoreDriver driver;
     protected PrimaryDataStoreVO pdsv;
     protected PrimaryDataStoreLifeCycle lifeCycle;
+    @Inject
     private ObjectInDataStoreManager objectInStoreMgr;
     @Inject
     ImageDataFactory imageDataFactory;
@@ -118,8 +119,8 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     public String getUri() {
         return this.pdsv.getPoolType() + File.separator
                 + this.pdsv.getHostAddress() + File.separator
-                + this.pdsv.getPath();
-
+                + this.pdsv.getPath() + File.separator
+                + "?role=" + this.getRole(); 
     }
 
     @Override

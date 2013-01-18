@@ -18,16 +18,21 @@
  */
 package org.apache.cloudstack.storage.image.store;
 
+import java.io.File;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
 import org.apache.cloudstack.storage.image.TemplateEvent;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
 import org.apache.cloudstack.storage.image.db.ImageDataVO;
 import org.apache.cloudstack.storage.image.manager.ImageDataManager;
+import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ComponentContext;
@@ -41,8 +46,10 @@ public class TemplateObject implements TemplateInfo {
     ImageDataManager imageMgr;
     @Inject
     ImageDataDao imageDao;
+    @Inject
+    ObjectInDataStoreManager ojbectInStoreMgr;
 
-    public TemplateObject(ImageDataVO template, DataStore dataStore) {
+    private TemplateObject(ImageDataVO template, DataStore dataStore) {
         this.imageVO = template;
         this.dataStore = dataStore;
     }
@@ -78,7 +85,16 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getUri() {
-        return this.dataStore.getUri() + "template/" + this.imageVO.getUrl();
+        if (this.dataStore == null) {
+            return this.imageVO.getUrl();
+        } else {
+            ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(this.imageVO.getId(), DataObjectType.TEMPLATE, this.dataStore.getId(), this.dataStore.getRole());
+            if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                return this.dataStore.getUri() + File.separator + "?type=" + DataObjectType.TEMPLATE + "&size=" + this.imageVO.getSize(); 
+            } else {
+                return this.dataStore.getUri() + File.separator + "?type=" + DataObjectType.TEMPLATE + "&path=" + obj.getInstallPath();
+            }
+        }
     }
 
     @Override

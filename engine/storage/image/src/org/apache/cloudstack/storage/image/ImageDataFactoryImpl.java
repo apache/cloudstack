@@ -45,7 +45,7 @@ public class ImageDataFactoryImpl implements ImageDataFactory {
             return null;
         }
         ImageDataVO templ = imageDataDao.findById(templateId);
-        TemplateObject tmpl = new TemplateObject(templ, store);
+        TemplateObject tmpl =  TemplateObject.getTemplate(templ, store);
         return tmpl;
     }
 }

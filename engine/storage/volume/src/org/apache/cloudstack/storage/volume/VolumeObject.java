@@ -24,6 +24,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
 import org.apache.cloudstack.storage.volume.db.VolumeDao2;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.apache.log4j.Logger;
@@ -43,14 +45,15 @@ public class VolumeObject implements VolumeInfo {
     VolumeDao2 volumeDao;
     @Inject
     VolumeManager volumeMgr;
+    @Inject
+    ObjectInDataStoreManager ojbectInStoreMgr;
 
     private VolumeObject(DataStore dataStore, VolumeVO volumeVO) {
         this.volumeVO = volumeVO;
         this.dataStore = dataStore;
     }
 
-    public static VolumeObject getVolumeObject(DataStore dataStore,
-            VolumeVO volumeVO) {
+    public static VolumeObject getVolumeObject(DataStore dataStore, VolumeVO volumeVO) {
         VolumeObject vo = new VolumeObject(dataStore, volumeVO);
         vo = ComponentContext.inject(vo);
         return vo;
@@ -87,11 +90,9 @@ public class VolumeObject implements VolumeInfo {
         boolean result = false;
         _volStateMachine = volumeMgr.getStateMachine();
         try {
-            result = _volStateMachine.transitTo(volumeVO, event, null,
-                    volumeDao);
+            result = _volStateMachine.transitTo(volumeVO, event, null, volumeDao);
         } catch (NoTransitionException e) {
-            String errorMessage = "Failed to transit volume: "
-                    + this.getVolumeId() + ", due to: " + e.toString();
+            String errorMessage = "Failed to transit volume: " + this.getVolumeId() + ", due to: " + e.toString();
             s_logger.debug(errorMessage);
             throw new CloudRuntimeException(errorMessage);
         }
@@ -115,8 +116,15 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public String getUri() {
-        return this.dataStore.getUri() + File.separator + "?type=volume&path="
-                + this.volumeVO.getPath();
+        if (this.dataStore == null) {
+            throw new CloudRuntimeException("datastore must be set before using this object");
+        }
+        ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(this.volumeVO.getId(), DataObjectType.VOLUME, this.dataStore.getId(), this.dataStore.getRole());
+        if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+            return this.dataStore.getUri() + File.separator + "&objType=" + DataObjectType.VOLUME + "&size=" + this.volumeVO.getSize();
+        } else {
+            return this.dataStore.getUri() + File.separator + "&objType=" + DataObjectType.VOLUME + "&path=" + obj.getInstallPath();
+        }
     }
 
     @Override

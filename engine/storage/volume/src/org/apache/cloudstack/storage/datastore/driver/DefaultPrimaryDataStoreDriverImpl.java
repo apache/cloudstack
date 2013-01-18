@@ -167,9 +167,8 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     }
 
     @Override
-    public String grantAccess(DataObject vol, EndPoint ep) {
-        // TODO Auto-generated method stub
-        return null;
+    public String grantAccess(DataObject object, EndPoint ep) {
+        return object.getUri();
     }
 
     @Override
