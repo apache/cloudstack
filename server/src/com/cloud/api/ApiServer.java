@@ -106,7 +106,6 @@ import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
-import org.springframework.aop.framework.Advised;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.response.ApiResponseSerializer;
@@ -452,7 +451,7 @@ public class ApiServer implements HttpRequestHandler {
             ctx.setAccountId(asyncCmd.getEntityOwnerId());
 
             Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
-            AsyncJobVO job = new AsyncJobVO(callerUserId, caller.getId(), cmdObj.getClass().getName(),
+            AsyncJobVO job = new AsyncJobVO(callerUserId, caller.getId(), realCmdObj.getClass().getName(),
                     ApiGsonHelper.getBuilder().create().toJson(params), instanceId, asyncCmd.getInstanceType());
 
             long jobId = _asyncMgr.submitAsyncJob(job);

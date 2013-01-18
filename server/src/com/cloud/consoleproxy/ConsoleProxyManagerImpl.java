@@ -259,7 +259,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private String _instance;
 
     private int _proxySessionTimeoutValue = DEFAULT_PROXY_SESSION_TIMEOUT;
-    private boolean _sslEnabled = false;
+    private boolean _sslEnabled = true;
 
     // global load picture at zone basis
     private SystemVmLoadScanner<Long> _loadScanner;

@@ -121,9 +121,9 @@ public class ComponentContext implements ApplicationContextAware {
     }
      
     public static Class<?> getTargetClass(Object instance) {
-	    if(instance instanceof Advised) {
+	    while(instance instanceof Advised) {
 	    	try {
-	    		return ((Advised)instance).getTargetSource().getTarget().getClass();
+	    		instance = ((Advised)instance).getTargetSource().getTarget();
 	    	} catch(Exception e) {
 	    		return instance.getClass();
 	    	}
@@ -132,9 +132,9 @@ public class ComponentContext implements ApplicationContextAware {
     }
     
     public static <T> T getTargetObject(Object instance) {
-        if(instance instanceof Advised) {
+        while(instance instanceof Advised) {
         	 try {
-				return (T)((Advised)instance).getTargetSource().getTarget();
+				instance = ((Advised)instance).getTargetSource().getTarget();
 			} catch (Exception e) {
 				return (T)instance;
 			}
