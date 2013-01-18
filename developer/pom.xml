@@ -340,6 +340,9 @@
               </executableDependency>
               <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
               <arguments>
+                <!-- db properties file -->
+                <argument>${project.parent.basedir}/utils/conf/db.properties</argument>
+                <argument>${project.parent.basedir}/utils/conf/db.properties.override</argument>
                 <!-- Create default schema and db table views -->
                 <argument>${basedir}/target/db/create-schema.sql</argument>
                 <argument>${basedir}/target/db/create-schema-premium.sql</argument>

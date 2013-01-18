@@ -24,6 +24,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.cloud.utils.PropertiesUtil;
 
@@ -39,74 +41,92 @@ public class DatabaseCreator {
                 "DatabaseCreator creates the database schema by removing the \n" +
                 "previous schema, creating the schema, and running \n" +
                 "through the database updaters.");
-        System.out.println("Usage: " + cmd + " [schema files] [database upgrade class]");
+        System.out.println("Usage: " + cmd + " [db.properties files] [schema.sql files] [database upgrade class]");
     }
 
     public static void main(String[] args) {
-        if (args.length < 2) {
+        List<String> dbPropFiles = new ArrayList<String>();
+        List<String> sqlFiles = new ArrayList<String>();
+        List<String> upgradeClasses = new ArrayList<String>();
+
+        for (String arg: args) {
+            if (arg.endsWith(".sql")) {
+                sqlFiles.add(arg);
+            } else if (arg.endsWith(".properties") || arg.endsWith("properties.override")) {
+                dbPropFiles.add(arg);
+            } else {
+                upgradeClasses.add(arg);
+            }
+        }
+
+        if ((dbPropFiles.size() == 0)
+                || (sqlFiles.size() == 0) && upgradeClasses.size() == 0) {
             printHelp("DatabaseCreator");
             System.exit(1);
         }
 
-        for (int i = 0; i < args.length; i++) {
+        // Process db.properties files
+        for (String dbPropFile: dbPropFiles) {
 
-            if (args[i].endsWith("sql")) {
+        }
 
-                File sqlScript = PropertiesUtil.findConfigFile(args[i]);
-                if (sqlScript == null) {
-                    System.err.println("Unable to find " + args[i]);
-                    printHelp("DatabaseCreator");
-                    System.exit(1);
-                }
-
-                System.out.println("=============> Processing SQL file at " + sqlScript.getAbsolutePath());
-
-                Connection conn = Transaction.getStandaloneConnection();
-                try {
-
-                    ScriptRunner runner = new ScriptRunner(conn, false, true);
-                    FileReader reader = null;
-                    try {
-                        reader = new FileReader(sqlScript);
-                    } catch (FileNotFoundException e) {
-                        System.err.println("Unable to read " + args[i] + ": " + e.getMessage());
-                        System.exit(1);
-                    }
-                    try {
-                        runner.runScript(reader);
-                    } catch (IOException e) {
-                        System.err.println("Unable to read " + args[i] + ": " + e.getMessage());
-                        System.exit(1);
-                    } catch (SQLException e) {
-                        System.err.println("Unable to execute " + args[i] + ": " + e.getMessage());
-                        System.exit(1);
-                    }
-                } finally {
-
-                    try {
-                        conn.close();
-                    } catch (SQLException e) {
-                        System.err.println("Unable to close DB connection: " + e.getMessage());
-                    }
-                }
-
-            } else {
-                System.out.println("=============> Processing upgrade: " + args[i]);
-                Class<?> clazz = null;
-                try {
-                    clazz = Class.forName(args[i]);
-                    if (!SystemIntegrityChecker.class.isAssignableFrom(clazz)) {
-                        System.err.println("The class must be of SystemIntegrityChecker: " + clazz.getName());
-                        System.exit(1);
-                    }
-                } catch (ClassNotFoundException e) {
-                    System.err.println("Unable to find " + args[i] + ": " + e.getMessage());
-                    System.exit(1);
-                }
-
-                //SystemIntegrityChecker checker = (SystemIntegrityChecker)ComponentLocator.inject(clazz);
-                //checker.check();
+        // Process sql files
+        for (String sqlFile: sqlFiles) {
+            File sqlScript = PropertiesUtil.findConfigFile(sqlFile);
+            if (sqlScript == null) {
+                System.err.println("Unable to find " + sqlFile);
+                printHelp("DatabaseCreator");
+                System.exit(1);
             }
+
+            System.out.println("=============> Processing SQL file at " + sqlScript.getAbsolutePath());
+
+            Connection conn = Transaction.getStandaloneConnection();
+            try {
+
+                ScriptRunner runner = new ScriptRunner(conn, false, true);
+                FileReader reader = null;
+                try {
+                    reader = new FileReader(sqlScript);
+                } catch (FileNotFoundException e) {
+                    System.err.println("Unable to read " + sqlFile + ": " + e.getMessage());
+                    System.exit(1);
+                }
+                try {
+                    runner.runScript(reader);
+                } catch (IOException e) {
+                    System.err.println("Unable to read " + sqlFile + ": " + e.getMessage());
+                    System.exit(1);
+                } catch (SQLException e) {
+                    System.err.println("Unable to execute " + sqlFile + ": " + e.getMessage());
+                    System.exit(1);
+                }
+            } finally {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    System.err.println("Unable to close DB connection: " + e.getMessage());
+                }
+            }
+        }
+
+        // Process db upgrade classes
+        for (String upgradeClass: upgradeClasses) {
+            System.out.println("=============> Processing upgrade: " + upgradeClass);
+            Class<?> clazz = null;
+            try {
+                clazz = Class.forName(upgradeClass);
+                if (!SystemIntegrityChecker.class.isAssignableFrom(clazz)) {
+                    System.err.println("The class must be of SystemIntegrityChecker: " + clazz.getName());
+                    System.exit(1);
+                }
+            } catch (ClassNotFoundException e) {
+                System.err.println("Unable to find " + upgradeClass + ": " + e.getMessage());
+                System.exit(1);
+            }
+
+            //SystemIntegrityChecker checker = (SystemIntegrityChecker)ComponentLocator.inject(clazz);
+            //checker.check();
         }
     }
 }
