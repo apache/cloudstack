@@ -349,7 +349,6 @@ public class ApiDispatcher {
             try {
                 internalId = Long.parseLong(uuid);
             } catch(NumberFormatException e) {
-                // In case regex failed, and it's still uuid string
                 internalId = null;
             }
             if (internalId != null)
@@ -381,10 +380,8 @@ public class ApiDispatcher {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Object entity with uuid=" + uuid + " does not exist in the database.");
             }
-            if (annotation.required()) {
-                throw new InvalidParameterValueException("Invalid parameter with uuid=" + uuid
-                        + ". Entity not found, or an annotation bug.");
-            }
+            throw new InvalidParameterValueException("Invalid parameter value=" + uuid
+                    + " due to incorrect long value, entity not found, or an annotation bug.");
         }
         return internalId;
     }

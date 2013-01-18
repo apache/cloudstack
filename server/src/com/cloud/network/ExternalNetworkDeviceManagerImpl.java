@@ -81,7 +81,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     @Inject ExternalDhcpManager _dhcpMgr;
     @Inject PxeServerManager _pxeMgr;
     @Inject AgentManager _agentMgr;
-    @Inject NetworkManager _networkMgr;
+    @Inject NetworkModel _networkMgr;
     @Inject HostDao _hostDao;
     @Inject DataCenterDao _dcDao;
     @Inject AccountDao _accountDao;

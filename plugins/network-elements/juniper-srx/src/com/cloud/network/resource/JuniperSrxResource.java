@@ -447,7 +447,7 @@ public class JuniperSrxResource implements ServerResource {
         cmd.setPod("");
         cmd.setPrivateIpAddress(_ip);
         cmd.setStorageIpAddress("");
-        cmd.setVersion("");
+        cmd.setVersion(JuniperSrxResource.class.getPackage().getImplementationVersion());
         cmd.setGuid(_guid);
         return new StartupCommand[]{cmd};
     }

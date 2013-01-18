@@ -17,6 +17,7 @@
 package org.apache.cloudstack.acl;
 
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.RequestLimitException;
 import com.cloud.user.User;
 import com.cloud.utils.component.Adapter;
 
@@ -26,5 +27,5 @@ public interface APIChecker extends Adapter {
     // If true, apiChecker has checked the operation
     // If false, apiChecker is unable to handle the operation or not implemented
     // On exception, checkAccess failed don't allow
-    boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException;
+    boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException, RequestLimitException;
 }

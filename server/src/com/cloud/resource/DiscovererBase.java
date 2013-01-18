@@ -32,7 +32,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.net.UrlUtil;
@@ -43,7 +43,7 @@ public abstract class DiscovererBase implements Discoverer {
     private static final Logger s_logger = Logger.getLogger(DiscovererBase.class);
     @Inject protected ClusterDao _clusterDao;
     @Inject protected ConfigurationDao _configDao;
-    @Inject protected NetworkManager _networkMgr;
+    @Inject protected NetworkModel _networkMgr;
     @Inject protected HostDao _hostDao;
     
     @Override

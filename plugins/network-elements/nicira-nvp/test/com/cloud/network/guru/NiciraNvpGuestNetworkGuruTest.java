@@ -44,6 +44,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -67,6 +68,8 @@ public class NiciraNvpGuestNetworkGuruTest {
 	NetworkOfferingServiceMapDao nosd = mock(NetworkOfferingServiceMapDao.class);
 	AgentManager agentmgr = mock (AgentManager.class);
 	NetworkManager netmgr = mock (NetworkManager.class);
+	NetworkModel netmodel = mock (NetworkModel.class);
+
 	HostDao hostdao = mock (HostDao.class);
 	NetworkDao netdao = mock(NetworkDao.class);
 	NiciraNvpGuestNetworkGuru guru;
@@ -80,7 +83,7 @@ public class NiciraNvpGuestNetworkGuruTest {
 		guru._niciraNvpDao = nvpdao;
 		guru._dcDao = dcdao;
 		guru._ntwkOfferingSrvcDao = nosd;
-		guru._networkMgr = netmgr;
+		guru._networkModel = netmodel;
 		guru._hostDao = hostdao;
 		guru._agentMgr = agentmgr;
 		guru._networkDao = netdao;
@@ -261,7 +264,7 @@ public class NiciraNvpGuestNetworkGuruTest {
 		when(niciraHost.getDetail("transportzoneisotype")).thenReturn("stt");
 		when(niciraHost.getId()).thenReturn(42L);
 		
-		when(netmgr.findPhysicalNetworkId(anyLong(), (String) any(), (TrafficType) any())).thenReturn(42L);
+		when(netmodel.findPhysicalNetworkId(anyLong(), (String) any(), (TrafficType) any())).thenReturn(42L);
 		Domain dom = mock(Domain.class);
 		when(dom.getName()).thenReturn("domain");
 		Account acc = mock(Account.class);
@@ -318,7 +321,7 @@ public class NiciraNvpGuestNetworkGuruTest {
 		when(niciraHost.getDetail("transportzoneisotype")).thenReturn("stt");
 		when(niciraHost.getId()).thenReturn(42L);
 		
-		when(netmgr.findPhysicalNetworkId(anyLong(), (String) any(), (TrafficType) any())).thenReturn(42L);
+		when(netmodel.findPhysicalNetworkId(anyLong(), (String) any(), (TrafficType) any())).thenReturn(42L);
 		Domain dom = mock(Domain.class);
 		when(dom.getName()).thenReturn("domain");
 		Account acc = mock(Account.class);
@@ -374,7 +377,7 @@ public class NiciraNvpGuestNetworkGuruTest {
 		when(niciraHost.getDetail("transportzoneisotype")).thenReturn("stt");
 		when(niciraHost.getId()).thenReturn(42L);
 		
-		when(netmgr.findPhysicalNetworkId(anyLong(), (String) any(), (TrafficType) any())).thenReturn(42L);
+		when(netmodel.findPhysicalNetworkId(anyLong(), (String) any(), (TrafficType) any())).thenReturn(42L);
 		Domain dom = mock(Domain.class);
 		when(dom.getName()).thenReturn("domain");
 		Account acc = mock(Account.class);
@@ -432,7 +435,7 @@ public class NiciraNvpGuestNetworkGuruTest {
 		when(niciraHost.getDetail("transportzoneisotype")).thenReturn("stt");
 		when(niciraHost.getId()).thenReturn(42L);
 		
-		when(netmgr.findPhysicalNetworkId(anyLong(), (String) any(), (TrafficType) any())).thenReturn(42L);
+		when(netmodel.findPhysicalNetworkId(anyLong(), (String) any(), (TrafficType) any())).thenReturn(42L);
 		Domain dom = mock(Domain.class);
 		when(dom.getName()).thenReturn("domain");
 		Account acc = mock(Account.class);

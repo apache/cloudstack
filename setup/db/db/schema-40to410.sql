@@ -944,3 +944,5 @@ left join host_pod_ref on storage_pool.pod_id = host_pod_ref.id
 left join storage_pool_details on storage_pool_details.pool_id = storage_pool.id and storage_pool_details.value = 'true'
 left join op_host_capacity on storage_pool.id = op_host_capacity.host_id and op_host_capacity.capacity_type = 3
 left join async_job on async_job.instance_id = storage_pool.id and async_job.instance_type = "StoragePool" and async_job.job_status = 0;
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'direct.agent.pool.size', '500', 'Default size for DirectAgentPool');

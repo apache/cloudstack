@@ -77,11 +77,13 @@ import com.cloud.keystore.KeystoreManager;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -193,7 +195,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Inject
     protected SwiftManager _swiftMgr;
     @Inject
-    private NetworkManager _networkMgr;
+    protected NetworkManager _networkMgr;
+    @Inject
+    protected NetworkModel _networkModel;
     @Inject
     protected SnapshotDao _snapshotDao;
     
@@ -380,7 +384,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                     allowedCidrs.add(cidr);
                 }
             }
-            List<? extends Nic> nics = _networkMgr.getNicsForTraffic(secStorageVm.getId(), TrafficType.Management);
+            List<? extends Nic> nics = _networkModel.getNicsForTraffic(secStorageVm.getId(), TrafficType.Management);
             setupCmd.setAllowedInternalSites(allowedCidrs.toArray(new String[allowedCidrs.size()]));
         }
         String copyPasswd = _configDao.getValue("secstorage.copy.password");
@@ -547,14 +551,14 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         
         NetworkVO defaultNetwork = defaultNetworks.get(0);
 
-        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork, NetworkOfferingVO.SystemStorageNetwork);
+        List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork, NetworkOfferingVO.SystemStorageNetwork);
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(offerings.size() + 1);
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
         try {
         	networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), plan, null, null, false).get(0), defaultNic));
-            for (NetworkOfferingVO offering : offerings) {
+            for (NetworkOffering offering : offerings) {
                 networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null));
             }
         } catch (ConcurrentOperationException e) {

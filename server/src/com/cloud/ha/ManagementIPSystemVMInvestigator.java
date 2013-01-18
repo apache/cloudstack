@@ -27,7 +27,7 @@ import org.apache.log4j.Logger;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.Nic;
@@ -40,7 +40,7 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
 
     private String _name = null;
     @Inject private HostDao _hostDao = null;
-    @Inject private NetworkManager _networkMgr = null;
+    @Inject private NetworkModel _networkMgr = null;
 
 
     @Override
