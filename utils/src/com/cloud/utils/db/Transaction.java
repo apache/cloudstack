@@ -1116,13 +1116,13 @@ public class Transaction {
     }
 
     private static DataSource getDefaultDataSource(final String database) {
-   final GenericObjectPool connectionPool = new GenericObjectPool(null, 5);
-   final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(
-       "jdbc:mysql://localhost:3306/" + database, "cloud", "cloud");
-   final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(
-       connectionFactory, connectionPool, null, null, false, true);
-   return new PoolingDataSource(
-       /* connectionPool */poolableConnectionFactory.getPool());
+        final GenericObjectPool connectionPool = new GenericObjectPool(null, 5);
+        final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(
+           "jdbc:mysql://localhost:3306/" + database, "cloud", "cloud");
+        final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(
+           connectionFactory, connectionPool, null, null, false, true);
+        return new PoolingDataSource(
+           /* connectionPool */poolableConnectionFactory.getPool());
     }
     
 }
