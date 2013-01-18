@@ -134,6 +134,7 @@ create_guest_network() {
   sudo ip addr add dev $dev $ip/$mask brd +
   sudo ip link set $dev up
   sudo arping -c 3 -I $dev -A -U -s $ip $ip
+  echo 1 > /proc/sys/net/ipv4/conf/$dev/rp_filter
   # restore mark from  connection mark
   local tableName="Table_$dev"
   sudo ip route add $subnet/$mask dev $dev table $tableName proto static

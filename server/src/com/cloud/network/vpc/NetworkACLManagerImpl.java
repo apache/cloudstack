@@ -35,7 +35,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.firewall.NetworkACLService;
@@ -78,7 +78,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
     @Inject
     FirewallRulesDao _firewallDao;
     @Inject
-    NetworkManager _networkMgr;
+    NetworkModel _networkMgr;
     @Inject
     VpcManager _vpcMgr;
     @Inject

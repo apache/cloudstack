@@ -307,7 +307,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 			s_logger.warn("Bare Metal only supports basical network mode now, switch to baisc network automatically");
 		}
 		
-		Network defaultNetwork = _networkMgr.getExclusiveGuestNetwork(dc.getId());
+		Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(dc.getId());
 		if (defaultNetwork == null) {
 			throw new InvalidParameterValueException("Unable to find a default network to start a vm");
 		}

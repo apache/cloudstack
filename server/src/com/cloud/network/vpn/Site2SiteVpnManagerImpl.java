@@ -44,7 +44,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteCustomerGatewayVO;
 import com.cloud.network.Site2SiteVpnConnection;
@@ -68,6 +67,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -84,10 +84,11 @@ import com.cloud.vm.DomainRouterVO;
 public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     private static final Logger s_logger = Logger.getLogger(Site2SiteVpnManagerImpl.class);
 
+    @Inject (adapter = Site2SiteVpnServiceProvider.class)
+    Adapters<Site2SiteVpnServiceProvider> _s2sProviders;
     @Inject Site2SiteCustomerGatewayDao _customerGatewayDao;
     @Inject Site2SiteVpnGatewayDao _vpnGatewayDao;
     @Inject Site2SiteVpnConnectionDao _vpnConnectionDao;
-    @Inject NetworkManager _networkMgr;
     @Inject VpcDao _vpcDao;
     @Inject IPAddressDao _ipAddressDao;
     @Inject AccountDao _accountDao;
@@ -107,6 +108,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         Map<String, String> configs = configDao.getConfiguration(params);
         _connLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnConnectionPerVpnGatewayLimit.key()), 4);
         _subnetsLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnSubnetsPerCustomerGatewayLimit.key()), 10);
+        assert (_s2sProviders.enumeration().hasMoreElements()): "Did not get injected with a list of S2S providers!";
         return true;
     }
 
@@ -327,9 +329,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             conn.setState(State.Pending);
             _vpnConnectionDao.persist(conn);
 
-            List <? extends Site2SiteVpnServiceProvider> elements = _networkMgr.getSite2SiteVpnElements();
             boolean result = true;
-            for (Site2SiteVpnServiceProvider element : elements) {
+            for (Site2SiteVpnServiceProvider element : _s2sProviders) {
                 result = result & element.startSite2SiteVpn(conn);
             }
 
@@ -527,9 +528,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             conn.setState(State.Disconnected);
             _vpnConnectionDao.persist(conn);
             
-            List <? extends Site2SiteVpnServiceProvider> elements = _networkMgr.getSite2SiteVpnElements();
             boolean result = true;
-            for (Site2SiteVpnServiceProvider element : elements) {
+            for (Site2SiteVpnServiceProvider element : _s2sProviders) {
                 result = result & element.stopSite2SiteVpn(conn);
             }
 

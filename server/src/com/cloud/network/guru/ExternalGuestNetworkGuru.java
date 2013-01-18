@@ -106,7 +106,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         NetworkVO config = (NetworkVO) super.design(offering, plan, userSpecified, owner);
         if (config == null) {
             return null;
-        } else if (_networkMgr.networkIsConfiguredForExternalNetworking(plan.getDataCenterId(), config.getId())) {
+        } else if (_networkModel.networkIsConfiguredForExternalNetworking(plan.getDataCenterId(), config.getId())) {
             /* In order to revert userSpecified network setup */
             config.setState(State.Allocated);
         }
@@ -122,7 +122,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             return null;
         }
         
-        if (!_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
+        if (!_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             return super.implement(config, offering, dest, context);
         }
 
@@ -195,7 +195,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
 
-        if (_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId()) && nic != null && nic.getRequestedIp() != null) {
+        if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId()) && nic != null && nic.getRequestedIp() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
         }
         
@@ -206,7 +206,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             return null;
         }
 
-        if (_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
+        if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             profile.setStrategy(ReservationStrategy.Start);
             /* We won't clear IP address, because router may set gateway as it IP, and it would be updated properly later */
             //profile.setIp4Address(null);
@@ -225,7 +225,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             return;
         }
         
-        if (_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
+        if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             nic.setIp4Address(null);
             nic.setGateway(null);
             nic.setNetmask(null);
@@ -245,7 +245,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         
         DataCenter dc = _dcDao.findById(config.getDataCenterId());
 
-        if (_networkMgr.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
+        if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             nic.setBroadcastUri(config.getBroadcastUri());
             nic.setIsolationUri(config.getBroadcastUri());
             nic.setDns1(dc.getDns1());
@@ -280,7 +280,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
         NetworkVO network = _networkDao.findById(nic.getNetworkId());
         
-        if (network != null && _networkMgr.networkIsConfiguredForExternalNetworking(network.getDataCenterId(), network.getId())) {
+        if (network != null && _networkModel.networkIsConfiguredForExternalNetworking(network.getDataCenterId(), network.getId())) {
             return true;
         } else {
             return super.release(nic, vm, reservationId);

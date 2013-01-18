@@ -48,7 +48,7 @@ import com.cloud.hypervisor.HypervisorGuruBase;
 import com.cloud.hypervisor.vmware.VmwareCleanupMaid;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
@@ -84,7 +84,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject VmwareManager _vmwareMgr;
     @Inject SecondaryStorageVmManager _secStorageMgr;
     @Inject CheckPointManager _checkPointMgr;
-    @Inject NetworkManager _networkMgr;
+    @Inject NetworkModel _networkMgr;
 
     protected VMwareGuru() {
     	super();

@@ -76,6 +76,7 @@ import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -120,7 +121,9 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
-@Local(value = NetworkElement.class)
+@Local(value = {NetworkElement.class, ConnectivityProvider.class, 
+		SourceNatServiceProvider.class, StaticNatServiceProvider.class, 
+		PortForwardingServiceProvider.class, IpDeployer.class} )
 public class NiciraNvpElement extends AdapterBase implements
 		ConnectivityProvider, SourceNatServiceProvider,
 		PortForwardingServiceProvider, StaticNatServiceProvider,
@@ -155,6 +158,8 @@ public class NiciraNvpElement extends AdapterBase implements
 	@Inject
 	NetworkManager _networkManager;
 	@Inject
+    NetworkModel _networkModel;
+	@Inject
 	ConfigurationManager _configMgr;
 	@Inject
 	NetworkServiceMapDao _ntwkSrvcDao;
@@ -178,7 +183,7 @@ public class NiciraNvpElement extends AdapterBase implements
 			return false;
 		}
 
-		if (!_networkManager.isProviderForNetwork(getProvider(),
+		if (!_networkModel.isProviderForNetwork(getProvider(),
 				network.getId())) {
 			s_logger.debug("NiciraNvpElement is not a provider for network "
 					+ network.getDisplayText());
@@ -242,58 +247,50 @@ public class NiciraNvpElement extends AdapterBase implements
 		 * Lock the network as we might need to do multiple operations that
 		 * should be done only once.
 		 */
-		Network lock = _networkDao.acquireInLockTable(network.getId(),
-				_networkManager.getNetworkLockTimeout());
-		if (lock == null) {
-			throw new ConcurrentOperationException("Unable to lock network "
-					+ network.getId());
+//		Network lock = _networkDao.acquireInLockTable(network.getId(),
+//				_networkModel.getNetworkLockTimeout());
+//		if (lock == null) {
+//			throw new ConcurrentOperationException("Unable to lock network "
+//					+ network.getId());
+//		}
+
+		// Implement SourceNat immediately as we have al the info already
+		if (_networkModel.isProviderSupportServiceInNetwork(
+		        network.getId(), Service.SourceNat, Provider.NiciraNvp)) {
+		    s_logger.debug("Apparently we are supposed to provide SourceNat on this network");
+
+		    PublicIp sourceNatIp = _networkManager
+		            .assignSourceNatIpAddressToGuestNetwork(owner, network);
+		    String publicCidr = sourceNatIp.getAddress().addr() + "/"
+		            + NetUtils.getCidrSize(sourceNatIp.getVlanNetmask());
+		    String internalCidr = network.getGateway() + "/"
+		            + network.getCidr().split("/")[1];
+		    long vlanid = (Vlan.UNTAGGED.equals(sourceNatIp.getVlanTag())) ? 0
+		            : Long.parseLong(sourceNatIp.getVlanTag());
+
+		    CreateLogicalRouterCommand cmd = new CreateLogicalRouterCommand(
+		            niciraNvpHost.getDetail("l3gatewayserviceuuid"), vlanid,
+		            network.getBroadcastUri().getSchemeSpecificPart(),
+		            "router-" + network.getDisplayText(), publicCidr,
+		            sourceNatIp.getGateway(), internalCidr, context
+		            .getDomain().getName()
+		            + "-"
+		            + context.getAccount().getAccountName());
+		    CreateLogicalRouterAnswer answer = (CreateLogicalRouterAnswer) _agentMgr
+		            .easySend(niciraNvpHost.getId(), cmd);
+		    if (answer.getResult() == false) {
+		        s_logger.error("Failed to create Logical Router for network "
+		                + network.getDisplayText());
+		        return false;
+		    }
+
+		    // Store the uuid so we can easily find it during cleanup
+		    NiciraNvpRouterMappingVO routermapping = 
+		            new NiciraNvpRouterMappingVO(answer.getLogicalRouterUuid(), network.getId());
+		    _niciraNvpRouterMappingDao.persist(routermapping);
 		}
-		try {
-			// Implement SourceNat immediately as we have al the info already
-			if (_networkManager.isProviderSupportServiceInNetwork(
-					network.getId(), Service.SourceNat, Provider.NiciraNvp)) {
-				s_logger.debug("Apparently we are supposed to provide SourceNat on this network");
 
-				PublicIp sourceNatIp = _networkManager
-						.assignSourceNatIpAddressToGuestNetwork(owner, network);
-				String publicCidr = sourceNatIp.getAddress().addr() + "/"
-						+ NetUtils.getCidrSize(sourceNatIp.getVlanNetmask());
-				String internalCidr = network.getGateway() + "/"
-						+ network.getCidr().split("/")[1];
-				long vlanid = (Vlan.UNTAGGED.equals(sourceNatIp.getVlanTag())) ? 0
-						: Long.parseLong(sourceNatIp.getVlanTag());
-
-				CreateLogicalRouterCommand cmd = new CreateLogicalRouterCommand(
-						niciraNvpHost.getDetail("l3gatewayserviceuuid"), vlanid,
-						network.getBroadcastUri().getSchemeSpecificPart(),
-						"router-" + network.getDisplayText(), publicCidr,
-						sourceNatIp.getGateway(), internalCidr, context
-								.getDomain().getName()
-								+ "-"
-								+ context.getAccount().getAccountName());
-				CreateLogicalRouterAnswer answer = (CreateLogicalRouterAnswer) _agentMgr
-						.easySend(niciraNvpHost.getId(), cmd);
-				if (answer.getResult() == false) {
-					s_logger.error("Failed to create Logical Router for network "
-							+ network.getDisplayText());
-					return false;
-				}
-
-				// Store the uuid so we can easily find it during cleanup
-				NiciraNvpRouterMappingVO routermapping =
-						new NiciraNvpRouterMappingVO(answer.getLogicalRouterUuid(), network.getId());
-				_niciraNvpRouterMappingDao.persist(routermapping);
-			}
-		} finally {
-			if (lock != null) {
-				_networkDao.releaseFromLockTable(lock.getId());
-				if (s_logger.isDebugEnabled()) {
-					s_logger.debug("Lock is released for network id "
-							+ lock.getId() + " as a part of router startup in "
-							+ dest);
-				}
-			}
-		}
+		
 		return true;
 	}
 
@@ -442,7 +439,7 @@ public class NiciraNvpElement extends AdapterBase implements
 		NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
 		HostVO niciraNvpHost = _hostDao.findById(niciraNvpDevice.getHostId());
 
-		if (_networkManager.isProviderSupportServiceInNetwork(network.getId(),
+		if (_networkModel.isProviderSupportServiceInNetwork(network.getId(),
 				Service.SourceNat, Provider.NiciraNvp)) {
 			s_logger.debug("Apparently we were providing SourceNat on this network");
 
@@ -892,7 +889,7 @@ public class NiciraNvpElement extends AdapterBase implements
 
 		List<StaticNatRuleTO> staticNatRules = new ArrayList<StaticNatRuleTO>();
         for (StaticNat rule : rules) {
-            IpAddress sourceIp = _networkManager.getIp(rule.getSourceIpAddressId());
+            IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
             // Force the nat rule into the StaticNatRuleTO, no use making a new TO object
             // we only need the source and destination ip. Unfortunately no mention if a rule
             // is new.
@@ -940,7 +937,7 @@ public class NiciraNvpElement extends AdapterBase implements
 
 		List<PortForwardingRuleTO> portForwardingRules = new ArrayList<PortForwardingRuleTO>();
         for (PortForwardingRule rule : rules) {
-            IpAddress sourceIp = _networkManager.getIp(rule.getSourceIpAddressId());
+            IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
             Vlan vlan = _vlanDao.findById(sourceIp.getVlanId());
             PortForwardingRuleTO ruleTO = new PortForwardingRuleTO((PortForwardingRule) rule, vlan.getVlanTag(), sourceIp.getAddress().addr());
             portForwardingRules.add(ruleTO);

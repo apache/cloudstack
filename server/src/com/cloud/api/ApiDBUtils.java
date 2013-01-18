@@ -111,6 +111,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkDomainVO;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
@@ -255,6 +256,7 @@ public class ApiDBUtils {
     private static StorageManager _storageMgr;
     private static UserVmManager _userVmMgr;
     private static NetworkManager _networkMgr;
+    private static NetworkModel _networkModel;
     private static StatsCollector _statsCollector;
 
     private static AccountDao _accountDao;
@@ -350,6 +352,7 @@ public class ApiDBUtils {
         _storageMgr = locator.getManager(StorageManager.class);
         _userVmMgr = locator.getManager(UserVmManager.class);
         _networkMgr = locator.getManager(NetworkManager.class);
+        _networkModel = locator.getManager(NetworkModel.class);
         _configMgr = locator.getManager(ConfigurationService.class);
 
         _accountDao = locator.getDao(AccountDao.class);
@@ -477,7 +480,7 @@ public class ApiDBUtils {
     }
 
     public static Long getPodIdForVlan(long vlanDbId) {
-        return _networkMgr.getPodIdForVlan(vlanDbId);
+        return _networkModel.getPodIdForVlan(vlanDbId);
     }
 
     public static String getVersion() {
@@ -844,11 +847,11 @@ public class ApiDBUtils {
     }
 
     public static Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId, long zoneId) {
-        return _networkMgr.getNetworkCapabilities(networkId);
+        return _networkModel.getNetworkCapabilities(networkId);
     }
 
     public static long getPublicNetworkIdByZone(long zoneId) {
-        return _networkMgr.getSystemNetworkByZoneAndTrafficType(zoneId, TrafficType.Public).getId();
+        return _networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, TrafficType.Public).getId();
     }
 
     public static Long getVlanNetworkId(long vlanId) {
@@ -878,7 +881,7 @@ public class ApiDBUtils {
     }
 
     public static Long getDedicatedNetworkDomain(long networkId) {
-        return _networkMgr.getDedicatedNetworkDomain(networkId);
+        return _networkModel.getDedicatedNetworkDomain(networkId);
     }
 
     public static float getCpuOverprovisioningFactor() {
@@ -931,25 +934,25 @@ public class ApiDBUtils {
     }
 
     public static Map<Service, Set<Provider>> listNetworkOfferingServices(long networkOfferingId) {
-        return _networkMgr.getNetworkOfferingServiceProvidersMap(networkOfferingId);
+        return _networkModel.getNetworkOfferingServiceProvidersMap(networkOfferingId);
     }
 
     public static List<Service> getElementServices(Provider provider) {
-        return _networkMgr.getElementServices(provider);
+        return _networkModel.getElementServices(provider);
     }
 
     public static List<? extends Provider> getProvidersForService(Service service) {
-        return _networkMgr.listSupportedNetworkServiceProviders(service.getName());
+        return _networkModel.listSupportedNetworkServiceProviders(service.getName());
     }
 
     public static boolean canElementEnableIndividualServices(Provider serviceProvider) {
-        return _networkMgr.canElementEnableIndividualServices(serviceProvider);
+        return _networkModel.canElementEnableIndividualServices(serviceProvider);
     }
 
     public static Pair<Long, Boolean> getDomainNetworkDetails(long networkId) {
         NetworkDomainVO map = _networkDomainDao.getDomainNetworkMapByNetworkId(networkId);
 
-        boolean subdomainAccess = (map.isSubdomainAccess() != null) ? map.isSubdomainAccess() : _networkMgr.getAllowSubdomainAccessGlobal();
+        boolean subdomainAccess = (map.isSubdomainAccess() != null) ? map.isSubdomainAccess() : _networkModel.getAllowSubdomainAccessGlobal();
 
         return new Pair<Long, Boolean>(map.getDomainId(), subdomainAccess);
     }
@@ -976,11 +979,11 @@ public class ApiDBUtils {
     }
 
     public static List<? extends Network> listVpcNetworks(long vpcId) {
-        return _networkMgr.listNetworksByVpc(vpcId);
+        return _networkModel.listNetworksByVpc(vpcId);
     }
 
     public static boolean canUseForDeploy(Network network) {
-        return _networkMgr.canUseForDeploy(network);
+        return _networkModel.canUseForDeploy(network);
     }
 
     public static String getUuid(String resourceId, TaggedResourceType resourceType) {
