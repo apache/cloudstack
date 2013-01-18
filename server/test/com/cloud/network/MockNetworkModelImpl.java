@@ -797,4 +797,13 @@ public class MockNetworkModelImpl implements NetworkModel, Manager {
         return null;
     }
 
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkModel#isNetworkInlineMode(com.cloud.network.Network)
+     */
+    @Override
+    public boolean isNetworkInlineMode(Network network) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }

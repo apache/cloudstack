@@ -246,5 +246,7 @@ public interface NetworkModel {
     String getDomainNetworkDomain(long domainId, long zoneId);
     
     PublicIpAddress getSourceNatIpAddressForGuestNetwork(Account owner, Network guestNetwork);
+    
+    boolean isNetworkInlineMode(Network network);
 
 }

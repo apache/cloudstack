@@ -1830,4 +1830,10 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
         
         return null;
     }
+    
+    public boolean isNetworkInlineMode(Network network) {
+        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        return offering.isInline();
+    }
+
 }
