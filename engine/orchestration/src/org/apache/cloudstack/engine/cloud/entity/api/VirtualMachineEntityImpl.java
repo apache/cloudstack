@@ -26,10 +26,12 @@ import javax.inject.Inject;
 
 
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
+import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 
+@Component
 public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 	
 	@Inject private VMEntityManager manager;

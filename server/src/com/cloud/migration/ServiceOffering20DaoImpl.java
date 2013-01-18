@@ -22,7 +22,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 
-@Component
 @Local(value={ServiceOffering20Dao.class})
 public class ServiceOffering20DaoImpl extends GenericDaoBase<ServiceOffering20VO, Long> implements ServiceOffering20Dao  {
 }
