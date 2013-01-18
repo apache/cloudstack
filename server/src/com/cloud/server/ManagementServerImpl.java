@@ -89,6 +89,7 @@ import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
@@ -219,6 +220,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -915,9 +917,26 @@ public class ManagementServerImpl implements ManagementServer {
         return new Pair<List<? extends Cluster>, Integer>(result.first(), result.second());
     }
 
+    @Override
+    public Pair<List<? extends Host>, Integer> searchForServers(ListHostsCmd cmd) {
+
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        Object name = cmd.getHostName();
+        Object type = cmd.getType();
+        Object state = cmd.getState();
+        Object pod = cmd.getPodId();
+        Object cluster = cmd.getClusterId();
+        Object id = cmd.getId();
+        Object keyword = cmd.getKeyword();
+        Object resourceState = cmd.getResourceState();
+        Object haHosts = cmd.getHaHost();
+
+        Pair<List<HostVO>, Integer> result = searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zoneId, pod, cluster, id, keyword, resourceState, haHosts);
+        return new Pair<List<? extends Host>, Integer>(result.first(), result.second());
+    }
 
     @Override
-    public Pair<List<? extends Host>, List<? extends Host>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize) {
+    public Pair<Pair<List<? extends Host>, Integer>, List<? extends Host>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize) {
         // access check - only root admin can migrate VM
         Account caller = UserContext.current().getCaller();
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -976,10 +995,12 @@ public class ManagementServerImpl implements ManagementServer {
             s_logger.debug("Searching for all hosts in cluster: " + cluster + " for migrating VM " + vm);
         }
 
-        List<? extends Host> allHostsInCluster = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, null, null,
-                null);
-        // filter out the current host
+        Pair<List<HostVO>, Integer> allHostsInClusterPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, null, null, null);
+
+        // filter out the current host        
+        List<HostVO> allHostsInCluster = allHostsInClusterPair.first();
         allHostsInCluster.remove(srcHost);
+        Pair<List<? extends Host>, Integer> otherHostsInCluster = new Pair<List <? extends Host>, Integer>(allHostsInCluster, new Integer(allHostsInClusterPair.second().intValue()-1));
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Other Hosts in this cluster: " + allHostsInCluster);
@@ -1013,11 +1034,11 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        return new Pair<List<? extends Host>, List<? extends Host>>(allHostsInCluster, suitableHosts);
+        return new Pair<Pair<List<? extends Host>, Integer>, List<? extends Host>>(otherHostsInCluster, suitableHosts);
     }
 
-    private List<HostVO> searchForServers(Long startIndex, Long pageSize, Object name, Object type, Object state, Object zone, Object pod,
-            Object cluster, Object id, Object keyword, Object resourceState, Object haHosts) {
+    private Pair<List<HostVO>, Integer> searchForServers(Long startIndex, Long pageSize, Object name, Object type, Object state, Object zone, Object pod, Object cluster, Object id, Object keyword,
+            Object resourceState, Object haHosts) {
         Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
         SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
@@ -1087,7 +1108,7 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setJoinParameters("hostTagSearch", "tag", haTag);
         }
 
-        return _hostDao.search(sc, searchFilter);
+        return _hostDao.searchAndCount(sc, searchFilter);
     }
 
     @Override
