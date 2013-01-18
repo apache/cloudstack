@@ -28,7 +28,9 @@ public interface Resource {
         template("template", 4, ResourceOwnerType.Account, ResourceOwnerType.Domain),
         project("project", 5, ResourceOwnerType.Account, ResourceOwnerType.Domain),
         network("network", 6, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        vpc("vpc", 7, ResourceOwnerType.Account, ResourceOwnerType.Domain);
+        vpc("vpc", 7, ResourceOwnerType.Account, ResourceOwnerType.Domain),
+        cpu("cpu", 8, ResourceOwnerType.Account, ResourceOwnerType.Domain),
+        memory("memory", 9, ResourceOwnerType.Account, ResourceOwnerType.Domain);
 
         private String name;
         private ResourceOwnerType[] supportedOwners;
