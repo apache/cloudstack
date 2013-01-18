@@ -162,7 +162,6 @@
     <module>utils</module>
     <module>deps/XenServerJava</module>
     <module>plugins</module>
-    <module>awsapi</module>
     <module>patches</module>
     <module>client</module>
     <module>test</module>
@@ -497,6 +496,12 @@
   </build>
 
   <profiles>
+    <profile>
+      <id>awsapi</id>
+      <modules>
+        <module>awsapi</module>
+      </modules>
+    </profile>
     <profile>
       <id>developer</id>
       <modules>
