@@ -87,6 +87,7 @@ import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.StoragePool;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.SSHKeyPair;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.VirtualMachine;
@@ -154,7 +155,7 @@ public interface ManagementService {
      * @param cmd
      * @return List of Hosts
      */
-    List<? extends Host> searchForServers(ListHostsCmd cmd);
+    Pair<List<? extends Host>, Integer> searchForServers(ListHostsCmd cmd);
 
     /**
      * Creates a new template
@@ -435,7 +436,7 @@ public interface ManagementService {
      * @return Pair<List<? extends Host>, List<? extends Host>> List of all Hosts in VM's cluster and list of Hosts with
      *         enough capacity
      */
-    Pair<List<? extends Host>, List<? extends Host>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize);
+    Pair<Pair<List<? extends Host>, Integer>, List<? extends Host>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize);
 
     String[] listEventTypes();
 
