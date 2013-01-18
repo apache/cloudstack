@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -28,7 +29,11 @@ public class XmlObject {
     XmlObject() {
     }
     
-    XmlObject putElement(String key, Object e) {
+    public XmlObject(String tag) {
+        this.tag = tag;
+    }
+    
+    public XmlObject putElement(String key, Object e) {
         Object old = elements.get(key);
         if (old == null) {
             System.out.println(String.format("no %s, add new", key));
@@ -83,16 +88,58 @@ public class XmlObject {
         return text;
     }
 
-    void setText(String text) {
+    public XmlObject setText(String text) {
         this.text = text;
+        return this;
     }
 
     public String getTag() {
         return tag;
     }
 
-    void setTag(String tag) {
+    public XmlObject setTag(String tag) {
         this.tag = tag;
+        return this;
+    }
+    
+    public String dump() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<").append(tag);
+        List<XmlObject> children = new ArrayList<XmlObject>();
+        for (Map.Entry<String, Object> e : elements.entrySet()) {
+            String key = e.getKey();
+            Object val = e.getValue();
+            if (val instanceof String)  {
+                sb.append(String.format(" %s=\"%s\"", key, val.toString()));
+            } else if (val instanceof XmlObject) {
+                children.add((XmlObject) val);
+            } else if (val instanceof List) {
+                children.addAll((Collection<? extends XmlObject>) val);
+            } else {
+                throw new CloudRuntimeException(String.format("unsupported element type[tag:%s, class: %s], only allowed type of [String, List<XmlObject>, Object]", key, val.getClass().getName()));
+            }
+        }
+        
+        if (!children.isEmpty() && text != null) {
+            throw new CloudRuntimeException(String.format("element %s cannot have both text[%s] and child elements", tag, text));
+        }
+        
+        if (!children.isEmpty()) {
+            sb.append(">");
+            for (XmlObject x : children) {
+                sb.append(x.dump());
+            }
+            sb.append(String.format("</%s>", tag));
+        } else {
+            if (text != null) {
+                sb.append(">");
+                sb.append(text);
+                sb.append(String.format("</%s>", tag));
+            } else {
+                sb.append(" />");
+            }
+        }
+        return sb.toString();
     }
     
     @Override
