@@ -3225,8 +3225,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         }
 
         try {
-            //we use libvirt since we passed a libvirt connection to cleanupDisk
-            KVMStoragePool pool = _storagePoolMgr.getStoragePool(null, poolUuid);
+            // we use libvirt as storage adaptor since we passed a libvirt
+            // connection to cleanupDisk. We pass a storage type that maps
+            // to libvirt adaptor.
+            KVMStoragePool pool = _storagePoolMgr.getStoragePool(
+                                      StoragePoolType.Filesystem, poolUuid);
             if (pool != null) {
                 pool.delete();
             }
