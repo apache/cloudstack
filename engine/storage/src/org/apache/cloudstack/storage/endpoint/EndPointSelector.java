@@ -23,4 +23,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 
 public interface EndPointSelector {
     public EndPoint select(DataObject srcData, DataObject destData);
+
+    /**
+     * @param object
+     * @return
+     */
+    EndPoint select(DataObject object);
 }

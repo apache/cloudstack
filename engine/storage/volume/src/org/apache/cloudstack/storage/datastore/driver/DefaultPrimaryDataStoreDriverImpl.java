@@ -16,8 +16,9 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
-import java.util.List;
 import java.util.Set;
+
+import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -28,10 +29,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
-import org.apache.cloudstack.storage.command.CreateVolumeCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.storage.endpoint.EndPointSelector;
 import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
 import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
 import org.apache.log4j.Logger;
@@ -41,11 +42,9 @@ import com.cloud.agent.api.Answer;
 
 public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(DefaultPrimaryDataStoreDriverImpl.class);
-    protected PrimaryDataStore dataStore;
-    public DefaultPrimaryDataStoreDriverImpl(PrimaryDataStore dataStore) {
-        this.dataStore = dataStore;
-    }
-    
+    @Inject
+    EndPointSelector selector;
+
     public DefaultPrimaryDataStoreDriverImpl() {
         
     }
@@ -83,8 +82,8 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     @Override
     public void deleteAsync(DataObject vo, AsyncCompletionCallback<CommandResult> callback) {
         DeleteCommand cmd = new DeleteCommand(vo.getUri());
-        List<EndPoint> endPoints = null;
-        EndPoint ep = endPoints.get(0);
+    
+        EndPoint ep = selector.select(vo);
         AsyncRpcConext<CommandResult> context = new AsyncRpcConext<CommandResult>(callback);
         AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().deleteCallback(null, null))
@@ -153,9 +152,8 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     @Override
     public void createAsync(DataObject vol,
             AsyncCompletionCallback<CreateCmdResult> callback) {
-        List<EndPoint> endPoints = null;
-        EndPoint ep = endPoints.get(0);
-        CreateVolumeCommand createCmd = new CreateVolumeCommand(vol.getUri());
+        EndPoint ep = selector.select(vol);
+        CreateObjectCommand createCmd = new CreateObjectCommand(vol.getUri());
         
         CreateVolumeContext<CommandResult> context = null;
         AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
@@ -163,7 +161,6 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             .setCallback(caller.getTarget().createAsyncCallback(null, null));
 
         ep.sendMessageAsync(createCmd, caller);
-        
     }
 
     @Override

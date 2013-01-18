@@ -33,7 +33,7 @@ import org.apache.cloudstack.storage.command.CopyCmd;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
-import org.apache.cloudstack.storage.command.CreateVolumeCommand;
+import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
@@ -82,8 +82,8 @@ public class XenServerStorageResource {
             return execute((CreatePrimaryDataStoreCmd) command);
         } else if (command instanceof CreateVolumeFromBaseImageCommand) {
             return execute((CreateVolumeFromBaseImageCommand)command);
-        } else if (command instanceof CreateVolumeCommand) {
-            return execute((CreateVolumeCommand) command);
+        } else if (command instanceof CreateObjectCommand) {
+            return execute((CreateObjectCommand) command);
         } else if (command instanceof DeleteVolumeCommand) {
             return execute((DeleteVolumeCommand)command);
         }
@@ -114,7 +114,7 @@ public class XenServerStorageResource {
         vdi.destroy(conn);
     }
     
-    protected CreateVolumeAnswer execute(CreateVolumeCommand cmd) {
+    protected CreateVolumeAnswer execute(CreateObjectCommand cmd) {
         VolumeTO volume = null;
         PrimaryDataStoreTO primaryDataStore = volume.getDataStore();
         Connection conn = hypervisorResource.getConnection();
