@@ -27,6 +27,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
+import org.springframework.stereotype.Component;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -51,11 +53,11 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
-
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vpc.dao.MockVpcDaoImpl;
 
+@Component
 @Local(value = { VpcManager.class, VpcService.class })
 public class MockVpcManagerImpl implements VpcManager, Manager{
     @Inject MockVpcDaoImpl _vpcDao;
@@ -219,7 +221,7 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
      */
     @Override
     public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, String gateway, String netmask, long gatewayOwnerId) throws ResourceAllocationException,
-            ConcurrentOperationException, InsufficientCapacityException {
+    ConcurrentOperationException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -329,7 +331,7 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
     @Override
     public void validateNtkwOffForVpc(long ntwkOffId, String cidr, String networkDomain, Account networkOwner, Vpc vpc, Long networkId, String gateway) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -392,7 +394,7 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
     @Override
     public void unassignIPFromVpcNetwork(long ipId, long networkId) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -456,7 +458,7 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
     @Override
     public void validateNtwkOffForVpc(NetworkOffering guestNtwkOff, List<Service> supportedSvcs) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)

@@ -25,8 +25,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.storage.Storage.StoragePoolType;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.storage.Storage.StoragePoolType;
 
 @Entity
 @Table(name="mockstoragepool")

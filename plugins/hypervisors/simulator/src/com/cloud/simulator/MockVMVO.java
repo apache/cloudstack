@@ -23,8 +23,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.vm.VirtualMachine.State;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name="mockvm")

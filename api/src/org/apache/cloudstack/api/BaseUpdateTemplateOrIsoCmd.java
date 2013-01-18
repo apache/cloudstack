@@ -21,10 +21,6 @@ import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Parameter;
-
 public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
 

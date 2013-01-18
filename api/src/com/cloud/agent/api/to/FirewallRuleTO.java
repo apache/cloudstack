@@ -19,10 +19,11 @@ package com.cloud.agent.api.to;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.utils.net.NetUtils;
-import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * FirewallRuleTO transfers a port range for an ip to be opened.

@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.naming.ConfigurationException;
 
@@ -33,8 +31,6 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
-import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.ShutdownCommand;

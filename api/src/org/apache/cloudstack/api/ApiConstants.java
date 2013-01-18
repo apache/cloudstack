@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import org.omg.CORBA.PUBLIC_MEMBER;
 
 public class ApiConstants {
     public static final String ACCOUNT = "account";

@@ -26,7 +26,6 @@ import com.cloud.network.as.Counter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.Pair;
-import org.apache.cloudstack.api.InternalIdentity;
 
 public class LoadBalancingRule implements FirewallRule, LoadBalancer {
     private LoadBalancer lb;

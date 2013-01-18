@@ -66,7 +66,6 @@ import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.BareMetalVmService;
 import com.cloud.vm.UserVmService;
 

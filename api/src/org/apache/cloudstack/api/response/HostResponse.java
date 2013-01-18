@@ -19,13 +19,14 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
+
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
 
 @EntityReference(value=Host.class)
 public class HostResponse extends BaseResponse {

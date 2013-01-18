@@ -19,11 +19,12 @@ package com.cloud.storage;
 import java.util.Date;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.template.BasedOn;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
 
 public interface Volume extends ControlledEntity, Identity, InternalIdentity, BasedOn, StateObject<Volume.State> {
     enum Type {

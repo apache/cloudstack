@@ -16,8 +16,11 @@
 // under the License.
 package com.cloud.user;
 
+import javax.inject.Inject;
+
 
 public class UserContext {
+    @Inject AccountService _accountMgr;
 
     private static ThreadLocal<UserContext> s_currentContext = new ThreadLocal<UserContext>();
 

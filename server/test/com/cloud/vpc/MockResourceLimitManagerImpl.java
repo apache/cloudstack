@@ -22,6 +22,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
@@ -31,6 +33,7 @@ import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.component.Manager;
 
+@Component
 @Local(value = { ResourceLimitService.class })
 public class MockResourceLimitManagerImpl implements ResourceLimitService, Manager{
 

@@ -21,7 +21,6 @@ import java.net.URI;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import org.apache.cloudstack.api.InternalIdentity;
 
 public class NetworkProfile implements Network {
     private long id;

@@ -27,7 +27,6 @@ import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.PingTestCommand;
-import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.resource.AgentResourceBase;
 import com.cloud.simulator.MockHost;
 import com.cloud.utils.component.Manager;

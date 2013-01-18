@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.test;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vpn.AddVpnUserCmd;
 import org.junit.Before;
 import org.junit.Rule;
@@ -26,7 +27,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.network.VpnUser;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.user.Account;

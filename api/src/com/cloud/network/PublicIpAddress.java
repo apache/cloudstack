@@ -17,8 +17,9 @@
 package com.cloud.network;
 
 import org.apache.cloudstack.acl.ControlledEntity;
-import com.cloud.dc.Vlan;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.dc.Vlan;
 
 /**
  */

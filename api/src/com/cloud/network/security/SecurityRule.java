@@ -16,9 +16,10 @@
 // under the License.
 package com.cloud.network.security;
 
-import com.cloud.async.AsyncInstanceCreateStatus;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.async.AsyncInstanceCreateStatus;
 
 public interface SecurityRule extends Identity, InternalIdentity {
 

@@ -24,10 +24,11 @@ import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
-import org.apache.cloudstack.api.command.user.template.*;
 import org.apache.cloudstack.api.command.user.template.CopyTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;

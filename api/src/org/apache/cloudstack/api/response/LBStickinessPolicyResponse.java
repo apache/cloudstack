@@ -16,15 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.cloudstack.api.BaseResponse;
+
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.serializer.Param;
 import com.cloud.utils.Pair;
 import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.BaseResponse;
-
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 
 public class LBStickinessPolicyResponse extends BaseResponse {
     @SerializedName("id")

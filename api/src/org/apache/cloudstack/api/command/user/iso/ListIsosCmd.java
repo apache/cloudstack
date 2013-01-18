@@ -21,14 +21,14 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;

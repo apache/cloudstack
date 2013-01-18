@@ -20,11 +20,12 @@ import java.util.Date;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
 
 public interface VirtualMachineTemplate extends ControlledEntity, Identity, InternalIdentity {
 

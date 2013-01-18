@@ -16,10 +16,9 @@
 // under the License.
 package com.cloud.storage;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 public interface VMTemplateStorageResourceAssoc extends InternalIdentity {
     public static enum Status {

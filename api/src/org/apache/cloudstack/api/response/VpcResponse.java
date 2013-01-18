@@ -19,12 +19,13 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.network.vpc.Vpc;
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+
+import com.cloud.network.vpc.Vpc;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value=Vpc.class)
 @SuppressWarnings("unused")

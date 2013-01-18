@@ -18,47 +18,48 @@
 package com.cloud.network;
 
 
+import javax.inject.Inject;
+
 import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.IpDeployer;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.testcase.ComponentSetup;
-import com.cloud.utils.testcase.ComponentTestCase;
+import com.cloud.utils.component.AdapterBase;
+
 
 @Ignore("Requires database to be set up")
-@ComponentSetup(managerName="management-server", setupXml="network-mgr-component.xml")
-public class NetworkManagerTest extends ComponentTestCase {
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations="classpath:/testContext.xml")
+//@ComponentSetup(managerName="management-server", setupXml="network-mgr-component.xml")
+public class NetworkManagerTest {
     private static final Logger s_logger = Logger.getLogger(NetworkManagerTest.class);
-    @Before
-    @Override
-    protected void setUp() {
-        super.setUp();
-    }
-    
+    @Inject NetworkManager _networkMgr;
+
     @Test
     public void testInjected() {
-        NetworkManagerImpl networkMgr = (NetworkManagerImpl)ComponentLocator.getCurrentLocator().getManager(NetworkManager.class);
-        Assert.assertTrue(networkMgr._ipDeployers.enumeration().hasMoreElements());
-        Assert.assertTrue(networkMgr._networkElements.enumeration().hasMoreElements());
-        Assert.assertTrue(networkMgr._dhcpProviders.enumeration().hasMoreElements());
+        NetworkManagerImpl networkMgr = (NetworkManagerImpl)_networkMgr;
+        Assert.assertTrue(networkMgr._ipDeployers.iterator().hasNext());
+        Assert.assertTrue(networkMgr._networkElements.iterator().hasNext());
+        Assert.assertTrue(networkMgr._dhcpProviders.iterator().hasNext());
         Assert.assertNotNull(networkMgr._networkModel);
-        
-        Assert.assertNotNull(networkMgr._ipDeployers.get("VirtualRouter"));
-        Assert.assertNotNull(networkMgr._ipDeployers.get("VpcVirtualRouter"));
 
-        Assert.assertNotNull(networkMgr._dhcpProviders.get("VirtualRouter"));
-        Assert.assertNotNull(networkMgr._dhcpProviders.get("VpcVirtualRouter"));
+        Assert.assertNotNull(AdapterBase.getAdapterByName(networkMgr._ipDeployers, "VirtualRouter"));
+        Assert.assertNotNull(AdapterBase.getAdapterByName(networkMgr._ipDeployers, "VpcVirtualRouter"));
 
-        
-        Assert.assertTrue(networkMgr._ipDeployers.get("VirtualRouter") instanceof IpDeployer);
-        Assert.assertTrue(networkMgr._dhcpProviders.get("VirtualRouter") instanceof DhcpServiceProvider);
-       
+        Assert.assertNotNull(AdapterBase.getAdapterByName(networkMgr._dhcpProviders, "VirtualRouter"));
+        Assert.assertNotNull(AdapterBase.getAdapterByName(networkMgr._dhcpProviders, "VpcVirtualRouter"));
+
+
+        Assert.assertTrue(AdapterBase.getAdapterByName(networkMgr._ipDeployers, "VirtualRouter") instanceof IpDeployer);
+        Assert.assertTrue(AdapterBase.getAdapterByName(networkMgr._dhcpProviders, "VirtualRouter") instanceof DhcpServiceProvider);
+
         s_logger.info("Done testing injection of network manager's network elements");
 
     }

@@ -28,9 +28,11 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -79,8 +81,7 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
@@ -99,6 +100,7 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+@Component
 @Local(value = { NetworkModel.class})
 public class NetworkModelImpl  implements NetworkModel, Manager{
     static final Logger s_logger = Logger.getLogger(NetworkModelImpl.class);
@@ -130,8 +132,7 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
     @Inject
     PodVlanMapDao _podVlanMapDao;
 
-    @Inject(adapter = NetworkElement.class)
-    Adapters<NetworkElement> _networkElements;
+    @Inject List<NetworkElement> _networkElements;
     
     @Inject
     NetworkDomainDao _networkDomainDao;
@@ -187,7 +188,7 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
     @Override
     public NetworkElement getElementImplementingProvider(String providerName) {
         String elementName = s_providerToNetworkElementMap.get(providerName);
-        NetworkElement element = _networkElements.get(elementName);
+        NetworkElement element = AdapterBase.getAdapterByName(_networkElements, elementName);
         return element;
     }
 
