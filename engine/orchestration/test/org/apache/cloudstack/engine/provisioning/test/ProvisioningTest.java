@@ -127,9 +127,9 @@ public class ProvisioningTest extends TestCase {
 
 	@Test
 	public void testProvisioning() {
-		//registerAndEnableZone();
-		//registerAndEnablePod();
-		//registerAndEnableCluster();
+		registerAndEnableZone();
+		registerAndEnablePod();
+		registerAndEnableCluster();
 		registerAndEnableHost();
 	}
 

@@ -27,20 +27,20 @@ alter table vm_instance add column disk_offering_id bigint unsigned;
 alter table data_center add column owner varchar(255);
 alter table data_center add column created datetime COMMENT 'date created';
 alter table data_center add column lastUpdated datetime COMMENT 'last updated';
-alter table data_center add column engine_state varchar(32) NOT NULL COMMENT 'the engine state of the zone';
+alter table data_center add column engine_state varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'the engine state of the zone';
 alter table host_pod_ref add column owner varchar(255);
 alter table host_pod_ref add column created datetime COMMENT 'date created';
 alter table host_pod_ref add column lastUpdated datetime COMMENT 'last updated';
-alter table host_pod_ref add column engine_state varchar(32) NOT NULL COMMENT 'the engine state of the zone';
+alter table host_pod_ref add column engine_state varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'the engine state of the zone';
 alter table host add column owner varchar(255);
 alter table host add column lastUpdated datetime COMMENT 'last updated';
-alter table host add column engine_state varchar(32) NOT NULL COMMENT 'the engine state of the zone';
+alter table host add column engine_state varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'the engine state of the zone';
 
 
 alter table cluster add column owner varchar(255);
 alter table cluster add column created datetime COMMENT 'date created';
 alter table cluster add column lastUpdated datetime COMMENT 'last updated';
-alter table cluster add column engine_state varchar(32) NOT NULL COMMENT 'the engine state of the zone';
+alter table cluster add column engine_state varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'the engine state of the zone';
 
 CREATE TABLE `cloud`.`data_store_provider` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
