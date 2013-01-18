@@ -149,9 +149,6 @@ public class ComponentContext implements ApplicationContextAware {
     }
     
     public static <T> T inject(Object instance) {
-    	if(instance instanceof Advised)
-    		return (T)instance;
-    	
     	// autowire dynamically loaded object
     	AutowireCapableBeanFactory  beanFactory = s_appContext.getAutowireCapableBeanFactory();
     	beanFactory.autowireBean(instance);
