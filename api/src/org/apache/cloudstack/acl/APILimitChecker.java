@@ -16,16 +16,15 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.RequestLimitException;
-import com.cloud.user.User;
+import org.apache.cloudstack.api.ServerApiException;
+
+import com.cloud.user.Account;
 import com.cloud.utils.component.Adapter;
 
-// APIChecker checks the ownership and access control to API requests
-public interface APIChecker extends Adapter {
-    // Interface for checking access for a role using apiname
-    // If true, apiChecker has checked the operation
-    // If false, apiChecker is unable to handle the operation or not implemented
-    // On exception, checkAccess failed don't allow
-    boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException, RequestLimitException;
+/**
+ * APILimitChecker checks if we should block an API request based on pre-set account based api limit.
+ */
+public interface APILimitChecker extends Adapter {
+    // Interface for checking if the account is over its api limit
+    void checkLimit(Account account) throws ServerApiException;
 }

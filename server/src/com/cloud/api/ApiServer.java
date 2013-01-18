@@ -51,6 +51,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.cloud.utils.ReflectUtil;
+import org.apache.cloudstack.acl.APILimitChecker;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.*;
@@ -118,6 +119,7 @@ import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.RequestLimitException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.server.ManagementServer;
@@ -150,6 +152,8 @@ public class ApiServer implements HttpRequestHandler {
     @Inject private DomainManager _domainMgr = null;
     @Inject private AsyncJobManager _asyncMgr = null;
 
+    @Inject(adapter = APILimitChecker.class)
+    protected Adapters<APILimitChecker> _apiLimitCheckers;
     @Inject(adapter = APIChecker.class)
     protected Adapters<APIChecker> _apiAccessCheckers;
 
@@ -382,6 +386,7 @@ public class ApiServer implements HttpRequestHandler {
             if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
+
             }
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, errorMsg, ex);
         }
@@ -585,12 +590,17 @@ public class ApiServer implements HttpRequestHandler {
             // if userId not null, that mean that user is logged in
             if (userId != null) {
             	User user = ApiDBUtils.findUserById(userId);
+
             	try{
             	    checkCommandAvailable(user, commandName);
             	}
             	catch (PermissionDeniedException ex){
                     s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
+                }
+                catch (RequestLimitException ex){
+                    s_logger.debug(ex.getMessage());
+                    throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
                 }
                 return true;
             } else {
@@ -820,6 +830,7 @@ public class ApiServer implements HttpRequestHandler {
         }
         return true;
     }
+
 
     private void checkCommandAvailable(User user, String commandName) throws PermissionDeniedException {
         if (user == null) {

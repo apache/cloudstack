@@ -14,18 +14,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl;
+package org.apache.cloudstack.ratelimit;
 
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.RequestLimitException;
-import com.cloud.user.User;
-import com.cloud.utils.component.Adapter;
+import org.apache.cloudstack.api.response.ApiLimitResponse;
+import com.cloud.user.Account;
+import com.cloud.utils.component.PluggableService;
 
-// APIChecker checks the ownership and access control to API requests
-public interface APIChecker extends Adapter {
-    // Interface for checking access for a role using apiname
-    // If true, apiChecker has checked the operation
-    // If false, apiChecker is unable to handle the operation or not implemented
-    // On exception, checkAccess failed don't allow
-    boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException, RequestLimitException;
+/**
+ * Provide API rate limit service
+ * @author minc
+ *
+ */
+public interface ApiRateLimitService extends PluggableService{
+
+    public ApiLimitResponse searchApiLimit(Account caller);
+
+    public boolean resetApiLimit(Long accountId);
+
+    public void setTimeToLive(int timeToLive);
+
+    public void setMaxAllowed(int max);
 }

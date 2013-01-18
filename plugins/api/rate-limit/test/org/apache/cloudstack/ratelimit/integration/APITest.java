@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api;
+package org.apache.cloudstack.ratelimit.integration;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
@@ -30,6 +30,7 @@ import java.util.Iterator;
 
 import org.apache.cloudstack.api.response.SuccessResponse;
 
+import com.cloud.api.ApiGsonHelper;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 

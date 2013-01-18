@@ -54,6 +54,11 @@ under the License.
              <param name="premium">true</param>
         </dao>
         <adapters key="org.apache.cloudstack.acl.APIChecker">
+            <adapter name="AccountBasedAPIRateLimit" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl" singleton="true">
+                 <param name="api.throttling.interval">1</param>
+                 <param name="api.throttling.max">25</param>
+                 <param name="api.throttling.cachesize">50000</param>
+            </adapter>        
             <adapter name="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
         </adapters>
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
@@ -233,6 +238,7 @@ under the License.
         <pluggableservice name="ApiDiscoveryService" key="org.apache.cloudstack.discovery.ApiDiscoveryService" class="org.apache.cloudstack.discovery.ApiDiscoveryServiceImpl"/>
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
         <pluggableservice name="NiciraNvpElementService" key="com.cloud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/>
+        <pluggableservice name="ApiRateLimitService" key="org.apache.cloudstack.ratelimit.ApiRateLimitService" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
         <dao name="OvsTunnelInterfaceDao" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" singleton="false"/>
         <dao name="OvsTunnelAccountDao" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" singleton="false"/>
         <dao name="NiciraNvpDao" class="com.cloud.network.dao.NiciraNvpDaoImpl" singleton="false"/>
