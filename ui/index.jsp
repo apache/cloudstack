@@ -220,7 +220,7 @@ under the License.
             </div>
 
             <!-- Step 5: Network -->
-            <div class="step network" wizard-step-id="network">
+            <div class="step network always-load" wizard-step-id="network">
               <!-- 5a: Network description -->
               <div class="wizard-step-conditional nothing-to-select">     
 								<p id="from_instance_page_1"><fmt:message key="message.zone.no.network.selection"/></p>
