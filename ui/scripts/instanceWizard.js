@@ -457,15 +457,6 @@
       // Create a new VM!!!!
       var array1 = [];
 
-      //
-      // @jessica
-      // If using an advanced security group zone, get the guest networks like this
-      //
-      //   var myNetworks = $('.multi-wizard:visible form').data('my-networks');
-      //
-      // -- and get the security groups from args.data['security-groups']
-      //
-
       //step 1 : select zone
       array1.push("&zoneId=" + args.data.zoneid);
 
@@ -562,41 +553,38 @@
 
         if(checkedSecurityGroupIdArray.length > 0)
           array1.push("&securitygroupids=" + checkedSecurityGroupIdArray.join(","));
-				
-        /*				
-				if(selectedZoneObj.networktype ==	"Advanced" && selectedZoneObj.securitygroupsenabled == true) { // Advanced SG-enabled zone 		
-					var networkData = {
-						zoneId: selectedZoneObj.id,
-						type: 'Shared',
-						supportedServices: 'SecurityGroup'
-					};										
-					if (!(cloudStack.context.projects && cloudStack.context.projects[0])) {
-						networkData.domainid = g_domainid;
-						networkData.account = g_account;
-					}						
+				        			
+				if(selectedZoneObj.networktype ==	"Advanced" && selectedZoneObj.securitygroupsenabled == true) { // Advanced SG-enabled zone 	          
+          var array2 = [];							
+					var myNetworks = $('.multi-wizard:visible form').data('my-networks'); //widget limitation: If using an advanced security group zone, get the guest networks like this 
+					var defaultNetworkId = $('.multi-wizard:visible form').find('input[name=defaultNetwork]:checked').val();
+										
+					var checkedNetworkIdArray;
+					if(typeof(myNetworks) == "object" && myNetworks.length != null) { //myNetworks is an array of string, e.g. ["203", "202"],
+						checkedNetworkIdArray = myNetworks;
+					}
+					else if(typeof(myNetworks) == "string" && myNetworks.length > 0) { //myNetworks is a string, e.g. "202"
+						checkedNetworkIdArray = [];
+						checkedNetworkIdArray.push(myNetworks);
+					}
+					else { // typeof(myNetworks) == null
+						checkedNetworkIdArray = [];
+					}
 					
-					var selectedNetworkObj = null;					
-					$.ajax({
-						url: createURL('listNetworks'),
-						data: networkData,
-						async: false,
-						success: function(json) {		              			
-							var networks = json.listnetworksresponse.network;
-							if(networks != null && networks.length > 0) {
-							  selectedNetworkObj = networks[0]; //each Advanced SG-enabled zone has only one guest network that is Shared and has SecurityGroup service
-							}
+					//add default network first
+					if(defaultNetworkId != null && defaultNetworkId.length > 0 && defaultNetworkId != 'new-network')
+						array2.push(defaultNetworkId);
+
+					//then, add other checked networks
+					if(checkedNetworkIdArray.length > 0) {
+						for(var i=0; i < checkedNetworkIdArray.length; i++) {
+							if(checkedNetworkIdArray[i] != defaultNetworkId) //exclude defaultNetworkId that has been added to array2
+								array2.push(checkedNetworkIdArray[i]);
 						}
-					});				 
-					if(selectedNetworkObj != null) {
-				    array1.push("&networkIds=" + selectedNetworkObj.id);	
 					}
-					else {
-					  alert('unable to find any Shared network with SecurityGroup service. Therefore, unable to deploy VM in this Advanced SecurityGroup-enabled zone.');
-						return; 
-					}
-				}
-				*/
-				
+					
+					array1.push("&networkIds=" + array2.join(","));					
+				}				
       }
       else if (step5ContainerType == 'nothing-to-select') {	  
 				if(args.context.networks != null) { //from VPC tier
