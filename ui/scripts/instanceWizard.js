@@ -268,25 +268,30 @@
       }
 
       if (selectedZoneObj.networktype == "Advanced") {  //Advanced zone. Show network list.	 
-				var $networkStep = $(".step.network:visible .nothing-to-select");		
+				var $networkStep = $(".step.network:visible .nothing-to-select");
+				var $networkStepContainer = $('.step.network:visible');
+
 				if(args.initArgs.pluginForm != null && args.initArgs.pluginForm.name == "vpcTierInstanceWizard") { //from VPC Tier chart
 				  step5ContainerType = 'nothing-to-select'; 					
 					$networkStep.find("#from_instance_page_1").hide();		
           $networkStep.find("#from_instance_page_2").hide();					
 					$networkStep.find("#from_vpc_tier").text("tier " + args.context.networks[0].name);					
 					$networkStep.find("#from_vpc_tier").show();					
-				}
-			  else { //from Instance page 
+				} else { //from Instance page
 				  if(selectedZoneObj.securitygroupsenabled != true) { // Advanced SG-disabled zone
 						step5ContainerType = 'select-network';
 						$networkStep.find("#from_instance_page_1").show();		
 						$networkStep.find("#from_instance_page_2").show();
 						$networkStep.find("#from_vpc_tier").text("");			
 						$networkStep.find("#from_vpc_tier").hide();
+					} else { // Advanced SG-enabled zone
+					  step5ContainerType = 'select-advanced-sg';
 					}
-					else { // Advanced SG-enabled zone
-					  step5ContainerType = 'select-security-group';					
-					}
+
+          if ($networkStepContainer.hasClass('next-use-security-groups')) {
+            $networkStepContainer.removeClass('repeat next-use-security-groups loaded');
+            step5ContainerType = 'select-security-group';
+          }
 				}
       }
       else { //Basic zone. Show securigy group list or nothing(when no SecurityGroup service in guest network)
@@ -320,7 +325,7 @@
       }
 
       //step5ContainerType = 'nothing-to-select'; //for testing only, comment it out before checking in
-      if(step5ContainerType == 'select-network') {
+      if(step5ContainerType == 'select-network' || step5ContainerType == 'select-advanced-sg') {
         var defaultNetworkArray = [], optionalNetworkArray = [];
         var networkData = {
           zoneId: args.currentData.zoneid
@@ -379,6 +384,9 @@
         });
         //get network offerings (end)	***			
 
+        if (step5ContainerType == 'select-advanced-sg') {
+          $networkStepContainer.addClass('repeat next-use-security-groups');
+        }
 
         args.response.success({
           type: 'select-network',
@@ -448,6 +456,15 @@
     action: function(args) {
       // Create a new VM!!!!
       var array1 = [];
+
+      //
+      // @jessica
+      // If using an advanced security group zone, get the guest networks like this
+      //
+      //   var myNetworks = $('.multi-wizard:visible form').data('my-networks');
+      //
+      // -- and get the security groups from args.data['security-groups']
+      //
 
       //step 1 : select zone
       array1.push("&zoneId=" + args.data.zoneid);
