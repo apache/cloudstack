@@ -20,6 +20,7 @@ import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -91,7 +92,7 @@ public class DeleteAutoScaleVmProfileCmd extends BaseAsyncCmd {
             this.setResponseObject(response);
         } else {
             s_logger.warn("Failed to delete autoscale vm profile " + getId());
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete autoscale vm profile");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete autoscale vm profile");
         }
     }
 

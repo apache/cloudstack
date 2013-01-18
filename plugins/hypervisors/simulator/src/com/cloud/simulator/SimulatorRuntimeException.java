@@ -18,12 +18,12 @@
 package com.cloud.simulator;
 
 import com.cloud.utils.SerialVersionUID;
-import com.cloud.utils.exception.RuntimeCloudException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * wrap exceptions that you know there's no point in dealing with.
  */
-public class SimulatorRuntimeException extends RuntimeCloudException {
+public class SimulatorRuntimeException extends CloudRuntimeException {
 
     private static final long serialVersionUID = SerialVersionUID.CloudRuntimeException;
 

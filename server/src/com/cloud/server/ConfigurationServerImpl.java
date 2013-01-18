@@ -263,7 +263,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         // Set init to true
         _configDao.update("init", "Hidden", "true");
-        
+
         // invalidate cache in DAO as we have changed DB status
         _configDao.invalidateCache();
     }
@@ -351,8 +351,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
         // now insert the user
-        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, account_id, firstname, lastname, created, state) " +
-                "VALUES (" + id + ", UUID(), '" + username + "', 2, '" + firstname + "','" + lastname + "',now(), 'disabled')";
+        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created, state) " +
+                "VALUES (" + id + ",'" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled')";
 
         txn = Transaction.currentTxn();
         try {
@@ -558,7 +558,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         String username = System.getProperty("user.name");
         Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
-        if (!username.equalsIgnoreCase("cloud") || !devel) {
+        if (!username.equalsIgnoreCase("cloud") && !devel) {
             s_logger.warn("Systemvm keypairs could not be set. Management server should be run as cloud user, or in development mode.");
             return;
         }
@@ -981,7 +981,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Shared networks with Elastic IP and Elastic LB capabilities",
                 TrafficType.Guest,
                 false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Shared, true, false, false, false, true, true, true, true, false);
+                null, Network.GuestType.Shared, true, false, false, false, true, true, true, false);
 
         defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);

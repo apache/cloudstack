@@ -54,7 +54,6 @@ public class CloudException extends Exception {
 		return;
 	}
 
-
 	public ArrayList<String> getIdProxyList() {
 		return idList;
 	}

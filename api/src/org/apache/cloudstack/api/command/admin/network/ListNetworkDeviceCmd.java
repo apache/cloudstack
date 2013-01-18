@@ -24,6 +24,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -83,9 +84,9 @@ public class ListNetworkDeviceCmd extends BaseListCmd {
             listResponse.setResponseName(getCommandName());
             this.setResponseObject(listResponse);
         } catch (InvalidParameterValueException ipve) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, ipve.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ipve.getMessage());
         } catch (CloudRuntimeException cre) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, cre.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, cre.getMessage());
         }
     }
 

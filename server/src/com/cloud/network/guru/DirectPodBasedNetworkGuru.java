@@ -109,7 +109,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         }
         
         if (rsStrategy == ReservationStrategy.Create) {
-            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(network.getId());
+            String mac = _networkModel.getNextAvailableMacAddressInNetwork(network.getId());
             nic.setMacAddress(mac);
         }
         return nic;

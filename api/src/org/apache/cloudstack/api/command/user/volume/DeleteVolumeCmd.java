@@ -20,6 +20,7 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -84,7 +85,7 @@ public class DeleteVolumeCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete volume");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete volume");
         }
     }
 }

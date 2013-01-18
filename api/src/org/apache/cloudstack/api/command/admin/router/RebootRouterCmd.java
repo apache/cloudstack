@@ -98,7 +98,7 @@ public class RebootRouterCmd extends BaseAsyncCmd {
             response.setResponseName("router");
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to reboot router");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reboot router");
         }
     }
 }

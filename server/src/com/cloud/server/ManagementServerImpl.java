@@ -53,6 +53,7 @@ import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
@@ -220,7 +221,6 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.ComponentContext;
@@ -380,13 +380,13 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Inject
     ComponentContext _forceContextRef;			// create a dependency to ComponentContext so that it can be loaded beforehead
-   
+
     @Inject
     EventUtils	_forceEventUtilsRef;
 
     @Inject
     CloudStackComponentComposer _componentRegistry;
-     
+
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private KeystoreManager _ksMgr;
 
@@ -397,7 +397,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Inject List<UserAuthenticator> _userAuthenticators;
 
     private String _hashKey = null;
-    
+
     public ManagementServerImpl() {
     }
 
@@ -452,7 +452,7 @@ public class ManagementServerImpl implements ManagementServer {
         Map<String, GenericDaoBase> daos = ComponentContext.getApplicationContext().getBeansOfType(
                 GenericDaoBase.class);
 
- 		Map<String, Object> params = new HashMap<String, Object>();
+        Map<String, Object> params = new HashMap<String, Object>();
         for (GenericDaoBase dao : daos.values()) {
             try {
                 s_logger.info("Starting dao " + ComponentContext.getTargetClass(dao).getName());
@@ -465,12 +465,12 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     private void startManagers() {
- 		Map<String, Object> params = new HashMap<String, Object>();
- 		
-		for(Manager manager : _componentRegistry.getManagers()) {
-			s_logger.info("Start manager: " + ComponentContext.getTargetClass(manager).getName() + "...");
-			try {
-				if(!manager.configure(manager.getClass().getSimpleName(), params)) {
+        Map<String, Object> params = new HashMap<String, Object>();
+
+        for(Manager manager : _componentRegistry.getManagers()) {
+            s_logger.info("Start manager: " + ComponentContext.getTargetClass(manager).getName() + "...");
+            try {
+                if(!manager.configure(manager.getClass().getSimpleName(), params)) {
                     throw new CloudRuntimeException("Failed to start manager: " + ComponentContext.getTargetClass(manager).getName());
                 }
 
@@ -489,19 +489,19 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     private void startAdapters() {
-		@SuppressWarnings("rawtypes")
-		Map<String, Adapter> adapters = ComponentContext.getApplicationContext().getBeansOfType(
-				Adapter.class);
-			
- 		Map<String, Object> params = new HashMap<String, Object>();
-		
-		for(Adapter adapter : adapters.values()) {
-			try {
-				// we also skip Adapter class that is both a manager class and a adapter class
-				if(Manager.class.isAssignableFrom(ComponentContext.getTargetClass(adapter)))
-					continue;
-				
-				if(!adapter.configure(adapter.getName(), params)) {
+        @SuppressWarnings("rawtypes")
+        Map<String, Adapter> adapters = ComponentContext.getApplicationContext().getBeansOfType(
+                Adapter.class);
+
+        Map<String, Object> params = new HashMap<String, Object>();
+
+        for(Adapter adapter : adapters.values()) {
+            try {
+                // we also skip Adapter class that is both a manager class and a adapter class
+                if(Manager.class.isAssignableFrom(ComponentContext.getTargetClass(adapter)))
+                    continue;
+
+                if(!adapter.configure(adapter.getName(), params)) {
                     throw new CloudRuntimeException("Failed to start adapter: " + ComponentContext.getTargetClass(adapter).getName());
                 }
                 if (!adapter.start()) {
@@ -860,7 +860,6 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("vm_type", SearchCriteria.Op.EQ, vmTypeStr);
         }
 
-        sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
         sc.addAnd("removed", SearchCriteria.Op.NULL);
         return _offeringsDao.search(sc, searchFilter);
 
@@ -1017,7 +1016,25 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public Pair<List<? extends Host>, List<? extends Host>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize) {
+    public Pair<List<? extends Host>, Integer> searchForServers(ListHostsCmd cmd) {
+
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
+        Object name = cmd.getHostName();
+        Object type = cmd.getType();
+        Object state = cmd.getState();
+        Object pod = cmd.getPodId();
+        Object cluster = cmd.getClusterId();
+        Object id = cmd.getId();
+        Object keyword = cmd.getKeyword();
+        Object resourceState = cmd.getResourceState();
+        Object haHosts = cmd.getHaHost();
+
+        Pair<List<HostVO>, Integer> result = searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zoneId, pod, cluster, id, keyword, resourceState, haHosts);
+        return new Pair<List<? extends Host>, Integer>(result.first(), result.second());
+    }
+
+    @Override
+    public Pair<Pair<List<? extends Host>, Integer>, List<? extends Host>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize) {
         // access check - only root admin can migrate VM
         Account caller = UserContext.current().getCaller();
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -1076,10 +1093,12 @@ public class ManagementServerImpl implements ManagementServer {
             s_logger.debug("Searching for all hosts in cluster: " + cluster + " for migrating VM " + vm);
         }
 
-        List<? extends Host> allHostsInCluster = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, null, null,
-                null);
+        Pair<List<HostVO>, Integer> allHostsInClusterPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, null, null, null);
+
         // filter out the current host
+        List<HostVO> allHostsInCluster = allHostsInClusterPair.first();
         allHostsInCluster.remove(srcHost);
+        Pair<List<? extends Host>, Integer> otherHostsInCluster = new Pair<List <? extends Host>, Integer>(allHostsInCluster, new Integer(allHostsInClusterPair.second().intValue()-1));
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Other Hosts in this cluster: " + allHostsInCluster);
@@ -1112,11 +1131,11 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        return new Pair<List<? extends Host>, List<? extends Host>>(allHostsInCluster, suitableHosts);
+        return new Pair<Pair<List<? extends Host>, Integer>, List<? extends Host>>(otherHostsInCluster, suitableHosts);
     }
 
-    private List<HostVO> searchForServers(Long startIndex, Long pageSize, Object name, Object type, Object state, Object zone, Object pod,
-            Object cluster, Object id, Object keyword, Object resourceState, Object haHosts) {
+    private Pair<List<HostVO>, Integer> searchForServers(Long startIndex, Long pageSize, Object name, Object type, Object state, Object zone, Object pod, Object cluster, Object id, Object keyword,
+            Object resourceState, Object haHosts) {
         Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
         SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
@@ -1186,7 +1205,7 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setJoinParameters("hostTagSearch", "tag", haTag);
         }
 
-        return _hostDao.search(sc, searchFilter);
+        return _hostDao.searchAndCount(sc, searchFilter);
     }
 
     @Override
@@ -2393,9 +2412,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public Map<String, String> getProperties() {
-        return PropertiesUtil.processConfigFile(new String[]
-                { "commands.properties" });
+    public List<Class<?>> getCommands() {
+        //TODO: Add cmd classes
+        return null;
     }
 
     protected class EventPurgeTask implements Runnable {

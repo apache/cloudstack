@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.volume;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -98,7 +99,7 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
                  this.setResponseObject(response);
              }
         } catch (ConcurrentOperationException e) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to migrate volume: ");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate volume: ");
         }
 
     }

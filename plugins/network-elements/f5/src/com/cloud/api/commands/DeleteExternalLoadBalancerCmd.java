@@ -77,10 +77,10 @@ public class DeleteExternalLoadBalancerCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete external load balancer.");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete external load balancer.");
             }
         } catch (InvalidParameterValueException e) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Failed to delete external load balancer.");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Failed to delete external load balancer.");
         }
     }
 }

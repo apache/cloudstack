@@ -17,6 +17,7 @@
 
 package com.cloud.network.element;
 
+import java.lang.Class;
 import java.lang.String;
 import java.util.List;
 import java.util.Map;
@@ -241,8 +242,12 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     }
 
     @Override
-    public Map<String, String> getProperties() {
-        return PropertiesUtil.processConfigFile(new String[]
-                { "cisconexusvsm_commands.properties" });
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(ListCiscoNexusVSMsCmd.class);
+        cmdList.add(EnableCiscoNexusVSMCmd.class);
+        cmdList.add(DisableCiscoNexusVSMCmd.class);
+        cmdList.add(DeleteCiscoNexusVSMCmd.class);
+        return cmdList;
     }
 }

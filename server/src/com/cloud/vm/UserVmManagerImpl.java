@@ -126,6 +126,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
@@ -279,6 +280,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected IPAddressDao _ipAddressDao = null;
     @Inject
     protected HostPodDao _podDao = null;
+    @Inject
+    protected NetworkModel _networkModel = null;
     @Inject
     protected NetworkManager _networkMgr = null;
     @Inject
@@ -469,28 +472,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         VMTemplateVO template = _templateDao
                 .findByIdIncludingRemoved(vmInstance.getTemplateId());
         if (template.getEnablePassword()) {
-            Nic defaultNic = _networkMgr.getDefaultNic(vmId);
+            Nic defaultNic = _networkModel.getDefaultNic(vmId);
             if (defaultNic == null) {
                 s_logger.error("Unable to reset password for vm " + vmInstance
                         + " as the instance doesn't have default nic");
                 return false;
             }
 
-            Network defaultNetwork = _networkDao.findById(defaultNic
-                    .getNetworkId());
-            NicProfile defaultNicProfile = new NicProfile(defaultNic,
-                    defaultNetwork, null, null, null,
-                    _networkMgr
-                    .isSecurityGroupSupportedInNetwork(defaultNetwork),
-                    _networkMgr.getNetworkTag(template.getHypervisorType(),
-                            defaultNetwork));
-            VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(
-                    vmInstance);
-            vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword,
-                    password);
+            Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
+            NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork), _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
+            VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmInstance);
+            vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
 
-            UserDataServiceProvider element = _networkMgr
-                    .getPasswordResetProvider(defaultNetwork);
+            UserDataServiceProvider element = _networkMgr.getPasswordResetProvider(defaultNetwork);
             if (element == null) {
                 throw new CloudRuntimeException(
                         "Can't find network element for "
@@ -2203,7 +2197,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     private boolean updateUserDataInternal(UserVm vm)
             throws ResourceUnavailableException, InsufficientCapacityException {
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-        Nic defaultNic = _networkMgr.getDefaultNic(vm.getId());
+        Nic defaultNic = _networkModel.getDefaultNic(vm.getId());
         if (defaultNic == null) {
             s_logger.error("Unable to update userdata for vm id=" + vm.getId() + " as the instance doesn't have default nic");
             return false;
@@ -2211,12 +2205,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
         NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null,
-                _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork),
-                _networkMgr.getNetworkTag(template.getHypervisorType(), defaultNetwork));
+                _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork),
+                _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
 
         VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>((VMInstanceVO)vm);
 
-        UserDataServiceProvider element = _networkMgr.getUserDataUpdateProvider(defaultNetwork);
+        UserDataServiceProvider element = _networkModel.getUserDataUpdateProvider(defaultNetwork);
         if (element == null) {
             throw new CloudRuntimeException("Can't find network element for " + Service.UserData.getName() + " provider needed for UserData update");
         }
@@ -2482,8 +2476,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         _accountMgr.checkAccess(caller, null, true, owner);
 
         // Get default guest network in Basic zone
-        Network defaultNetwork = _networkMgr.getExclusiveGuestNetwork(zone
-                .getId());
+        Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
 
         if (defaultNetwork == null) {
             throw new InvalidParameterValueException(
@@ -2495,14 +2488,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware || (hypervisor != null && hypervisor == HypervisorType.VMware));
 
         if (securityGroupIdList != null && isVmWare) {
-            throw new InvalidParameterValueException(
-                    "Security group feature is not supported for vmWare hypervisor");
-        } else if (!isVmWare
-                && _networkMgr
-                .isSecurityGroupSupportedInNetwork(defaultNetwork)
-                && _networkMgr.canAddDefaultSecurityGroup()) {
-            // add the default securityGroup only if no security group is
-            // specified
+            throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+        } else if (!isVmWare && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
+            //add the default securityGroup only if no security group is specified
             if (securityGroupIdList == null || securityGroupIdList.isEmpty()) {
                 if (securityGroupIdList == null) {
                     securityGroupIdList = new ArrayList<Long>();
@@ -2556,15 +2544,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // If no network is specified, find system security group enabled
         // network
         if (networkIdList == null || networkIdList.isEmpty()) {
-            NetworkVO networkWithSecurityGroup = _networkMgr
-                    .getNetworkWithSecurityGroupEnabled(zone.getId());
+            Network networkWithSecurityGroup = _networkModel.getNetworkWithSecurityGroupEnabled(zone.getId());
             if (networkWithSecurityGroup == null) {
                 throw new InvalidParameterValueException(
                         "No network with security enabled is found in zone id="
                                 + zone.getId());
             }
 
-            networkList.add(networkWithSecurityGroup);
+            networkList.add(_networkDao.findById(networkWithSecurityGroup.getId()));
             isSecurityGroupEnabledNetworkUsed = true;
 
         } else if (securityGroupIdList != null
@@ -2589,10 +2576,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                                 + networkIdList.get(0).longValue());
             }
 
-            if (!_networkMgr.isSecurityGroupSupportedInNetwork(network)) {
-                throw new InvalidParameterValueException(
-                        "Network is not security group enabled: "
-                                + network.getId());
+            if (!_networkModel.isSecurityGroupSupportedInNetwork(network)) {
+                throw new InvalidParameterValueException("Network is not security group enabled: " + network.getId());
             }
 
             networkList.add(network);
@@ -2609,7 +2594,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                                     + networkIdList.get(0).longValue());
                 }
 
-                boolean isSecurityGroupEnabled = _networkMgr.isSecurityGroupSupportedInNetwork(network);
+                boolean isSecurityGroupEnabled = _networkModel.isSecurityGroupSupportedInNetwork(network);
                 if (isSecurityGroupEnabled) {
                     if (networkIdList.size() > 1) {
                         throw new InvalidParameterValueException("Can't create a vm with multiple networks one of" +
@@ -2632,10 +2617,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
-        // if network is security group enabled, and no security group is
-        // specified, then add the default security group automatically
-        if (isSecurityGroupEnabledNetworkUsed && !isVmWare
-                && _networkMgr.canAddDefaultSecurityGroup()) {
+        // if network is security group enabled, and no security group is specified, then add the default security group automatically
+        if (isSecurityGroupEnabledNetworkUsed && !isVmWare && _networkModel.canAddDefaultSecurityGroup()) {
 
             // add the default securityGroup only if no security group is
             // specified
@@ -2712,11 +2695,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
             if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                 // get Virtual networks
-                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
+                List<? extends Network> virtualNetworks = _networkModel.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
                 if (virtualNetworks.isEmpty()) {
-                    long physicalNetworkId = _networkMgr.findPhysicalNetworkId(
-                            zone.getId(), requiredOfferings.get(0).getTags(),
-                            requiredOfferings.get(0).getTrafficType());
+                    long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                     // Validate physical network
                     PhysicalNetwork physicalNetwork = _physicalNetworkDao
                             .findById(physicalNetworkId);
@@ -2783,7 +2764,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
                 }
 
-                _networkMgr.checkNetworkPermissions(owner, network);
+                _networkModel.checkNetworkPermissions(owner, network);
 
                 // don't allow to use system networks
                 NetworkOffering networkOffering = _configMgr
@@ -2956,7 +2937,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
             networks.add(new Pair<NetworkVO, NicProfile>(network, profile));
 
-            if (_networkMgr.isSecurityGroupSupportedInNetwork(network)) {
+            if (_networkModel.isSecurityGroupSupportedInNetwork(network)) {
                 securityGroupEnabled = true;
             }
 
@@ -3030,12 +3011,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                             .listDistinctHostNames(ntwkId);
                     // * verify that there are no duplicates
                     if (hostNames.contains(hostName)) {
-                        throw new InvalidParameterValueException(
-                                "The vm with hostName "
-                                        + hostName
-                                        + " already exists in the network domain: "
-                                        + ntwkDomain + "; network="
-                                        + _networkMgr.getNetwork(ntwkId));
+                        throw new InvalidParameterValueException("The vm with hostName " + hostName
+                                + " already exists in the network domain: " + ntwkDomain + "; network=" 
+                                + _networkModel.getNetwork(ntwkId));
                     }
                 }
             }
@@ -3423,10 +3401,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (ip != null && ip.getSystem()) {
             UserContext ctx = UserContext.current();
             try {
-                long networkId = ip.getAssociatedWithNetworkId();
-                Network guestNetwork = _networkMgr.getNetwork(networkId);
-                NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
-                assert (offering.getAssociatePublicIP() == true) : "User VM should not have system owned public IP associated with it when offering configured not to associate public IP.";
                 _rulesMgr.disableStaticNat(ip.getId(), ctx.getCaller(), ctx.getCallerUserId(), true);
             } catch (Exception ex) {
                 s_logger.warn(
@@ -3495,10 +3469,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // check if vm is security group enabled
-        if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId)
-                && _securityGroupMgr.getSecurityGroupsForVm(vmId).isEmpty()
-                && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId)
-                && _networkMgr.canAddDefaultSecurityGroup()) {
+        if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId) && _securityGroupMgr.getSecurityGroupsForVm(vmId).isEmpty() && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId) && _networkModel.canAddDefaultSecurityGroup()) {
             // if vm is not mapped to security group, create a mapping
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Vm "
@@ -4230,8 +4201,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             List<NetworkVO> networkList = new ArrayList<NetworkVO>();
 
             // Get default guest network in Basic zone
-            Network defaultNetwork = _networkMgr.getExclusiveGuestNetwork(zone
-                    .getId());
+            Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
 
             if (defaultNetwork == null) {
                 throw new InvalidParameterValueException(
@@ -4243,12 +4213,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware);
 
             if (securityGroupIdList != null && isVmWare) {
-                throw new InvalidParameterValueException(
-                        "Security group feature is not supported for vmWare hypervisor");
-            } else if (!isVmWare
-                    && _networkMgr
-                    .isSecurityGroupSupportedInNetwork(defaultNetwork)
-                    && _networkMgr.canAddDefaultSecurityGroup()) {
+                throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+            } else if (!isVmWare && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
                 if (securityGroupIdList == null) {
                     securityGroupIdList = new ArrayList<Long>();
                 }
@@ -4328,8 +4294,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                             throw ex;
                         }
 
-                        _networkMgr
-                        .checkNetworkPermissions(newAccount, network);
+                        _networkModel.checkNetworkPermissions(newAccount, network);
 
                         // don't allow to use system networks
                         NetworkOffering networkOffering = _configMgr
@@ -4355,13 +4320,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     }
                     if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                         // get Virtual networks
-                        List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
+                        List<? extends Network> virtualNetworks = _networkModel.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
                         if (virtualNetworks.isEmpty()) {
-                            long physicalNetworkId = _networkMgr
-                                    .findPhysicalNetworkId(zone.getId(),
-                                            requiredOfferings.get(0).getTags(),
-                                            requiredOfferings.get(0)
-                                            .getTrafficType());
+                            long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                             // Validate physical network
                             PhysicalNetwork physicalNetwork = _physicalNetworkDao
                                     .findById(physicalNetworkId);

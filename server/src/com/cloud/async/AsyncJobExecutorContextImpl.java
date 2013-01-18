@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.AgentManager;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.event.dao.EventDao;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
@@ -47,7 +47,7 @@ public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
     private String _name;
 
     @Inject private AgentManager _agentMgr;
-    @Inject private NetworkManager _networkMgr;
+    @Inject private NetworkModel _networkMgr;
     @Inject private UserVmManager _vmMgr;
     @Inject private SnapshotManager _snapMgr;
     @Inject private AccountManager _accountMgr;
@@ -75,7 +75,7 @@ public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
     }
 
     @Override
-    public NetworkManager getNetworkMgr() {
+    public NetworkModel getNetworkMgr() {
         return _networkMgr;
     }
 

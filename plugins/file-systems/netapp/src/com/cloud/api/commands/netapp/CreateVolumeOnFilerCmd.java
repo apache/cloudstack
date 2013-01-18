@@ -20,6 +20,7 @@ import java.net.UnknownHostException;
 import java.rmi.ServerException;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -122,11 +123,11 @@ public class CreateVolumeOnFilerCmd extends BaseCmd {
 			response.setResponseName(getCommandName());
 			this.setResponseObject(response);
 		} catch (ServerException e) {
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
+			throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
 		} catch (InvalidParameterValueException e) {
-			throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
+			throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
 		} catch (UnknownHostException e) {
-			throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
+			throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
 		}
 		
 	}

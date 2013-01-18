@@ -31,6 +31,7 @@ import static org.apache.cloudstack.api.BaseCmd.CommandType.STRING;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.BOOLEAN;
 import static com.cloud.user.Account.ACCOUNT_ID_SYSTEM;
 
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -93,12 +94,12 @@ public final class AddS3Cmd extends BaseCmd {
             result = _resourceService.discoverS3(this);
 
             if (result == null) {
-                throw new ServerApiException(INTERNAL_ERROR, "Failed to add S3.");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add S3.");
             }
 
         } catch (DiscoveryException e) {
 
-            throw new ServerApiException(INTERNAL_ERROR, "Failed to add S3 due to " + e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add S3 due to " + e.getMessage());
 
         }
 

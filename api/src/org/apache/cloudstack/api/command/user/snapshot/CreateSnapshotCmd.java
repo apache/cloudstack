@@ -152,7 +152,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             this.setEntityId(snapshot.getId());
             this.setEntityUuid(snapshot.getUuid());
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot");
         }
     }
 
@@ -165,7 +165,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
         }
     }
 

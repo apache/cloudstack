@@ -156,7 +156,7 @@ public class AddClusterCmd extends BaseCmd {
                     clusterResponses.add(clusterResponse);
                 }
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add cluster");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add cluster");
             }
 
             response.setResponses(clusterResponses);
@@ -165,10 +165,10 @@ public class AddClusterCmd extends BaseCmd {
             this.setResponseObject(response);
         } catch (DiscoveryException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (ResourceInUseException ex) {
             s_logger.warn("Exception: ", ex);
-            ServerApiException e = new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            ServerApiException e = new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
             for (String proxyObj : ex.getIdProxyList()) {
                 e.addProxyObject(proxyObj);
             }

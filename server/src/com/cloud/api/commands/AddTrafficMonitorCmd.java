@@ -99,9 +99,9 @@ public class AddTrafficMonitorCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } catch (InvalidParameterValueException ipve) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, ipve.getMessage());
+			throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ipve.getMessage());
         } catch (CloudRuntimeException cre) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, cre.getMessage());
+			throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, cre.getMessage());
         }
     }
 }

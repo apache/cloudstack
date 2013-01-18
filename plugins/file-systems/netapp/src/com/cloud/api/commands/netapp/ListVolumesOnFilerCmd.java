@@ -71,7 +71,7 @@ public class ListVolumesOnFilerCmd extends BaseCmd {
     		listResponse.setResponseName(getCommandName());
     		this.setResponseObject(listResponse);
     	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
     	}
 		
 	}

@@ -1148,6 +1148,7 @@
                               var array1 = [];															
 															if(args.context.zones[0].networktype == "Advanced" && args.context.zones[0].securitygroupsenabled	== true) {
 															  array1.push({id: 'account-specific', description: 'Account'});
+																array1.push({id: 'zone-wide', description: 'All'});
 															}
 															else {															
 																array1.push({id: 'zone-wide', description: 'All'});

@@ -53,8 +53,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
@@ -109,6 +109,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.async.AsyncCommandQueued;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -118,9 +119,13 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventUtils;
+import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -128,8 +133,8 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
-import com.cloud.utils.Pair;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
@@ -137,7 +142,7 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CSExceptionErrorCode;
+
 
 @Component
 public class ApiServer implements HttpRequestHandler {
@@ -168,11 +173,11 @@ public class ApiServer implements HttpRequestHandler {
 
     public ApiServer() {
     }
-    
+
     @PostConstruct
     void initComponent() {
-    	s_instance = this;
-    	init();
+        s_instance = this;
+        init();
     }
 
     public static ApiServer getInstance() {
@@ -260,7 +265,7 @@ public class ApiServer implements HttpRequestHandler {
             // (Immutable)Multimap<String, String> paramMultiMap = HashMultimap.create();
             // Map<String, Collection<String>> parameterMap = paramMultiMap.asMap();
             Map parameterMap = new HashMap<String, String[]>();
-            String responseType = BaseCmd.RESPONSE_TYPE_JSON;
+            String responseType = BaseCmd.RESPONSE_TYPE_XML;
             for (NameValuePair param : paramList) {
                 if (param.getName().equalsIgnoreCase("response")) {
                     responseType = param.getValue();
@@ -271,7 +276,7 @@ public class ApiServer implements HttpRequestHandler {
 
             // Check responseType, if not among valid types, fallback to JSON
             if (!(responseType.equals(BaseCmd.RESPONSE_TYPE_JSON) || responseType.equals(BaseCmd.RESPONSE_TYPE_XML)))
-                responseType = BaseCmd.RESPONSE_TYPE_JSON;
+                responseType = BaseCmd.RESPONSE_TYPE_XML;
 
             try {
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
@@ -282,8 +287,8 @@ public class ApiServer implements HttpRequestHandler {
 
                 writeResponse(response, responseText, HttpStatus.SC_OK, responseType, null);
             } catch (ServerApiException se) {
-                String responseText = getSerializedApiError(se.getErrorCode(), se.getDescription(), parameterMap, responseType, se);                
-                writeResponse(response, responseText, se.getErrorCode(), responseType, se.getDescription());
+                String responseText = getSerializedApiError(se, parameterMap, responseType);
+                writeResponse(response, responseText, se.getErrorCode().getHttpCode(), responseType, se.getDescription());
                 sb.append(" " + se.getErrorCode() + " " + se.getDescription());
             } catch (RuntimeException e) {
                 // log runtime exception like NullPointerException to help identify the source easier
@@ -312,7 +317,7 @@ public class ApiServer implements HttpRequestHandler {
                         s_logger.trace("   key: " + keyStr + ", value: " + ((value == null) ? "'null'" : value[0]));
                     }
                 }
-                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "Invalid request, no command sent");
+                throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "Invalid request, no command sent");
             } else {
                 Map<String, String> paramMap = new HashMap<String, String>();
                 Set keys = params.keySet();
@@ -330,10 +335,10 @@ public class ApiServer implements HttpRequestHandler {
                             decodedValue = URLDecoder.decode(value[0], "UTF-8");
                         } catch (UnsupportedEncodingException usex) {
                             s_logger.warn(key + " could not be decoded, value = " + value[0]);
-                            throw new ServerApiException(BaseCmd.PARAM_ERROR, key + " could not be decoded, received value " + value[0]);
+                            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, key + " could not be decoded, received value " + value[0]);
                         } catch (IllegalArgumentException iae) {
                             s_logger.warn(key + " could not be decoded, value = " + value[0]);
-                            throw new ServerApiException(BaseCmd.PARAM_ERROR, key + " could not be decoded, received value " + value[0] + " which contains illegal characters eg.%");
+                            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, key + " could not be decoded, received value " + value[0] + " which contains illegal characters eg.%");
                         }
                     } else {
                         decodedValue = value[0];
@@ -348,7 +353,7 @@ public class ApiServer implements HttpRequestHandler {
                     cmdObj.configure();
                     cmdObj.setFullUrlParams(paramMap);
                     cmdObj.setResponseType(responseType);
-                    
+
                     // This is where the command is either serialized, or directly dispatched
                     response = queueCommand(cmdObj, paramMap);
                     buildAuditTrail(auditTrailSb, command[0], response);
@@ -357,57 +362,87 @@ public class ApiServer implements HttpRequestHandler {
                         String errorString = "Unknown API command: " + ((command == null) ? "null" : command[0]);
                         s_logger.warn(errorString);
                         auditTrailSb.append(" " + errorString);
-                        throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, errorString);
+                        throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, errorString);
                     }
                 }
-            }
-        } catch (Exception ex) {
-            if (ex instanceof InvalidParameterValueException) {
-                InvalidParameterValueException ref = (InvalidParameterValueException)ex;
-                ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());            	
-                // copy over the IdentityProxy information as well and throw the serverapiexception.
-                ArrayList<String> idList = ref.getIdProxyList();
-                if (idList != null) {
-                    // Iterate through entire arraylist and copy over each proxy id.
-                    for (int i = 0 ; i < idList.size(); i++) {
-                        e.addProxyObject(idList.get(i));
-                    }
-                }
-                // Also copy over the cserror code and the function/layer in which it was thrown.
-                e.setCSErrorCode(ref.getCSErrorCode());
-                throw e;
-            } else if (ex instanceof PermissionDeniedException) {
-                PermissionDeniedException ref = (PermissionDeniedException)ex;
-                ServerApiException e = new ServerApiException(BaseCmd.ACCOUNT_ERROR, ex.getMessage());
-                // copy over the IdentityProxy information as well and throw the serverapiexception.
-                ArrayList<String> idList = ref.getIdProxyList();
-                if (idList != null) {
-                    // Iterate through entire arraylist and copy over each proxy id.
-                    for (int i = 0 ; i < idList.size(); i++) {
-                        e.addProxyObject(idList.get(i));
-                    }
-                }
-                e.setCSErrorCode(ref.getCSErrorCode());
-                throw e;
-            } else if (ex instanceof ServerApiException) {
-                throw (ServerApiException) ex;
-            } else {
-                s_logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command[0]), ex);
-                ServerApiException e = new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal server error, unable to execute request.");
-                e.setCSErrorCode(CSExceptionErrorCode.getCSErrCode("ServerApiException"));
-                throw e;
             }
         }
+        catch (InvalidParameterValueException ex){
+            s_logger.info(ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage(), ex);
+        }
+        catch (IllegalArgumentException ex){
+            s_logger.info(ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage(), ex);
+        }
+        catch (PermissionDeniedException ex){
+            ArrayList<String> idList = ex.getIdProxyList();
+            if (idList != null) {
+                s_logger.info("PermissionDenied: " + ex.getMessage() + " on uuids: [" + StringUtils.listToCsvTags(idList) + "]");
+            } else {
+                s_logger.info("PermissionDenied: " + ex.getMessage());
+            }
+            throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, ex.getMessage(), ex);
+        }
+        catch (AccountLimitException ex){
+            s_logger.info(ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.ACCOUNT_RESOURCE_LIMIT_ERROR, ex.getMessage(), ex);
+        }
+        catch (InsufficientCapacityException ex){
+            s_logger.info(ex.getMessage());
+            String errorMsg = ex.getMessage();
+            if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
+                // hide internal details to non-admin user for security reason
+                errorMsg = BaseCmd.USER_ERROR_MESSAGE;
+            }
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, errorMsg, ex);
+        }
+        catch (ResourceAllocationException ex){
+            s_logger.info(ex.getMessage());
+            String errorMsg = ex.getMessage();
+            if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
+                // hide internal details to non-admin user for security reason
+                errorMsg = BaseCmd.USER_ERROR_MESSAGE;
+            }
+            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, errorMsg, ex);
+        }
+        catch (ResourceUnavailableException ex){
+            s_logger.info(ex.getMessage());
+            String errorMsg = ex.getMessage();
+            if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
+                // hide internal details to non-admin user for security reason
+                errorMsg = BaseCmd.USER_ERROR_MESSAGE;
+            }
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, errorMsg, ex);
+        }
+        catch (AsyncCommandQueued ex){
+            s_logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command[0]), ex);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Internal server error, unable to execute request.");
+        }
+        catch (ServerApiException ex){
+            s_logger.info(ex.getDescription());
+            throw ex;
+        }
+        catch (Exception ex){
+            s_logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command[0]), ex);
+            String errorMsg = ex.getMessage();
+            if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
+                // hide internal details to non-admin user for security reason
+                errorMsg = BaseCmd.USER_ERROR_MESSAGE;
+            }
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg, ex);
+        }
+
         return response;
     }
 
-    private String queueCommand(BaseCmd cmdObj, Map<String, String> params) {
+    private String queueCommand(BaseCmd cmdObj, Map<String, String> params) throws Exception {
         UserContext ctx = UserContext.current();
         Long callerUserId = ctx.getCallerUserId();
         Account caller = ctx.getCaller();
-        
+
         BaseCmd realCmdObj = ComponentContext.getTargetObject(cmdObj);
-        
+
         // Queue command based on Cmd super class:
         // BaseCmd: cmd is dispatched to ApiDispatcher, executed, serialized and returned.
         // BaseAsyncCreateCmd: cmd params are processed and create() is called, then same workflow as BaseAsyncCmd.
@@ -459,7 +494,7 @@ public class ApiServer implements HttpRequestHandler {
             if (jobId == 0L) {
                 String errorMsg = "Unable to schedule async job for command " + job.getCmd();
                 s_logger.warn(errorMsg);
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, errorMsg);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg);
             }
 
             if (objectId != null) {
@@ -564,16 +599,19 @@ public class ApiServer implements HttpRequestHandler {
             // if userId not null, that mean that user is logged in
             if (userId != null) {
                 User user = ApiDBUtils.findUserById(userId);
-                if (!isCommandAvailable(user, commandName)) {
+                try{
+                    checkCommandAvailable(user, commandName);
+                }
+                catch (PermissionDeniedException ex){
                     s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
-                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
+                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
                 return true;
             } else {
                 // check against every available command to see if the command exists or not
                 if (!_apiNameCmdClassMap.containsKey(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
                     s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
-                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
+                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
             }
 
@@ -664,9 +702,12 @@ public class ApiServer implements HttpRequestHandler {
 
             UserContext.updateContext(user.getId(), account, null);
 
-            if (!isCommandAvailable(user, commandName)) {
+            try{
+                checkCommandAvailable(user, commandName);
+            }
+            catch (PermissionDeniedException ex){
                 s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user");
-                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
+                throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
             }
 
             // verify secret key exists
@@ -689,11 +730,10 @@ public class ApiServer implements HttpRequestHandler {
                 s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
             }
             return equalSig;
+        } catch (ServerApiException ex){
+            throw ex;
         } catch (Exception ex) {
-            if (ex instanceof ServerApiException && ((ServerApiException) ex).getErrorCode() == BaseCmd.UNSUPPORTED_ACTION_ERROR) {
-                throw (ServerApiException) ex;
-            }
-            s_logger.error("unable to verify request signature", ex);
+            s_logger.error("unable to verify request signature");
         }
         return false;
     }
@@ -795,19 +835,14 @@ public class ApiServer implements HttpRequestHandler {
         return true;
     }
 
-    private boolean isCommandAvailable(User user, String commandName) throws PermissionDeniedException {
+    private void checkCommandAvailable(User user, String commandName) throws PermissionDeniedException {
         if (user == null) {
             throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
         }
 
-        Account account = _accountMgr.getAccount(user.getAccountId());
-        RoleType roleType = _accountMgr.getRoleType(account);
         for (APIChecker apiChecker : _apiAccessCheckers) {
-            // Fail the checking if any checker fails to verify
-            if (!apiChecker.checkAccess(roleType, commandName))
-                return false;
+            apiChecker.checkAccess(user, commandName);
         }
-        return true;
     }
 
     private Class<?> getCmdClass(String cmdName) {
@@ -941,13 +976,13 @@ public class ApiServer implements HttpRequestHandler {
         }
     }
 
-    public String getSerializedApiError(int errorCode, String errorText, Map<String, Object[]> apiCommandParams, String responseType, Exception ex) {
+    public String getSerializedApiError(int errorCode, String errorText, Map<String, Object[]> apiCommandParams, String responseType) {
         String responseName = null;
         Class<?> cmdClass = null;
         String responseText = null;
 
         try {
-            if (errorCode == BaseCmd.UNSUPPORTED_ACTION_ERROR || apiCommandParams == null || apiCommandParams.isEmpty()) {
+            if (apiCommandParams == null || apiCommandParams.isEmpty()) {
                 responseName = "errorresponse";
             } else {
                 Object cmdObj = apiCommandParams.get("command");
@@ -966,48 +1001,55 @@ public class ApiServer implements HttpRequestHandler {
             apiResponse.setErrorCode(errorCode);
             apiResponse.setErrorText(errorText);
             apiResponse.setResponseName(responseName);
-            // Also copy over the IdentityProxy object List into this new apiResponse, from
-            // the exception caught. When invoked from handle(), the exception here can
-            // be either ServerApiException, PermissionDeniedException or InvalidParameterValue
-            // Exception. When invoked from ApiServlet's processRequest(), this can be
-            // a standard exception like NumberFormatException. We'll leave the standard ones alone.
-            if (ex != null) {
-                if (ex instanceof ServerApiException || ex instanceof PermissionDeniedException
-                        || ex instanceof InvalidParameterValueException) {
-                    // Cast the exception appropriately and retrieve the IdentityProxy
-                    if (ex instanceof ServerApiException) {
-                        ServerApiException ref = (ServerApiException) ex;
-                        ArrayList<String> idList = ref.getIdProxyList();
-                        if (idList != null) {
-                            for (int i=0; i < idList.size(); i++) {
-                                apiResponse.addProxyObject(idList.get(i));
-                            }            				
-                        }
-                        // Also copy over the cserror code and the function/layer in which it was thrown.
-                        apiResponse.setCSErrorCode(ref.getCSErrorCode());
-                    } else if (ex instanceof PermissionDeniedException) {
-                        PermissionDeniedException ref = (PermissionDeniedException) ex;
-                        ArrayList<String> idList = ref.getIdProxyList();
-                        if (idList != null) {
-                            for (int i=0; i < idList.size(); i++) {
-                                apiResponse.addProxyObject(idList.get(i));
-                            }            				
-                        }
-                        // Also copy over the cserror code and the function/layer in which it was thrown.
-                        apiResponse.setCSErrorCode(ref.getCSErrorCode());
-                    } else if (ex instanceof InvalidParameterValueException) {
-                        InvalidParameterValueException ref = (InvalidParameterValueException) ex;
-                        ArrayList<String> idList = ref.getIdProxyList();
-                        if (idList != null) {
-                            for (int i=0; i < idList.size(); i++) {
-                                apiResponse.addProxyObject(idList.get(i));
-                            }            				
-                        }
-                        // Also copy over the cserror code and the function/layer in which it was thrown.
-                        apiResponse.setCSErrorCode(ref.getCSErrorCode());
+            SerializationContext.current().setUuidTranslation(true);
+            responseText = ApiResponseSerializer.toSerializedString(apiResponse, responseType);
+
+        } catch (Exception e) {
+            s_logger.error("Exception responding to http request", e);
+        }            				
+        return responseText;
+    }
+
+    public String getSerializedApiError(ServerApiException ex, Map<String, Object[]> apiCommandParams, String responseType) {
+        String responseName = null;
+        Class<?> cmdClass = null;
+        String responseText = null;
+
+        if (ex == null){
+            // this call should not be invoked with null exception
+            return getSerializedApiError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Some internal error happened", apiCommandParams, responseType);
+        }            				
+        try {
+            if (ex.getErrorCode() == ApiErrorCode.UNSUPPORTED_ACTION_ERROR || apiCommandParams == null || apiCommandParams.isEmpty()) {
+                responseName = "errorresponse";
+            } else {
+                Object cmdObj = apiCommandParams.get("command");
+                // cmd name can be null when "command" parameter is missing in
+                // the request
+                if (cmdObj != null) {
+                    String cmdName = ((String[]) cmdObj)[0];
+                    cmdClass = getCmdClass(cmdName);
+                    if (cmdClass != null) {
+                        responseName = ((BaseCmd) cmdClass.newInstance()).getCommandName();
+                    } else {
+                        responseName = "errorresponse";
                     }
                 }
             }
+            ExceptionResponse apiResponse = new ExceptionResponse();
+            apiResponse.setErrorCode(ex.getErrorCode().getHttpCode());
+            apiResponse.setErrorText(ex.getDescription());
+            apiResponse.setResponseName(responseName);
+            ArrayList<String> idList = ex.getIdProxyList();
+            if (idList != null) {
+                for (int i=0; i < idList.size(); i++) {
+                    apiResponse.addProxyObject(idList.get(i));
+                }            				
+            }
+            // Also copy over the cserror code and the function/layer in which
+            // it was thrown.
+            apiResponse.setCSErrorCode(ex.getCSErrorCode());
+
             SerializationContext.current().setUuidTranslation(true);
             responseText = ApiResponseSerializer.toSerializedString(apiResponse, responseType);
 

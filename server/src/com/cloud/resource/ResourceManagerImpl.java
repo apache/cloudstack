@@ -2099,6 +2099,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService,
 		host.setTotalMemory(ssCmd.getMemory());
 		host.setSpeed(ssCmd.getSpeed());
 		host.setHypervisorType(hyType);
+        host.setHypervisorVersion(ssCmd.getHypervisorVersion());
 		return host;
 	}
 

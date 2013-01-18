@@ -145,17 +145,17 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
         } catch (InsufficientCapacityException ex){
             s_logger.info(ex);
             s_logger.trace(ex);
-            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
 
         if (result != null) {
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a Private network");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a Private network");
         }
     }
 
@@ -167,7 +167,7 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create private network");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create private network");
         }
     }
 

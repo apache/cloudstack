@@ -16,29 +16,6 @@
 // under the License.
 package org.apache.cloudstack.discovery;
 
-import com.cloud.serializer.Param;
-import com.cloud.server.ManagementServer;
-import com.cloud.utils.ReflectUtil;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.component.PluggableService;
-import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
-import org.apache.cloudstack.api.response.ApiParameterResponse;
-import org.apache.cloudstack.api.response.ApiResponseResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,58 +24,57 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.command.user.discovery.ListApisCmd;
+import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
+import org.apache.cloudstack.api.response.ApiParameterResponse;
+import org.apache.cloudstack.api.response.ApiResponseResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.cloud.serializer.Param;
+import com.cloud.user.User;
+import com.cloud.utils.ReflectUtil;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.PluggableService;
+import com.google.gson.annotations.SerializedName;
+
 @Component
 @Local(value = ApiDiscoveryService.class)
 public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
     private static final Logger s_logger = Logger.getLogger(ApiDiscoveryServiceImpl.class);
 
-    private static Map<RoleType, List<ApiDiscoveryResponse>> _roleTypeDiscoveryResponseListMap;
-
-    private static Map<String, ApiDiscoveryResponse> _apiNameDiscoveryResponseMap =
-            new HashMap<String, ApiDiscoveryResponse>();
-
-    private static Map<String, List<RoleType>> _apiNameRoleTypeListMap = null;
+    @Inject List<APIChecker> _apiAccessCheckers = null;
+    private Map<String, ApiDiscoveryResponse> _apiNameDiscoveryResponseMap = null;
 
     @Inject List<PluggableService> _services;
 
     protected ApiDiscoveryServiceImpl() {
         super();
-        if (_roleTypeDiscoveryResponseListMap == null) {
+        if (_apiNameDiscoveryResponseMap == null) {
             long startTime = System.nanoTime();
-            _roleTypeDiscoveryResponseListMap = new HashMap<RoleType, List<ApiDiscoveryResponse>>();
-            for (RoleType roleType: RoleType.values())
-                _roleTypeDiscoveryResponseListMap.put(roleType, new ArrayList<ApiDiscoveryResponse>());
+            _apiNameDiscoveryResponseMap = new HashMap<String, ApiDiscoveryResponse>();
             cacheResponseMap();
             long endTime = System.nanoTime();
             s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
         }
     }
 
-    private Map<String, List<RoleType>> getApiNameRoleTypeListMap() {
-        Map<String, List<RoleType>> apiNameRoleTypeMap = new HashMap<String, List<RoleType>>();
-        _services.add((PluggableService) ComponentContext.getComponent(ManagementServer.Name));
-        for (PluggableService service : _services) {
-            for (Map.Entry<String, String> entry: service.getProperties().entrySet()) {
-                String apiName = entry.getKey();
-                String roleMask = entry.getValue();
-                try {
-                    short cmdPermissions = Short.parseShort(roleMask);
-                    if (!apiNameRoleTypeMap.containsKey(apiName))
-                        apiNameRoleTypeMap.put(apiName, new ArrayList<RoleType>());
-                    for (RoleType roleType: RoleType.values()) {
-                        if ((cmdPermissions & roleType.getValue()) != 0)
-                            apiNameRoleTypeMap.get(apiName).add(roleType);
-                    }
-                } catch (NumberFormatException nfe) {
-                }
-            }
-        }
-        return apiNameRoleTypeMap;
-    }
-
     private void cacheResponseMap() {
         Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
                 new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
+
+        //TODO: Fix and use PluggableService to get the classes
 
         Map<String, List<String>> responseApiNameListMap = new HashMap<String, List<String>>();
 
@@ -169,7 +145,7 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
             _apiNameDiscoveryResponseMap.put(apiName, response);
         }
 
-        for (String apiName: _apiNameDiscoveryResponseMap.keySet()) {
+        for (String apiName : _apiNameDiscoveryResponseMap.keySet()) {
             ApiDiscoveryResponse response = _apiNameDiscoveryResponseMap.get(apiName);
             Set<ApiParameterResponse> processedParams = new HashSet<ApiParameterResponse>();
             for (ApiParameterResponse param: response.getParams()) {
@@ -195,41 +171,48 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
     }
 
     @Override
-    public ListResponse<? extends BaseResponse> listApis(RoleType roleType, String name) {
-        // Creates roles based response list cache the first time listApis is called
-        // Due to how adapters work, this cannot be done when mgmt loads
-        if (_apiNameRoleTypeListMap == null) {
-            long startTime = System.nanoTime();
-            _apiNameRoleTypeListMap = getApiNameRoleTypeListMap();
-            for (Map.Entry<String, List<RoleType>> entry: _apiNameRoleTypeListMap.entrySet()) {
-                String apiName = entry.getKey();
-                for (RoleType roleTypeInList: entry.getValue()) {
-                    _roleTypeDiscoveryResponseListMap.get(roleTypeInList).add(
-                            _apiNameDiscoveryResponseMap.get(apiName));
-                }
-            }
-            long endTime = System.nanoTime();
-            s_logger.info("Api Discovery Service: List apis cached in " + (endTime - startTime) / 1000000.0 + " ms");
-        }
+    public ListResponse<? extends BaseResponse> listApis(User user, String name) {
         ListResponse<ApiDiscoveryResponse> response = new ListResponse<ApiDiscoveryResponse>();
+        List<ApiDiscoveryResponse> responseList = new ArrayList<ApiDiscoveryResponse>();
+
+        if (user == null)
+            return null;
+
         if (name != null) {
             if (!_apiNameDiscoveryResponseMap.containsKey(name))
                 return null;
 
-             List<ApiDiscoveryResponse> singleResponse = new ArrayList<ApiDiscoveryResponse>();
-            singleResponse.add(_apiNameDiscoveryResponseMap.get(name));
-            response.setResponses(singleResponse);
+            for (APIChecker apiChecker : _apiAccessCheckers) {
+                try {
+                    apiChecker.checkAccess(user, name);
+                } catch (Exception ex) {
+                    return null;
+                }
+            }
+            responseList.add(_apiNameDiscoveryResponseMap.get(name));
 
         } else {
-            response.setResponses(_roleTypeDiscoveryResponseListMap.get(roleType));
+            for (String apiName : _apiNameDiscoveryResponseMap.keySet()) {
+                boolean isAllowed = true;
+                for (APIChecker apiChecker : _apiAccessCheckers) {
+                    try {
+                        apiChecker.checkAccess(user, apiName);
+                    } catch (Exception ex) {
+                        isAllowed = false;
+                    }
+                }
+                if (isAllowed)
+                    responseList.add(_apiNameDiscoveryResponseMap.get(apiName));
+            }
         }
+        response.setResponses(responseList);
         return response;
     }
 
     @Override
-    public Map<String, String> getProperties() {
-        Map<String, String> apiDiscoveryPropertyMap = new HashMap<String, String>();
-        apiDiscoveryPropertyMap.put("listApis", "15");
-        return apiDiscoveryPropertyMap;
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(ListApisCmd.class);
+        return cmdList;
     }
 }

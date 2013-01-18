@@ -115,7 +115,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, lockRequested == true ? "Failed to lock account" : "Failed to disable account" );
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, lockRequested == true ? "Failed to lock account" : "Failed to disable account" );
         }
     }
 

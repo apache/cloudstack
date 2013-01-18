@@ -80,7 +80,7 @@ public class UpdateVMGroupCmd extends BaseCmd{
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update vm instance group");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vm instance group");
         }
     }
 }

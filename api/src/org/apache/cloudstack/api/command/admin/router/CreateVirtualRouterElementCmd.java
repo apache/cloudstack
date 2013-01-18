@@ -86,7 +86,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add Virtual Router entity to physical network");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Virtual Router entity to physical network");
         }
     }
 
@@ -97,7 +97,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add Virtual Router entity to physical network");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Virtual Router entity to physical network");
         }
     }
 

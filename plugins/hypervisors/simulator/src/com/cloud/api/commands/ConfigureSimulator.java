@@ -20,6 +20,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -63,7 +64,7 @@ public class ConfigureSimulator extends BaseCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         boolean result = _simMgr.configureSimulator(zoneId, podId, clusterId, hostId, command, values);
         if (!result) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to configure simulator");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure simulator");
         }
 
         SuccessResponse response = new SuccessResponse(getCommandName());

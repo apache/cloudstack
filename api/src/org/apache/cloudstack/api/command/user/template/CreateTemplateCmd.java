@@ -247,7 +247,7 @@ import com.cloud.user.UserContext;
                 this.setEntityId(template.getId());
                 this.setEntityUuid(template.getUuid());
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR,
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
                 "Failed to create a template");
             }
         }
@@ -277,7 +277,7 @@ import com.cloud.user.UserContext;
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create private template");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create private template");
         }
 
     }

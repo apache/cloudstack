@@ -115,6 +115,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkDomainVO;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
@@ -254,103 +255,105 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Component
 public class ApiDBUtils {
     private static ManagementServer _ms;
-    @Inject static AsyncJobManager _asyncMgr;
-    @Inject static SecurityGroupManager _securityGroupMgr;
-    @Inject static StorageManager _storageMgr;
-    @Inject static UserVmManager _userVmMgr;
-    @Inject static NetworkManager _networkMgr;
-    @Inject static StatsCollector _statsCollector;
+    static AsyncJobManager _asyncMgr;
+    static SecurityGroupManager _securityGroupMgr;
+    static StorageManager _storageMgr;
+    static UserVmManager _userVmMgr;
+    static NetworkModel _networkModel;
+    static NetworkManager _networkMgr;
+    static StatsCollector _statsCollector;
 
-    @Inject static AccountDao _accountDao;
-    @Inject static AccountVlanMapDao _accountVlanMapDao;
-    @Inject static ClusterDao _clusterDao;
-    @Inject static CapacityDao _capacityDao;
-    @Inject static DiskOfferingDao _diskOfferingDao;
-    @Inject static DomainDao _domainDao;
-    @Inject static DomainRouterDao _domainRouterDao;
-    @Inject static DomainRouterJoinDao _domainRouterJoinDao;
-    @Inject static GuestOSDao _guestOSDao;
-    @Inject static GuestOSCategoryDao _guestOSCategoryDao;
-    @Inject static HostDao _hostDao;
-    @Inject static IPAddressDao _ipAddressDao;
-    @Inject static LoadBalancerDao _loadBalancerDao;
-    @Inject static SecurityGroupDao _securityGroupDao;
-    @Inject static SecurityGroupJoinDao _securityGroupJoinDao;
-    @Inject static NetworkRuleConfigDao _networkRuleConfigDao;
-    @Inject static HostPodDao _podDao;
-    @Inject static ServiceOfferingDao _serviceOfferingDao;
-    @Inject static SnapshotDao _snapshotDao;
-    @Inject static StoragePoolDao _storagePoolDao;
-    @Inject static VMTemplateDao _templateDao;
-    @Inject static VMTemplateDetailsDao _templateDetailsDao;
-    @Inject static VMTemplateHostDao _templateHostDao;
-    @Inject static VMTemplateSwiftDao _templateSwiftDao;
-    @Inject static VMTemplateS3Dao _templateS3Dao;
-    @Inject static UploadDao _uploadDao;
-    @Inject static UserDao _userDao;
-    @Inject static UserStatisticsDao _userStatsDao;
-    @Inject static UserVmDao _userVmDao;
-    @Inject static UserVmJoinDao _userVmJoinDao;
-    @Inject static VlanDao _vlanDao;
-    @Inject static VolumeDao _volumeDao;
-    @Inject static Site2SiteVpnGatewayDao _site2SiteVpnGatewayDao;
-    @Inject static Site2SiteCustomerGatewayDao _site2SiteCustomerGatewayDao;
-    @Inject static VolumeHostDao _volumeHostDao;
-    @Inject static DataCenterDao _zoneDao;
-    @Inject static NetworkOfferingDao _networkOfferingDao;
-    @Inject static NetworkDao _networkDao;
-    @Inject static PhysicalNetworkDao _physicalNetworkDao;
-    @Inject static ConfigurationService _configMgr;
-    @Inject static ConfigurationDao _configDao;
-    @Inject static ConsoleProxyDao _consoleProxyDao;
-    @Inject static FirewallRulesCidrsDao _firewallCidrsDao;
-    @Inject static VMInstanceDao _vmDao;
-    @Inject static ResourceLimitService _resourceLimitMgr;
-    @Inject static ProjectService _projectMgr;
-    @Inject static ResourceManager _resourceMgr;
-    @Inject static AccountDetailsDao _accountDetailsDao;
-    @Inject static NetworkDomainDao _networkDomainDao;
-    @Inject static HighAvailabilityManager _haMgr;
-    @Inject static VpcManager _vpcMgr;
-    @Inject static TaggedResourceService _taggedResourceService;
-    @Inject static UserVmDetailsDao _userVmDetailsDao;
-    @Inject static SSHKeyPairDao _sshKeyPairDao;
+    static AccountDao _accountDao;
+    static AccountVlanMapDao _accountVlanMapDao;
+    static ClusterDao _clusterDao;
+    static CapacityDao _capacityDao;
+    static DiskOfferingDao _diskOfferingDao;
+    static DomainDao _domainDao;
+    static DomainRouterDao _domainRouterDao;
+    static DomainRouterJoinDao _domainRouterJoinDao;
+    static GuestOSDao _guestOSDao;
+    static GuestOSCategoryDao _guestOSCategoryDao;
+    static HostDao _hostDao;
+    static IPAddressDao _ipAddressDao;
+    static LoadBalancerDao _loadBalancerDao;
+    static SecurityGroupDao _securityGroupDao;
+    static SecurityGroupJoinDao _securityGroupJoinDao;
+    static NetworkRuleConfigDao _networkRuleConfigDao;
+    static HostPodDao _podDao;
+    static ServiceOfferingDao _serviceOfferingDao;
+    static SnapshotDao _snapshotDao;
+    static StoragePoolDao _storagePoolDao;
+    static VMTemplateDao _templateDao;
+    static VMTemplateDetailsDao _templateDetailsDao;
+    static VMTemplateHostDao _templateHostDao;
+    static VMTemplateSwiftDao _templateSwiftDao;
+    static VMTemplateS3Dao _templateS3Dao;
+    static UploadDao _uploadDao;
+    static UserDao _userDao;
+    static UserStatisticsDao _userStatsDao;
+    static UserVmDao _userVmDao;
+    static UserVmJoinDao _userVmJoinDao;
+    static VlanDao _vlanDao;
+    static VolumeDao _volumeDao;
+    static Site2SiteVpnGatewayDao _site2SiteVpnGatewayDao;
+    static Site2SiteCustomerGatewayDao _site2SiteCustomerGatewayDao;
+    static VolumeHostDao _volumeHostDao;
+    static DataCenterDao _zoneDao;
+    static NetworkOfferingDao _networkOfferingDao;
+    static NetworkDao _networkDao;
+    static PhysicalNetworkDao _physicalNetworkDao;
+    static ConfigurationService _configMgr;
+    static ConfigurationDao _configDao;
+    static ConsoleProxyDao _consoleProxyDao;
+    static FirewallRulesCidrsDao _firewallCidrsDao;
+    static VMInstanceDao _vmDao;
+    static ResourceLimitService _resourceLimitMgr;
+    static ProjectService _projectMgr;
+    static ResourceManager _resourceMgr;
+    static AccountDetailsDao _accountDetailsDao;
+    static NetworkDomainDao _networkDomainDao;
+    static HighAvailabilityManager _haMgr;
+    static VpcManager _vpcMgr;
+    static TaggedResourceService _taggedResourceService;
+    static UserVmDetailsDao _userVmDetailsDao;
+    static SSHKeyPairDao _sshKeyPairDao;
 
-    @Inject static ConditionDao _asConditionDao;
-    @Inject static AutoScalePolicyConditionMapDao _asPolicyConditionMapDao;
-    @Inject static AutoScaleVmGroupPolicyMapDao _asVmGroupPolicyMapDao;
-    @Inject static AutoScalePolicyDao _asPolicyDao;
-    @Inject static AutoScaleVmProfileDao _asVmProfileDao;
-    @Inject static AutoScaleVmGroupDao _asVmGroupDao;
-    @Inject static CounterDao _counterDao;
-    @Inject static ResourceTagJoinDao _tagJoinDao;
-    @Inject static EventJoinDao _eventJoinDao;
-    @Inject static InstanceGroupJoinDao _vmGroupJoinDao;
-    @Inject static UserAccountJoinDao _userAccountJoinDao;
-    @Inject static ProjectJoinDao _projectJoinDao;
-    @Inject static ProjectAccountJoinDao _projectAccountJoinDao;
-    @Inject static ProjectInvitationJoinDao _projectInvitationJoinDao;
-    @Inject static HostJoinDao _hostJoinDao;
-    @Inject static VolumeJoinDao _volJoinDao;
-    @Inject static StoragePoolJoinDao _poolJoinDao;
-    @Inject static AccountJoinDao _accountJoinDao;
-    @Inject static AsyncJobJoinDao _jobJoinDao;
+    static ConditionDao _asConditionDao;
+    static AutoScalePolicyConditionMapDao _asPolicyConditionMapDao;
+    static AutoScaleVmGroupPolicyMapDao _asVmGroupPolicyMapDao;
+    static AutoScalePolicyDao _asPolicyDao;
+    static AutoScaleVmProfileDao _asVmProfileDao;
+    static AutoScaleVmGroupDao _asVmGroupDao;
+    static CounterDao _counterDao;
+    static ResourceTagJoinDao _tagJoinDao;
+    static EventJoinDao _eventJoinDao;
+    static InstanceGroupJoinDao _vmGroupJoinDao;
+    static UserAccountJoinDao _userAccountJoinDao;
+    static ProjectJoinDao _projectJoinDao;
+    static ProjectAccountJoinDao _projectAccountJoinDao;
+    static ProjectInvitationJoinDao _projectInvitationJoinDao;
+    static HostJoinDao _hostJoinDao;
+    static VolumeJoinDao _volJoinDao;
+    static StoragePoolJoinDao _poolJoinDao;
+    static AccountJoinDao _accountJoinDao;
+    static AsyncJobJoinDao _jobJoinDao;
 
-    @Inject static PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
-    @Inject static PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
-    @Inject static FirewallRulesDao _firewallRuleDao;
-    @Inject static StaticRouteDao _staticRouteDao;
-    @Inject static VpcGatewayDao _vpcGatewayDao;
-    @Inject static VpcDao _vpcDao;
-    @Inject static VpcOfferingDao _vpcOfferingDao;
-    @Inject static SnapshotPolicyDao _snapshotPolicyDao;
-    @Inject static AsyncJobDao _asyncJobDao;
+    static PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
+    static PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
+    static FirewallRulesDao _firewallRuleDao;
+    static StaticRouteDao _staticRouteDao;
+    static VpcGatewayDao _vpcGatewayDao;
+    static VpcDao _vpcDao;
+    static VpcOfferingDao _vpcOfferingDao;
+    static SnapshotPolicyDao _snapshotPolicyDao;
+    static AsyncJobDao _asyncJobDao;
 
     @Inject private ManagementServer ms;
     @Inject public AsyncJobManager asyncMgr;
     @Inject private SecurityGroupManager securityGroupMgr;
     @Inject private StorageManager storageMgr;
     @Inject private UserVmManager userVmMgr;
+    @Inject private NetworkModel networkModel;
     @Inject private NetworkManager networkMgr;
     @Inject private StatsCollector statsCollector;
 
@@ -408,7 +411,7 @@ public class ApiDBUtils {
     @Inject private TaggedResourceService taggedResourceService;
     @Inject private UserVmDetailsDao userVmDetailsDao;
     @Inject private SSHKeyPairDao sshKeyPairDao;
-    
+
     @Inject private ConditionDao asConditionDao;
     @Inject private AutoScalePolicyConditionMapDao asPolicyConditionMapDao;
     @Inject private AutoScaleVmGroupPolicyMapDao asVmGroupPolicyMapDao;
@@ -438,7 +441,7 @@ public class ApiDBUtils {
     @Inject private VpcOfferingDao vpcOfferingDao;
     @Inject private SnapshotPolicyDao snapshotPolicyDao;
     @Inject private AsyncJobDao asyncJobDao;
-   
+
     @PostConstruct
     void init() {
         _ms = ms;
@@ -446,6 +449,7 @@ public class ApiDBUtils {
         _securityGroupMgr = securityGroupMgr;
         _storageMgr = storageMgr;
         _userVmMgr = userVmMgr;
+        _networkModel = networkModel;
         _networkMgr = networkMgr;
         _configMgr = configMgr;
 
@@ -574,7 +578,7 @@ public class ApiDBUtils {
     }
 
     public static Long getPodIdForVlan(long vlanDbId) {
-        return _networkMgr.getPodIdForVlan(vlanDbId);
+        return _networkModel.getPodIdForVlan(vlanDbId);
     }
 
     public static String getVersion() {
@@ -941,11 +945,11 @@ public class ApiDBUtils {
     }
 
     public static Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId, long zoneId) {
-        return _networkMgr.getNetworkCapabilities(networkId);
+        return _networkModel.getNetworkCapabilities(networkId);
     }
 
     public static long getPublicNetworkIdByZone(long zoneId) {
-        return _networkMgr.getSystemNetworkByZoneAndTrafficType(zoneId, TrafficType.Public).getId();
+        return _networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, TrafficType.Public).getId();
     }
 
     public static Long getVlanNetworkId(long vlanId) {
@@ -975,7 +979,7 @@ public class ApiDBUtils {
     }
 
     public static Long getDedicatedNetworkDomain(long networkId) {
-        return _networkMgr.getDedicatedNetworkDomain(networkId);
+        return _networkModel.getDedicatedNetworkDomain(networkId);
     }
 
     public static float getCpuOverprovisioningFactor() {
@@ -1028,25 +1032,25 @@ public class ApiDBUtils {
     }
 
     public static Map<Service, Set<Provider>> listNetworkOfferingServices(long networkOfferingId) {
-        return _networkMgr.getNetworkOfferingServiceProvidersMap(networkOfferingId);
+        return _networkModel.getNetworkOfferingServiceProvidersMap(networkOfferingId);
     }
 
     public static List<Service> getElementServices(Provider provider) {
-        return _networkMgr.getElementServices(provider);
+        return _networkModel.getElementServices(provider);
     }
 
     public static List<? extends Provider> getProvidersForService(Service service) {
-        return _networkMgr.listSupportedNetworkServiceProviders(service.getName());
+        return _networkModel.listSupportedNetworkServiceProviders(service.getName());
     }
 
     public static boolean canElementEnableIndividualServices(Provider serviceProvider) {
-        return _networkMgr.canElementEnableIndividualServices(serviceProvider);
+        return _networkModel.canElementEnableIndividualServices(serviceProvider);
     }
 
     public static Pair<Long, Boolean> getDomainNetworkDetails(long networkId) {
         NetworkDomainVO map = _networkDomainDao.getDomainNetworkMapByNetworkId(networkId);
 
-        boolean subdomainAccess = (map.isSubdomainAccess() != null) ? map.isSubdomainAccess() : _networkMgr.getAllowSubdomainAccessGlobal();
+        boolean subdomainAccess = (map.isSubdomainAccess() != null) ? map.isSubdomainAccess() : _networkModel.getAllowSubdomainAccessGlobal();
 
         return new Pair<Long, Boolean>(map.getDomainId(), subdomainAccess);
     }
@@ -1073,11 +1077,11 @@ public class ApiDBUtils {
     }
 
     public static List<? extends Network> listVpcNetworks(long vpcId) {
-        return _networkMgr.listNetworksByVpc(vpcId);
+        return _networkModel.listNetworksByVpc(vpcId);
     }
 
     public static boolean canUseForDeploy(Network network) {
-        return _networkMgr.canUseForDeploy(network);
+        return _networkModel.canUseForDeploy(network);
     }
 
     public static String getUuid(String resourceId, TaggedResourceType resourceType) {

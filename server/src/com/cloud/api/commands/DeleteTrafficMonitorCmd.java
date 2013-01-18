@@ -20,6 +20,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -76,10 +77,10 @@ public class DeleteTrafficMonitorCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete traffic monitor.");
+				throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete traffic monitor.");
             }
         } catch (InvalidParameterValueException e) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Failed to delete traffic monitor.");
+			throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Failed to delete traffic monitor.");
         }
     }
 }

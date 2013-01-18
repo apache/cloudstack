@@ -1259,12 +1259,16 @@
                                       data.listvirtualmachinesresponse.virtualmachine : [],
                                     function(instance) {
                                           var nonAutoScale=0;
+                                          if(instance.displayname == null)
+                                              nonAutoScale = 1;
+                                            else{
                                           if( instance.displayname.match(/AutoScale-LB-/)==null)
                                              nonAutoScale =1;
                                           else {
                                              if(instance.displayname.match(/AutoScale-LB-/).length)
                                                nonAutoScale =0;
                                              }
+                                          }
                                       var isActiveState= $.inArray(instance.state, ['Destroyed','Expunging']) == -1;
                                       return nonAutoScale && isActiveState;
                                     }
@@ -2623,12 +2627,16 @@
                                 function(instance) {
                                  //Hiding the autoScale VMs
                                  var nonAutoScale =0;
+                                 if(instance.displayname == null)
+                                    nonAutoScale = 1
+                                 else {
                                  if(instance.displayname.match(/AutoScale-LB-/) == null)
                                        nonAutoScale = 1;
                                  else {
                                      if( instance.displayname.match(/AutoScale-LB-/).length)          
                                         nonAutoScale =0;
-                                   }            
+                                   }   
+                                  }         
                                   var isActiveState = $.inArray(instance.state, ['Destroyed','Expunging']) == -1;
                                   var notExisting = !$.grep(itemData, function(item) {
                                     return item.id == instance.id;

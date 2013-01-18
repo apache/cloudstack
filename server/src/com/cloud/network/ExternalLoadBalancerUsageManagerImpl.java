@@ -90,7 +90,7 @@ public class ExternalLoadBalancerUsageManagerImpl implements ExternalLoadBalance
     @Inject
     DataCenterDao _dcDao;
     @Inject
-    NetworkManager _networkMgr;
+    NetworkModel _networkMgr;
     @Inject
     InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
     @Inject

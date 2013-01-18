@@ -27,7 +27,8 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.utils.PropertiesUtil;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -38,8 +39,6 @@ import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
-import org.apache.cloudstack.api.ApiConstants;
-
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
@@ -70,7 +69,6 @@ import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
 import com.cloud.network.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.IpAddress;
 import com.cloud.network.NetScalerPodVO;
 import com.cloud.network.Network;
@@ -78,7 +76,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkExternalLoadBalancerVO;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
@@ -114,7 +112,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
 
 @Component
-@Local(value = NetworkElement.class)
+@Local(value = {NetworkElement.class, StaticNatServiceProvider.class, LoadBalancingServiceProvider.class})
 public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer,
 StaticNatServiceProvider {
 
@@ -123,7 +121,7 @@ StaticNatServiceProvider {
     public static final AutoScaleCounterType AutoScaleCounterNetscaler = new AutoScaleCounterType("netscaler");
 
     @Inject
-    NetworkManager _networkManager;
+    NetworkModel _networkManager;
     @Inject
     ConfigurationManager _configMgr;
     @Inject
@@ -131,7 +129,7 @@ StaticNatServiceProvider {
     @Inject
     AgentManager _agentMgr;
     @Inject
-    NetworkManager _networkMgr;
+    NetworkModel _networkMgr;
     @Inject
     HostDao _hostDao;
     @Inject
@@ -152,11 +150,10 @@ StaticNatServiceProvider {
     NetScalerPodDao _netscalerPodDao;
     @Inject
     DataCenterIpAddressDao _privateIpAddressDao;
-   
+
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
-        boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced &&
-                (config.getGuestType() == Network.GuestType.Isolated || config.getGuestType() == Network.GuestType.Shared) && config.getTrafficType() == TrafficType.Guest);
+        boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced && config.getGuestType() == Network.GuestType.Isolated && config.getTrafficType() == TrafficType.Guest);
         boolean handleInBasicZone = (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() == Network.GuestType.Shared && config.getTrafficType() == TrafficType.Guest);
 
         if (!(handleInAdvanceZone || handleInBasicZone)) {
@@ -174,7 +171,7 @@ StaticNatServiceProvider {
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException,
-            InsufficientNetworkCapacityException {
+    InsufficientNetworkCapacityException {
 
         if (!canHandle(guestConfig, Service.Lb)) {
             return false;
@@ -195,7 +192,7 @@ StaticNatServiceProvider {
 
     @Override
     public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-            InsufficientNetworkCapacityException, ResourceUnavailableException {
+    InsufficientNetworkCapacityException, ResourceUnavailableException {
         return true;
     }
 
@@ -467,9 +464,14 @@ StaticNatServiceProvider {
     }
 
     @Override
-    public Map<String, String> getProperties() {
-        return PropertiesUtil.processConfigFile(new String[]
-                { "netscalerloadbalancer_commands.properties" });
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(AddNetscalerLoadBalancerCmd.class);
+        cmdList.add(ConfigureNetscalerLoadBalancerCmd.class);
+        cmdList.add(DeleteNetscalerLoadBalancerCmd.class);
+        cmdList.add(ListNetscalerLoadBalancerNetworksCmd.class);
+        cmdList.add(ListNetscalerLoadBalancersCmd.class);
+        return cmdList;
     }
 
     @Override
@@ -550,13 +552,13 @@ StaticNatServiceProvider {
         response.setProvider(lbDeviceVO.getProviderName());
         response.setDeviceState(lbDeviceVO.getState().name());
         response.setObjectName("netscalerloadbalancer");
-        
+
         List<Long> associatedPods = new ArrayList<Long>();
         List<NetScalerPodVO> currentPodVOs = _netscalerPodDao.listByNetScalerDeviceId(lbDeviceVO.getId());
         if (currentPodVOs != null && currentPodVOs.size() > 0) {
-        	for (NetScalerPodVO nsPodVo: currentPodVOs) {
-        		associatedPods.add(nsPodVo.getPodId());
-        	}
+            for (NetScalerPodVO nsPodVo: currentPodVOs) {
+                associatedPods.add(nsPodVo.getPodId());
+            }
         }
         response.setAssociatedPods(associatedPods);
         return response;
@@ -585,7 +587,7 @@ StaticNatServiceProvider {
 
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
         // TODO reset the configuration on all of the netscaler devices in this physical network
         return true;
     }
@@ -614,13 +616,13 @@ StaticNatServiceProvider {
         // NetScaler can only act as Lb and Static Nat service provider
         if (services != null && !services.isEmpty() && !netscalerServices.containsAll(services)) {
             s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination "
-                + services + " is not supported.");
+                    + services + " is not supported.");
             String servicesList = "";
             for (Service service : services) {
                 servicesList += service.getName() + " ";
             }
             s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination " 
-                + servicesList + " is not supported.");
+                    + servicesList + " is not supported.");
             s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination "
                     + services + " is not supported.");
             return false;
@@ -812,7 +814,7 @@ StaticNatServiceProvider {
                         return lbDeviceVO;
                     }
                 }
-           }
+            }
         }
         return null;
     }

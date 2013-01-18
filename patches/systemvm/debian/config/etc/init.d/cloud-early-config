@@ -660,7 +660,7 @@ EOF
   enable_svc dnsmasq 1
   enable_svc haproxy 1
   enable_svc cloud 0
-  disable_rpfilter_domR
+  disable_rpfilter
   enable_fwding 1
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules
   setup_sshd $ETH0_IP "eth0"

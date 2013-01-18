@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.element;
 
-import java.lang.String;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +25,8 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.utils.PropertiesUtil;
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -60,13 +60,12 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.ExternalFirewallDeviceManagerImpl;
 import com.cloud.network.ExternalFirewallDeviceVO;
 import com.cloud.network.ExternalFirewallDeviceVO.FirewallDeviceState;
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkExternalFirewallVO;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
@@ -85,8 +84,6 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.resource.ServerResource;
-import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -95,16 +92,18 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
-@Local(value = NetworkElement.class)
+@Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
+        PortForwardingServiceProvider.class, IpDeployer.class, 
+        SourceNatServiceProvider.class, RemoteAccessVPNServiceProvider.class})
 public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceManagerImpl implements SourceNatServiceProvider, FirewallServiceProvider,
-        PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, JuniperSRXFirewallElementService, StaticNatServiceProvider {
+PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, JuniperSRXFirewallElementService, StaticNatServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(JuniperSRXExternalFirewallElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Inject
-    NetworkManager _networkManager;
+    NetworkModel _networkManager;
     @Inject
     HostDao _hostDao;
     @Inject
@@ -132,8 +131,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
     private boolean canHandle(Network network, Service service) {
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
-        if ((zone.getNetworkType() == NetworkType.Advanced && !(network.getGuestType() == Network.GuestType.Isolated || network.getGuestType() == Network.GuestType.Shared ))
-                || (zone.getNetworkType() == NetworkType.Basic && network.getGuestType() != Network.GuestType.Shared)) {
+        if ((zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() != Network.GuestType.Isolated) || (zone.getNetworkType() == NetworkType.Basic && network.getGuestType() != Network.GuestType.Shared)) {
             s_logger.trace("Element " + getProvider().getName() + "is not handling network type = " + network.getGuestType());
             return false;
         }
@@ -155,7 +153,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException,
-            InsufficientNetworkCapacityException {
+    InsufficientNetworkCapacityException {
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
 
         // don't have to implement network is Basic zone
@@ -180,7 +178,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
     @Override
     public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-            InsufficientNetworkCapacityException, ResourceUnavailableException {
+    InsufficientNetworkCapacityException, ResourceUnavailableException {
         return true;
     }
 
@@ -329,7 +327,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
         // TODO Auto-generated method stub
         return true;
     }
@@ -361,7 +359,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         pNetwork = physicalNetworks.get(0);
 
         String deviceType = NetworkDevice.JuniperSRXFirewall.getName();
-        ExternalFirewallDeviceVO fwDeviceVO = addExternalFirewall(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, (ServerResource) new JuniperSrxResource());
+        ExternalFirewallDeviceVO fwDeviceVO = addExternalFirewall(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, new JuniperSrxResource());
         if (fwDeviceVO != null) {
             fwHost = _hostDao.findById(fwDeviceVO.getHostId());
         }
@@ -401,14 +399,23 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         return firewallHosts;
     }
 
+    @Override
     public ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall) {
         return super.createExternalFirewallResponse(externalFirewall);
     }
 
     @Override
-    public Map<String, String> getProperties() {
-        return PropertiesUtil.processConfigFile(new String[]
-                { "junipersrx_commands.properties"});
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(AddExternalFirewallCmd.class);
+        cmdList.add(AddSrxFirewallCmd.class);
+        cmdList.add(ConfigureSrxFirewallCmd.class);
+        cmdList.add(DeleteExternalFirewallCmd.class);
+        cmdList.add(DeleteSrxFirewallCmd.class);
+        cmdList.add(ListExternalFirewallsCmd.class);
+        cmdList.add(ListSrxFirewallNetworksCmd.class);
+        cmdList.add(ListSrxFirewallsCmd.class);
+        return cmdList;
     }
 
     @Override
@@ -418,7 +425,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
             throw new InvalidParameterValueException("Invalid SRX firewall device type");
         }
         return addExternalFirewall(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName,
-                (ServerResource) new JuniperSrxResource());
+                new JuniperSrxResource());
     }
 
     @Override
@@ -563,8 +570,8 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         return true;
     }
 
-	@Override
-	public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+    @Override
+    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
         if (!canHandle(config, Service.StaticNat)) {
             return false;
         }

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.user;
 
+
 public class UserContext {
 
     private static ThreadLocal<UserContext> s_currentContext = new ThreadLocal<UserContext>();
@@ -41,6 +42,10 @@ public class UserContext {
 
     public long getCallerUserId() {
         return userId;
+    }
+
+    public User getCallerUser() {
+        return _accountMgr.getActiveUser(userId);
     }
 
     public void setCallerUserId(long userId) {

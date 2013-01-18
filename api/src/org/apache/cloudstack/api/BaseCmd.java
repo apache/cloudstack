@@ -83,23 +83,6 @@ public abstract class BaseCmd {
         BOOLEAN, DATE, FLOAT, INTEGER, SHORT, LIST, LONG, OBJECT, MAP, STRING, TZDATE, UUID
     }
 
-    // FIXME: Extract these out into a separate file
-    // Client error codes
-    public static final int MALFORMED_PARAMETER_ERROR = 430;
-    public static final int PARAM_ERROR = 431;
-    public static final int UNSUPPORTED_ACTION_ERROR = 432;
-    public static final int PAGE_LIMIT_EXCEED = 433;
-
-    // Server error codes
-    public static final int INTERNAL_ERROR = 530;
-    public static final int ACCOUNT_ERROR = 531;
-    public static final int ACCOUNT_RESOURCE_LIMIT_ERROR = 532;
-    public static final int INSUFFICIENT_CAPACITY_ERROR = 533;
-    public static final int RESOURCE_UNAVAILABLE_ERROR = 534;
-    public static final int RESOURCE_ALLOCATION_ERROR = 534;
-    public static final int RESOURCE_IN_USE_ERROR = 536;
-    public static final int NETWORK_RULE_CONFLICT_ERROR = 537;
-
     public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     public static final DateFormat NEW_INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public static Pattern newInputDateFormat = Pattern.compile("[\\d]+-[\\d]+-[\\d]+ [\\d]+:[\\d]+:[\\d]+");
@@ -200,7 +183,7 @@ public abstract class BaseCmd {
             int arrayStartIndex = key.indexOf('[');
             int arrayStartLastIndex = key.lastIndexOf('[');
             if (arrayStartIndex != arrayStartLastIndex) {
-                throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
+                throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
                         + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
             }
 
@@ -209,7 +192,7 @@ public abstract class BaseCmd {
                 int arrayEndLastIndex = key.lastIndexOf(']');
                 if ((arrayEndIndex < arrayStartIndex) || (arrayEndIndex != arrayEndLastIndex)) {
                     // malformed parameter
-                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
+                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
                             + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 }
 
@@ -217,7 +200,7 @@ public abstract class BaseCmd {
                 int fieldIndex = key.indexOf('.');
                 String fieldName = null;
                 if (fieldIndex < arrayEndIndex) {
-                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
+                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
                             + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 } else {
                     fieldName = key.substring(fieldIndex + 1);
@@ -242,7 +225,7 @@ public abstract class BaseCmd {
                 }
 
                 if (!parsedIndex) {
-                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
+                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
                             + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 }
 

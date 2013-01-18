@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -123,7 +124,7 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
             routerResponse.setResponseName(getCommandName());
             this.setResponseObject(routerResponse);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to configure the virtual router provider");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure the virtual router provider");
         }
     }
 }

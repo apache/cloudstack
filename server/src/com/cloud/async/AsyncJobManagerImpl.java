@@ -35,8 +35,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.ExceptionResponse;
@@ -461,14 +461,14 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
                             checkQueue(((AsyncCommandQueued)e).getQueue().getId());
                         } else {
                             String errorMsg = null;
-                            int errorCode = BaseCmd.INTERNAL_ERROR;
+                            int errorCode = ApiErrorCode.INTERNAL_ERROR.getHttpCode();
                             if (!(e instanceof ServerApiException)) {
                                 s_logger.error("Unexpected exception while executing " + job.getCmd(), e);
                                 errorMsg = e.getMessage();
                             } else {
                                 ServerApiException sApiEx = (ServerApiException)e;
                                 errorMsg = sApiEx.getDescription();
-                                errorCode = sApiEx.getErrorCode();
+                                errorCode = sApiEx.getErrorCode().getHttpCode();
                             }
 
                             ExceptionResponse response = new ExceptionResponse();
@@ -476,9 +476,9 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
                             response.setErrorText(errorMsg);
                             response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
 
-                            // FIXME:  setting resultCode to BaseCmd.INTERNAL_ERROR is not right, usually executors have their exception handling
+                            // FIXME:  setting resultCode to ApiErrorCode.INTERNAL_ERROR is not right, usually executors have their exception handling
                             //         and we need to preserve that as much as possible here
-                            completeAsyncJob(jobId, AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, response);
+                            completeAsyncJob(jobId, AsyncJobResult.STATUS_FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), response);
 
                             // need to clean up any queue that happened as part of the dispatching and move on to the next item in the queue
                             try {
@@ -733,7 +733,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
                 txn.start();
                 List<SyncQueueItemVO> items = _queueMgr.getActiveQueueItems(msHost.getId(), true);
                 cleanupPendingJobs(items);
-                _jobDao.resetJobProcess(msHost.getId(), BaseCmd.INTERNAL_ERROR, getSerializedErrorMessage("job cancelled because of management server restart"));
+                _jobDao.resetJobProcess(msHost.getId(), ApiErrorCode.INTERNAL_ERROR.getHttpCode(), getSerializedErrorMessage("job cancelled because of management server restart"));
                 txn.commit();
             } catch(Throwable e) {
                 s_logger.warn("Unexpected exception ", e);
@@ -753,7 +753,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
         try {
             List<SyncQueueItemVO> l = _queueMgr.getActiveQueueItems(getMsid(), false);
             cleanupPendingJobs(l);
-            _jobDao.resetJobProcess(getMsid(), BaseCmd.INTERNAL_ERROR, getSerializedErrorMessage("job cancelled because of management server restart"));
+            _jobDao.resetJobProcess(getMsid(), ApiErrorCode.INTERNAL_ERROR.getHttpCode(), getSerializedErrorMessage("job cancelled because of management server restart"));
         } catch(Throwable e) {
             s_logger.error("Unexpected exception " + e.getMessage(), e);
         }
@@ -768,7 +768,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 
     private static ExceptionResponse getResetResultResponse(String errorMessage) {
         ExceptionResponse resultObject = new ExceptionResponse();
-        resultObject.setErrorCode(BaseCmd.INTERNAL_ERROR);
+        resultObject.setErrorCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
         resultObject.setErrorText(errorMessage);
         return resultObject;
     }

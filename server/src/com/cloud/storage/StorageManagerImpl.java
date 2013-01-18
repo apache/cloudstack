@@ -50,6 +50,7 @@ import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -73,6 +74,8 @@ import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.Commands;
@@ -124,7 +127,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
@@ -233,7 +236,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @Inject
     protected SecondaryStorageVmManager _secStorageMgr;
     @Inject
-    protected NetworkManager _networkMgr;
+    protected NetworkModel _networkMgr;
     @Inject
     protected VolumeDao _volsDao;
     @Inject
@@ -2087,6 +2090,183 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                 _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
             }
         }
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_RESIZE, eventDescription = "resizing volume", async = true)
+    public VolumeVO resizeVolume(ResizeVolumeCmd cmd) {
+        VolumeVO volume = _volsDao.findById(cmd.getEntityId());
+        Long newSize = null;
+        boolean shrinkOk = cmd.getShrinkOk();
+        boolean success = false;
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        DiskOfferingVO newDiskOffering = null;
+
+        newDiskOffering = _diskOfferingDao.findById(cmd.getNewDiskOfferingId());
+
+        /* Volumes with no hypervisor have never been assigned, and can be resized by recreating.
+           perhaps in the future we can just update the db entry for the volume */
+        if(_volsDao.getHypervisorType(volume.getId()) == HypervisorType.None){
+            throw new InvalidParameterValueException("Can't resize a volume that has never been attached, not sure which hypervisor type. Recreate volume to resize.");
+        }
+
+        /* Only works for KVM/Xen for now */
+        if(_volsDao.getHypervisorType(volume.getId()) != HypervisorType.KVM 
+           && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.XenServer){
+            throw new InvalidParameterValueException("Cloudstack currently only supports volumes marked as KVM or XenServer hypervisor for resize");
+        }
+
+        if (volume == null) {
+            throw new InvalidParameterValueException("No such volume");
+        }
+
+        if (volume.getState() != Volume.State.Ready) {
+            throw new InvalidParameterValueException("Volume should be in ready state before attempting a resize");
+        }
+
+        if (!volume.getVolumeType().equals(Volume.Type.DATADISK)) {
+            throw new InvalidParameterValueException("Can only resize DATA volumes");
+        }
+
+        /* figure out whether or not a new disk offering or size parameter is required, get the correct size value */
+        if (newDiskOffering == null) {
+            if (diskOffering.isCustomized()) {
+                newSize = cmd.getSize();
+
+                if (newSize == null) {
+                    throw new InvalidParameterValueException("new offering is of custom size, need to specify a size");
+                }
+
+                newSize = ( newSize << 30 );
+            } else {
+                throw new InvalidParameterValueException("current offering" + volume.getDiskOfferingId()  + " cannot be resized, need to specify a disk offering");
+            }
+        } else {
+
+            if (newDiskOffering.getRemoved() != null || !DiskOfferingVO.Type.Disk.equals(newDiskOffering.getType())) {
+                throw new InvalidParameterValueException("Disk offering ID is missing or invalid");
+            }
+
+            if(diskOffering.getTags() != null) {
+                if(!newDiskOffering.getTags().equals(diskOffering.getTags())){
+                    throw new InvalidParameterValueException("Tags on new and old disk offerings must match");
+                }
+            } else if (newDiskOffering.getTags() != null ){
+                throw new InvalidParameterValueException("There are no tags on current disk offering, new disk offering needs to have no tags");
+            }
+
+            if (newDiskOffering.getDomainId() == null) {
+                // do nothing as offering is public
+            } else {
+                _configMgr.checkDiskOfferingAccess(UserContext.current().getCaller(), newDiskOffering);
+            }
+ 
+            if (newDiskOffering.isCustomized()) {
+                newSize = cmd.getSize();
+
+                if (newSize == null) {
+                    throw new InvalidParameterValueException("new offering is of custom size, need to specify a size");
+                }
+
+                newSize = ( newSize << 30 );
+            } else {
+                newSize = newDiskOffering.getDiskSize();
+            }
+        }
+
+        if (newSize == null) {
+            throw new InvalidParameterValueException("could not detect a size parameter or fetch one from the diskofferingid parameter");
+        }
+
+        if (!validateVolumeSizeRange(newSize)) {
+            throw new InvalidParameterValueException("Requested size out of range");
+        }
+
+        /* does the caller have the authority to act on this volume? */
+        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, volume);
+
+        UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
+
+        StoragePool pool = _storagePoolDao.findById(volume.getPoolId());
+        long currentSize = volume.getSize();
+
+        /* lets make certain they (think they) know what they're doing if they 
+        want to shrink, by forcing them to provide the shrinkok parameter. This will
+        be checked again at the hypervisor level where we can see the actual disk size */
+        if (currentSize > newSize && !shrinkOk) {
+            throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " 
+                      + newSize + " would shrink the volume, need to sign off by supplying the shrinkok parameter with value of true");
+        }
+
+        /* get a list of hosts to send the commands to, try the system the 
+        associated vm is running on first, then the last known place it ran.
+        If not attached to a userVm, we pass 'none' and resizevolume.sh is
+        ok with that since it only needs the vm name to live resize */
+        long[] hosts = null;
+        String instanceName = "none";
+        if (userVm != null) {
+            instanceName = userVm.getInstanceName();
+            if(userVm.getHostId() != null) {
+                hosts = new long[] { userVm.getHostId() };
+            } else if(userVm.getLastHostId() != null) {
+                hosts = new long[] { userVm.getLastHostId() };
+            }
+
+            /*Xen only works offline, SR does not support VDI.resizeOnline*/
+            if(_volsDao.getHypervisorType(volume.getId()) == HypervisorType.XenServer
+               && ! userVm.getState().equals(State.Stopped)) {
+                throw new InvalidParameterValueException("VM must be stopped or disk detached in order to resize with the Xen HV");
+            }
+        }
+
+        try {
+            try {
+                    stateTransitTo(volume, Volume.Event.ResizeRequested);
+            } catch (NoTransitionException etrans) {
+                    throw new CloudRuntimeException("Unable to change volume state for resize: " + etrans.toString());
+            }
+
+            ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(volume.getPath(), new StorageFilerTO(pool), 
+                                                    currentSize, newSize, shrinkOk, instanceName);
+            ResizeVolumeAnswer answer = (ResizeVolumeAnswer) sendToPool(pool, hosts, resizeCmd);
+
+            /* need to fetch/store new volume size in database. This value comes from 
+            hypervisor rather than trusting that a success means we have a volume of the 
+            size we requested */
+            if (answer != null && answer.getResult()) {
+                long finalSize = answer.getNewSize();
+                s_logger.debug("Resize: volume started at size " + currentSize + " and ended at size " + finalSize);
+                volume.setSize(finalSize);
+                if (newDiskOffering != null) {
+                    volume.setDiskOfferingId(cmd.getNewDiskOfferingId());
+                }
+                _volsDao.update(volume.getId(), volume);
+
+                success  = true;
+                return volume;
+            } else if (answer != null) {
+                s_logger.debug("Resize: returned '" + answer.getDetails() + "'");
+            }
+        } catch (StorageUnavailableException e) {
+            s_logger.debug("volume failed to resize: "+e);
+            return null;
+        } finally {
+            if(success) {
+                try {
+                    stateTransitTo(volume, Volume.Event.OperationSucceeded);
+                } catch (NoTransitionException etrans) {
+                    throw new CloudRuntimeException("Failed to change volume state: " + etrans.toString());
+                }
+            } else {
+                try {
+                    stateTransitTo(volume, Volume.Event.OperationFailed);
+                } catch (NoTransitionException etrans) {
+                    throw new CloudRuntimeException("Failed to change volume state: " + etrans.toString());
+                }
+            } 
+        }
+        return null;
     }
 
     @Override

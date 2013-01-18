@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.storage;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -105,7 +106,7 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
             response.setResponseName("storagepool");
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to prepare primary storage for maintenance");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to prepare primary storage for maintenance");
         }
     }
 }

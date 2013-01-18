@@ -29,7 +29,7 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.ProjectManager;
@@ -46,18 +46,12 @@ import com.cloud.utils.component.AdapterBase;
 @Local(value = SecurityChecker.class)
 public class DomainChecker extends AdapterBase implements SecurityChecker {
     
-    @Inject
-    DomainDao _domainDao;
-    @Inject
-    AccountDao _accountDao;
-    @Inject
-    LaunchPermissionDao _launchPermissionDao;
-    @Inject
-    ProjectManager _projectMgr;
-    @Inject
-    ProjectAccountDao _projecAccountDao;
-    @Inject
-    NetworkManager _networkMgr;
+    @Inject DomainDao _domainDao;
+    @Inject AccountDao _accountDao;
+    @Inject LaunchPermissionDao _launchPermissionDao;
+    @Inject ProjectManager _projectMgr;
+    @Inject ProjectAccountDao _projecAccountDao;
+    @Inject NetworkModel _networkMgr;
     
     protected DomainChecker() {
         super();

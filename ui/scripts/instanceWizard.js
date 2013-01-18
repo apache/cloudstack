@@ -545,7 +545,8 @@
 
         if(checkedSecurityGroupIdArray.length > 0)
           array1.push("&securitygroupids=" + checkedSecurityGroupIdArray.join(","));
-									
+				
+        /*				
 				if(selectedZoneObj.networktype ==	"Advanced" && selectedZoneObj.securitygroupsenabled == true) { // Advanced SG-enabled zone 		
 					var networkData = {
 						zoneId: selectedZoneObj.id,
@@ -577,6 +578,8 @@
 						return; 
 					}
 				}
+				*/
+				
       }
       else if (step5ContainerType == 'nothing-to-select') {	  
 				if(args.context.networks != null) { //from VPC tier

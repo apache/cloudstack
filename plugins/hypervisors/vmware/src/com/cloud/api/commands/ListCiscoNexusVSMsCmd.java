@@ -21,6 +21,7 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -102,7 +103,7 @@ public class ListCiscoNexusVSMsCmd extends BaseListCmd {
     		response.setResponseName(getCommandName());
     		this.setResponseObject(response);
     	} else {
-        	throw new ServerApiException(BaseListCmd.INTERNAL_ERROR, "No VSM found.");
+        	throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "No VSM found.");
         }
     }
  

@@ -68,7 +68,7 @@ public class EnableCiscoNexusVSMCmd extends BaseAsyncCmd {
         	response.setResponseName(getCommandName());
         	this.setResponseObject(response);
         } else {
-        	throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to enable Cisco Nexus VSM device");
+        	throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable Cisco Nexus VSM device");
         }
     }
 

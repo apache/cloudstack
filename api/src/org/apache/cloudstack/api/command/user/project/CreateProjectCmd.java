@@ -114,7 +114,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a project");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a project");
         }
     }
 
@@ -126,7 +126,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
             this.setEntityId(project.getId());
             this.setEntityUuid(project.getUuid());
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a project");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a project");
         }
     }
 
