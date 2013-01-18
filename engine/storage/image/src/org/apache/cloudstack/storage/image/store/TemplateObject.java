@@ -90,9 +90,9 @@ public class TemplateObject implements TemplateInfo {
         } else {
             ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(this.imageVO.getId(), DataObjectType.TEMPLATE, this.dataStore.getId(), this.dataStore.getRole());
             if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-                return this.dataStore.getUri() + File.separator + "?type=" + DataObjectType.TEMPLATE + "&size=" + this.imageVO.getSize(); 
+                return this.dataStore.getUri() + File.separator + "&objType=" + DataObjectType.TEMPLATE + "&size=" + this.imageVO.getSize(); 
             } else {
-                return this.dataStore.getUri() + File.separator + "?type=" + DataObjectType.TEMPLATE + "&path=" + obj.getInstallPath();
+                return this.dataStore.getUri() + File.separator + "&objType=" + DataObjectType.TEMPLATE + "&path=" + obj.getInstallPath();
             }
         }
     }

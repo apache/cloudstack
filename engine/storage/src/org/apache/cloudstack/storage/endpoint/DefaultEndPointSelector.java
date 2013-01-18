@@ -39,6 +39,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DefaultEndPointSelector implements EndPointSelector {
@@ -48,6 +49,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
     HostDao hostDao;
     private String findOneHostInaScope = "select id from host where "
             + " status == 'Up' and hypervisor_type != 'VMware' and type in ('Routing', 'SecondaryStorageVM') ";
+    private String findOneHostOnPrimaryStorage = "select id from host where"
+            +  "status == 'Up' and type == 'Routing' ";
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore,
             DataStore destStore) {
@@ -62,9 +65,9 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     @DB
-    protected EndPoint findEndPointInScope(Scope scope) {
+    protected EndPoint findEndPointInScope(Scope scope, String sqlBase) {
         StringBuilder sbuilder = new StringBuilder();
-        sbuilder.append(findOneHostInaScope);
+        sbuilder.append(sqlBase);
 
         if (scope.getScopeType() == ScopeType.HOST) {
             sbuilder.append(" and id = ");
@@ -76,7 +79,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             sbuilder.append(" and data_center_id = ");
             sbuilder.append(scope.getScopeId());
         }
-
+//TODO: order by rand() is slow if there are lot of hosts
         sbuilder.append(" ORDER by rand() limit 1");
         String sql = sbuilder.toString();
         PreparedStatement pstmt = null;
@@ -129,7 +132,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             // if both are zone scope
             selectedScope = srcScope;
         }
-        return findEndPointInScope(selectedScope);
+        return findEndPointInScope(selectedScope, findOneHostInaScope);
     }
 
     @Override
@@ -145,5 +148,20 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
         // TODO Auto-generated method stub
         return null;
+    }
+    
+    protected EndPoint findEndpointForPrimaryStorage(DataStore store) {
+        return findEndPointInScope(store.getScope(), findOneHostOnPrimaryStorage);
+    }
+    
+    @Override
+    public EndPoint select(DataObject object) {
+        DataStore store = object.getDataStore();
+        if (store.getRole() == DataStoreRole.Primary) {
+            return findEndpointForPrimaryStorage(store);
+        } else {
+            throw new CloudRuntimeException("not implemented yet");
+        }
+        
     }
 }

@@ -1494,9 +1494,13 @@ SecondaryStorageResource {
 
             try {
                 Class<?> clazz = Class.forName(value);
-                _storage = (StorageLayer)ComponentContext.inject(clazz);
+                _storage = (StorageLayer)clazz.newInstance();
                 _storage.configure("StorageLayer", params);
             } catch (ClassNotFoundException e) {
+                throw new ConfigurationException("Unable to find class " + value);
+            } catch (InstantiationException e) {
+                throw new ConfigurationException("Unable to find class " + value);
+            } catch (IllegalAccessException e) {
                 throw new ConfigurationException("Unable to find class " + value);
             }
         }

@@ -20,15 +20,15 @@ package org.apache.cloudstack.storage.command;
 
 import com.cloud.agent.api.Command;
 
-public class CreateVolumeCommand extends Command implements StorageSubSystemCommand {
-    protected String volumeUri;
+public class CreateObjectCommand extends Command implements StorageSubSystemCommand {
+    protected String objectUri;
 
-    public CreateVolumeCommand(String volumeUri) {
+    public CreateObjectCommand(String objectUri) {
         super();
-        this.volumeUri = volumeUri;
+        this.objectUri = objectUri;
     }
 
-    protected CreateVolumeCommand() {
+    protected CreateObjectCommand() {
         super();
     }
 
@@ -38,8 +38,8 @@ public class CreateVolumeCommand extends Command implements StorageSubSystemComm
         return false;
     }
     
-    public String getVolume() {
-        return this.volumeUri;
+    public String getObjectUri() {
+        return this.objectUri;
     }
 
 }
