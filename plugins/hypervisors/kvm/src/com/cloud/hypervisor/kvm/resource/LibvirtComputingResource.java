@@ -788,10 +788,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements
     }
 
     private void getPifs() {
-        /* gather all available bridges and find their pifs, so that we can match them against traffic labels later */
-        String cmdout = Script.runSimpleBashScript("brctl show | tail -n +2 | grep -v \"^\\s\"|awk '{print $1}'|sed '{:q;N;s/\\n/%/g;t q}'");
-        s_logger.debug("cmdout was " + cmdout);
-        List<String> bridges = Arrays.asList(cmdout.split("%"));
+        File dir = new File("/sys/devices/virtual/net");
+        File[] netdevs = dir.listFiles();
+        List<String> bridges = new ArrayList<String>();
+        for (int i = 0; i < netdevs.length; i++) {
+            File isbridge = new File(netdevs[i].getAbsolutePath() + "/bridge");
+            String netdevName = netdevs[i].getName();
+            s_logger.debug("looking in file " + netdevs[i].getAbsolutePath() + "/bridge");
+            if (isbridge.exists()) {
+                s_logger.debug("Found bridge " + netdevName);
+                bridges.add(netdevName);
+            }
+        }
+
         for (String bridge : bridges) {
             s_logger.debug("looking for pif for bridge " + bridge);
             String pif = getPif(bridge);
@@ -807,24 +816,53 @@ public class LibvirtComputingResource extends ServerResourceBase implements
     }
 
     private String getPif(String bridge) {
-        String pif = Script.runSimpleBashScript("brctl show | grep " + bridge + " | awk '{print $4}'");
-        String vlan = Script.runSimpleBashScript("ls /proc/net/vlan/" + pif);
+        String pif = matchPifFileInDirectory(bridge);
+        File vlanfile = new File("/proc/net/vlan" + pif);
 
-        if (vlan != null && !vlan.isEmpty()) {
-                pif = Script.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/" + pif + " | awk {'print $2'}");
+        if (vlanfile.isFile()) {
+                pif = Script.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/"
+                                                  + pif + " | awk {'print $2'}");
         }
 
         return pif;
     }
+
+    private String matchPifFileInDirectory(String bridgeName){
+        File f = new File("/sys/devices/virtual/net/" + bridgeName + "/brif");
+
+        if (! f.isDirectory()){
+            s_logger.debug("failing to get physical interface from bridge"
+                           + bridgeName + ", does " + f.getAbsolutePath() 
+                           + "exist?");
+            return "";
+        }
+
+        File[] interfaces = f.listFiles();
+
+        for (int i = 0; i < interfaces.length; i++) {
+            String fname = interfaces[i].getName();
+            s_logger.debug("matchPifFileInDirectory: file name '"+fname+"'");
+            if (fname.startsWith("eth") || fname.startsWith("bond")
+                || fname.startsWith("vlan")) {
+                return fname;
+            }
+        }
+
+        s_logger.debug("failing to get physical interface from bridge"
+                        + bridgeName + ", did not find an eth*, bond*, or vlan* in "
+                        + f.getAbsolutePath());
+        return "";
+    }
+
 
     private boolean checkNetwork(String networkName) {
         if (networkName == null) {
             return true;
         }
 
-        String name = Script.runSimpleBashScript("brctl show | grep "
-                + networkName + " | awk '{print $4}'");
-        if (name == null) {
+        String name = matchPifFileInDirectory(networkName);
+
+        if (name == null || name.isEmpty()) {
             return false;
         } else {
             return true;
@@ -1381,20 +1419,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements
     }
 
     private String getVlanIdFromBridge(String brName) {
-        OutputInterpreter.OneLineParser vlanIdParser = new OutputInterpreter.OneLineParser();
-        final Script cmd = new Script("/bin/bash", s_logger);
-        cmd.add("-c");
-        cmd.add("vlanid=$(brctl show |grep " + brName
-                + " |awk '{print $4}' | cut -s -d. -f 2);echo $vlanid");
-        String result = cmd.execute(vlanIdParser);
-        if (result != null) {
-            return null;
-        }
-        String vlanId = vlanIdParser.getLine();
-        if (vlanId.equalsIgnoreCase("")) {
-            return null;
+        String pif= matchPifFileInDirectory(brName);
+        String[] pifparts = pif.split("\\.");
+
+        if(pifparts.length == 2) {
+            return pifparts[1];
         } else {
-            return vlanId;
+            s_logger.debug("failed to get vlan id from bridge " + brName 
+                           + "attached to physical interface" + pif);
+            return "";
         }
     }
 
@@ -1632,7 +1665,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             }
 
             for (IpAddressTO ip : ips) {
-                String ipVlan = ip.getVlanId();
                 String nicName = "eth" + vlanToNicNum.get(ip.getVlanId());
                 String netmask = Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
                 String subnet = NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
