@@ -88,8 +88,6 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.Gson;
 
-@Component
-@Primary
 @Local(value = { ClusterManager.class })
 public class ClusterManagerImpl implements ClusterManager {
     private static final Logger s_logger = Logger.getLogger(ClusterManagerImpl.class);

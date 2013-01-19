@@ -28,8 +28,6 @@ import org.springframework.stereotype.Component;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
 
-@Component
-@Primary
 @Local(value=VirtualMachineManager.class)
 public class ClusteredVirtualMachineManagerImpl extends VirtualMachineManagerImpl implements ClusterManagerListener {
 

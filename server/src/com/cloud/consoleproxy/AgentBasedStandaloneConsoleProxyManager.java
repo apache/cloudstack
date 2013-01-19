@@ -28,7 +28,6 @@ import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.vm.UserVmVO;
 
-@Component
 @Local(value={ConsoleProxyManager.class})
 public class AgentBasedStandaloneConsoleProxyManager extends
 AgentBasedConsoleProxyManager {

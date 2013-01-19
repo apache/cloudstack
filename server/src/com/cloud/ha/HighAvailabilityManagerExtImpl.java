@@ -32,8 +32,6 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.utils.db.Transaction;
 
-@Component
-@Primary
 @Local(value={HighAvailabilityManager.class})
 public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl {
 	

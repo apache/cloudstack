@@ -47,8 +47,6 @@ import com.cloud.network.security.SecurityRule.SecurityRuleType;
  * Same as the base class -- except it uses the abstracted security group work queue
  *
  */
-@Component
-@Primary
 @Local(value={ SecurityGroupManager.class, SecurityGroupService.class })
 public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl{
     SecurityGroupWorkQueue _workQueue = new LocalSecurityGroupWorkQueue();

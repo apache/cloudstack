@@ -23,7 +23,7 @@ alter table template_spool_ref add state varchar(255);
 alter table template_spool_ref add update_count bigint unsigned;
 alter table volumes add disk_type varchar(255);
 alter table volumes drop foreign key `fk_volumes__account_id`;
-CREATE TABLE `cloud`.`primary_data_store_provider` (
+CREATE TABLE `cloud`.`data_store_provider` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) NOT NULL COMMENT 'name of primary data store provider',
   PRIMARY KEY(`id`)

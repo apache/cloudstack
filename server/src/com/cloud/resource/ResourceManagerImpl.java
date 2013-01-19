@@ -235,7 +235,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService,
 
 	protected HashMap<Integer, List<ResourceListener>> _lifeCycleListeners = new HashMap<Integer, List<ResourceListener>>();
 	private HypervisorType _defaultSystemVMHypervisor;
-
+	
 	@PostConstruct
 	public void init() {
 		// TODO initialize pod allocators here instead

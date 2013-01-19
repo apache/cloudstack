@@ -1778,8 +1778,9 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
                 if (s_providerToNetworkElementMap.containsKey(implementedProvider.getName())) {
                     s_logger.error("Cannot start NetworkModel: Provider <-> NetworkElement must be a one-to-one map, " +
                             "multiple NetworkElements found for Provider: " + implementedProvider.getName());
-                    return false;
+                   continue;
                 }
+                s_logger.info("Add provider <-> element map entry. " + implementedProvider.getName() + "-" + element.getName() + "-" + element.getClass().getSimpleName());
                 s_providerToNetworkElementMap.put(implementedProvider.getName(), element.getName());
             }
             if (capabilities != null && implementedProvider != null) {

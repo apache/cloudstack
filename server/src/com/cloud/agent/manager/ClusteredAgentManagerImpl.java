@@ -88,8 +88,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.Task;
 
-@Component
-@Primary
 @Local(value = { AgentManager.class, ClusteredAgentRebalanceService.class })
 public class ClusteredAgentManagerImpl extends AgentManagerImpl implements ClusterManagerListener, ClusteredAgentRebalanceService {
     final static Logger s_logger = Logger.getLogger(ClusteredAgentManagerImpl.class);
@@ -117,8 +115,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     // @com.cloud.utils.component.Inject(adapter = AgentLoadBalancerPlanner.class)
     @Inject protected List<AgentLoadBalancerPlanner> _lbPlanners;
 
-    @Inject
-    protected AgentManager _agentMgr;
     @Inject ConfigurationDao _configDao;
 
     protected ClusteredAgentManagerImpl() {

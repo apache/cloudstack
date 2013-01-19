@@ -33,7 +33,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
 
-@Component
 @Local(value={ConsoleProxyManager.class})
 public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager implements ConsoleProxyManager {
     String _ip = null;

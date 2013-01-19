@@ -49,8 +49,6 @@ import com.cloud.vm.SystemVmLoadScanner.AfterScanAction;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
-@Component
-@Primary
 @Local(value = { SecondaryStorageVmManager.class })
 public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerImpl {
     private static final Logger s_logger = Logger.getLogger(PremiumSecondaryStorageManagerImpl.class);

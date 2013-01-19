@@ -46,8 +46,6 @@ import com.cloud.upgrade.dao.VersionDaoImpl;
 
 import com.cloud.utils.component.SystemIntegrityChecker;
 
-@Component
-@Primary
 @Local(value = { SystemIntegrityChecker.class })
 public class PremiumDatabaseUpgradeChecker extends DatabaseUpgradeChecker {
     public PremiumDatabaseUpgradeChecker() {

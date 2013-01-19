@@ -107,6 +107,7 @@ import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
+import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ConfigurationManager;
@@ -396,6 +397,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Inject List<UserAuthenticator> _userAuthenticators;
 
+    @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
 
     public ManagementServerImpl() {
@@ -429,8 +431,10 @@ public class ManagementServerImpl implements ManagementServer {
     private void initCloudStackComponents() {
         runCheckers();
         startDaos(); // daos should not be using managers and adapters.
-        startManagers();
-        startAdapters();
+        
+        Map<String, Object> avoidMap = new HashMap<String, Object>();
+        startManagers(avoidMap);
+        startAdapters(avoidMap);
     }
 
     private void runCheckers() {
@@ -464,12 +468,28 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
-    private void startManagers() {
+    private void startManagers(Map<String, Object> avoidMap) {
         Map<String, Object> params = new HashMap<String, Object>();
 
-        for(Manager manager : _componentRegistry.getManagers()) {
+        // make sure startup sequence is maintained
+        try {
+        	_clusterMgr.configure("ClusterMgr", params);
+        	_clusterMgr.start();
+        	
+        	avoidMap.put(ComponentContext.getTargetClass(_clusterMgr).getName(), _clusterMgr);
+        } catch(Exception e) {
+            s_logger.error("Problems to start manager:" + ComponentContext.getTargetClass(_clusterMgr).getName(), e);
+            System.exit(1);
+        }
+        
+        for(Manager manager : ComponentContext.getComponentsOfType(Manager.class).values()) {
             s_logger.info("Start manager: " + ComponentContext.getTargetClass(manager).getName() + "...");
             try {
+            	if(avoidMap.get(ComponentContext.getTargetClass(manager).getName()) != null) {
+                    s_logger.info("Skip manager: " + ComponentContext.getTargetClass(manager).getName() + " as it is already started");
+            		continue;
+            	}
+            	
                 if(!manager.configure(manager.getClass().getSimpleName(), params)) {
                     throw new CloudRuntimeException("Failed to start manager: " + ComponentContext.getTargetClass(manager).getName());
                 }
@@ -477,6 +497,7 @@ public class ManagementServerImpl implements ManagementServer {
                 if (!manager.start()) {
                     throw new CloudRuntimeException("Failed to start manager: " + ComponentContext.getTargetClass(manager).getName());
                 }
+                avoidMap.put(ComponentContext.getTargetClass(manager).getName(), manager);
 
                 if (manager instanceof ManagementBean) {
                     registerMBean((ManagementBean) manager);
@@ -488,7 +509,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
-    private void startAdapters() {
+    private void startAdapters(Map<String, Object> avoidMap) {
         @SuppressWarnings("rawtypes")
         Map<String, Adapter> adapters = ComponentContext.getApplicationContext().getBeansOfType(
                 Adapter.class);
@@ -497,22 +518,27 @@ public class ManagementServerImpl implements ManagementServer {
 
         for(Adapter adapter : adapters.values()) {
             try {
-                // we also skip Adapter class that is both a manager class and a adapter class
-                if(Manager.class.isAssignableFrom(ComponentContext.getTargetClass(adapter)))
-                    continue;
+                s_logger.info("Start adapter: " + ComponentContext.getTargetClass(adapter).getName() + "...");
+                
+            	if(avoidMap.get(ComponentContext.getTargetClass(adapter).getName()) != null) {
+                    s_logger.info("Skip adapter: " + ComponentContext.getTargetClass(adapter).getName() + " as it is already started");
+            		continue;
+            	}
 
                 if(!adapter.configure(adapter.getName(), params)) {
-                    throw new CloudRuntimeException("Failed to start adapter: " + ComponentContext.getTargetClass(adapter).getName());
+                    throw new CloudRuntimeException("Failed to configure adapter: " + ComponentContext.getTargetClass(adapter).getName());
                 }
                 if (!adapter.start()) {
                     throw new CloudRuntimeException("Failed to start adapter: " + ComponentContext.getTargetClass(adapter).getName());
                 }
+                
+                avoidMap.put(ComponentContext.getTargetClass(adapter).getName(), adapter);
 
                 if (adapter instanceof ManagementBean) {
                     registerMBean((ManagementBean) adapter);
                 }
             } catch (Exception e) {
-                s_logger.error("Problems to start manager:" + ComponentContext.getTargetClass(adapter).getName(), e);
+                s_logger.error("Problems to start adapter:" + ComponentContext.getTargetClass(adapter).getName(), e);
                 System.exit(1);
             }
         }

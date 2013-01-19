@@ -56,8 +56,10 @@ public class DataStoreProviderManagerImpl implements DataStoreProviderManager {
 
     @Override
     public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
-        //TODO: hold global lock
+    		throws ConfigurationException {
+    	
+/*
+    	//TODO: hold global lock
         List<DataStoreProviderVO> providerVos = providerDao.listAll();
         for (DataStoreProvider provider : providers) {
             boolean existingProvider = false;
@@ -82,6 +84,7 @@ public class DataStoreProviderManagerImpl implements DataStoreProviderManager {
             provider.configure(params);
             providerMap.put(uuid, provider);
         }
+*/       
         return true;
     }
 
