@@ -18,7 +18,10 @@
  */
 package org.apache.cloudstack.storage.endpoint;
 
+import java.util.List;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 
 public interface EndPointSelector {
@@ -29,4 +32,9 @@ public interface EndPointSelector {
      * @return
      */
     EndPoint select(DataObject object);
+    /**
+     * @param store
+     * @return
+     */
+    List<EndPoint> selectAll(DataStore store);
 }

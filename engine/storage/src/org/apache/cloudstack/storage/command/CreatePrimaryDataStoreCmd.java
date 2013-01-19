@@ -16,18 +16,15 @@
 // under the License.
 package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-
 import com.cloud.agent.api.Command;
 
 public class CreatePrimaryDataStoreCmd extends Command implements StorageSubSystemCommand {
-    private final PrimaryDataStoreTO dataStore;
-    public CreatePrimaryDataStoreCmd(PrimaryDataStoreTO dataStore) {
-        this.dataStore = dataStore;
+    private final String dataStore;
+    public CreatePrimaryDataStoreCmd(String uri) {
+        this.dataStore = uri;
     }
     
-    public PrimaryDataStoreTO getDataStore() {
+    public String getDataStore() {
         return this.dataStore;
     }
     

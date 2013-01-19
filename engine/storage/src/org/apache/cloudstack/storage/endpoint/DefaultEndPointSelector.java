@@ -21,6 +21,8 @@ package org.apache.cloudstack.storage.endpoint;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -36,9 +38,13 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.SearchCriteria2;
+import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -163,5 +169,28 @@ public class DefaultEndPointSelector implements EndPointSelector {
             throw new CloudRuntimeException("not implemented yet");
         }
         
+    }
+    
+    @Override
+    public List<EndPoint> selectAll(DataStore store) {
+        List<EndPoint> endPoints = new ArrayList<EndPoint>();
+        if (store.getScope().getScopeType() == ScopeType.HOST) {
+            HostVO host = hostDao.findById(store.getScope().getScopeId());
+            endPoints.add(new HypervisorHostEndPoint(host.getId(),
+                    host.getPrivateIpAddress()));
+        } else if (store.getScope().getScopeType() == ScopeType.CLUSTER) {
+            SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
+            sc.addAnd(sc.getEntity().getClusterId(), Op.EQ, store.getScope().getScopeId());
+            sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
+            List<HostVO> hosts = sc.find();
+            for (HostVO host : hosts) {
+                endPoints.add(new HypervisorHostEndPoint(host.getId(),
+                        host.getPrivateIpAddress()));
+            }
+           
+        } else {
+            throw new CloudRuntimeException("shouldn't use it for other scope");
+        }
+        return endPoints;
     }
 }

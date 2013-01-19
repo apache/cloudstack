@@ -38,13 +38,16 @@ import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
 
 
 public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(DefaultPrimaryDataStoreDriverImpl.class);
     @Inject
     EndPointSelector selector;
-
+    @Inject
+    StoragePoolHostDao storeHostDao;
     public DefaultPrimaryDataStoreDriverImpl() {
         
     }
@@ -65,13 +68,13 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         
     }
     
-    public Void createAsyncCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeContext<CommandResult> context) {
-        CommandResult result = new CommandResult();
+    public Void createAsyncCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeContext<CreateCmdResult> context) {
+        CreateCmdResult result = null;
         CreateVolumeAnswer volAnswer = (CreateVolumeAnswer) callback.getResult();
         if (volAnswer.getResult()) {
-            DataObject volume = context.getVolume();
-            //volume.setPath(volAnswer.getVolumeUuid());
+            result = new CreateCmdResult(volAnswer.getVolumeUuid());
         } else {
+            result = new CreateCmdResult("");
             result.setResult(volAnswer.getDetails());
         }
         
@@ -155,7 +158,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         EndPoint ep = selector.select(vol);
         CreateObjectCommand createCmd = new CreateObjectCommand(vol.getUri());
         
-        CreateVolumeContext<CommandResult> context = null;
+        CreateVolumeContext<CreateCmdResult> context = null;
         AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
         caller.setContext(context)
             .setCallback(caller.getTarget().createAsyncCallback(null, null));
@@ -165,7 +168,8 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     @Override
     public String grantAccess(DataObject object, EndPoint ep) {
-        return object.getUri();
+        StoragePoolHostVO poolHost = storeHostDao.findByPoolHost(object.getDataStore().getId(), ep.getId());
+        return object.getUri() + "&storagePath=" + poolHost.getLocalPath();
     }
 
     @Override

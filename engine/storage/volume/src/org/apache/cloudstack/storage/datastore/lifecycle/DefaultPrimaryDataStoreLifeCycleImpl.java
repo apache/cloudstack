@@ -18,7 +18,10 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
+import java.util.List;
 import java.util.Map;
+
+import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -26,16 +29,26 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
+import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.datastore.DataStoreStatus;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
+import org.apache.cloudstack.storage.endpoint.EndPointSelector;
+
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     protected PrimaryDataStore dataStore;
-    protected PrimaryDataStoreDao dataStoreDao;
-    public DefaultPrimaryDataStoreLifeCycleImpl(PrimaryDataStoreDao dataStoreDao) {
-        this.dataStoreDao = dataStoreDao;
+    @Inject
+    EndPointSelector selecotr;
+    @Inject
+    PrimaryDataStoreDao dataStoreDao;
+    @Inject
+    HostDao hostDao;
+    public DefaultPrimaryDataStoreLifeCycleImpl() {
     }
     
     @Override
@@ -44,26 +57,36 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
         return true;
     }
 
-    protected void attachCluster() {
+    protected void attachCluster(DataStore store) {
         //send down AttachPrimaryDataStoreCmd command to all the hosts in the cluster
-        AttachPrimaryDataStoreCmd cmd = new AttachPrimaryDataStoreCmd(this.dataStore.getUri());
-        /*for (EndPoint ep : dataStore.getEndPoints()) {
-            ep.sendMessage(cmd);
-        } */
+        List<EndPoint> endPoints = selecotr.selectAll(dataStore);
+        CreatePrimaryDataStoreCmd createCmd = new CreatePrimaryDataStoreCmd(store.getUri());
+        EndPoint ep = endPoints.get(0);
+        HostVO host = hostDao.findById(ep.getId());
+        if (host.getHypervisorType() == HypervisorType.XenServer) {
+            ep.sendMessage(createCmd);
+        }
+        
+        endPoints.get(0).sendMessage(createCmd);
+        AttachPrimaryDataStoreCmd cmd = new AttachPrimaryDataStoreCmd(dataStore.getUri());
+        for (EndPoint endp : endPoints) {
+            endp.sendMessage(cmd);
+        }
     }
     
     @Override
     public boolean attachCluster(DataStore dataStore, ClusterScope scope) {
-        PrimaryDataStoreVO dataStoreVO = dataStoreDao.findById(this.dataStore.getId());
+        PrimaryDataStoreVO dataStoreVO = dataStoreDao.findById(dataStore.getId());
         dataStoreVO.setDataCenterId(scope.getZoneId());
         dataStoreVO.setPodId(scope.getPodId());
         dataStoreVO.setClusterId(scope.getScopeId());
         dataStoreVO.setStatus(DataStoreStatus.Attaching);
+        dataStoreVO.setScope(scope.getScopeType());
         dataStoreDao.update(dataStoreVO.getId(), dataStoreVO);
         
-        attachCluster();
+        attachCluster(dataStore);
         
-        dataStoreVO = dataStoreDao.findById(this.dataStore.getId());
+        dataStoreVO = dataStoreDao.findById(dataStore.getId());
         dataStoreVO.setStatus(DataStoreStatus.Up);
         dataStoreDao.update(dataStoreVO.getId(), dataStoreVO);
         

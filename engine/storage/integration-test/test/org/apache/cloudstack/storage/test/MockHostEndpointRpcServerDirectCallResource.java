@@ -51,7 +51,7 @@ public class MockHostEndpointRpcServerDirectCallResource implements HostEndpoint
         MockRpcCallBack run = ComponentContext.inject(MockRpcCallBack.class);
         run.setCallback(callback);
         run.setCmd(command);
-        run.setHostId(host.getHostId());
+        run.setHostId(host.getId());
         executor.schedule(run, 10, TimeUnit.SECONDS);
     }
 
@@ -59,7 +59,7 @@ public class MockHostEndpointRpcServerDirectCallResource implements HostEndpoint
     public Answer sendCommand(HypervisorHostEndPoint host, Command command) {
         Answer answer;
         try {
-            answer = agentMgr.send(host.getHostId(), command);
+            answer = agentMgr.send(host.getId(), command);
             return answer;
         } catch (AgentUnavailableException e) {
            return null;

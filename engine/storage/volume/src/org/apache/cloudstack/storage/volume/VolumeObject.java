@@ -121,7 +121,7 @@ public class VolumeObject implements VolumeInfo {
         }
         ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(this.volumeVO.getId(), DataObjectType.VOLUME, this.dataStore.getId(), this.dataStore.getRole());
         if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-            return this.dataStore.getUri() + File.separator + "&objType=" + DataObjectType.VOLUME + "&size=" + this.volumeVO.getSize();
+            return this.dataStore.getUri() + File.separator + "&objType=" + DataObjectType.VOLUME + "&size=" + this.volumeVO.getSize() + "&name=" + this.volumeVO.getName();
         } else {
             return this.dataStore.getUri() + File.separator + "&objType=" + DataObjectType.VOLUME + "&path=" + obj.getInstallPath();
         }

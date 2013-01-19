@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,6 +32,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
+import org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManager;
 import org.apache.cloudstack.storage.image.ImageService;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
 import org.apache.cloudstack.storage.image.db.ImageDataVO;
@@ -80,8 +82,8 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	DataCenterDao dcDao;
 	@Inject
 	PrimaryDataStoreDao primaryStoreDao;
-	//@Inject
-	//PrimaryDataStoreProviderManager primaryDataStoreProviderMgr;
+	@Inject
+	DataStoreProviderManager dataStoreProviderMgr;
 	@Inject
 	AgentManager agentMgr;
 	Long dcId;
@@ -135,6 +137,12 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		host.setClusterId(cluster.getId());
 
 		host = hostDao.persist(host);
+		try {
+            dataStoreProviderMgr.configure(null, new HashMap<String, Object>());
+        } catch (ConfigurationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 		primaryStore = createPrimaryDataStore();
 	
 		//CreateVolumeAnswer createVolumeFromImageAnswer = new CreateVolumeAnswer(UUID.randomUUID().toString());
@@ -209,6 +217,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 
 	private PrimaryDataStoreInfo createPrimaryDataStore() {
 		try {
+		    
 		    /*
 		    PrimaryDataStoreProvider provider = primaryDataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
 		    primaryDataStoreProviderMgr.configure("primary data store mgr", new HashMap<String, Object>());

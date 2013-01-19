@@ -46,6 +46,7 @@ import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.component.ComponentContext;
 
 public class DefaultPrimaryDataStore implements PrimaryDataStore {
@@ -120,7 +121,8 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
         return this.pdsv.getPoolType() + File.separator
                 + this.pdsv.getHostAddress() + File.separator
                 + this.pdsv.getPath() + File.separator
-                + "?role=" + this.getRole(); 
+                + "?role=" + this.getRole()
+                + "&storeUuid=" + this.pdsv.getUuid();
     }
 
     @Override

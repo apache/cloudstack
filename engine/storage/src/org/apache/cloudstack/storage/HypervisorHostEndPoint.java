@@ -48,7 +48,7 @@ public class HypervisorHostEndPoint implements EndPoint {
         return this.hostAddress;
     }
     
-    public long getHostId() {
+    public long getId() {
         return this.hostId;
     }
 

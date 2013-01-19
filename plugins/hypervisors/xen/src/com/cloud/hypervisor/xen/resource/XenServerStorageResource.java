@@ -22,7 +22,10 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -31,9 +34,9 @@ import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CopyCmd;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
-import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
@@ -64,6 +67,8 @@ import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VDI;
+
+import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class XenServerStorageResource {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageResource.class);
@@ -114,16 +119,39 @@ public class XenServerStorageResource {
         vdi.destroy(conn);
     }
     
+    private Map<String, String> getParameters(URI uri) {
+        String parameters = uri.getQuery();
+        Map<String, String> params = new HashMap<String, String>();
+        List<String> paraLists = Arrays.asList(parameters.split("&"));
+        for (String para : paraLists) {
+            String[] pair = para.split("=");
+            params.put(pair[0], pair[1]);
+        }
+        return params;
+    }
+    
     protected CreateVolumeAnswer execute(CreateObjectCommand cmd) {
-        VolumeTO volume = null;
-        PrimaryDataStoreTO primaryDataStore = volume.getDataStore();
+        String uriString = cmd.getObjectUri();
+        Map<String, String> params = null;
+        
+        try {
+            URI uri = new URI(uriString);
+            params = getParameters(uri);
+        } catch (URISyntaxException e1) {
+            s_logger.debug("uri exception", e1);
+            return new CreateVolumeAnswer(cmd, false, e1.toString()); 
+        }
+        
+        long size = Long.parseLong(params.get("size"));
+        String name = params.get("name");
+        String storeUuid = params.get("storagePath");
         Connection conn = hypervisorResource.getConnection();
         VDI vdi = null;
         boolean result = false;
         String errorMsg = null;
         try {
-            SR primaryDataStoreSR = getSRByNameLabel(conn, primaryDataStore.getUuid());
-            vdi = createVdi(conn, volume.getName(), primaryDataStoreSR, volume.getSize());
+            SR primaryDataStoreSR = getSRByNameLabel(conn, storeUuid);
+            vdi = createVdi(conn, name, primaryDataStoreSR, size);
             VDI.Record record = vdi.getRecord(conn);
             result = true;
             return new CreateVolumeAnswer(cmd, record.uuid);
@@ -190,11 +218,14 @@ public class XenServerStorageResource {
         }
     }
     
-    protected SR getNfsSR(Connection conn, NfsPrimaryDataStoreTO pool) {
+    protected SR getNfsSR(Connection conn, URI uri) {
         Map<String, String> deviceConfig = new HashMap<String, String>();
+        Map<String, String> params = getParameters(uri);
+        String uuid = params.get("storeUuid");
         try {
-            String server = pool.getServer();
-            String serverpath = pool.getPath();
+            String server = uri.getHost();
+            String serverpath = uri.getPath();
+            
             serverpath = serverpath.replace("//", "/");
             Set<SR> srs = SR.getAll(conn);
             for (SR sr : srs) {
@@ -225,21 +256,21 @@ public class XenServerStorageResource {
 
                 if (server.equals(dc.get("server")) && serverpath.equals(dc.get("serverpath"))) {
                     throw new CloudRuntimeException("There is a SR using the same configuration server:" + dc.get("server") + ", serverpath:"
-                            + dc.get("serverpath") + " for pool " + pool.getUuid() + "on host:" + hypervisorResource.getHost().uuid);
+                            + dc.get("serverpath") + " for pool " + uuid + "on host:" + hypervisorResource.getHost().uuid);
                 }
 
             }
             deviceConfig.put("server", server);
             deviceConfig.put("serverpath", serverpath);
             Host host = Host.getByUuid(conn, hypervisorResource.getHost().uuid);
-            SR sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), Long.toString(pool.getId()), SRType.NFS.toString(), "user", true,
+            SR sr = SR.create(conn, host, deviceConfig, new Long(0), uuid, uuid, SRType.NFS.toString(), "user", true,
                     new HashMap<String, String>());
             sr.scan(conn);
             return sr;
         } catch (XenAPIException e) {
-            throw new CloudRuntimeException("Unable to create NFS SR " + pool.toString(), e);
+            throw new CloudRuntimeException("Unable to create NFS SR " + uuid, e);
         } catch (XmlRpcException e) {
-            throw new CloudRuntimeException("Unable to create NFS SR " + pool.toString(), e);
+            throw new CloudRuntimeException("Unable to create NFS SR " + uuid, e);
         }
     }
     /*
@@ -369,15 +400,26 @@ public class XenServerStorageResource {
     
     protected Answer execute(CreatePrimaryDataStoreCmd cmd) {
         Connection conn = hypervisorResource.getConnection();
-        PrimaryDataStoreTO dataStore = cmd.getDataStore();
+        String storeUrl = cmd.getDataStore();
+        String scheme = null;
+        String type = null;
+        URI storeUri = null;
         try {
-            if (DataStoreProtocol.NFS.toString().equalsIgnoreCase(dataStore.getType())) {
-                getNfsSR(conn, (NfsPrimaryDataStoreTO)dataStore);
-            } else if (DataStoreProtocol.NFS.toString().equalsIgnoreCase(dataStore.getType())) {
+            storeUri = new URI(storeUrl);
+        } catch(URISyntaxException e) {
+            return new Answer(cmd, false, e.toString());
+        }
+        
+        scheme = storeUri.getScheme();
+        
+        try {
+            if (scheme.equalsIgnoreCase("nfs")) {
+                SR sr = getNfsSR(conn, storeUri);
+            } else if (scheme.equalsIgnoreCase("iscsi")) {
                 //getIscsiSR(conn, dataStore);
-            } else if (dataStore.getType() == StoragePoolType.PreSetup.toString()) {
+            } else if (scheme.equalsIgnoreCase("presetup")) {
             } else {
-                //return new Answer(cmd, false, "The pool type: " + pool.getType().name() + " is not supported.");
+                return new Answer(cmd, false, "The pool type: " + scheme + " is not supported.");
             }
             return new Answer(cmd, true, "success");
         } catch (Exception e) {
