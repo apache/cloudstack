@@ -3254,7 +3254,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (rules != null) {
             rulesTO = new ArrayList<FirewallRuleTO>();
             for (FirewallRule rule : rules) {
-                IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+                IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
                 if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
                     _rulesDao.loadSourceCidrs((FirewallRuleVO)rule);
                 }
