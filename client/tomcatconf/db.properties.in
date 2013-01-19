@@ -65,6 +65,10 @@ db.usage.maxWait=10000
 db.usage.autoReconnect=true
 
 # awsapi database settings
+db.awsapi.username=@DBUSER@
+db.awsapi.password=@DBPW@
+db.awsapi.host=@DBHOST@
+db.awsapi.port=3306
 db.awsapi.name=cloudbridge
 
 # Simulator database settings

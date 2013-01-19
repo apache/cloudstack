@@ -90,200 +90,6 @@
             </executions>
           </plugin>
 
-          <!-- Database recreator -->
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>sql-maven-plugin</artifactId>
-            <version>1.5</version>
-            <dependencies>
-              <!-- specify the dependent jdbc driver here -->
-              <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${cs.mysql.version}</version>
-              </dependency>
-            </dependencies>
-            <configuration>
-              <driver>org.gjt.mm.mysql.Driver</driver>
-              <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}/cloud</url>
-              <username>${db.cloud.username}</username>
-              <password>${db.cloud.password}</password>
-              <!--all executions are ignored if -Dmaven.test.skip=true -->
-              <skip>${maven.test.skip}</skip>
-              <forceMojoExecution>true</forceMojoExecution>
-            </configuration>
-            <executions>
-              <execution>
-                <id>drop-database</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
-                  <sqlCommand>drop database if exists `cloud`</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>create-database</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
-                  <sqlCommand>create database `cloud`</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>grant-user-cloud</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
-                  <sqlCommand>GRANT ALL ON cloud.* to
-                    ${db.cloud.username}@`localhost` identified by
-                    '${db.cloud.password}';</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>grant-user-cloud-all</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
-                  <sqlCommand>GRANT ALL ON cloud.* to
-                    ${db.cloud.username}@`%` identified by
-                    '${db.cloud.password}';</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>drop-database-usage</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
-                  <sqlCommand>drop database if exists `cloud_usage`</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>create-database-usage</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
-                  <sqlCommand>create database `cloud_usage`</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>grant-user-cloud-usage</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
-                  <sqlCommand>GRANT ALL ON cloud_usage.* to
-                    ${db.cloud.username}@`localhost` identified by
-                    '${db.cloud.password}';</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>grant-user-cloud-usage-all</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
-                  <sqlCommand>GRANT ALL ON cloud_usage.* to
-                    ${db.cloud.username}@`%` identified by
-                    '${db.cloud.password}';</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>drop-database-cloudbridge</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
-                  <sqlCommand>drop database if exists `cloudbridge`</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>create-database-cloudbridge</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
-                  <sqlCommand>create database `cloudbridge`</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>grant-user-cloudbridge</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
-                  <sqlCommand>GRANT ALL ON cloudbridge.* to
-                    ${db.cloud.username}@`localhost` identified by
-                    '${db.cloud.password}';</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>grant-user-cloudbridge-all</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
-                  <sqlCommand>GRANT ALL ON cloudbridge.* to
-                    ${db.cloud.username}@`%` identified by
-                    '${db.cloud.password}';</sqlCommand>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-
           <!-- DatabaseCreator driver here -->
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
@@ -365,6 +171,11 @@
                 <argument>${basedir}/developer-prefill.sql</argument>
                 <!-- Do database upgrade-->
                 <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
+                <argument>--database=cloud,usage,awsapi</argument>
+                <argument>--rootpassword=${db.root.password}</argument>
+                <!-- Print help using -h or dash-dash-help -->
+                <!-- Do dry run using -d or dash-dash-dry -->
+                <!-- Enable verbosity by -v or dash-dash-verbose -->
               </arguments>
             </configuration>
           </plugin>
@@ -402,96 +213,75 @@
               </execution>
             </executions>
           </plugin>
+          <!-- DatabaseCreator driver here -->
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
-            <artifactId>sql-maven-plugin</artifactId>
-            <version>1.5</version>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.2.1</version>
             <dependencies>
+              <!-- specify the dependent jdbc driver here -->
               <dependency>
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${cs.mysql.version}</version>
               </dependency>
+              <dependency>
+                <groupId>commons-dbcp</groupId>
+                <artifactId>commons-dbcp</artifactId>
+                <version>${cs.dbcp.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>commons-pool</groupId>
+                <artifactId>commons-pool</artifactId>
+                <version>${cs.pool.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>org.jasypt</groupId>
+                <artifactId>jasypt</artifactId>
+                <version>${cs.jasypt.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>org.apache.cloudstack</groupId>
+                <artifactId>cloud-utils</artifactId>
+                <version>${project.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>org.apache.cloudstack</groupId>
+                <artifactId>cloud-server</artifactId>
+                <version>${project.version}</version>
+              </dependency>
             </dependencies>
-            <configuration>
-              <driver>org.gjt.mm.mysql.Driver</driver>
-              <url>jdbc:mysql://${db.simulator.host}:3306/simulator</url>
-              <username>${db.simulator.username}</username>
-              <password>${db.simulator.password}</password>
-              <skip>${maven.test.skip}</skip>
-              <forceMojoExecution>true</forceMojoExecution>
-            </configuration>
             <executions>
               <execution>
-                <id>drop-database</id>
                 <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.simulator.host}:3306</url>
-                  <sqlCommand>drop database if exists `simulator`</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>create-database</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.simulator.host}:3306</url>
-                  <sqlCommand>create database `simulator`</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>grant-user-cloud</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.simulator.host}:3306</url>
-                  <sqlCommand>GRANT ALL ON simulator.* to
-                    ${db.simulator.username}@`localhost` identified by
-                    '${db.simulator.password}';</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
-                <id>grant-user-cloud-all</id>
-                <phase>process-test-resources</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <username>root</username>
-                  <password>${db.root.password}</password>
-                  <url>jdbc:mysql://${db.simulator.host}:3306</url>
-                  <sqlCommand>GRANT ALL ON simulator.* to
-                    ${db.simulator.username}@`%` identified by
-                    '${db.simulator.password}';</sqlCommand>
-                </configuration>
-              </execution>
-              <execution>
                 <id>create-schema</id>
-                <phase>process-test-resources</phase>
                 <goals>
-                  <goal>execute</goal>
+                  <goal>java</goal>
                 </goals>
-                <configuration>
-                  <srcFiles>
-                    <srcFile>${basedir}/target/db/create-schema-simulator.sql</srcFile>
-                    <srcFile>${basedir}/target/db/templates.simulator.sql</srcFile>
-                  </srcFiles>
-                </configuration>
               </execution>
             </executions>
+            <configuration>
+              <includeProjectDependencies>false</includeProjectDependencies>
+              <includePluginDependencies>true</includePluginDependencies>
+              <executableDependency>
+                <groupId>org.apache.cloudstack</groupId>
+                <artifactId>cloud-server</artifactId>
+              </executableDependency>
+              <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+              <arguments>
+                <!-- db properties file -->
+                <argument>${project.parent.basedir}/utils/conf/db.properties</argument>
+                <argument>${project.parent.basedir}/utils/conf/db.properties.override</argument>
+                <!-- simulator sql files -->
+                <argument>${basedir}/target/db/create-schema-simulator.sql</argument>
+                <argument>${basedir}/target/db/templates.simulator.sql</argument>
+                <!-- database upgrade-->
+                <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
+                <argument>--database=simulator</argument>
+                <argument>--rootpassword=${db.root.password}</argument>
+                <!-- enable verbosity by -v or dash-dash-verbose -->
+              </arguments>
+            </configuration>
           </plugin>
         </plugins>
       </build>
