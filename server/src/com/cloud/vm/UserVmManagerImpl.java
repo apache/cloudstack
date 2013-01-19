@@ -962,7 +962,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         //todo: verify unique hostname in network domain?
         
         //verify that there isn't a NIC attached to network
-        if(_networkMgr.getNicInNetwork(vmInstance.getId(),network.getId()) != null){
+        if(_networkModel.getNicInNetwork(vmInstance.getId(),network.getId()) != null){
             throw new CloudRuntimeException("Unable to add NIC to " + vmInstance + " because it already has a NIC attached to " + network);
         }
 
@@ -1071,7 +1071,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // no need to check permissions for network, we'll enumerate the ones they already have access to
-        Network existingdefaultnet = _networkMgr.getDefaultNetworkForVm(vmId);
+        Network existingdefaultnet = _networkModel.getDefaultNetworkForVm(vmId);
         
         // if current default equals chosen new default, return and do nothing
         if (existingdefaultnet == network){
@@ -1082,8 +1082,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             s_logger.debug("looks like we want to change from " + existingdefaultnet + " to " + network);
         }
         
-        NicProfile chosen = _networkMgr.getNicProfile(vmInstance, network.getId(), null);
-        NicProfile existing = _networkMgr.getNicProfile(vmInstance, existingdefaultnet.getId(), null);
+        NicProfile chosen = _networkModel.getNicProfile(vmInstance, network.getId(), null);
+        NicProfile existing = _networkModel.getNicProfile(vmInstance, existingdefaultnet.getId(), null);
         
         // if we can't find the chosen nic, fail!
         if (chosen == null){
@@ -1114,7 +1114,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         existingVO = _nicDao.persist(existingVO);
 
         Network newdefault = null;
-        newdefault = _networkMgr.getDefaultNetworkForVm(vmId);
+        newdefault = _networkModel.getDefaultNetworkForVm(vmId);
         
         if (newdefault == null){
              chosenVO.setDefaultNic(false);
@@ -1125,7 +1125,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
              chosenVO = _nicDao.persist(chosenVO);
              existingVO = _nicDao.persist(existingVO);
              
-             newdefault = _networkMgr.getDefaultNetworkForVm(vmId);
+             newdefault = _networkModel.getDefaultNetworkForVm(vmId);
              if (newdefault.getId() == existingdefaultnet.getId()) {
                     throw new CloudRuntimeException("Setting a default nic failed, and we had no default nic, but we were able to set it back to the original");
              }
