@@ -35,6 +35,7 @@ public class DataStoreManagerImpl implements DataStoreManager {
     PrimaryDataStoreProviderManager primaryStorMgr;
     @Inject
     ImageDataStoreManager imageDataStoreMgr;
+
     @Override
     public DataStore getDataStore(long storeId, DataStoreRole role) {
         if (role == DataStoreRole.Primary) {
@@ -47,7 +48,6 @@ public class DataStoreManagerImpl implements DataStoreManager {
     @Override
     public DataStore registerDataStore(Map<String, String> params,
             String providerUuid) {
-        // TODO Auto-generated method stub
         return null;
     }
 

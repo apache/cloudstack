@@ -32,9 +32,12 @@ import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.datastore.DataStoreStatus;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
+import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.endpoint.EndPointSelector;
+import org.apache.cloudstack.storage.image.datastore.ImageDataStoreHelper;
+import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -48,13 +51,18 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     PrimaryDataStoreDao dataStoreDao;
     @Inject
     HostDao hostDao;
+    @Inject
+    PrimaryDataStoreHelper primaryStoreHelper;
+    @Inject
+    PrimaryDataStoreProviderManager providerMgr;
     public DefaultPrimaryDataStoreLifeCycleImpl() {
     }
     
     @Override
-    public boolean initialize(DataStore store, Map<String, String> dsInfos) {
-        //TODO: add extension point for each data store
-        return true;
+    public DataStore initialize(Map<String, String> dsInfos) {
+        
+        PrimaryDataStoreVO storeVO = primaryStoreHelper.createPrimaryDataStore(dsInfos); 
+        return providerMgr.getPrimaryDataStore(storeVO.getId());
     }
 
     protected void attachCluster(DataStore store) {

@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.test;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -28,10 +29,15 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
+import org.apache.cloudstack.storage.datastore.provider.DataStoreProvider;
 import org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManager;
 import org.apache.cloudstack.storage.image.ImageService;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
@@ -215,9 +221,23 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		createTemplate();
 	}
 
-	private PrimaryDataStoreInfo createPrimaryDataStore() {
+	@Test
+	public PrimaryDataStoreInfo createPrimaryDataStore() {
 		try {
+		    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
+		    Map<String, String> params = new HashMap<String, String>();
+            params.put("url", this.getPrimaryStorageUrl());
+            params.put("dcId", dcId.toString());
+            params.put("clusterId", clusterId.toString());
+            params.put("name", this.primaryName);
+            params.put("roles", DataStoreRole.Primary.toString());
+            params.put("uuid", UUID.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString());
+            params.put("providerId", String.valueOf(provider.getId()));
 		    
+		    DataStoreLifeCycle lifeCycle = provider.getLifeCycle();
+		    DataStore store = lifeCycle.initialize(params);
+		    ClusterScope scope = new ClusterScope(clusterId, podId, dcId);
+		    lifeCycle.attachCluster(store, scope);
 		    /*
 		    PrimaryDataStoreProvider provider = primaryDataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
 		    primaryDataStoreProviderMgr.configure("primary data store mgr", new HashMap<String, Object>());
@@ -255,7 +275,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		return volume;
 	}
 
-	@Test(priority=2)
+	//@Test(priority=2)
 	public void createVolumeFromTemplate() {
 	    primaryStore = createPrimaryDataStore();
 		TemplateEntity te = createTemplate();
@@ -265,7 +285,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		ve.destroy();
 	}
 	
-	@Test(priority=3) 
+	//@Test(priority=3) 
 	public void createDataDisk() {
 	    primaryStore = createPrimaryDataStore();
 	    VolumeVO volume = createVolume(null, primaryStore.getId());

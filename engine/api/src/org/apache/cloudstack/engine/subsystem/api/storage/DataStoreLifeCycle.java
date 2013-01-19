@@ -22,7 +22,7 @@ import java.util.Map;
 
 
 public interface DataStoreLifeCycle {
-    public boolean initialize(DataStore store, Map<String, String> dsInfos);
+    public DataStore initialize(Map<String, String> dsInfos);
 
     public boolean attachCluster(DataStore store, ClusterScope scope);
     

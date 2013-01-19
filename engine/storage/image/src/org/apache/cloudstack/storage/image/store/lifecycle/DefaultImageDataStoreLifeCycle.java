@@ -34,9 +34,9 @@ public class DefaultImageDataStoreLifeCycle implements ImageDataStoreLifeCycle {
 
 
     @Override
-    public boolean initialize(DataStore store, Map<String, String> dsInfos) {
+    public DataStore initialize(Map<String, String> dsInfos) {
         // TODO Auto-generated method stub
-        return false;
+        return null;
     }
 
 
