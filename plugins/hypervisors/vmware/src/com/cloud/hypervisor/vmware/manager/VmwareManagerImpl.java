@@ -58,6 +58,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.VmwareCleanupMaid;
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
@@ -91,6 +92,7 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
 import com.google.gson.Gson;
 import com.vmware.apputils.vim25.ServiceUtil;
+import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.HostConnectSpec;
 import com.vmware.vim25.ManagedObjectReference;
 
@@ -119,6 +121,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Inject ClusterVSMMapDao _vsmMapDao;
     @Inject ConfigurationDao _configDao;
     @Inject ConfigurationServer _configServer;
+    @Inject HypervisorCapabilitiesDao _hvCapabilitiesDao;
 
     String _mountParent;
     StorageLayer _storage;
@@ -133,7 +136,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     String _recycleHungWorker = "false";
     int _additionalPortRangeStart;
     int _additionalPortRangeSize;
-    int _maxHostsPerCluster;
     int _routerExtraPublicNics = 2;
 
     String _cpuOverprovisioningFactor = "1";
@@ -260,7 +262,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
 
-        _maxHostsPerCluster = NumbersUtil.parseInt(_configDao.getValue(Config.VmwarePerClusterHostMax.key()), VmwareManager.MAX_HOSTS_PER_CLUSTER);
         _cpuOverprovisioningFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
         if(_cpuOverprovisioningFactor == null || _cpuOverprovisioningFactor.isEmpty())
             _cpuOverprovisioningFactor = "1";
@@ -400,10 +401,15 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 ManagedObjectReference[] hosts = (ManagedObjectReference[])serviceContext.getServiceUtil().getDynamicProperty(mor, "host");
                 assert(hosts != null);
 
-                if(hosts.length > _maxHostsPerCluster) {
-                    String msg = "vCenter cluster size is too big (current configured cluster size: " + _maxHostsPerCluster + ")";
-                    s_logger.error(msg);
-                    throw new DiscoveredWithErrorException(msg);
+                if (hosts.length > 0) {
+                    AboutInfo about = (AboutInfo)(serviceContext.getServiceUtil().getDynamicProperty(hosts[0], "config.product"));
+                    String version = about.getApiVersion();
+                    int maxHostsPerCluster = _hvCapabilitiesDao.getMaxHostsPerCluster(HypervisorType.VMware, version);
+                    if (hosts.length > maxHostsPerCluster) {
+                        String msg = "vCenter cluster size is too big (current configured cluster size: " + maxHostsPerCluster + ")";
+                        s_logger.error(msg);
+                        throw new DiscoveredWithErrorException(msg);
+                    }
                 }
 
                 for(ManagedObjectReference morHost: hosts) {
@@ -866,11 +872,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public Pair<Integer, Integer> getAddiionalVncPortRange() {
         return new Pair<Integer, Integer>(_additionalPortRangeStart, _additionalPortRangeSize);
-    }
-
-    @Override
-    public int getMaxHostsPerCluster() {
-        return this._maxHostsPerCluster;
     }
 
     @Override

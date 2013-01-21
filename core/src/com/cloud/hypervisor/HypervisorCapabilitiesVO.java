@@ -59,6 +59,9 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
     @Column(name="max_data_volumes_limit")
     private Integer maxDataVolumesLimit;
 
+    @Column(name="max_hosts_per_cluster")
+    private Integer maxHostsPerCluster;
+
     protected HypervisorCapabilitiesVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
@@ -155,6 +158,15 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
 
     public void setMaxDataVolumesLimit(Integer maxDataVolumesLimit) {
         this.maxDataVolumesLimit = maxDataVolumesLimit;
+    }
+
+    @Override
+    public Integer getMaxHostsPerCluster() {
+        return maxHostsPerCluster;
+    }
+
+    public void setMaxHostsPerCluster(Integer maxHostsPerCluster) {
+        this.maxHostsPerCluster = maxHostsPerCluster;
     }
 
     @Override

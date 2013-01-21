@@ -45,6 +45,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
@@ -95,78 +96,69 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 	CiscoNexusVSMDeviceDao _nexusDao;
 	@Inject
     NetworkModel _netmgr;
-	
+    @Inject
+    HypervisorCapabilitiesDao _hvCapabilitiesDao;
+
 	public VmwareServerDiscoverer() {
 		s_logger.info("VmwareServerDiscoverer is constructed");
 	}
-	
-	@Override
-	public Map<? extends ServerResource, Map<String, String>> find(long dcId,
-			Long podId, Long clusterId, URI url, String username,
-			String password, List<String> hostTags) throws DiscoveryException {
 
-		if (s_logger.isInfoEnabled())
-			s_logger.info("Discover host. dc: " + dcId + ", pod: " + podId
-					+ ", cluster: " + clusterId + ", uri host: "
-					+ url.getHost());
+    @Override
+    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, 
+    	String username, String password, List<String> hostTags) throws DiscoveryException {
+    	
+    	if(s_logger.isInfoEnabled())
+    		s_logger.info("Discover host. dc: " + dcId + ", pod: " + podId + ", cluster: " + clusterId + ", uri host: " + url.getHost());
+    	
+    	if(podId == null) {
+        	if(s_logger.isInfoEnabled())
+        		s_logger.info("No pod is assigned, assuming that it is not for vmware and skip it to next discoverer"); 
+    		return null;
+    	}
+    	
+        ClusterVO cluster = _clusterDao.findById(clusterId);
+        if(cluster == null || cluster.getHypervisorType() != HypervisorType.VMware) {
+        	if(s_logger.isInfoEnabled())
+        		s_logger.info("invalid cluster id or cluster is not for VMware hypervisors"); 
+    		return null;
+        }
+        
+        List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(clusterId);
+        if (hosts != null && hosts.size() > 0) {
+            int maxHostsPerCluster = _hvCapabilitiesDao.getMaxHostsPerCluster(hosts.get(0).getHypervisorType(), hosts.get(0).getHypervisorVersion());
+            if (hosts.size() > maxHostsPerCluster) {
+                   String msg = "VMware cluster " + cluster.getName() + " is too big to add new host now. (current configured cluster size: " + maxHostsPerCluster + ")";
+                   s_logger.error(msg);
+                   throw new DiscoveredWithErrorException(msg);
+            }
+        }
 
-		if (podId == null) {
-			if (s_logger.isInfoEnabled())
-				s_logger.info("No pod is assigned, assuming that it is not for vmware and skip it to next discoverer");
-			return null;
-		}
-
-		ClusterVO cluster = _clusterDao.findById(clusterId);
-		if (cluster == null
-				|| cluster.getHypervisorType() != HypervisorType.VMware) {
-			if (s_logger.isInfoEnabled())
-				s_logger.info("invalid cluster id or cluster is not for VMware hypervisors");
-			return null;
-		}
-
-		List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(clusterId);
-		if (hosts.size() >= _vmwareMgr.getMaxHostsPerCluster()) {
-			String msg = "VMware cluster "
-					+ cluster.getName()
-					+ " is too big to add new host now. (current configured cluster size: "
-					+ _vmwareMgr.getMaxHostsPerCluster() + ")";
-			s_logger.error(msg);
-			throw new DiscoveredWithErrorException(msg);
-		}
-
-		String privateTrafficLabel = null;
-		String publicTrafficLabel = null;
-		String guestTrafficLabel = null;
-		Map<String, String> vsmCredentials = null;
-
-		privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId,
-				HypervisorType.VMware);
-		if (privateTrafficLabel != null) {
-			s_logger.info("Detected private network label : "
-					+ privateTrafficLabel);
-		}
-
-		if (_vmwareMgr.getNexusVSwitchGlobalParameter()) {
-			DataCenterVO zone = _dcDao.findById(dcId);
-			NetworkType zoneType = zone.getNetworkType();
-			if (zoneType != NetworkType.Basic) {
-				publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId,
-						HypervisorType.VMware);
-				if (publicTrafficLabel != null) {
-					s_logger.info("Detected public network label : "
-							+ publicTrafficLabel);
-				}
-			}
-			// Get physical network label
-			guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId,
-					HypervisorType.VMware);
-			if (guestTrafficLabel != null) {
-				s_logger.info("Detected guest network label : "
-						+ guestTrafficLabel);
-			}
-			vsmCredentials = _vmwareMgr
-					.getNexusVSMCredentialsByClusterId(clusterId);
-		}
+        String privateTrafficLabel = null;
+        String publicTrafficLabel = null;
+        String guestTrafficLabel = null;
+        Map<String, String> vsmCredentials = null;
+        
+        privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.VMware);
+        if (privateTrafficLabel != null) {
+            s_logger.info("Detected private network label : " + privateTrafficLabel);
+        }
+        
+        if (_vmwareMgr.getNexusVSwitchGlobalParameter()) {
+            DataCenterVO zone = _dcDao.findById(dcId);
+            NetworkType zoneType = zone.getNetworkType();
+            if (zoneType != NetworkType.Basic) {
+                publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
+                if (publicTrafficLabel != null) {
+                    s_logger.info("Detected public network label : " + publicTrafficLabel);
+                }
+            }
+            // Get physical network label
+            guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
+            if (guestTrafficLabel != null) {
+                s_logger.info("Detected guest network label : " + guestTrafficLabel);
+            }
+            vsmCredentials = _vmwareMgr.getNexusVSMCredentialsByClusterId(clusterId);
+        }
 
 		VmwareContext context = null;
 		try {
