@@ -399,9 +399,8 @@
 
         args.response.success({
           type: 'select-network',
-          data: {
-            myNetworks: [], //not used any more
-            sharedNetworks: networkObjs,
+          data: {            
+            networkObjs: networkObjs,
             securityGroups: [],
             networkOfferings: networkOfferingObjs,
             vpcs: vpcObjs
@@ -432,9 +431,8 @@
         });
         args.response.success({
           type: 'select-security-group',
-          data: {
-            myNetworks: [], //not used any more
-            sharedNetworks: [],
+          data: {            
+            networkObjs: [],
             securityGroups: securityGroupArray,
             networkOfferings: [],
             vpcs: []
@@ -445,9 +443,8 @@
       else if(step5ContainerType == 'nothing-to-select') {
         args.response.success({
           type: 'nothing-to-select',
-          data: {
-            myNetworks: [], //not used any more
-            sharedNetworks: [],
+          data: {            
+            networkObjs: [],
             securityGroups: [],
             networkOfferings: [],
             vpcs: []

@@ -636,7 +636,7 @@
 
                   // My networks
                   $step.find('.my-networks .select-container').append(
-                    makeSelects('my-networks', $.merge(args.data.myNetworks, args.data.sharedNetworks), {
+                    makeSelects('my-networks', args.data.networkObjs, {
                       name: 'name',
                       desc: 'type',
                       id: 'id'
