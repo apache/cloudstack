@@ -284,6 +284,7 @@
 						$networkStep.find("#from_instance_page_2").show();
 						$networkStep.find("#from_vpc_tier").text("");			
 						$networkStep.find("#from_vpc_tier").hide();
+            $networkStepContainer.removeClass('next-use-security-groups');
 					} else { // Advanced SG-enabled zone
 					  step5ContainerType = 'select-advanced-sg';
 					}
@@ -384,8 +385,15 @@
         });
         //get network offerings (end)	***			
 
+        $networkStepContainer.removeClass('repeat next-use-security-groups');
+
         if (step5ContainerType == 'select-advanced-sg') {
           $networkStepContainer.addClass('repeat next-use-security-groups');
+
+          // Add guest network is disabled
+          $networkStepContainer.find('.select-network').addClass('no-add-network');
+        } else {
+          $networkStepContainer.find('.select-network').removeClass('no-add-network');
         }
 
         args.response.success({
