@@ -819,3 +819,26 @@ left join host_pod_ref on storage_pool.pod_id = host_pod_ref.id
 left join storage_pool_details on storage_pool_details.pool_id = storage_pool.id and storage_pool_details.value = 'true'
 left join op_host_capacity on storage_pool.id = op_host_capacity.host_id and op_host_capacity.capacity_type = 3
 left join async_job on async_job.instance_id = storage_pool.id and async_job.instance_type = "StoragePool" and async_job.job_status = 0;
+
+DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
+CREATE VIEW disk_offering_view AS
+select 
+disk_offering.id,
+disk_offering.uuid,
+disk_offering.name,
+disk_offering.display_text,
+disk_offering.disk_size,
+disk_offering.created,
+disk_offering.tags,
+disk_offering.customized,
+disk_offering.removed,
+disk_offering.use_local_storage,
+disk_offering.system_use,
+disk_offering.sort_key,
+disk_offering.type,
+domain.id domain_id, 
+domain.uuid domain_uuid,
+domain.name domain_name, 
+domain.path domain_path
+from disk_offering 
+left join domain on disk_offering.domain_id=domain.id;

@@ -44,6 +44,7 @@ import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.ControlledViewEntity;
+import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -298,24 +299,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public DiskOfferingResponse createDiskOfferingResponse(DiskOffering offering) {
-        DiskOfferingResponse diskOfferingResponse = new DiskOfferingResponse();
-        diskOfferingResponse.setId(offering.getUuid());
-        diskOfferingResponse.setName(offering.getName());
-        diskOfferingResponse.setDisplayText(offering.getDisplayText());
-        diskOfferingResponse.setCreated(offering.getCreated());
-        diskOfferingResponse.setDiskSize(offering.getDiskSize() / (1024 * 1024 * 1024));
-        if (offering.getDomainId() != null) {
-            Domain domain = ApiDBUtils.findDomainById(offering.getDomainId());
-            if (domain != null) {
-                diskOfferingResponse.setDomain(domain.getName());
-                diskOfferingResponse.setDomainId(domain.getUuid());
-            }
-        }
-        diskOfferingResponse.setTags(offering.getTags());
-        diskOfferingResponse.setCustomized(offering.isCustomized());
-        diskOfferingResponse.setStorageType(offering.getUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
-        diskOfferingResponse.setObjectName("diskoffering");
-        return diskOfferingResponse;
+        DiskOfferingJoinVO vOffering = ApiDBUtils.newDiskOfferingView(offering);
+        return ApiDBUtils.newDiskOfferingResponse(vOffering);
     }
 
     @Override

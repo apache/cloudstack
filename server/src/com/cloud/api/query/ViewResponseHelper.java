@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -43,6 +44,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
+import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -271,6 +273,14 @@ public class ViewResponseHelper {
         List<AsyncJobResponse> respList = new ArrayList<AsyncJobResponse>();
         for (AsyncJobJoinVO vt : jobs){
             respList.add(ApiDBUtils.newAsyncJobResponse(vt));
+        }
+        return respList;
+    }
+
+    public static List<DiskOfferingResponse> createDiskOfferingResponse(DiskOfferingJoinVO... offerings) {
+        List<DiskOfferingResponse> respList = new ArrayList<DiskOfferingResponse>();
+        for (DiskOfferingJoinVO vt : offerings){
+            respList.add(ApiDBUtils.newDiskOfferingResponse(vt));
         }
         return respList;
     }
