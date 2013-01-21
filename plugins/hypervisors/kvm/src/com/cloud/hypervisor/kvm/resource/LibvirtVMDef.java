@@ -748,7 +748,7 @@ public class LibvirtVMDef {
                 }
                 netBuilder.append("</virtualport>\n");
             }
-            if (_vlanTag != -1) {
+            if (_vlanTag > 0 && _vlanTag < 4095) {
                 netBuilder.append("<vlan trunk='no'>\n<tag id='" + _vlanTag + "'/>\n</vlan>");
             }
             netBuilder.append("</interface>\n");

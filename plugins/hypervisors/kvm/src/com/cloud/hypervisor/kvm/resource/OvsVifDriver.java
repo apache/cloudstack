@@ -143,7 +143,7 @@ public class OvsVifDriver extends VifDriverBase {
         return brName;
     }
     
-    private void deleteExitingLinkLocalRoutTable(String linkLocalBr) {
+    private void deleteExitingLinkLocalRouteTable(String linkLocalBr) {
         Script command = new Script("/bin/bash", _timeout);
         command.add("-c");
         command.add("ip route | grep " + NetUtils.getLinkLocalCIDR());
@@ -168,7 +168,7 @@ public class OvsVifDriver extends VifDriverBase {
     }
 
     private void createControlNetwork(String privBrName) {
-        deleteExitingLinkLocalRoutTable(privBrName);
+        deleteExitingLinkLocalRouteTable(privBrName);
         if (!isBridgeExists(privBrName)) {
             Script.runSimpleBashScript("ovs-vsctl add-br " + privBrName + "; ifconfig " + privBrName + " up; ifconfig " +
                     privBrName + " 169.254.0.1", _timeout);

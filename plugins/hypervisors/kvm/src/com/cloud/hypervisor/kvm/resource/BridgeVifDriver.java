@@ -176,7 +176,7 @@ public class BridgeVifDriver extends VifDriverBase {
         createControlNetwork(_bridges.get("linklocal"));
     }
 
-    private void deletExitingLinkLocalRoutTable(String linkLocalBr) {
+    private void deleteExitingLinkLocalRouteTable(String linkLocalBr) {
         Script command = new Script("/bin/bash", _timeout);
         command.add("-c");
         command.add("ip route | grep " + NetUtils.getLinkLocalCIDR());
@@ -201,7 +201,7 @@ public class BridgeVifDriver extends VifDriverBase {
     }
 
     private void createControlNetwork(String privBrName) {
-        deletExitingLinkLocalRoutTable(privBrName);
+        deleteExitingLinkLocalRouteTable(privBrName);
         if (!isBridgeExists(privBrName)) {
             Script.runSimpleBashScript("brctl addbr " + privBrName + "; ifconfig " + privBrName + " up; ifconfig " +
                     privBrName + " 169.254.0.1", _timeout);
