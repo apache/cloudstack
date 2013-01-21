@@ -385,9 +385,6 @@ public class ManagementServerImpl implements ManagementServer {
     @Inject
     EventUtils	_forceEventUtilsRef;
 
-    @Inject
-    CloudStackComponentComposer _componentRegistry;
-
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private KeystoreManager _ksMgr;
 
@@ -431,7 +428,7 @@ public class ManagementServerImpl implements ManagementServer {
     private void initCloudStackComponents() {
         runCheckers();
         startDaos(); // daos should not be using managers and adapters.
-        
+
         Map<String, Object> avoidMap = new HashMap<String, Object>();
         startManagers(avoidMap);
         startAdapters(avoidMap);
@@ -473,23 +470,23 @@ public class ManagementServerImpl implements ManagementServer {
 
         // make sure startup sequence is maintained
         try {
-        	_clusterMgr.configure("ClusterMgr", params);
-        	_clusterMgr.start();
-        	
-        	avoidMap.put(ComponentContext.getTargetClass(_clusterMgr).getName(), _clusterMgr);
+            _clusterMgr.configure("ClusterMgr", params);
+            _clusterMgr.start();
+
+            avoidMap.put(ComponentContext.getTargetClass(_clusterMgr).getName(), _clusterMgr);
         } catch(Exception e) {
             s_logger.error("Problems to start manager:" + ComponentContext.getTargetClass(_clusterMgr).getName(), e);
             System.exit(1);
         }
-        
+
         for(Manager manager : ComponentContext.getComponentsOfType(Manager.class).values()) {
             s_logger.info("Start manager: " + ComponentContext.getTargetClass(manager).getName() + "...");
             try {
-            	if(avoidMap.get(ComponentContext.getTargetClass(manager).getName()) != null) {
+                if(avoidMap.get(ComponentContext.getTargetClass(manager).getName()) != null) {
                     s_logger.info("Skip manager: " + ComponentContext.getTargetClass(manager).getName() + " as it is already started");
-            		continue;
-            	}
-            	
+                    continue;
+                }
+
                 if(!manager.configure(manager.getClass().getSimpleName(), params)) {
                     throw new CloudRuntimeException("Failed to start manager: " + ComponentContext.getTargetClass(manager).getName());
                 }
@@ -519,11 +516,11 @@ public class ManagementServerImpl implements ManagementServer {
         for(Adapter adapter : adapters.values()) {
             try {
                 s_logger.info("Start adapter: " + ComponentContext.getTargetClass(adapter).getName() + "...");
-                
-            	if(avoidMap.get(ComponentContext.getTargetClass(adapter).getName()) != null) {
+
+                if(avoidMap.get(ComponentContext.getTargetClass(adapter).getName()) != null) {
                     s_logger.info("Skip adapter: " + ComponentContext.getTargetClass(adapter).getName() + " as it is already started");
-            		continue;
-            	}
+                    continue;
+                }
 
                 if(!adapter.configure(adapter.getName(), params)) {
                     throw new CloudRuntimeException("Failed to configure adapter: " + ComponentContext.getTargetClass(adapter).getName());
@@ -531,7 +528,7 @@ public class ManagementServerImpl implements ManagementServer {
                 if (!adapter.start()) {
                     throw new CloudRuntimeException("Failed to start adapter: " + ComponentContext.getTargetClass(adapter).getName());
                 }
-                
+
                 avoidMap.put(ComponentContext.getTargetClass(adapter).getName(), adapter);
 
                 if (adapter instanceof ManagementBean) {
