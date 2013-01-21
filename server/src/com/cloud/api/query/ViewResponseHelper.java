@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -54,6 +55,7 @@ import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -281,6 +283,14 @@ public class ViewResponseHelper {
         List<DiskOfferingResponse> respList = new ArrayList<DiskOfferingResponse>();
         for (DiskOfferingJoinVO vt : offerings){
             respList.add(ApiDBUtils.newDiskOfferingResponse(vt));
+        }
+        return respList;
+    }
+
+    public static List<ServiceOfferingResponse> createServiceOfferingResponse(ServiceOfferingJoinVO... offerings) {
+        List<ServiceOfferingResponse> respList = new ArrayList<ServiceOfferingResponse>();
+        for (ServiceOfferingJoinVO vt : offerings){
+            respList.add(ApiDBUtils.newServiceOfferingResponse(vt));
         }
         return respList;
     }

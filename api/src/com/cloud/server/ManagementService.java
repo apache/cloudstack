@@ -110,13 +110,6 @@ public interface ManagementService {
      */
     Pair<List<? extends Configuration>, Integer> searchForConfigurations(ListCfgsByCmd c);
 
-    /**
-     * Searches for Service Offerings by the specified search criteria Can search by: "name"
-     *
-     * @param cmd
-     * @return List of ServiceOfferings
-     */
-    List<? extends ServiceOffering> searchForServiceOfferings(ListServiceOfferingsCmd cmd);
 
     /**
      * Searches for Clusters by the specified search criteria

@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -52,6 +53,7 @@ import com.cloud.api.query.dao.ProjectInvitationJoinDao;
 import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
@@ -68,6 +70,7 @@ import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -338,6 +341,7 @@ public class ApiDBUtils {
     private static AccountJoinDao _accountJoinDao;
     private static AsyncJobJoinDao _jobJoinDao;
     private static DiskOfferingJoinDao _diskOfferingJoinDao;
+    private static ServiceOfferingJoinDao _srvOfferingJoinDao;
 
     private static PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     private static PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
@@ -443,6 +447,7 @@ public class ApiDBUtils {
         _snapshotPolicyDao = locator.getDao(SnapshotPolicyDao.class);
         _asyncJobDao = locator.getDao(AsyncJobDao.class);
         _diskOfferingJoinDao = locator.getDao(DiskOfferingJoinDao.class);
+        _srvOfferingJoinDao = locator.getDao(ServiceOfferingJoinDao.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -1412,5 +1417,13 @@ public class ApiDBUtils {
 
    public static DiskOfferingJoinVO newDiskOfferingView(DiskOffering offering){
        return _diskOfferingJoinDao.newDiskOfferingView(offering);
+   }
+
+   public static ServiceOfferingResponse newServiceOfferingResponse(ServiceOfferingJoinVO offering) {
+       return _srvOfferingJoinDao.newServiceOfferingResponse(offering);
+   }
+
+   public static ServiceOfferingJoinVO newServiceOfferingView(ServiceOffering offering){
+       return _srvOfferingJoinDao.newServiceOfferingView(offering);
    }
 }

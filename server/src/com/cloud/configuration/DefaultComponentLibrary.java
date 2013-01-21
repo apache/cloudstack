@@ -28,6 +28,7 @@ import com.cloud.api.query.QueryManagerImpl;
 import com.cloud.api.query.dao.AccountJoinDaoImpl;
 import com.cloud.api.query.dao.AsyncJobJoinDaoImpl;
 import com.cloud.api.query.dao.DiskOfferingJoinDaoImpl;
+import com.cloud.api.query.dao.ServiceOfferingJoinDaoImpl;
 import com.cloud.api.query.dao.DomainRouterJoinDaoImpl;
 import com.cloud.api.query.dao.InstanceGroupJoinDaoImpl;
 import com.cloud.api.query.dao.ProjectAccountJoinDaoImpl;
@@ -394,6 +395,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("AsyncJobJoinDao", AsyncJobJoinDaoImpl.class);
         addDao("StoragePoolJoinDao", StoragePoolJoinDaoImpl.class);
         addDao("DiskOfferingJoinDao", DiskOfferingJoinDaoImpl.class);
+        addDao("ServiceOfferingJoinDao", ServiceOfferingJoinDaoImpl.class);
     }
 
     @Override

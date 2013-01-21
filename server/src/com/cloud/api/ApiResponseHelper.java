@@ -54,6 +54,7 @@ import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -342,33 +343,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ServiceOfferingResponse createServiceOfferingResponse(ServiceOffering offering) {
-        ServiceOfferingResponse offeringResponse = new ServiceOfferingResponse();
-        offeringResponse.setId(offering.getUuid());
-        offeringResponse.setName(offering.getName());
-        offeringResponse.setIsSystemOffering(offering.getSystemUse());
-        offeringResponse.setDefaultUse(offering.getDefaultUse());
-        offeringResponse.setSystemVmType(offering.getSystemVmType());
-        offeringResponse.setDisplayText(offering.getDisplayText());
-        offeringResponse.setCpuNumber(offering.getCpu());
-        offeringResponse.setCpuSpeed(offering.getSpeed());
-        offeringResponse.setMemory(offering.getRamSize());
-        offeringResponse.setCreated(offering.getCreated());
-        offeringResponse.setStorageType(offering.getUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
-        offeringResponse.setOfferHa(offering.getOfferHA());
-        offeringResponse.setLimitCpuUse(offering.getLimitCpuUse());
-        offeringResponse.setTags(offering.getTags());
-        if (offering.getDomainId() != null) {
-            Domain domain = ApiDBUtils.findDomainById(offering.getDomainId());
-            if (domain != null) {
-                offeringResponse.setDomain(domain.getName());
-                offeringResponse.setDomainId(domain.getUuid());
-            }
-        }
-        offeringResponse.setNetworkRate(offering.getRateMbps());
-        offeringResponse.setHostTag(offering.getHostTag());
-        offeringResponse.setObjectName("serviceoffering");
-
-        return offeringResponse;
+        ServiceOfferingJoinVO vOffering = ApiDBUtils.newServiceOfferingView(offering);
+        return ApiDBUtils.newServiceOfferingResponse(vOffering);
     }
 
     @Override

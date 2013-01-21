@@ -842,3 +842,34 @@ domain.name domain_name,
 domain.path domain_path
 from disk_offering 
 left join domain on disk_offering.domain_id=domain.id;
+
+DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
+CREATE VIEW service_offering_view AS
+select 
+service_offering.id,
+disk_offering.uuid,
+disk_offering.name,
+disk_offering.display_text,
+disk_offering.created,
+disk_offering.tags,
+disk_offering.removed,
+disk_offering.use_local_storage,
+disk_offering.system_use,
+service_offering.cpu,
+service_offering.speed,
+service_offering.ram_size,
+service_offering.nw_rate,
+service_offering.mc_rate,
+service_offering.ha_enabled,
+service_offering.limit_cpu_use,
+service_offering.host_tag,
+service_offering.default_use,
+service_offering.vm_type,
+service_offering.sort_key,
+domain.id domain_id, 
+domain.uuid domain_uuid,
+domain.name domain_name, 
+domain.path domain_path
+from service_offering 
+inner join disk_offering on service_offering.id = disk_offering.id
+left join domain on disk_offering.domain_id=domain.id;
