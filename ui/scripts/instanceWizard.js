@@ -329,7 +329,8 @@
       if(step5ContainerType == 'select-network' || step5ContainerType == 'select-advanced-sg') {
         var defaultNetworkArray = [], optionalNetworkArray = [];
         var networkData = {
-          zoneId: args.currentData.zoneid
+          zoneId: args.currentData.zoneid,
+					canusefordeploy: true
         };
 				
 				// step5ContainerType of Advanced SG-enabled zone is 'select-security-group', so won't come into this block
