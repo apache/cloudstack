@@ -41,9 +41,11 @@ import com.cloud.agent.manager.MockStorageManager;
 import com.cloud.agent.manager.MockVmManager;
 import com.cloud.agent.manager.SimulatorManager;
 import com.cloud.agent.manager.SimulatorManager.AgentType;
+import com.cloud.agent.manager.SimulatorManagerImpl;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.simulator.MockHost;
+import com.cloud.utils.component.ComponentContext;
 
 
 public class AgentResourceBase implements ServerResource {
@@ -117,8 +119,8 @@ public class AgentResourceBase implements ServerResource {
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
         hostGuid = (String)params.get("guid");
-        _locator = ComponentLocator.getLocator("management-server");
-        _simMgr = _locator.getManager(SimulatorManager.class);
+
+        _simMgr = ComponentContext.inject(SimulatorManagerImpl.class);
 
         agentHost = getAgentMgr().getHost(hostGuid);
         return true;
