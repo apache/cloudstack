@@ -255,6 +255,7 @@ deleteVolume=15
 listVolumes=15
 extractVolume=15
 migrateVolume=15
+resizeVolume=15
 
 #### registration command:  FIXME -- this really should be something in management server that
 ####                                 generates a new key for the user and they just have to
@@ -508,3 +509,8 @@ configureSimulator=1
 #### api discovery commands
 
 listApis=15
+
+#### API Rate Limit service command
+
+getApiLimit=15
+resetApiLimit=1

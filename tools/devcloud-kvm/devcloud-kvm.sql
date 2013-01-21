@@ -17,7 +17,7 @@
 
 
 INSERT INTO `cloud`.`disk_offering` (id, name, uuid, display_text, created, use_local_storage, type, disk_size) VALUES (17, 'tinyOffering', UUID(), 'tinyOffering', NOW(), 1, 'Service', 0);
-INSERT INTO `cloud`.`service_offering` (id, cpu, speed, ram_size) VALUES (17, 1, 100, 100);
+INSERT INTO `cloud`.`service_offering` (id, cpu, speed, ram_size) VALUES (17, 1, 100, 128);
 INSERT INTO `cloud`.`disk_offering` (id, name, uuid, display_text, created, type, disk_size) VALUES (18, 'tinyDiskOffering', UUID(), 'tinyDiskOffering', NOW(), 'Disk', 1073741824);
 INSERT INTO `cloud`.`configuration` (instance, name,value) VALUE('DEFAULT','router.ram.size', '100');
 INSERT INTO `cloud`.`configuration` (instance, name,value) VALUE('DEFAULT','router.cpu.mhz','100');
@@ -37,4 +37,5 @@ INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'se
 UPDATE `cloud`.`configuration` SET value='10' where name = 'storage.overprovisioning.factor';
 UPDATE `cloud`.`configuration` SET value='10' where name = 'cpu.overprovisioning.factor';
 UPDATE `cloud`.`configuration` SET value='10' where name = 'mem.overprovisioning.factor';
-UPDATE `cloud`.`vm_template` SET unique_name="tiny Linux",name="tiny Linux",url="http://marcus.mlsorensen.com/cloudstack-extras/ttylinux_pv.qcow2",checksum="81dcf4b4ca05a3b637a040e851568f29",display_text="tiny Linux",format='QCOW2',hypervisor_type='KVM' where id=5;
+UPDATE `cloud`.`vm_template` SET unique_name="tiny CentOS 6.3",name="tiny CentOS 6.3",url="http://marcus.mlsorensen.com/cloudstack-extras/tiny-centos-63.qcow2",checksum="4bbb806aa8570f4dfac13b4c38ea1603",display_text="tiny CentOS 6.3",format='QCOW2',hypervisor_type='KVM' where id=5;
+UPDATE `cloud`.`vm_template` SET url="http://dontdownloadthistemplate" where id=4;

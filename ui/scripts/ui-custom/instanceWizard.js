@@ -598,6 +598,8 @@
               response: {
                 success: function(args) {
                   var vpcs = args.data.vpcs;
+                  var addClass = args.addClass;
+                  var removeClass = args.removeClass;
 
                   // Populate VPC drop-down
                   $vpcSelect.html('');
@@ -753,7 +755,8 @@
               )
             );
 
-            $targetStep.addClass('loaded');
+            if (!$targetStep.hasClass('repeat') &&
+                !$targetStep.hasClass('always-load')) $targetStep.addClass('loaded');
           }
 
           // Show launch vm button if last step
@@ -806,6 +809,14 @@
 
             //step 5 - select network
             if($activeStep.find('.wizard-step-conditional.select-network:visible').size() > 0) {
+              var data = $activeStep.data('my-networks');
+
+              if (!data) {
+                $activeStep.closest('form').data('my-networks', cloudStack.serializeForm(
+                  $activeStep.closest('form')
+                )['my-networks']);
+              }
+
               if($activeStep.find('input[type=checkbox]:checked').size() == 0) {  //if no checkbox is checked
                 cloudStack.dialog.notice({ message: 'message.step.4.continue' });
                 return false;
@@ -828,7 +839,11 @@
               }
             }
 
-            showStep($steps.filter(':visible').index() + 2);
+            if ($activeStep.hasClass('repeat')) {
+              showStep($steps.filter(':visible').index() + 1);
+            } else {
+              showStep($steps.filter(':visible').index() + 2);
+            }
 
             return false;
           }

@@ -33,6 +33,7 @@ import org.libvirt.LibvirtException;
 import javax.naming.ConfigurationException;
 import java.net.URI;
 import java.util.Map;
+import java.io.File;
 
 public class BridgeVifDriver extends VifDriverBase {
 
@@ -209,15 +210,11 @@ public class BridgeVifDriver extends VifDriverBase {
     }
 
     private boolean isBridgeExists(String bridgeName) {
-        Script command = new Script("/bin/sh", _timeout);
-        command.add("-c");
-        command.add("brctl show|grep " + bridgeName);
-        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        String result = command.execute(parser);
-        if (result != null || parser.getLine() == null) {
-            return false;
-        } else {
+        File f = new File("/sys/devices/virtual/net/" + bridgeName);
+        if (f.exists()) {
             return true;
+        } else {
+            return false;
         }
     }
 }

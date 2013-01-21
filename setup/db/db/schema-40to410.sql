@@ -58,7 +58,6 @@ ALTER TABLE `cloud`.`snapshots` ADD COLUMN `s3_id` bigint unsigned COMMENT 'S3 t
 
 ALTER TABLE `cloud`.`snapshots` ADD CONSTRAINT `fk_snapshots__s3_id` FOREIGN KEY `fk_snapshots__s3_id` (`s3_id`) REFERENCES `s3` (`id`);
 
-ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `eip_associate_public_ip` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if public IP is associated with user VM creation by default when EIP service is enabled.' AFTER `elastic_ip_service`;
 ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `inline` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering LB provider is in inline mode';
 
 ALTER TABLE `cloud`.`external_load_balancer_devices` DROP COLUMN `is_inline`;
@@ -945,3 +944,5 @@ left join host_pod_ref on storage_pool.pod_id = host_pod_ref.id
 left join storage_pool_details on storage_pool_details.pool_id = storage_pool.id and storage_pool_details.value = 'true'
 left join op_host_capacity on storage_pool.id = op_host_capacity.host_id and op_host_capacity.capacity_type = 3
 left join async_job on async_job.instance_id = storage_pool.id and async_job.instance_type = "StoragePool" and async_job.job_status = 0;
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'direct.agent.pool.size', '500', 'Default size for DirectAgentPool');

@@ -68,7 +68,7 @@ public class DeleteNetworkCmd extends BaseAsyncCmd{
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete network");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete network");
         }
     }
 

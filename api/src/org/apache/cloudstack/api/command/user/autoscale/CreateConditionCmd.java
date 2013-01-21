@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -74,7 +75,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
             this.setEntityId(condition.getId());
             this.setEntityUuid(condition.getUuid());
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create condition.");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create condition.");
         }
     }
 

@@ -132,7 +132,7 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
             response.setResponseName("volume");
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to detach volume");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to detach volume");
         }
     }
 }

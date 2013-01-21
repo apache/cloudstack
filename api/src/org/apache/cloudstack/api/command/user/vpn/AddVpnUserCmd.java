@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.vpn;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -119,7 +120,7 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
         VpnUser vpnUser = _entityMgr.findById(VpnUser.class, getEntityId());
         Account account = _entityMgr.findById(Account.class, vpnUser.getAccountId());
         if (!_ravService.applyVpnUsers(vpnUser.getAccountId(), userName)) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add vpn user");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add vpn user");
         }
 
         VpnUsersResponse vpnResponse = new VpnUsersResponse();
@@ -144,7 +145,7 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
 
         VpnUser vpnUser = _ravService.addVpnUser(owner.getId(), userName, password);
         if (vpnUser == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add vpn user");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add vpn user");
         }
         setEntityId(vpnUser.getId());
         setEntityUuid(vpnUser.getUuid());

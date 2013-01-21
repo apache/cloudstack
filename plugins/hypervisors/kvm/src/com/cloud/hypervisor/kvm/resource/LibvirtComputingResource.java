@@ -162,6 +162,8 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
@@ -255,6 +257,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
     private String _patchdomrPath;
     private String _createvmPath;
     private String _manageSnapshotPath;
+    private String _resizeVolumePath;
     private String _createTmplPath;
     private String _heartBeatPath;
     private String _securityGroupPath;
@@ -548,6 +551,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                     "Unable to find the managesnapshot.sh");
         }
 
+        _resizeVolumePath = Script.findScript(storageScriptsDir, "resizevolume.sh");
+        if (_resizeVolumePath == null) {
+            throw new ConfigurationException(
+                    "Unable to find the resizevolume.sh");
+        }
+
         _createTmplPath = Script
                 .findScript(storageScriptsDir, "createtmplt.sh");
         if (_createTmplPath == null) {
@@ -813,10 +822,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements
     }
 
     private void getPifs() {
-        /* gather all available bridges and find their pifs, so that we can match them against traffic labels later */
-        String cmdout = Script.runSimpleBashScript("brctl show | tail -n +2 | grep -v \"^\\s\"|awk '{print $1}'|sed '{:q;N;s/\\n/%/g;t q}'");
-        s_logger.debug("cmdout was " + cmdout);
-        List<String> bridges = Arrays.asList(cmdout.split("%"));
+        File dir = new File("/sys/devices/virtual/net");
+        File[] netdevs = dir.listFiles();
+        List<String> bridges = new ArrayList<String>();
+        for (int i = 0; i < netdevs.length; i++) {
+            File isbridge = new File(netdevs[i].getAbsolutePath() + "/bridge");
+            String netdevName = netdevs[i].getName();
+            s_logger.debug("looking in file " + netdevs[i].getAbsolutePath() + "/bridge");
+            if (isbridge.exists()) {
+                s_logger.debug("Found bridge " + netdevName);
+                bridges.add(netdevName);
+            }
+        }
+
         for (String bridge : bridges) {
             s_logger.debug("looking for pif for bridge " + bridge);
             String pif = getPif(bridge);
@@ -853,11 +871,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements
     }
 
     private String getPif(String bridge) {
-        String pif = Script.runSimpleBashScript("brctl show | grep " + bridge + " | awk '{print $4}'");
-        String vlan = Script.runSimpleBashScript("ls /proc/net/vlan/" + pif);
+        String pif = matchPifFileInDirectory(bridge);
+        File vlanfile = new File("/proc/net/vlan" + pif);
 
-        if (vlan != null && !vlan.isEmpty()) {
-                pif = Script.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/" + pif + " | awk {'print $2'}");
+        if (vlanfile.isFile()) {
+                pif = Script.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/"
+                                                  + pif + " | awk {'print $2'}");
         }
 
         return pif;
@@ -868,6 +887,34 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         return pif;
     }
     
+    private String matchPifFileInDirectory(String bridgeName){
+        File f = new File("/sys/devices/virtual/net/" + bridgeName + "/brif");
+
+        if (! f.isDirectory()){
+            s_logger.debug("failing to get physical interface from bridge"
+                           + bridgeName + ", does " + f.getAbsolutePath() 
+                           + "exist?");
+            return "";
+        }
+
+        File[] interfaces = f.listFiles();
+
+        for (int i = 0; i < interfaces.length; i++) {
+            String fname = interfaces[i].getName();
+            s_logger.debug("matchPifFileInDirectory: file name '"+fname+"'");
+            if (fname.startsWith("eth") || fname.startsWith("bond")
+                || fname.startsWith("vlan")) {
+                return fname;
+            }
+        }
+
+        s_logger.debug("failing to get physical interface from bridge"
+                        + bridgeName + ", did not find an eth*, bond*, or vlan* in "
+                        + f.getAbsolutePath());
+        return "";
+    }
+
+
     private boolean checkNetwork(String networkName) {
         if (networkName == null) {
             return true;
@@ -875,8 +922,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
         if (_bridgeType == BridgeType.OPENVSWITCH) {
             return checkOvsNetwork(networkName);
-        }
-        else {
+        } else {
             return checkBridgeNetwork(networkName);
         }
     }
@@ -886,9 +932,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             return true;
         }
 
-        String name = Script.runSimpleBashScript("brctl show | grep "
-                + networkName + " | awk '{print $4}'");
-        if (name == null) {
+        String name = matchPifFileInDirectory(networkName);
+
+        if (name == null || name.isEmpty()) {
             return false;
         } else {
             return true;
@@ -1152,6 +1198,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                 return execute((CleanupNetworkRulesCmd) cmd);
             } else if (cmd instanceof CopyVolumeCommand) {
                 return execute((CopyVolumeCommand) cmd);
+            } else if (cmd instanceof ResizeVolumeCommand) {
+                return execute((ResizeVolumeCommand) cmd);
             } else if (cmd instanceof CheckNetworkCommand) {
                 return execute((CheckNetworkCommand) cmd);
             } else {
@@ -1358,6 +1406,72 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         }
     }
 
+    private String getResizeScriptType (KVMStoragePool pool, KVMPhysicalDisk vol) {
+        StoragePoolType poolType = pool.getType();
+        PhysicalDiskFormat volFormat = vol.getFormat();
+         
+        if(pool.getType() == StoragePoolType.CLVM && volFormat == KVMPhysicalDisk.PhysicalDiskFormat.RAW) {
+            return "CLVM";
+        } else if ((poolType == StoragePoolType.NetworkFilesystem
+                  || poolType == StoragePoolType.SharedMountPoint
+                  || poolType == StoragePoolType.Filesystem)
+                  && volFormat == KVMPhysicalDisk.PhysicalDiskFormat.QCOW2 ) {
+            return "QCOW2";
+        }
+        return null;
+    }
+
+    /* uses a local script now, eventually support for virStorageVolResize() will maybe work on 
+       qcow2 and lvm and we can do this in libvirt calls */
+    public Answer execute(ResizeVolumeCommand cmd) {
+        String volid = cmd.getPath();
+        long newSize = cmd.getNewSize();
+        long currentSize = cmd.getCurrentSize();
+        String vmInstanceName = cmd.getInstanceName();
+        boolean shrinkOk = cmd.getShrinkOk();
+        StorageFilerTO spool = cmd.getPool();
+
+        try {
+            KVMStoragePool pool = _storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
+            KVMPhysicalDisk vol = pool.getPhysicalDisk(volid);
+            String path = vol.getPath();
+            String type = getResizeScriptType(pool, vol);
+
+            if (type == null) {
+                return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '" 
+                                + pool.getType() + "' and volume format '" + vol.getFormat() + "'");
+            }
+
+            s_logger.debug("got to the stage where we execute the volume resize, params:" 
+                           + path + "," + currentSize + "," + newSize + "," + type + "," + vmInstanceName + "," + shrinkOk);
+            final Script resizecmd = new Script(_resizeVolumePath,
+                        _cmdsTimeout, s_logger); 
+            resizecmd.add("-s",String.valueOf(newSize));
+            resizecmd.add("-c",String.valueOf(currentSize));
+            resizecmd.add("-p",path);
+            resizecmd.add("-t",type);
+            resizecmd.add("-r",String.valueOf(shrinkOk));
+            resizecmd.add("-v",vmInstanceName);
+            String result = resizecmd.execute();
+
+            if (result == null) {
+
+                /* fetch new size as seen from libvirt, don't want to assume anything */
+                pool = _storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
+                long finalSize = pool.getPhysicalDisk(volid).getVirtualSize();
+                s_logger.debug("after resize, size reports as " + finalSize + ", requested " + newSize);
+                return new ResizeVolumeAnswer(cmd, true, "success", finalSize);
+            }
+
+            return new ResizeVolumeAnswer(cmd, false, result);
+        } catch (CloudRuntimeException e) {
+            String error = "failed to resize volume: " + e;
+            s_logger.debug(error);
+            return new ResizeVolumeAnswer(cmd, false, error);
+        }
+        
+    } 
+
     public Answer execute(DestroyCommand cmd) {
         VolumeTO vol = cmd.getVolume();
 
@@ -1394,20 +1508,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements
     }
 
     private String getVlanIdFromBridge(String brName) {
-        OutputInterpreter.OneLineParser vlanIdParser = new OutputInterpreter.OneLineParser();
-        final Script cmd = new Script("/bin/bash", s_logger);
-        cmd.add("-c");
-        cmd.add("vlanid=$(brctl show |grep " + brName
-                + " |awk '{print $4}' | cut -s -d. -f 2);echo $vlanid");
-        String result = cmd.execute(vlanIdParser);
-        if (result != null) {
-            return null;
-        }
-        String vlanId = vlanIdParser.getLine();
-        if (vlanId.equalsIgnoreCase("")) {
-            return null;
+        String pif= matchPifFileInDirectory(brName);
+        String[] pifparts = pif.split("\\.");
+
+        if(pifparts.length == 2) {
+            return pifparts[1];
         } else {
-            return vlanId;
+            s_logger.debug("failed to get vlan id from bridge " + brName 
+                           + "attached to physical interface" + pif);
+            return "";
         }
     }
 
@@ -1632,20 +1741,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                 String pluggedVlan = pluggedNic.getBrName();
                 if (pluggedVlan.equalsIgnoreCase(_linkLocalBridgeName)) {
                     vlanToNicNum.put("LinkLocal",devNum); 
-                }
-                else if (pluggedVlan.equalsIgnoreCase(_publicBridgeName)
+                } else if (pluggedVlan.equalsIgnoreCase(_publicBridgeName)
                          || pluggedVlan.equalsIgnoreCase(_privBridgeName)
                          || pluggedVlan.equalsIgnoreCase(_guestBridgeName)) {
                     vlanToNicNum.put(Vlan.UNTAGGED,devNum);
-                }
-                else {
+                } else {
                     vlanToNicNum.put(getVlanIdFromBridge(pluggedVlan),devNum);
                 }
                 devNum++;
             }
 
             for (IpAddressTO ip : ips) {
-                String ipVlan = ip.getVlanId();
                 String nicName = "eth" + vlanToNicNum.get(ip.getVlanId());
                 String netmask = Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
                 String subnet = NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
@@ -2991,9 +3097,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
             NicTO[] nics = vmSpec.getNics();
             for (NicTO nic : nics) {
-                if (nic.getIsolationUri() != null
-                        && nic.getIsolationUri().getScheme()
-                                .equalsIgnoreCase(IsolationType.Ec2.toString())) {
+                if (nic.isSecurityGroupEnabled() || ( nic.getIsolationUri() != null
+                         && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString()))) {
                     if (vmSpec.getType() != VirtualMachine.Type.User) {
                         default_network_rules_for_systemvm(conn, vmName);
                         break;
@@ -3239,8 +3344,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         }
 
         try {
-            //we use libvirt since we passed a libvirt connection to cleanupDisk
-            KVMStoragePool pool = _storagePoolMgr.getStoragePool(null, poolUuid);
+            // we use libvirt as storage adaptor since we passed a libvirt
+            // connection to cleanupDisk. We pass a storage type that maps
+            // to libvirt adaptor.
+            KVMStoragePool pool = _storagePoolMgr.getStoragePool(
+                                      StoragePoolType.Filesystem, poolUuid);
             if (pool != null) {
                 pool.delete();
             }

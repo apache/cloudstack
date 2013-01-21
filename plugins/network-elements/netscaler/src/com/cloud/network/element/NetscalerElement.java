@@ -77,7 +77,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkExternalLoadBalancerVO;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
@@ -113,7 +113,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
 
-@Local(value = NetworkElement.class)
+@Local(value = {NetworkElement.class, StaticNatServiceProvider.class, LoadBalancingServiceProvider.class})
 public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer,
 StaticNatServiceProvider {
 
@@ -122,7 +122,7 @@ StaticNatServiceProvider {
     public static final AutoScaleCounterType AutoScaleCounterNetscaler = new AutoScaleCounterType("netscaler");
 
     @Inject
-    NetworkManager _networkManager;
+    NetworkModel _networkManager;
     @Inject
     ConfigurationManager _configMgr;
     @Inject
@@ -130,7 +130,7 @@ StaticNatServiceProvider {
     @Inject
     AgentManager _agentMgr;
     @Inject
-    NetworkManager _networkMgr;
+    NetworkModel _networkMgr;
     @Inject
     HostDao _hostDao;
     @Inject
@@ -154,8 +154,7 @@ StaticNatServiceProvider {
 
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
-        boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced &&
-                (config.getGuestType() == Network.GuestType.Isolated || config.getGuestType() == Network.GuestType.Shared) && config.getTrafficType() == TrafficType.Guest);
+        boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced && config.getGuestType() == Network.GuestType.Isolated && config.getTrafficType() == TrafficType.Guest);
         boolean handleInBasicZone = (zone.getNetworkType() == NetworkType.Basic && config.getGuestType() == Network.GuestType.Shared && config.getTrafficType() == TrafficType.Guest);
 
         if (!(handleInAdvanceZone || handleInBasicZone)) {

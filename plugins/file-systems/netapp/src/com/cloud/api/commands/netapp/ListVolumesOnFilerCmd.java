@@ -39,7 +39,7 @@ import com.cloud.utils.component.ComponentLocator;
 public class ListVolumesOnFilerCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(ListVolumesOnFilerCmd.class.getName());
     private static final String s_name = "listvolumesresponse";
-    
+
     @Parameter(name=ApiConstants.POOL_NAME, type=CommandType.STRING, required = true, description="pool name.")
 	private String poolName;
 
@@ -49,7 +49,7 @@ public class ListVolumesOnFilerCmd extends BaseCmd {
 			ConcurrentOperationException, ResourceAllocationException {
 		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
     	NetappManager netappMgr = locator.getManager(NetappManager.class);
-    	
+
     	try {
     		List<NetappVolumeVO> volumes = netappMgr.listVolumesOnFiler(poolName);
     		ListResponse<ListVolumesOnFilerCmdResponse> listResponse = new ListResponse<ListVolumesOnFilerCmdResponse>();
@@ -71,9 +71,9 @@ public class ListVolumesOnFilerCmd extends BaseCmd {
     		listResponse.setResponseName(getCommandName());
     		this.setResponseObject(listResponse);
     	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
     	}
-		
+
 	}
 
 	@Override

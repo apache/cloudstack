@@ -20,6 +20,7 @@ import org.apache.cloudstack.api.response.*;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -153,7 +154,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
             this.setEntityId(volume.getId());
             this.setEntityUuid(volume.getUuid());
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create volume");
         }
     }
 
@@ -179,7 +180,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a volume");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a volume");
         }
     }
 }

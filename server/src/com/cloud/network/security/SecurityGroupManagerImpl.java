@@ -64,6 +64,7 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.network.security.dao.SecurityGroupDao;
@@ -149,6 +150,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     VMInstanceDao _vmDao;
     @Inject
     NetworkManager _networkMgr;
+    @Inject
+    NetworkModel _networkModel;
     @Inject
     AccountManager _accountMgr;
     @Inject
@@ -351,7 +354,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 if (rule.getAllowedNetworkId() != null) {
                     List<SecurityGroupVMMapVO> allowedInstances = _securityGroupVMMapDao.listBySecurityGroup(rule.getAllowedNetworkId(), State.Running);
                     for (SecurityGroupVMMapVO ngmapVO : allowedInstances) {
-                        Nic defaultNic = _networkMgr.getDefaultNic(ngmapVO.getInstanceId());
+                        Nic defaultNic = _networkModel.getDefaultNic(ngmapVO.getInstanceId());
                         if (defaultNic != null) {
                             String cidr = defaultNic.getIp4Address();
                             cidr = cidr + "/32";
@@ -1248,8 +1251,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         VirtualMachine vm = _vmDao.findByIdIncludingRemoved(vmId);
         List<NicProfile> nics = _networkMgr.getNicProfiles(vm);
         for (NicProfile nic : nics) {
-            Network network = _networkMgr.getNetwork(nic.getNetworkId());
-            if (_networkMgr.isSecurityGroupSupportedInNetwork(network) && vm.getHypervisorType() != HypervisorType.VMware) {
+            Network network = _networkModel.getNetwork(nic.getNetworkId());
+            if (_networkModel.isSecurityGroupSupportedInNetwork(network) && vm.getHypervisorType() != HypervisorType.VMware) {
                 return true;
             }
         }

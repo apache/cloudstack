@@ -50,7 +50,7 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
 import com.cloud.hypervisor.vmware.resource.VmwareResource;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
@@ -84,7 +84,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     @Inject ResourceManager _resourceMgr;
     @Inject CiscoNexusVSMDeviceDao _nexusDao;
     @Inject
-    NetworkManager _netmgr;
+    NetworkModel _netmgr;
     
     @Override
     public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, 

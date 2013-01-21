@@ -31,7 +31,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
@@ -62,7 +62,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     protected PrivateIpDao _privateIpDao;
     @Inject
-    protected NetworkManager _networkMgr;
+    protected NetworkModel _networkMgr;
     
     private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
 

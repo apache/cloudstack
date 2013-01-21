@@ -157,7 +157,7 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create AutoScale Policy");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create AutoScale Policy");
         }
     }
 }

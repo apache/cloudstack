@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.iso;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ServerApiException;
@@ -72,7 +73,7 @@ public class UpdateIsoCmd extends BaseUpdateTemplateOrIsoCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update iso");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update iso");
         }
     }
 }

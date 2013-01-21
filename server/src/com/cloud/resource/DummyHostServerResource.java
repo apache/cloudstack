@@ -91,7 +91,7 @@ public class DummyHostServerResource extends ServerResourceBase {
         cmd.setPublicIpAddress(getHostStoragePrivateIp());
         cmd.setPublicMacAddress(getHostStorageMacAddress().toString());
         cmd.setPublicNetmask("255.255.0.0");
-        cmd.setVersion("1.0");
+        cmd.setVersion(DummyHostServerResource.class.getPackage().getImplementationVersion());
 
         return new StartupCommand[] {cmd};
 	}

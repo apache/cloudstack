@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.admin.autoscale;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -86,7 +87,7 @@ public class CreateCounterCmd extends BaseAsyncCreateCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create Counter with name " + getName());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Counter with name " + getName());
         }
     }
 

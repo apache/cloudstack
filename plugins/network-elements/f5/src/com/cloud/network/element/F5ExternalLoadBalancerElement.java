@@ -65,7 +65,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkExternalLoadBalancerVO;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
@@ -93,13 +93,14 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
 
-@Local(value = NetworkElement.class)
+@Local(value = {NetworkElement.class, LoadBalancingServiceProvider.class, 
+		IpDeployer.class})
 public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, IpDeployer, F5ExternalLoadBalancerElementService, ExternalLoadBalancerDeviceManager {
 
     private static final Logger s_logger = Logger.getLogger(F5ExternalLoadBalancerElement.class);
 
     @Inject
-    NetworkManager _networkManager;
+    NetworkModel _networkManager;
     @Inject
     ConfigurationManager _configMgr;
     @Inject
@@ -122,7 +123,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     ConfigurationDao _configDao;
 
     private boolean canHandle(Network config) {
-        if ((config.getGuestType() != Network.GuestType.Isolated && config.getGuestType() != Network.GuestType.Shared) || config.getTrafficType() != TrafficType.Guest) {
+        if (config.getGuestType() != Network.GuestType.Isolated || config.getTrafficType() != TrafficType.Guest) {
             s_logger.trace("Not handling network with Type  " + config.getGuestType() + " and traffic type " + config.getTrafficType());
             return false;
         }

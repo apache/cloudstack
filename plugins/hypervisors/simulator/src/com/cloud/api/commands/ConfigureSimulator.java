@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.manager.SimulatorManager;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -62,7 +63,7 @@ public class ConfigureSimulator extends BaseCmd {
         SimulatorManager _simMgr = locator.getManager(SimulatorManager.class);
         boolean result = _simMgr.configureSimulator(zoneId, podId, clusterId, hostId, command, values);
         if (!result) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to configure simulator");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure simulator");
         }
 
         SuccessResponse response = new SuccessResponse(getCommandName());

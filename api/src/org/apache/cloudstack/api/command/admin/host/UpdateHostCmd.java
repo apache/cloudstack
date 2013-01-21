@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -108,7 +109,7 @@ public class UpdateHostCmd extends BaseCmd {
             this.setResponseObject(hostResponse);
         } catch (Exception e) {
             s_logger.debug("Failed to update host:" + getId(), e);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update host:" + getId() + "," + e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update host:" + getId() + "," + e.getMessage());
         }
     }
 }

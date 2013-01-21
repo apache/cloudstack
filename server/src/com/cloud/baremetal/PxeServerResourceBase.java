@@ -114,7 +114,7 @@ public class PxeServerResourceBase implements ServerResource {
 		cmd.setPod(_podId);
 		cmd.setPrivateIpAddress(_ip);
 		cmd.setStorageIpAddress("");
-		cmd.setVersion("");
+		cmd.setVersion(PxeServerResourceBase.class.getPackage().getImplementationVersion());
 		cmd.setGuid(_guid);
 		return new StartupCommand[]{cmd};
 	}

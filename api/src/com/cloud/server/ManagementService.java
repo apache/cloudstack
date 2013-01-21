@@ -25,6 +25,7 @@ import java.util.Set;
 import com.cloud.alert.Alert;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
+import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
@@ -140,6 +141,14 @@ public interface ManagementService {
      */
     Pair<List<? extends Pod>, Integer> searchForPods(ListPodsByCmd cmd);
 
+    /**
+     * Searches for servers by the specified search criteria Can search by: "name", "type", "state", "dataCenterId",
+     * "podId"
+     * 
+     * @param cmd
+     * @return List of Hosts
+     */
+    Pair<List<? extends Host>, Integer> searchForServers(ListHostsCmd cmd);
 
     /**
      * Creates a new template
@@ -384,7 +393,7 @@ public interface ManagementService {
      * @return Pair<List<? extends Host>, List<? extends Host>> List of all Hosts in VM's cluster and list of Hosts with
      *         enough capacity
      */
-    Pair<List<? extends Host>, List<? extends Host>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize);
+    Pair<Pair<List<? extends Host>, Integer>, List<? extends Host>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize);
 
     String[] listEventTypes();
 

@@ -126,11 +126,11 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to extract template");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract template");
             }
         } catch (InternalErrorException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }
 }

@@ -78,9 +78,9 @@ public class DeletePoolCmd extends BaseCmd {
         } else {
             StoragePool pool = _storageService.getStoragePool(id);
             if (pool != null && pool.getStatus() == StoragePoolStatus.Removed) {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to finish storage pool removal. The storage pool will not be used but cleanup is needed");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to finish storage pool removal. The storage pool will not be used but cleanup is needed");
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete storage pool");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete storage pool");
             }
         }
     }

@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.api.commands;
@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
@@ -81,12 +82,12 @@ public class ConfigureSrxFirewallCmd extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to configure SRX firewall device due to internal error.");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure SRX firewall device due to internal error.");
             }
         }  catch (InvalidParameterValueException invalidParamExcp) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
 

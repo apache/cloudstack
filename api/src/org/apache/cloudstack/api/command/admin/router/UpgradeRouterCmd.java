@@ -81,7 +81,7 @@ public class UpgradeRouterCmd extends BaseCmd {
             routerResponse.setResponseName(getCommandName());
             this.setResponseObject(routerResponse);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to upgrade router");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upgrade router");
         }
     }
 }

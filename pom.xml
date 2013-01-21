@@ -160,7 +160,6 @@
     <module>utils</module>
     <module>deps/XenServerJava</module>
     <module>plugins</module>
-    <module>awsapi</module>
     <module>patches</module>
     <module>client</module>
     <module>test</module>
@@ -244,10 +243,6 @@
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
-              <exclude>tools/devcloud/devcloud.cfg</exclude>
-              <exclude>tools/devcloud/devcloud-advanced.cfg</exclude>
-              <exclude>tools/devcloud-kvm/devcloud-kvm.cfg</exclude>
-              <exclude>tools/devcloud-kvm/devcloud-kvm-advanced.cfg</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>
@@ -363,11 +358,47 @@
             </formats>
           </configuration>
         </plugin>
+        <!--This plugin's configuration is used to store Eclipse m2e settings
+          only. It has no influence on the Maven build itself. -->
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>
+                      org.apache.maven.plugins
+                    </groupId>
+                    <artifactId>
+                      maven-antrun-plugin
+                    </artifactId>
+                    <versionRange>[1.7,)</versionRange>
+                    <goals>
+                      <goal>run</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore />
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>        
       </plugins>
     </pluginManagement>
   </build>
 
   <profiles>
+    <profile>
+      <id>awsapi</id>
+      <modules>
+        <module>awsapi</module>
+      </modules>
+    </profile>
     <profile>
       <id>developer</id>
       <modules>

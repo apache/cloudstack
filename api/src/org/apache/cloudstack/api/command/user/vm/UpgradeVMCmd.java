@@ -98,7 +98,7 @@ public class UpgradeVMCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to upgrade vm");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upgrade vm");
         }
     }
 }

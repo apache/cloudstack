@@ -16,37 +16,28 @@
 // under the License.
 package com.cloud.exception;
 
-import java.util.HashSet;
+import com.cloud.utils.SerialVersionUID;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
+ * Exception thrown if number of requests is over api rate limit set.
+ * @author minc
+ *
  */
-public class ErrorCode {
-    String code;
-    private static HashSet<ErrorCode> s_codes = new HashSet<ErrorCode>();
+public class RequestLimitException extends CloudRuntimeException {
 
-    public ErrorCode(String code) {
-        this.code = code;
-        assert !s_codes.contains(this) : "There is already an error code registered for this code: " + code;
-        s_codes.add(this);
+    private static final long serialVersionUID = SerialVersionUID.AccountLimitException;
+
+    protected RequestLimitException() {
+        super();
     }
 
-    public String getCode() {
-        return code;
+    public RequestLimitException(String msg) {
+        super(msg);
     }
 
-    @Override
-    public int hashCode() {
-        return code.hashCode();
+    public RequestLimitException(String msg, Throwable cause) {
+        super(msg, cause);
     }
 
-    @Override
-    public boolean equals(Object that) {
-        if (!(that instanceof ErrorCode)) {
-            return false;
-        }
-
-        return this.code.equals(((ErrorCode)that).code);
-    }
-
-    public final static ErrorCode UnableToReachResource = new ErrorCode("resource.unavailable");
 }

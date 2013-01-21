@@ -16,32 +16,6 @@
 // under the License.
 package com.cloud.vm;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
-import org.apache.cloudstack.api.command.user.vm.*;
-import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
-import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
-import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.*;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
@@ -53,17 +27,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
-
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
-import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
-import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
-import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -151,12 +114,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.RSAHelper;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.*;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
@@ -164,6 +122,26 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.*;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
+import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
+import org.apache.cloudstack.api.command.user.vm.*;
+import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
+import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
 public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager {
@@ -205,6 +183,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected IPAddressDao _ipAddressDao = null;
     @Inject
     protected HostPodDao _podDao = null;
+    @Inject
+    protected NetworkModel _networkModel = null;
     @Inject
     protected NetworkManager _networkMgr = null;
     @Inject
@@ -376,14 +356,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
         if (template.getEnablePassword()) {
-            Nic defaultNic = _networkMgr.getDefaultNic(vmId);
+            Nic defaultNic = _networkModel.getDefaultNic(vmId);
             if (defaultNic == null) {
                 s_logger.error("Unable to reset password for vm " + vmInstance + " as the instance doesn't have default nic");
                 return false;
             }
 
             Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
-            NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null, _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork), _networkMgr.getNetworkTag(template.getHypervisorType(), defaultNetwork));
+            NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork), _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
             VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmInstance);
             vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
 
@@ -1786,7 +1766,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     private boolean updateUserDataInternal(UserVm vm)
             throws ResourceUnavailableException, InsufficientCapacityException {
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-        Nic defaultNic = _networkMgr.getDefaultNic(vm.getId());
+        Nic defaultNic = _networkModel.getDefaultNic(vm.getId());
         if (defaultNic == null) {
             s_logger.error("Unable to update userdata for vm id=" + vm.getId() + " as the instance doesn't have default nic");
             return false;
@@ -1794,12 +1774,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
         NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null,
-                _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork),
-                _networkMgr.getNetworkTag(template.getHypervisorType(), defaultNetwork));
+                _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork),
+                _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
 
         VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>((VMInstanceVO)vm);
 
-        UserDataServiceProvider element = _networkMgr.getUserDataUpdateProvider(defaultNetwork);
+        UserDataServiceProvider element = _networkModel.getUserDataUpdateProvider(defaultNetwork);
         if (element == null) {
             throw new CloudRuntimeException("Can't find network element for " + Service.UserData.getName() + " provider needed for UserData update");
         }
@@ -2024,7 +2004,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         _accountMgr.checkAccess(caller, null, true, owner);
 
         // Get default guest network in Basic zone
-        Network defaultNetwork = _networkMgr.getExclusiveGuestNetwork(zone.getId());
+        Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
 
         if (defaultNetwork == null) {
             throw new InvalidParameterValueException("Unable to find a default network to start a vm");
@@ -2036,7 +2016,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         if (securityGroupIdList != null && isVmWare) {
             throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
-        } else if (!isVmWare && _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkMgr.canAddDefaultSecurityGroup()) {
+        } else if (!isVmWare && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
             //add the default securityGroup only if no security group is specified
             if(securityGroupIdList == null || securityGroupIdList.isEmpty()){
                 if (securityGroupIdList == null) {
@@ -2076,12 +2056,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // If no network is specified, find system security group enabled network
         if (networkIdList == null || networkIdList.isEmpty()) {
-            NetworkVO networkWithSecurityGroup = _networkMgr.getNetworkWithSecurityGroupEnabled(zone.getId());
+            Network networkWithSecurityGroup = _networkModel.getNetworkWithSecurityGroupEnabled(zone.getId());
             if (networkWithSecurityGroup == null) {
                 throw new InvalidParameterValueException("No network with security enabled is found in zone id=" + zone.getId());
             }
 
-            networkList.add(networkWithSecurityGroup);
+            networkList.add(_networkDao.findById(networkWithSecurityGroup.getId()));
             isSecurityGroupEnabledNetworkUsed = true;
 
         } else if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
@@ -2099,7 +2079,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
             }
 
-            if (!_networkMgr.isSecurityGroupSupportedInNetwork(network)) {
+            if (!_networkModel.isSecurityGroupSupportedInNetwork(network)) {
                 throw new InvalidParameterValueException("Network is not security group enabled: " + network.getId());
             }
 
@@ -2115,7 +2095,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
                 }
 
-                boolean isSecurityGroupEnabled = _networkMgr.isSecurityGroupSupportedInNetwork(network);
+                boolean isSecurityGroupEnabled = _networkModel.isSecurityGroupSupportedInNetwork(network);
                 if (isSecurityGroupEnabled) {
                     if (networkIdList.size() > 1) {
                         throw new InvalidParameterValueException("Can't create a vm with multiple networks one of" +
@@ -2139,8 +2119,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // if network is security group enabled, and no security group is specified, then add the default security group automatically
-        if (isSecurityGroupEnabledNetworkUsed && !isVmWare && _networkMgr.canAddDefaultSecurityGroup()) {
-
+        if (isSecurityGroupEnabledNetworkUsed && !isVmWare && _networkModel.canAddDefaultSecurityGroup()) {
+            
           //add the default securityGroup only if no security group is specified
             if(securityGroupIdList == null || securityGroupIdList.isEmpty()){
                 if (securityGroupIdList == null) {
@@ -2193,9 +2173,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
             if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                 // get Virtual networks
-                List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
+                List<? extends Network> virtualNetworks = _networkModel.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
                 if (virtualNetworks.isEmpty()) {
-                    long physicalNetworkId = _networkMgr.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
+                    long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                     // Validate physical network
                     PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
                     if (physicalNetwork == null) {
@@ -2236,8 +2216,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     }
 
                 }
-
-                _networkMgr.checkNetworkPermissions(owner, network);
+                
+                _networkModel.checkNetworkPermissions(owner, network);
 
                 //don't allow to use system networks
                 NetworkOffering networkOffering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
@@ -2406,7 +2386,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
             networks.add(new Pair<NetworkVO, NicProfile>(network, profile));
 
-            if (_networkMgr.isSecurityGroupSupportedInNetwork(network)) {
+            if (_networkModel.isSecurityGroupSupportedInNetwork(network)) {
                 securityGroupEnabled = true;
             }
 
@@ -2469,8 +2449,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     //* verify that there are no duplicates
                     if (hostNames.contains(hostName)) {
                         throw new InvalidParameterValueException("The vm with hostName " + hostName
-                                + " already exists in the network domain: " + ntwkDomain + "; network="
-                                + _networkMgr.getNetwork(ntwkId));
+                                + " already exists in the network domain: " + ntwkDomain + "; network=" 
+                                + _networkModel.getNetwork(ntwkId));
                     }
                 }
             }
@@ -2788,10 +2768,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (ip != null && ip.getSystem()) {
             UserContext ctx = UserContext.current();
             try {
-                long networkId = ip.getAssociatedWithNetworkId();
-                Network guestNetwork = _networkMgr.getNetwork(networkId);
-                NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
-                assert (offering.getAssociatePublicIP() == true) : "User VM should not have system owned public IP associated with it when offering configured not to associate public IP.";
                 _rulesMgr.disableStaticNat(ip.getId(), ctx.getCaller(), ctx.getCallerUserId(), true);
             } catch (Exception ex) {
                 s_logger.warn("Failed to disable static nat and release system ip " + ip + " as a part of vm " + profile.getVirtualMachine() + " stop due to exception ", ex);
@@ -2844,7 +2820,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         //check if vm is security group enabled
-        if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId) && _securityGroupMgr.getSecurityGroupsForVm(vmId).isEmpty() && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId) && _networkMgr.canAddDefaultSecurityGroup()) {
+        if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId) && _securityGroupMgr.getSecurityGroupsForVm(vmId).isEmpty() && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId) && _networkModel.canAddDefaultSecurityGroup()) {
             //if vm is not mapped to security group, create a mapping
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Vm " + vm + " is security group enabled, but not mapped to default security group; creating the mapping automatically");
@@ -3457,7 +3433,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             List<NetworkVO> networkList = new ArrayList<NetworkVO>();
 
             // Get default guest network in Basic zone
-            Network defaultNetwork = _networkMgr.getExclusiveGuestNetwork(zone.getId());
+            Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
 
             if (defaultNetwork == null) {
                 throw new InvalidParameterValueException("Unable to find a default network to start a vm");
@@ -3469,7 +3445,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
             if (securityGroupIdList != null && isVmWare) {
                 throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
-            } else if (!isVmWare && _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkMgr.canAddDefaultSecurityGroup()) {
+            } else if (!isVmWare && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
                 if (securityGroupIdList == null) {
                     securityGroupIdList = new ArrayList<Long>();
                 }
@@ -3534,7 +3510,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                             throw ex;
                         }
 
-                        _networkMgr.checkNetworkPermissions(newAccount, network);
+                        _networkModel.checkNetworkPermissions(newAccount, network);
 
                         //don't allow to use system networks
                         NetworkOffering networkOffering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
@@ -3555,9 +3531,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     }
                     if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                         // get Virtual networks
-                        List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
+                        List<? extends Network> virtualNetworks = _networkModel.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
                         if (virtualNetworks.isEmpty()) {
-                            long physicalNetworkId = _networkMgr.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
+                            long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                             // Validate physical network
                             PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
                             if (physicalNetwork == null) {

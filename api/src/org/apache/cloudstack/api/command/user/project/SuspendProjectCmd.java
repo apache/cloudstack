@@ -69,7 +69,7 @@ public class SuspendProjectCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to suspend a project");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to suspend a project");
         }
     }
 

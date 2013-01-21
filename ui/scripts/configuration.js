@@ -1293,11 +1293,11 @@
 											}											
 										}
 										//hide/show service fields ***** (end) *****			
-																						
-
-                    //show LB InlineMode dropdown only when (1)LB Service is checked (2)Service Provider is F5 							
-										if((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
-										   &&(args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp') && ( args.$form.find('.form-item[rel=\"service.Firewall.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Firewall.provider\"]').find('select').val() == 'JuniperSRX')) {			
+												
+                    //show LB InlineMode dropdown only when (1)LB service is checked and LB service provider is F5BigIp (2)Firewall service is checked and Firewall service provider is JuniperSRX 						
+										if((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp') && 
+										   (args.$form.find('.form-item[rel=\"service.Firewall.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Firewall.provider\"]').find('select').val() == 'JuniperSRX'))
+										{		
 											args.$form.find('.form-item[rel=\"service.Lb.inlineModeDropdown\"]').css('display', 'inline-block');	
 										}
 										else {										  
@@ -1325,10 +1325,10 @@
 											args.$form.find('.form-item[rel=\"service.Lb.elasticLbCheckbox\"]').find('input[type=checkbox]').attr('checked', false);	
 										}
 																				
-							      //show Elastic IP checkbox only when (1)StaticNat Service is checked (2)Service Provider is Netscaler (3)Guest IP Type is Shared 										
+							      //show Elastic IP checkbox only when (1)StaticNat service is checked (2)StaticNat service provider is Netscaler 								
 										if((args.$form.find('.form-item[rel=\"service.StaticNat.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
 										   &&(args.$form.find('.form-item[rel=\"service.StaticNat.provider\"]').find('select').val() == 'Netscaler')
-											 &&(args.$form.find('.form-item[rel=\"guestIpType\"]').find('select').val() == 'Shared')) {
+										) {
 										  args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').css('display', 'inline-block');		                      										
 										}
 										else {		

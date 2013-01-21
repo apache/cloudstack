@@ -102,7 +102,7 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update network offering");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update network offering");
         }
     }
 }

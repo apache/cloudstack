@@ -185,7 +185,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
                 _rulesService.revokePortForwardingRule(getEntityId(), true);
 
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to apply port forwarding rule");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to apply port forwarding rule");
             }
         }
     }
@@ -302,7 +302,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " , ex);
             s_logger.trace("Network Rule Conflict: ", ex);
-            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
     }
 

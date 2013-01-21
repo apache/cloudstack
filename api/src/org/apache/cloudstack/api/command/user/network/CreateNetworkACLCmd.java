@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
@@ -164,7 +165,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
         } finally {
             if (!success || rule == null) {
                 _networkACLService.revokeNetworkACL(getEntityId(), true);
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create network ACL");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create network ACL");
             }
         }
     }
@@ -250,7 +251,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
         if (getSourceCidrList() != null) {
             for (String cidr: getSourceCidrList()){
                 if (!NetUtils.isValidCIDR(cidr)){
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Source cidrs formatting error " + cidr);
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Source cidrs formatting error " + cidr);
                 }
             }
         }
@@ -262,7 +263,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " + ex.getMessage());
             s_logger.trace("Network Rule Conflict: ", ex);
-            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
     }
 

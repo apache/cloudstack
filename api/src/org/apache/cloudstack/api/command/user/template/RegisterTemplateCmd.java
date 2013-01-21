@@ -24,6 +24,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -233,11 +234,11 @@ public class RegisterTemplateCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register template");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to register template");
             }
         } catch (URISyntaxException ex1) {
             s_logger.info(ex1);
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, ex1.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex1.getMessage());
         }
     }
 }

@@ -101,14 +101,14 @@ public class AssignVMCmd extends BaseCmd  {
         try {
            UserVm userVm = _userVmService.moveVMToUser(this);
            if (userVm == null){
-               throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to move vm");
+               throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm");
            }
            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", userVm).get(0);
            response.setResponseName(DeployVMCmd.getResultObjectName());
            this.setResponseObject(response);
         }catch (Exception e){
             e.printStackTrace();
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to move vm " + e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm " + e.getMessage());
         }
 
     }

@@ -71,7 +71,7 @@ umount_raw_disk() {
     sync
     while [ $retry -gt 0 ]
     do
-        umount $path &>/dev/null
+        umount -d $path &>/dev/null
     	if [ $? -gt 0 ]
     	then
 	   sleep 5
