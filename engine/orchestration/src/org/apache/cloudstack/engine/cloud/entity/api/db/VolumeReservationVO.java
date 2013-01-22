@@ -26,7 +26,7 @@ public class VolumeReservationVO implements InternalIdentity{
     private long id;
 
     @Column(name = "vm_reservation_id")
-    private long vmReservationId;
+    private Long vmReservationId;
     
     @Column(name = "vm_id")
     private long vmId;
@@ -48,10 +48,11 @@ public class VolumeReservationVO implements InternalIdentity{
     protected VolumeReservationVO() {
     }
 
-    public VolumeReservationVO(long vmId, long volumeId, long poolId) {
+    public VolumeReservationVO(long vmId, long volumeId, long poolId, Long vmReservationId) {
         this.vmId = vmId;
         this.volumeId = volumeId;
         this.poolId = poolId;
+        this.vmReservationId = vmReservationId;
     }
     
     
@@ -63,7 +64,7 @@ public class VolumeReservationVO implements InternalIdentity{
         return vmId;
     }
 
-    public long geVmReservationId() {
+    public Long geVmReservationId() {
         return vmReservationId;
     }
     

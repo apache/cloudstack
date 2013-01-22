@@ -50,13 +50,15 @@ public class VMReservationDaoImpl extends GenericDaoBase<VMReservationVO, Long> 
     
     @Override
     public void loadVolumeReservation(VMReservationVO reservation){
-        List<VolumeReservationVO> volumeResList = _volumeReservationDao.listVolumeReservation(reservation.getId());
-        Map<Long, Long> volumeReservationMap = new HashMap<Long,Long>();
-        
-        for(VolumeReservationVO res : volumeResList){
-            volumeReservationMap.put(res.getVolumeId(), res.getPoolId());
+        if(reservation != null){
+            List<VolumeReservationVO> volumeResList = _volumeReservationDao.listVolumeReservation(reservation.getId());
+            Map<Long, Long> volumeReservationMap = new HashMap<Long,Long>();
+            
+            for(VolumeReservationVO res : volumeResList){
+                volumeReservationMap.put(res.getVolumeId(), res.getPoolId());
+            }
+            reservation.setVolumeReservation(volumeReservationMap);
         }
-        reservation.setVolumeReservation(volumeReservationMap);
     }
     
     @Override
@@ -76,12 +78,12 @@ public class VMReservationDaoImpl extends GenericDaoBase<VMReservationVO, Long> 
     }
 
     private void saveVolumeReservation(VMReservationVO reservation) {
-        
-        for(Long volumeId : reservation.getVolumeReservation().keySet()){
-            VolumeReservationVO volumeReservation = new VolumeReservationVO(reservation.getVmId(), volumeId, reservation.getVolumeReservation().get(volumeId));
-            _volumeReservationDao.persist(volumeReservation);
-        }
-        
+        if(reservation.getVolumeReservation() != null){
+            for(Long volumeId : reservation.getVolumeReservation().keySet()){
+                VolumeReservationVO volumeReservation = new VolumeReservationVO(reservation.getVmId(), volumeId, reservation.getVolumeReservation().get(volumeId), reservation.getId());
+                _volumeReservationDao.persist(volumeReservation);
+            }
+        }        
     }
 
     @Override

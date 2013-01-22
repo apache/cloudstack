@@ -44,10 +44,12 @@ public class VMRootDiskTagDaoImpl extends GenericDaoBase<VMRootDiskTagVO, Long> 
         expunge(sc);
         
         for (String tag : rootDiskTags) {
-            tag = tag.trim();
-            if(tag.length() > 0) {
-                VMRootDiskTagVO vo = new VMRootDiskTagVO(vmId, tag);
-                persist(vo);
+            if(tag != null){
+                tag = tag.trim();
+                if(tag.length() > 0) {
+                    VMRootDiskTagVO vo = new VMRootDiskTagVO(vmId, tag);
+                    persist(vo);
+                }
             }
         }
         txn.commit();

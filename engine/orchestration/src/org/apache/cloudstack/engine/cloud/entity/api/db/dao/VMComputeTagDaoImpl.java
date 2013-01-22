@@ -44,10 +44,12 @@ public class VMComputeTagDaoImpl extends GenericDaoBase<VMComputeTagVO, Long> im
         expunge(sc);
         
         for (String tag : computeTags) {
-            tag = tag.trim();
-            if(tag.length() > 0) {
-                VMComputeTagVO vo = new VMComputeTagVO(vmId, tag);
-                persist(vo);
+            if(tag != null){
+                tag = tag.trim();
+                if(tag.length() > 0) {
+                    VMComputeTagVO vo = new VMComputeTagVO(vmId, tag);
+                    persist(vo);
+                }
             }
         }
         txn.commit();

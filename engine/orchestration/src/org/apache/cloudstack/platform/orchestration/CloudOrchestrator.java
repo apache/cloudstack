@@ -25,6 +25,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.engine.cloud.entity.api.NetworkEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
@@ -49,9 +50,12 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 
@@ -69,6 +73,9 @@ public class CloudOrchestrator implements OrchestrationService {
 	
     @Inject
     protected VMInstanceDao _vmDao;
+    
+    @Inject
+    protected UserVmDao _userVmDao = null;
     
 	@Inject
 	protected ServiceOfferingDao _serviceOfferingDao;
@@ -168,7 +175,9 @@ public class CloudOrchestrator implements OrchestrationService {
 
     	VirtualMachineEntityImpl vmEntity = null;
 		try {
-			vmEntity = _vmEntityFactory.getObject();
+			//vmEntity = _vmEntityFactory.getObject();
+			vmEntity = VirtualMachineEntityImpl.class.newInstance();
+			vmEntity = ComponentContext.inject(vmEntity);
 		} catch (Exception e) {
 			// add error handling here
 		}
@@ -188,24 +197,27 @@ public class CloudOrchestrator implements OrchestrationService {
  
 		ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
 		rootDiskOffering.first(offering);
-
-		DiskOfferingVO diskOffering = _diskOfferingDao.findById(vm.getDiskOfferingId());
-		if (diskOffering == null) {
-			throw new InvalidParameterValueException("Unable to find disk offering " + vm.getDiskOfferingId());
+		
+		if(vm.getDiskOfferingId() != null){
+    		DiskOfferingVO diskOffering = _diskOfferingDao.findById(vm.getDiskOfferingId());
+    		if (diskOffering == null) {
+    			throw new InvalidParameterValueException("Unable to find disk offering " + vm.getDiskOfferingId());
+    		}
+    		Long size = null;
+    		if (diskOffering.getDiskSize() == 0) {
+    			size = diskSize;
+    			if (size == null) {
+    				throw new InvalidParameterValueException(
+    						"Disk offering " + diskOffering
+    								+ " requires size parameter.");
+    			}
+    		}
+    		dataDiskOfferings.add(new Pair<DiskOfferingVO, Long>(diskOffering, size));
 		}
-		Long size = null;
-		if (diskOffering.getDiskSize() == 0) {
-			size = diskSize;
-			if (size == null) {
-				throw new InvalidParameterValueException(
-						"Disk offering " + diskOffering
-								+ " requires size parameter.");
-			}
-		}
-		dataDiskOfferings.add(new Pair<DiskOfferingVO, Long>(diskOffering, size));
 		
 		
-    	if (_itMgr.allocate(vm, _templateDao.findById(new Long(templateId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, null,	plan, hypervisorType, _accountDao.findById(new Long(owner))) == null) {
+		
+    	if (_itMgr.allocate(_userVmDao.findById(vm.getId(), true), _templateDao.findById(new Long(templateId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, null,	plan, hypervisorType, _accountDao.findById(new Long(owner))) == null) {
 			return null;
 		}
     	

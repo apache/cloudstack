@@ -21,7 +21,7 @@ public class VMRootDiskTagVO implements InternalIdentity {
     @Column(name = "vm_id")
     private long vmId;
 
-    @Column(name = "compute_tag")
+    @Column(name = "root_disk_tag")
     private String rootDiskTag;
 
     /**

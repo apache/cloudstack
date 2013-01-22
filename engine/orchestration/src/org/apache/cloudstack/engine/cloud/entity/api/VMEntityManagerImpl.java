@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.engine.cloud.entity.api;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,7 +108,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
 	@Override
 	public VMEntityVO loadVirtualMachine(String vmId) {
 		// TODO Auto-generated method stub
-		return null;
+		return _vmEntityDao.findByUuid(vmId);
 	}
 
 	@Override
@@ -125,7 +126,10 @@ public class VMEntityManagerImpl implements VMEntityManager {
         //FIXME: profile should work on VirtualMachineEntity
         VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
         VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
-        DeploymentPlan plan = planToDeploy;
+        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null);
+        if(planToDeploy != null && planToDeploy.getDataCenterId() != 0){
+            plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(), planToDeploy.getPoolId(), planToDeploy.getPhysicalNetworkId());
+        }
         
         List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vm.getId());
         if(!vols.isEmpty()){
@@ -192,12 +196,13 @@ public class VMEntityManagerImpl implements VMEntityManager {
         Long poolId = null;
         Map<Long,Long> storage = vmReservation.getVolumeReservation();
         if(storage != null){
-            Long[] array = new Long[storage.keySet().size()];
-            storage.keySet().toArray(array);
-            poolId = array[0];
+            List<Long> poolIdList = new ArrayList<Long>(storage.keySet());
+            if(poolIdList !=null && !poolIdList.isEmpty()){
+                poolId = poolIdList.get(0);
+            }
         }
         
-        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), vmReservation.getPodId(), vmReservation.getClusterId(),
+        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vmReservation.getPodId(), vmReservation.getClusterId(),
                 vmReservation.getHostId(), poolId , null);
         
         VMInstanceVO vmDeployed = _itMgr.start(vm, null, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()), plan);
