@@ -365,6 +365,18 @@
           async: false,
           success: function(json) {
             networkObjs = json.listnetworksresponse.network ? json.listnetworksresponse.network : [];
+												
+						if(networkObjs.length > 0) {
+						  for(var i = 0; i < networkObjs.length; i++) {
+								var networkObj = networkObjs[i];    
+								var serviceObjArray = networkObj.service;
+								for(var k = 0; k < serviceObjArray.length; k++) {
+									if(serviceObjArray[k].name == "SecurityGroup") {
+									  networkObjs[i].type = networkObjs[i].type + ' (sg)';																		
+									}
+								}
+							}
+            }						
           }
         });
                   
