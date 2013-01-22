@@ -34,6 +34,12 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-storage-snapshot</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-storage-image</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>

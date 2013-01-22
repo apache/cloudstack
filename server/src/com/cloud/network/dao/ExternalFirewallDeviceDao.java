@@ -18,9 +18,8 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.network.ExternalFirewallDeviceVO;
-import com.cloud.network.ExternalFirewallDeviceVO.FirewallDeviceAllocationState;
-import com.cloud.network.ExternalFirewallDeviceVO.FirewallDeviceState;
+import com.cloud.network.dao.ExternalFirewallDeviceVO.FirewallDeviceAllocationState;
+import com.cloud.network.dao.ExternalFirewallDeviceVO.FirewallDeviceState;
 import com.cloud.utils.db.GenericDao;
 
 public interface ExternalFirewallDeviceDao extends GenericDao<ExternalFirewallDeviceVO, Long> {

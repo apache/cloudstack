@@ -570,10 +570,18 @@ public class XenServerStorageResource {
     }
     
     protected Answer execute(AttachPrimaryDataStoreCmd cmd) {
-        PrimaryDataStoreTO dataStore = null;
+        String dataStoreUri = cmd.getDataStore();
         Connection conn = hypervisorResource.getConnection();
+        Map<String, String> params = null;
         try {
-            SR sr = hypervisorResource.getStorageRepository(conn, dataStore.getUuid());
+            try {
+                URI uri = new URI(dataStoreUri);
+                params = getParameters(uri);
+            } catch (URISyntaxException e1) {
+                s_logger.debug("uri exception", e1);
+                return new CreateVolumeAnswer(cmd, false, e1.toString()); 
+            }
+            SR sr = hypervisorResource.getStorageRepository(conn, params.get("storeUuid"));
             hypervisorResource.setupHeartbeatSr(conn, sr, false);
             long capacity = sr.getPhysicalSize(conn);
             long available = capacity - sr.getPhysicalUtilisation(conn);

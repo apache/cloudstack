@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.network.IPAddressVO;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;

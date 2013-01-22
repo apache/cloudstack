@@ -16,7 +16,7 @@
 // under the License.
 
 
-package com.cloud.network;
+package com.cloud.network.dao;
 
 import java.util.UUID;
 

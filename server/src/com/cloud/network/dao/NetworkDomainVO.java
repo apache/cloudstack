@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.network.dao;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -23,32 +23,33 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.user.OwnedBy;
+import com.cloud.domain.PartOf;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="account_network_ref")
-public class NetworkAccountVO implements OwnedBy, InternalIdentity {
+@Table(name="domain_network_ref")
+public class NetworkDomainVO implements PartOf, InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     long id;
     
-    @Column(name="account_id")
-    long accountId;
+    @Column(name="domain_id")
+    long domainId;
     
     @Column(name="network_id")
     long networkId;
     
-    @Column(name="is_owner")
-    boolean owner;
+    @Column(name="subdomain_access")
+    public
+    Boolean subdomainAccess;
 
-    protected NetworkAccountVO() {
+    protected NetworkDomainVO() {
     }
     
-    public NetworkAccountVO(long networkId, long accountId, boolean owner) {
+    public NetworkDomainVO(long networkId, long domainId, Boolean subdomainAccess) {
         this.networkId = networkId;
-        this.accountId = accountId;
-        this.owner = owner;
+        this.domainId = domainId;
+        this.subdomainAccess = subdomainAccess;
     }
 
     @Override
@@ -57,16 +58,15 @@ public class NetworkAccountVO implements OwnedBy, InternalIdentity {
     }
 
     @Override
-    public long getAccountId() {
-        return accountId;
+    public long getDomainId() {
+        return domainId;
     }
     
     public long getNetworkId() {
         return networkId;
     }
-    
-    public boolean isOwner() {
-        return owner;
-    }
 
+	public Boolean isSubdomainAccess() {
+		return subdomainAccess;
+	}
 }

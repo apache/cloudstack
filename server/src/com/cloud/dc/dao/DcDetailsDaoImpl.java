@@ -36,7 +36,7 @@ public class DcDetailsDaoImpl extends GenericDaoBase<DcDetailVO, Long> implement
     protected final SearchBuilder<DcDetailVO> DcSearch;
     protected final SearchBuilder<DcDetailVO> DetailSearch;
     
-    protected DcDetailsDaoImpl() {
+    public DcDetailsDaoImpl() {
         DcSearch = createSearchBuilder();
         DcSearch.and("dcId", DcSearch.entity().getDcId(), SearchCriteria.Op.EQ);
         DcSearch.done();

@@ -23,10 +23,10 @@ import java.util.Map;
 import javax.ejb.Local;
 
 import com.cloud.network.Network.GuestType;
-import com.cloud.network.NetworkAccountVO;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.NetworkAccountVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

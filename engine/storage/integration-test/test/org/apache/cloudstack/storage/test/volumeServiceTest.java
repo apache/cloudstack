@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.storage.test;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,12 +35,15 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
+import org.apache.cloudstack.storage.HypervisorHostEndPoint;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.provider.DataStoreProvider;
 import org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManager;
+import org.apache.cloudstack.storage.endpoint.EndPointSelector;
 import org.apache.cloudstack.storage.image.ImageService;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
 import org.apache.cloudstack.storage.image.db.ImageDataVO;
@@ -66,7 +71,7 @@ import com.cloud.org.Managed.ManagedState;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.TemplateType;
 
-@ContextConfiguration(locations="classpath:/storageContext.xml")
+@ContextConfiguration(locations={"classpath:/storageContext.xml"})
 public class volumeServiceTest extends CloudStackTestNGBase {
 	//@Inject
 	//ImageDataStoreProviderManager imageProviderMgr;
@@ -92,6 +97,8 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	DataStoreProviderManager dataStoreProviderMgr;
 	@Inject
 	AgentManager agentMgr;
+	@Inject
+	EndPointSelector selector;
 	Long dcId;
 	Long clusterId;
 	Long podId;
@@ -101,7 +108,12 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	
     @Test(priority = -1)
 	public void setUp() {
-        
+        try {
+            dataStoreProviderMgr.configure(null, new HashMap<String, Object>());
+        } catch (ConfigurationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         host = hostDao.findByGuid(this.getHostGuid());
         if (host != null) {
             dcId = host.getDataCenterId();
@@ -143,13 +155,8 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		host.setClusterId(cluster.getId());
 
 		host = hostDao.persist(host);
-		try {
-            dataStoreProviderMgr.configure(null, new HashMap<String, Object>());
-        } catch (ConfigurationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-		primaryStore = createPrimaryDataStore();
+
+		//primaryStore = createPrimaryDataStore();
 	
 		//CreateVolumeAnswer createVolumeFromImageAnswer = new CreateVolumeAnswer(UUID.randomUUID().toString());
 
@@ -175,7 +182,12 @@ public class volumeServiceTest extends CloudStackTestNGBase {
         List<HostVO> results = new ArrayList<HostVO>();
         results.add(host);
         Mockito.when(hostDao.listAll()).thenReturn(results);
+        Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(host);
         Mockito.when(hostDao.findHypervisorHostInCluster(Mockito.anyLong())).thenReturn(results);
+        List<EndPoint> eps = new ArrayList<EndPoint>();
+        eps.add(HypervisorHostEndPoint.getHypervisorHostEndPoint(host.getId(),
+                host.getPrivateIpAddress()));
+        Mockito.when(selector.selectAll(Mockito.any(DataStore.class))).thenReturn(eps);
     }
 
 	private ImageDataVO createImageData() {
@@ -220,16 +232,50 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	public void createTemplateTest() {
 		createTemplate();
 	}
+	
+	@Test
+	public void testCreatePrimaryStorage() {
+	    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
+        Map<String, String> params = new HashMap<String, String>();
+        URI uri = null;
+        try {
+            uri = new URI(this.getPrimaryStorageUrl());
+        } catch (URISyntaxException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        params.put("url", this.getPrimaryStorageUrl());
+        params.put("server", uri.getHost());
+        params.put("path", uri.getPath());
+        params.put("protocol", uri.getScheme());
+        params.put("dcId", dcId.toString());
+        params.put("clusterId", clusterId.toString());
+        params.put("name", this.primaryName);
+        params.put("port", "1");
+        params.put("roles", DataStoreRole.Primary.toString());
+        params.put("uuid", UUID.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString());
+        params.put("providerId", String.valueOf(provider.getId()));
+        
+        DataStoreLifeCycle lifeCycle = provider.getLifeCycle();
+        DataStore store = lifeCycle.initialize(params);
+        ClusterScope scope = new ClusterScope(clusterId, podId, dcId);
+        lifeCycle.attachCluster(store, scope);
+	}
 
 	@Test
 	public PrimaryDataStoreInfo createPrimaryDataStore() {
-		try {
+		try {/*
 		    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
 		    Map<String, String> params = new HashMap<String, String>();
-            params.put("url", this.getPrimaryStorageUrl());
+		    URI uri = new URI(this.getPrimaryStorageUrl());
+		    params.put("url", this.getPrimaryStorageUrl());
+            params.put("server", uri.getHost());
+            params.put("path", uri.getPath());
+            params.put("protocol", uri.getScheme());
             params.put("dcId", dcId.toString());
             params.put("clusterId", clusterId.toString());
             params.put("name", this.primaryName);
+            params.put("port", "1");
             params.put("roles", DataStoreRole.Primary.toString());
             params.put("uuid", UUID.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString());
             params.put("providerId", String.valueOf(provider.getId()));
@@ -238,6 +284,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		    DataStore store = lifeCycle.initialize(params);
 		    ClusterScope scope = new ClusterScope(clusterId, podId, dcId);
 		    lifeCycle.attachCluster(store, scope);
+		    */
 		    /*
 		    PrimaryDataStoreProvider provider = primaryDataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
 		    primaryDataStoreProviderMgr.configure("primary data store mgr", new HashMap<String, Object>());
@@ -306,7 +353,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	}
 
 	//@Test
-	@Test
+	//@Test
     public void test1() {
 		/*System.out.println(VolumeTypeHelper.getType("Root"));
 		System.out.println(VolumeDiskTypeHelper.getDiskType("vmdk"));

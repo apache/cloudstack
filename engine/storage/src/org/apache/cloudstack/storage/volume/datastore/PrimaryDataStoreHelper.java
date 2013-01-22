@@ -49,7 +49,6 @@ public class PrimaryDataStoreHelper {
         dataStoreVO.setPath(params.get("path"));
         dataStoreVO.setPoolType(params.get("protocol"));
         dataStoreVO.setPort(Integer.parseInt(params.get("port")));
-        //dataStoreVO.setKey(params.get("key"));
         dataStoreVO.setName(params.get("name"));
         dataStoreVO.setUuid(params.get("uuid"));
         dataStoreVO = dataStoreDao.persist(dataStoreVO);

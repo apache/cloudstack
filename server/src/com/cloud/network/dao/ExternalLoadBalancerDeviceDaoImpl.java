@@ -21,9 +21,8 @@ import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.network.ExternalLoadBalancerDeviceVO;
-import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceAllocationState;
-import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
+import com.cloud.network.dao.ExternalLoadBalancerDeviceVO.LBDeviceAllocationState;
+import com.cloud.network.dao.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

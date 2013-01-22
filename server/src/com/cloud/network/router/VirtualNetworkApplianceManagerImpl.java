@@ -126,16 +126,13 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
-import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
@@ -144,7 +141,6 @@ import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.Site2SiteVpnConnectionVO;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VirtualRouterProvider;
@@ -154,13 +150,17 @@ import com.cloud.network.VpnUserVO;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
+import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
@@ -212,6 +212,9 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
@@ -235,6 +238,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 /**
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual network appliances available in the Cloud Stack.
@@ -286,6 +290,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     ServiceOfferingDao _serviceOfferingDao = null;
     @Inject
     UserVmDao _userVmDao;
+    @Inject VMInstanceDao _vmDao;
     @Inject
     UserStatisticsDao _statsDao = null;
     @Inject
@@ -336,6 +341,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     Site2SiteVpnConnectionDao _s2sVpnConnectionDao;
     @Inject
     Site2SiteVpnManager _s2sVpnMgr;
+
     
     int _routerRamSize;
     int _routerCpuMHz;
@@ -1389,7 +1395,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (dest.getDataCenter().getNetworkType() == NetworkType.Basic) {
                 // Find all pods in the data center with running or starting user vms
                 long dcId = dest.getDataCenter().getId();
-                List<HostPodVO> pods = _podDao.listByDataCenterIdVMTypeAndStates(dcId, VirtualMachine.Type.User, VirtualMachine.State.Starting, VirtualMachine.State.Running);
+                List<HostPodVO> pods = listByDataCenterIdVMTypeAndStates(dcId, VirtualMachine.Type.User, VirtualMachine.State.Starting, VirtualMachine.State.Running);
 
                 // Loop through all the pods skip those with running or starting VRs
                 for (HostPodVO pod: pods) {
@@ -1498,6 +1504,26 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         return routers;
     }
+    
+    protected List<HostPodVO> listByDataCenterIdVMTypeAndStates(long id, VirtualMachine.Type type, VirtualMachine.State... states) {
+        SearchBuilder<VMInstanceVO> vmInstanceSearch = _vmDao.createSearchBuilder();
+        vmInstanceSearch.and("type", vmInstanceSearch.entity().getType(), SearchCriteria.Op.EQ);
+        vmInstanceSearch.and("states", vmInstanceSearch.entity().getState(), SearchCriteria.Op.IN);
+
+        SearchBuilder<HostPodVO> podIdSearch = _podDao.createSearchBuilder();
+        podIdSearch.and("dc", podIdSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        podIdSearch.select(null, SearchCriteria.Func.DISTINCT, podIdSearch.entity().getId());
+        podIdSearch.join("vmInstanceSearch", vmInstanceSearch, podIdSearch.entity().getId(),
+                vmInstanceSearch.entity().getPodIdToDeployIn(), JoinBuilder.JoinType.INNER);
+        podIdSearch.done();
+
+        SearchCriteria<HostPodVO> sc = podIdSearch.create();
+        sc.setParameters("dc", id);
+        sc.setJoinParameters("vmInstanceSearch", "type", type);
+        sc.setJoinParameters("vmInstanceSearch", "states", (Object[]) states);
+        return _podDao.search(sc, null);
+    }
+ 
 
     protected DomainRouterVO deployRouter(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params,
             boolean isRedundant, VirtualRouterProvider vrProvider, long svcOffId,

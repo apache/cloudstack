@@ -26,8 +26,6 @@ import com.cloud.vm.VirtualMachine;
 public interface HostPodDao extends GenericDao<HostPodVO, Long> {
 	public List<HostPodVO> listByDataCenterId(long id);
 
-    public List<HostPodVO> listByDataCenterIdVMTypeAndStates(long id, VirtualMachine.Type type, VirtualMachine.State... states);
-
     public HostPodVO findByName(String name, long dcId);
 	
 	public HashMap<Long, List<Object>> getCurrentPodCidrSubnets(long zoneId, long podIdToSkip);

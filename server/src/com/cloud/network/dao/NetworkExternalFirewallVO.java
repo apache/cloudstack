@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.network.dao;
 
 import java.util.Date;
 import java.util.UUID;
@@ -30,13 +30,12 @@ import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
 
 /**
- * NetworkExternalLoadBalancerVO contains mapping of a network and the external load balancer device id assigned to the network
+ * NetworkExternalFirewallVO contains information on the networks that are using external firewall
   */
 
 @Entity
-@Table(name="network_external_lb_device_map")
-public class NetworkExternalLoadBalancerVO implements InternalIdentity {
-
+@Table(name="network_external_firewall_device_map")
+public class NetworkExternalFirewallVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -48,8 +47,8 @@ public class NetworkExternalLoadBalancerVO implements InternalIdentity {
     @Column(name = "network_id")
     private long networkId;
 
-    @Column(name = "external_load_balancer_device_id")
-    private long externalLBDeviceId;
+    @Column(name = "external_firewall_device_id")
+    private long externalFirewallDeviceId;
 
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
@@ -57,13 +56,13 @@ public class NetworkExternalLoadBalancerVO implements InternalIdentity {
     @Column(name=GenericDao.REMOVED_COLUMN)
     Date removed;
 
-    public NetworkExternalLoadBalancerVO(long networkId, long externalLBDeviceID) {
+    public NetworkExternalFirewallVO(long networkId, long externalFirewallDeviceId) {
         this.networkId = networkId;
-        this.externalLBDeviceId = externalLBDeviceID;
+        this.externalFirewallDeviceId = externalFirewallDeviceId;
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public NetworkExternalLoadBalancerVO(){
+    public NetworkExternalFirewallVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -75,8 +74,8 @@ public class NetworkExternalLoadBalancerVO implements InternalIdentity {
         return networkId;
     }
 
-    public long getExternalLBDeviceId() {
-        return externalLBDeviceId;
+    public long getExternalFirewallDeviceId() {
+        return externalFirewallDeviceId;
     }
 
     public String getUuid() {

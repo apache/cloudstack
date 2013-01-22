@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.network.dao;
 
 import java.util.Date;
 import java.util.UUID;
@@ -32,6 +32,9 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import org.apache.cloudstack.api.Identity;
+
+import com.cloud.network.IpAddress;
+import com.cloud.network.IpAddress.State;
 import com.cloud.utils.net.Ip;
 import org.apache.cloudstack.api.InternalIdentity;
 

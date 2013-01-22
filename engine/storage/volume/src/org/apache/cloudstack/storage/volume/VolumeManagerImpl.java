@@ -35,7 +35,7 @@ import com.cloud.utils.fsm.StateMachine2;
 public class VolumeManagerImpl implements VolumeManager {
     @Inject
     protected VolumeDao2 _volumeDao;
-    private final static StateMachine2<State, Event, VolumeVO> s_fsm = new StateMachine2<State, Event, VolumeVO>();
+    private final StateMachine2<State, Event, VolumeVO> s_fsm = new StateMachine2<State, Event, VolumeVO>();
     public VolumeManagerImpl() {
         initStateMachine();
     }

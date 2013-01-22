@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.network.dao;
 
 import java.net.URI;
 import java.util.Date;
@@ -30,6 +30,11 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+
+import com.cloud.network.Network;
+import com.cloud.network.Networks;
+import com.cloud.network.Network.GuestType;
+import com.cloud.network.Network.State;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;

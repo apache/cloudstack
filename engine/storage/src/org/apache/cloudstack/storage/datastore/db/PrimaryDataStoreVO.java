@@ -98,6 +98,7 @@ public class PrimaryDataStoreVO implements Identity {
     private Long clusterId;
 
     @Column(name = "scope")
+    @Enumerated(value = EnumType.STRING)
     private ScopeType scope;
 
     public long getId() {

@@ -49,7 +49,7 @@ public class StoragePoolVO implements StoragePool {
     
     @Column(name="pool_type", updatable=false, nullable=false, length=32)
     @Enumerated(value=EnumType.STRING)
-    private StoragePoolType protocol;
+    private StoragePoolType poolType;
     
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
@@ -112,7 +112,7 @@ public class StoragePoolVO implements StoragePool {
 	
 	@Override
     public StoragePoolType getPoolType() {
-		return protocol;
+		return poolType;
 	}
 
 	@Override
@@ -215,7 +215,7 @@ public class StoragePoolVO implements StoragePool {
         this.name  = name;
         this.id = poolId;
         this.uuid = uuid;
-        this.protocol = type;
+        this.poolType = type;
         this.dataCenterId = dataCenterId;
         this.availableBytes = availableBytes;
         this.capacityBytes = capacityBytes;
@@ -227,11 +227,11 @@ public class StoragePoolVO implements StoragePool {
     }
     
     public StoragePoolVO(StoragePoolVO that) {
-        this(that.id, that.name, that.uuid, that.protocol, that.dataCenterId, that.podId, that.availableBytes, that.capacityBytes, that.hostAddress, that.port, that.path);
+        this(that.id, that.name, that.uuid, that.poolType, that.dataCenterId, that.podId, that.availableBytes, that.capacityBytes, that.hostAddress, that.port, that.path);
     }
     
     public StoragePoolVO(StoragePoolType type, String hostAddress, int port, String path) {
-        this.protocol = type;
+        this.poolType = type;
         this.hostAddress = hostAddress;
         this.port = port;
         this.path = path;
@@ -240,7 +240,7 @@ public class StoragePoolVO implements StoragePool {
     }
 
     public StoragePoolVO(StoragePoolType type, String hostAddress, int port, String path, String userInfo) {
-        this.protocol = type;
+        this.poolType = type;
         this.hostAddress = hostAddress;
         this.port = port;
         this.path = path;
@@ -285,12 +285,12 @@ public class StoragePoolVO implements StoragePool {
     
     @Override
     public boolean isShared() {
-    	return protocol.isShared();
+    	return poolType.isShared();
     }
     
     @Override
     public boolean isLocal() {
-    	return !protocol.isShared();
+    	return !poolType.isShared();
     }
     
     @Transient
@@ -341,6 +341,6 @@ public class StoragePoolVO implements StoragePool {
 	
     @Override
     public String toString() {
-        return new StringBuilder("Pool[").append(id).append("|").append(protocol).append("]").toString();
+        return new StringBuilder("Pool[").append(id).append("|").append(poolType).append("]").toString();
     }
 }

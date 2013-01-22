@@ -37,7 +37,7 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
     protected final SearchBuilder<DetailVO> HostSearch;
     protected final SearchBuilder<DetailVO> DetailSearch;
     
-    protected HostDetailsDaoImpl() {
+    public HostDetailsDaoImpl() {
         HostSearch = createSearchBuilder();
         HostSearch.and("hostId", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostSearch.done();

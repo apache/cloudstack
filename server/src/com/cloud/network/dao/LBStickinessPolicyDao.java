@@ -18,7 +18,6 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.network.LBStickinessPolicyVO;
 import com.cloud.utils.db.GenericDao;
 
 

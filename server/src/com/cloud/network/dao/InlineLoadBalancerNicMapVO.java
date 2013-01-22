@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.network.dao;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -26,40 +26,35 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name=("firewall_rules_cidrs"))
-public class FirewallRulesCidrsVO implements InternalIdentity {
+@Table(name=("inline_load_balancer_nic_map"))
+public class InlineLoadBalancerNicMapVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id;
+    private long id;
 
-    @Column(name="firewall_rule_id")
-    private long firewallRuleId;
+    @Column(name="public_ip_address")
+    private String publicIpAddress;
 
-    @Column(name="source_cidr")
-    private String sourceCidrList;
+    @Column(name="nic_id")
+    private long nicId;
 
-    public FirewallRulesCidrsVO() { }
+    public InlineLoadBalancerNicMapVO() { }
 
-    public FirewallRulesCidrsVO(long firewallRuleId, String sourceCidrList) {
-        this.firewallRuleId = firewallRuleId;
-        this.sourceCidrList = sourceCidrList;
+    public InlineLoadBalancerNicMapVO(String publicIpAddress, long nicId) {
+        this.publicIpAddress = publicIpAddress;
+        this.nicId = nicId;
     }
 
     public long getId() {
         return id;
     }
 
-    public long getFirewallRuleId() {
-        return firewallRuleId;
+    public String getPublicIpAddress() {
+    	return publicIpAddress;
     }
 
-    public String getCidr() {
-        return sourceCidrList;
+    public long getNicId() {
+    	return nicId;
     }
-
-    public String getSourceCidrList() {
-        return sourceCidrList;
-    }
-    
 }

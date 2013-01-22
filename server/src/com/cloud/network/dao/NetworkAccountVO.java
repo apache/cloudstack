@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.network.dao;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -23,32 +23,32 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.domain.PartOf;
+import com.cloud.user.OwnedBy;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="domain_network_ref")
-public class NetworkDomainVO implements PartOf, InternalIdentity {
+@Table(name="account_network_ref")
+public class NetworkAccountVO implements OwnedBy, InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     long id;
     
-    @Column(name="domain_id")
-    long domainId;
+    @Column(name="account_id")
+    long accountId;
     
     @Column(name="network_id")
     long networkId;
     
-    @Column(name="subdomain_access")
-    Boolean subdomainAccess;
+    @Column(name="is_owner")
+    boolean owner;
 
-    protected NetworkDomainVO() {
+    protected NetworkAccountVO() {
     }
     
-    public NetworkDomainVO(long networkId, long domainId, Boolean subdomainAccess) {
+    public NetworkAccountVO(long networkId, long accountId, boolean owner) {
         this.networkId = networkId;
-        this.domainId = domainId;
-        this.subdomainAccess = subdomainAccess;
+        this.accountId = accountId;
+        this.owner = owner;
     }
 
     @Override
@@ -57,15 +57,16 @@ public class NetworkDomainVO implements PartOf, InternalIdentity {
     }
 
     @Override
-    public long getDomainId() {
-        return domainId;
+    public long getAccountId() {
+        return accountId;
     }
     
     public long getNetworkId() {
         return networkId;
     }
+    
+    public boolean isOwner() {
+        return owner;
+    }
 
-	public Boolean isSubdomainAccess() {
-		return subdomainAccess;
-	}
 }

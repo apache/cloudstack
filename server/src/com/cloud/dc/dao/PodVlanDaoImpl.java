@@ -117,7 +117,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements G
         update(vo.getId(), vo);
     }
     
-    protected PodVlanDaoImpl() {
+    public PodVlanDaoImpl() {
     	super();
     	PodSearchAllocated = createSearchBuilder();
     	PodSearchAllocated.and("podId", PodSearchAllocated.entity().getPodId(), SearchCriteria.Op.EQ);

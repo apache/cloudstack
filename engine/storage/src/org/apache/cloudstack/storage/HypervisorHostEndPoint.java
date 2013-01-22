@@ -29,19 +29,30 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.utils.component.ComponentContext;
 
 public class HypervisorHostEndPoint implements EndPoint {
     private static final Logger s_logger = Logger.getLogger(HypervisorHostEndPoint.class);
-    private final long hostId;
-    private final String hostAddress;
+    private  long hostId;
+    private  String hostAddress;
     @Inject
     AgentManager agentMgr;
     @Inject
     HostEndpointRpcServer rpcServer;
 
-    public HypervisorHostEndPoint(long hostId, String hostAddress) {
+    protected HypervisorHostEndPoint() {
+      
+    }
+    
+    private void configure(long hostId, String hostAddress) {
         this.hostId = hostId;
         this.hostAddress = hostAddress;
+    }
+    
+    public static HypervisorHostEndPoint getHypervisorHostEndPoint(long hostId, String hostAddress) {
+        HypervisorHostEndPoint ep = ComponentContext.inject(HypervisorHostEndPoint.class);
+        ep.configure(hostId, hostAddress);
+        return ep;
     }
     
     public String getHostAddr() {

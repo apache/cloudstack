@@ -34,6 +34,8 @@ import org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManager
 import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.component.ComponentContext;
+
 @Component
 public class DefaultPrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProviderManager {
     @Inject
@@ -49,10 +51,10 @@ public class DefaultPrimaryDataStoreProviderManagerImpl implements PrimaryDataSt
         PrimaryDataStoreVO dataStoreVO = dataStoreDao.findById(dataStoreId);
         long providerId = dataStoreVO.getStorageProviderId();
         DataStoreProvider provider = providerManager.getDataStoreProviderById(providerId);
-        DefaultPrimaryDataStore dataStore = DefaultPrimaryDataStore.createDataStore(dataStoreVO, 
+        /*DefaultPrimaryDataStore dataStore = DefaultPrimaryDataStore.createDataStore(dataStoreVO, 
                 driverMaps.get(provider.getUuid()),
-                provider);
-
+                provider);*/
+        DefaultPrimaryDataStore dataStore = DefaultPrimaryDataStore.createDataStore(dataStoreVO, driverMaps.get(provider.getUuid()), provider);
         return dataStore;
     }
     

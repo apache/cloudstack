@@ -293,7 +293,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         return true;
     }
 
-    protected DataCenterDaoImpl() {
+    public DataCenterDaoImpl() {
         super();
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);

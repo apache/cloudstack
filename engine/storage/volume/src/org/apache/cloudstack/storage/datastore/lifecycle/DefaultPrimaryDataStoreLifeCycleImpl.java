@@ -44,9 +44,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
-    protected PrimaryDataStore dataStore;
     @Inject
-    EndPointSelector selecotr;
+    EndPointSelector selector;
     @Inject
     PrimaryDataStoreDao dataStoreDao;
     @Inject
@@ -67,7 +66,7 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
 
     protected void attachCluster(DataStore store) {
         //send down AttachPrimaryDataStoreCmd command to all the hosts in the cluster
-        List<EndPoint> endPoints = selecotr.selectAll(dataStore);
+        List<EndPoint> endPoints = selector.selectAll(store);
         CreatePrimaryDataStoreCmd createCmd = new CreatePrimaryDataStoreCmd(store.getUri());
         EndPoint ep = endPoints.get(0);
         HostVO host = hostDao.findById(ep.getId());
@@ -76,7 +75,7 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
         }
         
         endPoints.get(0).sendMessage(createCmd);
-        AttachPrimaryDataStoreCmd cmd = new AttachPrimaryDataStoreCmd(dataStore.getUri());
+        AttachPrimaryDataStoreCmd cmd = new AttachPrimaryDataStoreCmd(store.getUri());
         for (EndPoint endp : endPoints) {
             endp.sendMessage(cmd);
         }
@@ -91,6 +90,7 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
         dataStoreVO.setStatus(DataStoreStatus.Attaching);
         dataStoreVO.setScope(scope.getScopeType());
         dataStoreDao.update(dataStoreVO.getId(), dataStoreVO);
+        
         
         attachCluster(dataStore);
         

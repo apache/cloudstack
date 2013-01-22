@@ -24,7 +24,6 @@ import javax.inject.Inject;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder;

@@ -31,7 +31,6 @@ import org.springframework.stereotype.Component;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDaoImpl;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress.State;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;

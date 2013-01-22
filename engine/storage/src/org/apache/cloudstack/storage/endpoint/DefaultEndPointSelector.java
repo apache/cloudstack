@@ -118,7 +118,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             return null;
         }
 
-        return new HypervisorHostEndPoint(host.getId(),
+        return HypervisorHostEndPoint.getHypervisorHostEndPoint(host.getId(),
                 host.getPrivateIpAddress());
     }
 
@@ -176,7 +176,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         List<EndPoint> endPoints = new ArrayList<EndPoint>();
         if (store.getScope().getScopeType() == ScopeType.HOST) {
             HostVO host = hostDao.findById(store.getScope().getScopeId());
-            endPoints.add(new HypervisorHostEndPoint(host.getId(),
+            endPoints.add(HypervisorHostEndPoint.getHypervisorHostEndPoint(host.getId(),
                     host.getPrivateIpAddress()));
         } else if (store.getScope().getScopeType() == ScopeType.CLUSTER) {
             SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2.create(HostVO.class);
@@ -184,7 +184,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
             List<HostVO> hosts = sc.find();
             for (HostVO host : hosts) {
-                endPoints.add(new HypervisorHostEndPoint(host.getId(),
+                endPoints.add(HypervisorHostEndPoint.getHypervisorHostEndPoint(host.getId(),
                         host.getPrivateIpAddress()));
             }
            

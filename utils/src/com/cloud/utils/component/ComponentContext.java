@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
@@ -151,7 +152,9 @@ public class ComponentContext implements ApplicationContextAware {
     public static <T> T inject(Object instance) {
     	// autowire dynamically loaded object
     	AutowireCapableBeanFactory  beanFactory = s_appContext.getAutowireCapableBeanFactory();
+
     	beanFactory.autowireBean(instance);
+    	beanFactory.initializeBean(instance, null);
 
     	Advisor advisor = new DefaultPointcutAdvisor(new MatchAnyMethodPointcut(),
     			new TransactionContextBuilder());

@@ -23,7 +23,6 @@ import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;

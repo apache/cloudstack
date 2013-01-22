@@ -76,18 +76,18 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
     private static final Logger s_logger = Logger.getLogger(VMTemplateDaoImpl.class);
 
 
-    @Inject VMTemplateZoneDao _templateZoneDao = null;
+    VMTemplateZoneDao _templateZoneDao = null;
 
-    @Inject VMTemplateDetailsDao _templateDetailsDao = null;
+    VMTemplateDetailsDao _templateDetailsDao = null;
 
 
-    @Inject ConfigurationDao _configDao = null;
+    ConfigurationDao _configDao = null;
 
-    @Inject HostDao _hostDao = null;
+    HostDao _hostDao = null;
 
-    @Inject DomainDao _domainDao = null;
+    DomainDao _domainDao = null;
 
-    @Inject DataCenterDao _dcDao = null;
+    DataCenterDao _dcDao = null;
     private final String SELECT_TEMPLATE_HOST_REF = "SELECT t.id, h.data_center_id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, "
             + "t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type FROM vm_template t";
 

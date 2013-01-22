@@ -34,7 +34,7 @@ import com.cloud.utils.db.Transaction;
 public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements HostTagsDao {
     protected final SearchBuilder<HostTagVO> HostSearch;
     
-    protected HostTagsDaoImpl() {
+    public HostTagsDaoImpl() {
         HostSearch = createSearchBuilder();
         HostSearch.and("hostId", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostSearch.done();        

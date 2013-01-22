@@ -33,6 +33,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.provider.DataStoreProvider;
 import org.apache.cloudstack.storage.image.ImageDataFactory;
@@ -46,7 +47,6 @@ import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.component.ComponentContext;
 
 public class DefaultPrimaryDataStore implements PrimaryDataStore {
@@ -54,6 +54,8 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
             .getLogger(DefaultPrimaryDataStore.class);
     protected PrimaryDataStoreDriver driver;
     protected PrimaryDataStoreVO pdsv;
+    @Inject
+    protected PrimaryDataStoreDao dataStoreDao;
     protected PrimaryDataStoreLifeCycle lifeCycle;
     @Inject
     private ObjectInDataStoreManager objectInStoreMgr;
@@ -66,7 +68,11 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     @Inject
     private VolumeDao2 volumeDao;
 
-    private DefaultPrimaryDataStore(PrimaryDataStoreVO pdsv,
+    protected DefaultPrimaryDataStore() {
+       
+    }
+    
+    public void configure(PrimaryDataStoreVO pdsv,
             PrimaryDataStoreDriver driver, DataStoreProvider provider) {
         this.pdsv = pdsv;
         this.driver = driver;
@@ -76,9 +82,9 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     public static DefaultPrimaryDataStore createDataStore(
             PrimaryDataStoreVO pdsv, PrimaryDataStoreDriver driver,
             DataStoreProvider provider) {
-        DefaultPrimaryDataStore dataStore = new DefaultPrimaryDataStore(pdsv,
-                driver, provider);
-        return ComponentContext.inject(dataStore);
+        DefaultPrimaryDataStore dataStore = (DefaultPrimaryDataStore)ComponentContext.inject(DefaultPrimaryDataStore.class);
+        dataStore.configure(pdsv, driver, provider);
+        return dataStore;
     }
 
     @Override
@@ -113,12 +119,14 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     @Override
     public long getId() {
         // TODO Auto-generated method stub
-        return 0;
+        return this.pdsv.getId();
     }
 
     @Override
     public String getUri() {
-        return this.pdsv.getPoolType() + File.separator
+        String path = this.pdsv.getPath();
+        path.replaceFirst("/*", "");
+        return this.pdsv.getPoolType() + ":" + File.separator + File.separator
                 + this.pdsv.getHostAddress() + File.separator
                 + this.pdsv.getPath() + File.separator
                 + "?role=" + this.getRole()
@@ -127,11 +135,12 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
 
     @Override
     public Scope getScope() {
-        if (pdsv.getScope() == ScopeType.CLUSTER) {
-            return new ClusterScope(pdsv.getClusterId(), pdsv.getPodId(),
-                    pdsv.getDataCenterId());
-        } else if (pdsv.getScope() == ScopeType.ZONE) {
-            return new ZoneScope(pdsv.getDataCenterId());
+        PrimaryDataStoreVO vo = dataStoreDao.findById(this.pdsv.getId());
+        if (vo.getScope() == ScopeType.CLUSTER) {
+            return new ClusterScope(vo.getClusterId(), vo.getPodId(),
+                    vo.getDataCenterId());
+        } else if (vo.getScope() == ScopeType.ZONE) {
+            return new ZoneScope(vo.getDataCenterId());
         }
         return null;
     }

@@ -198,7 +198,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         return count.get(0);
 	}
     
-    protected DataCenterIpAddressDaoImpl() {
+    public DataCenterIpAddressDaoImpl() {
         super();
         
         AllFieldsSearch = createSearchBuilder();

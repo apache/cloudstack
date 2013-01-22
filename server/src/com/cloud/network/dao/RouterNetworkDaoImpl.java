@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.network.RouterNetworkVO;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;

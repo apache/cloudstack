@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;

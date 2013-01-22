@@ -142,7 +142,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         update(vo.getId(), vo);
     }
 
-    protected DataCenterVnetDaoImpl() {
+    public DataCenterVnetDaoImpl() {
     	super();
         DcSearchAllocated = createSearchBuilder();
         DcSearchAllocated.and("dc", DcSearchAllocated.entity().getDataCenterId(), SearchCriteria.Op.EQ);

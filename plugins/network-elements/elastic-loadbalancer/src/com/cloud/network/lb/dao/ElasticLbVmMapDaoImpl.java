@@ -25,9 +25,9 @@ import javax.inject.Inject;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.ElasticLbVmMapVO;
-import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VirtualRouter.Role;
 

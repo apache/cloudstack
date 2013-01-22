@@ -151,7 +151,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         return count.get(0);
 	}
     
-    protected DataCenterLinkLocalIpAddressDaoImpl() {
+    public DataCenterLinkLocalIpAddressDaoImpl() {
         super();
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("ip", AllFieldsSearch.entity().getIpAddress(), SearchCriteria.Op.EQ);

@@ -17,7 +17,7 @@
 
 alter table vm_template add image_data_store_id bigint unsigned;
 alter table storage_pool add storage_provider_id bigint unsigned; 
-alter table storage_pool add configurator_key varchar(255); 
+alter table storage_pool add scope varchar(255); 
 alter table storage_pool modify id bigint unsigned AUTO_INCREMENT UNIQUE NOT NULL;
 alter table template_spool_ref add state varchar(255);
 alter table template_spool_ref add update_count bigint unsigned;
@@ -26,6 +26,7 @@ alter table volumes drop foreign key `fk_volumes__account_id`;
 CREATE TABLE `cloud`.`data_store_provider` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) NOT NULL COMMENT 'name of primary data store provider',
+  `uuid` varchar(255) NOT NULL COMMENT 'uuid of primary data store provider',
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
