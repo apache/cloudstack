@@ -112,7 +112,7 @@ public class VolumeTest {
 		results.add(host);
 		Mockito.when(hostDao.listAll()).thenReturn(results);
 		Mockito.when(hostDao.findHypervisorHostInCluster(Mockito.anyLong())).thenReturn(results);
-		CreateObjectAnswer createVolumeFromImageAnswer = new CreateObjectAnswer(null,UUID.randomUUID().toString());
+		CreateObjectAnswer createVolumeFromImageAnswer = new CreateObjectAnswer(null,UUID.randomUUID().toString(), null);
 
 		try {
 			Mockito.when(agentMgr.send(Mockito.anyLong(), Mockito.any(CreateVolumeFromBaseImageCommand.class))).thenReturn(createVolumeFromImageAnswer);
