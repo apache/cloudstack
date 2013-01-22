@@ -959,7 +959,7 @@ under the License.
           <div class="button refresh" id="refresh_button">
             <span><fmt:message key="label.refresh"/></span>
           </div>
-          <div id="update_ssl_button" class="button action main-action reduced-hide lock">
+          <div id="update_ssl_button" class="button action main-action reduced-hide lock" title="Updates your Console Proxy SSL Certificate">
             <span class="icon">&nbsp;</span>            
             <span><fmt:message key="label.update.ssl.cert"/></span>
           </div>
