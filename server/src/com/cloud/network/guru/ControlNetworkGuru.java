@@ -167,7 +167,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         assert nic.getTrafficType() == TrafficType.Control;
 
         if (vm.getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.DomainRouter) {
-            long dcId = vm.getVirtualMachine().getDataCenterIdToDeployIn();
+            long dcId = vm.getVirtualMachine().getDataCenterId();
             DataCenterVO dcVo = _dcDao.findById(dcId);
             if(dcVo.getNetworkType() != NetworkType.Basic) {
                 super.release(nic, vm, reservationId);

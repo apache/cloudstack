@@ -3116,7 +3116,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         } else {
             size = (size * 1024 * 1024 * 1024);
         }
-        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterIdToDeployIn(), owner.getDomainId(), owner.getId(), offering.getId(), size);
+        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), size);
         if (vm != null) {
             vol.setInstanceId(vm.getId());
         }
@@ -3147,7 +3147,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         SearchCriteria<VMTemplateHostVO> sc = HostTemplateStatesSearch.create();
         sc.setParameters("id", template.getId());
         sc.setParameters("state", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-        sc.setJoinParameters("host", "dcId", vm.getDataCenterIdToDeployIn());
+        sc.setJoinParameters("host", "dcId", vm.getDataCenterId());
         List<VMTemplateSwiftVO> tsvs = _vmTemplateSwiftDao.listByTemplateId(template.getId());
         Long size = null;
         if (tsvs != null && tsvs.size() > 0) {
@@ -3164,12 +3164,12 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         if (size == null) {
             List<VMTemplateHostVO> sss = _vmTemplateHostDao.search(sc, null);
             if (sss == null || sss.size() == 0) {
-                throw new CloudRuntimeException("Template " + template.getName() + " has not been completely downloaded to zone " + vm.getDataCenterIdToDeployIn());
+                throw new CloudRuntimeException("Template " + template.getName() + " has not been completely downloaded to zone " + vm.getDataCenterId());
             }
             size = sss.get(0).getSize();
         }
 
-        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterIdToDeployIn(), owner.getDomainId(), owner.getId(), offering.getId(), size);
+        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), size);
         if (vm != null) {
             vol.setInstanceId(vm.getId());
         }
@@ -3219,7 +3219,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         if (vm.getType() == VirtualMachine.Type.User) {
             UserVmVO userVM = (UserVmVO) vm.getVirtualMachine();
             if (userVM.getIsoId() != null) {
-                Pair<String, String> isoPathPair = getAbsoluteIsoPath(userVM.getIsoId(), userVM.getDataCenterIdToDeployIn());
+                Pair<String, String> isoPathPair = getAbsoluteIsoPath(userVM.getIsoId(), userVM.getDataCenterId());
                 if (isoPathPair != null) {
                     String isoPath = isoPathPair.first();
                     VolumeTO iso = new VolumeTO(vm.getId(), Volume.Type.ISO, StoragePoolType.ISO, null, null, null, isoPath, 0, null, null);

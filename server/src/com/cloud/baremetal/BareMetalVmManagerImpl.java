@@ -396,7 +396,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
 	    UserVmVO vm = _vmDao.findById(cmd.getInstanceId());
 	    
-		List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.PxeServer, vm.getDataCenterIdToDeployIn()); 
+		List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.PxeServer, vm.getDataCenterId()); 
 	    if (servers.size() == 0) {
 	    	throw new CloudRuntimeException("Cannot find PXE server, please make sure there is one PXE server per zone");
 	    }
@@ -424,7 +424,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
         
         Map<VirtualMachineProfile.Param, Object> params = null;
         if (vm.isUpdateParameters()) {
-            List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.PxeServer, vm.getDataCenterIdToDeployIn()); 
+            List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.PxeServer, vm.getDataCenterId()); 
             if (servers.size() == 0) {
                 throw new CloudRuntimeException("Cannot find PXE server, please make sure there is one PXE server per zone");
             }

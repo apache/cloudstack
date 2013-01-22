@@ -56,24 +56,24 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         }
         
         if (VirtualMachine.State.isVmCreated(oldState, event, newState)) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(), 
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(), 
                     vo.getTemplateId(), vo.getHypervisorType().toString());
             _usageEventDao.persist(usageEvent);
         } else if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(), 
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(), 
                     vo.getTemplateId(), vo.getHypervisorType().toString());
             _usageEventDao.persist(usageEvent);
         } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), vo.getHostName());
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName());
             _usageEventDao.persist(usageEvent);
             List<NicVO> nics = _nicDao.listByVmId(vo.getId());
             for (NicVO nic : nics) {
                 NetworkVO network = _networkDao.findById(nic.getNetworkId());
-                usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), null, network.getNetworkOfferingId(), null, 0L);
+                usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), null, network.getNetworkOfferingId(), null, 0L);
                 _usageEventDao.persist(usageEvent);
             }
         } else if (VirtualMachine.State.isVmDestroyed(oldState, event, newState)) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(), 
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(), 
                     vo.getTemplateId(), vo.getHypervisorType().toString());
             _usageEventDao.persist(usageEvent);
         } 

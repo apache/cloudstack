@@ -151,9 +151,6 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Column(name="cpu")
     protected int cpu;
 
-    @Column(name="tags")
-    protected String tags;
-
     @Transient
     Map<String, String> details;
 
@@ -173,10 +170,10 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Transient
     List<String> rootDiskTags;
 
-    @Column(name="hostname")
+    @Column(name="host_name")
     private String hostname = null;
 
-    @Column(name="displayname")
+    @Column(name="display_name")
     private String displayname = null;
 
     @Transient
@@ -292,7 +289,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     }
 
     @Override
-    public long getDataCenterIdToDeployIn() {
+    public long getDataCenterId() {
         return dataCenterIdToDeployIn;
     }
 

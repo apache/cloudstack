@@ -968,7 +968,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 }
 
                 SubscriptionMgr.getInstance().notifySubscribers(ALERT_SUBJECT, this,
-                        new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_REBOOTED, secStorageVm.getDataCenterIdToDeployIn(), secStorageVm.getId(), secStorageVm, null));
+                        new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_REBOOTED, secStorageVm.getDataCenterId(), secStorageVm.getId(), secStorageVm, null));
 
                 return true;
             } else {
@@ -990,7 +990,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         try {
             boolean result = _itMgr.expunge(ssvm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
             if (result) {
-                HostVO host = _hostDao.findByTypeNameAndZoneId(ssvm.getDataCenterIdToDeployIn(), ssvm.getHostName(), 
+                HostVO host = _hostDao.findByTypeNameAndZoneId(ssvm.getDataCenterId(), ssvm.getHostName(), 
                         Host.Type.SecondaryStorageVM);
                 if (host != null) {
                     s_logger.debug("Removing host entry for ssvm id=" + vmId);
@@ -1121,7 +1121,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             buf.append(" bootproto=dhcp");
         }
 
-        DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterIdToDeployIn());
+        DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterId());
         buf.append(" internaldns1=").append(dc.getInternalDns1());
         if (dc.getInternalDns2() != null) {
             buf.append(" internaldns2=").append(dc.getInternalDns2());

@@ -1378,7 +1378,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 }
 
                 SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
-                        new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_REBOOTED, proxy.getDataCenterIdToDeployIn(), proxy.getId(), proxy, null));
+                        new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_REBOOTED, proxy.getDataCenterId(), proxy.getId(), proxy, null));
 
                 return true;
             } else {
@@ -1400,7 +1400,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             //expunge the vm
             boolean result = _itMgr.expunge(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
             if (result) {
-                HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterIdToDeployIn(), proxy.getHostName(), 
+                HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(), 
                         Host.Type.ConsoleProxy);
                 if (host != null) {
                     s_logger.debug("Removing host entry for proxy id=" + vmId);
@@ -1630,7 +1630,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         if (externalDhcp) {
             buf.append(" bootproto=dhcp");
         }
-        DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterIdToDeployIn());
+        DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterId());
         buf.append(" internaldns1=").append(dc.getInternalDns1());
         if (dc.getInternalDns2() != null) {
             buf.append(" internaldns2=").append(dc.getInternalDns2());

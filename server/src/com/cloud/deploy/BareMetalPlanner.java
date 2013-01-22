@@ -87,7 +87,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
 			}
 		}
 		
-		List<ClusterVO> clusters = _clusterDao.listByDcHyType(vm.getDataCenterIdToDeployIn(), HypervisorType.BareMetal.toString());
+		List<ClusterVO> clusters = _clusterDao.listByDcHyType(vm.getDataCenterId(), HypervisorType.BareMetal.toString());
 		int cpu_requested;
 		long ram_requested;
 		HostVO target = null;

@@ -624,9 +624,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Trying to deploy VM, vm has dcId: " + vm.getDataCenterIdToDeployIn() + " and podId: " + vm.getPodIdToDeployIn());
+            s_logger.debug("Trying to deploy VM, vm has dcId: " + vm.getDataCenterId() + " and podId: " + vm.getPodIdToDeployIn());
         }
-        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), null, null, null, null, ctx);
+        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null, ctx);
         if(planToDeploy != null && planToDeploy.getDataCenterId() != 0){
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("advanceStart: DeploymentPlan is provided, using dcId:" + planToDeploy.getDataCenterId() + ", podId: " + planToDeploy.getPodId() + ", clusterId: "
@@ -1230,7 +1230,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 //if the vm is migrated to different pod in basic mode, need to reallocate ip
 
                 if (vm.getPodIdToDeployIn() != destPool.getPodId()) {
-                    DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), destPool.getPodId(), null, null, null, null);
+                    DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), destPool.getPodId(), null, null, null, null);
                     VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, null, null, null, null);
                     _networkMgr.reallocate(vmProfile, plan);
                 }
@@ -1585,7 +1585,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     ConcurrentOperationException, ResourceUnavailableException {
         T rebootedVm = null;
 
-        DataCenter dc = _configMgr.getZone(vm.getDataCenterIdToDeployIn());
+        DataCenter dc = _configMgr.getZone(vm.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId());
         Cluster cluster = null;
         if (host != null) {
@@ -1980,11 +1980,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
 
             HostPodVO podVO = _podDao.findById(vm.getPodIdToDeployIn());
-            DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterIdToDeployIn());
+            DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterId());
             HostVO hostVO = _hostDao.findById(vm.getHostId());
 
             String hostDesc = "name: " + hostVO.getName() + " (id:" + hostVO.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
-            _alertMgr.sendAlert(alertType, vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getInstanceName() + ", id: " + vm.getId() + ") stopped on host " + hostDesc
+            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getInstanceName() + ", id: " + vm.getId() + ") stopped on host " + hostDesc
                     + " due to storage failure", "Virtual Machine " + vm.getInstanceName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() + "] stopped due to storage failure.");
         }
 
@@ -2501,7 +2501,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         } else {
             s_logger.warn("Unable to add vm " + vm + " to network  " + network);
             throw new ResourceUnavailableException("Unable to add vm " + vm + " to network, is not in the right state",
-                    DataCenter.class, vm.getDataCenterIdToDeployIn());
+                    DataCenter.class, vm.getDataCenterId());
         }
     }
 

@@ -43,7 +43,7 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
     @Override
     protected HostVO findHost(VMInstanceVO vm) {
 
-        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Type.ConsoleProxy, vm.getDataCenterIdToDeployIn());
+        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Type.ConsoleProxy, vm.getDataCenterId());
 
         return hosts.isEmpty() ? null : hosts.get(0);
     }

@@ -655,7 +655,7 @@ public class ManagementServerImpl implements ManagementServer {
                     DataCenterVO dc = iter.next();
                     boolean found = false;
                     for (DomainRouterVO router : routers) {
-                        if (dc.getId() == router.getDataCenterIdToDeployIn()) {
+                        if (dc.getId() == router.getDataCenterId()) {
                             found = true;
                             break;
                         }
@@ -1934,7 +1934,7 @@ public class ManagementServerImpl implements ManagementServer {
     public String getConsoleAccessUrlRoot(long vmId) {
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm != null) {
-            ConsoleProxyInfo proxy = getConsoleProxyForVm(vm.getDataCenterIdToDeployIn(), vmId);
+            ConsoleProxyInfo proxy = getConsoleProxyForVm(vm.getDataCenterId(), vmId);
             if (proxy != null) {
                 return proxy.getProxyImageUrl();
             }
@@ -2577,7 +2577,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("hostName", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);

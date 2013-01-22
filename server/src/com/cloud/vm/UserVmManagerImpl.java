@@ -647,7 +647,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // Check that the VM and the volume are in the same zone
-        if (vm.getDataCenterIdToDeployIn() != volume.getDataCenterId()) {
+        if (vm.getDataCenterId() != volume.getDataCenterId()) {
             throw new InvalidParameterValueException(
                     "Please specify a VM that is in the same zone as the volume.");
         }
@@ -752,7 +752,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 VMTemplateVO rootDiskTmplt = _templateDao.findById(vm
                         .getTemplateId());
                 DataCenterVO dcVO = _dcDao.findById(vm
-                        .getDataCenterIdToDeployIn());
+                        .getDataCenterId());
                 HostPodVO pod = _podDao.findById(vm.getPodIdToDeployIn());
                 StoragePoolVO rootDiskPool = _storagePoolDao
                         .findById(rootVolumeOfVm.getPoolId());
@@ -1107,7 +1107,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             isoPath = tmplt.getName();
         } else {
             isoPathPair = _storageMgr.getAbsoluteIsoPath(isoId,
-                    vm.getDataCenterIdToDeployIn());
+                    vm.getDataCenterId());
             if (isoPathPair == null) {
                 s_logger.warn("Couldn't get absolute iso path");
                 return false;
@@ -2040,7 +2040,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 }
                 String msg = "Failed to deploy Vm with Id: " + vmId;
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM,
-                        vm.getDataCenterIdToDeployIn(),
+                        vm.getDataCenterId(),
                         vm.getPodIdToDeployIn(), msg, msg);
 
                 _resourceLimitMgr.decrementResourceCount(vm.getAccountId(),
@@ -3052,12 +3052,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             vm.setIsoId(template.getId());
         }
 
+        _vmDao.persist(vm);
+        _vmDao.saveDetails(vm);
+        txn.commit();
+
+        
         s_logger.debug("Allocating in the DB for vm");
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
 
-
-        _vmDao.persist(vm);
-        _vmDao.saveDetails(vm);
 
         long guestOSId = template.getGuestOSId();
         GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
@@ -3076,11 +3078,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             VirtualMachineEntity vmEntity = _orchSrvc.createVirtualMachine(vm.getUuid(), new Long(owner.getAccountId()).toString(), new Long(template.getId()).toString(), hostName, displayName, hypervisor.name(), offering.getCpu(),  offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags, networkNicMap, plan);
         }
 
+        
+        
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Successfully allocated DB entry for " + vm);
         }
         UserContext.current().setEventDetails("Vm Id: " + vm.getId());
 
+        txn = Transaction.currentTxn();
+        txn.start();
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE,
                 accountId, zone.getId(), vm.getId(), vm.getHostName(),
                 offering.getId(), template.getId(), hypervisorType.toString());
@@ -3190,7 +3196,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
 
             Pair<String, String> isoPathPair = _storageMgr.getAbsoluteIsoPath(
-                    template.getId(), vm.getDataCenterIdToDeployIn());
+                    template.getId(), vm.getDataCenterId());
 
             if (template.getTemplateType() == TemplateType.PERHOST) {
                 isoPath = template.getName();
@@ -3286,7 +3292,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
             UsageEventVO usageEvent = new UsageEventVO(
                     EventTypes.EVENT_NETWORK_OFFERING_ASSIGN,
-                    vm.getAccountId(), vm.getDataCenterIdToDeployIn(),
+                    vm.getAccountId(), vm.getDataCenterId(),
                     vm.getId(), vm.getHostName(),
                     network.getNetworkOfferingId(), null, isDefault);
             _usageEventDao.persist(usageEvent);
@@ -3310,7 +3316,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         if (ipChanged) {
-            DataCenterVO dc = _dcDao.findById(vm.getDataCenterIdToDeployIn());
+            DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
             UserVmVO userVm = profile.getVirtualMachine();
             // dc.getDhcpProvider().equalsIgnoreCase(Provider.ExternalDhcpServer.getName())
             if (_ntwkSrvcDao.canProviderSupportServiceInNetwork(
@@ -3496,7 +3502,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         DataCenterDeployment plan = null;
         if (destinationHost != null) {
             s_logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
-            plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(),
+            plan = new DataCenterDeployment(vm.getDataCenterId(),
                     destinationHost.getPodId(), destinationHost.getClusterId(),
                     destinationHost.getId(), null, null);
         }
@@ -4109,7 +4115,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
-        DataCenterVO zone = _dcDao.findById(vm.getDataCenterIdToDeployIn());
+        DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
 
         // Remove vm from instance group
         removeInstanceFromInstanceGroup(cmd.getVmId());
@@ -4139,7 +4145,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         txn.start();
         // generate destroy vm event for usage
         _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm
-                .getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm
+                .getAccountId(), vm.getDataCenterId(), vm.getId(), vm
                 .getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
                 vm.getHypervisorType().toString()));
         // update resource counts
@@ -4181,7 +4187,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 ResourceType.user_vm);
         // generate usage events to account for this change
         _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VM_CREATE, vm
-                .getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm
+                .getAccountId(), vm.getDataCenterId(), vm.getId(), vm
                 .getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
                 vm.getHypervisorType().toString()));
 

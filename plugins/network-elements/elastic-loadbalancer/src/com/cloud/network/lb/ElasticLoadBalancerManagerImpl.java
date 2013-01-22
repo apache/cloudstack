@@ -919,7 +919,7 @@ ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
     @Override
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile) {
         DomainRouterVO elbVm = profile.getVirtualMachine();
-        DataCenterVO dcVo = _dcDao.findById(elbVm.getDataCenterIdToDeployIn());
+        DataCenterVO dcVo = _dcDao.findById(elbVm.getDataCenterId());
 
         NicProfile controlNic = null;
         Long guestNetworkId = null;

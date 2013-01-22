@@ -113,7 +113,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             DeploymentPlan plan, ExcludeList avoid)
                     throws InsufficientServerCapacityException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        DataCenter dc = _dcDao.findById(vm.getDataCenterIdToDeployIn());
+        DataCenter dc = _dcDao.findById(vm.getDataCenterId());
 
         //check if datacenter is in avoid set
         if(avoid.shouldAvoid(dc)){
@@ -346,7 +346,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 
         VirtualMachine vm = vmProfile.getVirtualMachine();
         ServiceOffering offering = vmProfile.getServiceOffering();
-        DataCenter dc = _dcDao.findById(vm.getDataCenterIdToDeployIn());
+        DataCenter dc = _dcDao.findById(vm.getDataCenterId());
         int requiredCpu = offering.getCpu() * offering.getSpeed();
         long requiredRam = offering.getRamSize() * 1024L * 1024L;
         String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());

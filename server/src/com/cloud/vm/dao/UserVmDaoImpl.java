@@ -151,7 +151,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
         AccountDataCenterSearch = createSearchBuilder();
         AccountDataCenterSearch.and("account", AccountDataCenterSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountDataCenterSearch.and("dc", AccountDataCenterSearch.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        AccountDataCenterSearch.and("dc", AccountDataCenterSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         AccountDataCenterSearch.done();
 
         StateChangeSearch = createSearchBuilder();
@@ -191,7 +191,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
         AccountDataCenterVirtualSearch = createSearchBuilder();
         AccountDataCenterVirtualSearch.and("account", AccountDataCenterVirtualSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountDataCenterVirtualSearch.and("dc", AccountDataCenterVirtualSearch.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        AccountDataCenterVirtualSearch.and("dc", AccountDataCenterVirtualSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         AccountDataCenterVirtualSearch.join("nicSearch", nicSearch, AccountDataCenterVirtualSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         AccountDataCenterVirtualSearch.done();
        

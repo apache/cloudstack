@@ -352,7 +352,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             s_logger.warn("Unable to apply PlugNic, vm " + router + " is not in the right state " + router.getState());
             
             throw new ResourceUnavailableException("Unable to apply PlugNic on the backend," +
-                    " vm " + vm + " is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+                    " vm " + vm + " is not in the right state", DataCenter.class, router.getDataCenterId());
         }
         
         return result;
@@ -388,7 +388,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             s_logger.warn("Unable to apply unplug nic, Vm " + router + " is not in the right state " + router.getState());
             
             throw new ResourceUnavailableException("Unable to apply unplug nic on the backend," +
-                    " vm " + router +" is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+                    " vm " + router +" is not in the right state", DataCenter.class, router.getDataCenterId());
         }
        
         return result;
@@ -419,7 +419,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         } else {
             s_logger.warn("Unable to setup guest network on virtual router " + router + " is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to setup guest network on the backend," +
-                    " virtual router " + router + " is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+                    " virtual router " + router + " is not in the right state", DataCenter.class, router.getDataCenterId());
         }
     }
 
@@ -512,7 +512,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(ipAddrList.get(0).getNetworkId(), router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
             cmds.addCommand("IPAssocVpcCommand", cmd);
@@ -524,7 +524,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             SetSourceNatCommand cmd = new SetSourceNatCommand(sourceNatIp, addSourceNat);
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
             cmds.addCommand("SetSourceNatCommand", cmd);
         }
@@ -610,10 +610,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             //Create network usage commands. Send commands to router after IPAssoc
             NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), true, defaultNic.getIp4Address(), vpc.getCidr());
         	netUsagecmds.addCommand(netUsageCmd);
-        	UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
+        	UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), 
             		publicNtwk.getId(), publicNic.getIp4Address(), router.getId(), router.getType().toString());
             if (stats == null) {
-                stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), publicNic.getIp4Address(), router.getId(),
+                stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterId(), publicNic.getIp4Address(), router.getId(),
                         router.getType().toString(), publicNtwk.getId());
                 _userStatsDao.persist(stats);
             }
@@ -748,7 +748,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, guestVlan);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
     }
@@ -820,10 +820,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 VpcVO vpc = _vpcDao.findById(router.getVpcId());
                 NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), true, publicNic.getIp4Address(), vpc.getCidr());
                 usageCmds.add(netUsageCmd);
-                UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
+                UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), 
                 		publicNtwk.getId(), publicNic.getIp4Address(), router.getId(), router.getType().toString());
                 if (stats == null) {
-                    stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), publicNic.getIp4Address(), router.getId(),
+                    stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterId(), publicNic.getIp4Address(), router.getId(),
                             router.getType().toString(), publicNtwk.getId());
                     _userStatsDao.persist(stats);
                 }
@@ -1003,7 +1003,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             s_logger.warn("Unable to setup private gateway, virtual router " + router + " is not in the right state " + router.getState());
             
             throw new ResourceUnavailableException("Unable to setup Private gateway on the backend," +
-                    " virtual router " + router + " is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+                    " virtual router " + router + " is not in the right state", DataCenter.class, router.getDataCenterId());
         }
         return true;
     }
@@ -1069,7 +1069,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 s_logger.warn("Unable to apply StaticRoute, virtual router is not in the right state " + router.getState());
                 
                 throw new ResourceUnavailableException("Unable to apply StaticRoute on the backend," +
-                		" virtual router is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+                		" virtual router is not in the right state", DataCenter.class, router.getDataCenterId());
             }
         }
         return result;
@@ -1091,7 +1091,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         SetStaticRouteCommand cmd = new SetStaticRouteCommand(staticRoutes);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
     }
@@ -1101,7 +1101,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (router.getState() != State.Running) {
             s_logger.warn("Unable to apply site-to-site VPN configuration, virtual router is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to apply site 2 site VPN configuration," +
-                    " virtual router is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+                    " virtual router is not in the right state", DataCenter.class, router.getDataCenterId());
         }
 
         return applySite2SiteVpn(true, router, conn);
@@ -1112,7 +1112,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (router.getState() != State.Running) {
             s_logger.warn("Unable to apply site-to-site VPN configuration, virtual router is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to apply site 2 site VPN configuration," +
-                    " virtual router is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+                    " virtual router is not in the right state", DataCenter.class, router.getDataCenterId());
         }
 
         return applySite2SiteVpn(false, router, conn);
@@ -1146,7 +1146,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand("applyS2SVpn", cmd);
     }
@@ -1187,7 +1187,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(ipAddrList.get(0).getNetworkId(), router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
             cmds.addCommand("IPAssocVpcCommand", cmd);

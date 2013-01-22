@@ -55,7 +55,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     
     public SecondaryStorageVmDaoImpl() {
         DataCenterStatusSearch = createSearchBuilder();
-        DataCenterStatusSearch.and("dc", DataCenterStatusSearch.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        DataCenterStatusSearch.and("dc", DataCenterStatusSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         DataCenterStatusSearch.and("states", DataCenterStatusSearch.entity().getState(), SearchCriteria.Op.IN);
         DataCenterStatusSearch.and("role", DataCenterStatusSearch.entity().getRole(), SearchCriteria.Op.EQ);
         DataCenterStatusSearch.done();
@@ -87,7 +87,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         HostUpSearch.done();
         
         ZoneSearch = createSearchBuilder();
-        ZoneSearch.and("zone", ZoneSearch.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        ZoneSearch.and("zone", ZoneSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         ZoneSearch.and("role", ZoneSearch.entity().getRole(), SearchCriteria.Op.EQ);
         ZoneSearch.done();
         

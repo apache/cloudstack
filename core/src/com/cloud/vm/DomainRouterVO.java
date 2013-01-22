@@ -143,8 +143,8 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     }
 
     @Override
-    public long getDataCenterIdToDeployIn() {
-        return dataCenterIdToDeployIn;
+    public long getDataCenterId() {
+        return dataCenterId;
     }
 
     public String getPublicNetmask() {

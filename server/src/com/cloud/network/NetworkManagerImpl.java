@@ -2840,7 +2840,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     @Override
     public boolean reallocate(VirtualMachineProfile<? extends VMInstanceVO> vm, DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException {
         VMInstanceVO vmInstance = _vmDao.findById(vm.getId());
-        DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterIdToDeployIn());
+        DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterId());
         if (dc.getNetworkType() == NetworkType.Basic) {
             List<NicVO> nics = _nicDao.listByVmId(vmInstance.getId());
             NetworkVO network = _networksDao.findById(nics.get(0).getNetworkId());

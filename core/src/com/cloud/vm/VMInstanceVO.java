@@ -102,7 +102,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     protected String privateMacAddress;
 
     @Column(name="data_center_id", updatable=true, nullable=false)
-    protected long dataCenterIdToDeployIn;
+    protected long dataCenterId;
 
     @Column(name="vm_type", updatable=false, nullable=false, length=32)
     @Enumerated(value=EnumType.STRING)
@@ -259,8 +259,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     @Override
-    public long getDataCenterIdToDeployIn() {
-        return dataCenterIdToDeployIn;
+    public long getDataCenterId() {
+        return dataCenterId;
     }
 
     @Override
@@ -404,7 +404,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     public void setDataCenterId(long dataCenterId) {
-        this.dataCenterIdToDeployIn = dataCenterId;
+        this.dataCenterId = dataCenterId;
     }
 
     public boolean isRemoved() {

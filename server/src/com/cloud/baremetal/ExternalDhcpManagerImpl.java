@@ -181,9 +181,9 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 			return;
 		}
 		
-		List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.PxeServer, null, vm.getPodIdToDeployIn(), vm.getDataCenterIdToDeployIn());
+		List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.PxeServer, null, vm.getPodIdToDeployIn(), vm.getDataCenterId());
 		if (servers.size() != 1) {
-			throw new CloudRuntimeException("Wrong number of PXE server found in zone " + vm.getDataCenterIdToDeployIn()
+			throw new CloudRuntimeException("Wrong number of PXE server found in zone " + vm.getDataCenterId()
 					+ " Pod " + vm.getPodIdToDeployIn() + ", number is " + servers.size());
 		}
 		HostVO pxeServer = servers.get(0);
@@ -194,7 +194,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 	@Override
 	public boolean addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> profile, DeployDestination dest,
 			ReservationContext context) throws ResourceUnavailableException {
-		Long zoneId = profile.getVirtualMachine().getDataCenterIdToDeployIn();
+		Long zoneId = profile.getVirtualMachine().getDataCenterId();
 		Long podId = profile.getVirtualMachine().getPodIdToDeployIn();
 		List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Type.ExternalDhcp, null, podId, zoneId);
 		if (hosts.size() == 0) {

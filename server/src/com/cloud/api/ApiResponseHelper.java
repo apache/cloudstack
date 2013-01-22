@@ -1087,7 +1087,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
 
-            DataCenter zone = ApiDBUtils.findZoneById(vm.getDataCenterIdToDeployIn());
+            DataCenter zone = ApiDBUtils.findZoneById(vm.getDataCenterId());
             if (zone != null) {
                 vmResponse.setZoneId(zone.getUuid());
                 vmResponse.setZoneName(zone.getName());
