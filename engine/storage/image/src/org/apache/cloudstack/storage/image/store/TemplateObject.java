@@ -49,14 +49,18 @@ public class TemplateObject implements TemplateInfo {
     @Inject
     ObjectInDataStoreManager ojbectInStoreMgr;
 
-    private TemplateObject(ImageDataVO template, DataStore dataStore) {
+    protected TemplateObject() {
+    }
+    
+    protected void configure(ImageDataVO template, DataStore dataStore) {
         this.imageVO = template;
         this.dataStore = dataStore;
     }
     
     public static TemplateObject getTemplate(ImageDataVO vo, DataStore store) {
-        TemplateObject to = new TemplateObject(vo, store);
-        return ComponentContext.inject(to);
+        TemplateObject to = ComponentContext.inject(TemplateObject.class);
+        to.configure(vo, store);
+        return to;
     }
     
     public void setImageStoreId(long id) {
@@ -90,7 +94,7 @@ public class TemplateObject implements TemplateInfo {
         } else {
             ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(this.imageVO.getId(), DataObjectType.TEMPLATE, this.dataStore.getId(), this.dataStore.getRole());
             if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-                return this.dataStore.getUri() + File.separator + "&objType=" + DataObjectType.TEMPLATE + "&size=" + this.imageVO.getSize(); 
+                return this.dataStore.getUri() + File.separator + "&objType=" + DataObjectType.TEMPLATE + "&size=" + this.imageVO.getSize() + "&path=" + this.imageVO.getUrl(); 
             } else {
                 return this.dataStore.getUri() + File.separator + "&objType=" + DataObjectType.TEMPLATE + "&path=" + obj.getInstallPath();
             }
@@ -98,9 +102,12 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
-    public long getSize() {
-        // TODO Auto-generated method stub
-        return 0;
+    public Long getSize() {
+        if (this.dataStore == null) {
+            return null;
+        }
+        ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(this.imageVO.getId(), DataObjectType.TEMPLATE, this.dataStore.getId(), this.dataStore.getRole());
+        return obj.getSize();
     }
 
     @Override

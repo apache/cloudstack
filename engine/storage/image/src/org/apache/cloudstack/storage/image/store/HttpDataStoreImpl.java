@@ -45,12 +45,16 @@ public class HttpDataStoreImpl implements ImageDataStore {
     ImageDataDao imageDao;
     @Inject
     private ObjectInDataStoreManager objectInStoreMgr;
-    ImageDataStoreDriver driver;
-    ImageDataStoreVO imageDataStoreVO;
-    ImageDataStoreProvider provider;
+    protected ImageDataStoreDriver driver;
+    protected ImageDataStoreVO imageDataStoreVO;
+    protected ImageDataStoreProvider provider;
     boolean needDownloadToCacheStorage = false;
 
-    private HttpDataStoreImpl(ImageDataStoreVO dataStoreVO, ImageDataStoreDriver imageDataStoreDriver,
+    protected HttpDataStoreImpl() {
+     
+    }
+    
+    protected void configure(ImageDataStoreVO dataStoreVO, ImageDataStoreDriver imageDataStoreDriver,
             ImageDataStoreProvider provider) {
         this.driver = imageDataStoreDriver;
         this.imageDataStoreVO = dataStoreVO;
@@ -59,8 +63,9 @@ public class HttpDataStoreImpl implements ImageDataStore {
 
     public static HttpDataStoreImpl getDataStore(ImageDataStoreVO dataStoreVO, ImageDataStoreDriver imageDataStoreDriver,
             ImageDataStoreProvider provider) {
-        HttpDataStoreImpl instance = new HttpDataStoreImpl(dataStoreVO, imageDataStoreDriver, provider);
-        return ComponentContext.inject(instance);
+        HttpDataStoreImpl instance = (HttpDataStoreImpl)ComponentContext.inject(HttpDataStoreImpl.class);
+        instance.configure(dataStoreVO, imageDataStoreDriver, provider);
+        return instance;
     }
 
     @Override

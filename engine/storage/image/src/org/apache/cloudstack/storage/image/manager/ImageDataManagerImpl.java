@@ -21,11 +21,13 @@ package org.apache.cloudstack.storage.image.manager;
 import org.apache.cloudstack.storage.image.TemplateEvent;
 import org.apache.cloudstack.storage.image.TemplateState;
 import org.apache.cloudstack.storage.image.db.ImageDataVO;
+import org.springframework.stereotype.Component;
 
 import com.cloud.utils.fsm.StateMachine2;
 
+@Component
 public class ImageDataManagerImpl implements ImageDataManager {
-    private final static StateMachine2<TemplateState, TemplateEvent, ImageDataVO> 
+    private final StateMachine2<TemplateState, TemplateEvent, ImageDataVO> 
         stateMachine = new StateMachine2<TemplateState, TemplateEvent, ImageDataVO>();
     
     public ImageDataManagerImpl() {

@@ -32,19 +32,25 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.provider.DataStoreProvider;
 import org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManager;
 import org.apache.cloudstack.storage.endpoint.EndPointSelector;
+import org.apache.cloudstack.storage.image.ImageDataFactory;
 import org.apache.cloudstack.storage.image.ImageService;
+import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
 import org.apache.cloudstack.storage.image.db.ImageDataVO;
 import org.apache.cloudstack.storage.volume.VolumeService;
@@ -52,6 +58,7 @@ import org.apache.cloudstack.storage.volume.db.VolumeDao2;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import com.cloud.agent.AgentManager;
@@ -69,6 +76,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.resource.ResourceState;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
 
 @ContextConfiguration(locations={"classpath:/storageContext.xml"})
@@ -99,6 +107,8 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	AgentManager agentMgr;
 	@Inject
 	EndPointSelector selector;
+	@Inject
+	ImageDataFactory imageDataFactory;
 	Long dcId;
 	Long clusterId;
 	Long podId;
@@ -188,6 +198,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
         eps.add(HypervisorHostEndPoint.getHypervisorHostEndPoint(host.getId(),
                 host.getPrivateIpAddress()));
         Mockito.when(selector.selectAll(Mockito.any(DataStore.class))).thenReturn(eps);
+        Mockito.when(selector.select(Mockito.any(DataObject.class))).thenReturn(eps.get(0));
     }
 
 	private ImageDataVO createImageData() {
@@ -200,7 +211,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		image.setFeatured(true);
 		image.setRequireHvm(true);
 		image.setBits(64);
-		//image.setFormat(new VHD().toString());
+		image.setFormat(Storage.ImageFormat.VHD.toString());
 		image.setAccountId(1);
 		image.setEnablePassword(true);
 		image.setEnableSshKey(true);
@@ -209,12 +220,20 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		image.setPrepopulate(true);
 		image.setCrossZones(true);
 		image.setExtractable(true);
+		
+		//image.setImageDataStoreId(storeId);
 		image = imageDataDao.persist(image);
+		
 		return image;
 	}
 
 	private TemplateEntity createTemplate() {
 		try {
+		    DataStore store = createImageStore();
+		    ImageDataVO image = createImageData();
+		    TemplateInfo template = imageDataFactory.getTemplate(image.getId(), store);
+		    AsyncCallFuture<CommandResult> future = imageService.createTemplateAsync(template, store);
+		    future.get();
 			/*imageProviderMgr.configure("image Provider", new HashMap<String, Object>());
 			ImageDataVO image = createImageData();
 			ImageDataStoreProvider defaultProvider = imageProviderMgr.getProvider("DefaultProvider");
@@ -225,15 +244,17 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 			return te;*/
 		    return null;
 		} catch (Exception e) {
-			return null;
+		    Assert.fail("failed", e);
+		    return null;
 		}
 	}
 
+	@Test
 	public void createTemplateTest() {
 		createTemplate();
 	}
 	
-	@Test
+	//@Test
 	public void testCreatePrimaryStorage() {
 	    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
         Map<String, String> params = new HashMap<String, String>();
@@ -261,6 +282,25 @@ public class volumeServiceTest extends CloudStackTestNGBase {
         ClusterScope scope = new ClusterScope(clusterId, podId, dcId);
         lifeCycle.attachCluster(store, scope);
 	}
+	
+	private DataStore createImageStore() {
+	    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("default image data store");
+        Map<String, String> params = new HashMap<String, String>();
+        String name = UUID.randomUUID().toString();
+        params.put("name", name);
+        params.put("uuid", name);
+        params.put("protocol", "http");
+        params.put("scope", ScopeType.GLOBAL.toString());
+        params.put("provider", Long.toString(provider.getId()));
+        DataStoreLifeCycle lifeCycle = provider.getLifeCycle();
+        DataStore store = lifeCycle.initialize(params);
+        return store;
+	}
+	@Test
+	public void testcreateImageStore() {
+	    createImageStore();
+	}
+	
 
 	@Test
 	public PrimaryDataStoreInfo createPrimaryDataStore() {

@@ -165,7 +165,11 @@ public class DefaultEndPointSelector implements EndPointSelector {
         DataStore store = object.getDataStore();
         if (store.getRole() == DataStoreRole.Primary) {
             return findEndpointForPrimaryStorage(store);
-        } else {
+        } else if (store.getRole() == DataStoreRole.Image) {
+            //in case there is no ssvm, directly send down command hypervisor host
+            //TODO: add code to handle in case ssvm is there
+            return findEndpointForPrimaryStorage(store);
+        }else {
             throw new CloudRuntimeException("not implemented yet");
         }
         

@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
 import org.springframework.stereotype.Component;
@@ -33,10 +34,16 @@ public class ImageDataStoreHelper {
     @Inject
     ImageDataStoreDao imageStoreDao;
     public ImageDataStoreVO createImageDataStore(Map<String, String> params) {
-        ImageDataStoreVO store = new ImageDataStoreVO();
+        ImageDataStoreVO store = imageStoreDao.findByUuid(params.get("uuid"));
+        if (store != null) {
+            throw new CloudRuntimeException("duplicate uuid");
+        }
+        store = new ImageDataStoreVO();
         store.setName(params.get("name"));
         store.setProtocol(params.get("protocol"));
         store.setProvider(Long.parseLong(params.get("provider")));
+        store.setScope(Enum.valueOf(ScopeType.class, params.get("scope")));
+        store.setUuid(params.get("uuid"));
         store = imageStoreDao.persist(store);
         return store;
     }

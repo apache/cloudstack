@@ -20,9 +20,13 @@ package org.apache.cloudstack.storage.image.db;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 
 @Entity
 @Table(name = "image_data_store")
@@ -35,6 +39,9 @@ public class ImageDataStoreVO {
     @Column(name = "name", nullable = false)
     private String name;
     
+    @Column(name = "uuid", nullable = false)
+    private String uuid;
+    
     @Column(name = "protocol", nullable = false)
     private String protocol;
 
@@ -43,6 +50,11 @@ public class ImageDataStoreVO {
     
     @Column(name = "data_center_id")
     private long dcId;
+    
+    @Column(name = "scope")
+    @Enumerated(value = EnumType.STRING)
+    private ScopeType scope;
+    
     
     public long getId() {
         return this.id;
@@ -78,5 +90,21 @@ public class ImageDataStoreVO {
     
     public long getDcId() {
         return this.dcId;
+    }
+    
+    public ScopeType getScope() {
+        return this.scope;
+    }
+    
+    public void setScope(ScopeType scope) {
+        this.scope = scope;
+    }
+    
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+    
+    public String getUuid() {
+        return this.uuid;
     }
 }

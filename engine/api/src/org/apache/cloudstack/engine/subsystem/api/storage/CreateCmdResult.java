@@ -20,12 +20,18 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 public class CreateCmdResult extends CommandResult {
     private String path;
-    public CreateCmdResult(String path) {
+    private Long size;
+    public CreateCmdResult(String path, Long size) {
         super();
         this.path = path;
+        this.size = size;
     }
     
     public String getPath() {
         return this.path;
+    }
+    
+    public Long getSize() {
+        return this.size;
     }
 }

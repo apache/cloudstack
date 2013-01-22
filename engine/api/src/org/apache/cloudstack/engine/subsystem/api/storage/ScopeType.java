@@ -21,5 +21,7 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 public enum ScopeType {
     HOST,
     CLUSTER,
-    ZONE;
+    ZONE,
+    REGION,
+    GLOBAL;
 }

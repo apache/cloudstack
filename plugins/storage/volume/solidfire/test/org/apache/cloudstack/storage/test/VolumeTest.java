@@ -26,7 +26,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
-import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.provider.PrimaryDataStoreProvider;
@@ -112,7 +112,7 @@ public class VolumeTest {
 		results.add(host);
 		Mockito.when(hostDao.listAll()).thenReturn(results);
 		Mockito.when(hostDao.findHypervisorHostInCluster(Mockito.anyLong())).thenReturn(results);
-		CreateVolumeAnswer createVolumeFromImageAnswer = new CreateVolumeAnswer(null,UUID.randomUUID().toString());
+		CreateObjectAnswer createVolumeFromImageAnswer = new CreateObjectAnswer(null,UUID.randomUUID().toString());
 
 		try {
 			Mockito.when(agentMgr.send(Mockito.anyLong(), Mockito.any(CreateVolumeFromBaseImageCommand.class))).thenReturn(createVolumeFromImageAnswer);

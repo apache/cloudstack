@@ -36,7 +36,7 @@ import org.apache.cloudstack.storage.command.CopyCmd;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
-import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
@@ -130,7 +130,12 @@ public class XenServerStorageResource {
         return params;
     }
     
-    protected CreateVolumeAnswer execute(CreateObjectCommand cmd) {
+    protected CreateObjectAnswer getTemplateSize(CreateObjectCommand cmd, String templateUrl) {
+        Connection conn = hypervisorResource.getConnection();
+        long size = this.getTemplateSize(conn, templateUrl);
+        return new CreateObjectAnswer(cmd, templateUrl, size);
+    }
+    protected CreateObjectAnswer execute(CreateObjectCommand cmd) {
         String uriString = cmd.getObjectUri();
         Map<String, String> params = null;
         
@@ -139,7 +144,11 @@ public class XenServerStorageResource {
             params = getParameters(uri);
         } catch (URISyntaxException e1) {
             s_logger.debug("uri exception", e1);
-            return new CreateVolumeAnswer(cmd, false, e1.toString()); 
+            return new CreateObjectAnswer(cmd, false, e1.toString()); 
+        }
+        
+        if (params.get("objType").equalsIgnoreCase("template")) {
+            return getTemplateSize(cmd, params.get("path"));
         }
         
         long size = Long.parseLong(params.get("size"));
@@ -154,7 +163,7 @@ public class XenServerStorageResource {
             vdi = createVdi(conn, name, primaryDataStoreSR, size);
             VDI.Record record = vdi.getRecord(conn);
             result = true;
-            return new CreateVolumeAnswer(cmd, record.uuid);
+            return new CreateObjectAnswer(cmd, record.uuid, record.virtualSize);
         } catch (BadServerResponse e) {
             s_logger.debug("Failed to create volume", e);
             errorMsg = e.toString();
@@ -174,7 +183,7 @@ public class XenServerStorageResource {
             }
         }
         
-        return new CreateVolumeAnswer(cmd, false, errorMsg);
+        return new CreateObjectAnswer(cmd, false, errorMsg);
     }
     
     protected Answer execute(DeleteVolumeCommand cmd) {
@@ -208,7 +217,7 @@ public class XenServerStorageResource {
             VDI baseVdi = VDI.getByUuid(conn, baseImage.getPathOnPrimaryDataStore());
             VDI newVol = baseVdi.createClone(conn, new HashMap<String, String>());
             newVol.setNameLabel(conn, volume.getName());
-            return new CreateVolumeAnswer(cmd, newVol.getUuid(conn));
+            return new CreateObjectAnswer(cmd, newVol.getUuid(conn), newVol.getVirtualSize(conn));
         } catch (BadServerResponse e) {
             return new Answer(cmd, false, e.toString());
         } catch (XenAPIException e) {
@@ -579,7 +588,7 @@ public class XenServerStorageResource {
                 params = getParameters(uri);
             } catch (URISyntaxException e1) {
                 s_logger.debug("uri exception", e1);
-                return new CreateVolumeAnswer(cmd, false, e1.toString()); 
+                return new CreateObjectAnswer(cmd, false, e1.toString()); 
             }
             SR sr = hypervisorResource.getStorageRepository(conn, params.get("storeUuid"));
             hypervisorResource.setupHeartbeatSr(conn, sr, false);

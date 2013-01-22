@@ -40,11 +40,17 @@ public class ImageDataFactoryImpl implements ImageDataFactory {
     DataStoreManager storeMgr;
     @Override
     public TemplateInfo getTemplate(long templateId, DataStore store) {
+        ImageDataVO templ = imageDataDao.findById(templateId);
+        if (store == null) {
+            TemplateObject tmpl =  TemplateObject.getTemplate(templ, null);
+            return tmpl;
+        }
         ObjectInDataStoreVO obj = objMap.findObject(templateId, DataObjectType.TEMPLATE, store.getId(), store.getRole());
         if (obj == null) {
-            return null;
+            TemplateObject tmpl =  TemplateObject.getTemplate(templ, null);
+            return tmpl;
         }
-        ImageDataVO templ = imageDataDao.findById(templateId);
+        
         TemplateObject tmpl =  TemplateObject.getTemplate(templ, store);
         return tmpl;
     }

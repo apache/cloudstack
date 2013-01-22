@@ -51,7 +51,7 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Enumerated(EnumType.STRING)
     private DataStoreRole dataStoreRole;
 
-    @Column(name = "ojbect_id")
+    @Column(name = "object_id")
     long objectId;
     
     @Column(name = "object_type")
@@ -85,7 +85,7 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     String installPath;
 
     @Column(name = "size")
-    long size;
+    Long size;
     
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
@@ -93,6 +93,10 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     @Column(name="update_count", updatable = true, nullable=false)
     protected long updatedCount;
+    
+    @Column(name = "updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    Date updated;
     
     public ObjectInDataStoreVO() {
         this.state = ObjectInDataStoreStateMachine.State.Allocated;
@@ -145,5 +149,33 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     
     public String getInstallPath() {
         return this.installPath;
+    }
+    
+    public void setSize(Long size) {
+        this.size = size;
+    }
+    
+    public Long getSize() {
+        return this.size;
+    }
+    
+    public long getUpdatedCount() {
+        return this.updatedCount;
+    }
+    
+    public void incrUpdatedCount() {
+        this.updatedCount++;
+    }
+
+    public void decrUpdatedCount() {
+        this.updatedCount--;
+    }
+    
+    public Date getUpdated() {
+        return updated;
+    }
+    
+    public void setUpdated(Date updated) {
+        this.updated = updated;
     }
 }

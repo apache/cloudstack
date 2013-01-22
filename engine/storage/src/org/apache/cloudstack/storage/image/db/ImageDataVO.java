@@ -80,7 +80,7 @@ public class ImageDataVO implements Identity, StateObject<TemplateState> {
 
     @Temporal(value = TemporalType.TIMESTAMP)
     @Column(name = GenericDao.CREATED_COLUMN)
-    private final Date created = null;
+    private Date created = null;
 
     @Column(name = GenericDao.REMOVED)
     @Temporal(TemporalType.TIMESTAMP)
@@ -155,6 +155,7 @@ public class ImageDataVO implements Identity, StateObject<TemplateState> {
     public ImageDataVO() {
         this.uuid = UUID.randomUUID().toString();
         this.state = TemplateState.Allocated;
+        this.created = new Date();
     }
 
     public boolean getEnablePassword() {

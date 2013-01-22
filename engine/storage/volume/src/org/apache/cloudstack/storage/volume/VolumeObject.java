@@ -78,7 +78,7 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
-    public long getSize() {
+    public Long getSize() {
         return volumeVO.getSize();
     }
 

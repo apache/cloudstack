@@ -74,9 +74,9 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     @Override
-    public long getSize() {
+    public Long getSize() {
         // TODO Auto-generated method stub
-        return 0;
+        return 0L;
     }
 
     @Override

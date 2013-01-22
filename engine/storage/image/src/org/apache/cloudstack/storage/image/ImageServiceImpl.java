@@ -78,6 +78,7 @@ public class ImageServiceImpl implements ImageService {
         TemplateInfo templateOnStore = null;
         if (obj == null) {
             templateOnStore = objectInDataStoreMgr.create(template, store);
+            obj = objectInDataStoreMgr.findObject(template.getId(), template.getType(), store.getId(), store.getRole());
         } else {
             CommandResult result = new CommandResult();
             result.setResult("duplicate template on the storage");
@@ -127,6 +128,10 @@ public class ImageServiceImpl implements ImageService {
         
         ObjectInDataStoreVO obj = context.obj;
         obj.setInstallPath(callbackResult.getPath());
+        
+        if (callbackResult.getSize() != null) {
+            obj.setSize(callbackResult.getSize());
+        }
         
         try {
             objectInDataStoreMgr.update(templateOnStore, Event.OperationSuccessed);

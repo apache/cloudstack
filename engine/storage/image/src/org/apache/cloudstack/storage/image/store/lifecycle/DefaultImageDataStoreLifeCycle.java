@@ -23,20 +23,26 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.image.datastore.ImageDataStoreHelper;
+import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
+import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
 
 public class DefaultImageDataStoreLifeCycle implements ImageDataStoreLifeCycle {
     @Inject
 	protected ImageDataStoreDao imageStoreDao;
-	
+	@Inject
+	ImageDataStoreHelper imageStoreHelper;
+	@Inject
+	ImageDataStoreManager imageStoreMgr;
 	public DefaultImageDataStoreLifeCycle() {
 	}
 
 
     @Override
     public DataStore initialize(Map<String, String> dsInfos) {
-        // TODO Auto-generated method stub
-        return null;
+        ImageDataStoreVO ids = imageStoreHelper.createImageDataStore(dsInfos);
+        return imageStoreMgr.getImageDataStore(ids.getId());
     }
 
 

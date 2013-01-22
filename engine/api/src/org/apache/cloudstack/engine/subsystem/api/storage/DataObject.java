@@ -24,7 +24,7 @@ public interface DataObject {
     public long getId();
     public String getUri();
     public DataStore getDataStore();
-    public long getSize();
+    public Long getSize();
     public DataObjectType getType();
     public DiskFormat getFormat();
     public String getUuid();

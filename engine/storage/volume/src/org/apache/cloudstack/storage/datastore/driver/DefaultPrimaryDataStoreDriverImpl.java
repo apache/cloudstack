@@ -30,7 +30,7 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
-import org.apache.cloudstack.storage.command.CreateVolumeAnswer;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.endpoint.EndPointSelector;
 import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
@@ -70,11 +70,11 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     
     public Void createAsyncCallback(AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> callback, CreateVolumeContext<CreateCmdResult> context) {
         CreateCmdResult result = null;
-        CreateVolumeAnswer volAnswer = (CreateVolumeAnswer) callback.getResult();
+        CreateObjectAnswer volAnswer = (CreateObjectAnswer) callback.getResult();
         if (volAnswer.getResult()) {
-            result = new CreateCmdResult(volAnswer.getVolumeUuid());
+            result = new CreateCmdResult(volAnswer.getPath(), volAnswer.getSize());
         } else {
-            result = new CreateCmdResult("");
+            result = new CreateCmdResult("", null);
             result.setResult(volAnswer.getDetails());
         }
         

@@ -21,23 +21,28 @@ package org.apache.cloudstack.storage.command;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
-public class CreateVolumeAnswer extends Answer {
-    private String volumeUuid;
-
-    protected CreateVolumeAnswer() {
+public class CreateObjectAnswer extends Answer {
+    private String path;
+    private Long size;
+    protected CreateObjectAnswer() {
         super();
     }
 
-    public CreateVolumeAnswer(Command cmd, String volumeUuid) {
+    public CreateObjectAnswer(Command cmd, String path, Long size) {
         super(cmd);
-        this.volumeUuid = volumeUuid;
+        this.path = path;
+        this.size = size;
     }
     
-    public CreateVolumeAnswer(Command cmd, boolean status, String result) {
+    public CreateObjectAnswer(Command cmd, boolean status, String result) {
         super(cmd, status, result);
     }
 
-    public String getVolumeUuid() {
-        return this.volumeUuid;
+    public String getPath() {
+        return this.path;
+    }
+    
+    public Long getSize() {
+        return this.size;
     }
 }

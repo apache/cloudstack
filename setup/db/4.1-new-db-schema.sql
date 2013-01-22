@@ -16,6 +16,8 @@
 -- under the License.
 
 alter table vm_template add image_data_store_id bigint unsigned;
+alter table vm_template add size bigint unsigned;
+alter table vm_template add state varchar(255);
 alter table storage_pool add storage_provider_id bigint unsigned; 
 alter table storage_pool add scope varchar(255); 
 alter table storage_pool modify id bigint unsigned AUTO_INCREMENT UNIQUE NOT NULL;
@@ -48,6 +50,26 @@ alter table cluster add column owner varchar(255);
 alter table cluster add column created datetime COMMENT 'date created';
 alter table cluster add column lastUpdated datetime COMMENT 'last updated';
 alter table cluster add column engine_state varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'the engine state of the zone';
+CREATE TABLE  `cloud`.`object_datastore_ref` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `datastore_id` bigint unsigned NOT NULL,
+  `datastore_role` varchar(255) NOT NULL,
+  `object_id` bigint unsigned NOT NULL,
+  `object_type` varchar(255) NOT NULL,
+  `created` DATETIME NOT NULL,
+  `last_updated` DATETIME,
+  `job_id` varchar(255),
+  `download_pct` int(10) unsigned,
+  `download_state` varchar(255),
+  `error_str` varchar(255),
+  `local_path` varchar(255),
+  `install_path` varchar(255),
+  `size` bigint unsigned COMMENT 'the size of the template on the pool',
+  `state` varchar(255) NOT NULL,
+  `update_count` bigint unsigned NOT NULL,
+  `updated` DATETIME NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`data_store_provider` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -56,18 +78,16 @@ CREATE TABLE `cloud`.`data_store_provider` (
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`image_data_store_provider` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `name` varchar(255) NOT NULL COMMENT 'name of data store provider',
-  PRIMARY KEY(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE `cloud`.`image_data_store` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) NOT NULL COMMENT 'name of data store',
   `image_provider_id` bigint unsigned NOT NULL COMMENT 'id of image_data_store_provider',
+  `protocol` varchar(255) NOT NULL COMMENT 'protocol of data store',
+  `data_center_id` bigint unsigned  COMMENT 'datacenter id of data store',
+  `scope` varchar(255) COMMENT 'scope of data store',
+  `uuid` varchar(255) COMMENT 'uuid of data store',
   PRIMARY KEY(`id`),
-  CONSTRAINT `fk_tags__image_data_store_provider_id` FOREIGN KEY(`image_provider_id`) REFERENCES `image_data_store_provider`(`id`)
+  CONSTRAINT `fk_tags__image_data_store_provider_id` FOREIGN KEY(`image_provider_id`) REFERENCES `data_store_provider`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`vm_compute_tags` (
