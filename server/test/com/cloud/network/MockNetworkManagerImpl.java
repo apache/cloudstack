@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementors
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan.VlanType;
@@ -68,6 +69,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 
+@Component
 @Local(value = { NetworkManager.class, NetworkService.class })
 public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkService {
 
@@ -167,7 +169,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return false;
     }
 
-   
+
 
     @Override
     public List<NetworkVO> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
@@ -183,7 +185,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-   
+
 
     @Override
     public void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) throws InsufficientCapacityException, ConcurrentOperationException {
@@ -216,17 +218,17 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     }
 
-    
+
     @Override
     public List<NicProfile> getNicProfiles(VirtualMachine vm) {
         // TODO Auto-generated method stub
         return null;
     }
 
-   
-   
 
-   
+
+
+
     @Override
     public Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
     InsufficientCapacityException {
@@ -261,9 +263,9 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return false;
     }
 
-   
 
-   
+
+
 
     @Override
     public boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException {
@@ -271,7 +273,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return false;
     }
 
-   
+
 
     @Override
     public boolean startNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
@@ -279,7 +281,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return false;
     }
 
-   
+
     @Override
     public IPAddressVO markIpAsUnavailable(long addrId) {
         // TODO Auto-generated method stub
@@ -292,22 +294,22 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-   
+
     @Override
     public boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
 
-  
+
 
     public Map<Service, Set<Provider>> getNetworkOfferingServiceProvidersMap(long networkOfferingId) {
         return null;
     }
 
-   
 
-   
+
+
 
     @Override
     public PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRange, Long domainId, List<String> tags, String name) {
@@ -412,16 +414,16 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-   
+
     @Override
     public Network getExclusiveGuestNetwork(long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }
 
-   
 
-   
+
+
 
     @Override
     public UserDataServiceProvider getPasswordResetProvider(Network network) {
@@ -429,7 +431,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-   
+
     @Override
     public PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, List<String> enabledServices) {
         // TODO Auto-generated method stub
@@ -442,7 +444,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
- 
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#applyRules(java.util.List, com.cloud.network.rules.FirewallRule.Purpose, com.cloud.network.NetworkRuleApplier, boolean)
      */
@@ -499,7 +501,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
             NetworkVO network, NetworkOfferingVO findById) throws ConcurrentOperationException,
             InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -555,7 +557,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      */
     @Override
     public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup) throws ConcurrentOperationException,
-            ResourceUnavailableException, InsufficientCapacityException {
+    ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -593,7 +595,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      */
     @Override
     public IpAddress associateIPToNetwork(long ipId, long networkId) throws InsufficientAddressCapacityException,
-            ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException {
+    ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -604,7 +606,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     @Override
     public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan,
             String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId)
-            throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
+                    throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -665,7 +667,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
             Network network, String requestedIp) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -684,8 +686,8 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     @Override
     public Pair<NicProfile, Integer> allocateNic(NicProfile requested, Network network, Boolean isDefaultNic,
             int deviceId, VirtualMachineProfile<? extends VMInstanceVO> vm)
-            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
-            ConcurrentOperationException {
+                    throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
+                    ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -696,8 +698,8 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     @Override
     public NicProfile prepareNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest,
             ReservationContext context, long nicId, NetworkVO network)
-            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
-            ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+                    throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
+                    ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -708,7 +710,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     @Override
     public void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Nic nic) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -727,7 +729,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, Nic nic)
             throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -736,8 +738,8 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     @Override
     public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context,
             VirtualMachineProfileImpl<VMInstanceVO> vmProfile, boolean prepare)
-            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
-            ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+                    throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
+                    ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -758,7 +760,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     @Override
     public void markPublicIpAsAllocated(IPAddressVO addr) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -816,7 +818,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      */
     @Override
     public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws ResourceAllocationException,
-            InsufficientAddressCapacityException, ConcurrentOperationException {
+    InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }

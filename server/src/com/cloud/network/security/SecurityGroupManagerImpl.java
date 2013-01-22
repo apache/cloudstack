@@ -37,10 +37,14 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.command.user.securitygroup.*;
+import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupEgressCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupIngressCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.CreateSecurityGroupCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.DeleteSecurityGroupCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupIngressCmd;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
@@ -49,8 +53,7 @@ import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
-
-import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;
+import com.cloud.cluster.ManagementServerNode;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.dao.DomainDao;
@@ -75,9 +78,7 @@ import com.cloud.network.security.dao.SecurityGroupRulesDao;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.dao.SecurityGroupWorkDao;
 import com.cloud.network.security.dao.VmRulesetLogDao;
-import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
-import com.cloud.server.ManagementServer;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -87,17 +88,12 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
-
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.net.NetUtils;
@@ -163,10 +159,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     UsageEventDao _usageEventDao;
     @Inject
     ResourceTagDao _resourceTagDao;
-    
-    @Inject
-    ManagementServer _msServer;
-    
+
     ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
 
@@ -463,7 +456,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(vm.getId());
         // For each group, find the security rules that allow the group
         for (SecurityGroupVMMapVO mapVO : groupsForVm) {// FIXME: use custom sql in the dao
-        	//Add usage events for security group assign
+            //Add usage events for security group assign
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SECURITY_GROUP_ASSIGN, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), mapVO.getSecurityGroupId());
             _usageEventDao.persist(usageEvent);
 
@@ -479,7 +472,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(vm.getId());
         // For each group, find the security rules rules that allow the group
         for (SecurityGroupVMMapVO mapVO : groupsForVm) {// FIXME: use custom sql in the dao
-        	//Add usage events for security group remove
+            //Add usage events for security group remove
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SECURITY_GROUP_REMOVE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), mapVO.getSecurityGroupId());
             _usageEventDao.persist(usageEvent);
 
@@ -583,11 +576,11 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Map groupList = cmd.getUserSecurityGroupList();
         return authorizeSecurityGroupRule(securityGroupId,protocol,startPort,endPort,icmpType,icmpCode,cidrList,groupList,SecurityRuleType.IngressRule);
     }
-    
+
     private List<SecurityGroupRuleVO> authorizeSecurityGroupRule(Long securityGroupId,String protocol,Integer startPort,Integer endPort,Integer icmpType,Integer icmpCode,List<String>  cidrList,Map groupList,SecurityRuleType ruleType) {
         Integer startPortOrType = null;
         Integer endPortOrCode = null;
-        
+
         // Validate parameters
         SecurityGroup securityGroup = _securityGroupDao.findById(securityGroupId);
         if (securityGroup == null) {
@@ -755,7 +748,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             }
         }
     }
-    
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_REVOKE_EGRESS, eventDescription = "Revoking Egress Rule ", async = true)
@@ -763,7 +756,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Long id = cmd.getId();
         return revokeSecurityGroupRule(id, SecurityRuleType.EgressRule);
     }
-    
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_REVOKE_INGRESS, eventDescription = "Revoking Ingress Rule ", async = true)
@@ -772,11 +765,11 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Long id = cmd.getId();
         return revokeSecurityGroupRule(id, SecurityRuleType.IngressRule);
     }
-    
+
     private boolean revokeSecurityGroupRule(Long id, SecurityRuleType type) {
         // input validation
         Account caller = UserContext.current().getCaller();
-        
+
         SecurityGroupRuleVO rule = _securityGroupRuleDao.findById(id);
         if (rule == null) {
             s_logger.debug("Unable to find security rule with id " + id);
@@ -788,7 +781,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             s_logger.debug("Mismatch in rule type for security rule with id " + id );
             throw new InvalidParameterValueException("Mismatch in rule type for security rule with id " + id);
         }
-        	
+
         // Check permissions
         SecurityGroup securityGroup = _securityGroupDao.findById(rule.getSecurityGroupId());
         _accountMgr.checkAccess(caller, null, true, securityGroup);
@@ -866,15 +859,15 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         _answerListener = new SecurityGroupListener(this, _agentMgr, _workDao);
         _agentMgr.registerForHostEvents(_answerListener, true, true, true);
 
-        _serverId = _msServer.getId();
+        _serverId = ManagementServerNode.getManagementServerId();
 
         s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads + 
-                       ", time between cleanups=" + _timeBetweenCleanups + " global lock timeout=" + _globalWorkLockTimeout);
+                ", time between cleanups=" + _timeBetweenCleanups + " global lock timeout=" + _globalWorkLockTimeout);
         createThreadPools();
 
         return true;
     }
-    
+
     protected void createThreadPools() {
         _executorPool = Executors.newScheduledThreadPool(_numWorkerThreads, new NamedThreadFactory("NWGRP"));
         _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NWGRP-Cleanup"));
@@ -971,7 +964,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                         s_logger.debug("Unable to send ingress rules updates for vm: " + userVmId + "(agentid=" + agentId + ")");
                         _workDao.updateStep(work.getInstanceId(), seqnum, Step.Done);
                     }
-                    
+
                 }
             }
         } finally {
@@ -1034,10 +1027,10 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     @Override
     @DB
     public void removeInstanceFromGroups(long userVmId) {
-    	if (_securityGroupVMMapDao.countSGForVm(userVmId) < 1) {
-    		s_logger.trace("No security groups found for vm id=" + userVmId + ", returning");
-    		return;
-    	}
+        if (_securityGroupVMMapDao.countSGForVm(userVmId) < 1) {
+            s_logger.trace("No security groups found for vm id=" + userVmId + ", returning");
+            return;
+        }
         final Transaction txn = Transaction.currentTxn();
         txn.start();
         UserVm userVm = _userVMDao.acquireInLockTable(userVmId); // ensures that duplicate entries are not created in
@@ -1104,7 +1097,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         if (count.intValue() == 0) {
             // handle empty result cases
             return new Pair<List<SecurityGroupJoinVO>, Integer>(new ArrayList<SecurityGroupJoinVO>(), count);
-            }
+        }
         List<SecurityGroupVMMapVO> sgVmMappings = sgVmMappingPair.first();
         Long[] sgIds = new Long[sgVmMappings.size()];
         int i = 0;

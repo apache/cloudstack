@@ -23,6 +23,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
@@ -51,6 +53,7 @@ import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
+@Component
 @Local(value = VirtualMachineManager.class)
 public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
 
@@ -212,18 +215,18 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
         return null;
     }
 
-	@Override
-	public <T extends VMInstanceVO> T storageMigration(T vm,
-			StoragePool storagePoolId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public <T extends VMInstanceVO> T storageMigration(T vm,
+            StoragePool storagePoolId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public VMInstanceVO findById(long vmId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public VMInstanceVO findById(long vmId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
     /* (non-Javadoc)
      * @see com.cloud.vm.VirtualMachineManager#checkIfCanUpgrade(com.cloud.vm.VirtualMachine, long)
@@ -231,7 +234,7 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
     @Override
     public void checkIfCanUpgrade(VirtualMachine vmInstance, long newServiceOfferingId) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)

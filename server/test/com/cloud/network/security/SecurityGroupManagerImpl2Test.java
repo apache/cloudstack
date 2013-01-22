@@ -25,22 +25,18 @@ import javax.naming.ConfigurationException;
 import junit.framework.TestCase;
 
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.utils.Profiler;
-import com.cloud.vm.dao.UserVmDaoImpl;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "classpath:/testContext.xml")
+@ContextConfiguration(locations = "classpath:/SecurityGroupManagerTestContext.xml")
 public class SecurityGroupManagerImpl2Test extends TestCase {
     @Inject
     SecurityGroupManagerImpl2 _sgMgr = null;
-    @Inject
-    UserVmDaoImpl _vmDao = null;
 
     @Override
     @After
@@ -62,7 +58,7 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
                 + " ms");
     }
 
-    @Ignore
+    @Test
     public void testSchedule() throws ConfigurationException {
         _schedule(1000);
     }
@@ -71,6 +67,5 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
     public void testWork() throws ConfigurationException {
         _schedule(1000);
         _sgMgr.work();
-
     }
 }
