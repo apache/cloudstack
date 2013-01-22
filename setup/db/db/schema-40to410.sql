@@ -194,16 +194,11 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         vm_template.name template_name,
         vm_template.display_text template_display_text,
         vm_template.enable_password password_enabled,
---        iso.id iso_id,
---        iso.uuid iso_uuid,
---        iso.name iso_name,
---        iso.display_text iso_display_text,
--- FIXME workaround
-        NULL iso_id,
-		NULL iso_uuid,
-        NULL iso_name,
-		NULL iso_display_text,        service_offering.id service_offering_id,
--- end of workaround
+        iso.id iso_id,
+        iso.uuid iso_uuid,
+        iso.name iso_name,
+        iso.display_text iso_display_text,
+        service_offering.id service_offering_id,
         disk_offering.uuid service_offering_uuid,
         service_offering.cpu cpu,
         service_offering.speed speed,
@@ -278,8 +273,8 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         `cloud`.`host` ON vm_instance.host_id = host.id
             left join
         `cloud`.`vm_template` ON vm_instance.vm_template_id = vm_template.id
---            left join
---        `cloud`.`vm_template iso` ON iso.id = user_vm.iso_id
+            left join
+        `cloud`.`vm_template` iso ON iso.id = user_vm.iso_id
             left join
         `cloud`.`service_offering` ON vm_instance.service_offering_id = service_offering.id
             left join
