@@ -361,11 +361,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         if (getStartVm()) {
             try {
                 UserContext.current().setEventDetails("Vm Id: "+getEntityId());
-                if (getHypervisor() == HypervisorType.BareMetal) {
-                    result = _bareMetalVmService.startVirtualMachine(this);
-                } else {
-                    result = _userVmService.startVirtualMachine(this);
-                }
+                result = _userVmService.startVirtualMachine(this);
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Exception: ", ex);
                 throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
@@ -430,27 +426,23 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             }
 
             UserVm vm = null;
-            if (getHypervisor() == HypervisorType.BareMetal) {
-                vm = _bareMetalVmService.createVirtualMachine(this);
-            } else {
-                if (zone.getNetworkType() == NetworkType.Basic) {
-                    if (getNetworkIds() != null) {
-                        throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
-                    } else {
-                        vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
-                                displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
-                    }
+            if (zone.getNetworkType() == NetworkType.Basic) {
+                if (getNetworkIds() != null) {
+                    throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
                 } else {
-                    if (zone.isSecurityGroupEnabled())  {
-                        vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
-                                owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
-                    } else {
-                        if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
-                            throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
-                        }
-                        vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
-                                diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
+                    vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
+                            displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
+                }
+            } else {
+                if (zone.isSecurityGroupEnabled())  {
+                    vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
+                            owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
+                } else {
+                    if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
+                        throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
                     }
+                    vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
+                            diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
                 }
             }
 

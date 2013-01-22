@@ -239,33 +239,23 @@ import com.cloud.user.UserContext;
 
     @Override
     public void create() throws ResourceAllocationException {
-        if (isBareMetal()) {
-            _bareMetalVmService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
-            /*Baremetal creates template record after taking image proceeded, use vmId as entity id and uuid here*/
-            this.setEntityId(vmId);
-            this.setEntityUuid(vmId.toString());
+        VirtualMachineTemplate template = null;
+        template = _userVmService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
+        if (template != null) {
+            this.setEntityId(template.getId());
+            this.setEntityUuid(template.getUuid());
         } else {
-            VirtualMachineTemplate template = null;
-            template = _userVmService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
-            if (template != null) {
-                this.setEntityId(template.getId());
-                this.setEntityUuid(template.getUuid());
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
-                "Failed to create a template");
-            }
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
+            "Failed to create a template");
         }
+
     }
 
     @Override
     public void execute() {
         UserContext.current().setEventDetails("Template Id: "+getEntityId()+((getSnapshotId() == null) ? " from volume Id: " + getVolumeId() : " from snapshot Id: " + getSnapshotId()));
         VirtualMachineTemplate template = null;
-        if (isBareMetal()) {
-            template = _bareMetalVmService.createPrivateTemplate(this);
-        } else {
-            template = _userVmService.createPrivateTemplate(this);
-        }
+        template = _userVmService.createPrivateTemplate(this);
 
         if (template != null){
             List<TemplateResponse> templateResponses;

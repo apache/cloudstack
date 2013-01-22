@@ -111,7 +111,6 @@ public abstract class BaseCmd {
     @Inject public AutoScaleService _autoScaleService;
     @Inject public LoadBalancingRulesService _lbService;
     @Inject public RemoteAccessVpnService _ravService;
-    @Inject public BareMetalVmService _bareMetalVmService;
     @Inject public ProjectService _projectService;
     @Inject public FirewallService _firewallService;
     @Inject public DomainService _domainService;

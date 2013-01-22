@@ -24,6 +24,13 @@ alter table template_spool_ref add update_count bigint unsigned;
 alter table volumes add disk_type varchar(255);
 alter table volumes drop foreign key `fk_volumes__account_id`;
 alter table vm_instance add column disk_offering_id bigint unsigned;
+alter table vm_instance add column cpu int(10) unsigned;
+alter table vm_instance add column ram bigint unsigned;
+alter table vm_instance add column owner varchar(255);
+alter table vm_instance add column speed int(10) unsigned;
+alter table vm_instance add column host_name varchar(255);
+alter table vm_instance add column display_name varchar(255);
+
 alter table data_center add column owner varchar(255);
 alter table data_center add column created datetime COMMENT 'date created';
 alter table data_center add column lastUpdated datetime COMMENT 'last updated';
@@ -90,7 +97,7 @@ CREATE TABLE `cloud`.`vm_reservation` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40) NOT NULL COMMENT 'reservation id',
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
-  `datacenter_id` bigint unsigned NOT NULL COMMENT 'zone id',
+  `data_center_id` bigint unsigned NOT NULL COMMENT 'zone id',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',
   `cluster_id` bigint unsigned NOT NULL COMMENT 'cluster id',
   `host_id` bigint unsigned NOT NULL COMMENT 'host id',

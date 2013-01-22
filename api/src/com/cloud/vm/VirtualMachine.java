@@ -257,7 +257,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
     /**
      * @return data center id.
      */
-    public long getDataCenterIdToDeployIn();
+    public long getDataCenterId();
 
     /**
      * @return id of the host it was assigned last time.

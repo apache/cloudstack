@@ -43,7 +43,8 @@
   <bean id="clusteredAgentManagerImpl" class="com.cloud.agent.manager.ClusteredAgentManagerImpl" />
   <bean id="clusteredVirtualMachineManagerImpl" class="com.cloud.vm.ClusteredVirtualMachineManagerImpl" />
   <bean id="highAvailabilityManagerExtImpl" class="com.cloud.ha.HighAvailabilityManagerExtImpl" />
-  <bean id="bareMetalVmManagerImpl" class="com.cloud.baremetal.BareMetalVmManagerImpl" />
+  <!-- bean id="bareMetalVmManagerImpl" class="com.cloud.baremetal.BareMetalVmManagerImpl" / -->
+  <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl" />
   <bean id="consoleProxyManagerImpl" class="com.cloud.consoleproxy.ConsoleProxyManagerImpl" />
   <bean id="securityGroupManagerImpl2" class="com.cloud.network.security.SecurityGroupManagerImpl2" />
   <bean id="premiumSecondaryStorageManagerImpl" class="com.cloud.secstorage.PremiumSecondaryStorageManagerImpl" />
