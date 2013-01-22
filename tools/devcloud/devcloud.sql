@@ -37,4 +37,4 @@ INSERT INTO `cloud`.`configuration` (instance, name, value) VALUE('DEFAULT', 'se
 UPDATE `cloud`.`configuration` SET value='10' where name = 'storage.overprovisioning.factor';
 UPDATE `cloud`.`configuration` SET value='10' where name = 'cpu.overprovisioning.factor';
 UPDATE `cloud`.`configuration` SET value='10' where name = 'mem.overprovisioning.factor';
-UPDATE `cloud`.`vm_template` SET unique_name="tiny Linux",name="tiny Linux",url="https://github.com/downloads/bhaisaab/incubator-cloudstack/ttylinux_pv.vhd",checksum="046e134e642e6d344b34648223ba4bc1",display_text="tiny Linux" where id=5;
+UPDATE `cloud`.`vm_template` SET unique_name="tiny Linux",name="tiny Linux",url="http://people.apache.org/~bhaisaab/vms/ttylinux_pv.vhd",checksum="046e134e642e6d344b34648223ba4bc1",display_text="tiny Linux" where id=5;
