@@ -58,18 +58,16 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
         if (s_apiNameDiscoveryResponseMap == null) {
             long startTime = System.nanoTime();
             s_apiNameDiscoveryResponseMap = new HashMap<String, ApiDiscoveryResponse>();
-            cacheResponseMap();
+            //TODO: Fix and use PluggableService to get the classes
+            Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
+                    new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
+            cacheResponseMap(cmdClasses);
             long endTime = System.nanoTime();
             s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
         }
     }
 
-    private void cacheResponseMap() {
-        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
-                new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
-
-        //TODO: Fix and use PluggableService to get the classes
-
+    protected void cacheResponseMap(Set<Class<?>> cmdClasses) {
         Map<String, List<String>> responseApiNameListMap = new HashMap<String, List<String>>();
 
         for (Class<?> cmdClass : cmdClasses) {
