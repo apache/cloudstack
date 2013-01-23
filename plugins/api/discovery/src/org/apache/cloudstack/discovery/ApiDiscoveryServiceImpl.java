@@ -107,7 +107,7 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
                 }
             }
 
-            Field[] fields = ReflectUtil.getAllFieldsForClass(cmdClass,
+            Set<Field> fields = ReflectUtil.getAllFieldsForClass(cmdClass,
                     new Class<?>[]{BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
 
             boolean isAsync = ReflectUtil.isCmdClassAsync(cmdClass,
