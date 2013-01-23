@@ -392,6 +392,4 @@ Listener, ResourceStateAdapter {
         _resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return super.stop();
     }
-
-
 }

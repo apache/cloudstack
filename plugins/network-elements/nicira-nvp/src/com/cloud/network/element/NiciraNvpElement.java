@@ -206,8 +206,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
         super.configure(name, params);
-        _resourceMgr.registerResourceStateAdapter(this.getClass()
-                .getSimpleName(), this);
+        _resourceMgr.registerResourceStateAdapter(name, this);
         return true;
     }
 
