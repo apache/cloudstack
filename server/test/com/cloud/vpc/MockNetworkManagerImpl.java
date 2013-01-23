@@ -1127,7 +1127,7 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
      */
     @Override
     public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context,
-            VirtualMachineProfileImpl<VMInstanceVO> vmProfile, boolean prepare)
+            VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean prepare)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         // TODO Auto-generated method stub

@@ -17,11 +17,16 @@
 package com.cloud.vm;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.*;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.api.PlugNicAnswer;
+import com.cloud.agent.api.PlugNicCommand;
+import com.cloud.agent.api.UnPlugNicAnswer;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -951,11 +956,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         
-        if (vmInstance.getState() != State.Stopped) {
-            s_logger.warn("VM is running, needs to be stopped in order to add nic");
-            throw new CloudRuntimeException(vmInstance + " currently in " + vmInstance.getState() + " state, operation can only execute when VM is Stopped");
-        }
-
         //todo: any security group related checks
         //todo: ensure network belongs in zone
         //todo: check other nics for VPC networks (can only belong to one?)
@@ -969,7 +969,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         NicProfile guestNic = null;
 
         try {
-            guestNic = _itMgr.addUserVmToNetwork(vmInstance, network, profile);
+            guestNic = _itMgr.addUserVmToNetwork(vmInstance,_vmDao.findById(vmInstance.getId()), network, profile);
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException("Unable to add NIC to " + vmInstance + ": " + e);
         } catch (InsufficientCapacityException e) {
@@ -1014,11 +1014,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         
-        if (vmInstance.getState() != State.Stopped) {
-            s_logger.warn("VM is running, needs to be stopped in order to remove nic");
-            throw new CloudRuntimeException(vmInstance + " currently in " + vmInstance.getState() + " state, operation can only execute when VM is Stopped");
-        }
-
         //todo: any security group related checks
         //todo: ensure network belongs in zone
         //todo: check other nics for VPC networks (can only belong to one?)
@@ -1064,11 +1059,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         // Perform permission check on VM
         _accountMgr.checkAccess(caller, null, true, vmInstance);
-
-        if(vmInstance.getState() != State.Stopped){
-            s_logger.warn("VM is running, needs to be stopped in order to change default nic");
-            throw new CloudRuntimeException(vmInstance + " currently in " + vmInstance.getState() + " state, operation can only execute when VM is Stopped");
-        }
 
         // no need to check permissions for network, we'll enumerate the ones they already have access to
         Network existingdefaultnet = _networkModel.getDefaultNetworkForVm(vmId);
@@ -3897,16 +3887,59 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
             ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException {
-        //not supported
-        throw new UnsupportedOperationException("Plug nic is not supported for vm of type " + vm.getType());
+        UserVmVO vmVO = _vmDao.findById(vm.getId());
+        if (vmVO.getState() == State.Running) {
+            s_logger.warn("plugNic called need to plug in the NIC!!!! vm " + vmVO);
+            try {
+                PlugNicCommand plugNicCmd = new PlugNicCommand(nic,vm.getName());
+                Commands cmds = new Commands(OnError.Stop);
+                cmds.addCommand("plugnic",plugNicCmd);
+                _agentMgr.send(dest.getHost().getId(),cmds);
+                PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
+                if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
+                    s_logger.warn("Unable to plug nic for " + vmVO);
+                    return false;
+                }
+            } catch (OperationTimedoutException e) {
+                throw new AgentUnavailableException("Unable to plug nic for " + vmVO + " in network " + network, dest.getHost().getId(), e);
+            }
+        } else if (vmVO.getState() == State.Stopped || vmVO.getState() == State.Stopping) {
+            s_logger.warn(vmVO + " is Stopped, not sending PlugNicCommand.  Currently " + vmVO.getState());
+        } else {
+            s_logger.warn("Unable to plug nic, " + vmVO + " is not in the right state " + vmVO.getState());
+            throw new ResourceUnavailableException("Unable to plug nic on the backend," +
+                    vmVO + " is not in the right state", DataCenter.class, vmVO.getDataCenterIdToDeployIn());
+        }
+        return true;
     }
 
 
     @Override
     public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
             ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
-        //not supported
-        throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
+        UserVmVO vmVO = _vmDao.findById(vm.getId());
+        if (vmVO.getState() == State.Running) {
+            try {
+                UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic,vm.getName());
+                Commands cmds = new Commands(OnError.Stop);
+                cmds.addCommand("unplugnic",unplugNicCmd);
+                _agentMgr.send(dest.getHost().getId(),cmds);
+                UnPlugNicAnswer unplugNicAnswer = cmds.getAnswer(UnPlugNicAnswer.class);
+                if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
+                    s_logger.warn("Unable to unplug nic for " + vmVO);
+                    return false;
+                }
+            } catch (OperationTimedoutException e) {
+                throw new AgentUnavailableException("Unable to unplug nic for " + vmVO + " in network " + network, dest.getHost().getId(), e);
+            }
+        } else if (vmVO.getState() == State.Stopped || vmVO.getState() == State.Stopping) {
+            s_logger.warn(vmVO + " is Stopped, not sending UnPlugNicCommand.  Currently " + vmVO.getState());
+        } else {
+            s_logger.warn("Unable to unplug nic, " + vmVO + " is not in the right state " + vmVO.getState());
+            throw new ResourceUnavailableException("Unable to unplug nic on the backend," +
+                    vmVO + " is not in the right state", DataCenter.class, vmVO.getDataCenterIdToDeployIn());
+        }
+        return true;
     }
 
     @Override

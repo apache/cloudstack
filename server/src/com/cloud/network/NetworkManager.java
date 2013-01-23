@@ -262,7 +262,7 @@ public interface NetworkManager  {
      * @throws InsufficientCapacityException
      * @throws ResourceUnavailableException
      */
-    NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfileImpl<VMInstanceVO> vmProfile, boolean prepare) throws InsufficientVirtualNetworkCapcityException,
+    NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean prepare) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
 
 
