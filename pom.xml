@@ -167,7 +167,6 @@
     <module>test</module>
     <module>engine</module>
     <module>framework</module>
-    <module>tools/devcloud</module>
   </modules>
 
   <dependencyManagement>
