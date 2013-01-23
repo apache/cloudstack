@@ -158,8 +158,7 @@ public class ApiDispatcher {
                 }
 
                 if (queueSizeLimit != null) {
-                    _asyncMgr
-                            .syncAsyncJobExecution(asyncCmd.getJob(), asyncCmd.getSyncObjType(), asyncCmd.getSyncObjId().longValue(), queueSizeLimit);
+                    _asyncMgr.syncAsyncJobExecution(asyncCmd.getJob(), asyncCmd.getSyncObjType(), asyncCmd.getSyncObjId().longValue(), queueSizeLimit);
                 } else {
                     s_logger.trace("The queue size is unlimited, skipping the synchronizing");
                 }
@@ -360,8 +359,9 @@ public class ApiDispatcher {
         // Go through each entity which is an interface to a VO class and get a VO object
         // Try to getId() for the object using reflection, break on first non-null value
         for (Class<?> entity: entities) {
-            // findByUuid returns one VO object using uuid, use reflect to get the Id
-            Object objVO = s_instance._entityMgr.findByUuid(entity, uuid);
+            // For backward compatibility, we search within removed entities and let service layer deal
+            // with removed ones, return empty response or error
+            Object objVO = s_instance._entityMgr.findByUuidIncludingRemoved(entity, uuid);
             if (objVO == null) {
                 continue;
             }
@@ -377,11 +377,10 @@ public class ApiDispatcher {
                 break;
         }
         if (internalId == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Object entity with uuid=" + uuid + " does not exist in the database.");
-            }
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Object entity uuid = " + uuid + " does not exist in the database.");
             throw new InvalidParameterValueException("Invalid parameter value=" + uuid
-                    + " due to incorrect long value, entity not found, or an annotation bug.");
+                + " due to incorrect long value format, or entity was not found as it may have been deleted, or due to incorrect parameter annotation for the field in api cmd.");
         }
         return internalId;
     }
