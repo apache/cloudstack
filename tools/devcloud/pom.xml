@@ -27,6 +27,14 @@
       <version>5.1.21</version>
       <scope>runtime</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-developer</artifactId>
+      <version>${project.version}</version>
+      <type>pom</type>
+      <optional>true</optional>
+      <scope>runtime</scope>
+    </dependency>
   </dependencies>
 
   <build>
