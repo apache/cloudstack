@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 
@@ -190,8 +191,7 @@ public class ApiDispatcher {
             }
         }
 
-        Field[] fields = ReflectUtil.getAllFieldsForClass(cmd.getClass(),
-                new Class<?>[] {BaseCmd.class});
+        List<Field> fields = ReflectUtil.getAllFieldsForClass(cmd.getClass(), BaseCmd.class);
 
         for (Field field : fields) {
             PlugService plugServiceAnnotation = field.getAnnotation(PlugService.class);
