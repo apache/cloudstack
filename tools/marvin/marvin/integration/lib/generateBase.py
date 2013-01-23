@@ -17,6 +17,7 @@
 
 import marvin
 from marvin.cloudstackAPI import *
+import os
 
 # Add verbs in grammar - same as cloudmonkey
 grammar = ['create', 'list', 'delete', 'update',
@@ -27,6 +28,9 @@ grammar = ['create', 'list', 'delete', 'update',
            'cancel', 'destroy', 'revoke', 'mark', 'reset',
            'copy', 'extract', 'migrate', 'restore', 'suspend',
            'get', 'query', 'prepare', 'deploy', 'upload', 'lock', 'disassociate']
+
+aslv2 = ""
+
 
 def get_api_cmds():
     api_classes = __import__('marvin.cloudstackAPI')
@@ -86,15 +90,19 @@ def get_actionable_entities():
 def write_entity_classes(entities):
     tabspace = '    '
     classlist = []
+    #TODO: Add license header for ASLv2
     code = ''
     for entity, actions in entities.iteritems():
         code += 'class %s:'%entity
         for action, args in actions.iteritems():
             code += '\n\n'
             code += tabspace
-            code += 'def %s(self, apiclient, %sFactory=None'%(action, entity)
+            if action.startswith('create'):
+                code += 'def %s(self, apiclient, %sFactory'%(action, entity)
+            else:
+                code += 'def %s(self, apiclient'%(action)
             if len(args[0]) > 0:
-                code += ', ' + ', '.join(args[0])
+                code += ', ' + ', '.join(list(set(args[0])))
             if len(args[1]) > 0:
                 code += ', **kwargs):\n'
             else:
@@ -103,7 +111,31 @@ def write_entity_classes(entities):
             code += 'pass'
         code += '\n\n'
         classlist.append(code)
+        write_entity_factory(entity, actions)
     return list(set(classlist))
+
+def write_entity_factory(entity, actions):
+    tabspace = '    '
+    #TODO: Add license header for ASLv2
+    code = ''
+    if 'create' not in actions:
+        return
+    factory_defaults = actions['create']
+    if os.path.exists("./factory/%sFactory.py"%entity):
+        for arg in factory_defaults[0]:
+            code += tabspace + '%s = None\n'%arg
+        with open("./factory/%sFactory.py"%entity, "a") as writer:
+            writer.write(code)
+    else:
+        code += 'import factory\n'
+        code += 'from marvin.integration.lib.newbase import %s\n'%entity
+        code += 'class %sFactory(factory.Factory):'%entity
+        code += '\n\n'
+        code += tabspace + 'FACTORY_FOR = %s\n\n'%entity
+        for arg in factory_defaults[0]:
+            code += tabspace + '%s = None\n'%arg
+        with open("./factory/%sFactory.py"%entity, "w") as writer:
+            writer.write(code)
 
 if __name__=='__main__':
     entities = get_actionable_entities()
