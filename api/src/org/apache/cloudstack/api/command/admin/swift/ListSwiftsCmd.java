@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SwiftResponse;
 import com.cloud.storage.Swift;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 @APICommand(name = "listSwifts", description = "List Swift.", responseObject = HostResponse.class, since="3.0.0")
 public class ListSwiftsCmd extends BaseListCmd {
@@ -64,20 +65,19 @@ public class ListSwiftsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends Swift> result = _resourceService.listSwifts(this);
+        Pair<List<? extends Swift>, Integer> result = _resourceService.listSwifts(this);
         ListResponse<SwiftResponse> response = new ListResponse<SwiftResponse>();
         List<SwiftResponse> swiftResponses = new ArrayList<SwiftResponse>();
 
         if (result != null) {
-            SwiftResponse swiftResponse = null;
-            for (Swift swift : result) {
-                swiftResponse = _responseGenerator.createSwiftResponse(swift);
+            for (Swift swift : result.first()) {
+                SwiftResponse swiftResponse = _responseGenerator.createSwiftResponse(swift);
                 swiftResponse.setResponseName(getCommandName());
                 swiftResponse.setObjectName("swift");
                 swiftResponses.add(swiftResponse);
             }
         }
-        response.setResponses(swiftResponses);
+        response.setResponses(swiftResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
