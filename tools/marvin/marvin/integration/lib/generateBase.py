@@ -118,9 +118,18 @@ def write_entity_factory(entity, actions):
     tabspace = '    '
     #TODO: Add license header for ASLv2
     code = ''
-    if 'create' not in actions:
+    factory_defaults = []
+    if 'create' in actions:
+        factory_defaults.extend(actions['create'])
+    elif 'deploy' in actions:
+        factory_defaults.extend(actions['deploy'])
+    elif 'associate' in actions:
+        factory_defaults.extend(actions['associate'])
+    elif 'register' in actions:
+        factory_defaults.extend(actions['register'])
+    else:
         return
-    factory_defaults = actions['create']
+
     if os.path.exists("./factory/%sFactory.py"%entity):
         for arg in factory_defaults[0]:
             code += tabspace + '%s = None\n'%arg
