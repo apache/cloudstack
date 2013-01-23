@@ -61,6 +61,7 @@ import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.ConnectionClosedException;
@@ -518,6 +519,7 @@ public class ApiServer implements HttpRequestHandler {
                     && !(cmdObj instanceof ListStoragePoolsCmd)
                     && !(cmdObj instanceof ListDiskOfferingsCmd)
                     && !(cmdObj instanceof ListServiceOfferingsCmd)
+                    && !(cmdObj instanceof ListZonesByCmd)
                     ) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }
