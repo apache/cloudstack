@@ -262,8 +262,9 @@ class CloudMonkeyShell(cmd.Cmd, object):
             return
 
         isAsync = isAsync and (self.asyncblock == "true")
-        if isAsync and 'jobid' in response[response.keys()[0]]:
-            jobId = response[response.keys()[0]]['jobid']
+        responsekey = filter(lambda x: 'response' in x, response.keys())[0]
+        if isAsync and 'jobid' in response[responsekey]:
+            jobId = response[responsekey]['jobid']
             command = "queryAsyncJobResult"
             requests = {'jobid': jobId}
             timeout = int(self.timeout)
@@ -282,7 +283,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
                 jobstatus = result['jobstatus']
                 if jobstatus == 2:
                     jobresult = result["jobresult"]
-                    self.print_shell("Async query failed for jobid=",
+                    self.print_shell("\rAsync query failed for jobid",
                                      jobId, "\nError", jobresult["errorcode"],
                                      jobresult["errortext"])
                     return
@@ -293,7 +294,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
                 timeout = timeout - pollperiod
                 progress += 1
                 logger.debug("job: %s to timeout in %ds" % (jobId, timeout))
-            self.print_shell("Error:", "Async query timeout for jobid=", jobId)
+            self.print_shell("Error:", "Async query timeout for jobid", jobId)
 
         return response
 
