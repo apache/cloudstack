@@ -104,7 +104,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.uuididentity.dao.IdentityDao;
 
-@Component
+//@Component
 public class ConfigurationServerImpl implements ConfigurationServer {
     public static final Logger s_logger = Logger.getLogger(ConfigurationServerImpl.class.getName());
 

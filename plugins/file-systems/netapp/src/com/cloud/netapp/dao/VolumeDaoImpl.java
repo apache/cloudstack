@@ -29,7 +29,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-@Component
+@Component(value = "netappVolumeDaoImpl")
 @Local(value={VolumeDao.class})
 public class VolumeDaoImpl extends GenericDaoBase<NetappVolumeVO, Long> implements VolumeDao {
     private static final Logger s_logger = Logger.getLogger(VolumeDaoImpl.class);
