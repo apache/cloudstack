@@ -388,7 +388,8 @@ class CloudMonkeyShell(cmd.Cmd, object):
                                   self.cache_verbs[verb][subject][1])
             search_string = text
 
-        autocompletions.append("filter=")
+        if self.tabularize == "true":
+            autocompletions.append("filter=")
         return [s for s in autocompletions if s.startswith(search_string)]
 
     def do_api(self, args):
