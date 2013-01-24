@@ -753,7 +753,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                             s_logger.debug("Planner need not allocate a pool for this volume since its READY");
                             suitablePools.add(pool);
                             suitableVolumeStoragePools.put(toBeCreated, suitablePools);
-                            readyAndReusedVolumes.add(toBeCreated);
+                            if (!(toBeCreated.getState() == Volume.State.Allocated || toBeCreated.getState() == Volume.State.Creating)) {
+                                readyAndReusedVolumes.add(toBeCreated);
+                            }
                             continue;
                         }else{
                             s_logger.debug("Pool of the volume does not fit the specified plan, need to reallocate a pool for this volume");
