@@ -196,9 +196,9 @@ public class VMEntityManagerImpl implements VMEntityManager {
         Long poolId = null;
         Map<Long,Long> storage = vmReservation.getVolumeReservation();
         if(storage != null){
-            List<Long> poolIdList = new ArrayList<Long>(storage.keySet());
-            if(poolIdList !=null && !poolIdList.isEmpty()){
-                poolId = poolIdList.get(0);
+            List<Long> volIdList = new ArrayList<Long>(storage.keySet());
+            if(volIdList !=null && !volIdList.isEmpty()){
+                poolId = storage.get(volIdList.get(0));
             }
         }
         
