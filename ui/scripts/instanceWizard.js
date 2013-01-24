@@ -16,7 +16,7 @@
 // under the License. 
 
 (function($, cloudStack) {
-  var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, community;
+  var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, community, networkObjs;
   var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj; 
   var step5ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group'
 
@@ -38,6 +38,33 @@
       return vpcID != -1?
         data.vpcid == vpcID :
         !data.vpcid;
+    },
+
+    // Runs when advanced SG-enabled zone is run, before
+    // the security group step
+    //
+    // -- if it returns false, then 'Select Security Group' is skipped.
+    //
+    advSGFilter: function(args) {
+      var selectedNetworks;
+      
+      if ($.isArray(args.data['my-networks'])) {
+        selectedNetworks = $(args.data['my-networks']).map(function(index, myNetwork) {
+          return $.grep(networkObjs, function(networkObj) {
+            return networkObj.id == myNetwork;
+          });
+        });        
+      } else {
+        selectedNetworks = $.grep(networkObjs, function(networkObj) {
+          return networkObj.id == args.data['my-networks'];
+        });
+      }
+
+      return $.grep(selectedNetworks, function(network) {
+        return $.grep(network.service, function(service) {
+          return service.name == 'SecurityGroup';
+        }).length;
+      }).length;
     },
 
     // Data providers for each wizard step
@@ -347,7 +374,7 @@
           networkData.account = g_account;
         }
 
-        var networkObjs, vpcObjs;
+        var vpcObjs;
 
         //listVPCs without account/domainid/listAll parameter will return only VPCs belonging to the current login. That's what should happen in Instances page's VM Wizard. 
 				//i.e. If the current login is root-admin, do not show VPCs belonging to regular-user/domain-admin in Instances page's VM Wizard. 
@@ -365,7 +392,7 @@
           async: false,
           success: function(json) {
             networkObjs = json.listnetworksresponse.network ? json.listnetworksresponse.network : [];
-												
+
 						if(networkObjs.length > 0) {
 						  for(var i = 0; i < networkObjs.length; i++) {
 								var networkObj = networkObjs[i];    
