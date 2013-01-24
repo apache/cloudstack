@@ -262,6 +262,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     public UserVO getSystemUser() {
+        if (_systemUser == null) {
+            _systemUser = _userDao.findById(User.UID_SYSTEM);
+        }
         return _systemUser;
     }
 
