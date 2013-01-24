@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api.commands.netapp;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -51,13 +53,12 @@ public class CreateVolumePoolCmd extends BaseCmd {
     public String getAlgorithm() {
     	return algorithm;
     }
+    @Inject NetappManager netappMgr;
 
 	@Override
 	public void execute() throws ResourceUnavailableException,
 			InsufficientCapacityException, ServerApiException,
 			ConcurrentOperationException, ResourceAllocationException {
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
     	
     	try {
     		CreateVolumePoolCmdResponse response = new CreateVolumePoolCmdResponse();

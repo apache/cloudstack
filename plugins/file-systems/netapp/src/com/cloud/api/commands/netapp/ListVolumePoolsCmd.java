@@ -19,6 +19,8 @@ package com.cloud.api.commands.netapp;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -42,13 +44,12 @@ public class ListVolumePoolsCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(ListVolumePoolsCmd.class.getName());
     private static final String s_name = "listpoolresponse";
 
+    @Inject NetappManager netappMgr;
 
 	@Override
 	public void execute() throws ResourceUnavailableException,
 			InsufficientCapacityException, ServerApiException,
 			ConcurrentOperationException, ResourceAllocationException {
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
     	try {
     		List<PoolVO> poolList = netappMgr.listPools();
     		ListResponse<ListVolumePoolsCmdResponse> listResponse = new ListResponse<ListVolumePoolsCmdResponse>();

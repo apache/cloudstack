@@ -18,6 +18,8 @@ package com.cloud.api.commands.netapp;
 
 import java.rmi.ServerException;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -70,10 +72,10 @@ public class AssociateLunCmd extends BaseCmd {
 		return s_name;
 	}
 	
+	@Inject NetappManager netappMgr;
+	
     @Override
     public void execute(){
-    	ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
     	
     	try {
     		AssociateLunCmdResponse response = new AssociateLunCmdResponse();

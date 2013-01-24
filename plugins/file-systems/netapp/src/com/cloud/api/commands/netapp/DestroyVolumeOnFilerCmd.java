@@ -18,6 +18,8 @@ package com.cloud.api.commands.netapp;
 
 import java.rmi.ServerException;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
@@ -29,7 +31,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
-import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DeleteVolumeOnFilerCmdResponse;
 
 
@@ -47,13 +48,13 @@ public class DestroyVolumeOnFilerCmd extends BaseCmd {
     @Parameter(name=ApiConstants.VOLUME_NAME, type=CommandType.STRING, required = true, description="volume name.")
 	private String volumeName;
     
+    @Inject NetappManager netappMgr;
+    
     
 	@Override
 	public void execute() throws ResourceUnavailableException,
 			InsufficientCapacityException, ServerApiException,
 			ConcurrentOperationException, ResourceAllocationException {
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
     	try {
     		netappMgr.destroyVolumeOnFiler(ipAddr, aggrName, volumeName);
     		DeleteVolumeOnFilerCmdResponse response = new DeleteVolumeOnFilerCmdResponse();

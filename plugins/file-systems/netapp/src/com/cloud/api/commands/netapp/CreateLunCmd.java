@@ -18,6 +18,8 @@ package com.cloud.api.commands.netapp;
 
 import java.rmi.ServerException;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -58,13 +60,12 @@ public class CreateLunCmd extends BaseCmd {
     public long getLunSize() {
     	return size;
     }
+    @Inject NetappManager netappMgr;
 
 	@Override
 	public void execute() throws ResourceUnavailableException,
 			InsufficientCapacityException, ServerApiException,
 			ConcurrentOperationException, ResourceAllocationException {
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
     	
     	try {
     		CreateLunCmdResponse response = new CreateLunCmdResponse();

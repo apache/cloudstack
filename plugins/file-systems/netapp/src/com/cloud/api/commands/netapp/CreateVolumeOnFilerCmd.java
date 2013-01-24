@@ -19,6 +19,8 @@ package com.cloud.api.commands.netapp;
 import java.net.UnknownHostException;
 import java.rmi.ServerException;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -102,6 +104,8 @@ public class CreateVolumeOnFilerCmd extends BaseCmd {
     public String getPassword() {
     	return password;
     }
+    
+    @Inject NetappManager netappMgr;
 
 	@Override
 	public void execute() throws ResourceUnavailableException,
@@ -111,9 +115,6 @@ public class CreateVolumeOnFilerCmd extends BaseCmd {
 		if(snapshotReservation != null && (snapshotReservation<0 || snapshotReservation>100))
 			throw new InvalidParameterValueException("Invalid snapshot reservation");
 		
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
-    	
 		StringBuilder s = new StringBuilder(getVolSize().toString());
 		s.append("g");
 	
