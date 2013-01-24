@@ -1072,8 +1072,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new CloudRuntimeException("refusing to set default nic because chosen nic is already the default");
         }
         
-        NicProfile existing = _networkModel.getNicProfile(vmInstance, existingdefaultnet.getId(), null);
-        
+        NicProfile existing = null;
+        List<NicProfile> nicProfiles = _networkMgr.getNicProfiles(vmInstance);
+        for (NicProfile nicProfile : nicProfiles) {
+            if(nicProfile.isDefaultNic() && nicProfile.getNetworkId() == existingdefaultnet.getId()){
+                existing = nicProfile;
+                continue;
+            }
+        }
+
         if (existing == null){
             s_logger.warn("Failed to update default nic, no nic profile found for existing default network");
             throw new CloudRuntimeException("Failed to find a nic profile for the existing default network. This is bad and probably means some sort of configuration corruption");
