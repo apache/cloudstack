@@ -25,18 +25,25 @@ import javax.naming.ConfigurationException;
 import junit.framework.TestCase;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.utils.Profiler;
+import com.cloud.utils.component.ComponentContext;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/SecurityGroupManagerTestContext.xml")
 public class SecurityGroupManagerImpl2Test extends TestCase {
     @Inject
     SecurityGroupManagerImpl2 _sgMgr = null;
+    
+    @Before
+    public void setup() throws Exception {
+        ComponentContext.initComponentsLifeCycle();
+    }
 
     @Override
     @After

@@ -62,7 +62,7 @@ public class ComponentContext implements ApplicationContextAware {
         return s_appContext;  
     }  
 
-    public void initComponentsLifeCycle() {
+    public static void initComponentsLifeCycle() {
         @SuppressWarnings("rawtype")
         Collection<GenericDao> daos = ComponentContext.getApplicationContext().getBeansOfType(GenericDao.class).values();
         Collection<Manager> mgrs = ComponentContext.getApplicationContext().getBeansOfType(Manager.class).values();
