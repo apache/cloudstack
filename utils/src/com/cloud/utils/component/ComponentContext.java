@@ -18,11 +18,12 @@
 package com.cloud.utils.component;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.inject.Inject;
+import javax.annotation.PostConstruct;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -50,22 +51,23 @@ import com.cloud.utils.db.TransactionContextBuilder;
 public class ComponentContext implements ApplicationContextAware {
     private static final Logger s_logger = Logger.getLogger(ComponentContext.class);
 
-    private static ApplicationContext s_appContext;
+    private static ApplicationContext s_appContext;  
 
-	@Inject List<GenericDao> daos;
-    @Inject List<Manager>  mgrs;
-    @Inject List<Adapter>  adapters;
-    
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {  
-        s_appContext = applicationContext;
+        s_appContext = applicationContext;  
     }  
 
     public static ApplicationContext getApplicationContext() {  
         return s_appContext;  
-    }
-    
-    public void init() {
+    }  
+
+    public void initComponentsLifeCycle() {
+        @SuppressWarnings("rawtype")
+        Collection<GenericDao> daos = ComponentContext.getApplicationContext().getBeansOfType(GenericDao.class).values();
+        Collection<Manager> mgrs = ComponentContext.getApplicationContext().getBeansOfType(Manager.class).values();
+        Collection<Adapter> adapters = ComponentContext.getApplicationContext().getBeansOfType(Adapter.class).values();
+
         Map<String, Object> params = new HashMap<String, Object>();
         for (GenericDao dao : daos) {
             try {
@@ -77,7 +79,7 @@ public class ComponentContext implements ApplicationContextAware {
             }
         }
 
-       	List<String> avoidMap = new ArrayList<String>();
+        List<String> avoidMap = new ArrayList<String>();
         for (Manager manager : mgrs) {
             if (avoidMap.contains(manager.getName())) {
                 s_logger.info("Skip manager: " + ComponentContext.getTargetClass(manager).getName() + " as it is already started");
