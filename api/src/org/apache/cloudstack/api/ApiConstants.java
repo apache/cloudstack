@@ -224,6 +224,7 @@ public class ApiConstants {
     public static final String NETWORK_OFFERING_ID = "networkofferingid";
     public static final String NETWORK_IDS = "networkids";
     public static final String NETWORK_ID = "networkid";
+    public static final String NIC_ID = "nicid";
     public static final String SPECIFY_VLAN = "specifyvlan";
     public static final String IS_DEFAULT = "isdefault";
     public static final String IS_SYSTEM = "issystem";

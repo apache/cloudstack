@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.NicResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -48,9 +48,9 @@ public class RemoveNicFromVMCmd extends BaseCmd {
             required=true, description="Virtual Machine ID")
     private Long vmId;
 
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType=NetworkResponse.class,
-            required=true, description="Network ID")
-    private Long netId;
+    @Parameter(name=ApiConstants.NIC_ID, type=CommandType.UUID, entityType=NicResponse.class,
+            required=true, description="NIC ID")
+    private Long nicId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -60,8 +60,8 @@ public class RemoveNicFromVMCmd extends BaseCmd {
         return vmId;
     }
     
-    public Long getNetworkId() {
-        return netId;
+    public Long getNicId() {
+        return nicId;
     }
 
     /////////////////////////////////////////////////////
@@ -88,7 +88,7 @@ public class RemoveNicFromVMCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Vm Id: "+getVmId());
+        UserContext.current().setEventDetails("Vm Id: "+getVmId() + " Nic Id: " + getNicId());
         UserVm result = _userVmService.removeNicFromVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));
