@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 
-import com.cloud.dc.Pod;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
@@ -38,7 +37,7 @@ import com.cloud.utils.db.StateMachine;
 
 @Entity
 @Table(name = "host_pod_ref")
-public class EngineHostPodVO implements Pod, Identity {
+public class EngineHostPodVO implements EnginePod, Identity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id;

@@ -40,7 +40,7 @@ import com.cloud.utils.db.StateMachine;
 
 @Entity
 @Table(name="cluster")
-public class EngineClusterVO implements Cluster, Identity {
+public class EngineClusterVO implements EngineCluster, Identity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
