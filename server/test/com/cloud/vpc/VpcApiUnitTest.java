@@ -25,6 +25,10 @@ import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.configuration.dao.ResourceCountDaoImpl;
@@ -47,6 +51,7 @@ import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountVO;
 import com.cloud.user.MockAccountManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
+import com.cloud.utils.component.ComponentContext;
 
 import com.cloud.vm.dao.DomainRouterDaoImpl;
 import com.cloud.vpc.dao.MockNetworkDaoImpl;
@@ -57,15 +62,19 @@ import com.cloud.vpc.dao.MockVpcDaoImpl;
 import com.cloud.vpc.dao.MockVpcOfferingDaoImpl;
 import com.cloud.vpc.dao.MockVpcOfferingServiceMapDaoImpl;
 
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = "classpath:/VpcTestContext.xml")
 public class VpcApiUnitTest extends TestCase{
     private static final Logger s_logger = Logger.getLogger(VpcApiUnitTest.class);
-    @Inject VpcManager _vpcService;
+    @Inject VpcManagerImpl _vpcService = null;
 
     @Override
     @Before
     public void setUp() throws Exception {
+        ComponentContext.initComponentsLifeCycle();
     }
     
+    @Test
     public void test() {
         s_logger.debug("Starting test for VpcService interface");
         //Vpc service methods
@@ -250,7 +259,7 @@ public class VpcApiUnitTest extends TestCase{
             msg = ex.getMessage();
         } finally {
             if (!result) {
-                s_logger.debug("Test passed: " + msg);
+                s_logger.debug("Test passed : " + msg);
             } else {
                 s_logger.error("Validate network offering: TEST FAILED, can't use network offering with guest type = Shared");
             }

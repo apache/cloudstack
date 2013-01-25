@@ -73,6 +73,7 @@ import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -84,7 +85,7 @@ import com.cloud.vm.VirtualMachine.Type;
 @Local(value = { ConfigurationManager.class, ConfigurationService.class })
 public class MockConfigurationManagerImpl implements ConfigurationManager, ConfigurationService, Manager{
     @Inject
-    NetworkOfferingDao _ntwkOffDao;
+    NetworkOfferingDaoImpl _ntwkOffDao;
 
     /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationService#updateConfiguration(org.apache.cloudstack.api.commands.UpdateCfgCmd)

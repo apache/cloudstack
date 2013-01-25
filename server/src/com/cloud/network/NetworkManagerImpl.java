@@ -239,8 +239,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     @Inject 
     List<NetworkGuru> _networkGurus;
 
-    @Inject 
-    List<NetworkElement> _networkElements;
+    @Inject  protected List<NetworkElement> _networkElements;
 
     @Inject NetworkDomainDao _networkDomainDao;
     @Inject List<IpDeployer> _ipDeployers;
