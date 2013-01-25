@@ -247,4 +247,5 @@ public interface NetworkModel {
     
     PublicIpAddress getSourceNatIpAddressForGuestNetwork(Account owner, Network guestNetwork);
 
+	Vlan getVlanForNetwork(long networkId);
 }

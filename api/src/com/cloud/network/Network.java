@@ -267,7 +267,11 @@ public interface Network extends ControlledEntity {
     String getGateway();
 
     String getCidr();
-
+    
+    String getIp6Gateway();
+    
+    String getIp6Cidr();
+    
     long getDataCenterId();
 
     long getNetworkOfferingId();

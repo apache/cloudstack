@@ -98,6 +98,12 @@ public class NicVO implements Nic, Identity {
     @Column(name = "default_nic")
     boolean defaultNic;
 
+    @Column(name = "ip6_gateway")
+    String ip6Gateway;
+
+    @Column(name = "ip6_cidr")
+    String ip6Cidr;
+
     @Column(name = "strategy")
     @Enumerated(value = EnumType.STRING)
     ReservationStrategy reservationStrategy;
@@ -155,6 +161,7 @@ public class NicVO implements Nic, Identity {
         this.defaultNic = defaultNic;
     }
 
+    @Override
     public String getIp6Address() {
         return ip6Address;
     }
@@ -323,4 +330,22 @@ public class NicVO implements Nic, Identity {
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
+
+    @Override
+	public String getIp6Gateway() {
+		return ip6Gateway;
+	}
+
+	public void setIp6Gateway(String ip6Gateway) {
+		this.ip6Gateway = ip6Gateway;
+	}
+
+    @Override
+	public String getIp6Cidr() {
+		return ip6Cidr;
+	}
+
+	public void setIp6Cidr(String ip6Cidr) {
+		this.ip6Cidr = ip6Cidr;
+	}
 }

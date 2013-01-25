@@ -147,4 +147,10 @@ public interface Nic {
     VirtualMachine.Type getVmType();
 
     AddressFormat getAddressFormat();
+
+	String getIp6Gateway();
+
+	String getIp6Cidr();
+
+	String getIp6Address();
 }

@@ -36,6 +36,8 @@ public class NicProfile {
     TrafficType trafficType;
     String ip4Address;
     String ip6Address;
+    String ip6Gateway;
+    String ip6Cidr;
     String macAddress;
     URI isolationUri;
     String netmask;
@@ -49,7 +51,8 @@ public class NicProfile {
     Integer networkRate;
     boolean isSecurityGroupEnabled;
     String name;
-    String requestedIp;
+    String requestedIpv4;
+    String requestedIpv6;
 
     public String getDns1() {
         return dns1;
@@ -217,7 +220,7 @@ public class NicProfile {
         this.trafficType = network.getTrafficType();
         this.ip4Address = nic.getIp4Address();
         this.format = nic.getAddressFormat();
-        this.ip6Address = null;
+        this.ip6Address = nic.getIp6Address();
         this.macAddress = nic.getMacAddress();
         this.reservationId = nic.getReservationId();
         this.strategy = nic.getReservationStrategy();
@@ -229,6 +232,8 @@ public class NicProfile {
         this.isSecurityGroupEnabled = isSecurityGroupEnabled;
         this.vmId = nic.getInstanceId();
         this.name = name;
+        this.ip6Cidr = nic.getIp6Cidr();
+        this.ip6Gateway = nic.getIp6Gateway();
 
         if (networkRate != null) {
             this.networkRate = networkRate;
@@ -244,8 +249,9 @@ public class NicProfile {
         this.strategy = strategy;
     }
 
-    public NicProfile(String requestedIp) {
-        this.requestedIp = requestedIp;
+    public NicProfile(String requestedIpv4, String requestedIpv6) {
+        this.requestedIpv4 = requestedIpv4;
+        this.requestedIpv6 = requestedIpv6;
     }
 
     public NicProfile() {
@@ -271,8 +277,8 @@ public class NicProfile {
         this.isSecurityGroupEnabled = enabled;
     }
 
-    public String getRequestedIp() {
-        return requestedIp;
+    public String getRequestedIpv4() {
+        return requestedIpv4;
     }
 
     public void deallocate() {
@@ -299,5 +305,29 @@ public class NicProfile {
         return new StringBuilder("NicProfile[").append(id).append("-").append(vmId).append("-").
                 append(reservationId).append("-").append(ip4Address).append("-").append(broadcastUri).toString();
     }
+
+	public String getIp6Gateway() {
+		return ip6Gateway;
+	}
+
+	public void setIp6Gateway(String ip6Gateway) {
+		this.ip6Gateway = ip6Gateway;
+	}
+
+	public String getIp6Cidr() {
+		return ip6Cidr;
+	}
+
+	public void setIp6Cidr(String ip6Cidr) {
+		this.ip6Cidr = ip6Cidr;
+	}
+
+	public String getRequestedIpv6() {
+		return requestedIpv6;
+	}
+
+	public void setRequestedIpv6(String requestedIpv6) {
+		this.requestedIpv6 = requestedIpv6;
+	}
 
 }

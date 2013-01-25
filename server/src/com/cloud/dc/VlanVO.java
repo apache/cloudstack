@@ -47,11 +47,20 @@ public class VlanVO implements Vlan, Identity {
 	@Column(name="vlan_netmask") 
 	String vlanNetmask;
 	
-	@Column(name="data_center_id") 
+	@Column(name="ip6_gateway")
+	String ip6Gateway;
+
+	@Column(name="ip6_cidr")
+	String ip6Cidr;
+
+	@Column(name="data_center_id")
 	long dataCenterId;
 	
 	@Column(name="description") 
 	String ipRange;
+
+	@Column(name="ip6_range")
+	String ip6Range;
 	
     @Column(name="network_id")
     Long networkId;
@@ -65,14 +74,17 @@ public class VlanVO implements Vlan, Identity {
 
     @Column(name="uuid")
     String uuid;
-	
-	public VlanVO(VlanType vlanType, String vlanTag, String vlanGateway, String vlanNetmask, long dataCenterId, String ipRange, Long networkId, Long physicalNetworkId) {
+
+	public VlanVO(VlanType vlanType, String vlanTag, String vlanGateway, String vlanNetmask, long dataCenterId, String ipRange, Long networkId, Long physicalNetworkId, String ip6Gateway, String ip6Cidr, String ip6Range) {
 		this.vlanType = vlanType;
 		this.vlanTag = vlanTag;
 		this.vlanGateway = vlanGateway;
 		this.vlanNetmask = vlanNetmask;
+		this.ip6Gateway = ip6Gateway;
+		this.ip6Cidr = ip6Cidr;
 		this.dataCenterId = dataCenterId;
 		this.ipRange = ipRange;
+		this.ip6Range = ip6Range;
 		this.networkId = networkId;
 		this.uuid = UUID.randomUUID().toString();
 		this.physicalNetworkId = physicalNetworkId;
@@ -148,9 +160,36 @@ public class VlanVO implements Vlan, Identity {
     public String toString() {
         if (toString == null) {
             toString = new StringBuilder("Vlan[").append(vlanTag).append("|").append(vlanGateway).append("|").append(vlanNetmask).
-                    append("|").append(ipRange).append("|").append(networkId).append("]").toString();
+                    append("|").append(ip6Gateway).append("|").append(ip6Cidr).append("|").append(ipRange).append("|").
+                    append("|").append(ip6Range).append(networkId).append("]").toString();
         }
         return toString;
     }
     
+    @Override
+	public String getIp6Gateway() {
+		return ip6Gateway;
+	}
+
+	public void setIp6Gateway(String ip6Gateway) {
+		this.ip6Gateway = ip6Gateway;
+	}
+
+    @Override
+	public String getIp6Cidr() {
+		return ip6Cidr;
+	}
+
+	public void setIp6Cidr(String ip6Cidr) {
+		this.ip6Cidr = ip6Cidr;
+	}
+
+	@Override
+	public String getIp6Range() {
+		return ip6Range;
+	}
+
+	public void setIp6Range(String ip6Range) {
+		this.ip6Range = ip6Range;
+	}
 }
