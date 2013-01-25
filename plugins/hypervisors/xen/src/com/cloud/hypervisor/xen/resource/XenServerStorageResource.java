@@ -54,8 +54,8 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase.SRType;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.storage.encoding.DataStore;
 import com.cloud.utils.storage.encoding.DecodedDataObject;
+import com.cloud.utils.storage.encoding.DecodedDataStore;
 import com.cloud.utils.storage.encoding.Decoder;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
@@ -144,7 +144,7 @@ public class XenServerStorageResource {
         
         try {
             obj = Decoder.decode(uriString);
-            DataStore store = obj.getStore(); 
+            DecodedDataStore store = obj.getStore(); 
             if (obj.getObjType().equalsIgnoreCase("template") && store.getRole().equalsIgnoreCase("image")) {
                 return getTemplateSize(cmd, obj.getPath());
             }
@@ -223,7 +223,7 @@ public class XenServerStorageResource {
         }
     }
     
-    protected SR getNfsSR(Connection conn, DataStore store) {
+    protected SR getNfsSR(Connection conn, DecodedDataStore store) {
         Map<String, String> deviceConfig = new HashMap<String, String>();
 
         String uuid = store.getUuid();
@@ -409,7 +409,7 @@ public class XenServerStorageResource {
 
         try {
             DecodedDataObject obj = Decoder.decode(storeUrl);
-            DataStore store = obj.getStore();
+            DecodedDataStore store = obj.getStore();
             if (store.getScheme().equalsIgnoreCase("nfs")) {
                 SR sr = getNfsSR(conn, store);
             } else if (store.getScheme().equalsIgnoreCase("iscsi")) {
@@ -570,7 +570,7 @@ public class XenServerStorageResource {
         Connection conn = hypervisorResource.getConnection();
         try {
             DecodedDataObject obj = Decoder.decode(dataStoreUri);
-            DataStore store = obj.getStore();
+            DecodedDataStore store = obj.getStore();
             SR sr = hypervisorResource.getStorageRepository(conn, store.getUuid());
             hypervisorResource.setupHeartbeatSr(conn, sr, false);
             long capacity = sr.getPhysicalSize(conn);

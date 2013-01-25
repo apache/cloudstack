@@ -43,7 +43,7 @@ public class Decoder {
     public static DecodedDataObject decode(String url) throws URISyntaxException {
         URI uri = new URI(url);
         Map<String, String> params = getParameters(uri);
-        EncodedDataStore store = new EncodedDataStore(params.get(EncodingType.ROLE.toString()),
+        DecodedDataStore store = new DecodedDataStore(params.get(EncodingType.ROLE.toString()),
                 params.get(EncodingType.STOREUUID.toString()),
                 params.get(EncodingType.PROVIDERNAME.toString()),
                 uri.getScheme(),

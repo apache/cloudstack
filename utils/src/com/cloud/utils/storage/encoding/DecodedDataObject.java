@@ -23,13 +23,13 @@ public class DecodedDataObject {
     private Long size;
     private String name;
     private String path;
-    private EncodedDataStore store;
+    private DecodedDataStore store;
     
     public DecodedDataObject(String objType,
             Long size,
             String name,
             String path,
-            EncodedDataStore store) {
+            DecodedDataStore store) {
         this.objType = objType;
         this.size = size;
         this.path = path;
@@ -52,7 +52,7 @@ public class DecodedDataObject {
         return this.path;
     }
     
-    public EncodedDataStore getStore() {
+    public DecodedDataStore getStore() {
         return this.store;
     }
 }

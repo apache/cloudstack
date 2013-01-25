@@ -18,7 +18,7 @@
  */
 package com.cloud.utils.storage.encoding;
 
-public class EncodedDataStore {
+public class DecodedDataStore {
     private final String role;
     private final String uuid;
     private final String providerName;
@@ -27,7 +27,7 @@ public class EncodedDataStore {
     private final String server;
     private final String path;
     
-    public EncodedDataStore(String role,
+    public DecodedDataStore(String role,
             String uuid,
             String providerName,
             String scheme,
