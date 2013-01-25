@@ -953,7 +953,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         
-        //todo: any security group related checks
         //ensure network belongs in zone
         if (network.getDataCenterId() != vmInstance.getDataCenterIdToDeployIn()) {
             throw new CloudRuntimeException(vmInstance + " is in zone:" + vmInstance.getDataCenterIdToDeployIn() + " but " + network + " is in zone:" + network.getDataCenterId());
@@ -963,7 +962,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             s_logger.debug(vmInstance + " already in " + network + " going to add another NIC");
         }
 
-        //todo: check other nics for VPC networks (can only belong to one?)
         //todo: verify unique hostname in network domain?
         
         NicProfile guestNic = null;
