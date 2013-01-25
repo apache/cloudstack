@@ -18,6 +18,8 @@
 alter table vm_template add image_data_store_id bigint unsigned;
 alter table vm_template add size bigint unsigned;
 alter table vm_template add state varchar(255);
+alter table vm_template add update_count bigint unsigned;
+alter table vm_template add updated  datetime;
 alter table storage_pool add storage_provider_id bigint unsigned; 
 alter table storage_pool add scope varchar(255); 
 alter table storage_pool modify id bigint unsigned AUTO_INCREMENT UNIQUE NOT NULL;
@@ -67,7 +69,7 @@ CREATE TABLE  `cloud`.`object_datastore_ref` (
   `size` bigint unsigned COMMENT 'the size of the template on the pool',
   `state` varchar(255) NOT NULL,
   `update_count` bigint unsigned NOT NULL,
-  `updated` DATETIME NOT NULL,
+  `updated` DATETIME,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 

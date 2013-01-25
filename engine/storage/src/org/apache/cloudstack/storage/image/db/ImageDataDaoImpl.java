@@ -68,7 +68,9 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -76,18 +78,19 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
     private static final Logger s_logger = Logger.getLogger(VMTemplateDaoImpl.class);
 
     @Inject
-    VMTemplateZoneDao _templateZoneDao = null;
+    VMTemplateZoneDao templateZoneDao;
     @Inject
-    VMTemplateDetailsDao _templateDetailsDao = null;
+    VMTemplateDetailsDao templateDetailsDao;
 
     @Inject
-    ConfigurationDao _configDao = null;
+    ConfigurationDao configDao;
     @Inject
-    HostDao _hostDao = null;
+    HostDao hostDao;
     @Inject
-    DomainDao _domainDao = null;
+    DomainDao domainDao;
     @Inject
-    DataCenterDao _dcDao = null;
+    DataCenterDao dcDao;
+
     private final String SELECT_TEMPLATE_HOST_REF = "SELECT t.id, h.data_center_id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, "
             + "t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type FROM vm_template t";
 
@@ -110,6 +113,7 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
     private SearchBuilder<ImageDataVO> PublicIsoSearch;
     private SearchBuilder<ImageDataVO> UserIsoSearch;
     private GenericSearchBuilder<ImageDataVO, Long> CountTemplatesByAccount;
+    private SearchBuilder<ImageDataVO> updateStateSearch;
 
     //ResourceTagsDaoImpl _tagsDao = ComponentInject.inject(ResourceTagsDaoImpl.class);
     @Inject
@@ -326,7 +330,7 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
 
         tmpltTypeHyperSearch = createSearchBuilder();
         tmpltTypeHyperSearch.and("templateType", tmpltTypeHyperSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
-        SearchBuilder<HostVO> hostHyperSearch = _hostDao.createSearchBuilder();
+        SearchBuilder<HostVO> hostHyperSearch = hostDao.createSearchBuilder();
         hostHyperSearch.and("type", hostHyperSearch.entity().getType(), SearchCriteria.Op.EQ);
         hostHyperSearch.and("zoneId", hostHyperSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         hostHyperSearch.groupBy(hostHyperSearch.entity().getHypervisorType());
@@ -348,7 +352,7 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
         AccountIdSearch.and("publicTemplate", AccountIdSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
         AccountIdSearch.done();
 
-        SearchBuilder<VMTemplateZoneVO> tmpltZoneSearch = _templateZoneDao.createSearchBuilder();
+        SearchBuilder<VMTemplateZoneVO> tmpltZoneSearch = templateZoneDao.createSearchBuilder();
         tmpltZoneSearch.and("removed", tmpltZoneSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         tmpltZoneSearch.and("zoneId", tmpltZoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
 
@@ -367,6 +371,11 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
         CountTemplatesByAccount.and("removed", CountTemplatesByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
         CountTemplatesByAccount.done();
 
+        updateStateSearch = this.createSearchBuilder();
+        updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
+        updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
+        updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
+        updateStateSearch.done();
         return result;
     }
 
@@ -572,7 +581,7 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
                 for (Account account : permittedAccounts) {
                     // accountType = account.getType();
                     // accountId = Long.toString(account.getId());
-                    DomainVO accountDomain = _domainDao.findById(account.getDomainId());
+                    DomainVO accountDomain = domainDao.findById(account.getDomainId());
 
                     // get all parent domain ID's all the way till root domain
                     DomainVO domainTreeNode = accountDomain;
@@ -580,7 +589,7 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
                         relatedDomainIds.append(domainTreeNode.getId());
                         relatedDomainIds.append(",");
                         if (domainTreeNode.getParent() != null) {
-                            domainTreeNode = _domainDao.findById(domainTreeNode.getParent());
+                            domainTreeNode = domainDao.findById(domainTreeNode.getParent());
                         } else {
                             break;
                         }
@@ -588,7 +597,7 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
 
                     // get all child domain ID's
                     if (isAdmin(account.getType())) {
-                        List<DomainVO> allChildDomains = _domainDao.findAllChildren(accountDomain.getPath(), accountDomain.getId());
+                        List<DomainVO> allChildDomains = domainDao.findAllChildren(accountDomain.getPath(), accountDomain.getId());
                         for (DomainVO childDomain : allChildDomains) {
                             relatedDomainIds.append(childDomain.getId());
                             relatedDomainIds.append(",");
@@ -779,7 +788,7 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
     }
 
     private String getOrderByLimit(Long pageSize, Long startIndex) {
-        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+        Boolean isAscending = Boolean.parseBoolean(configDao.getValue("sortkey.algorithm"));
         isAscending = (isAscending == null ? true : isAscending);
 
         String sql;
@@ -806,17 +815,17 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
                 throw new CloudRuntimeException("Failed to persist the template " + tmplt);
             }
             if (tmplt.getDetails() != null) {
-                _templateDetailsDao.persist(tmplt.getId(), tmplt.getDetails());
+                templateDetailsDao.persist(tmplt.getId(), tmplt.getDetails());
             }
         }
-        VMTemplateZoneVO tmpltZoneVO = _templateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());
+        VMTemplateZoneVO tmpltZoneVO = templateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());
         if (tmpltZoneVO == null) {
             tmpltZoneVO = new VMTemplateZoneVO(zoneId, tmplt.getId(), new Date());
-            _templateZoneDao.persist(tmpltZoneVO);
+            templateZoneDao.persist(tmpltZoneVO);
         } else {
             tmpltZoneVO.setRemoved(null);
             tmpltZoneVO.setLastUpdated(new Date());
-            _templateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
+            templateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
         }
         txn.commit();
 
@@ -931,7 +940,36 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
     @Override
     public boolean updateState(TemplateState currentState, TemplateEvent event,
             TemplateState nextState, ImageDataVO vo, Object data) {
-        // TODO Auto-generated method stub
-        return false;
+        Long oldUpdated = vo.getUpdatedCount();
+        Date oldUpdatedTime = vo.getUpdated();
+    
+        
+        SearchCriteria<ImageDataVO> sc = updateStateSearch.create();
+        sc.setParameters("id", vo.getId());
+        sc.setParameters("state", currentState);
+        sc.setParameters("updatedCount", vo.getUpdatedCount());
+
+        vo.incrUpdatedCount();
+
+        UpdateBuilder builder = getUpdateBuilder(vo);
+        builder.set(vo, "state", nextState);
+        builder.set(vo, "updated", new Date());
+
+        int rows = update((ImageDataVO) vo, sc);
+        if (rows == 0 && s_logger.isDebugEnabled()) {
+            ImageDataVO dbVol = findByIdIncludingRemoved(vo.getId());
+            if (dbVol != null) {
+                StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
+                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState()).append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
+                        .append(dbVol.getUpdated());
+                str.append(": New Data={id=").append(vo.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatecount=").append(vo.getUpdatedCount())
+                        .append("; updatedTime=").append(vo.getUpdated());
+                str.append(": stale Data={id=").append(vo.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatecount=").append(oldUpdated)
+                        .append("; updatedTime=").append(oldUpdatedTime);
+            } else {
+                s_logger.debug("Unable to update objectIndatastore: id=" + vo.getId() + ", as there is no such object exists in the database anymore");
+            }
+        }
+        return rows > 0;
     }
 }

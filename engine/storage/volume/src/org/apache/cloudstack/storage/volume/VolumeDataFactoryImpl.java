@@ -44,7 +44,8 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
         VolumeVO volumeVO = volumeDao.findById(volumeId);
         ObjectInDataStoreVO obj = objMap.findObject(volumeId, DataObjectType.VOLUME, store.getId(), store.getRole());
         if (obj == null) {
-            return null;
+            VolumeObject vol = VolumeObject.getVolumeObject(null, volumeVO);
+            return vol;
         }
         VolumeObject vol = VolumeObject.getVolumeObject(store, volumeVO);
         return vol;

@@ -25,12 +25,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
-import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -38,11 +37,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
+import org.apache.cloudstack.storage.datastore.VolumeDataFactory;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.provider.DataStoreProvider;
@@ -54,6 +54,7 @@ import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.image.db.ImageDataDao;
 import org.apache.cloudstack.storage.image.db.ImageDataVO;
 import org.apache.cloudstack.storage.volume.VolumeService;
+import org.apache.cloudstack.storage.volume.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.storage.volume.db.VolumeDao2;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.mockito.Mockito;
@@ -109,12 +110,14 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	EndPointSelector selector;
 	@Inject
 	ImageDataFactory imageDataFactory;
+	@Inject
+	VolumeDataFactory volumeFactory;
 	Long dcId;
 	Long clusterId;
 	Long podId;
 	HostVO host;
 	String primaryName = "my primary data store";
-	PrimaryDataStoreInfo primaryStore;
+	DataStore primaryStore;
 	
     @Test(priority = -1)
 	public void setUp() {
@@ -199,6 +202,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
                 host.getPrivateIpAddress()));
         Mockito.when(selector.selectAll(Mockito.any(DataStore.class))).thenReturn(eps);
         Mockito.when(selector.select(Mockito.any(DataObject.class))).thenReturn(eps.get(0));
+        Mockito.when(selector.select(Mockito.any(DataObject.class), Mockito.any(DataObject.class))).thenReturn(eps.get(0));
     }
 
 	private ImageDataVO createImageData() {
@@ -227,13 +231,14 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		return image;
 	}
 
-	private TemplateEntity createTemplate() {
+	private TemplateInfo createTemplate() {
 		try {
 		    DataStore store = createImageStore();
 		    ImageDataVO image = createImageData();
 		    TemplateInfo template = imageDataFactory.getTemplate(image.getId(), store);
 		    AsyncCallFuture<CommandResult> future = imageService.createTemplateAsync(template, store);
 		    future.get();
+		    template = imageDataFactory.getTemplate(image.getId(), store);
 			/*imageProviderMgr.configure("image Provider", new HashMap<String, Object>());
 			ImageDataVO image = createImageData();
 			ImageDataStoreProvider defaultProvider = imageProviderMgr.getProvider("DefaultProvider");
@@ -242,19 +247,19 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 			imageService.registerTemplate(image.getId(), store.getImageDataStoreId());
 			TemplateEntity te = imageService.getTemplateEntity(image.getId());
 			return te;*/
-		    return null;
+		    return template;
 		} catch (Exception e) {
 		    Assert.fail("failed", e);
 		    return null;
 		}
 	}
 
-	@Test
+	//@Test
 	public void createTemplateTest() {
 		createTemplate();
 	}
 	
-	//@Test
+	@Test
 	public void testCreatePrimaryStorage() {
 	    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
         Map<String, String> params = new HashMap<String, String>();
@@ -278,9 +283,9 @@ public class volumeServiceTest extends CloudStackTestNGBase {
         params.put("providerId", String.valueOf(provider.getId()));
         
         DataStoreLifeCycle lifeCycle = provider.getLifeCycle();
-        DataStore store = lifeCycle.initialize(params);
+        this.primaryStore  = lifeCycle.initialize(params);
         ClusterScope scope = new ClusterScope(clusterId, podId, dcId);
-        lifeCycle.attachCluster(store, scope);
+        lifeCycle.attachCluster(this.primaryStore, scope);
 	}
 	
 	private DataStore createImageStore() {
@@ -296,15 +301,14 @@ public class volumeServiceTest extends CloudStackTestNGBase {
         DataStore store = lifeCycle.initialize(params);
         return store;
 	}
-	@Test
+	//@Test
 	public void testcreateImageStore() {
 	    createImageStore();
 	}
 	
 
-	@Test
-	public PrimaryDataStoreInfo createPrimaryDataStore() {
-		try {/*
+	public DataStore createPrimaryDataStore() {
+		try {
 		    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
 		    Map<String, String> params = new HashMap<String, String>();
 		    URI uri = new URI(this.getPrimaryStorageUrl());
@@ -324,7 +328,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		    DataStore store = lifeCycle.initialize(params);
 		    ClusterScope scope = new ClusterScope(clusterId, podId, dcId);
 		    lifeCycle.attachCluster(store, scope);
-		    */
+		    
 		    /*
 		    PrimaryDataStoreProvider provider = primaryDataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
 		    primaryDataStoreProviderMgr.configure("primary data store mgr", new HashMap<String, Object>());
@@ -349,7 +353,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 			lc.attachCluster(scope);
 			return primaryDataStoreInfo;
 			*/
-		    return null;
+		    return store;
 		} catch (Exception e) {
 			return null;
 		}
@@ -362,25 +366,72 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 		return volume;
 	}
 
-	//@Test(priority=2)
+	@Test(priority=2)
 	public void createVolumeFromTemplate() {
-	    primaryStore = createPrimaryDataStore();
-		TemplateEntity te = createTemplate();
+	    DataStore primaryStore = this.primaryStore;
+		TemplateInfo te = createTemplate();
 		VolumeVO volume = createVolume(te.getId(), primaryStore.getId());
-		VolumeEntity ve = volumeService.getVolumeEntity(volume.getId());
+		VolumeInfo vol = volumeFactory.getVolume(volume.getId(), primaryStore);
 		//ve.createVolumeFromTemplate(primaryStore.getId(), new VHD(), te);
-		ve.destroy();
+		AsyncCallFuture<VolumeApiResult> future = volumeService.createVolumeFromTemplateAsync(vol, primaryStore.getId(), te);
+		try {
+            future.get();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 	}
 	
 	//@Test(priority=3) 
 	public void createDataDisk() {
-	    primaryStore = createPrimaryDataStore();
+	    DataStore primaryStore = this.primaryStore;
 	    VolumeVO volume = createVolume(null, primaryStore.getId());
-	    VolumeEntity ve = volumeService.getVolumeEntity(volume.getId());
-	    //ve.createVolume(primaryStore.getId(), new VHD());
-	    ve.destroy();
+	    VolumeInfo vol = volumeFactory.getVolume(volume.getId(), primaryStore);
+	    AsyncCallFuture<VolumeApiResult> future = volumeService.createVolumeAsync(vol, primaryStore.getId());
+	    try {
+            future.get();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 	}
 	
+	//@Test(priority=3) 
+	public void createAndDeleteDataDisk() {
+	    DataStore primaryStore = this.primaryStore;
+	    VolumeVO volume = createVolume(null, primaryStore.getId());
+	    VolumeInfo vol = volumeFactory.getVolume(volume.getId(), primaryStore);
+	    AsyncCallFuture<VolumeApiResult> future = volumeService.createVolumeAsync(vol, primaryStore.getId());
+	    try {
+	        future.get();
+	    } catch (InterruptedException e) {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+	    } catch (ExecutionException e) {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+	    }
+	    
+	    //delete the volume
+	    vol = volumeFactory.getVolume(volume.getId(), primaryStore);
+	    future = volumeService.deleteVolumeAsync(vol);
+	    try {
+            future.get();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+	}
+
 	//@Test(priority=3)
 	public void tearDown() {
 	    List<PrimaryDataStoreVO> ds = primaryStoreDao.findPoolByName(this.primaryName);

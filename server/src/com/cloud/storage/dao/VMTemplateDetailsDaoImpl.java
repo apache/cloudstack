@@ -37,7 +37,7 @@ public class VMTemplateDetailsDaoImpl extends GenericDaoBase<VMTemplateDetailVO,
     protected final SearchBuilder<VMTemplateDetailVO> TemplateSearch;
     protected final SearchBuilder<VMTemplateDetailVO> DetailSearch;
     
-	protected VMTemplateDetailsDaoImpl() {
+	public VMTemplateDetailsDaoImpl() {
 		TemplateSearch = createSearchBuilder();
 		TemplateSearch.and("templateId", TemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
 		TemplateSearch.done();

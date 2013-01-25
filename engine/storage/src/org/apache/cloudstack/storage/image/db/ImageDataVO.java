@@ -136,10 +136,17 @@ public class ImageDataVO implements Identity, StateObject<TemplateState> {
     private long imageDataStoreId;
     
     @Column(name = "size")
-    private long size;
+    private Long size;
     
     @Column(name = "state")
     private TemplateState state;
+    
+    @Column(name="update_count", updatable = true)
+    protected long updatedCount;
+    
+    @Column(name = "updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    Date updated;
 
     @Transient
     Map details;
@@ -408,16 +415,36 @@ public class ImageDataVO implements Identity, StateObject<TemplateState> {
         this.imageDataStoreId = dataStoreId;
     }
     
-    public void setSize(long size) {
+    public void setSize(Long size) {
         this.size = size;
     }
     
-    public long getSize() {
+    public Long getSize() {
         return this.size;
     }
     
     public TemplateState getState() {
         return this.state;
+    }
+    
+    public long getUpdatedCount() {
+        return this.updatedCount;
+    }
+    
+    public void incrUpdatedCount() {
+        this.updatedCount++;
+    }
+
+    public void decrUpdatedCount() {
+        this.updatedCount--;
+    }
+    
+    public Date getUpdated() {
+        return updated;
+    }
+    
+    public void setUpdated(Date updated) {
+        this.updated = updated;
     }
 
 }

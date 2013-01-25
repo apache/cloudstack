@@ -19,7 +19,6 @@ package org.apache.cloudstack.storage.test;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.storage.HostEndpointRpcServer;
-import org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector;
 import org.apache.cloudstack.storage.endpoint.EndPointSelector;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +27,8 @@ import com.cloud.agent.AgentManager;
 import com.cloud.cluster.ClusteredAgentRebalanceService;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
+import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDao;
@@ -39,6 +40,8 @@ import com.cloud.dc.dao.DcDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.HostPodDaoImpl;
 import com.cloud.dc.dao.PodVlanDaoImpl;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostDetailsDaoImpl;
@@ -47,7 +50,10 @@ import com.cloud.host.dao.HostTagsDaoImpl;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolHostDaoImpl;
-import com.cloud.utils.component.ComponentContext;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.storage.dao.VMTemplateDetailsDaoImpl;
+import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 
 public class ChildTestConfiguration extends TestConfiguration {
 	
@@ -105,10 +111,21 @@ public class ChildTestConfiguration extends TestConfiguration {
 	@Bean StoragePoolHostDao storagePoolHostDao() {
 	    return new StoragePoolHostDaoImpl();
 	}
-	
+	@Bean VMTemplateZoneDao templateZoneDao() {
+	    return new VMTemplateZoneDaoImpl();
+	}
+	@Bean VMTemplateDetailsDao templateDetailsDao() {
+	    return new VMTemplateDetailsDaoImpl();
+	}
+	@Bean ConfigurationDao configDao() {
+	    return new ConfigurationDaoImpl();
+	}
 	@Bean
 	public AgentManager agentMgr() {
 		return new DirectAgentManagerSimpleImpl();
+	}
+	@Bean DomainDao domainDao() {
+	    return new DomainDaoImpl();
 	}
 	
     @Bean

@@ -18,8 +18,6 @@
  */
 package org.apache.cloudstack.storage.image.store;
 
-import java.io.File;
-
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
@@ -37,9 +35,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.storage.encoding.EncodingType;
 
 public class TemplateObject implements TemplateInfo {
-    private static final Logger s_logger = Logger.getLogger(TemplateObject.class);
+    private static final Logger s_logger = Logger
+            .getLogger(TemplateObject.class);
     private ImageDataVO imageVO;
     private DataStore dataStore;
     @Inject
@@ -51,22 +51,26 @@ public class TemplateObject implements TemplateInfo {
 
     protected TemplateObject() {
     }
-    
+
     protected void configure(ImageDataVO template, DataStore dataStore) {
         this.imageVO = template;
         this.dataStore = dataStore;
     }
-    
+
     public static TemplateObject getTemplate(ImageDataVO vo, DataStore store) {
         TemplateObject to = ComponentContext.inject(TemplateObject.class);
         to.configure(vo, store);
         return to;
     }
-    
+
     public void setImageStoreId(long id) {
         this.imageVO.setImageDataStoreId(id);
     }
     
+    public void setSize(Long size) {
+        this.imageVO.setSize(size);
+    }
+
     public ImageDataVO getImage() {
         return this.imageVO;
     }
@@ -89,14 +93,28 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getUri() {
+        ImageDataVO image = imageDao.findById(this.imageVO.getId());
         if (this.dataStore == null) {
-            return this.imageVO.getUrl();
+            return image.getUrl();
         } else {
-            ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(this.imageVO.getId(), DataObjectType.TEMPLATE, this.dataStore.getId(), this.dataStore.getRole());
-            if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-                return this.dataStore.getUri() + File.separator + "&objType=" + DataObjectType.TEMPLATE + "&size=" + this.imageVO.getSize() + "&path=" + this.imageVO.getUrl(); 
+            ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(
+                    this.imageVO.getId(), DataObjectType.TEMPLATE,
+                    this.dataStore.getId(), this.dataStore.getRole());
+            StringBuilder builder = new StringBuilder();
+            if (obj.getState() == ObjectInDataStoreStateMachine.State.Ready
+                    || obj.getState() == ObjectInDataStoreStateMachine.State.Copying) {
+                
+                builder.append(this.dataStore.getUri());
+                builder.append("&" + EncodingType.OBJTYPE + "=" + DataObjectType.TEMPLATE);
+                builder.append("&" + EncodingType.PATH + "=" + obj.getInstallPath());
+                builder.append("&" + EncodingType.SIZE + "=" + image.getSize());
+                return builder.toString();
             } else {
-                return this.dataStore.getUri() + File.separator + "&objType=" + DataObjectType.TEMPLATE + "&path=" + obj.getInstallPath();
+                builder.append(this.dataStore.getUri());
+                builder.append("&" + EncodingType.OBJTYPE + "=" + DataObjectType.TEMPLATE);
+                builder.append("&" + EncodingType.SIZE + "=" + image.getSize());
+                builder.append("&" + EncodingType.PATH + "=" + image.getUrl());
+                return builder.toString();
             }
         }
     }
@@ -104,9 +122,11 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public Long getSize() {
         if (this.dataStore == null) {
-            return null;
+            return this.imageVO.getSize();
         }
-        ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(this.imageVO.getId(), DataObjectType.TEMPLATE, this.dataStore.getId(), this.dataStore.getRole());
+        ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(
+                this.imageVO.getId(), DataObjectType.TEMPLATE,
+                this.dataStore.getId(), this.dataStore.getRole());
         return obj.getSize();
     }
 
@@ -119,8 +139,11 @@ public class TemplateObject implements TemplateInfo {
     public DiskFormat getFormat() {
         return DiskFormat.getFormat(this.imageVO.getFormat());
     }
-    
+
     public boolean stateTransit(TemplateEvent e) throws NoTransitionException {
-        return imageMgr.getStateMachine().transitTo(this.imageVO, e, null, imageDao);
+        boolean result= imageMgr.getStateMachine().transitTo(this.imageVO, e, null,
+                imageDao);
+        this.imageVO = imageDao.findById(this.imageVO.getId());
+        return result;
     }
 }

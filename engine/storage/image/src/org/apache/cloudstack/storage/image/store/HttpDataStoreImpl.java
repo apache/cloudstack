@@ -38,6 +38,7 @@ import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
 import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
 
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.storage.encoding.EncodingType;
 
 
 public class HttpDataStoreImpl implements ImageDataStore {
@@ -100,10 +101,8 @@ public class HttpDataStoreImpl implements ImageDataStore {
 
     @Override
     public String getUri() {
-        return this.imageDataStoreVO.getProtocol() + "://" + "?role=" + this.getRole();
+        return this.imageDataStoreVO.getProtocol() + "://" + "?" + EncodingType.ROLE + "=" + this.getRole();
     }
-
-
 
     @Override
     public Scope getScope() {

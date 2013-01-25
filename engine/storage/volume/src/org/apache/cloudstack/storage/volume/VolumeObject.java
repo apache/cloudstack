@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.volume;
 
-import java.io.File;
-
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
@@ -35,6 +33,7 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.utils.storage.encoding.EncodingType;
 
 public class VolumeObject implements VolumeInfo {
     private static final Logger s_logger = Logger.getLogger(VolumeObject.class);
@@ -48,14 +47,18 @@ public class VolumeObject implements VolumeInfo {
     @Inject
     ObjectInDataStoreManager ojbectInStoreMgr;
 
-    private VolumeObject(DataStore dataStore, VolumeVO volumeVO) {
+    protected VolumeObject() {
+      
+    }
+    
+    protected void configure(DataStore dataStore, VolumeVO volumeVO) {
         this.volumeVO = volumeVO;
         this.dataStore = dataStore;
     }
 
     public static VolumeObject getVolumeObject(DataStore dataStore, VolumeVO volumeVO) {
-        VolumeObject vo = new VolumeObject(dataStore, volumeVO);
-        vo = ComponentContext.inject(vo);
+        VolumeObject vo = ComponentContext.inject(VolumeObject.class);
+        vo.configure(dataStore, volumeVO);
         return vo;
     }
 
@@ -121,9 +124,14 @@ public class VolumeObject implements VolumeInfo {
         }
         ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(this.volumeVO.getId(), DataObjectType.VOLUME, this.dataStore.getId(), this.dataStore.getRole());
         if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
-            return this.dataStore.getUri() + File.separator + "&objType=" + DataObjectType.VOLUME + "&size=" + this.volumeVO.getSize() + "&name=" + this.volumeVO.getName();
+            return this.dataStore.getUri() + 
+                    "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + 
+                    "&" + EncodingType.SIZE + "=" + this.volumeVO.getSize() + 
+                    "&" + EncodingType.NAME + "=" + this.volumeVO.getName();
         } else {
-            return this.dataStore.getUri() + File.separator + "&objType=" + DataObjectType.VOLUME + "&path=" + obj.getInstallPath();
+            return this.dataStore.getUri() +
+                    "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + 
+                    "&" + EncodingType.PATH + "=" + obj.getInstallPath();
         }
     }
 

@@ -16,31 +16,43 @@
 // under the License.
 package org.apache.cloudstack.storage.db;
 import java.util.Date;
+import java.util.Map;
 
-import org.springframework.stereotype.Component;
+import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.State;
-import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
+import com.cloud.storage.VolumeVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria2;
-import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.UpdateBuilder;
+import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
 public class ObjectInDataStoreDaoImpl extends GenericDaoBase<ObjectInDataStoreVO, Long> implements ObjectInDataStoreDao {
     private static final Logger s_logger = Logger.getLogger(ObjectInDataStoreDaoImpl.class);
+    private SearchBuilder<ObjectInDataStoreVO> updateStateSearch;
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        updateStateSearch = this.createSearchBuilder();
+        updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
+        updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
+        updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
+        updateStateSearch.done();
+        return true;
+    }
     @Override
     public boolean updateState(State currentState, Event event,
             State nextState, ObjectInDataStoreVO vo, Object data) {
         Long oldUpdated = vo.getUpdatedCount();
         Date oldUpdatedTime = vo.getUpdated();
     
-        SearchCriteria<ObjectInDataStoreVO> sc = this.createSearchCriteria();
+        
+        SearchCriteria<ObjectInDataStoreVO> sc = updateStateSearch.create();
         sc.setParameters("id", vo.getId());
         sc.setParameters("state", currentState);
         sc.setParameters("updatedCount", vo.getUpdatedCount());

@@ -77,7 +77,7 @@ public class ImageServiceImpl implements ImageService {
         ObjectInDataStoreVO obj = objectInDataStoreMgr.findObject(template.getId(), template.getType(), store.getId(), store.getRole());
         TemplateInfo templateOnStore = null;
         if (obj == null) {
-            templateOnStore = objectInDataStoreMgr.create(template, store);
+            templateOnStore = (TemplateInfo)objectInDataStoreMgr.create(template, store);
             obj = objectInDataStoreMgr.findObject(template.getId(), template.getType(), store.getId(), store.getRole());
         } else {
             CommandResult result = new CommandResult();
@@ -87,7 +87,7 @@ public class ImageServiceImpl implements ImageService {
         }
         
         try {
-            objectInDataStoreMgr.update(templateOnStore, Event.CreateOnlyRequested);
+            objectInDataStoreMgr.update(obj, Event.CreateOnlyRequested);
         } catch (NoTransitionException e) {
             s_logger.debug("failed to transit", e);
             CommandResult result = new CommandResult();
@@ -125,8 +125,7 @@ public class ImageServiceImpl implements ImageService {
             future.complete(result);
             return null;
         }
-        
-        ObjectInDataStoreVO obj = context.obj;
+        ObjectInDataStoreVO obj = objectInDataStoreMgr.findObject(templateOnStore.getId(), templateOnStore.getType(), templateOnStore.getDataStore().getId(), templateOnStore.getDataStore().getRole());
         obj.setInstallPath(callbackResult.getPath());
         
         if (callbackResult.getSize() != null) {
@@ -134,15 +133,16 @@ public class ImageServiceImpl implements ImageService {
         }
         
         try {
-            objectInDataStoreMgr.update(templateOnStore, Event.OperationSuccessed);
+            objectInDataStoreMgr.update(obj, Event.OperationSuccessed);
         } catch (NoTransitionException e) {
             s_logger.debug("Failed to transit state", e);
             result.setResult(e.toString());
             future.complete(result);
             return null;
         }
-       
+        
         template.setImageStoreId(templateOnStore.getDataStore().getId());
+        template.setSize(callbackResult.getSize());
         try {
             template.stateTransit(TemplateEvent.OperationSucceeded);
         } catch (NoTransitionException e) {

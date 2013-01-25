@@ -28,22 +28,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CopyCmd;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
-import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateVolumeFromBaseImageCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
 import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
-import org.apache.cloudstack.storage.to.NfsPrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.TemplateTO;
 import org.apache.cloudstack.storage.to.VolumeTO;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -57,8 +53,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase.SRType;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.storage.encoding.DataStore;
+import com.cloud.utils.storage.encoding.DecodedDataObject;
+import com.cloud.utils.storage.encoding.Decoder;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.PBD;
@@ -137,28 +135,23 @@ public class XenServerStorageResource {
     }
     protected CreateObjectAnswer execute(CreateObjectCommand cmd) {
         String uriString = cmd.getObjectUri();
-        Map<String, String> params = null;
-        
-        try {
-            URI uri = new URI(uriString);
-            params = getParameters(uri);
-        } catch (URISyntaxException e1) {
-            s_logger.debug("uri exception", e1);
-            return new CreateObjectAnswer(cmd, false, e1.toString()); 
-        }
-        
-        if (params.get("objType").equalsIgnoreCase("template")) {
-            return getTemplateSize(cmd, params.get("path"));
-        }
-        
-        long size = Long.parseLong(params.get("size"));
-        String name = params.get("name");
-        String storeUuid = params.get("storagePath");
+        DecodedDataObject obj = null;
+
         Connection conn = hypervisorResource.getConnection();
         VDI vdi = null;
         boolean result = false;
         String errorMsg = null;
+        
         try {
+            obj = Decoder.decode(uriString);
+            DataStore store = obj.getStore(); 
+            if (obj.getObjType().equalsIgnoreCase("template") && store.getRole().equalsIgnoreCase("image")) {
+                return getTemplateSize(cmd, obj.getPath());
+            }
+            
+            long size = obj.getSize();
+            String name = obj.getName();
+            String storeUuid = store.getUuid();
             SR primaryDataStoreSR = getSRByNameLabel(conn, storeUuid);
             vdi = createVdi(conn, name, primaryDataStoreSR, size);
             VDI.Record record = vdi.getRecord(conn);
@@ -171,6 +164,9 @@ public class XenServerStorageResource {
             s_logger.debug("Failed to create volume", e);
             errorMsg = e.toString();
         } catch (XmlRpcException e) {
+            s_logger.debug("Failed to create volume", e);
+            errorMsg = e.toString();
+        } catch (URISyntaxException e) {
             s_logger.debug("Failed to create volume", e);
             errorMsg = e.toString();
         } finally {
@@ -227,13 +223,13 @@ public class XenServerStorageResource {
         }
     }
     
-    protected SR getNfsSR(Connection conn, URI uri) {
+    protected SR getNfsSR(Connection conn, DataStore store) {
         Map<String, String> deviceConfig = new HashMap<String, String>();
-        Map<String, String> params = getParameters(uri);
-        String uuid = params.get("storeUuid");
+
+        String uuid = store.getUuid();
         try {
-            String server = uri.getHost();
-            String serverpath = uri.getPath();
+            String server = store.getServer();
+            String serverpath = store.getPath();
             
             serverpath = serverpath.replace("//", "/");
             Set<SR> srs = SR.getAll(conn);
@@ -410,25 +406,17 @@ public class XenServerStorageResource {
     protected Answer execute(CreatePrimaryDataStoreCmd cmd) {
         Connection conn = hypervisorResource.getConnection();
         String storeUrl = cmd.getDataStore();
-        String scheme = null;
-        String type = null;
-        URI storeUri = null;
+
         try {
-            storeUri = new URI(storeUrl);
-        } catch(URISyntaxException e) {
-            return new Answer(cmd, false, e.toString());
-        }
-        
-        scheme = storeUri.getScheme();
-        
-        try {
-            if (scheme.equalsIgnoreCase("nfs")) {
-                SR sr = getNfsSR(conn, storeUri);
-            } else if (scheme.equalsIgnoreCase("iscsi")) {
+            DecodedDataObject obj = Decoder.decode(storeUrl);
+            DataStore store = obj.getStore();
+            if (store.getScheme().equalsIgnoreCase("nfs")) {
+                SR sr = getNfsSR(conn, store);
+            } else if (store.getScheme().equalsIgnoreCase("iscsi")) {
                 //getIscsiSR(conn, dataStore);
-            } else if (scheme.equalsIgnoreCase("presetup")) {
+            } else if (store.getScheme().equalsIgnoreCase("presetup")) {
             } else {
-                return new Answer(cmd, false, "The pool type: " + scheme + " is not supported.");
+                return new Answer(cmd, false, "The pool type: " + store.getScheme() + " is not supported.");
             }
             return new Answer(cmd, true, "success");
         } catch (Exception e) {
@@ -509,31 +497,30 @@ public class XenServerStorageResource {
        
     }
     
-    protected Answer directDownloadHttpTemplate(CopyCmd cmd, TemplateTO template, PrimaryDataStoreTO primarDataStore) {
-        String primaryStoreUuid = primarDataStore.getUuid();
+    protected Answer directDownloadHttpTemplate(CopyCmd cmd, DecodedDataObject srcObj, DecodedDataObject destObj) {
         Connection conn = hypervisorResource.getConnection();
         SR poolsr = null;
         VDI vdi = null;
         boolean result = false;
         try {
-            
-            Set<SR> srs = SR.getByNameLabel(conn, primaryStoreUuid);
+            if (destObj.getPath() == null) {
+                //need to create volume at first
+                
+            }
+            vdi = VDI.getByUuid(conn, destObj.getPath());
+            if (vdi == null) {
+                throw new CloudRuntimeException("can't find volume: " + destObj.getPath());
+            }
+            String destStoreUuid = destObj.getStore().getUuid();
+            Set<SR> srs = SR.getByNameLabel(conn, destStoreUuid);
             if (srs.size() != 1) {
-                throw new CloudRuntimeException("storage uuid: " + primaryStoreUuid + " is not unique");
+                throw new CloudRuntimeException("storage uuid: " + destStoreUuid + " is not unique");
             }
             poolsr = srs.iterator().next();
-            VDI.Record vdir = new VDI.Record();
-            vdir.nameLabel = "Base-Image-" + UUID.randomUUID().toString();
-            vdir.SR = poolsr;
-            vdir.type = Types.VdiType.USER;
-            
-            vdir.virtualSize = getTemplateSize(conn, template.getPath());
-            vdi = VDI.create(conn, vdir);
-            
-            vdir = vdi.getRecord(conn);
+            VDI.Record vdir = vdi.getRecord(conn);
             String vdiLocation = vdir.location;
             String pbdLocation = null;
-            if (primarDataStore.getType().equalsIgnoreCase(DataStoreProtocol.NFS.toString())) {
+            if (destObj.getStore().getScheme().equalsIgnoreCase(DataStoreProtocol.NFS.toString())) {
                 pbdLocation = "/run/sr-mount/" + poolsr.getUuid(conn);
             } else {
                 Set<PBD> pbds = poolsr.getPBDs(conn);
@@ -551,7 +538,7 @@ public class XenServerStorageResource {
             String vdiPath = pbdLocation + "/" + vdiLocation + ".vhd";
             //download a url into vdipath
             //downloadHttpToLocalFile(vdiPath, template.getPath());
-            hypervisorResource.callHostPlugin(conn, "storagePlugin", "downloadTemplateFromUrl", "destPath", vdiPath, "srcUrl", template.getPath());
+            hypervisorResource.callHostPlugin(conn, "storagePlugin", "downloadTemplateFromUrl", "destPath", vdiPath, "srcUrl", srcObj.getPath());
             result = true;
             return new CopyCmdAnswer(cmd, vdi.getUuid(conn));
         } catch (BadServerResponse e) {
@@ -581,16 +568,10 @@ public class XenServerStorageResource {
     protected Answer execute(AttachPrimaryDataStoreCmd cmd) {
         String dataStoreUri = cmd.getDataStore();
         Connection conn = hypervisorResource.getConnection();
-        Map<String, String> params = null;
         try {
-            try {
-                URI uri = new URI(dataStoreUri);
-                params = getParameters(uri);
-            } catch (URISyntaxException e1) {
-                s_logger.debug("uri exception", e1);
-                return new CreateObjectAnswer(cmd, false, e1.toString()); 
-            }
-            SR sr = hypervisorResource.getStorageRepository(conn, params.get("storeUuid"));
+            DecodedDataObject obj = Decoder.decode(dataStoreUri);
+            DataStore store = obj.getStore();
+            SR sr = hypervisorResource.getStorageRepository(conn, store.getUuid());
             hypervisorResource.setupHeartbeatSr(conn, sr, false);
             long capacity = sr.getPhysicalSize(conn);
             long available = capacity - sr.getPhysicalUtilisation(conn);
@@ -616,10 +597,18 @@ public class XenServerStorageResource {
     }
     
     protected Answer execute(CopyCmd cmd) {
-        ImageOnPrimayDataStoreTO imageTO = cmd.getImage();
-        TemplateTO template = imageTO.getTemplate();
-        if (template.getPath().startsWith("http")) {
-            return directDownloadHttpTemplate(cmd, template, imageTO.getPrimaryDataStore());
+        DecodedDataObject srcObj = null;
+        DecodedDataObject destObj = null;
+        try {
+            srcObj = Decoder.decode(cmd.getSrcUri());
+            destObj = Decoder.decode(cmd.getDestUri());
+        } catch (URISyntaxException e) {
+            return new Answer(cmd, false, e.toString());
+        }
+       
+        
+        if (srcObj.getPath().startsWith("http")) {
+            return directDownloadHttpTemplate(cmd, srcObj, destObj);
         } else {
             return new Answer(cmd, false, "not implemented yet");
             /*

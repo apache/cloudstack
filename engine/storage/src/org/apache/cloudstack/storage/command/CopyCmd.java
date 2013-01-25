@@ -16,25 +16,24 @@
 // under the License.
 package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.storage.to.ImageOnPrimayDataStoreTO;
-
 import com.cloud.agent.api.Command;
 
 public class CopyCmd extends Command implements StorageSubSystemCommand {
+    private String srcUri;
+    private String destUri;
 
-    private ImageOnPrimayDataStoreTO imageTO;
-
-    protected CopyCmd() {
+    public CopyCmd(String srcUri, String destUri) {
         super();
-    }
-
-    public CopyCmd(String destUri, String srcUri) {
-        super();
-       // this.imageTO = image;
+        this.srcUri = srcUri;
+        this.destUri = destUri;
     }
     
-    public ImageOnPrimayDataStoreTO getImage() {
-        return this.imageTO;
+    public String getDestUri() {
+        return this.destUri;
+    }
+    
+    public String getSrcUri() {
+        return this.srcUri;
     }
 
     @Override
