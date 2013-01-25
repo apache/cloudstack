@@ -918,10 +918,16 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 s_logger.info("Investigating why host " + hostId + " has disconnected with event " + event);
 
                 final Status determinedState = investigate(attache);
+                // if state cannot be determined do nothing and bail out
+                if (determinedState == null) {
+                    s_logger.warn("Agent state cannot be determined, do nothing");
+                    return false;
+                }
+
                 final Status currentStatus = host.getStatus();
                 s_logger.info("The state determined is " + determinedState);
 
-                if (determinedState == null || determinedState == Status.Down) {
+                if (determinedState == Status.Down) {
                     s_logger.error("Host is down: " + host.getId() + "-" + host.getName() + ".  Starting HA on the VMs");
                     event = Status.Event.HostDown;
                 } else if (determinedState == Status.Up) {

@@ -19,16 +19,16 @@ package com.cloud.api;
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Iterator;
+
+import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
@@ -147,17 +147,38 @@ public abstract class APITest {
     protected Object fromSerializedString(String result, Class<?> repCls) {
         try {
             if (result != null && !result.isEmpty()) {
-
                 // get real content
-                int start = result.indexOf('{', result.indexOf('{') + 1); // find the second {
-                if ( start < 0 ){
+                int start;
+                int end;
+                if (repCls == LoginResponse.class || repCls == SuccessResponse.class) {
+
+                    start = result.indexOf('{', result.indexOf('{') + 1); // find
+                                                                          // the
+                                                                          // second
+                                                                          // {
+
+                    end = result.lastIndexOf('}', result.lastIndexOf('}') - 1); // find
+                                                                                // the
+                                                                                // second
+                                                                                // }
+                                                                                // backwards
+
+                } else {
+                    // get real content
+                    start = result.indexOf('{', result.indexOf('{', result.indexOf('{') + 1) + 1); // find
+                                                                                                   // the
+                                                                                                   // third
+                                                                                                   // {
+                    end = result.lastIndexOf('}', result.lastIndexOf('}', result.lastIndexOf('}') - 1) - 1); // find
+                                                                                                             // the
+                                                                                                             // third
+                                                                                                             // }
+                                                                                                             // backwards
+                }
+                if (start < 0 || end < 0) {
                     throw new CloudRuntimeException("Response format is wrong: " + result);
                 }
-                int end = result.lastIndexOf('}', result.lastIndexOf('}')-1); // find the second } backwards
-                if ( end < 0 ){
-                    throw new CloudRuntimeException("Response format is wrong: " + result);
-                }
-                String content = result.substring(start, end+1);
+                String content = result.substring(start, end + 1);
                 Gson gson = ApiGsonHelper.getBuilder().create();
                 return gson.fromJson(content, repCls);
             }

@@ -196,7 +196,7 @@ public class F5BigIpResource implements ServerResource {
 		cmd.setPod("");
     	cmd.setPrivateIpAddress(_ip);
     	cmd.setStorageIpAddress("");
-    	cmd.setVersion("");
+    	cmd.setVersion(F5BigIpResource.class.getPackage().getImplementationVersion());
     	cmd.setGuid(_guid);
     	return new StartupCommand[]{cmd};
     }

@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,7 +26,6 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import com.cloud.offering.ServiceOffering;
 
 @APICommand(name = "listServiceOfferings", description="Lists all available service offerings.", responseObject=ServiceOfferingResponse.class)
 public class ListServiceOfferingsCmd extends BaseListCmd {
@@ -102,17 +98,10 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends ServiceOffering> offerings = _mgr.searchForServiceOfferings(this);
-        ListResponse<ServiceOfferingResponse> response = new ListResponse<ServiceOfferingResponse>();
-        List<ServiceOfferingResponse> offeringResponses = new ArrayList<ServiceOfferingResponse>();
-        for (ServiceOffering offering : offerings) {
-            ServiceOfferingResponse offeringResponse = _responseGenerator.createServiceOfferingResponse(offering);
-            offeringResponse.setObjectName("serviceoffering");
-            offeringResponses.add(offeringResponse);
-        }
 
-        response.setResponses(offeringResponses);
+        ListResponse<ServiceOfferingResponse> response = _queryService.searchForServiceOfferings(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
+
     }
 }

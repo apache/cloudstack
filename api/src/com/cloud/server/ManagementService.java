@@ -25,6 +25,7 @@ import java.util.Set;
 import com.cloud.alert.Alert;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
+import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
@@ -93,29 +94,12 @@ public interface ManagementService {
     static final String Name = "management-server";
 
     /**
-     * Retrieves the list of data centers with search criteria. Currently the only search criteria is "available" zones
-     * for the
-     * account that invokes the API. By specifying available=true all zones which the account can access. By specifying
-     * available=false the zones where the account has virtual machine instances will be returned.
-     *
-     * @return a list of DataCenters
-     */
-    List<? extends DataCenter> listDataCenters(ListZonesByCmd cmd);
-
-    /**
      * returns the a map of the names/values in the configuraton table
      *
      * @return map of configuration name/values
      */
     Pair<List<? extends Configuration>, Integer> searchForConfigurations(ListCfgsByCmd c);
 
-    /**
-     * Searches for Service Offerings by the specified search criteria Can search by: "name"
-     *
-     * @param cmd
-     * @return List of ServiceOfferings
-     */
-    List<? extends ServiceOffering> searchForServiceOfferings(ListServiceOfferingsCmd cmd);
 
     /**
      * Searches for Clusters by the specified search criteria
@@ -140,6 +124,14 @@ public interface ManagementService {
      */
     Pair<List<? extends Pod>, Integer> searchForPods(ListPodsByCmd cmd);
 
+    /**
+     * Searches for servers by the specified search criteria Can search by: "name", "type", "state", "dataCenterId",
+     * "podId"
+     *
+     * @param cmd
+     * @return List of Hosts
+     */
+    Pair<List<? extends Host>, Integer> searchForServers(ListHostsCmd cmd);
 
     /**
      * Creates a new template
@@ -233,15 +225,6 @@ public interface ManagementService {
      * @return list of ISOs
      */
     Set<Pair<Long, Long>> listTemplates(ListTemplatesCmd cmd);
-
-    /**
-     * Search for disk offerings based on search criteria
-     *
-     * @param cmd
-     *            the command containing the criteria to use for searching for disk offerings
-     * @return a list of disk offerings that match the given criteria
-     */
-    List<? extends DiskOffering> searchForDiskOfferings(ListDiskOfferingsCmd cmd);
 
 
     /**
@@ -384,7 +367,7 @@ public interface ManagementService {
      * @return Pair<List<? extends Host>, List<? extends Host>> List of all Hosts in VM's cluster and list of Hosts with
      *         enough capacity
      */
-    Pair<List<? extends Host>, List<? extends Host>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize);
+    Pair<Pair<List<? extends Host>, Integer>, List<? extends Host>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize);
 
     String[] listEventTypes();
 

@@ -25,6 +25,7 @@
 <section id="hypervisor-host-install-network">
     <title>Configure the network bridges</title>
     <warning><para>This is a very important section, please make sure you read this thoroughly.</para></warning>
+    <note><para>This section details how to configure bridges using the native implementation in Linux. Please refer to the next section if you intend to use OpenVswitch</para></note>
     <para>In order to forward traffic to your instances you will need at least two bridges: <emphasis>public</emphasis> and <emphasis>private</emphasis>.</para>
     <para>By default these bridges are called <emphasis>cloudbr0</emphasis> and <emphasis>cloudbr1</emphasis>, but you do have to make sure they are available on each hypervisor.</para>
     <para>The most important factor is that you keep the configuration consistent on all your hypervisors.</para>

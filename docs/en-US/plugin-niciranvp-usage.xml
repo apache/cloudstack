@@ -24,6 +24,7 @@
     <title>Using the Nicira NVP Plugin</title>
     
     <xi:include href="plugin-niciranvp-preparations.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
+    <xi:include href="plugin-niciranvp-ui.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
     <xi:include href="plugin-niciranvp-provider.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
     <xi:include href="plugin-niciranvp-devicemanagement.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
 </chapter>

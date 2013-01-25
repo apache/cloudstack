@@ -3984,7 +3984,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         cmd.setHypervisorType(HypervisorType.VMware);
         cmd.setStateChanges(changes);
         cmd.setCluster(_cluster);
-        cmd.setVersion(hostApiVersion);
+        cmd.setHypervisorVersion(hostApiVersion);
 
         List<StartupStorageCommand> storageCmds = initializeLocalStorage();
         StartupCommand[] answerCmds = new StartupCommand[1 + storageCmds.size()];

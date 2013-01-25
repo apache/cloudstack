@@ -509,3 +509,8 @@ configureSimulator=1
 #### api discovery commands
 
 listApis=15
+
+#### API Rate Limit service command
+
+getApiLimit=15
+resetApiLimit=1

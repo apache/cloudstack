@@ -5778,6 +5778,10 @@ label.error {
   height: 223px;
 }
 
+.multi-wizard.instance-wizard .select-network.no-add-network .select table .select-container {
+  height: 282px;
+}
+
 .multi-wizard.instance-wizard .select-network .select.new-network table .select-container {
   height: 29px;
   overflow: visible;
@@ -5800,6 +5804,10 @@ label.error {
 
 .multi-wizard.instance-wizard .select-network .select.new-network {
   margin: -17px 0 0;
+}
+
+.multi-wizard.instance-wizard .select-network.no-add-network .select.new-network {
+  display: none !important;
 }
 
 .multi-wizard.instance-wizard .select-network .main-desc {
@@ -5849,6 +5857,10 @@ label.error {
   float: left;
   padding: 3px;
   margin: 7px 0px 7px 7px;
+}
+
+.multi-wizard.instance-wizard .select-network.no-add-network .select-vpc {
+  visibility: hidden !important;
 }
 
 .multi-wizard.instance-wizard .select-network .select-vpc select {

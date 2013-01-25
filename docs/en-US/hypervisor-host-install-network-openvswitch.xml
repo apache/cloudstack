@@ -1,0 +1,116 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="hypervisor-host-install-network-openvswitch">
+    <title>Configure the network using OpenVswitch</title>
+    <warning><para>This is a very important section, please make sure you read this thoroughly.</para></warning>
+    <para>In order to forward traffic to your instances you will need at least two bridges: <emphasis>public</emphasis> and <emphasis>private</emphasis>.</para>
+    <para>By default these bridges are called <emphasis>cloudbr0</emphasis> and <emphasis>cloudbr1</emphasis>, but you do have to make sure they are available on each hypervisor.</para>
+    <para>The most important factor is that you keep the configuration consistent on all your hypervisors.</para>
+    <section id="hypervisor-host-install-network-openvswitch-prepare">
+        <title>Preparing</title>
+        <para>To make sure that the native bridge module will not interfere with openvswitch the bridge module should be added to the blacklist. See the modprobe documentation for your distribution on where to find the blacklist. Make sure the module is not loaded either by rebooting or executing rmmod bridge before executing next steps.</para>
+        <para>The network configurations below depend on the ifup-ovs and ifdown-ovs scripts which are part of the openvswitch installation. They should be installed in /etc/sysconfig/network-scripts/</para>
+    </section>        
+    <section id="hypervisor-host-install-network-openvswitch-vlan">
+        <title>Network example</title>
+        <para>There are many ways to configure your network. In the Basic networking mode you should have two (V)LAN's, one for your private network and one for the public network.</para>
+        <para>We assume that the hypervisor has one NIC (eth0) with three tagged VLAN's:</para>
+        <orderedlist>
+            <listitem><para>VLAN 100 for management of the hypervisor</para></listitem>
+            <listitem><para>VLAN 200 for public network of the instances (cloudbr0)</para></listitem>
+            <listitem><para>VLAN 300 for private network of the instances (cloudbr1)</para></listitem>
+        </orderedlist>
+        <para>On VLAN 100 we give the Hypervisor the IP-Address 192.168.42.11/24 with the gateway 192.168.42.1</para>
+        <note><para>The Hypervisor and Management server don't have to be in the same subnet!</para></note>
+    </section>
+    <section id="hypervisor-host-install-network-openvswitch-configure">
+        <title>Configuring the network bridges</title>
+        <para>It depends on the distribution you are using how to configure these, below you'll find
+            examples for RHEL/CentOS.</para>
+        <note><para>The goal is to have three bridges called 'mgmt0', 'cloudbr0' and 'cloudbr1' after this
+                section. This should be used as a guideline only. The exact configuration will
+                depend on your network layout.</para></note>
+        <section id="hypervisor-host-install-network-openvswitch-configure-ovs">
+            <title>Configure OpenVswitch</title>
+            <para>The network interfaces using OpenVswitch are created using the ovs-vsctl command. This command will configure the interfaces and persist them to the OpenVswitch database.</para>
+            <para>First we create a main bridge connected to the eth0 interface. Next we create three fake bridges, each connected to a specific vlan tag.</para>
+            <programlisting><![CDATA[# ovs-vsctl add-br cloudbr
+# ovs-vsctl add-port cloudbr eth0 
+# ovs-vsctl set port cloudbr trunks=100,200,300
+# ovs-vsctl add-br mgmt0 cloudbr 100
+# ovs-vsctl add-br cloudbr0 cloudbr 200
+# ovs-vsctl add-br cloudbr1 cloudbr 300]]></programlisting>
+        </section>
+        <section id="hypervisor-host-install-network-openvswitch-configure-rhel">
+            <title>Configure in RHEL or CentOS</title>
+            <para>The required packages were installed when openvswitch and libvirt were installed,
+                we can proceed to configuring the network.</para>
+            <para>First we configure eth0</para>
+            <programlisting language="Bash">vi /etc/sysconfig/network-scripts/ifcfg-eth0</programlisting>
+            <para>Make sure it looks similair to:</para>
+            <programlisting><![CDATA[DEVICE=eth0
+HWADDR=00:04:xx:xx:xx:xx
+ONBOOT=yes
+HOTPLUG=no
+BOOTPROTO=none
+TYPE=Ethernet]]></programlisting>
+            <para>We have to configure the base bridge with the trunk.</para>
+            <programlisting language="Bash">vi /etc/sysconfig/network-scripts/ifcfg-cloudbr</programlisting>
+            <programlisting><![CDATA[DEVICE=cloudbr
+ONBOOT=yes
+HOTPLUG=no
+BOOTPROTO=none
+DEVICETYPE=ovs
+TYPE=OVSBridge]]></programlisting>
+            <para>We now have to configure the three VLAN bridges:</para>
+            <programlisting language="Bash">vi /etc/sysconfig/network-scripts/ifcfg-mgmt0</programlisting>
+            <programlisting><![CDATA[DEVICE=mgmt0
+ONBOOT=yes
+HOTPLUG=no
+BOOTPROTO=static
+DEVICETYPE=ovs
+TYPE=OVSBridge
+IPADDR=192.168.42.11
+GATEWAY=192.168.42.1
+NETMASK=255.255.255.0]]></programlisting>
+            <programlisting language="Bash">vi /etc/sysconfig/network-scripts/ifcfg-cloudbr0</programlisting>
+            <programlisting><![CDATA[DEVICE=cloudbr0
+ONBOOT=yes
+HOTPLUG=no
+BOOTPROTO=none
+DEVICETYPE=ovs
+TYPE=OVSBridge]]></programlisting>
+            <programlisting language="Bash">vi /etc/sysconfig/network-scripts/ifcfg-cloudbr1</programlisting>
+            <programlisting><![CDATA[DEVICE=cloudbr1
+ONBOOT=yes
+HOTPLUG=no
+BOOTPROTO=none
+TYPE=OVSBridge
+DEVICETYPE=ovs]]></programlisting>
+            <para>With this configuration you should be able to restart the network, although a reboot is recommended to see if everything works properly.</para>
+            <warning><para>Make sure you have an alternative way like IPMI or ILO to reach the machine in case you made a configuration error and the network stops functioning!</para></warning>
+        </section>
+    </section>
+</section>

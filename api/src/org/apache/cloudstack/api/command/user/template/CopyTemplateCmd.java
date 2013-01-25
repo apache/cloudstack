@@ -51,7 +51,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
             required=true, description="ID of the zone the template is being copied to.")
     private Long destZoneId;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = UserVmResponse.class,
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TemplateResponse.class,
             required=true, description="Template ID.")
     private Long id;
 

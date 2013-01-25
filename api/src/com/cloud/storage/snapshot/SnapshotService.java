@@ -82,7 +82,7 @@ public interface SnapshotService {
      *            the command that specifies the volume criteria
      * @return list of snapshot policies
      */
-    List<? extends SnapshotPolicy> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd);
+    Pair<List<? extends SnapshotPolicy>, Integer> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd);
 
     boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd);
 

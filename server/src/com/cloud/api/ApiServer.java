@@ -51,6 +51,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.cloud.utils.ReflectUtil;
+import org.apache.cloudstack.acl.APILimitChecker;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.*;
@@ -60,6 +61,7 @@ import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.ConnectionClosedException;
@@ -94,6 +96,8 @@ import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
+import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
@@ -118,6 +122,7 @@ import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.RequestLimitException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.server.ManagementServer;
@@ -150,6 +155,8 @@ public class ApiServer implements HttpRequestHandler {
     @Inject private DomainManager _domainMgr = null;
     @Inject private AsyncJobManager _asyncMgr = null;
 
+    @Inject(adapter = APILimitChecker.class)
+    protected Adapters<APILimitChecker> _apiLimitCheckers;
     @Inject(adapter = APIChecker.class)
     protected Adapters<APIChecker> _apiAccessCheckers;
 
@@ -382,6 +389,7 @@ public class ApiServer implements HttpRequestHandler {
             if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
+
             }
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, errorMsg, ex);
         }
@@ -509,6 +517,9 @@ public class ApiServer implements HttpRequestHandler {
                     && !(cmdObj instanceof ListUsersCmd)
                     && !(cmdObj instanceof ListAccountsCmd)
                     && !(cmdObj instanceof ListStoragePoolsCmd)
+                    && !(cmdObj instanceof ListDiskOfferingsCmd)
+                    && !(cmdObj instanceof ListServiceOfferingsCmd)
+                    && !(cmdObj instanceof ListZonesByCmd)
                     ) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }
@@ -585,12 +596,17 @@ public class ApiServer implements HttpRequestHandler {
             // if userId not null, that mean that user is logged in
             if (userId != null) {
             	User user = ApiDBUtils.findUserById(userId);
+
             	try{
             	    checkCommandAvailable(user, commandName);
             	}
             	catch (PermissionDeniedException ex){
                     s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
+                }
+                catch (RequestLimitException ex){
+                    s_logger.debug(ex.getMessage());
+                    throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
                 }
                 return true;
             } else {
@@ -820,6 +836,7 @@ public class ApiServer implements HttpRequestHandler {
         }
         return true;
     }
+
 
     private void checkCommandAvailable(User user, String commandName) throws PermissionDeniedException {
         if (user == null) {
