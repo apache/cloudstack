@@ -62,7 +62,9 @@ public class AlertGenerator {
                 Adapters<EventBus> eventBusImpls = locator.getAdapters(EventBus.class);
                 if (eventBusImpls != null) {
                     Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
-                   _eventBus = eventBusenum.nextElement();
+                    if (eventBusenum != null && eventBusenum.hasMoreElements()) {
+                        _eventBus = eventBusenum.nextElement();
+                    }
                 }
                 _eventBusLoaded = true;
             }

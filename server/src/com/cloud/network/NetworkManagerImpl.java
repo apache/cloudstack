@@ -198,11 +198,12 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     NetworkACLManager _networkACLMgr;
     @Inject
     UsageEventDao _usageEventDao;
+    @Inject
+    NetworkModel _networkModel;
 
     protected StateMachine2<Network.State, Network.Event, Network> _stateMachine;
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
     private static Long _privateOfferingId = null;
-    NetworkModel _networkModel;
 
     ScheduledExecutorService _executor;
 
