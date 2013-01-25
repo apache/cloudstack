@@ -18,8 +18,11 @@ package com.cloud.api.query;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -41,6 +44,7 @@ import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
@@ -59,11 +63,13 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
+import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
@@ -80,6 +86,7 @@ import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
+import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
@@ -96,6 +103,7 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -107,6 +115,7 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
+import com.cloud.org.Grouping;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.Project;
@@ -135,8 +144,10 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
 /**
@@ -232,6 +243,12 @@ public class QueryManagerImpl implements QueryService, Manager {
 
     @Inject
     private ServiceOfferingDao _srvOfferingDao;
+
+    @Inject
+    private DataCenterJoinDao _dcJoinDao;
+
+    @Inject
+    private DomainRouterDao _routerDao;
 
     @Inject
     private HighAvailabilityManager _haMgr;
@@ -2114,7 +2131,7 @@ public class QueryManagerImpl implements QueryService, Manager {
                 domainRecord = _domainDao.findById(domainRecord.getParent());
                 domainIds.add(domainRecord.getId());
             }
-            sc.addAnd("domainIdIn", SearchCriteria.Op.IN, domainIds);
+            sc.addAnd("domainId", SearchCriteria.Op.IN, domainIds);
 
             // include also public offering if no keyword, name and id specified
             if ( keyword == null && name == null && id == null ){
@@ -2187,6 +2204,125 @@ public class QueryManagerImpl implements QueryService, Manager {
 
 
 
+    @Override
+    public ListResponse<ZoneResponse> listDataCenters(ListZonesByCmd cmd) {
+        Pair<List<DataCenterJoinVO>, Integer> result = listDataCentersInternal(cmd);
+        ListResponse<ZoneResponse> response = new ListResponse<ZoneResponse>();
+        List<ZoneResponse> dcResponses = ViewResponseHelper.createDataCenterResponse(cmd.getShowCapacities(), result.first().toArray(new DataCenterJoinVO[result.first().size()]));
+        response.setResponses(dcResponses, result.second());
+        return response;
+    }
+
+
+    private Pair<List<DataCenterJoinVO>, Integer> listDataCentersInternal(ListZonesByCmd cmd) {
+        Account account = UserContext.current().getCaller();
+        Long domainId = cmd.getDomainId();
+        Long id = cmd.getId();
+        String keyword = cmd.getKeyword();
+
+        Filter searchFilter = new Filter(DataCenterJoinVO.class, null, false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchCriteria<DataCenterJoinVO> sc = _dcJoinDao.createSearchCriteria();
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        } else {
+            if (keyword != null) {
+                SearchCriteria<DataCenterJoinVO> ssc = _dcJoinDao.createSearchCriteria();
+                ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+                ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+                sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+            }
+
+            if (domainId != null) {
+                // for domainId != null
+                // right now, we made the decision to only list zones associated
+                // with this domain, private zone
+                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+            }  else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                // it was decided to return all zones for the user's domain, and
+                // everything above till root
+                // list all zones belonging to this domain, and all of its
+                // parents
+                // check the parent, if not null, add zones for that parent to
+                // list
+
+
+                // find all domain Id up to root domain for this account
+                List<Long> domainIds = new ArrayList<Long>();
+                DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+                if ( domainRecord == null ){
+                    s_logger.error("Could not find the domainId for account:" + account.getAccountName());
+                    throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
+                }
+                domainIds.add(domainRecord.getId());
+                while (domainRecord.getParent() != null ){
+                    domainRecord = _domainDao.findById(domainRecord.getParent());
+                    domainIds.add(domainRecord.getId());
+                }
+                // domainId == null (public zones) or domainId IN [all domain id up to root domain]
+                SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
+                sdc.addOr("domainId", SearchCriteria.Op.IN, domainIds);
+                sdc.addOr("domainId", SearchCriteria.Op.NULL);
+                sc.addAnd("domain", SearchCriteria.Op.SC, sdc);
+
+                // remove disabled zones
+                sc.addAnd("allocationState", SearchCriteria.Op.NEQ, Grouping.AllocationState.Disabled);
+
+            } else if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                // it was decided to return all zones for the domain admin, and
+                // everything above till root, as well as zones till the domain leaf
+                List<Long> domainIds = new ArrayList<Long>();
+                DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+                if ( domainRecord == null ){
+                    s_logger.error("Could not find the domainId for account:" + account.getAccountName());
+                    throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
+                }
+                domainIds.add(domainRecord.getId());
+                // find all domain Ids till leaf
+                List<DomainVO> allChildDomains = _domainDao.findAllChildren(domainRecord.getPath(), domainRecord.getId());
+                for (DomainVO domain : allChildDomains) {
+                    domainIds.add(domain.getId());
+                }
+                // then find all domain Id up to root domain for this account
+                while (domainRecord.getParent() != null ){
+                    domainRecord = _domainDao.findById(domainRecord.getParent());
+                    domainIds.add(domainRecord.getId());
+                }
+
+                // domainId == null (public zones) or domainId IN [all domain id up to root domain]
+                SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
+                sdc.addOr("domainId", SearchCriteria.Op.IN, domainIds);
+                sdc.addOr("domainId", SearchCriteria.Op.NULL);
+                sc.addAnd("domain", SearchCriteria.Op.SC, sdc);
+
+                // remove disabled zones
+                sc.addAnd("allocationState", SearchCriteria.Op.NEQ, Grouping.AllocationState.Disabled);
+            }
+
+            // handle available=FALSE option, only return zones with at least one VM running there
+            Boolean available = cmd.isAvailable();
+            if (account != null) {
+                if ((available != null) && Boolean.FALSE.equals(available)) {
+                    Set<Long> dcIds = new HashSet<Long>(); //data centers with at least one VM running
+                    List<DomainRouterVO> routers = _routerDao.listBy(account.getId());
+                    for (DomainRouterVO router : routers){
+                        dcIds.add(router.getDataCenterIdToDeployIn());
+                    }
+                    if ( dcIds.size() == 0) {
+                        return new Pair<List<DataCenterJoinVO>, Integer>(new ArrayList<DataCenterJoinVO>(), 0);
+                    }
+                    else{
+                        sc.addAnd("idIn", SearchCriteria.Op.IN, dcIds);
+                    }
+
+                }
+            }
+        }
+
+        return _dcJoinDao.searchAndCount(sc, searchFilter);
+    }
+
+
     // This method is used for permissions check for both disk and service
     // offerings
     private boolean isPermissible(Long accountDomainId, Long offeringDomainId) {
@@ -2214,4 +2350,6 @@ public class QueryManagerImpl implements QueryService, Manager {
 
         return false;
     }
+
+
 }

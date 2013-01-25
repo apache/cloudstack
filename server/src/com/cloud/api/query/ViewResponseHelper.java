@@ -40,11 +40,13 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
+import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
@@ -291,6 +293,14 @@ public class ViewResponseHelper {
         List<ServiceOfferingResponse> respList = new ArrayList<ServiceOfferingResponse>();
         for (ServiceOfferingJoinVO vt : offerings){
             respList.add(ApiDBUtils.newServiceOfferingResponse(vt));
+        }
+        return respList;
+    }
+
+    public static List<ZoneResponse> createDataCenterResponse(Boolean showCapacities, DataCenterJoinVO... dcs) {
+        List<ZoneResponse> respList = new ArrayList<ZoneResponse>();
+        for (DataCenterJoinVO vt : dcs){
+            respList.add(ApiDBUtils.newDataCenterResponse(vt, showCapacities));
         }
         return respList;
     }

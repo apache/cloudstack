@@ -44,6 +44,7 @@ import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.ControlledViewEntity;
+import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
@@ -723,77 +724,42 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ZoneResponse createZoneResponse(DataCenter dataCenter, Boolean showCapacities) {
-        Account account = UserContext.current().getCaller();
-        ZoneResponse zoneResponse = new ZoneResponse();
-        zoneResponse.setId(dataCenter.getUuid());
-        zoneResponse.setName(dataCenter.getName());
-        zoneResponse.setSecurityGroupsEnabled(ApiDBUtils.isSecurityGroupEnabledInZone(dataCenter.getId()));
-        zoneResponse.setLocalStorageEnabled(dataCenter.isLocalStorageEnabled());
-
-        if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
-            zoneResponse.setDescription(dataCenter.getDescription());
-        }
-
-        if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
-            zoneResponse.setDns1(dataCenter.getDns1());
-            zoneResponse.setDns2(dataCenter.getDns2());
-            zoneResponse.setInternalDns1(dataCenter.getInternalDns1());
-            zoneResponse.setInternalDns2(dataCenter.getInternalDns2());
-            // FIXME zoneResponse.setVlan(dataCenter.get.getVnet());
-            zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
-        }
-
-        if (showCapacities != null && showCapacities) {
-            List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(dataCenter.getId(), null, null);
-            Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
-            float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor();
-
-            for (SummedCapacity capacity : capacities) {
-                CapacityResponse capacityResponse = new CapacityResponse();
-                capacityResponse.setCapacityType(capacity.getCapacityType());
-                capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
-                if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_CPU) {
-                    capacityResponse.setCapacityTotal(new Long((long) (capacity.getTotalCapacity() * cpuOverprovisioningFactor)));
-                } else if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
-                    List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(dataCenter.getId(), null, null);
-                    capacityResponse.setCapacityTotal(capacity.getTotalCapacity() - c.get(0).getTotalCapacity());
-                    capacityResponse.setCapacityUsed(capacity.getUsedCapacity() - c.get(0).getUsedCapacity());
-                } else {
-                    capacityResponse.setCapacityTotal(capacity.getTotalCapacity());
-                }
-                if (capacityResponse.getCapacityTotal() != 0) {
-                    capacityResponse.setPercentUsed(s_percentFormat.format((float) capacityResponse.getCapacityUsed() / (float) capacityResponse.getCapacityTotal() * 100f));
-                } else {
-                    capacityResponse.setPercentUsed(s_percentFormat.format(0L));
-                }
-                capacityResponses.add(capacityResponse);
-            }
-            // Do it for stats as well.
-            capacityResponses.addAll(getStatsCapacityresponse(null, null, null, dataCenter.getId()));
-
-            zoneResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
-        }
-
-        // set network domain info
-        zoneResponse.setDomain(dataCenter.getDomain());
-
-        // set domain info
-        Long domainId = dataCenter.getDomainId();
-        if (domainId != null) {
-            Domain domain = ApiDBUtils.findDomainById(domainId);
-            zoneResponse.setDomainId(domain.getId());
-            zoneResponse.setDomainName(domain.getName());
-        }
-
-        zoneResponse.setType(dataCenter.getNetworkType().toString());
-        zoneResponse.setAllocationState(dataCenter.getAllocationState().toString());
-        zoneResponse.setZoneToken(dataCenter.getZoneToken());
-        zoneResponse.setDhcpProvider(dataCenter.getDhcpProvider());
-        zoneResponse.setObjectName("zone");
-        return zoneResponse;
+        DataCenterJoinVO vOffering = ApiDBUtils.newDataCenterView(dataCenter);
+        return ApiDBUtils.newDataCenterResponse(vOffering, showCapacities);
     }
 
-    private List<CapacityResponse> getStatsCapacityresponse(Long poolId, Long clusterId, Long podId, Long zoneId) {
+    public static List<CapacityResponse> getDataCenterCapacityResponse(Long zoneId){
+        List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(zoneId, null, null);
+        Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
+        float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor();
+
+        for (SummedCapacity capacity : capacities) {
+            CapacityResponse capacityResponse = new CapacityResponse();
+            capacityResponse.setCapacityType(capacity.getCapacityType());
+            capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
+            if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_CPU) {
+                capacityResponse.setCapacityTotal(new Long((long) (capacity.getTotalCapacity() * cpuOverprovisioningFactor)));
+            } else if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
+                List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(zoneId, null, null);
+                capacityResponse.setCapacityTotal(capacity.getTotalCapacity() - c.get(0).getTotalCapacity());
+                capacityResponse.setCapacityUsed(capacity.getUsedCapacity() - c.get(0).getUsedCapacity());
+            } else {
+                capacityResponse.setCapacityTotal(capacity.getTotalCapacity());
+            }
+            if (capacityResponse.getCapacityTotal() != 0) {
+                capacityResponse.setPercentUsed(s_percentFormat.format((float) capacityResponse.getCapacityUsed() / (float) capacityResponse.getCapacityTotal() * 100f));
+            } else {
+                capacityResponse.setPercentUsed(s_percentFormat.format(0L));
+            }
+            capacityResponses.add(capacityResponse);
+        }
+        // Do it for stats as well.
+        capacityResponses.addAll(getStatsCapacityresponse(null, null, null, zoneId));
+
+        return new ArrayList<CapacityResponse>(capacityResponses);
+    }
+
+    private static List<CapacityResponse> getStatsCapacityresponse(Long poolId, Long clusterId, Long podId, Long zoneId) {
         List<CapacityVO> capacities = new ArrayList<CapacityVO>();
         capacities.add(ApiDBUtils.getStoragePoolUsedStats(poolId, clusterId, podId, zoneId));
         if (clusterId == null && podId == null) {

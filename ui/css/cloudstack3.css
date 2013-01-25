@@ -5859,6 +5859,10 @@ label.error {
   margin: 7px 0px 7px 7px;
 }
 
+.multi-wizard.instance-wizard .select-network.no-add-network .select-vpc {
+  visibility: hidden !important;
+}
+
 .multi-wizard.instance-wizard .select-network .select-vpc select {
   width: 124px;
 }

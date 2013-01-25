@@ -94,16 +94,6 @@ public interface ManagementService {
     static final String Name = "management-server";
 
     /**
-     * Retrieves the list of data centers with search criteria. Currently the only search criteria is "available" zones
-     * for the
-     * account that invokes the API. By specifying available=true all zones which the account can access. By specifying
-     * available=false the zones where the account has virtual machine instances will be returned.
-     *
-     * @return a list of DataCenters
-     */
-    List<? extends DataCenter> listDataCenters(ListZonesByCmd cmd);
-
-    /**
      * returns the a map of the names/values in the configuraton table
      *
      * @return map of configuration name/values

@@ -821,6 +821,16 @@
                 cloudStack.dialog.notice({ message: 'message.step.4.continue' });
                 return false;
               }
+
+              if ($activeStep.hasClass('next-use-security-groups')) {
+                var advSGFilter = args.advSGFilter({
+                  data: cloudStack.serializeForm($form)
+                });
+
+                if (!advSGFilter) {
+                  showStep(6);
+                }
+              }
             }
 						
 						//step 6 - review (spcifiy displyname, group as well)		

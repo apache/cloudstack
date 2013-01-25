@@ -65,8 +65,8 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.DOMAIN) @Param(description="Network domain name for the networks in the zone")
     private String domain;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the containing domain, null for public zones")
-    private Long domainId;
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the UUID of the containing domain, null for public zones")
+    private String domainId;
 
     @SerializedName("domainname") @Param(description="the name of the containing domain, null for public zones")
     private String domainName;
@@ -140,7 +140,7 @@ public class ZoneResponse extends BaseResponse {
         this.domain = domain;
     }
 
-    public void setDomainId(Long domainId) {
+    public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
 

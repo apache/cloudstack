@@ -1814,9 +1814,6 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
                 throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
             }
             
-            //check for vnet conflicts with other physical network(s) in the zone
-            checkGuestVnetsConflicts(zoneId, vnetStart, vnetEnd, null);
-
             if ((vnetStart > vnetEnd) || (vnetStart < 0) || (vnetEnd > 4096)) {
                 s_logger.warn("Invalid vnet range: start range:" + vnetStart + " end range:" + vnetEnd);
                 throw new InvalidParameterValueException("Vnet range should be between 0-4096 and start range should be lesser than or equal to end range");
@@ -1995,9 +1992,6 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
                 throw new InvalidParameterValueException("Vnet range has to be" + rangeMessage + " and start range should be lesser than or equal to stop range");
             }
             
-            //check if new vnet conflicts with vnet ranges of other physical networks
-            checkGuestVnetsConflicts(network.getDataCenterId(), newStartVnet, newEndVnet, network.getId());
-
             if (physicalNetworkHasAllocatedVnets(network.getDataCenterId(), network.getId())) {
                 String[] existingRange = network.getVnet().split("-");
                 int existingStartVnet = Integer.parseInt(existingRange[0]);
@@ -2040,24 +2034,6 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         }
 
         return network;
-    }
-
-    protected void checkGuestVnetsConflicts(long zoneId, int newStartVnet, int newEndVnet, Long pNtwkIdToSkip) {
-        List<? extends PhysicalNetwork> pNtwks = _physicalNetworkDao.listByZone(zoneId);
-        for (PhysicalNetwork pNtwk : pNtwks) {
-            // skip my own network and networks that don't have vnet range set
-            if ((pNtwk.getVnet() == null || pNtwk.getVnet().isEmpty()) || (pNtwkIdToSkip != null && pNtwkIdToSkip == pNtwk.getId())) {
-                continue;
-            }
-            String[] existingRange = pNtwk.getVnet().split("-");
-            int startVnet = Integer.parseInt(existingRange[0]);
-            int endVnet = Integer.parseInt(existingRange[1]);
-            if ((newStartVnet >= startVnet && newStartVnet <= endVnet)
-                    || (newEndVnet <= endVnet && newEndVnet >= startVnet)) {
-                throw new InvalidParameterValueException("Vnet range for physical network conflicts with another " +
-                		"physical network's vnet in the zone");
-            } 
-        }
     }
 
     private boolean physicalNetworkHasAllocatedVnets(long zoneId, long physicalNetworkId) {

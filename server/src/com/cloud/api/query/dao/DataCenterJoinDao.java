@@ -14,14 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api;
+package com.cloud.api.query.dao;
 
-public abstract class BaseListAccountResourcesCmd extends BaseListDomainResourcesCmd {
+import org.apache.cloudstack.api.response.ZoneResponse;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "list resources by account. Must be used with the domainId parameter.")
-    private String accountName;
+import com.cloud.api.query.vo.DataCenterJoinVO;
+import com.cloud.dc.DataCenter;
+import com.cloud.utils.db.GenericDao;
 
-    public String getAccountName() {
-        return accountName;
-    }
+public interface DataCenterJoinDao extends GenericDao<DataCenterJoinVO, Long> {
+
+    ZoneResponse newDataCenterResponse(DataCenterJoinVO dof, Boolean showCapacities);
+
+    DataCenterJoinVO newDataCenterView(DataCenter dof);
 }

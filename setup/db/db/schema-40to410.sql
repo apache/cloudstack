@@ -194,16 +194,11 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         vm_template.name template_name,
         vm_template.display_text template_display_text,
         vm_template.enable_password password_enabled,
---        iso.id iso_id,
---        iso.uuid iso_uuid,
---        iso.name iso_name,
---        iso.display_text iso_display_text,
--- FIXME workaround
-        NULL iso_id,
-		NULL iso_uuid,
-        NULL iso_name,
-		NULL iso_display_text,        service_offering.id service_offering_id,
--- end of workaround
+        iso.id iso_id,
+        iso.uuid iso_uuid,
+        iso.name iso_name,
+        iso.display_text iso_display_text,
+        service_offering.id service_offering_id,
         disk_offering.uuid service_offering_uuid,
         service_offering.cpu cpu,
         service_offering.speed speed,
@@ -278,8 +273,8 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         `cloud`.`host` ON vm_instance.host_id = host.id
             left join
         `cloud`.`vm_template` ON vm_instance.vm_template_id = vm_template.id
---            left join
---        `cloud`.`vm_template iso` ON iso.id = user_vm.iso_id
+            left join
+        `cloud`.`vm_template` iso ON iso.id = user_vm.iso_id
             left join
         `cloud`.`service_offering` ON vm_instance.service_offering_id = service_offering.id
             left join
@@ -1236,5 +1231,34 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         `cloud`.`disk_offering` ON service_offering.id = disk_offering.id
             left join
         `cloud`.`domain` ON disk_offering.domain_id = domain.id;
+        
+DROP VIEW IF EXISTS `cloud`.`data_center_view`;
+CREATE VIEW `cloud`.`data_center_view` AS
+    select 
+        data_center.id,
+        data_center.uuid,
+        data_center.name,
+        data_center.is_security_group_enabled,
+        data_center.is_local_storage_enabled,
+        data_center.description,
+        data_center.dns1,
+        data_center.dns2,
+        data_center.internal_dns1,
+        data_center.internal_dns2,
+        data_center.guest_network_cidr,
+        data_center.domain,
+        data_center.networktype,
+        data_center.allocation_state,
+        data_center.zone_token,
+        data_center.dhcp_provider,
+        data_center.removed,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path
+    from
+        `cloud`.`data_center`
+            left join
+        `cloud`.`domain` ON data_center.domain_id = domain.id;               
         
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'direct.agent.pool.size', '500', 'Default size for DirectAgentPool');

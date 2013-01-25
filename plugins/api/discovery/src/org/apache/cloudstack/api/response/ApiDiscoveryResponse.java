@@ -57,16 +57,32 @@ public class ApiDiscoveryResponse extends BaseResponse {
         this.name = name;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public void setSince(String since) {
         this.since = since;
     }
 
+    public String getSince() {
+        return since;
+    }
+
     public void setAsync(Boolean isAsync) {
         this.isAsync = isAsync;
+    }
+
+    public boolean getAsync() {
+        return isAsync;
     }
 
     public String getRelated() {

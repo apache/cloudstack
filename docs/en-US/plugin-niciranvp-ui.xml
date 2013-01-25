@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 <!ENTITY % xinclude SYSTEM "http://www.docbook.org/xml/4.4/xinclude.mod">
@@ -20,11 +20,7 @@
  specific language governing permissions and limitations
  under the License.
 -->
-<chapter id="Using-the-Nicira-NVP-Plugin" >
-    <title>Using the Nicira NVP Plugin</title>
-    
-    <xi:include href="plugin-niciranvp-preparations.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
-    <xi:include href="plugin-niciranvp-ui.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
-    <xi:include href="plugin-niciranvp-provider.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
-    <xi:include href="plugin-niciranvp-devicemanagement.xml" xmlns:xi="http://www.w3.org/2001/XInclude"></xi:include>
-</chapter>
+<section id="plugin-niciranvp-ui">
+    <title>Configuring the Nicira NVP plugin from the UI</title>
+    <para>In CloudStack 4.1.0-incubating the Nicira NVP plugin and its resources can be configured in the infrastructure tab of the UI. Navigate to the physical network with STT isolation and configure the network elements. The NiciraNvp is listed here. <!-- TODO add screenshot --></para>
+</section>

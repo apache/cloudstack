@@ -922,6 +922,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override @DB(txn=false)
+    @SuppressWarnings("unchecked")
+    public T findByUuidIncludingRemoved(final String uuid) {
+        SearchCriteria<T> sc = createSearchCriteria();
+        sc.addAnd("uuid", SearchCriteria.Op.EQ, uuid);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override @DB(txn=false)
     public T findByIdIncludingRemoved(ID id) {
         return findById(id, true, null);
     }

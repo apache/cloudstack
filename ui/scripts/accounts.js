@@ -642,12 +642,16 @@
                     },
                     vmLimit: {
                       label: 'label.instance.limits',
-                      isEditable: function(context) {											  
+                      isEditable: function(context) {
+
+                                   if(context.accounts == undefined)
+                                         return false;
+                                               else {											  
 											  if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
 												  return true;
 												else
 												  return false;
-											}
+				                        						}	}
                     },
                     ipLimit: {
                       label: 'label.ip.limits',
