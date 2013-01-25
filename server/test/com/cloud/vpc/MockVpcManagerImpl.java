@@ -23,9 +23,9 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.acl.ControlledEntity.ACLType;
-import com.cloud.api.commands.ListPrivateGatewaysCmd;
-import com.cloud.api.commands.ListStaticRoutesCmd;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -49,6 +49,7 @@ import com.cloud.network.vpc.VpcService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouterVO;
@@ -241,10 +242,10 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcService#listPrivateGateway(com.cloud.api.commands.ListPrivateGatewaysCmd)
+     * @see com.cloud.network.vpc.VpcService#listPrivateGateway(org.apache.cloudstack.api.commands.ListPrivateGatewaysCmd)
      */
     @Override
-    public List<PrivateGateway> listPrivateGateway(ListPrivateGatewaysCmd listPrivateGatewaysCmd) {
+    public Pair<List<PrivateGateway>, Integer> listPrivateGateway(ListPrivateGatewaysCmd listPrivateGatewaysCmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -286,10 +287,10 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcService#listStaticRoutes(com.cloud.api.commands.ListStaticRoutesCmd)
+     * @see com.cloud.network.vpc.VpcService#listStaticRoutes(org.apache.cloudstack.api.commands.ListStaticRoutesCmd)
      */
     @Override
-    public List<? extends StaticRoute> listStaticRoutes(ListStaticRoutesCmd cmd) {
+    public Pair<List<? extends StaticRoute>, Integer> listStaticRoutes(ListStaticRoutesCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -343,7 +344,7 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
      * @see com.cloud.network.vpc.VpcManager#destroyVpc(com.cloud.network.vpc.Vpc)
      */
     @Override
-    public boolean destroyVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroyVpc(Vpc vpc, Account caller, Long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -394,7 +395,7 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.vpc.VpcManager#createVpcGuestNetwork(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, com.cloud.user.Account, java.lang.Long, com.cloud.network.PhysicalNetwork, long, com.cloud.acl.ControlledEntity.ACLType, java.lang.Boolean, long, com.cloud.user.Account)
+     * @see com.cloud.network.vpc.VpcManager#createVpcGuestNetwork(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, com.cloud.user.Account, java.lang.Long, com.cloud.network.PhysicalNetwork, long, org.apache.cloudstack.acl.ControlledEntity.ACLType, java.lang.Boolean, long, com.cloud.user.Account)
      */
     @Override
     public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork pNtwk,

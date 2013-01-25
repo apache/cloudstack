@@ -15,6 +15,9 @@
 
 package com.cloud.server.auth;
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -25,9 +28,8 @@ import org.apache.log4j.Logger;
 import com.cloud.region.RegionManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.UserAccount;
-import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * Simple UserAuthenticator that performs a MD5 hash of the password before 
@@ -51,31 +53,7 @@ public class MD5UserAuthenticator extends DefaultUserAuthenticator {
             return false;
         }
         
-        /**
-        MessageDigest md5;
-        try {
-            md5 = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw new CloudRuntimeException("Error", e);
-        }
-        md5.reset();
-        BigInteger pwInt = new BigInteger(1, md5.digest(password.getBytes()));
-
-        // make sure our MD5 hash value is 32 digits long...
-        StringBuffer sb = new StringBuffer();
-        String pwStr = pwInt.toString(16);
-        int padding = 32 - pwStr.length();
-        for (int i = 0; i < padding; i++) {
-            sb.append('0');
-        }
-        sb.append(pwStr);
-        **/
-        
-        // Will: The MD5Authenticator is now a straight pass-through comparison of the
-        // the passwords because we will not assume that the password passed in has
-        // already been MD5 hashed.  I am keeping the above code in case this requirement changes
-        // or people need examples of how to MD5 hash passwords in java.
-        if (!user.getPassword().equals(password)) {
+        if (!user.getPassword().equals(encode(password))) {
             s_logger.debug("Password does not match");
             return false;
         }
@@ -88,5 +66,26 @@ public class MD5UserAuthenticator extends DefaultUserAuthenticator {
 		ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
 		_regionMgr = locator.getManager(RegionManager.class);
 		return true;
+	}
+
+	@Override
+	public String encode(String password) {
+		MessageDigest md5 = null;
+		try {
+			md5 = MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			throw new CloudRuntimeException("Unable to hash password", e);
+		}
+
+		md5.reset();
+		BigInteger pwInt = new BigInteger(1, md5.digest(password.getBytes()));
+		String pwStr = pwInt.toString(16);
+		int padding = 32 - pwStr.length();
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < padding; i++) {
+		    sb.append('0'); // make sure the MD5 password is 32 digits long
+		}
+		sb.append(pwStr);
+		return sb.toString();
 	}
 }

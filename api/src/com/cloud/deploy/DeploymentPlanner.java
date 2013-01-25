@@ -37,7 +37,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public interface DeploymentPlanner extends Adapter {
     /**
      * plan is called to determine where a virtual machine should be running.
-     * 
+     *
      * @param vm
      *            virtual machine.
      * @param plan
@@ -51,7 +51,7 @@ public interface DeploymentPlanner extends Adapter {
     /**
      * check() is called right before the virtual machine starts to make sure
      * the host has enough capacity.
-     * 
+     *
      * @param vm
      *            virtual machine in question.
      * @param plan
@@ -69,7 +69,7 @@ public interface DeploymentPlanner extends Adapter {
      * canHandle is called before plan to determine if the plan can do the allocation. Planers should be exclusive so
      * planner writer must
      * make sure only one planer->canHandle return true in the planner list
-     * 
+     *
      * @param vm
      *            virtual machine.
      * @param plan
@@ -187,7 +187,7 @@ public interface DeploymentPlanner extends Adapter {
             }
             _clusterIds.addAll(clusterList);
         }
-        
+
         public void addHost(long hostId) {
             if (_hostIds == null) {
                 _hostIds = new HashSet<Long>();

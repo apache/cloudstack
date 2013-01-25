@@ -20,7 +20,7 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.to.SwiftTO;
 
 /**
- * This currently assumes that both primary and secondary storage are mounted on the XenServer.  
+ * This currently assumes that both primary and secondary storage are mounted on the XenServer.
  */
 public class downloadSnapshotFromSwiftCommand extends SnapshotCommand {
     @LogLevel(Log4jLevel.Off)
@@ -29,12 +29,12 @@ public class downloadSnapshotFromSwiftCommand extends SnapshotCommand {
     private String _parent;
 
     protected downloadSnapshotFromSwiftCommand() {
-        
+
     }
-   
+
     public downloadSnapshotFromSwiftCommand(SwiftTO swift, String secondaryStorageUrl, Long dcId, Long accountId, Long volumeId, String parent, String BackupUuid, int wait) {
 
-        super("", secondaryStorageUrl, BackupUuid, "", dcId, accountId, volumeId);
+        super(null, secondaryStorageUrl, BackupUuid, "", dcId, accountId, volumeId);
         setParent(parent);
         setSwift(swift);
         setWait(wait);

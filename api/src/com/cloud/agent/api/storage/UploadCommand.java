@@ -20,13 +20,14 @@ import com.cloud.agent.api.storage.DownloadCommand.PasswordAuth;
 import com.cloud.agent.api.to.TemplateTO;
 import com.cloud.storage.Upload.Type;
 import com.cloud.template.VirtualMachineTemplate;
+import org.apache.cloudstack.api.InternalIdentity;
 
 
-public class UploadCommand extends AbstractUploadCommand {
+public class UploadCommand extends AbstractUploadCommand implements InternalIdentity {
 
 	private TemplateTO template;
 	private String url;
-	private String installPath;	
+	private String installPath;
 	private boolean hvm;
 	private String description;
 	private String checksum;
@@ -36,16 +37,16 @@ public class UploadCommand extends AbstractUploadCommand {
 	private Type type;
 
 	public UploadCommand(VirtualMachineTemplate template, String url, String installPath, long sizeInBytes) {
-		
+
 		this.template = new TemplateTO(template);
 		this.url = url;
 		this.installPath = installPath;
 		this.checksum = template.getChecksum();
 		this.id = template.getId();
 		this.templateSizeInBytes = sizeInBytes;
-		
+
 	}
-	
+
 	public UploadCommand(String url, long id, long sizeInBytes, String installPath, Type type){
 		this.template = null;
 		this.url = url;
@@ -54,10 +55,10 @@ public class UploadCommand extends AbstractUploadCommand {
 		this.type = type;
 		this.templateSizeInBytes = sizeInBytes;
 	}
-	
+
 	protected UploadCommand() {
 	}
-	
+
 	public UploadCommand(UploadCommand that) {
 		this.template = that.template;
 		this.url = that.url;

@@ -407,6 +407,23 @@ public class ClusterManagerImpl implements ClusterManager {
             Answer[] answers = new Answer[1];
             answers[0] = new Answer(cmd, result, null);
             return _gson.toJson(answers);
+        } else if (cmds.length == 1 && cmds[0] instanceof PropagateResourceEventCommand ) {
+        	PropagateResourceEventCommand cmd = (PropagateResourceEventCommand) cmds[0];
+        	
+        	s_logger.debug("Intercepting command to propagate event " + cmd.getEvent().name() + " for host " + cmd.getHostId());
+        	
+        	boolean result = false;
+        	try {
+        		result = executeResourceUserRequest(cmd.getHostId(), cmd.getEvent());
+        		s_logger.debug("Result is " + result);
+        	} catch (AgentUnavailableException ex) {
+        		s_logger.warn("Agent is unavailable", ex);
+        		return null;
+        	}
+        	
+        	Answer[] answers = new Answer[1];
+        	answers[0] = new Answer(cmd, result, null);
+        	return _gson.toJson(answers);
         }
 
         try {
@@ -794,7 +811,8 @@ public class ClusterManagerImpl implements ClusterManager {
 
                     invalidHeartbeatConnection();
                 } finally {
-                    txn.close("ClusterHeartBeat");
+                    txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);                         
+                    txn.close("ClusterHeartBeat");           	
                 }
             }
         };

@@ -16,7 +16,8 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -30,7 +31,7 @@
   <version>4.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
-  <description>CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
+  <description>Apache CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
   <url>http://www.cloudstack.org</url>
   <scm>
     <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</connection>
@@ -64,10 +65,11 @@
     <cs.trilead.version>build213-svnkit-1.3-patch</cs.trilead.version>
     <cs.ehcache.version>1.5.0</cs.ehcache.version>
     <cs.gson.version>1.7.1</cs.gson.version>
+    <cs.guava.version>14.0-rc1</cs.guava.version>
     <cs.xapi.version>5.6.100-1-SNAPSHOT</cs.xapi.version>
     <cs.httpclient.version>3.1</cs.httpclient.version>
-    <cs.httpcore.version>4.0</cs.httpcore.version>
-    <cs.mysql.version>5.1.12</cs.mysql.version>
+    <cs.httpcore.version>4.2.1</cs.httpcore.version>
+    <cs.mysql.version>5.1.21</cs.mysql.version>
     <cs.xstream.version>1.3.1</cs.xstream.version>
     <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
     <cs.mail.version>1.4</cs.mail.version>
@@ -79,8 +81,12 @@
     <cs.servlet.version>2.4</cs.servlet.version>
     <cs.jstl.version>1.2</cs.jstl.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
-    <skipTests>true</skipTests>
-
+    <cs.vmware.api.version>4.1</cs.vmware.api.version>
+    <cs.mockito.version>1.9.5</cs.mockito.version>
+    <cs.aws.sdk.version>1.3.21.1</cs.aws.sdk.version>
+    <cs.lang.version>2.6</cs.lang.version>
+    <cs.commons-io.version>1.4</cs.commons-io.version>
+    <cs.reflections.version>0.9.8</cs.reflections.version>
   </properties>
 
   <distributionManagement>
@@ -154,11 +160,20 @@
     <module>utils</module>
     <module>deps/XenServerJava</module>
     <module>plugins</module>
-    <module>awsapi</module>
     <module>patches</module>
     <module>client</module>
     <module>test</module>
   </modules>
+
+  <dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${cs.mysql.version}</version>
+        </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -166,6 +181,12 @@
       <artifactId>junit</artifactId>
       <version>${cs.junit.version}</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+    	<groupId>org.mockito</groupId>
+    	<artifactId>mockito-all</artifactId>
+    	<version>1.9.5</version>
+        <scope>test</scope>
     </dependency>
   </dependencies>
 
@@ -176,7 +197,7 @@
         <plugin>
           <groupId>org.apache.tomcat.maven</groupId>
           <artifactId>tomcat7-maven-plugin</artifactId>
-          <version>2.0-SNAPSHOT</version>
+          <version>2.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.rat</groupId>
@@ -186,19 +207,30 @@
             <numUnapprovedLicenses>0</numUnapprovedLicenses>
             <excludeSubProjects>false</excludeSubProjects>
             <excludes>
+              <exclude>CHANGES</exclude>
               <exclude>INSTALL.md</exclude>
+              <exclude>.idea/</exclude>
+              <exclude>*.log</exclude>
+              <exclude>**/*.patch</exclude>
+              <exclude>**/.classpath</exclude>
+              <exclude>**/.project</exclude>
+              <exclude>**/*.iml</exclude>
+              <exclude>**/.settings/**</exclude>
+              <exclude>.metadata/**</exclude>
               <exclude>.git/**</exclude>
               <exclude>.gitignore</exclude>
               <exclude>**/*.crt</exclude>
               <exclude>**/*.csr</exclude>
               <exclude>**/*.key</exclude>
               <exclude>**/authorized_keys</exclude>
+              <exclude>**/*.war</exclude>
               <exclude>**/*.mar</exclude>
               <exclude>**/*.jar</exclude>
               <exclude>**/*.iso</exclude>
               <exclude>**/*.tgz</exclude>
               <exclude>**/*.zip</exclude>
               <exclude>**/target/**</exclude>
+              <exclude>**/.vagrant</exclude>
               <exclude>build/build.number</exclude>
               <exclude>console-proxy/js/jquery.js</exclude>
               <exclude>debian/compat</exclude>
@@ -211,7 +243,6 @@
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
-              <exclude>tools/devcloud/devcloud.cfg</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>
@@ -245,14 +276,17 @@
               <exclude>patches/systemvm/debian/config/etc/apache2/vhostexample.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/dnsmasq.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/vpcdnsmasq.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/ssh/sshd_config</exclude> <!-- Pending resolution of CLOUDSTACK-145 -->
-              <exclude>patches/systemvm/debian/config/etc/rsyslog.conf</exclude> <!-- Pending resolution of CLOUDSTACK-147 -->
+              <exclude>patches/systemvm/debian/config/etc/ssh/sshd_config</exclude>
+              <!-- Pending resolution of CLOUDSTACK-145 -->
+              <exclude>patches/systemvm/debian/config/etc/rsyslog.conf</exclude>
+              <!-- Pending resolution of CLOUDSTACK-147 -->
               <exclude>patches/systemvm/debian/config/etc/logrotate.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/logrotate.d/*</exclude>
               <exclude>patches/systemvm/debian/config/etc/sysctl.conf</exclude>
               <exclude>patches/systemvm/debian/config/root/redundant_router/keepalived.conf.templ</exclude>
               <exclude>patches/systemvm/debian/config/root/redundant_router/arping_gateways.sh.templ</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/conntrackd.conf.templ</exclude> <!-- Pending resolution of CLOUDSTACK-166 -->
+              <exclude>patches/systemvm/debian/config/root/redundant_router/conntrackd.conf.templ</exclude>
+              <!-- Pending resolution of CLOUDSTACK-166 -->
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.conf</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ppp/options.xl2tpd</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/xl2tpd/xl2tpd.conf</exclude>
@@ -275,56 +309,105 @@
           <configuration>
             <source>${cs.jdk.version}</source>
             <target>${cs.jdk.version}</target>
-			<fork>true</fork>
-          	<meminitial>128m</meminitial>
-          	<maxmem>512m</maxmem>            
+            <fork>true</fork>
+            <meminitial>128m</meminitial>
+            <maxmem>512m</maxmem>
           </configuration>
         </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.4</version>
-        <configuration>
-          <archive>
-            <manifest>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-            </manifest>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.7</version>
-        <executions>
-          <execution>
-            <id>remove-old-installers</id>
-            <goals>
-              <goal>remove-project-artifact</goal>
-            </goals>
-            <configuration>
-              <removeAll>true</removeAll>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>2.4</version>
+          <configuration>
+            <archive>
+              <manifest>
+                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+              </manifest>
+            </archive>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>1.7</version>
+          <executions>
+            <execution>
+              <id>remove-old-installers</id>
+              <goals>
+                <goal>remove-project-artifact</goal>
+              </goals>
+              <configuration>
+                <removeAll>true</removeAll>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>2.5.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>cobertura-maven-plugin</artifactId>
+          <configuration>
+            <formats>
+              <format>html</format>
+              <format>xml</format>
+            </formats>
+          </configuration>
+        </plugin>
+        <!--This plugin's configuration is used to store Eclipse m2e settings
+          only. It has no influence on the Maven build itself. -->
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>
+                      org.apache.maven.plugins
+                    </groupId>
+                    <artifactId>
+                      maven-antrun-plugin
+                    </artifactId>
+                    <versionRange>[1.7,)</versionRange>
+                    <goals>
+                      <goal>run</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore />
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>        
       </plugins>
     </pluginManagement>
   </build>
 
   <profiles>
-
     <profile>
-      <id>deps</id>
+      <id>awsapi</id>
       <modules>
-        <module>deps</module>
+        <module>awsapi</module>
       </modules>
     </profile>
     <profile>
       <id>developer</id>
       <modules>
         <module>developer</module>
+        <module>tools/apidoc</module>
+        <module>tools/devcloud</module>
+        <module>tools/devcloud-kvm</module>
+        <module>tools/marvin</module>
+        <module>tools/cli</module>
       </modules>
     </profile>
     <profile>
@@ -338,7 +421,5 @@
         <module>vmware-base</module>
       </modules>
     </profile>
-
   </profiles>
-
 </project>

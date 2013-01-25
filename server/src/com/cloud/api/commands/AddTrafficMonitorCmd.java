@@ -16,25 +16,21 @@
 // under the License.
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.network.NetworkUsageManager;
 import com.cloud.server.ManagementService;
-import com.cloud.server.api.response.ExternalFirewallResponse;
-import com.cloud.server.api.response.TrafficMonitorResponse;
+import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(description="Adds Traffic Monitor Host for Direct Network Usage", responseObject = ExternalFirewallResponse.class)
+@APICommand(name = "addTrafficMonitor", description="Adds Traffic Monitor Host for Direct Network Usage", responseObject = TrafficMonitorResponse.class)
 public class AddTrafficMonitorCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(AddTrafficMonitorCmd.class.getName());	
 	private static final String s_name = "addtrafficmonitorresponse";	
@@ -43,18 +39,31 @@ public class AddTrafficMonitorCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 	
-    @IdentityMapper(entityTableName="data_center")
-	@Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required = true, description="Zone in which to add the external firewall appliance.")
+	@Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
+            required = true, description="Zone in which to add the external firewall appliance.")
 	private Long zoneId;
-
 	
 	@Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the traffic monitor Host")
 	private String url;	 
+
+	@Parameter(name=ApiConstants.INCL_ZONES, type=CommandType.STRING, description="Traffic going into the listed zones will be metered")
+	private String inclZones;	 
+	
+	@Parameter(name=ApiConstants.EXCL_ZONES, type=CommandType.STRING, description="Traffic going into the listed zones will not be metered")
+	private String exclZones;	 
 	
 	///////////////////////////////////////////////////
 	/////////////////// Accessors ///////////////////////
 	/////////////////////////////////////////////////////
 	 
+	public String getInclZones() {
+		return inclZones;
+	}
+	
+	public String getExclZones() {
+		return exclZones;
+	}
+
 	public Long getZoneId() {
 	    return zoneId;
 	}
@@ -82,15 +91,15 @@ public class AddTrafficMonitorCmd extends BaseCmd {
 		try {
 		    ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
 		    NetworkUsageManager networkUsageMgr = locator.getManager(NetworkUsageManager.class);
-			Host trafficMoinitor = networkUsageMgr.addTrafficMonitor(this);
-			TrafficMonitorResponse response = networkUsageMgr.getApiResponse(trafficMoinitor);
+			Host trafficMonitor = networkUsageMgr.addTrafficMonitor(this);
+			TrafficMonitorResponse response = networkUsageMgr.getApiResponse(trafficMonitor);
 			response.setObjectName("trafficmonitor");
 			response.setResponseName(getCommandName());
 			this.setResponseObject(response);
 		} catch (InvalidParameterValueException ipve) {
-			throw new ServerApiException(BaseCmd.PARAM_ERROR, ipve.getMessage());
+			throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ipve.getMessage());
 		} catch (CloudRuntimeException cre) {
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, cre.getMessage());
+			throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, cre.getMessage());
 		}
     }
 }

@@ -11,22 +11,23 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.PlugService;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import com.cloud.api.response.SrxFirewallResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -37,7 +38,7 @@ import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=SuccessResponse.class, description=" delete a SRX firewall device")
+@APICommand(name = "deleteSrxFirewall", responseObject=SuccessResponse.class, description=" delete a SRX firewall device")
 public class DeleteSrxFirewallCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSrxFirewallCmd.class.getName());
     private static final String s_name = "deletesrxfirewallresponse";
@@ -47,8 +48,8 @@ public class DeleteSrxFirewallCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="external_firewall_devices")
-    @Parameter(name=ApiConstants.FIREWALL_DEVICE_ID, type=CommandType.LONG, required=true, description="srx firewall device ID")
+    @Parameter(name=ApiConstants.FIREWALL_DEVICE_ID, type=CommandType.UUID, entityType = SrxFirewallResponse.class,
+            required=true, description="srx firewall device ID")
     private Long fwDeviceId;
 
     /////////////////////////////////////////////////////
@@ -72,12 +73,12 @@ public class DeleteSrxFirewallCmd extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete SRX firewall device");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete SRX firewall device");
             }
         }  catch (InvalidParameterValueException invalidParamExcp) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
 

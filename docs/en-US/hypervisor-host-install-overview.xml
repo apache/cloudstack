@@ -23,11 +23,11 @@
 -->
 
 <section id="hypervisor-host-install-overview">
-    <title>Hypervisor Host Installation Overview</title>
-    <para>This section describes installing a Hypervisor host. This is targeted towards hosts running Linux Kernel Virtual Machine (KVM)</para>
+    <title>KVM Installation Overview</title>
+    <para>If you want to use the Linux Kernel Virtual Machine (KVM) hypervisor to run guest virtual machines, install KVM on the host(s) in your cloud. The material in this section doesn't duplicate KVM installation docs. It provides the &PRODUCT;-specific steps that are needed to prepare a KVM host to work with &PRODUCT;.</para>
     <warning><para>Before continuing, make sure that you have applied the latest updates to your host.</para></warning>
     <warning><para>It is NOT recommended to run services on this host not controlled by &PRODUCT;.</para></warning>
-    <para>The procedure for installing the Hypervisor Host is:</para>
+    <para>The procedure for installing a KVM Hypervisor Host is:</para>
     <orderedlist>
         <listitem><para>Prepare the Operating System</para></listitem>
         <listitem><para>Install and configure libvirt</para></listitem>

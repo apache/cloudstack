@@ -24,11 +24,11 @@
 
 <section id="management-server-install-db">
     <title>Install the database server</title>
-    <para>The &PRODUCT; management server uses a MySQL database server to store it's data.
-        When you are installing the management server on a single node you can install the MySQL server locally.
-        When using a multi-node installation the MySQL database has to run on an external node.
+    <para>The &PRODUCT; management server uses a MySQL database server to store its data.
+        When you are installing the management server on a single node, you can install the MySQL server locally.
+        For an installation that has multiple management server nodes, we assume the MySQL database also runs on a separate node.
     </para>
-    <para>&PRODUCT; has been tested with MySQL 5.1 and 5.5, both should work fine. These versions are included in RHEL/CentOS and Ubuntu.</para>
+    <para>&PRODUCT; has been tested with MySQL 5.1 and 5.5. These versions are included in RHEL/CentOS and Ubuntu.</para>
     <xi:include href="management-server-install-db-local.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="management-server-install-db-external.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

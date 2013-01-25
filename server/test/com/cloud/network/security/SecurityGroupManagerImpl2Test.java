@@ -28,11 +28,13 @@ import org.junit.Before;
 import org.junit.Ignore;
 
 import com.cloud.agent.MockAgentManagerImpl;
+import com.cloud.api.query.dao.SecurityGroupJoinDaoImpl;
 import com.cloud.configuration.DefaultInterceptorLibrary;
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.network.MockNetworkManagerImpl;
+import com.cloud.network.MockNetworkModelImpl;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
@@ -66,6 +68,7 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
         locator.addDao("SecurityGroupDao", SecurityGroupDaoImpl.class);
         
         locator.addDao("SecurityGroupRuleDao", SecurityGroupRuleDaoImpl.class);
+        locator.addDao("SecurityGroupJoinDao", SecurityGroupJoinDaoImpl.class);
         locator.addDao("SecurityGroupVMMapDao", SecurityGroupVMMapDaoImpl.class);
         locator.addDao("SecurityGroupRulesDao", SecurityGroupRulesDaoImpl.class);
         locator.addDao("UserVmDao", UserVmDaoImpl.class);
@@ -81,6 +84,7 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
         locator.addManager("VirtualMachineManager", MockVirtualMachineManagerImpl.class);
         locator.addManager("UserVmManager", MockUserVmManagerImpl.class);
         locator.addManager("NetworkManager", MockNetworkManagerImpl.class);
+        locator.addManager("NetworkModel", MockNetworkModelImpl.class);
         locator.addManager("AccountManager", MockAccountManagerImpl.class); 
         locator.addManager("DomainManager", MockDomainManagerImpl.class); 
         locator.addManager("ProjectManager", MockProjectManagerImpl.class);

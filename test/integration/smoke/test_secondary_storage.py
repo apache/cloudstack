@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,43 +20,23 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from integration.lib.utils import *
-from integration.lib.base import *
-from integration.lib.common import *
+from marvin.integration.lib.utils import *
+from marvin.integration.lib.base import *
+from marvin.integration.lib.common import *
 from nose.plugins.attrib import attr
 
 #Import System modules
 import time
-
-class Services:
-    """Test secondary storage Services
-    """
-
-    def __init__(self):
-        self.services = {
-                         "storage": {
-                                "url": "nfs://192.168.100.131/SecStorage"
-                                # Format: File_System_Type/Location/Path
-                            },
-                        "hypervisors": {
-                            0: {
-                                    "hypervisor": "XenServer",
-                                    "templatefilter": "self",
-                                },
-                            },
-                         "sleep": 60,
-                         "timeout": 5,
-                        }
+_multiprocess_shared_ = True
 
 class TestSecStorageServices(cloudstackTestCase):
-    
+
     @classmethod
     def setUpClass(cls):
         cls.api_client = super(TestSecStorageServices, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
         cls._cleanup = []
         return
-    
+
     @classmethod
     def tearDownClass(cls):
         try:
@@ -65,16 +45,32 @@ class TestSecStorageServices(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
-    
-    def setUp(self):
 
+    def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.cleanup = []
-        self.services = Services().services
         # Get Zone and pod
-        self.domain = get_domain(self.apiclient, self.services)
-        self.zone = get_zone(self.apiclient, self.services)
-        self.pod = get_pod(self.apiclient, self.zone.id)
+        self.zones = []
+        self.pods = []
+        for zone in self.config.zones:
+            cmd = listZones.listZonesCmd()
+            cmd.name = zone.name
+            z = self.apiclient.listZones(cmd)
+            if isinstance(z, list) and len(z) > 0:
+                self.zones.append(z[0].id)
+            for pod in zone.pods:
+                podcmd = listPods.listPodsCmd()
+                podcmd.zoneid = z[0].id
+                p = self.apiclient.listPods(podcmd)
+                if isinstance(p, list) and len(p) >0:
+                    self.pods.append(p[0].id)
+
+        self.domains = []
+        dcmd = listDomains.listDomainsCmd()
+        domains = self.apiclient.listDomains(dcmd)
+        assert isinstance(domains, list) and len(domains) > 0
+        for domain in domains:
+            self.domains.append(domain.id)
         return
 
     def tearDown(self):
@@ -85,62 +81,8 @@ class TestSecStorageServices(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @unittest.skip("skipped - do not add secondary storage")
-    def test_01_add_sec_storage(self):
-        """Test secondary storage
-        """
-
-        # Validate the following:
-        # 1. secondary storage should be added to the zone.
-        # 2. Verify with listHosts and type secondarystorage
-
-        cmd = addSecondaryStorage.addSecondaryStorageCmd()
-        cmd.zoneid = self.zone.id
-        cmd.url = self.services["storage"]["url"]
-        sec_storage = self.apiclient.addSecondaryStorage(cmd)
-        
-        self.debug("Added secondary storage to zone: %s" % self.zone.id)
-        # Cleanup at the end
-        self._cleanup.append(sec_storage)
-        
-        self.assertEqual(
-                            sec_storage.zoneid,
-                            self.zone.id,
-                            "Check zoneid where sec storage is added"
-                        )
-
-        list_hosts_response = list_hosts(
-                                         self.apiclient,
-                                         type='SecondaryStorage',
-                                         id=sec_storage.id
-                           )
-        self.assertEqual(
-                            isinstance(list_hosts_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        self.assertNotEqual(
-                        len(list_hosts_response),
-                        0,
-                        "Check list Hosts response"
-                        )
-
-        host_response = list_hosts_response[0]
-        #Check if host is Up and running
-        self.assertEqual(
-                        host_response.id,
-                        sec_storage.id,
-                        "Check ID of secondary storage"
-                        )
-        self.assertEqual(
-                        sec_storage.type,
-                        host_response.type,
-                        "Check type of host from list hosts response"
-                        )
-        return
-
     @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
-    def test_02_sys_vm_start(self):
+    def test_01_sys_vm_start(self):
         """Test system VM start
         """
 
@@ -152,8 +94,6 @@ class TestSecStorageServices(cloudstackTestCase):
         list_hosts_response = list_hosts(
                            self.apiclient,
                            type='Routing',
-                           zoneid=self.zone.id,
-                           podid=self.pod.id
                            )
         self.assertEqual(
                             isinstance(list_hosts_response, list),
@@ -176,8 +116,6 @@ class TestSecStorageServices(cloudstackTestCase):
         # ListStoragePools shows all primary storage pools in UP state
         list_storage_response = list_storage_pools(
                                                    self.apiclient,
-                                                   zoneid=self.zone.id,
-                                                   podid=self.pod.id
                                                    )
         self.assertEqual(
                             isinstance(list_storage_response, list),
@@ -197,59 +135,11 @@ class TestSecStorageServices(cloudstackTestCase):
                         "Check state of primary storage pools is Up or not"
                         )
 
-        # Secondary storage is added successfully
-        timeout = self.services["timeout"]
-        while True:
-            list_hosts_response = list_hosts(
-                           self.apiclient,
-                           type='SecondaryStorageVM',
-                           zoneid=self.zone.id,
-                           )
+        list_ssvm_response = list_ssvms(
+                                    self.apiclient,
+                                    systemvmtype='secondarystoragevm',
+                                    )
 
-            if not isinstance(list_hosts_response, list):
-                # Sleep to ensure Secondary storage is Up
-                time.sleep(int(self.services["sleep"]))
-                timeout = timeout - 1
-            elif timeout == 0 or isinstance(list_hosts_response, list):
-                break
-        
-        self.assertEqual(
-                            isinstance(list_hosts_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        
-        self.assertNotEqual(
-                        len(list_hosts_response),
-                        0,
-                        "Check list Hosts response"
-                        )
-
-        host_response = list_hosts_response[0]
-        #Check if host is Up and running
-        self.assertEqual(
-                        host_response.state,
-                        'Up',
-                        "Check state of secondary storage"
-                        )
-        self.debug("Checking SSVM status in zone: %s" % self.zone.id)
-
-        timeout = self.services["timeout"]
-
-        while True:
-            list_ssvm_response = list_ssvms(
-                                        self.apiclient,
-                                        systemvmtype='secondarystoragevm',
-                                        zoneid=self.zone.id,
-                                        podid=self.pod.id
-                                        )
-            if not isinstance(list_ssvm_response, list):
-                # Sleep to ensure SSVMs are Up and Running
-                time.sleep(int(self.services["sleep"]))
-                timeout = timeout - 1
-            elif timeout == 0 or isinstance(list_ssvm_response, list):
-                break
-            
         self.assertEqual(
                             isinstance(list_ssvm_response, list),
                             True,
@@ -271,109 +161,59 @@ class TestSecStorageServices(cloudstackTestCase):
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
-    def test_03_sys_template_ready(self):
+    def test_02_sys_template_ready(self):
         """Test system templates are ready
         """
 
         # Validate the following
         # If SSVM is in UP state and running
-        # 1. wait for listTemplates to show all builtin templates
-        #    downloaded for all added hypervisors and in “Ready” state"
+        # 1. wait for listTemplates to show all builtin templates downloaded and
+        # in Ready state
 
-        for k, v in self.services["hypervisors"].items():
+        hypervisors = {}
+        for zone in self.config.zones:
+            for pod in zone.pods:
+                for cluster in pod.clusters:
+                    hypervisors[cluster.hypervisor] = "self"
 
-            self.debug("Downloading BUILTIN templates in zone: %s" % 
-                                                                self.zone.id)
-            
-            list_template_response = list_templates(
-                                    self.apiclient,
-                                    hypervisor=v["hypervisor"],
-                                    zoneid=self.zone.id,
-                                    templatefilter=v["templatefilter"],
-                                    listall=True,
-                                    account='system',
-                                    domainid=self.domain.id
-                                    )
+        for zid in self.zones:
+            for k, v in hypervisors.items():
+                self.debug("Checking BUILTIN templates in zone: %s" %zid)
+                list_template_response = list_templates(
+                                        self.apiclient,
+                                        hypervisor=k,
+                                        zoneid=zid,
+                                        templatefilter=v,
+                                        listall=True,
+                                        account='system'
+                                        )
 
-            # Ensure all BUILTIN templates are downloaded
-            templateid = None
-            for template in list_template_response:
-                if template.templatetype == "BUILTIN":
-                    templateid = template.id
+                # Ensure all BUILTIN templates are downloaded
+                templateid = None
+                for template in list_template_response:
+                    if template.templatetype == "BUILTIN":
+                        templateid = template.id
 
-            # Wait to start a downloading of template
-            time.sleep(self.services["sleep"])
-            
-            while True and (templateid != None):
-                
-                timeout = self.services["timeout"]
-                while True: 
                     template_response = list_templates(
                                     self.apiclient,
                                     id=templateid,
-                                    zoneid=self.zone.id,
-                                    templatefilter=v["templatefilter"],
+                                    zoneid=zid,
+                                    templatefilter=v,
                                     listall=True,
-                                    account='system',
-                                    domainid=self.domain.id
+                                    account='system'
                                     )
-                
                     if isinstance(template_response, list):
                         template = template_response[0]
-                        break
-                    
-                    elif timeout == 0:
-                        raise Exception("List template API call failed.")
-                    
-                    time.sleep(1)
-                    timeout = timeout - 1
-                     
-                # If template is ready,
-                # template.status = Download Complete
-                # Downloading - x% Downloaded
-                # Error - Any other string 
-                if template.status == 'Download Complete'  :
-                    break
-                elif 'Downloaded' not in template.status.split():
-                    raise Exception
-                elif 'Downloaded' in template.status.split():
-                    time.sleep(self.services["sleep"])
+                    else:
+                        raise Exception("ListTemplate API returned invalid list")
 
-            #Ensuring the template is in ready state
-            time.sleep(self.services["sleep"])
-            
-            timeout = self.services["timeout"]
-            while True: 
-                template_response = list_templates(
-                                    self.apiclient,
-                                    id=templateid,
-                                    zoneid=self.zone.id,
-                                    templatefilter=v["templatefilter"],
-                                    listall=True,
-                                    account='system',
-                                    domainid=self.domain.id
-                                    )
-                
-                if isinstance(template_response, list):
-                    template = template_response[0]
-                    break
-                    
-                elif timeout == 0:
-                    raise Exception("List template API call failed.")
-                
-                time.sleep(1)
-                timeout = timeout - 1
-            
-            self.assertEqual(
-                            isinstance(template_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-            template = template_response[0]
+                    if template.status == 'Download Complete':
+                        self.debug("Template %s is ready in zone %s"%(template.templatetype, zid))
+                    elif 'Downloaded' not in template.status.split():
+                        self.debug("templates status is %s"%template.status)
 
-            self.assertEqual(
-                            template.isready,
-                            True,
-                            "Check whether state of template is ready or not"
-                        )
-        return
+                    self.assertEqual(
+                        template.isready,
+                        True,
+                        "Builtin template is not ready %s in zone %s"%(template.status, zid)
+                    )

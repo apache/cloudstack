@@ -68,10 +68,13 @@ under the License.
             <!-- Select language -->
             <div class="select-language">
               <select name="language">
-							  <option value=""></option> <!-- when this blank option is selected, browser's default language will be used -->
+                <option value=""></option> <!-- when this blank option is selected, browser's default language will be used -->
                 <option value="en"><fmt:message key="label.lang.english"/></option>
                 <option value="ja"><fmt:message key="label.lang.japanese"/></option>
-								<option value="zh_CN"><fmt:message key="label.lang.chinese"/></option>
+		<option value="zh_CN"><fmt:message key="label.lang.chinese"/></option>
+                <option value="ru_RU"><fmt:message key="label.lang.russian"/></option>
+                <option value="fr_FR"><fmt:message key="label.lang.french"/></option>
+                <option value="pt_BR"><fmt:message key="label.lang.brportugese"/></option>
               </select>
             </div>
           </div>
@@ -217,7 +220,7 @@ under the License.
             </div>
 
             <!-- Step 5: Network -->
-            <div class="step network" wizard-step-id="network">
+            <div class="step network always-load" wizard-step-id="network">
               <!-- 5a: Network description -->
               <div class="wizard-step-conditional nothing-to-select">     
 								<p id="from_instance_page_1"><fmt:message key="message.zone.no.network.selection"/></p>
@@ -477,19 +480,34 @@ under the License.
                 <div class="section select-network-model">
                   <h3><fmt:message key="label.set.up.zone.type"/></h3>
                   <p><fmt:message key="message.please.select.a.configuration.for.your.zone"/></p>
-                  <div class="select-area">
+                  <div class="select-area basic-zone">
                     <div class="desc">
                       <fmt:message key="message.desc.basic.zone"/>
                     </div>
                     <input type="radio" name="network-model" value="Basic" checked="checked" />
                     <label><fmt:message key="label.basic"/></label>
                   </div>
-                  <div class="select-area">
+                  <div class="select-area advanced-zone disabled">
                     <div class="desc">
                       <fmt:message key="message.desc.advanced.zone"/>  
 										</div>
                     <input type="radio" name="network-model" value="Advanced" />
                     <label><fmt:message key="label.advanced"/></label>
+                    <!-- Isolation mode -->
+                    <div class="isolation-mode">
+                      <div class="title">
+                        <fmt:message key="label.isolation.mode"/>
+                      </div>
+
+                      <!-- Security groups -->
+                      <div class="select-area">
+                        <div class="desc">
+                          <fmt:message key="message.advanced.security.group"/>
+                        </div>
+                        <input type="checkbox" name="zone-advanced-sg-enabled" disabled="disabled" />
+                        <label><fmt:message key="label.menu.security.groups"/></label>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -530,10 +548,11 @@ under the License.
                 <li class="management">
                   <ul class="container">
                     <li traffic-type-id="management"
-                        title="Traffic between CloudStack's internal resources, including any components that communicate with the Management Server, such as hosts and CloudStack system VMs"
+                        title="<fmt:message key="label.zoneWizard.trafficType.management"/>"
                         class="traffic-type-draggable management">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
+                        <span class="name"><fmt:message key="label.management"/></span>
                         <span class="icon">&nbsp;</span>
                         <span>Edit</span>
                       </div>
@@ -547,10 +566,11 @@ under the License.
                 <li class="public">
                   <ul class="container">
                     <li traffic-type-id="public"
-                        title="Traffic between the internet and virtual machines in the cloud."
+                        title="<fmt:message key="label.zoneWizard.trafficType.public"/>"
                         class="traffic-type-draggable public">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
+                        <span class="name"><fmt:message key="label.public"/></span>
                         <span class="icon">&nbsp;</span>
                         <span>Edit</span>
                       </div>
@@ -564,10 +584,11 @@ under the License.
                 <li class="guest">
                   <ul class="container">
                     <li traffic-type-id="guest"
-                        title="Traffic between end-user virtual machines"
+                        title="<fmt:message key="label.zoneWizard.trafficType.guest"/>"
                         class="traffic-type-draggable guest">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
+                        <span class="name"><fmt:message key="label.guest"/></span>
                         <span class="icon">&nbsp;</span>
                         <span>Edit</span>
                       </div>
@@ -581,10 +602,11 @@ under the License.
                 <li class="storage">
                   <ul class="container">
                     <li traffic-type-id="storage"
-                        title="Traffic between primary and secondary storage servers, such as VM templates and snapshots"
+                        title="<fmt:message key="label.zoneWizard.trafficType.storage"/>"
                         class="traffic-type-draggable storage">
                       <!-- Edit buttton -->
                       <div class="edit-traffic-type">
+                        <span class="name"><fmt:message key="label.storage"/></span>
                         <span class="icon">&nbsp;</span>
                         <span>Edit</span>
                       </div>
@@ -937,7 +959,7 @@ under the License.
           <div class="button refresh" id="refresh_button">
             <span><fmt:message key="label.refresh"/></span>
           </div>
-          <div id="update_ssl_button" class="button action main-action reduced-hide lock">
+          <div id="update_ssl_button" class="button action main-action reduced-hide lock" title="Updates your Console Proxy SSL Certificate">
             <span class="icon">&nbsp;</span>            
             <span><fmt:message key="label.update.ssl.cert"/></span>
           </div>
@@ -949,57 +971,65 @@ under the License.
             <span><fmt:message key="label.menu.infrastructure"/></span>
           </div>
           <ul class="status_box good">
-            <li class="block">
+            <li class="block zones">
               <span class="header"><fmt:message key="label.zones"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="zoneCount"></span>
               <span class="button view-all zones"
                     view-all-title="<fmt:message key="label.zones"/>"
                     view-all-target="zones"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block">
+            <li class="block pods">
               <span class="header"><fmt:message key="label.pods"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="podCount"></span>
               <span class="button view-all pods"
                     view-all-title="<fmt:message key="label.pods"/>"
                     view-all-target="pods"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block">
+            <li class="block clusters">
               <span class="header"><fmt:message key="label.clusters"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="clusterCount"></span>
               <span class="button view-all clusters"
                     view-all-title="<fmt:message key="label.clusters"/>"
                     view-all-target="clusters"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block last">
+            <li class="block last hosts">
               <span class="header"><fmt:message key="label.hosts"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="hostCount"></span>
               <span class="button view-all hosts"
                     view-all-title="<fmt:message key="label.hosts"/>"
                     view-all-target="hosts"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block">
+            <li class="block primary-storage">
               <span class="header"><fmt:message key="label.primary.storage"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="primaryStorageCount"></span>
               <span class="button view-all zones"
                     view-all-title="<fmt:message key="label.primary.storage"/>"
                     view-all-target="primaryStorage"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block">
+            <li class="block secondary-storage">
               <span class="header"><fmt:message key="label.secondary.storage"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="secondaryStorageCount"></span>
               <span class="button view-all pods"
                     view-all-title="<fmt:message key="label.secondary.storage"/>"
                     view-all-target="secondaryStorage"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block">
+            <li class="block system-vms">
               <span class="header"><fmt:message key="label.system.vms"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="systemVmCount"></span>
               <span class="button view-all clusters"
                     view-all-title="<fmt:message key="label.system.vms"/>"
                     view-all-target="systemVms"><fmt:message key="label.view.all"/></span>
             </li>
-            <li class="block last">
+            <li class="block last virtual-routers">
               <span class="header"><fmt:message key="label.virtual.routers"/></span>
+              <span class="icon">&nbsp;</span>
               <span class="overview total" data-item="virtualRouterCount"></span>
               <span class="button view-all hosts"
                     view-all-title="<fmt:message key="label.virtual.routers"/>"
@@ -1605,13 +1635,15 @@ under the License.
     <script type="text/javascript" src="scripts/ui/widgets/treeView.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/widgets/notifications.js?t=<%=now%>"></script> 
     <script type="text/javascript" src="scripts/ui/widgets/tagger.js?t=<%=now%>"></script>
-    
+    <script type="text/javascript" src="scripts/ui/widgets/toolTip.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.callbacks.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/sharedFunctions.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/login.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/projects.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloudStack.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/lbStickyPolicy.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/autoscaler.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/autoscaler.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/zoneChart.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/dashboard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/installWizard.js?t=<%=now%>"></script>
@@ -1639,7 +1671,8 @@ under the License.
     <script type="text/javascript" src="scripts/ui-custom/physicalResources.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/zoneWizard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/system.js?t=<%=now%>"></script>
-    <script type="text/javascript" src="scripts/domains.js?t=<%=now%>"></script>   
+    <script type="text/javascript" src="scripts/domains.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/docs.js?t=<%=now%>"></script>
   </body>
 </html>
 <jsp:include page="dictionary.jsp" />

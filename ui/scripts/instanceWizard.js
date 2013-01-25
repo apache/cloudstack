@@ -25,6 +25,12 @@
       return g_capabilities.customdiskofferingmaxsize;
     },
 
+    // Determines whether 'add new network' box is shown.
+    // -- return true to show, false to hide
+    showAddNetwork: function(args) {
+      return true;
+    },
+
     // Called in networks list, when VPC drop-down is changed
     // -- if vpcID given, return true if in network specified by vpcID
     // -- if vpcID == -1, return true if network is not associated with a VPC
@@ -262,20 +268,31 @@
       }
 
       if (selectedZoneObj.networktype == "Advanced") {  //Advanced zone. Show network list.	 
-				var $networkStep = $(".step.network:visible .nothing-to-select");		
+				var $networkStep = $(".step.network:visible .nothing-to-select");
+				var $networkStepContainer = $('.step.network:visible');
+
 				if(args.initArgs.pluginForm != null && args.initArgs.pluginForm.name == "vpcTierInstanceWizard") { //from VPC Tier chart
 				  step5ContainerType = 'nothing-to-select'; 					
 					$networkStep.find("#from_instance_page_1").hide();		
           $networkStep.find("#from_instance_page_2").hide();					
 					$networkStep.find("#from_vpc_tier").text("tier " + args.context.networks[0].name);					
 					$networkStep.find("#from_vpc_tier").show();					
-				}
-			  else { //from Instance page 
-          step5ContainerType = 'select-network';
-					$networkStep.find("#from_instance_page_1").show();		
-          $networkStep.find("#from_instance_page_2").show();
-					$networkStep.find("#from_vpc_tier").text("");			
-					$networkStep.find("#from_vpc_tier").hide();
+				} else { //from Instance page
+				  if(selectedZoneObj.securitygroupsenabled != true) { // Advanced SG-disabled zone
+						step5ContainerType = 'select-network';
+						$networkStep.find("#from_instance_page_1").show();		
+						$networkStep.find("#from_instance_page_2").show();
+						$networkStep.find("#from_vpc_tier").text("");			
+						$networkStep.find("#from_vpc_tier").hide();
+            $networkStepContainer.removeClass('next-use-security-groups');
+					} else { // Advanced SG-enabled zone
+					  step5ContainerType = 'select-advanced-sg';
+					}
+
+          if ($networkStepContainer.hasClass('next-use-security-groups')) {
+            $networkStepContainer.removeClass('repeat next-use-security-groups loaded');
+            step5ContainerType = 'select-security-group';
+          }
 				}
       }
       else { //Basic zone. Show securigy group list or nothing(when no SecurityGroup service in guest network)
@@ -309,12 +326,22 @@
       }
 
       //step5ContainerType = 'nothing-to-select'; //for testing only, comment it out before checking in
-      if(step5ContainerType == 'select-network') {
+      if(step5ContainerType == 'select-network' || step5ContainerType == 'select-advanced-sg') {
         var defaultNetworkArray = [], optionalNetworkArray = [];
         var networkData = {
-          zoneId: args.currentData.zoneid
+          zoneId: args.currentData.zoneid,
+					canusefordeploy: true
         };
-
+				
+				// step5ContainerType of Advanced SG-enabled zone is 'select-security-group', so won't come into this block
+				/*
+				if(selectedZoneObj.networktype == 'Advanced' && selectedZoneObj.securitygroupsenabled == true) {
+				  $.extend(networkData, {
+					  type: 'Shared'
+					});
+				}
+				*/
+				
         if (!(cloudStack.context.projects && cloudStack.context.projects[0])) {
           networkData.domainid = g_domainid;
           networkData.account = g_account;
@@ -338,6 +365,18 @@
           async: false,
           success: function(json) {
             networkObjs = json.listnetworksresponse.network ? json.listnetworksresponse.network : [];
+												
+						if(networkObjs.length > 0) {
+						  for(var i = 0; i < networkObjs.length; i++) {
+								var networkObj = networkObjs[i];    
+								var serviceObjArray = networkObj.service;
+								for(var k = 0; k < serviceObjArray.length; k++) {
+									if(serviceObjArray[k].name == "SecurityGroup") {
+									  networkObjs[i].type = networkObjs[i].type + ' (sg)';																		
+									}
+								}
+							}
+            }						
           }
         });
                   
@@ -359,12 +398,21 @@
         });
         //get network offerings (end)	***			
 
+        $networkStepContainer.removeClass('repeat next-use-security-groups');
+
+        if (step5ContainerType == 'select-advanced-sg') {
+          $networkStepContainer.addClass('repeat next-use-security-groups');
+
+          // Add guest network is disabled
+          $networkStepContainer.find('.select-network').addClass('no-add-network');
+        } else {
+          $networkStepContainer.find('.select-network').removeClass('no-add-network');
+        }
 
         args.response.success({
           type: 'select-network',
-          data: {
-            myNetworks: [], //not used any more
-            sharedNetworks: networkObjs,
+          data: {            
+            networkObjs: networkObjs,
             securityGroups: [],
             networkOfferings: networkOfferingObjs,
             vpcs: vpcObjs
@@ -388,17 +436,15 @@
             var items = json.listsecuritygroupsresponse.securitygroup;
             if (items != null && items.length > 0) {
               for (var i = 0; i < items.length; i++) {
-                if(items[i].name != "default") //exclude default security group because it is always applied
-                  securityGroupArray.push(items[i]);
+                securityGroupArray.push(items[i]);
               }
             }
           }
         });
         args.response.success({
           type: 'select-security-group',
-          data: {
-            myNetworks: [], //not used any more
-            sharedNetworks: [],
+          data: {            
+            networkObjs: [],
             securityGroups: securityGroupArray,
             networkOfferings: [],
             vpcs: []
@@ -409,9 +455,8 @@
       else if(step5ContainerType == 'nothing-to-select') {
         args.response.success({
           type: 'nothing-to-select',
-          data: {
-            myNetworks: [], //not used any more
-            sharedNetworks: [],
+          data: {            
+            networkObjs: [],
             securityGroups: [],
             networkOfferings: [],
             vpcs: []
@@ -467,9 +512,17 @@
         //create new network starts here
         if(args.data["new-network"] == "create-new-network") {
           var isCreateNetworkSuccessful = true;
+					
+					var data = {
+					  networkOfferingId: args.data["new-network-networkofferingid"],
+						name: args.data["new-network-name"],
+						displayText: args.data["new-network-name"],
+						zoneId: selectedZoneObj.id
+					};
+					
           $.ajax({
-            url: createURL("createNetwork&networkOfferingId="+args.data["new-network-networkofferingid"]+"&name="+todb(args.data["new-network-name"])+"&displayText="+todb(args.data["new-network-name"])+"&zoneId="+selectedZoneObj.id),
-            dataType: "json",
+            url: createURL('createNetwork'),
+            data: data,
             async: false,
             success: function(json) {
               newNetwork = json.createnetworkresponse.network;
@@ -518,12 +571,48 @@
 
         if(checkedSecurityGroupIdArray.length > 0)
           array1.push("&securitygroupids=" + checkedSecurityGroupIdArray.join(","));
+				        			
+				if(selectedZoneObj.networktype ==	"Advanced" && selectedZoneObj.securitygroupsenabled == true) { // Advanced SG-enabled zone 	          
+          var array2 = [];							
+					var myNetworks = $('.multi-wizard:visible form').data('my-networks'); //widget limitation: If using an advanced security group zone, get the guest networks like this 
+					var defaultNetworkId = $('.multi-wizard:visible form').find('input[name=defaultNetwork]:checked').val();
+										
+					var checkedNetworkIdArray;
+					if(typeof(myNetworks) == "object" && myNetworks.length != null) { //myNetworks is an array of string, e.g. ["203", "202"],
+						checkedNetworkIdArray = myNetworks;
+					}
+					else if(typeof(myNetworks) == "string" && myNetworks.length > 0) { //myNetworks is a string, e.g. "202"
+						checkedNetworkIdArray = [];
+						checkedNetworkIdArray.push(myNetworks);
+					}
+					else { // typeof(myNetworks) == null
+						checkedNetworkIdArray = [];
+					}
+					
+					//add default network first
+					if(defaultNetworkId != null && defaultNetworkId.length > 0 && defaultNetworkId != 'new-network')
+						array2.push(defaultNetworkId);
+
+					//then, add other checked networks
+					if(checkedNetworkIdArray.length > 0) {
+						for(var i=0; i < checkedNetworkIdArray.length; i++) {
+							if(checkedNetworkIdArray[i] != defaultNetworkId) //exclude defaultNetworkId that has been added to array2
+								array2.push(checkedNetworkIdArray[i]);
+						}
+					}
+					
+					array1.push("&networkIds=" + array2.join(","));					
+				}				
       }
       else if (step5ContainerType == 'nothing-to-select') {	  
 				if(args.context.networks != null) { //from VPC tier
 				  array1.push("&networkIds=" + args.context.networks[0].id);
 					array1.push("&domainid=" + args.context.vpc[0].domainid);
-					array1.push("&account=" + args.context.vpc[0].account);
+					
+					if(args.context.vpc[0].account != null)
+					  array1.push("&account=" + args.context.vpc[0].account);
+					else if(args.context.vpc[0].projectid != null)
+					  array1.push("&projectid=" + args.context.vpc[0].projectid);
 				}
 			}
 			

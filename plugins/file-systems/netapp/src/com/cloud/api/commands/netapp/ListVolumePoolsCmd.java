@@ -21,10 +21,11 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -36,7 +37,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ListVolumePoolsCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="List Pool", responseObject = ListVolumePoolsCmdResponse.class)
+@APICommand(name = "listPools", description="List Pool", responseObject = ListVolumePoolsCmdResponse.class)
 public class ListVolumePoolsCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(ListVolumePoolsCmd.class.getName());
     private static final String s_name = "listpoolresponse";
@@ -64,9 +65,9 @@ public class ListVolumePoolsCmd extends BaseCmd {
     		listResponse.setResponseName(getCommandName());
     		this.setResponseObject(listResponse);
     	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
-    	}		
-		
+    		throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
+    	}
+
 	}
 
 	@Override

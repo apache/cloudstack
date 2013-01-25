@@ -28,17 +28,17 @@ public class CheckStateAnswer extends Answer {
     public CheckStateAnswer(CheckStateCommand cmd, State state) {
         this(cmd, state, null);
     }
-    
+
     public CheckStateAnswer(CheckStateCommand cmd, String details) {
         super(cmd, false, details);
         this.state = null;
     }
-    
+
     public CheckStateAnswer(CheckStateCommand cmd, State state, String details) {
         super(cmd, true, details);
         this.state = state;
     }
-    
+
     public State getState() {
         return state;
     }

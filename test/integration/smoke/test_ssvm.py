@@ -21,14 +21,15 @@ import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin import remoteSSHClient
-from integration.lib.utils import *
-from integration.lib.base import *
-from integration.lib.common import *
+from marvin.integration.lib.utils import *
+from marvin.integration.lib.base import *
+from marvin.integration.lib.common import *
 from nose.plugins.attrib import attr
 import telnetlib
 
 #Import System modules
 import time
+_multiprocess_shared_ = True
 
 class Services:
     """Test SSVM Services

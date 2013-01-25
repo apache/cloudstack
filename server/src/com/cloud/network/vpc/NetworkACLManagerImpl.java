@@ -23,10 +23,10 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.SecurityChecker.AccessType;
-import com.cloud.api.commands.ListNetworkACLsCmd;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -35,7 +35,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.firewall.NetworkACLService;
@@ -51,6 +51,7 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -77,7 +78,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
     @Inject
     FirewallRulesDao _firewallDao;
     @Inject
-    NetworkManager _networkMgr;
+    NetworkModel _networkMgr;
     @Inject
     VpcManager _vpcMgr;
     @Inject
@@ -137,8 +138,11 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         Vpc vpc = _vpcMgr.getVpc(network.getVpcId());
         Account aclOwner = _accountMgr.getAccount(vpc.getAccountId());
         
-        _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+        //check if the caller can access vpc
+        _accountMgr.checkAccess(caller, null, false, vpc);
 
+        //check if the acl can be created for this network
+        _accountMgr.checkAccess(aclOwner, AccessType.UseNetwork, false, network);
         
         if (!_networkMgr.areServicesSupportedInNetwork(networkId, Service.NetworkACL)) {
             throw new InvalidParameterValueException("Service " + Service.NetworkACL + " is not supported in network " + network);
@@ -343,7 +347,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
 
     
     @Override
-    public List<? extends FirewallRule> listNetworkACLs(ListNetworkACLsCmd cmd) {
+    public Pair<List<? extends FirewallRule>,Integer> listNetworkACLs(ListNetworkACLsCmd cmd) {
         Long networkId = cmd.getNetworkId();
         Long id = cmd.getId();
         String trafficType = cmd.getTrafficType();
@@ -408,7 +412,8 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
 
         sc.setParameters("purpose", Purpose.NetworkACL);
 
-        return _firewallDao.search(sc, filter);
+        Pair<List<FirewallRuleVO>, Integer> result = _firewallDao.searchAndCount(sc, filter);
+        return new Pair<List<? extends FirewallRule>, Integer>(result.first(), result.second());
     }
 
 

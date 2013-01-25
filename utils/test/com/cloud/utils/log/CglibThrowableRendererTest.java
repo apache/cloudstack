@@ -18,14 +18,21 @@ package com.cloud.utils.log;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
+import org.apache.log4j.*;
 
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.log4j.spi.RootLogger;
+import org.apache.log4j.spi.ThrowableRenderer;
+
+import java.io.CharArrayWriter;
+import java.io.Writer;
 
 
 public class CglibThrowableRendererTest extends TestCase {
+    static Logger another = Logger.getLogger("TEST");
+
     private final static Logger s_logger = Logger.getLogger(CglibThrowableRendererTest.class);
     public static class Test {
         @DB
@@ -48,13 +55,40 @@ public class CglibThrowableRendererTest extends TestCase {
             }
         }
     }
+
+    private Logger getAlternateLogger(Writer writer, ThrowableRenderer renderer) {
+        Hierarchy hierarchy = new Hierarchy(new RootLogger(Level.INFO));
+        if (renderer != null) {
+            hierarchy.setThrowableRenderer(renderer);
+        }
+        Logger alternateRoot = hierarchy.getRootLogger();
+        alternateRoot.addAppender(new WriterAppender(new SimpleLayout(), writer));
+        return alternateRoot;
+    }
     
     public void testException() {
+        Writer w = new CharArrayWriter();
+        Logger alt = getAlternateLogger(w, null);
+
         Test test = ComponentLocator.inject(Test.class);
         try {
             test.exception();
         } catch (Exception e) {
-            s_logger.warn("exception caught", e);
+            alt.warn("exception caught", e);
         }
+        // first check that we actually have some call traces containing "<generated>"
+        assertTrue(w.toString().contains("<generated>"));
+
+        w = new CharArrayWriter();
+        alt = getAlternateLogger(w, new CglibThrowableRenderer());
+
+        try {
+            test.exception();
+        } catch (Exception e) {
+            alt.warn("exception caught", e);
+        }
+        // then we check that CglibThrowableRenderer indeed remove those occurrences
+        assertFalse(w.toString().contains("<generated>"));
+
     }
 }

@@ -28,12 +28,13 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="alert")
-public class AlertVO implements Alert, Identity {
+public class AlertVO implements Alert {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

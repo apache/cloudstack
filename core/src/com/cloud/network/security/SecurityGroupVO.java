@@ -25,11 +25,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("security_group"))
-public class SecurityGroupVO implements SecurityGroup, Identity {
+public class SecurityGroupVO implements SecurityGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

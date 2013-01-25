@@ -19,22 +19,22 @@ package com.cloud.agent.api;
 import com.cloud.agent.api.to.NicTO;
 
 public class PlugNicCommand extends Command {
-    
+
     NicTO nic;
     String instanceName;
-    
+
     public NicTO getNic() {
         return nic;
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return true;
     }
-    
+
     protected PlugNicCommand() {
     }
-    
+
     public PlugNicCommand(NicTO nic, String instanceName) {
         this.nic = nic;
         this.instanceName = instanceName;

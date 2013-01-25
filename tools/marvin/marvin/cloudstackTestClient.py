@@ -58,7 +58,7 @@ class cloudstackTestClient(object):
         """Generate Random Strings of variable length"""
         return ''.join(random.choice(chars) for x in range(size))
 
-    def createNewApiClient(self, UserName, DomainName, acctType=0):
+    def createUserApiClient(self, UserName, DomainName, acctType=0):
         if not self.isAdminContext():
             return self.apiClient
         
@@ -88,7 +88,7 @@ class cloudstackTestClient(object):
             createAcctCmd = createAccount.createAccountCmd()
             createAcctCmd.accounttype = acctType
             createAcctCmd.domainid = domId
-            createAcctCmd.email = "test-" + self.random_gen() + "@citrix.com"
+            createAcctCmd.email = "test-" + self.random_gen() + "@cloudstack.org"
             createAcctCmd.firstname = UserName
             createAcctCmd.lastname = UserName
             createAcctCmd.password = mdf_pass
@@ -111,16 +111,14 @@ class cloudstackTestClient(object):
             apiKey = registerUserRes.apikey
             securityKey = registerUserRes.secretkey
         
-        nConnection = cloudstackConnection.cloudConnection(self.connection.mgtSvr, self.connection.port, apiKey, securityKey, self.connection.asyncTimeout, self.connection.logging)
-        self.connection.close()
-        self.connection = nConnection
-        self.apiClient = cloudstackAPIClient.CloudStackAPIClient(self.connection)
+        newUserConnection = cloudstackConnection.cloudConnection(self.connection.mgtSvr, self.connection.port, apiKey, securityKey, self.connection.asyncTimeout, self.connection.logging)
+        self.userApiClient = cloudstackAPIClient.CloudStackAPIClient(newUserConnection)
+        self.userApiClient.connection = newUserConnection
+        return self.userApiClient
         
     def close(self):
         if self.connection is not None:
             self.connection.close()
-        if self.dbConnection is not None:
-            self.dbConnection.close()
         
     def getDbConnection(self):
         return self.dbConnection
@@ -138,6 +136,17 @@ class cloudstackTestClient(object):
     
     def getApiClient(self):
         return self.apiClient
+
+    def getUserApiClient(self, account, domain, type=0):
+        """
+        0 - user
+        1 - admin
+        2 - domain admin
+        """
+        self.createUserApiClient(account, domain, type)
+        if hasattr(self, "userApiClient"):
+            return self.userApiClient
+        return None
     
     '''FixME, httplib has issue if more than one thread submitted'''
     def submitCmdsAndWait(self, cmds, workers=1):

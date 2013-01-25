@@ -153,6 +153,12 @@
     // Include zone network type
     if (groupedForms.zone) {
       groupedForms.zone.networkType = $forms.find('input[name=network-model]:checked').val();
+      
+      // Include zone isolation mode, supported for Advanced zones only
+      if (groupedForms.zone.networkType == 'Advanced') {
+        groupedForms.zone.sgEnabled = $forms.find('input[name=zone-advanced-sg-enabled]')
+          .is(':checked') ? true : false;
+      }
     }
 
     return groupedForms;
@@ -1045,8 +1051,8 @@
         // Custom UI manipulations for specific steps
         switch($targetStep.attr('zone-wizard-step-id')) {
         case 'configureGuestTraffic':
-          if (formState['network-model'] == 'Advanced') {
-            guestTraffic.init($wizard, args);
+				  if (formState['network-model'] == 'Advanced' && formState['zone-advanced-sg-enabled']	== undefined) {
+            guestTraffic.init($wizard, args); //initialize multiple tabs (tabs is as many as Guest Traffic types in multiple physical networks in Advanced Zone without SG)
           } else {
             guestTraffic.remove($wizard);
           }
@@ -1160,8 +1166,15 @@
               disabled: 'disabled'
             });
 
+            var $selectArea = $target.closest('.select-area');
+
             if ($target.val() == 'Advanced') {
               $inputs.attr('disabled', false);
+              $selectArea.removeClass('disabled')
+                .find('.isolation-mode input').attr('disabled', false);
+            } else if ($target.val() == 'Basic') {
+              $selectArea.siblings('.advanced-zone').addClass('disabled')
+                .find('.isolation-mode input').attr('disabled', 'disabled');
             }
           }
 

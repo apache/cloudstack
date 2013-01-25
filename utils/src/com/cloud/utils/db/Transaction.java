@@ -131,7 +131,7 @@ public class Transaction {
     // the existing DAO features
     //
     public void transitToUserManagedConnection(Connection conn) {
-    	assert(_conn == null /*&& _stack.size() <= 1*/) : "Can't change to a user managed connection unless the stack is empty and the db connection is null: " + toString();
+        assert(_conn == null /*&& _stack.size() <= 1*/) : "Can't change to a user managed connection unless the stack is empty and the db connection is null, you may have forgotten to invoke transitToAutoManagedConnection to close out the DB connection: " + toString();
         _conn = conn;
         _dbId = CONNECTED_DB;
     }
@@ -653,12 +653,6 @@ public class Transaction {
             s_logger.trace("Transaction is done");
             cleanup();
         }
-
-        if(this._dbId == CONNECTED_DB) {
-            tls.set(_prev);
-            _prev = null;
-            s_mbean.removeTransaction(this);
-        }
     }
 
     /**
@@ -754,14 +748,15 @@ public class Transaction {
         }
 
         try {
-            if (s_connLogger.isTraceEnabled()) {
-                s_connLogger.trace("Closing DB connection: dbconn" + System.identityHashCode(_conn));
-            }
-            if(this._dbId != CONNECTED_DB) {
+            // we should only close db connection when it is not user managed
+            if (this._dbId != CONNECTED_DB) {
+                if (s_connLogger.isTraceEnabled()) {
+                    s_connLogger.trace("Closing DB connection: dbconn" + System.identityHashCode(_conn));
+                }                                
                 _conn.close();
+                _conn = null;  
             }
 
-            _conn = null;
         } catch (final SQLException e) {
             s_logger.warn("Unable to close connection", e);
         }
@@ -1045,9 +1040,6 @@ public class Transaction {
             final boolean cloudTestWhileIdle = Boolean.parseBoolean(dbProps.getProperty("db.cloud.testWhileIdle"));
             final long cloudTimeBtwEvictionRunsMillis = Long.parseLong(dbProps.getProperty("db.cloud.timeBetweenEvictionRunsMillis"));
             final long cloudMinEvcitableIdleTimeMillis = Long.parseLong(dbProps.getProperty("db.cloud.minEvictableIdleTimeMillis"));
-            final boolean cloudRemoveAbandoned = Boolean.parseBoolean(dbProps.getProperty("db.cloud.removeAbandoned"));
-            final int cloudRemoveAbandonedTimeout = Integer.parseInt(dbProps.getProperty("db.cloud.removeAbandonedTimeout"));
-            final boolean cloudLogAbandoned = Boolean.parseBoolean(dbProps.getProperty("db.cloud.logAbandoned"));
             final boolean cloudPoolPreparedStatements = Boolean.parseBoolean(dbProps.getProperty("db.cloud.poolPreparedStatements"));
             final String url = dbProps.getProperty("db.cloud.url.params");
             final boolean useSSL = Boolean.parseBoolean(dbProps.getProperty("db.cloud.useSSL"));
@@ -1123,21 +1115,21 @@ public class Transaction {
             	s_logger.debug("Simulator DB properties are not available. Not initializing simulator DS");
             }
         } catch (final Exception e) {
-            final GenericObjectPool connectionPool = new GenericObjectPool(null, 5);
-            final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/cloud", "cloud", "cloud");
-            final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, connectionPool, null, null, false, true);
-            s_ds = new PoolingDataSource(/*connectionPool*/ poolableConnectionFactory.getPool());
-
-            final GenericObjectPool connectionPoolUsage = new GenericObjectPool(null, 5);
-            final ConnectionFactory connectionFactoryUsage = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/cloud_usage", "cloud", "cloud");
-            final PoolableConnectionFactory poolableConnectionFactoryUsage = new PoolableConnectionFactory(connectionFactoryUsage, connectionPoolUsage, null, null, false, true);
-            s_usageDS = new PoolingDataSource(poolableConnectionFactoryUsage.getPool());
-            
-            final GenericObjectPool connectionPoolsimulator = new GenericObjectPool(null, 5);
-            final ConnectionFactory connectionFactorysimulator = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/cloud_simulator", "cloud", "cloud");
-            final PoolableConnectionFactory poolableConnectionFactorysimulator = new PoolableConnectionFactory(connectionFactorysimulator, connectionPoolsimulator, null, null, false, true);
-            s_simulatorDS = new PoolingDataSource(poolableConnectionFactorysimulator.getPool());
+            s_ds = getDefaultDataSource("cloud");
+            s_usageDS = getDefaultDataSource("cloud_usage");
+            s_simulatorDS = getDefaultDataSource("cloud_simulator");
             s_logger.warn("Unable to load db configuration, using defaults with 5 connections.  Please check your configuration", e);
         }
     }
+
+    private static DataSource getDefaultDataSource(final String database) {
+   final GenericObjectPool connectionPool = new GenericObjectPool(null, 5);
+   final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(
+       "jdbc:mysql://localhost:3306/" + database, "cloud", "cloud");
+   final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(
+       connectionFactory, connectionPool, null, null, false, true);
+   return new PoolingDataSource(
+       /* connectionPool */poolableConnectionFactory.getPool());
+    }
+    
 }

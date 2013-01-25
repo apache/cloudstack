@@ -36,7 +36,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
@@ -57,7 +57,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider, IpDeployer {
     private static final Logger s_logger = Logger.getLogger(ElasticLoadBalancerElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
-    @Inject NetworkManager _networkManager;
+    @Inject NetworkModel _networkManager;
     @Inject ElasticLoadBalancerManager _lbMgr;
     @Inject ConfigurationDao _configDao;
     @Inject NetworkOfferingDao _networkOfferingDao;
@@ -125,7 +125,7 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
     }
 
     @Override
-    public boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO  kill all loadbalancer vms by calling the ElasticLoadBalancerManager
         return false;
     }

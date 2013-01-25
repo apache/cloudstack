@@ -25,7 +25,7 @@ public class UploadProgressCommand extends UploadCommand {
 	protected UploadProgressCommand() {
 		super();
 	}
-	
+
 	public UploadProgressCommand(UploadCommand cmd, String jobId, RequestType req) {
 	    super(cmd);
 
@@ -44,5 +44,5 @@ public class UploadProgressCommand extends UploadCommand {
 	public RequestType getRequest() {
 		return request;
 	}
-	
+
 }

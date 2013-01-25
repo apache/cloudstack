@@ -58,6 +58,8 @@ import com.caringo.client.ScspResponse;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 
 /**
  * Creates an SCSP client to a CAStor cluster, configured in "storage.root",
@@ -65,6 +67,7 @@ import org.apache.commons.httpclient.Header;
  */
 public class S3CAStorBucketAdapter implements S3BucketAdapter {
     protected final static Logger s_logger = Logger.getLogger(S3CAStorBucketAdapter.class);
+    private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
     private static final int HTTP_OK = 200;
     private static final int HTTP_CREATED = 201;
@@ -411,23 +414,26 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
     }
 
     public class ScspDataSource implements DataSource {
-        GetMethod method;
-        public ScspDataSource(GetMethod m) {
-            method = m;
+        String content_type = null;
+        byte content[] = null;
+        public ScspDataSource(GetMethod method) {
+            Header h = method.getResponseHeader("Content-type");
+            if (h != null) {
+                content_type = h.getValue();
+            }
+            try{
+                content = method.getResponseBody();
+            }catch(IOException e){
+                s_logger.error("CAStor loadObjectRange getInputStream error", e);
+            }
         }
         @Override
         public String getContentType() {
-            Header h = method.getResponseHeader("Content-type");
-            return h==null ? null : h.getValue();
+            return content_type;
         }
         @Override
-        public InputStream getInputStream() throws IOException {
-            try {
-                return method.getResponseBodyAsStream();
-            } catch (Exception e) {
-                s_logger.error("CAStor loadObjectRange getInputStream error", e);
-                return null;
-            }
+        public InputStream getInputStream() {
+            return new ByteArrayInputStream(content);
         }
         @Override
         public String getName() {
@@ -443,21 +449,27 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
 
     @Override
     public DataHandler loadObjectRange(String mountedRoot, String bucket, String fileName, long startPos, long endPos) {
+        HttpClient httpClient = new HttpClient(s_httpClientManager);
+        // Create a method instance.
+        GetMethod method = new GetMethod(castorURL(mountedRoot, bucket, fileName));
+        method.addRequestHeader("Range", "bytes=" + startPos + "-" + endPos);
+        int statusCode;
         try {
-            HttpClient httpClient = new HttpClient();
-            // Create a method instance.
-            GetMethod method = new GetMethod(castorURL(mountedRoot, bucket, fileName));
-            method.addRequestHeader("Range", "bytes=" + startPos + "-" + endPos);
-            int statusCode = httpClient.executeMethod(method);
-            if (statusCode < HTTP_OK || statusCode >= HTTP_UNSUCCESSFUL) {
-                s_logger.error("CAStor loadObjectRange response: "+  statusCode);
-                throw new FileNotExistException("CAStor loadObjectRange response: " + statusCode);
-            }
-            return new DataHandler(new ScspDataSource(method));
-        } catch (Exception e) {
+            statusCode = httpClient.executeMethod(method);
+        } catch (HttpException e) {
+            s_logger.error("CAStor loadObjectRange failure", e);
+            throw new FileNotExistException("CAStor loadObjectRange failure: " + e);
+        } catch (IOException e) {
             s_logger.error("CAStor loadObjectRange failure", e);
             throw new FileNotExistException("CAStor loadObjectRange failure: " + e);
         }
+        if (statusCode < HTTP_OK || statusCode >= HTTP_UNSUCCESSFUL) {
+            s_logger.error("CAStor loadObjectRange response: "+  statusCode);
+            throw new FileNotExistException("CAStor loadObjectRange response: " + statusCode);
+        }
+        DataHandler ret = new DataHandler(new ScspDataSource(method));
+        method.releaseConnection();
+        return ret;
     }
 
     @Override

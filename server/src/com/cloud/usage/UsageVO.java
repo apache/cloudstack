@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.usage;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -29,7 +31,7 @@ import javax.persistence.TemporalType;
 
 @Entity
 @Table(name="cloud_usage")
-public class UsageVO {
+public class UsageVO implements InternalIdentity {
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -165,7 +167,7 @@ public class UsageVO {
 	    this.endDate = endDate;
 	}
 	
-	public Long getId() {
+	public long getId() {
 		return id;
 	}
 

@@ -23,25 +23,25 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.storage.StoragePool;
 
 public class ModifyStoragePoolCommand extends Command {
-	
+
 	boolean add;
 	StorageFilerTO pool;
     String localPath;
 	String [] options;
 	public static final String LOCAL_PATH_PREFIX="/mnt/";
 
-	
+
 	public ModifyStoragePoolCommand() {
-		
+
 	}
-    
+
     public ModifyStoragePoolCommand(boolean add, StoragePool pool, String localPath) {
     	this.add = add;
     	this.pool = new StorageFilerTO(pool);
         this.localPath = localPath;
 
     }
-    
+
     public ModifyStoragePoolCommand(boolean add, StoragePool pool) {
 		this(add, pool, LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()));
 	}
@@ -53,11 +53,11 @@ public class ModifyStoragePoolCommand extends Command {
     public void setPool(StoragePool pool) {
         this.pool = new StorageFilerTO(pool);
     }
-    
+
 	public boolean getAdd() {
     	return add;
     }
-    
+
 	@Override
     public boolean executeInSequence() {
         return false;
@@ -71,5 +71,5 @@ public class ModifyStoragePoolCommand extends Command {
 		this.options = options;
 	}
 
-	
+
 }

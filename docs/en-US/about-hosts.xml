@@ -28,7 +28,8 @@
     <para>The host is the smallest organizational unit within a &PRODUCT; deployment. Hosts are contained within clusters, clusters are contained within pods, and pods are contained within zones.</para>
     <para>Hosts in a &PRODUCT; deployment:</para>
     <itemizedlist>
-        <listitem><para>Provde the CPU, memory, storage, and networking resources needed to host the virtual machines</para></listitem>
+        <listitem><para>Provide the CPU, memory, storage, and networking resources needed to host the virtual
+        machines</para></listitem>
         <listitem><para>Interconnect using a high bandwidth TCP/IP network and connect to the Internet</para></listitem>
         <listitem><para>May reside in multiple data centers across different geographic locations</para></listitem>
         <listitem><para>May have different capacities (different CPU speeds, different amounts of RAM, etc.), although the hosts within a cluster must all be homogeneous</para></listitem>

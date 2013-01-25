@@ -18,14 +18,11 @@ package com.cloud.agent.manager;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CronCommand;
@@ -37,13 +34,11 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.resource.ServerResource;
-import com.cloud.utils.concurrency.NamedThreadFactory;
 
 public class DirectAgentAttache extends AgentAttache {
     private final static Logger s_logger = Logger.getLogger(DirectAgentAttache.class);
 
     ServerResource _resource;
-    static ScheduledExecutorService s_executor = new ScheduledThreadPoolExecutor(500, new NamedThreadFactory("DirectAgent"));
     List<ScheduledFuture<?>> _futures = new ArrayList<ScheduledFuture<?>>();
     AgentManagerImpl _mgr;
     long _seq = 0;
@@ -94,15 +89,15 @@ public class DirectAgentAttache extends AgentAttache {
             if (answers != null && answers[0] instanceof StartupAnswer) {
                 StartupAnswer startup = (StartupAnswer)answers[0];
                 int interval = startup.getPingInterval();
-                _futures.add(s_executor.scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
+                _futures.add(_agentMgr.getDirectAgentPool().scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
             }
         } else {
             Command[] cmds = req.getCommands();
             if (cmds.length > 0 && !(cmds[0] instanceof CronCommand)) {
-                s_executor.execute(new Task(req));
+                _agentMgr.getDirectAgentPool().execute(new Task(req));
             } else {
                 CronCommand cmd = (CronCommand)cmds[0];
-                _futures.add(s_executor.scheduleAtFixedRate(new Task(req), cmd.getInterval(), cmd.getInterval(), TimeUnit.SECONDS));
+                _futures.add(_agentMgr.getDirectAgentPool().scheduleAtFixedRate(new Task(req), cmd.getInterval(), cmd.getInterval(), TimeUnit.SECONDS));
             }
         }
     }
@@ -113,7 +108,7 @@ public class DirectAgentAttache extends AgentAttache {
             StartupAnswer startup = (StartupAnswer)answers[0];
             int interval = startup.getPingInterval();
             s_logger.info("StartupAnswer received " + startup.getHostId() + " Interval = " + interval );
-            _futures.add(s_executor.scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
+            _futures.add(_agentMgr.getDirectAgentPool().scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
         }
     }
 

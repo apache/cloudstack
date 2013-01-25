@@ -251,8 +251,27 @@
     routerDetailView: function() {
       return {
         title: 'VPC router details',
+        updateContext: function(args) {
+          var router;
+          
+          $.ajax({
+            url: createURL("listRouters&listAll=true&vpcid=" +args.context.vpc[0].id),
+            dataType: "json",
+            async: false,
+            success: function(json) {
+              router = json.listroutersresponse.router[0];
+            }
+          });
+          
+          return {
+            routers: [router]
+          };
+        },
+        actions: cloudStack.sections.system.subsections.virtualRouters
+          .listView.detailView.actions,
         tabs: {
-          routerDetails: cloudStack.sections.network.sections.vpc.listView.detailView.tabs.router
+          routerDetails: cloudStack.sections.network.sections.vpc
+            .listView.detailView.tabs.router
         }
       };
     },
@@ -633,7 +652,8 @@
           title: 'label.add.new.gateway',
           desc: 'message.add.new.gateway.to.vpc',
           fields: {
-					  physicalnetworkid: { 
+					  physicalnetworkid: {
+              docID: 'helpVPCGatewayPhysicalNetwork',
 						  label: 'label.physical.network',
               select: function(args) {               
 								$.ajax({
@@ -652,10 +672,22 @@
 								});
               }							
 						},
-            vlan: { label: 'label.vlan', validation: { required: true }},
-            ipaddress: { label: 'label.ip.address', validation: { required: true }},
-            gateway: { label: 'label.gateway', validation: { required: true }},
-            netmask: { label: 'label.netmask', validation: { required: true }}
+            vlan: {
+              label: 'label.vlan', validation: { required: true },
+              docID: 'helpVPCGatewayVLAN'
+            },
+            ipaddress: {
+              label: 'label.ip.address', validation: { required: true },
+              docID: 'helpVPCGatewayIP'
+            },
+            gateway: {
+              label: 'label.gateway', validation: { required: true },
+              docID: 'helpVPCGatewayGateway'
+            },
+            netmask: {
+              label: 'label.netmask', validation: { required: true },
+              docID: 'helpVPCGatewayNetmask'
+            }
           }
         },
         action: function(args) {
@@ -1414,7 +1446,10 @@
                              }
                             }
                           );
-                        }
+                        },
+                        error:function(json) {
+                         args.response.error(parseXMLHttpResponse(json));
+                            }
                       });
                     },
                     cancelAction: function() { //"Cancel" button is clicked
@@ -1434,7 +1469,10 @@
                              }
                             }
                           );
-                        }
+                        },
+                        error:function(json) {
+                         args.response.error(parseXMLHttpResponse(json));
+                            }
                       });
                     }
                   });
@@ -1457,7 +1495,10 @@
                      }
                     }
                   );
-                }
+                },
+                error:function(json) {
+                         args.response.error(parseXMLHttpResponse(json));
+                            }
               });
             },
             notification: {
@@ -1582,7 +1623,8 @@
             }
           });
 
-          var hiddenTabs = [];
+          var hiddenTabs = ['ipAddresses']; // Disable IP address tab; it is redundant with 'view all' button
+          
           if(networkOfferingHavingELB == false)
             hiddenTabs.push("addloadBalancer");
           return hiddenTabs;
@@ -1956,11 +1998,14 @@
           createForm: {
             title: 'label.add.new.tier',
             fields: {
-              name: { label: 'label.name',
-                      validation: { required: true }
-                    },
+              name: {
+                label: 'label.name',
+                validation: { required: true },
+                docID: 'helpTierName'
+              },
               networkOfferingId: {
                 label: 'label.network.offering',
+                docID: 'helpTierNetworkOffering',
                 validation: { required: true },
                 dependsOn: 'zoneId',
                 select: function(args) {
@@ -2025,10 +2070,12 @@
               },
               gateway: {
                 label: 'label.gateway',
+                docID: 'helpTierGateway',
                 validation: { required: true }
               },
               netmask: {
                 label: 'label.netmask',
+                docID: 'helpTierNetmask',
                 validation: { required: true }
               }
             }

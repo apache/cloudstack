@@ -18,7 +18,7 @@ package com.cloud.network.lb;
 
 import java.util.List;
 
-import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -28,21 +28,23 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
 public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
-    
+
     LoadBalancer createLoadBalancer(CreateLoadBalancerRuleCmd lb, boolean openFirewall) throws NetworkRuleConflictException;
-    
+
     boolean removeAllLoadBalanacersForIp(long ipId, Account caller, long callerUserId);
     boolean removeAllLoadBalanacersForNetwork(long networkId, Account caller, long callerUserId);
     List<LbDestination> getExistingDestinations(long lbId);
     List<LbStickinessPolicy> getStickinessPolicies(long lbId);
     List<LbStickinessMethod> getStickinessMethods(long networkid);
-    
+
     /**
      * Remove vm from all load balancers
      * @param vmId
      * @return true if removal is successful
      */
     boolean removeVmFromLoadBalancers(long vmId);
-    
+
     boolean applyLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException;
+    String getLBCapability(long networkid, String capabilityName);
+    boolean configureLbAutoScaleVmGroup(long vmGroupid, String currentState) throws ResourceUnavailableException;
 }

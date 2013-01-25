@@ -65,9 +65,14 @@
         var $formItem = $('<div>')
               .addClass('form-item')
               .attr({ rel: key });
-
-        if (field.hidden || field.isHidden) $formItem.hide();
-
+											
+        if(field.isHidden != null) {
+					if (typeof(field.isHidden) == 'boolean' && field.isHidden == true) 
+						$formItem.hide();
+					else if (typeof(field.isHidden) == 'function' && field.isHidden() == true) 
+						$formItem.hide();
+        }
+				
         $formItem.appendTo($form);
 
         //Handling Escape KeyPress events
@@ -91,10 +96,7 @@
          closeOnEscape: false
          }); */
         // Label field
-				
-				//if( field.label == 'label.network.offering' || field.label == 'label.guest.gateway')
-				//  debugger;
-				
+								
         var $name = $('<div>').addClass('name')
               .appendTo($formItem)
               .append(
@@ -198,9 +200,8 @@
           selectFn = field.select;
           $input = $('<select>')
             .attr({ name: key })
-            .data('dialog-select-fn', function(args) {
-              selectFn(args ?
-                       $.extend(true, {}, selectArgs, args) : selectArgs);
+            .data('dialog-select-fn', function(args) {								
+              selectFn(args ? $.extend(true, {}, selectArgs, args) : selectArgs);
             })
             .appendTo($value);
 
@@ -224,16 +225,17 @@
               if (!$target.children().size()) return true;
 
               dependsOnArgs[dependsOn] = $target.val();
-              selectFn($.extend(selectArgs, dependsOnArgs));
+							
+							selectFn($.extend(selectArgs, dependsOnArgs));
 
               return true;
             });
 
             if (!$dependsOn.is('select')) {
-              selectFn(selectArgs);
+						  selectFn(selectArgs);
             }
           } else {
-            selectFn(selectArgs);
+					  selectFn(selectArgs);
           }
         } else if (field.isBoolean) {
           if (field.multiArray) {
@@ -306,39 +308,52 @@
           if (field.defaultValue) {
             $input.val(field.defaultValue);
           }
-        } else {
-          // Text field
-          if (field.range) {
-            $input = $.merge(
-              // Range start
-              $('<input>').attr({
-                type: 'text',
-                name: field.range[0]
-              }),
+        } else if (field.isDatepicker) { //jQuery datepicker				
+				  $input = $('<input>').attr({
+						name: key,
+						type: 'text'
+					}).appendTo($value);
 
-              // Range end
-              $('<input>').attr({
-                type: 'text',
-                name: field.range[1]
-              })
-            ).appendTo(
-              $('<div>').addClass('range-edit').appendTo($value)
-            );
+					if (field.defaultValue) {
+						$input.val(field.defaultValue);
+					}
+					if (field.id) {
+						$input.attr('id', field.id);
+					}          
+          $input.addClass("disallowSpecialCharacters"); 										
+					$input.datepicker({dateFormat: 'yy-mm-dd'});	
+				
+				} else if(field.range) {	//2 text fields on the same line (e.g. port range: startPort - endPort)			
+				  $input = $.merge(
+						// Range start
+						$('<input>').attr({
+							type: 'text',
+							name: field.range[0]
+						}),
 
-            $input.wrap($('<div>').addClass('range-item'));
-          } else {
-            $input = $('<input>').attr({
-              name: key,
-              type: field.password || field.isPassword ? 'password' : 'text'
-            }).appendTo($value);
+						// Range end
+						$('<input>').attr({
+							type: 'text',
+							name: field.range[1]
+						})
+					).appendTo(
+						$('<div>').addClass('range-edit').appendTo($value)
+					);
+					$input.wrap($('<div>').addClass('range-item'));					
+					$input.addClass("disallowSpecialCharacters");
+				
+				} else { //text field                  
+					$input = $('<input>').attr({
+						name: key,
+						type: field.password || field.isPassword ? 'password' : 'text'
+					}).appendTo($value);
 
-            if (field.defaultValue) {
-              $input.val(field.defaultValue);
-            }
-			if (field.id) {
-              $input.attr('id', field.id);
-            }
-          }
+					if (field.defaultValue) {
+						$input.val(field.defaultValue);
+					}
+					if (field.id) {
+						$input.attr('id', field.id);
+					}          
           $input.addClass("disallowSpecialCharacters");
         }
 
@@ -347,10 +362,27 @@
 				else
           $input.data('validation-rules', {});
 
-          var fieldLabel = field.label;
-          var inputId = $input.attr('id') ? $input.attr('id') : fieldLabel.replace(/\./g,'_');
-          $input.attr('id', inputId);
-          $name.find('label').attr('for', inputId);
+        var fieldLabel = field.label;
+        var inputId = $input.attr('id') ? $input.attr('id') : fieldLabel.replace(/\./g,'_');
+        
+        $input.attr('id', inputId);
+        $name.find('label').attr('for', inputId);
+
+        if(field.isDisabled)
+            $input.attr("disabled","disabled");
+
+        // Tooltip
+        if (field.docID) {
+          $input.toolTip({
+            docID: field.docID,
+            tooltip:'.tooltip-box',
+            mode:'focus',
+            attachTo: '.form-item'
+          });
+        }
+        /*     $input.blur(function() {
+         console.log('tooltip remove->' + $input.attr('name'));
+         });*/
       });
      
       var getFormValues = function() {
@@ -402,6 +434,7 @@
       return $formContainer.dialog({
         dialogClass: 'create-form',
         closeOnEscape: false,
+        draggable: false,
         width: 400,
         title: _l(args.form.title),
         open: function() {
@@ -417,8 +450,11 @@
               if (!complete($formContainer)) { return false; }
 
               $('div.overlay').remove();
+              $('.tooltip-box').remove();
               $formContainer.remove();
               $(this).dialog('destroy');
+
+              $('.hovered-elem').hide();
 
               return true;
             }
@@ -428,8 +464,11 @@
             'class': 'cancel',
             click: function() {
               $('div.overlay').remove();
+              $('.tooltip-box').remove();
               $formContainer.remove();
               $(this).dialog('destroy');
+
+              $('.hovered-elem').hide();
             }
           }
         ]
@@ -498,6 +537,7 @@
               $(this).dialog('destroy');
               $('div.overlay').remove();
               if (args.cancelAction) { args.cancelAction(); }
+              $('.hovered-elem').hide();
             }
           },
           {
@@ -507,6 +547,7 @@
               args.action();
               $(this).dialog('destroy');
               $('div.overlay').remove();
+              $('.hovered-elem').hide();
             }
           }
         ]
@@ -533,6 +574,7 @@
             click: function() {
               $(this).dialog('destroy');
               if (args.clickAction) args.clickAction();
+              $('.hovered-elem').hide();
             }
           }
         ]

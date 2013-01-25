@@ -36,6 +36,7 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -54,6 +55,7 @@ import com.cloud.utils.component.ComponentLocator;
 @Local(UpgradeManager.class)
 public class UpgradeManagerImpl implements UpgradeManager {
 	private final static Logger s_logger = Logger.getLogger(UpgradeManagerImpl.class);
+    private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
     String _name;
     String _minimalVersion;
@@ -92,7 +94,7 @@ public class UpgradeManagerImpl implements UpgradeManager {
     public String deployNewAgent(String url) {
         s_logger.info("Updating agent with binary from " + url);
 
-        final HttpClient client = new HttpClient();
+        final HttpClient client = new HttpClient(s_httpClientManager);
         final GetMethod method = new GetMethod(url);
         int response;
         File file = null;
@@ -129,6 +131,8 @@ public class UpgradeManagerImpl implements UpgradeManager {
         	return "Unable to retrieve the file from " + url;
         } catch (final IOException e) {
         	return "Unable to retrieve the file from " + url;
+        } finally {
+               method.releaseConnection();
         }
         
         file.delete();

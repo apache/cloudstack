@@ -17,16 +17,18 @@
 
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.PlugService;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.CiscoNexusVSMResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -38,12 +40,12 @@ import com.cloud.user.Account;
 import java.util.ArrayList;
 import java.util.List;
 
-@Implementation(responseObject=CiscoNexusVSMResponse.class, description="Retrieves a Cisco Nexus 1000v Virtual Switch Manager device associated with a Cluster")
+@APICommand(name = "listCiscoNexusVSMs", responseObject=CiscoNexusVSMResponse.class, description="Retrieves a Cisco Nexus 1000v Virtual Switch Manager device associated with a Cluster")
 public class ListCiscoNexusVSMsCmd extends BaseListCmd {
 
 	/**
 	 * This command returns a list of all the VSMs configured in the management server.
-	 * If a clusterId is specified, it will return a list containing only that VSM 
+	 * If a clusterId is specified, it will return a list containing only that VSM
 	 * that is associated with that cluster. If a zone is specified, it will pull
 	 * up all the clusters of type vmware in that zone, and prepare a list of VSMs
 	 * associated with those clusters.
@@ -56,22 +58,22 @@ public class ListCiscoNexusVSMsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="cluster")
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, required = false, description="Id of the CloudStack cluster in which the Cisco Nexus 1000v VSM appliance.")
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType = ClusterResponse.class,
+            required = false, description="Id of the CloudStack cluster in which the Cisco Nexus 1000v VSM appliance.")
     private long clusterId;
-    
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required = false, description="Id of the CloudStack cluster in which the Cisco Nexus 1000v VSM appliance.")
+
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
+            required = false, description="Id of the CloudStack cluster in which the Cisco Nexus 1000v VSM appliance.")
     private long zoneId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public long getClusterId() {
     	return clusterId;
     }
-    
+
     public long getZoneId() {
     	return zoneId;
     }
@@ -86,7 +88,7 @@ public class ListCiscoNexusVSMsCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
     	List<? extends CiscoNexusVSMDevice> vsmDeviceList = _ciscoNexusVSMService.getCiscoNexusVSMs(this);
-    	
+
     	if (vsmDeviceList.size() > 0) {
     		ListResponse<CiscoNexusVSMResponse> response = new ListResponse<CiscoNexusVSMResponse>();
     		List<CiscoNexusVSMResponse> vsmResponses = new ArrayList<CiscoNexusVSMResponse>();
@@ -100,10 +102,10 @@ public class ListCiscoNexusVSMsCmd extends BaseListCmd {
     		response.setResponseName(getCommandName());
     		this.setResponseObject(response);
     	} else {
-        	throw new ServerApiException(BaseListCmd.INTERNAL_ERROR, "No VSM found.");
+        	throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "No VSM found.");
         }
     }
- 
+
     @Override
     public String getCommandName() {
         return s_name;

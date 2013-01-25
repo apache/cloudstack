@@ -20,21 +20,18 @@ package com.cloud.api.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
-import com.cloud.api.response.HostResponse;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.host.Host;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
-import com.cloud.server.api.response.ExternalLoadBalancerResponse;
+import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
 
-@Implementation(description="Lists F5 external load balancer appliances added in a zone.", responseObject = HostResponse.class)
+@APICommand(name = "listExternalLoadBalancers", description="Lists F5 external load balancer appliances added in a zone.", responseObject = HostResponse.class)
 @Deprecated // API supported for backward compatibility.
 public class ListExternalLoadBalancersCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListExternalLoadBalancersCmd.class.getName());
@@ -44,8 +41,8 @@ public class ListExternalLoadBalancersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="zone Id")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
+            description="zone Id")
     private long zoneId;
 
     /////////////////////////////////////////////////////

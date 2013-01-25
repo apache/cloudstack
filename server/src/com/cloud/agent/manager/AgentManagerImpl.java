@@ -28,6 +28,8 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -94,6 +96,7 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
+import com.cloud.server.ManagementService;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolDao;
@@ -219,7 +222,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     protected AgentMonitor _monitor = null;
 
     protected ExecutorService _executor;
-    
+    protected ThreadPoolExecutor _connectExecutor;
+    protected ScheduledExecutorService _directAgentExecutor;
+
     protected StateMachine2<Status, Status.Event, Host> _statusStateMachine = Status.getStateMachine();
     
     @Inject ResourceManager _resourceMgr;
@@ -274,10 +279,20 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         registerForHostEvents(_monitor, true, true, false);
 
         _executor = new ThreadPoolExecutor(threads, threads, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
+        
+        _connectExecutor = new ThreadPoolExecutor(100, 500, 60l, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentConnectTaskPool"));
+        //allow core threads to time out even when there are no items in the queue
+        _connectExecutor.allowCoreThreadTimeOut(true);
 
         _connection = new NioServer("AgentManager", _port, workers + 10, this);
-
         s_logger.info("Listening on " + _port + " with " + workers + " workers");
+
+        value = configs.get(Config.DirectAgentPoolSize.key());
+        int size = NumbersUtil.parseInt(value, 500);
+        _directAgentExecutor = new ScheduledThreadPoolExecutor(size, new NamedThreadFactory("DirectAgent"));
+        s_logger.debug("Created DirectAgentAttache pool with size: " + size);
+
         return true;
     }
 
@@ -608,19 +623,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         ConnectionException ce = (ConnectionException)e;
                         if (ce.isSetupError()) {
                             s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage());
-                            handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
+                            handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true);
                             throw ce;
                         } else {
                             s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " + e.getMessage());
-                            handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested);
+                            handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true);
                             return attache;
                         }
                     } else if (e instanceof HypervisorVersionChangedException) {
-                        handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested);
+                        handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     } else {
                         s_logger.error("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage(), e);
-                        handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
+                        handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     }
                 }
@@ -628,13 +643,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         }
 
         Long dcId = host.getDataCenterId();
-        ReadyCommand ready = new ReadyCommand(dcId);
+        ReadyCommand ready = new ReadyCommand(dcId, host.getId());
         Answer answer = easySend(hostId, ready);
         if (answer == null || !answer.getResult()) {
             // this is tricky part for secondary storage
             // make it as disconnected, wait for secondary storage VM to be up
             // return the attache instead of null, even it is disconnectede
-            handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
+            handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true);
         }
 
         agentStatusTransitTo(host, Event.Ready, _nodeId);
@@ -828,6 +843,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 }
             }
         }
+        
+        _connectExecutor.shutdownNow();
         return true;
     }
 
@@ -836,7 +853,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         return _name;
     }
    
-    protected boolean handleDisconnectWithoutInvestigation(AgentAttache attache, Status.Event event) {
+    protected boolean handleDisconnectWithoutInvestigation(AgentAttache attache, Status.Event event, boolean transitState) {
         long hostId = attache.getId();
 
         s_logger.info("Host " + hostId + " is disconnecting with event " + event);
@@ -871,8 +888,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             s_logger.debug("Deregistering link for " + hostId + " with state " + nextStatus);
         }
 
+        //remove the attache
         removeAgent(attache, nextStatus);
-        if (host != null) {
+        
+        //update the DB
+        if (host != null && transitState) {
         	disconnectAgent(host, event, _nodeId);
         }
 
@@ -898,10 +918,16 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 s_logger.info("Investigating why host " + hostId + " has disconnected with event " + event);
 
                 final Status determinedState = investigate(attache);
+                // if state cannot be determined do nothing and bail out
+                if (determinedState == null) {
+                    s_logger.warn("Agent state cannot be determined, do nothing");
+                    return false;
+                }
+
                 final Status currentStatus = host.getStatus();
                 s_logger.info("The state determined is " + determinedState);
 
-                if (determinedState == null || determinedState == Status.Down) {
+                if (determinedState == Status.Down) {
                     s_logger.error("Host is down: " + host.getId() + "-" + host.getName() + ".  Starting HA on the VMs");
                     event = Status.Event.HostDown;
                 } else if (determinedState == Status.Up) {
@@ -942,7 +968,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
         }
         
-        handleDisconnectWithoutInvestigation(attache, event);
+        handleDisconnectWithoutInvestigation(attache, event, true);
         host = _hostDao.findById(host.getId());
         if (host.getStatus() == Status.Alert || host.getStatus() == Status.Down) {
             _haMgr.scheduleRestartForVmsOnHost(host, true);
@@ -968,7 +994,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 if (_investigate == true) {
                     handleDisconnectWithInvestigation(_attache, _event);
                 } else {
-                	handleDisconnectWithoutInvestigation(_attache, _event);
+                	handleDisconnectWithoutInvestigation(_attache, _event, true);
                 }
             } catch (final Exception e) {
                 s_logger.error("Exception caught while handling disconnect: ", e);
@@ -1060,7 +1086,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             AgentAttache attache = null;
             attache = findAttache(hostId);
             if (attache != null) {
-            	handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected);
+            	handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true);
             }
             return true;
         } else if (event == Event.ShutdownRequested) {
@@ -1085,91 +1111,37 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         return attache;
     }
     
-    //TODO: handle mycloud specific
     private AgentAttache handleConnectedAgent(final Link link, final StartupCommand[] startup, Request request) {
     	AgentAttache attache = null;
-    	StartupAnswer[] answers = new StartupAnswer[startup.length];
-    	try {
-    		HostVO host = _resourceMgr.createHostVOForConnectedAgent(startup);
+    	ReadyCommand ready = null;
+        try {
+        	HostVO host = _resourceMgr.createHostVOForConnectedAgent(startup);
     		if (host != null) {
+    		    ready = new ReadyCommand(host.getDataCenterId(), host.getId());
     			attache = createAttacheForConnect(host, link);
+    			attache = notifyMonitorsOfConnection(attache, startup, false);
     		}
-    		Command cmd;
-    		for (int i = 0; i < startup.length; i++) {
-    			cmd = startup[i];
-    			if ((cmd instanceof StartupRoutingCommand) || (cmd instanceof StartupProxyCommand) || (cmd instanceof StartupSecondaryStorageCommand) || (cmd instanceof StartupStorageCommand)) {
-    				answers[i] = new StartupAnswer(startup[i], attache.getId(), getPingInterval());
-    				break;
-    			}
-    		}
-    	}catch (ConnectionException e) {
-    		Command cmd;
-        	for (int i = 0; i < startup.length; i++) {
-        		cmd = startup[i];
-        		if ((cmd instanceof StartupRoutingCommand) || (cmd instanceof StartupProxyCommand) || (cmd instanceof StartupSecondaryStorageCommand) || (cmd instanceof StartupStorageCommand)) {
-        		answers[i] = new StartupAnswer(startup[i], e.toString());
-        		break;
-        		}
-        	}
-    	} catch (IllegalArgumentException e) {
-    		Command cmd;
-        	for (int i = 0; i < startup.length; i++) {
-        		cmd = startup[i];
-        		if ((cmd instanceof StartupRoutingCommand) || (cmd instanceof StartupProxyCommand) || (cmd instanceof StartupSecondaryStorageCommand) || (cmd instanceof StartupStorageCommand)) {
-        		answers[i] = new StartupAnswer(startup[i], e.toString());
-        		break;
-        		}
-        	}
-    	} catch (CloudRuntimeException e) {
-    		Command cmd;
-        	for (int i = 0; i < startup.length; i++) {
-        		cmd = startup[i];
-        		if ((cmd instanceof StartupRoutingCommand) || (cmd instanceof StartupProxyCommand) || (cmd instanceof StartupSecondaryStorageCommand) || (cmd instanceof StartupStorageCommand)) {
-        		answers[i] = new StartupAnswer(startup[i], e.toString());
-        		break;
-        		}
-        	}
-    	}
-    	
-    	Response response = null;
-        if (attache != null) {
-        	response = new Response(request, answers[0], _nodeId, attache.getId());
-        } else {
-        	response = new Response(request, answers[0], _nodeId, -1); 
+        } catch (Exception e) {
+        	s_logger.debug("Failed to handle host connection: " + e.toString());
+        	ready = new ReadyCommand(null);
+        	ready.setDetails(e.toString());
+        } finally {
+            if (ready == null) {
+                ready = new ReadyCommand(null);
+            }
         }
         
         try {
-        	link.send(response.toBytes());
-        } catch (ClosedChannelException e) {
-        	s_logger.debug("Failed to send startupanswer: " + e.toString());
-        	return null;
-        }        
-        if (attache == null) {
-        	return null;
-        }
-        
-        try {
-        	attache = notifyMonitorsOfConnection(attache, startup, false);
-        	return attache;
-        } catch (ConnectionException e) {
-        	ReadyCommand ready = new ReadyCommand(null);
-        	ready.setDetails(e.toString());
-        	try {
+        	if (attache == null) {
+        		final Request readyRequest = new Request(-1, -1, ready, false);
+        		link.send(readyRequest.getBytes());
+        	} else {
         		easySend(attache.getId(), ready);
-        	} catch (Exception e1) {
-        		s_logger.debug("Failed to send readycommand, due to " + e.toString());
         	}
-        	return null;
-        } catch (CloudRuntimeException e) {
-        	ReadyCommand ready = new ReadyCommand(null);
-        	ready.setDetails(e.toString());
-        	try {
-        		easySend(attache.getId(), ready);
-        	} catch (Exception e1) {
-        		s_logger.debug("Failed to send readycommand, due to " + e.toString());
-        	}
-        	return null;
+        } catch (Exception e) {
+        	s_logger.debug("Failed to send ready command:" + e.toString());
         }
+        return attache;
     }
 
     protected class SimulateStartTask implements Runnable {
@@ -1203,6 +1175,53 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             }
         }
     }
+    
+    protected class HandleAgentConnectTask implements Runnable {
+        Link _link;
+        Command[] _cmds;
+        Request _request;
+
+        HandleAgentConnectTask(Link link, final Command[] cmds, final Request request) {
+            _link = link;
+            _cmds = cmds;
+            _request = request;
+        }
+
+        @Override
+        public void run() {
+            _request.logD("Processing the first command ");
+            StartupCommand[] startups = new StartupCommand[_cmds.length];
+            for (int i = 0; i < _cmds.length; i++) {
+                startups[i] = (StartupCommand) _cmds[i];
+            }
+        
+            AgentAttache attache = handleConnectedAgent(_link, startups, _request);
+            if (attache == null) {
+                s_logger.warn("Unable to create attache for agent: " + _request);
+            }
+        }
+    }
+    
+    protected void connectAgent(Link link, final Command[] cmds, final Request request) {
+    	//send startupanswer to agent in the very beginning, so agent can move on without waiting for the answer for an undetermined time, if we put this logic into another thread pool.
+    	StartupAnswer[] answers = new StartupAnswer[cmds.length];
+    	Command cmd;
+    	for (int i = 0; i < cmds.length; i++) {
+			cmd = cmds[i];
+			if ((cmd instanceof StartupRoutingCommand) || (cmd instanceof StartupProxyCommand) || (cmd instanceof StartupSecondaryStorageCommand) || (cmd instanceof StartupStorageCommand)) {
+				answers[i] = new StartupAnswer((StartupCommand)cmds[i], 0, getPingInterval());
+				break;
+			}
+		}
+    	Response response = null;
+    	response = new Response(request, answers[0], _nodeId, -1); 
+    	 try {
+         	link.send(response.toBytes());
+         } catch (ClosedChannelException e) {
+         	s_logger.debug("Failed to send startupanswer: " + e.toString());
+         }        
+        _connectExecutor.execute(new HandleAgentConnectTask(link, cmds, request));
+    }
 
     public class AgentHandler extends Task {
         public AgentHandler(Task.Type type, Link link, byte[] data) {
@@ -1215,21 +1234,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             Command cmd = cmds[0];
             boolean logD = true;
 
-            Response response = null;
             if (attache == null) {
-            	request.logD("Processing the first command ");
             	if (!(cmd instanceof StartupCommand)) {
             		s_logger.warn("Throwing away a request because it came through as the first command on a connect: " + request);
-            		return;
-            	}
-
-            	StartupCommand[] startups = new StartupCommand[cmds.length];
-            	for (int i = 0; i < cmds.length; i++) {
-            		startups[i] = (StartupCommand) cmds[i];
-            	}
-            	attache = handleConnectedAgent(link, startups, request);
-            	if (attache == null) {
-            		s_logger.warn("Unable to create attache for agent: " + request);
+            	} else {
+            	    //submit the task for execution
+            	    request.logD("Scheduling the first command ");
+            	    connectAgent(link, cmds, request);
             	}
             	return;
             }
@@ -1295,17 +1306,23 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                             if (cmd instanceof PingRoutingCommand) {
                                 boolean gatewayAccessible = ((PingRoutingCommand) cmd).isGatewayAccessible();
                                 HostVO host = _hostDao.findById(Long.valueOf(cmdHostId));
-                                if (!gatewayAccessible) {
-                                    // alert that host lost connection to
-                                    // gateway (cannot ping the default route)
-                                    DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
-                                    HostPodVO podVO = _podDao.findById(host.getPodId());
-                                    String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
+                                
+                                if (host != null) {
+                                    if (!gatewayAccessible) {
+                                        // alert that host lost connection to
+                                        // gateway (cannot ping the default route)
+                                        DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
+                                        HostPodVO podVO = _podDao.findById(host.getPodId());
+                                        String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
 
-                                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId(), "Host lost connection to gateway, " + hostDesc, "Host [" + hostDesc
-                                            + "] lost connection to gateway (default route) and is possibly having network connection issues.");
+                                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId(), "Host lost connection to gateway, " + hostDesc, "Host [" + hostDesc
+                                                + "] lost connection to gateway (default route) and is possibly having network connection issues.");
+                                    } else {
+                                        _alertMgr.clearAlert(AlertManager.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId());
+                                    }  
                                 } else {
-                                    _alertMgr.clearAlert(AlertManager.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId());
+                                    s_logger.debug("Not processing " + PingRoutingCommand.class.getSimpleName() +
+                                            " for agent id=" + cmdHostId + "; can't find the host in the DB");
                                 }
                             }
                             answer = new PingAnswer((PingCommand) cmd);
@@ -1328,7 +1345,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 answers[i] = answer;
             }
 
-            response = new Response(request, answers, _nodeId, attache.getId());
+            Response response = new Response(request, answers, _nodeId, attache.getId());
             if (s_logger.isDebugEnabled()) {
                 if (logD) {
                     s_logger.debug("SeqA " + attache.getId() + "-" + response.getSequence() + ": Sending " + response);
@@ -1519,7 +1536,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         	attache.setMaintenanceMode(false);
         }
     }
-    
-    
-    
+
+    public ScheduledExecutorService getDirectAgentPool() {
+        return _directAgentExecutor;
+    }
+
 }

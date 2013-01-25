@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.projects;
 
-import java.util.List;
-import java.util.Map;
-
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -28,7 +25,7 @@ import com.cloud.user.Account;
 public interface ProjectService {
     /**
      * Creates a new project
-     * 
+     *
      * @param name
      *            - project name
      * @param displayText
@@ -44,7 +41,7 @@ public interface ProjectService {
 
     /**
      * Deletes a project
-     * 
+     *
      * @param id
      *            - project id
      * @return true if the project was deleted successfully, false otherwise
@@ -53,15 +50,12 @@ public interface ProjectService {
 
     /**
      * Gets a project by id
-     * 
+     *
      * @param id
      *            - project id
      * @return project object
      */
     Project getProject(long id);
-
-    List<? extends Project> listProjects(Long id, String name, String displayText, String state, String accountName, 
-            Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll, boolean isRecursive, Map<String, String> tags);
 
     ProjectAccount assignAccountToProject(Project project, long accountId, Role accountRole);
 
@@ -79,10 +73,7 @@ public interface ProjectService {
 
     boolean deleteAccountFromProject(long projectId, String accountName);
 
-    List<? extends ProjectAccount> listProjectAccounts(long projectId, String accountName, String role, Long startIndex, Long pageSizeVal);
 
-    List<? extends ProjectInvitation> listProjectInvitations(Long id, Long projectId, String accountName, Long domainId, String state, boolean activeOnly, Long startIndex, Long pageSizeVal, boolean isRecursive,
-            boolean listAll);
 
     boolean updateInvitation(long projectId, String accountName, String token, boolean accept);
 
@@ -93,4 +84,6 @@ public interface ProjectService {
     Project enableProject(long projectId);
 
     boolean deleteProjectInvitation(long invitationId);
+
+    Project findByProjectAccountIdIncludingRemoved(long projectAccountId);
 }

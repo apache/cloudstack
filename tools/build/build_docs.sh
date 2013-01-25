@@ -51,5 +51,5 @@ fi
 cd $sourcedir/docs
 cp -R /usr/share/publican/Common_Content .
 ln -s $sourcedir/docs/publican-cloudstack Common_Content/cloudstack
-publican build --config=publican-all.cfg --formats html,pdf --langs en-US --common_content=$sourcedir/docs/Common_Content
+publican build --config=publican-installation.cfg --formats html,pdf --langs en-US --common_content=$sourcedir/docs/Common_Content
 rm -r Common_Content

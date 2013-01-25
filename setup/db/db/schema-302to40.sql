@@ -475,3 +475,6 @@ INSERT IGNORE INTO `cloud`.`guest_os_category` VALUES ('11','None',NULL);
 ALTER TABLE `cloud`.`user` ADD COLUMN `incorrect_login_attempts` integer unsigned NOT NULL DEFAULT '0';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'incorrect.login.attempts.allowed', '5', 'Incorrect login attempts allowed before the user is disabled');
 UPDATE `cloud`.`configuration` set description ='Uuid of the service offering used by console proxy; if NULL - system offering will be used' where name ='consoleproxy.service.offering';
+
+UPDATE `cloud`.`user` SET PASSWORD=RAND() WHERE id=1;
+ALTER TABLE `cloud_usage`.`account` ADD COLUMN `default_zone_id` bigint unsigned;

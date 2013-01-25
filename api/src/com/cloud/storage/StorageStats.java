@@ -22,7 +22,7 @@ public interface StorageStats {
      */
     public long getByteUsed();
     /**
-     * @return bytes capacity of the storage server 
+     * @return bytes capacity of the storage server
      */
     public long getCapacityBytes();
 }

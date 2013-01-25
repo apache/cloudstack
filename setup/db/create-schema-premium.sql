@@ -136,6 +136,7 @@ CREATE TABLE  `cloud_usage`.`account` (
   `removed` datetime COMMENT 'date removed',
   `cleanup_needed` tinyint(1) NOT NULL default '0',
   `network_domain` varchar(100) COMMENT 'Network domain name of the Vms of the account',
+  `default_zone_id` bigint unsigned,
   CONSTRAINT `uc_account__uuid` UNIQUE (`uuid`),
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

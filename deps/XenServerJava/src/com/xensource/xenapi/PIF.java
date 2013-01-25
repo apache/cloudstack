@@ -1,18 +1,19 @@
-/* Copyright (c) Citrix Systems, Inc.
+/*
+ * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -26,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -51,7 +53,7 @@ import org.apache.xmlrpc.XmlRpcException;
 public class PIF extends XenAPIObject {
 
     /**
-     * The XenAPI reference to this object.
+     * The XenAPI reference (OpaqueRef) to this object.
      */
     protected final String ref;
 
@@ -62,6 +64,9 @@ public class PIF extends XenAPIObject {
        this.ref = ref;
     }
 
+    /**
+     * @return The XenAPI reference (OpaqueRef) to this object.
+     */
     public String toWireString() {
        return this.ref;
     }
@@ -119,6 +124,10 @@ public class PIF extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "disallowUnplug", this.disallowUnplug);
             print.printf("%1$20s: %2$s\n", "tunnelAccessPIFOf", this.tunnelAccessPIFOf);
             print.printf("%1$20s: %2$s\n", "tunnelTransportPIFOf", this.tunnelTransportPIFOf);
+            print.printf("%1$20s: %2$s\n", "ipv6ConfigurationMode", this.ipv6ConfigurationMode);
+            print.printf("%1$20s: %2$s\n", "IPv6", this.IPv6);
+            print.printf("%1$20s: %2$s\n", "ipv6Gateway", this.ipv6Gateway);
+            print.printf("%1$20s: %2$s\n", "primaryAddressType", this.primaryAddressType);
             return writer.toString();
         }
 
@@ -151,6 +160,10 @@ public class PIF extends XenAPIObject {
             map.put("disallow_unplug", this.disallowUnplug == null ? false : this.disallowUnplug);
             map.put("tunnel_access_PIF_of", this.tunnelAccessPIFOf == null ? new LinkedHashSet<Tunnel>() : this.tunnelAccessPIFOf);
             map.put("tunnel_transport_PIF_of", this.tunnelTransportPIFOf == null ? new LinkedHashSet<Tunnel>() : this.tunnelTransportPIFOf);
+            map.put("ipv6_configuration_mode", this.ipv6ConfigurationMode == null ? Types.Ipv6ConfigurationMode.UNRECOGNIZED : this.ipv6ConfigurationMode);
+            map.put("IPv6", this.IPv6 == null ? new LinkedHashSet<String>() : this.IPv6);
+            map.put("ipv6_gateway", this.ipv6Gateway == null ? "" : this.ipv6Gateway);
+            map.put("primary_address_type", this.primaryAddressType == null ? Types.PrimaryAddressType.UNRECOGNIZED : this.primaryAddressType);
             return map;
         }
 
@@ -250,6 +263,22 @@ public class PIF extends XenAPIObject {
          * Indicates to which tunnel this PIF provides transport
          */
         public Set<Tunnel> tunnelTransportPIFOf;
+        /**
+         * Sets if and how this interface gets an IPv6 address
+         */
+        public Types.Ipv6ConfigurationMode ipv6ConfigurationMode;
+        /**
+         * IPv6 address
+         */
+        public Set<String> IPv6;
+        /**
+         * IPv6 gateway
+         */
+        public String ipv6Gateway;
+        /**
+         * Which protocol should define the primary address of this interface
+         */
+        public Types.PrimaryAddressType primaryAddressType;
     }
 
     /**
@@ -696,6 +725,74 @@ public class PIF extends XenAPIObject {
     }
 
     /**
+     * Get the ipv6_configuration_mode field of the given PIF.
+     *
+     * @return value of the field
+     */
+    public Types.Ipv6ConfigurationMode getIpv6ConfigurationMode(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "PIF.get_ipv6_configuration_mode";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toIpv6ConfigurationMode(result);
+    }
+
+    /**
+     * Get the IPv6 field of the given PIF.
+     *
+     * @return value of the field
+     */
+    public Set<String> getIPv6(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "PIF.get_IPv6";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSetOfString(result);
+    }
+
+    /**
+     * Get the ipv6_gateway field of the given PIF.
+     *
+     * @return value of the field
+     */
+    public String getIpv6Gateway(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "PIF.get_ipv6_gateway";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toString(result);
+    }
+
+    /**
+     * Get the primary_address_type field of the given PIF.
+     *
+     * @return value of the field
+     */
+    public Types.PrimaryAddressType getPrimaryAddressType(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "PIF.get_primary_address_type";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toPrimaryAddressType(result);
+    }
+
+    /**
      * Set the other_config field of the given PIF.
      *
      * @param otherConfig New value to set
@@ -885,6 +982,80 @@ public class PIF extends XenAPIObject {
     }
 
     /**
+     * Reconfigure the IPv6 address settings for this interface
+     *
+     * @param mode whether to use dynamic/static/no-assignment
+     * @param IPv6 the new IPv6 address (in <addr>/<prefix length> format)
+     * @param gateway the new gateway
+     * @param DNS the new DNS settings
+     * @return Task
+     */
+    public Task reconfigureIpv6Async(Connection c, Types.Ipv6ConfigurationMode mode, String IPv6, String gateway, String DNS) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.PIF.reconfigure_ipv6";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(mode), Marshalling.toXMLRPC(IPv6), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Reconfigure the IPv6 address settings for this interface
+     *
+     * @param mode whether to use dynamic/static/no-assignment
+     * @param IPv6 the new IPv6 address (in <addr>/<prefix length> format)
+     * @param gateway the new gateway
+     * @param DNS the new DNS settings
+     */
+    public void reconfigureIpv6(Connection c, Types.Ipv6ConfigurationMode mode, String IPv6, String gateway, String DNS) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "PIF.reconfigure_ipv6";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(mode), Marshalling.toXMLRPC(IPv6), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Change the primary address type used by this PIF
+     *
+     * @param primaryAddressType Whether to prefer IPv4 or IPv6 connections
+     * @return Task
+     */
+    public Task setPrimaryAddressTypeAsync(Connection c, Types.PrimaryAddressType primaryAddressType) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.PIF.set_primary_address_type";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(primaryAddressType)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Change the primary address type used by this PIF
+     *
+     * @param primaryAddressType Whether to prefer IPv4 or IPv6 connections
+     */
+    public void setPrimaryAddressType(Connection c, Types.PrimaryAddressType primaryAddressType) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "PIF.set_primary_address_type";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(primaryAddressType)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
      * Scan for physical interfaces on a host and create PIF objects to represent them
      *
      * @param host The host on which to scan
@@ -916,42 +1087,6 @@ public class PIF extends XenAPIObject {
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host)};
         Map response = c.dispatch(method_call, method_params);
         return;
-    }
-
-    /**
-     * Scan for physical interfaces on a host and create PIF objects to represent them. Use BIOS-based device names.
-     *
-     * @param host The host on which to scan
-     * @return Task
-     */
-    public static Task scanBiosAsync(Connection c, Host host) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
-        String method_call = "Async.PIF.scan_bios";
-        String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host)};
-        Map response = c.dispatch(method_call, method_params);
-        Object result = response.get("Value");
-        return Types.toTask(result);
-    }
-
-    /**
-     * Scan for physical interfaces on a host and create PIF objects to represent them. Use BIOS-based device names.
-     *
-     * @param host The host on which to scan
-     * @return List of newly created PIFs
-     */
-    public static Set<PIF> scanBios(Connection c, Host host) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
-        String method_call = "PIF.scan_bios";
-        String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host)};
-        Map response = c.dispatch(method_call, method_params);
-        Object result = response.get("Value");
-            return Types.toSetOfPIF(result);
     }
 
     /**
@@ -1097,32 +1232,36 @@ public class PIF extends XenAPIObject {
     /**
      * Create a new PIF record in the database only
      *
-     * @param device 
-     * @param network 
-     * @param host 
-     * @param MAC 
-     * @param MTU 
-     * @param VLAN 
-     * @param physical 
-     * @param ipConfigurationMode 
-     * @param IP 
-     * @param netmask 
-     * @param gateway 
-     * @param DNS 
-     * @param bondSlaveOf 
-     * @param VLANMasterOf 
-     * @param management 
-     * @param otherConfig 
-     * @param disallowUnplug 
+     * @param device
+     * @param network
+     * @param host
+     * @param MAC
+     * @param MTU
+     * @param VLAN
+     * @param physical
+     * @param ipConfigurationMode
+     * @param IP
+     * @param netmask
+     * @param gateway
+     * @param DNS
+     * @param bondSlaveOf
+     * @param VLANMasterOf
+     * @param management
+     * @param otherConfig
+     * @param disallowUnplug
+     * @param ipv6ConfigurationMode
+     * @param IPv6
+     * @param ipv6Gateway
+     * @param primaryAddressType
      * @return Task
      */
-    public static Task dbIntroduceAsync(Connection c, String device, Network network, Host host, String MAC, Long MTU, Long VLAN, Boolean physical, Types.IpConfigurationMode ipConfigurationMode, String IP, String netmask, String gateway, String DNS, Bond bondSlaveOf, VLAN VLANMasterOf, Boolean management, Map<String, String> otherConfig, Boolean disallowUnplug) throws
+    public static Task dbIntroduceAsync(Connection c, String device, Network network, Host host, String MAC, Long MTU, Long VLAN, Boolean physical, Types.IpConfigurationMode ipConfigurationMode, String IP, String netmask, String gateway, String DNS, Bond bondSlaveOf, VLAN VLANMasterOf, Boolean management, Map<String, String> otherConfig, Boolean disallowUnplug, Types.Ipv6ConfigurationMode ipv6ConfigurationMode, Set<String> IPv6, String ipv6Gateway, Types.PrimaryAddressType primaryAddressType) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "Async.PIF.db_introduce";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(MAC), Marshalling.toXMLRPC(MTU), Marshalling.toXMLRPC(VLAN), Marshalling.toXMLRPC(physical), Marshalling.toXMLRPC(ipConfigurationMode), Marshalling.toXMLRPC(IP), Marshalling.toXMLRPC(netmask), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS), Marshalling.toXMLRPC(bondSlaveOf), Marshalling.toXMLRPC(VLANMasterOf), Marshalling.toXMLRPC(management), Marshalling.toXMLRPC(otherConfig), Marshalling.toXMLRPC(disallowUnplug)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(MAC), Marshalling.toXMLRPC(MTU), Marshalling.toXMLRPC(VLAN), Marshalling.toXMLRPC(physical), Marshalling.toXMLRPC(ipConfigurationMode), Marshalling.toXMLRPC(IP), Marshalling.toXMLRPC(netmask), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS), Marshalling.toXMLRPC(bondSlaveOf), Marshalling.toXMLRPC(VLANMasterOf), Marshalling.toXMLRPC(management), Marshalling.toXMLRPC(otherConfig), Marshalling.toXMLRPC(disallowUnplug), Marshalling.toXMLRPC(ipv6ConfigurationMode), Marshalling.toXMLRPC(IPv6), Marshalling.toXMLRPC(ipv6Gateway), Marshalling.toXMLRPC(primaryAddressType)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -1131,32 +1270,36 @@ public class PIF extends XenAPIObject {
     /**
      * Create a new PIF record in the database only
      *
-     * @param device 
-     * @param network 
-     * @param host 
-     * @param MAC 
-     * @param MTU 
-     * @param VLAN 
-     * @param physical 
-     * @param ipConfigurationMode 
-     * @param IP 
-     * @param netmask 
-     * @param gateway 
-     * @param DNS 
-     * @param bondSlaveOf 
-     * @param VLANMasterOf 
-     * @param management 
-     * @param otherConfig 
-     * @param disallowUnplug 
+     * @param device
+     * @param network
+     * @param host
+     * @param MAC
+     * @param MTU
+     * @param VLAN
+     * @param physical
+     * @param ipConfigurationMode
+     * @param IP
+     * @param netmask
+     * @param gateway
+     * @param DNS
+     * @param bondSlaveOf
+     * @param VLANMasterOf
+     * @param management
+     * @param otherConfig
+     * @param disallowUnplug
+     * @param ipv6ConfigurationMode
+     * @param IPv6
+     * @param ipv6Gateway
+     * @param primaryAddressType
      * @return The ref of the newly created PIF record.
      */
-    public static PIF dbIntroduce(Connection c, String device, Network network, Host host, String MAC, Long MTU, Long VLAN, Boolean physical, Types.IpConfigurationMode ipConfigurationMode, String IP, String netmask, String gateway, String DNS, Bond bondSlaveOf, VLAN VLANMasterOf, Boolean management, Map<String, String> otherConfig, Boolean disallowUnplug) throws
+    public static PIF dbIntroduce(Connection c, String device, Network network, Host host, String MAC, Long MTU, Long VLAN, Boolean physical, Types.IpConfigurationMode ipConfigurationMode, String IP, String netmask, String gateway, String DNS, Bond bondSlaveOf, VLAN VLANMasterOf, Boolean management, Map<String, String> otherConfig, Boolean disallowUnplug, Types.Ipv6ConfigurationMode ipv6ConfigurationMode, Set<String> IPv6, String ipv6Gateway, Types.PrimaryAddressType primaryAddressType) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
         String method_call = "PIF.db_introduce";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(MAC), Marshalling.toXMLRPC(MTU), Marshalling.toXMLRPC(VLAN), Marshalling.toXMLRPC(physical), Marshalling.toXMLRPC(ipConfigurationMode), Marshalling.toXMLRPC(IP), Marshalling.toXMLRPC(netmask), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS), Marshalling.toXMLRPC(bondSlaveOf), Marshalling.toXMLRPC(VLANMasterOf), Marshalling.toXMLRPC(management), Marshalling.toXMLRPC(otherConfig), Marshalling.toXMLRPC(disallowUnplug)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(device), Marshalling.toXMLRPC(network), Marshalling.toXMLRPC(host), Marshalling.toXMLRPC(MAC), Marshalling.toXMLRPC(MTU), Marshalling.toXMLRPC(VLAN), Marshalling.toXMLRPC(physical), Marshalling.toXMLRPC(ipConfigurationMode), Marshalling.toXMLRPC(IP), Marshalling.toXMLRPC(netmask), Marshalling.toXMLRPC(gateway), Marshalling.toXMLRPC(DNS), Marshalling.toXMLRPC(bondSlaveOf), Marshalling.toXMLRPC(VLANMasterOf), Marshalling.toXMLRPC(management), Marshalling.toXMLRPC(otherConfig), Marshalling.toXMLRPC(disallowUnplug), Marshalling.toXMLRPC(ipv6ConfigurationMode), Marshalling.toXMLRPC(IPv6), Marshalling.toXMLRPC(ipv6Gateway), Marshalling.toXMLRPC(primaryAddressType)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toPIF(result);

@@ -27,8 +27,8 @@
     <para>To manage KVM instances on the host &PRODUCT; uses a Agent. This Agent communicates with the Management server and controls all the instances on the host.</para>
     <para>First we start by installing the agent:</para>
     <para>In RHEL or CentOS:</para>
-    <programlisting language="Bash">yum install cloud-agent</programlisting>
+    <programlisting language="Bash"><command>$ yum install cloud-agent</command></programlisting>
     <para>In Ubuntu:</para>
-    <programlisting language="Bash">apt-get install cloud-agent</programlisting>
+    <programlisting language="Bash"><command>$ apt-get install cloud-agent</command></programlisting>
     <para>The host is now ready to be added to a cluster. This is covered in a later section, see <xref linkend="host-add" />. It is recommended that you continue to read the documentation before adding the host!</para>
 </section>

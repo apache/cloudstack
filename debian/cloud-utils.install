@@ -17,8 +17,6 @@
 
 /usr/share/java/cloud-utils.jar
 /usr/share/java/cloud-api.jar
-/usr/share/doc/cloud/sccs-info
 /usr/share/doc/cloud/version-info
-/usr/share/doc/cloud/configure-info
 /usr/bin/cloud-sccs
 /usr/bin/cloud-gitrevs

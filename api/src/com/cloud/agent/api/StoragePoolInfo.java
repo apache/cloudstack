@@ -29,7 +29,7 @@ public class StoragePoolInfo {
 	long capacityBytes;
 	long availableBytes;
 	Map<String, String> details;
-	
+
 	protected StoragePoolInfo() {
 		super();
 	}
@@ -46,14 +46,14 @@ public class StoragePoolInfo {
 		this.capacityBytes = capacityBytes;
 		this.availableBytes = availableBytes;
 	}
-	
+
     public StoragePoolInfo(String uuid, String host, String hostPath,
             String localPath, StoragePoolType poolType, long capacityBytes,
             long availableBytes, Map<String, String> details) {
         this(uuid, host, hostPath, localPath, poolType, capacityBytes, availableBytes);
         this.details = details;
     }
-    
+
 	public long getCapacityBytes() {
 		return capacityBytes;
 	}

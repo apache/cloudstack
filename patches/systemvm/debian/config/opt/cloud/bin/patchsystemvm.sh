@@ -74,6 +74,8 @@ routing_svcs() {
    chkconfig ssh on
    chkconfig nfs-common off
    chkconfig portmap off
+   echo "ssh haproxy apache2" > /var/cache/cloud/enabled_svcs
+   echo "cloud nfs-common portmap" > /var/cache/cloud/disabled_svcs
    if [ $RROUTER -eq 0 ]
    then
        chkconfig dnsmasq off
@@ -81,18 +83,16 @@ routing_svcs() {
        chkconfig keepalived on
        chkconfig conntrackd on
        chkconfig postinit on
-       echo "keepalived conntrackd postinit" > /var/cache/cloud/enabled_svcs
-       echo "dnsmasq cloud-passwd-srvr" > /var/cache/cloud/disabled_svcs
+       echo "keepalived conntrackd postinit" >> /var/cache/cloud/enabled_svcs
+       echo "dnsmasq cloud-passwd-srvr" >> /var/cache/cloud/disabled_svcs
    else
        chkconfig dnsmasq on
        chkconfig cloud-passwd-srvr on
        chkconfig keepalived off
        chkconfig conntrackd off
-       echo "dnsmasq cloud-passwd-srvr " > /var/cache/cloud/enabled_svcs
-       echo "keepalived conntrackd " > /var/cache/cloud/disabled_svcs
+       echo "dnsmasq cloud-passwd-srvr " >> /var/cache/cloud/enabled_svcs
+       echo "keepalived conntrackd " >> /var/cache/cloud/disabled_svcs
    fi
-   echo "ssh haproxy apache2" >> /var/cache/cloud/enabled_svcs
-   echo "cloud nfs-common portmap" > /var/cache/cloud/disabled_svcs
 }
 
 vpcrouting_svcs() {
@@ -119,7 +119,7 @@ dhcpsrvr_svcs() {
    chkconfig portmap off
    chkconfig keepalived off
    chkconfig conntrackd off
-   echo "cloud-passwd-srvr ssh dnsmasq apache2" > /var/cache/cloud/enabled_svcs
+   echo "ssh dnsmasq cloud-passwd-srvr apache2" > /var/cache/cloud/enabled_svcs
    echo "cloud nfs-common haproxy portmap" > /var/cache/cloud/disabled_svcs
 }
 
@@ -132,7 +132,7 @@ elbvm_svcs() {
    chkconfig keepalived off
    chkconfig conntrackd off
    echo "ssh haproxy" > /var/cache/cloud/enabled_svcs
-   echo "cloud cloud-passwd-srvr dnsmasq apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
+   echo "cloud dnsmasq cloud-passwd-srvr apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
 }
 
 enable_pcihotplug() {

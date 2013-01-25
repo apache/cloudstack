@@ -27,6 +27,7 @@ import javax.persistence.Table;
 
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.utils.db.JoinType;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("security_group"))

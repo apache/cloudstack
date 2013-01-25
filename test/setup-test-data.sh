@@ -20,6 +20,7 @@ usage() {
   printf "Usage: %s:\n
 	[-t path to tests ]  \n
 	[-m mgmt-server ] \n
+    [-h hypervisor (xen|kvm) ] \n
 	[-p hypervisor root password ] \n
 	[-d db node url ]\n" $(basename $0) >&2
 }
@@ -34,7 +35,7 @@ MGMT_SVR="localhost"
 DB_SVR="localhost"
 HV_PASSWD="password"
 
-while getopts 't:d:m:p:' OPTION
+while getopts 't:d:m:p:h:' OPTION
 do
   case $OPTION in
   d)    dflag=1
@@ -46,6 +47,9 @@ do
   m)    mflag=1
 		MGMT_SVR="$OPTARG"
 		;;
+  h)    hflag=1
+		HV="$OPTARG"
+		;;
   p)    pflag=1
 		HV_PASSWD="$OPTARG"
 		;;
@@ -56,7 +60,11 @@ do
 done
 
 #Damn Small Linux ISO type
-ostypeid=$(mysql -uroot -Dcloud -h$DB_SVR -s -N -r -e"select uuid from guest_os where display_name='CentOS 5.3 (64-bit)'")
+if [[ $HV == "kvm" ]]; then
+    ostypeid=$(mysql -ucloud -Dcloud -pcloud -h$DB_SVR -s -N -r -e"select uuid from guest_os where display_name='CentOS 5.5 (64-bit)'")
+else
+    ostypeid=$(mysql -ucloud -Dcloud -pcloud -h$DB_SVR -s -N -r -e"select uuid from guest_os where display_name='CentOS 5.3 (64-bit)'")
+fi
 if [[ $ostypeid == "" ]]; then
     echo "Unable to contact DB server @ $DB_SVR"
     exit 2

@@ -1,0 +1,109 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="external-guest-lb-integration">
+  <title>External Guest Load Balancer Integration (Optional)</title>
+  <para>&PRODUCT; can optionally use a Citrix NetScaler or BigIP F5 load balancer to provide load
+    balancing services to guests. If this is not enabled, &PRODUCT; will use the software load
+    balancer in the virtual router.</para>
+  <para>To install and enable an external load balancer for &PRODUCT; management:</para>
+  <orderedlist>
+    <listitem>
+      <para>Set up the appliance according to the vendor's directions.</para>
+    </listitem>
+    <listitem>
+      <para>Connect it to the networks carrying public traffic and management traffic (these could
+        be the same network).</para>
+    </listitem>
+    <listitem>
+      <para>Record the IP address, username, password, public interface name, and private interface
+        name. The interface names will be something like "1.1" or "1.2".</para>
+    </listitem>
+    <listitem>
+      <para>Make sure that the VLANs are trunked to the management network interface.</para>
+    </listitem>
+    <listitem>
+      <para>After the &PRODUCT; Management Server is installed, log in as administrator to the
+        &PRODUCT; UI.</para>
+    </listitem>
+    <listitem>
+      <para>In the left navigation bar, click Infrastructure.</para>
+    </listitem>
+    <listitem>
+      <para>In Zones, click View More.</para>
+    </listitem>
+    <listitem>
+      <para>Choose the zone you want to work with.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Network tab.</para>
+    </listitem>
+    <listitem>
+      <para>In the Network Service Providers node of the diagram, click Configure. (You might have
+        to scroll down to see this.)</para>
+    </listitem>
+    <listitem>
+      <para>Click NetScaler or F5.</para>
+    </listitem>
+    <listitem>
+      <para>Click the Add button (+) and provide the following:</para>
+      <para>For NetScaler:</para>
+      <itemizedlist>
+        <listitem>
+          <para>IP Address: The IP address of the SRX.</para>
+        </listitem>
+        <listitem>
+          <para>Username/Password: The authentication credentials to access the device. &PRODUCT;
+            uses these credentials to access the device.</para>
+        </listitem>
+        <listitem>
+          <para>Type: The type of device that is being added. It could be F5 Big Ip Load Balancer,
+            NetScaler VPX, NetScaler MPX, or NetScaler SDX. For a comparison of the NetScaler types,
+            see the &PRODUCT; Administration Guide.</para>
+        </listitem>
+        <listitem>
+          <para>Public interface: Interface of device that is configured to be part of the public
+            network.</para>
+        </listitem>
+        <listitem>
+          <para>Private interface: Interface of device that is configured to be part of the private
+            network.</para>
+        </listitem>
+        <listitem>
+          <para>Number of retries. Number of times to attempt a command on the device before
+            considering the operation failed. Default is 2.</para>
+        </listitem>
+        <listitem>
+          <para>Capacity: The number of networks the device can handle.</para>
+        </listitem>
+        <listitem>
+          <para>Dedicated: When marked as dedicated, this device will be dedicated to a single
+            account. When Dedicated is checked, the value in the Capacity field has no significance
+            implicitly, its value is 1.</para>
+        </listitem>
+      </itemizedlist>
+    </listitem>
+    <listitem>
+      <para>Click OK.</para>
+    </listitem>
+  </orderedlist>
+  <para>The installation and provisioning of the external load balancer is finished. You can proceed
+    to add VMs and NAT or load balancing rules.</para>
+</section>

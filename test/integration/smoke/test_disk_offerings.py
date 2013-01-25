@@ -20,10 +20,12 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from integration.lib.utils import *
-from integration.lib.base import *
-from integration.lib.common import *
+from marvin.integration.lib.utils import *
+from marvin.integration.lib.base import *
+from marvin.integration.lib.common import *
 from nose.plugins.attrib import attr
+
+_multiprocess_shared_ = True
 
 class Services:
     """Test Disk offerings Services
@@ -49,7 +51,6 @@ class TestCreateDiskOffering(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -112,7 +113,6 @@ class TestDiskOfferings(cloudstackTestCase):
     def tearDown(self):
 
         try:
-            self.dbclient.close()
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 

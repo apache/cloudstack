@@ -24,10 +24,10 @@ public class HostTO {
     private NetworkTO publicNetwork;
     private NetworkTO storageNetwork1;
     private NetworkTO storageNetwork2;
-    
+
     protected HostTO() {
     }
-    
+
     public HostTO(Host vo) {
         guid = vo.getGuid();
         privateNetwork = new NetworkTO(vo.getPrivateIpAddress(), vo.getPrivateNetmask(), vo.getPrivateMacAddress());

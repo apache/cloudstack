@@ -342,4 +342,19 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
         return 0;
     }
 
+    /* (non-Javadoc)
+     * @see com.cloud.network.dao.NetworkDao#listNetworksByAccount(long, long, com.cloud.network.Network.GuestType, boolean)
+     */
+    @Override
+    public List<NetworkVO> listNetworksByAccount(long accountId, long zoneId, GuestType type, boolean isSystem) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<NetworkVO> listRedundantNetworks() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

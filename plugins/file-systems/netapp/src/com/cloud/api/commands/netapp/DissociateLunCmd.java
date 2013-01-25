@@ -18,13 +18,10 @@ package com.cloud.api.commands.netapp;
 
 import java.rmi.ServerException;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -35,17 +32,17 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DissociateLunCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="Dissociate a LUN", responseObject = DissociateLunCmdResponse.class)
+@APICommand(name = "dissociateLun", description="Dissociate a LUN", responseObject = DissociateLunCmdResponse.class)
 public class DissociateLunCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DissociateLunCmd.class.getName());
     private static final String s_name = "dissociatelunresponse";
 
     @Parameter(name=ApiConstants.PATH, type=CommandType.STRING, required = true, description="LUN path.")
 	private String path;
-    
+
     @Parameter(name=ApiConstants.IQN, type=CommandType.STRING, required = true, description="Guest IQN.")
 	private String guestIQN;
-    
+
 	@Override
 	public void execute() throws ResourceUnavailableException,
 			InsufficientCapacityException, ServerApiException,
@@ -58,9 +55,9 @@ public class DissociateLunCmd extends BaseCmd {
     		response.setResponseName(getCommandName());
     		this.setResponseObject(response);
     	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
     	} catch (ServerException e) {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
 		}
 	}
 

@@ -59,14 +59,17 @@
                 fields: {
                   name: {
                     label: 'label.name',
+                    docID: 'helpComputeOfferingName',
                     validation: { required: true }
                   },
                   description: {
                     label: 'label.description',
+                    docID: 'helpComputeOfferingDescription',
                     validation: { required: true }
                   },
                   storageType: {
                     label: 'label.storage.type',
+                    docID: 'helpComputeOfferingStorageType',
                     select: function(args) {
                       var items = [];
                       items.push({id: 'shared', description: 'shared'});
@@ -76,6 +79,7 @@
                   },
                   cpuNumber: {
                     label: 'label.num.cpu.cores',
+                    docID: 'helpComputeOfferingCPUCores',
                     validation: {
                       required: true,
                       number: true
@@ -83,6 +87,7 @@
                   },
                   cpuSpeed: {
                     label: 'label.cpu.mhz',
+                    docID: 'helpComputeOfferingCPUMHz',
                     validation: {
                       required: true,
                       number: true
@@ -90,6 +95,7 @@
                   },
                   memory: {
                     label: 'label.memory.mb',
+                    docID: 'helpComputeOfferingMemory',
                     validation: {
                       required: true,
                       number: true
@@ -97,6 +103,7 @@
                   },
                   networkRate: {
                     label: 'label.network.rate',
+                    docID: 'helpComputeOfferingNetworkRate',
                     validation: {
                       required: false, //optional
                       number: true
@@ -104,28 +111,34 @@
                   },
                   offerHA: {
                     label: 'label.offer.ha',
+                    docID: 'helpComputeOfferingHA',
                     isBoolean: true,
                     isChecked: false
                   },
                   storageTags: {
-                    label: 'label.storage.tags'
+                    label: 'label.storage.tags',
+                    docID: 'helpComputeOfferingStorageType'
                   },
                   hostTags: {
-                    label: 'label.host.tags'
+                    label: 'label.host.tags',
+                    docID: 'helpComputeOfferingHostTags'
                   },
                   cpuCap: {
                     label: 'label.CPU.cap',
                     isBoolean: true,
-                    isChecked: false
+                    isChecked: false,
+                    docID: 'helpComputeOfferingCPUCap'
                   },
                   isPublic: {
                     label: 'label.public',
                     isBoolean: true,
                     isReverse: true,
-                    isChecked: true
+                    isChecked: true,
+                    docID: 'helpComputeOfferingPublic'
                   },
                   domainId: {
                     label: 'label.domain',
+                    docID: 'helpComputeOfferingDomain',
                     dependsOn: 'isPublic',
                     select: function(args) {		
                       $.ajax({
@@ -148,34 +161,51 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + args.data.name);
-                array1.push("&displaytext=" + todb(args.data.description));
-                array1.push("&storageType=" + todb(args.data.storageType));
-                array1.push("&cpuNumber=" + args.data.cpuNumber);
-                array1.push("&cpuSpeed="+ args.data.cpuSpeed);
-                array1.push("&memory=" + args.data.memory);
+                var data = {
+								  issystem: false,
+								  name: args.data.name,
+									displaytext: args.data.description,
+									storageType: args.data.storageType,
+									cpuNumber: args.data.cpuNumber,
+									cpuSpeed: args.data.cpuSpeed,
+									memory: args.data.memory
+								};															
+               
+                if(args.data.networkRate != null && args.data.networkRate.length > 0) {
+								  $.extend(data, {
+									  networkrate: args.data.networkRate
+									});
+								}
 
-                if(args.data.networkRate != null && args.data.networkRate.length > 0)
-                  array1.push("&networkrate=" + args.data.networkRate);
-
-                array1.push("&offerha=" + (args.data.offerHA == "on"));
-
-                if(args.data.storageTags != null && args.data.storageTags.length > 0)
-                  array1.push("&tags=" + todb(args.data.storageTags));
-
-                if(args.data.hostTags != null && args.data.hostTags.length > 0)
-                  array1.push("&hosttags=" + todb(args.data.hostTags));
-
-                array1.push("&limitcpuuse=" + (args.data.cpuCap == "on"));
-
-                if(args.$form.find('.form-item[rel=domainId]').css("display") != "none")
-                  array1.push("&domainid=" + args.data.domainId);
+                $.extend(data, {
+                  offerha: (args.data.offerHA == "on")
+                });								
+								
+                if(args.data.storageTags != null && args.data.storageTags.length > 0) {
+								  $.extend(data, {
+									  tags: args.data.storageTags
+									});								
+                }
+								
+                if(args.data.hostTags != null && args.data.hostTags.length > 0) {
+								  $.extend(data, {
+									  hosttags: args.data.hostTags
+									});								
+                }
+								
+								$.extend(data, {
+								  limitcpuuse: (args.data.cpuCap == "on")
+								});
+                
+                if(args.$form.find('.form-item[rel=domainId]').css("display") != "none") {
+								  $.extend(data, {
+									  domainid: args.data.domainId
+									});								
+								}
 
                 $.ajax({
-                  url: createURL("createServiceOffering&issystem=false"+array1.join("")),
-                  dataType: "json",
-                  async: true,
+                  url: createURL('createServiceOffering'),
+                  data: data,                 
                   success: function(json) {
                     var item = json.createserviceofferingresponse.serviceoffering;
                     args.response.success({data: item});
@@ -195,22 +225,16 @@
           },
 
           dataProvider: function(args) {					 
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
+						var data = {};
+						listViewDataProvider(args, data);						
+						
+						$.extend(data, {
+						  issystem: false
+						});
 						
             $.ajax({
-              url: createURL("listServiceOfferings&issystem=false&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
-              async: true,
+              url: createURL('listServiceOfferings'),
+              data: data,              
               success: function(json) {
                 var items = json.listserviceofferingsresponse.serviceoffering;
                 args.response.success({
@@ -230,12 +254,14 @@
               edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
+                  var data = {
+									  id: args.context.serviceOfferings[0].id,
+									  name: args.data.name,
+										displaytext: args.data.displaytext
+									};                
                   $.ajax({
-                    url: createURL("updateServiceOffering&id=" + args.context.serviceOfferings[0].id + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateServiceOffering'),
+                    data: data,
                     success: function(json) {
                       var item = json.updateserviceofferingresponse.serviceoffering;
                       args.response.success({data: item});
@@ -258,9 +284,12 @@
                   }
                 },
                 action: function(args) {
+								  var data = {
+									  id: args.context.serviceOfferings[0].id
+									};								
                   $.ajax({
-                    url: createURL("deleteServiceOffering&id=" + args.context.serviceOfferings[0].id),
-                    dataType: "json",
+                    url: createURL('deleteServiceOffering'),
+                    data: data,
                     async: true,
                     success: function(json) {
                       args.response.success();
@@ -327,10 +356,14 @@
                   }
                 ],
 
-                dataProvider: function(args) {								  							
+                dataProvider: function(args) {			
+                  var data = {
+									  issystem: false,
+										id: args.context.serviceOfferings[0].id
+									};								
 									$.ajax({
-										url: createURL("listServiceOfferings&issystem=false&id=" + args.context.serviceOfferings[0].id),
-										dataType: "json",
+										url: createURL('listServiceOfferings'),
+										data: data,
 										async: true,
 										success: function(json) {										  
 											var item = json.listserviceofferingsresponse.serviceoffering[0];
@@ -383,14 +416,17 @@
                 fields: {
                   name: {
                     label: 'label.name',
-                    validation: { required: true }
+                    validation: { required: true },
+                    docID: 'helpSystemOfferingName'
                   },
                   description: {
                     label: 'label.description',
-                    validation: { required: true }
+                    validation: { required: true },
+                    docID: 'helpSystemOfferingDescription'
                   },																		
 									systemvmtype: {
                     label: 'label.system.vm.type',
+                    docID: 'helpSystemOfferingVMType',
                     select: function(args) {
                       var items = [];											
                       items.push({id: 'domainrouter', description: dictionary['label.domain.router']}); 
@@ -401,6 +437,7 @@
                   },									
                   storageType: {
                     label: 'label.storage.type',
+                    docID: 'helpSystemOfferingStorageType',
                     select: function(args) {
                       var items = [];
                       items.push({id: 'shared', description: 'shared'});
@@ -410,6 +447,7 @@
                   },
                   cpuNumber: {
                     label: 'label.num.cpu.cores',
+                    docID: 'helpSystemOfferingCPUCores',
                     validation: {
                       required: true,
                       number: true
@@ -417,6 +455,7 @@
                   },
                   cpuSpeed: {
                     label: 'label.cpu.mhz',
+                    docID: 'helpSystemOfferingCPUMHz',
                     validation: {
                       required: true,
                       number: true
@@ -424,6 +463,7 @@
                   },
                   memory: {
                     label: 'label.memory.mb',
+                    docID: 'helpSystemOfferingMemory',
                     validation: {
                       required: true,
                       number: true
@@ -431,6 +471,7 @@
                   },
                   networkRate: {
                     label: 'label.network.rate',
+                    docID: 'helpSystemOfferingNetworkRate',
                     validation: {
                       required: false, //optional
                       number: true
@@ -438,28 +479,34 @@
                   },
                   offerHA: {
                     label: 'label.offer.ha',
+                    docID: 'helpSystemOfferingHA',
                     isBoolean: true,
                     isChecked: false
                   },
                   storageTags: {
-                    label: 'label.storage.tags'
+                    label: 'label.storage.tags',
+                    docID: 'helpSystemOfferingStorageTags'
                   },
                   hostTags: {
-                    label: 'label.host.tags'
+                    label: 'label.host.tags',
+                    docID: 'helpSystemOfferingHostTags'
                   },
                   cpuCap: {
                     label: 'label.CPU.cap',
                     isBoolean: true,
-                    isChecked: false
+                    isChecked: false,
+                    docID: 'helpSystemOfferingCPUCap'
                   },
                   isPublic: {
                     label: 'label.public',
                     isBoolean: true,
                     isReverse: true,
-                    isChecked: true
+                    isChecked: true,
+                    docID: 'helpSystemOfferingPublic'
                   },
                   domainId: {
                     label: 'label.domain',
+                    docID: 'helpSystemOfferingDomain',
                     dependsOn: 'isPublic',
                     select: function(args) {										
                       $.ajax({
@@ -482,35 +529,52 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + args.data.name);
-                array1.push("&displaytext=" + todb(args.data.description));
-								array1.push("&systemvmtype=" + todb(args.data.systemvmtype));
-                array1.push("&storageType=" + todb(args.data.storageType));
-                array1.push("&cpuNumber=" + args.data.cpuNumber);
-                array1.push("&cpuSpeed="+ args.data.cpuSpeed);
-                array1.push("&memory=" + args.data.memory);
+                var data = {
+								  issystem: true,
+								  name: args.data.name,
+									displaytext: args.data.description,
+									systemvmtype: args.data.systemvmtype,
+									storageType: args.data.storageType,
+									cpuNumber: args.data.cpuNumber,
+									cpuSpeed: args.data.cpuSpeed,
+									memory: args.data.memory
+								};		
 
-                if(args.data.networkRate != null && args.data.networkRate.length > 0)
-                  array1.push("&networkrate=" + args.data.networkRate);
+                if(args.data.networkRate != null && args.data.networkRate.length > 0) {
+								  $.extend(data, {
+									  networkrate: args.data.networkRate
+									});								
+								}
 
-                array1.push("&offerha=" + (args.data.offerHA == "on"));
+								$.extend(data, {
+								  offerha: (args.data.offerHA == "on")
+								});								
+               
+                if(args.data.storageTags != null && args.data.storageTags.length > 0) {
+								  $.extend(data, {
+									  tags: args.data.storageTags
+									});		
+								}
 
-                if(args.data.storageTags != null && args.data.storageTags.length > 0)
-                  array1.push("&tags=" + todb(args.data.storageTags));
+                if(args.data.hostTags != null && args.data.hostTags.length > 0) {
+								  $.extend(data, {
+									  hosttags: args.data.hostTags
+									});								
+								}
 
-                if(args.data.hostTags != null && args.data.hostTags.length > 0)
-                  array1.push("&hosttags=" + todb(args.data.hostTags));
-
-                array1.push("&limitcpuuse=" + (args.data.cpuCap == "on"));
-
-                if(args.$form.find('.form-item[rel=domainId]').css("display") != "none")
-                  array1.push("&domainid=" + args.data.domainId);
+								$.extend(data, {
+								  limitcpuuse: (args.data.cpuCap == "on")
+								});
+                
+                if(args.$form.find('.form-item[rel=domainId]').css("display") != "none") {
+								  $.extend(data, {
+									  domainid: args.data.domainId
+									});								
+								}
 
                 $.ajax({
-                  url: createURL("createServiceOffering&issystem=true"+array1.join("")),
-                  dataType: "json",
-                  async: true,
+                  url: createURL('createServiceOffering'),
+                  data: data,                 
                   success: function(json) {
                     var item = json.createserviceofferingresponse.serviceoffering;
                     args.response.success({data: item});
@@ -530,22 +594,16 @@
           },
 
           dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
-					
+						var data = {};
+						listViewDataProvider(args, data);			
+
+            $.extend(data, {
+              issystem: true
+            });						
+											
             $.ajax({
-              url: createURL("listServiceOfferings&issystem=true&page=" + args.page + "&pagesize=" + pageSize  + array1.join("")),
-              dataType: "json",
-              async: true,
+              url: createURL('listServiceOfferings'),
+              data: data,             
               success: function(json) {
                 var items = json.listserviceofferingsresponse.serviceoffering;
                 args.response.success({data:items});
@@ -562,12 +620,14 @@
               edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
+                  var data = {
+									  id: args.context.systemServiceOfferings[0].id,
+										name: args.data.name,
+                    displaytext: args.data.displaytext
+									};                 
                   $.ajax({
-                    url: createURL("updateServiceOffering&id=" + args.context.systemServiceOfferings[0].id + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateServiceOffering'),
+                    data: data,
                     success: function(json) {
                       var item = json.updateserviceofferingresponse.serviceoffering;
                       args.response.success({data: item});
@@ -590,10 +650,12 @@
                   }
                 },
                 action: function(args) {
+								  var data = {
+									  id: args.context.systemServiceOfferings[0].id
+									};								
                   $.ajax({
-                    url: createURL("deleteServiceOffering&id=" + args.context.systemServiceOfferings[0].id),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('deleteServiceOffering'),
+                    data: data,                    
                     success: function(json) {
                       args.response.success();
                     },
@@ -677,11 +739,14 @@
                   }
                 ],
 
-                dataProvider: function(args) {								  
+                dataProvider: function(args) {		
+                  var data = {
+									  issystem: true,
+										id: args.context.systemServiceOfferings[0].id
+									};								
 									$.ajax({
-										url: createURL("listServiceOfferings&issystem=true&id=" + args.context.systemServiceOfferings[0].id),
-										dataType: "json",
-										async: true,
+										url: createURL('listServiceOfferings'),
+										data: data,										
 										success: function(json) {										  
 											var item = json.listserviceofferingsresponse.serviceoffering[0];
 											args.response.success({
@@ -724,22 +789,12 @@
           reorder: cloudStack.api.actions.sort('updateDiskOffering', 'diskOfferings'),
 
           dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}				
-					
+						var data = {};
+						listViewDataProvider(args, data);						
+											
             $.ajax({
-              url: createURL("listDiskOfferings&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
-              async: true,
+              url: createURL('listDiskOfferings'),
+              data: data,             
               success: function(json) {
                 var items = json.listdiskofferingsresponse.diskoffering;
                 args.response.success({data:items});
@@ -768,14 +823,17 @@
                 fields: {
                   name: {
                     label: 'label.name',
+                    docID: 'helpDiskOfferingName',
                     validation: { required: true }
                   },
                   description: {
                     label: 'label.description',
+                    docID: 'helpDiskOfferingDescription',
                     validation: { required: true }
                   },
                   storageType: {
                     label: 'label.storage.type',
+                    docID: 'helpDiskOfferingStorageType',
                     select: function(args) {
                       var items = [];
                       items.push({id: 'shared', description: 'shared'});
@@ -785,26 +843,31 @@
                   },
                   isCustomized: {
                     label: 'label.custom.disk.size',
+                    docID: 'helpDiskOfferingCustomDiskSize',
                     isBoolean: true,
                     isReverse: true,
                     isChecked: false
                   },
                   disksize: {
                     label: 'label.disk.size.gb',
+                    docID: 'helpDiskOfferingDiskSize',
                     dependsOn: 'isCustomized',
                     validation: { required: true, number: true }
                   },
                   tags: {
-                    label: 'label.storage.tags'
+                    label: 'label.storage.tags',
+                    docID: 'helpDiskOfferingStorageTags'
                   },
                   isPublic: {
                     label: 'label.public',
                     isBoolean: true,
                     isReverse: true,
-                    isChecked: true
+                    isChecked: true,
+                    docID: 'helpDiskOfferingPublic'
                   },
                   domainId: {
                     label: 'label.domain',
+                    docID: 'helpDiskOfferingDomain',
                     dependsOn: 'isPublic',
                     select: function(args) {										 
                       $.ajax({
@@ -827,25 +890,35 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + args.data.name);
-                array1.push("&displaytext=" + todb(args.data.description));
+                var data = {
+								  isMirrored: false,
+									name: args.data.name,
+									displaytext: args.data.description,
+									storageType: args.data.storageType,
+									customized: (args.data.isCustomized=="on")
+								};																
+               
+                if(args.$form.find('.form-item[rel=disksize]').css("display") != "none") {
+								  $.extend(data, {
+									  disksize: args.data.disksize
+									});		
+								}
 
-                array1.push("&storageType=" + todb(args.data.storageType));
-                array1.push("&customized=" + (args.data.isCustomized=="on"));
-                if(args.$form.find('.form-item[rel=disksize]').css("display") != "none")
-                  array1.push("&disksize=" + args.data.disksize);
+                if(args.data.tags != null && args.data.tags.length > 0) {
+								  $.extend(data, {
+									  tags: args.data.tags
+									});	
+								}
 
-                if(args.data.tags != null && args.data.tags.length > 0)
-                  array1.push("&tags=" + todb(args.data.tags));
-
-                if(args.$form.find('.form-item[rel=domainId]').css("display") != "none")
-                  array1.push("&domainid=" + args.data.domainId);
+                if(args.$form.find('.form-item[rel=domainId]').css("display") != "none") {
+								  $.extend(data, {
+									  domainid: args.data.domainId
+									});		
+								}
 
                 $.ajax({
-                  url: createURL("createDiskOffering&isMirrored=false" + array1.join("")),
-                  dataType: "json",
-                  async: true,
+                  url: createURL('createDiskOffering'),
+                  data: data,                  
                   success: function(json) {
                     var item = json.creatediskofferingresponse.diskoffering;
                     args.response.success({data: item});
@@ -870,12 +943,14 @@
               edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
+                  var data = {
+									  id: args.context.diskOfferings[0].id,
+										name: args.data.name,
+										displaytext: args.data.displaytext
+									};									
                   $.ajax({
-                    url: createURL("updateDiskOffering&id=" + args.context.diskOfferings[0].id + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateDiskOffering'),
+                    data: data,
                     success: function(json) {
                       var item = json.updatediskofferingresponse.diskoffering;
                       args.response.success({data: item});
@@ -898,10 +973,12 @@
                   }
                 },
                 action: function(args) {
+								  var data = {
+									  id: args.context.diskOfferings[0].id
+									};								
                   $.ajax({
-                    url: createURL("deleteDiskOffering&id=" + args.context.diskOfferings[0].id),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('deleteDiskOffering'),
+                    data: data,                    
                     success: function(json) {
                       args.response.success();
                     },
@@ -957,10 +1034,12 @@
                 ],
 
                 dataProvider: function(args) {								 
+									var data = {
+									  id: args.context.diskOfferings[0].id
+									};
 									$.ajax({
-										url: createURL("listDiskOfferings&id=" + args.context.diskOfferings[0].id),
-										dataType: "json",
-										async: true,
+										url: createURL('listDiskOfferings'),
+										data: data,										
 										success: function(json) {
 											var item = json.listdiskofferingsresponse.diskoffering[0];
 											args.response.success({
@@ -995,26 +1074,12 @@
           },
 
           dataProvider: function(args) {					  
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
+						var data = {};
+						listViewDataProvider(args, data);		
 					
             $.ajax({
-              url: createURL('listNetworkOfferings' + array1.join("")),
-              data: {
-                page: args.page,
-                pagesize: pageSize
-              },
-              dataType: "json",
-              async: true,
+              url: createURL('listNetworkOfferings'),
+              data: data,
               success: function(json) {
                 var items = json.listnetworkofferingsresponse.networkoffering;
 																
@@ -1069,7 +1134,21 @@
 									  //check whether to show or hide availability field
                     var $sourceNATField = args.$form.find('input[name=\"service.SourceNat.isEnabled\"]');
                     var $guestTypeField = args.$form.find('select[name=guestIpType]');
-                    		
+                    											
+                    if($guestTypeField.val() == 'Shared') { //Shared network offering
+                      args.$form.find('.form-item[rel=\"useVpc\"]').hide();
+																						
+											var $useVpcCb = args.$form.find('.form-item[rel=\"useVpc\"]').find("input[type=checkbox]");
+											if($useVpcCb.is(':checked')) { //if useVpc is checked,											  
+												$useVpcCb.removeAttr("checked");  //remove "checked" attribute in useVpc
+												$useVpcCb.trigger("click");  //trigger useVpc.onChange()
+											}
+										}
+										else { //Isolated network offering 
+                      args.$form.find('.form-item[rel=\"useVpc\"]').css('display', 'inline-block');
+										}
+										
+											
                     if (!requiredNetworkOfferingExists &&
                         $sourceNATField.is(':checked') &&
                         $guestTypeField.val() == 'Isolated') {
@@ -1117,22 +1196,24 @@
 													return false; //break each loop
 												}
 											}																					
-										});                    
-                    if(havingVpcVirtualRouterForAtLeastOneService == true) {
+										});   
+										if(havingVpcVirtualRouterForAtLeastOneService == true || $guestTypeField.val() == 'Shared') {			
 										  $conservemode.find("input[type=checkbox]").attr("disabled", "disabled"); 
-                      $conservemode.find("input[type=checkbox]").attr('checked', false);		
-
+                      $conservemode.find("input[type=checkbox]").attr('checked', false);	
+										
                       $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").attr("disabled", "disabled"); 
                       $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").attr('checked', false);										
 										}
-                    else {
-                      $conservemode.find("input[type=checkbox]").removeAttr("disabled"); 
-                      $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").removeAttr("disabled"); 									
-										}
-																				
+                    else {                      
+                      $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").removeAttr("disabled"); 
+                      $conservemode.find("input[type=checkbox]").removeAttr("disabled");       											
+										}		
+												
 	                  $(':ui-dialog').dialog('option', 'position', 'center');
 										
-										//hide/show service fields upon guestIpType(Shared/Isolated), zoneType(Advanced/Basic), having VpcVirtualRouter or not ***** (begin) *****						
+										//CS-16612 show all services regardless of guestIpType(Shared/Isolated)
+										/*
+										//hide/show service fields ***** (begin) *****					
 										var serviceFieldsToHide = [];										
 										if($guestTypeField.val() == 'Shared') { //Shared network offering
 										  serviceFieldsToHide = [
@@ -1169,7 +1250,21 @@
 												serviceFieldsToHide = temp;
 											}
 										}
-                     											
+                    */
+										
+										
+										//CS-16687: NetworkACL should be removed when the guest_type is SHARED
+										//hide/show service fields ***** (begin) *****	
+										var serviceFieldsToHide = [];										
+										if($guestTypeField.val() == 'Shared') { //Shared network offering
+										  serviceFieldsToHide = [
+												'service.NetworkACL.isEnabled'
+											];	
+										}
+										else { //Isolated network offering 
+										  serviceFieldsToHide = [];		
+										}
+										
 										//hide service fields that are included in serviceFieldsToHide
 										var $serviceCheckboxesToHide = args.$form.find('.form-item').filter(function() {                         											
                       if ($.inArray($(this).attr('rel'), serviceFieldsToHide) > -1) {
@@ -1197,14 +1292,22 @@
                         }													
 											}											
 										}
-										//hide/show service fields upon guestIpType(Shared/Isolated), zoneType(Advanced/Basic), having VpcVirtualRouter or not ***** (end) *****			
-																				
+										//hide/show service fields ***** (end) *****			
+												
+                    //show LB InlineMode dropdown only when (1)LB service is checked and LB service provider is F5BigIp (2)Firewall service is checked and Firewall service provider is JuniperSRX 						
+										if((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp') && 
+										   (args.$form.find('.form-item[rel=\"service.Firewall.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Firewall.provider\"]').find('select').val() == 'JuniperSRX'))
+										{		
+											args.$form.find('.form-item[rel=\"service.Lb.inlineModeDropdown\"]').css('display', 'inline-block');	
+										}
+										else {										  
+											args.$form.find('.form-item[rel=\"service.Lb.inlineModeDropdown\"]').hide();	
+										}												
 										
-										//show LB Isolation dropdown only when (1)LB Service is checked (2)Service Provider is Netscaler OR F5 (3)Guest IP Type is Isolated 									
+										//show LB Isolation dropdown only when (1)LB Service is checked (2)Service Provider is Netscaler OR F5 						
 										if((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
 										   &&(args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'Netscaler' 
-											    || args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp')
-											 &&(args.$form.find('.form-item[rel=\"guestIpType\"]').find('select').val() == 'Isolated')) {										  
+											    || args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp')) {										  
 											args.$form.find('.form-item[rel=\"service.Lb.lbIsolationDropdown\"]').css('display', 'inline-block');	
 										}
 										else {										  
@@ -1215,34 +1318,45 @@
 										if((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
 										   &&(args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'Netscaler')
 											 &&(args.$form.find('.form-item[rel=\"guestIpType\"]').find('select').val() == 'Shared')) {
-										  args.$form.find('.form-item[rel=\"service.Lb.elasticLbCheckbox\"]').css('display', 'inline-block');												
+										  args.$form.find('.form-item[rel=\"service.Lb.elasticLbCheckbox\"]').css('display', 'inline-block');		
 										}
 										else {
-										  args.$form.find('.form-item[rel=\"service.Lb.elasticLbCheckbox\"]').hide();	
-											args.$form.find('.form-item[rel=\"service.Lb.elasticLbCheckbox\"]').find('input[type=checkbox]').attr('checked', false);											
+										  args.$form.find('.form-item[rel=\"service.Lb.elasticLbCheckbox\"]').hide();	                        
+											args.$form.find('.form-item[rel=\"service.Lb.elasticLbCheckbox\"]').find('input[type=checkbox]').attr('checked', false);	
 										}
 																				
-							      //show Elastic IP checkbox only when (1)StaticNat Service is checked (2)Service Provider is Netscaler (3)Guest IP Type is Shared 										
+							      //show Elastic IP checkbox only when (1)StaticNat service is checked (2)StaticNat service provider is Netscaler 								
 										if((args.$form.find('.form-item[rel=\"service.StaticNat.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
 										   &&(args.$form.find('.form-item[rel=\"service.StaticNat.provider\"]').find('select').val() == 'Netscaler')
-											 &&(args.$form.find('.form-item[rel=\"guestIpType\"]').find('select').val() == 'Shared')) {
-										  args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').css('display', 'inline-block');												
+										) {
+										  args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').css('display', 'inline-block');		                      										
 										}
 										else {		
 										  args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').hide();			
-                      args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').find('input[type=checkbox]').attr('checked', false);											
+                      args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').find('input[type=checkbox]').attr('checked', false);			                      			
 										}
-							
+														
+							      //show Associate Public IP checkbox only when (1)StaticNat Service is checked (2)Service Provider is Netscaler (3)Guest IP Type is Shared (4) Elastic IP checkbox is checked 										
+										if((args.$form.find('.form-item[rel=\"service.StaticNat.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
+										   &&(args.$form.find('.form-item[rel=\"service.StaticNat.provider\"]').find('select').val() == 'Netscaler')
+											 &&(args.$form.find('.form-item[rel=\"guestIpType\"]').find('select').val() == 'Shared')
+											 &&(args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').find('input[type=checkbox]').attr('checked')	== "checked")) { 										  
+                      args.$form.find('.form-item[rel=\"service.StaticNat.associatePublicIP\"]').css('display', 'inline-block');												
+										}
+										else {												  		
+                      args.$form.find('.form-item[rel=\"service.StaticNat.associatePublicIP\"]').hide();		
+                      args.$form.find('.form-item[rel=\"service.StaticNat.associatePublicIP\"]').find('input[type=checkbox]').attr('checked',false);									
+										}							
                   });
 									
 									args.$form.change();
 								},				
                 fields: {
-                  name: { label: 'label.name', validation: { required: true } },
+                  name: { label: 'label.name', validation: { required: true }, docID: 'helpNetworkOfferingName' },
 
-                  displayText: { label: 'label.description', validation: { required: true } },
+                  displayText: { label: 'label.description', validation: { required: true }, docID: 'helpNetworkOfferingDescription' },
 
-                  networkRate: { label: 'label.network.rate' },
+                  networkRate: { label: 'label.network.rate.megabytes', docID: 'helpNetworkOfferingNetworkRate' },
 
 									/*
                   trafficType: {
@@ -1259,6 +1373,7 @@
 
                   guestIpType: {
                     label: 'label.guest.type',
+                    docID: 'helpNetworkOfferingGuestType',
                     select: function(args) {
                       args.response.success({
                         data: [
@@ -1280,16 +1395,17 @@
                     }
                   },
 
-                  specifyVlan: { label: 'label.specify.vlan', isBoolean: true },
+                  specifyVlan: { label: 'label.specify.vlan', isBoolean: true, docID: 'helpNetworkOfferingSpecifyVLAN' },
 
                   useVpc: {
                     label: 'VPC',
+                    docID: 'helpNetworkOfferingVPC',
                     isBoolean: true,
                     onChange: function(args) {
                       var $checkbox = args.$checkbox;
                       var $selects = $checkbox.closest('form').find('.dynamic-input select');
                       var $vpcOptions = $selects.find('option[value=VpcVirtualRouter]');
-                      
+                     
                       if ($checkbox.is(':checked')) {
                         $vpcOptions.siblings().attr('disabled', true);
                         $selects.val('VpcVirtualRouter');
@@ -1331,6 +1447,7 @@
                             case 'PortForwarding': serviceDisplayName = 'Port Forwarding'; break;
                             case 'SecurityGroup': serviceDisplayName = 'Security Groups'; break;
                             case 'UserData': serviceDisplayName = 'User Data'; break;
+                            case 'Connectivity': serviceDisplayName = 'Virtual Networking'; break;
                             default: serviceDisplayName = serviceName; break;
                             }
 
@@ -1428,6 +1545,7 @@
 									//show or hide upon checked services and selected providers above (begin)
                   serviceOfferingId: {
                     label: 'label.system.offering',
+                    docID: 'helpNetworkOfferingSystemOffering',
                     select: function(args) {
                       $.ajax({
                         url: createURL('listServiceOfferings&issystem=true&systemvmtype=domainrouter'),
@@ -1462,6 +1580,7 @@
                     label: "label.redundant.router.capability",
                     isHidden: true,
                     dependsOn: 'service.SourceNat.isEnabled',
+                    docID: 'helpNetworkOfferingRedundantRouterCapability',
                     isBoolean: true
                   },
 
@@ -1471,20 +1590,22 @@
                     dependsOn: 'service.SourceNat.isEnabled',
                     select: function(args) {
                       args.response.success({
-                        data: [
-                          { id: 'peraccount', description: 'Per account'},
+                        data: [                          
                           { id: 'perzone', description: 'Per zone'},
+													{ id: 'peraccount', description: 'Per account'}
                         ]
                       });
                     }
                   },
+									
 									"service.Lb.elasticLbCheckbox" : {
                     label: "label.elastic.LB",
                     isHidden: true,                    
                     isBoolean: true
-                  },
+                  },                  
                   "service.Lb.lbIsolationDropdown": {
                     label: 'label.LB.isolation',
+                    docID: 'helpNetworkOfferingLBIsolation',
                     isHidden: true,                   
                     select: function(args) {
                       args.response.success({
@@ -1494,18 +1615,36 @@
                         ]
                       })
                     }
-                  },									
+                  },	                
+									"service.Lb.inlineModeDropdown": {
+										label: 'Mode',
+                    docID: 'helpNetworkOfferingMode',
+										select: function(args) {
+											var items = [];
+											items.push({id: "false", description: "side by side"});
+											items.push({id: "true", description: "inline"});
+											args.response.success({data: items});
+										}
+									},  		
+									
 									"service.StaticNat.elasticIpCheckbox" : {
 										label: "label.elastic.IP",
 										isHidden: true,										
 										isBoolean: true
 									},	
+
+									"service.StaticNat.associatePublicIP": {
+                    label: 'Associate Public IP',
+                    docID: 'helpNetworkOfferingAssociatePublicIP',
+                    isBoolean: true,
+                    isHidden: true                  
+                  },
                   //show or hide upon checked services and selected providers above (end)
 									
 									
-									conservemode: { label: 'label.conserve.mode', isBoolean: true },
+									conservemode: { label: 'label.conserve.mode', isBoolean: true , docID: 'helpNetworkOfferingConserveMode'},
 									
-                  tags: { label: 'label.tags' },
+                  tags: { label: 'label.tags', docID: 'helpNetworkOfferingTags' },
 									
 									availability: {
                     label: 'label.availability',
@@ -1557,6 +1696,14 @@
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticLb'; 
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
 											serviceCapabilityIndex++;
+										} 
+                    else if ((key == 'service.Lb.inlineModeDropdown') && ("Lb" in serviceProviderMap) && (serviceProviderMap.Lb	== "F5BigIp")) {   
+										  if(value == 'true') { //CS-16605 do not pass parameter if value is 'false'(side by side)
+												inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb';
+												inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'InlineMode';
+												inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = value;
+												serviceCapabilityIndex++;
+											}
 										} 										
 										else if ((key == 'service.Lb.lbIsolationDropdown') && ("Lb" in serviceProviderMap)) {											
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb';
@@ -1569,13 +1716,40 @@
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticIp'; 
 											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
 											serviceCapabilityIndex++;
-										} 										
+										} 	
+                    else if ((key == 'service.StaticNat.associatePublicIP') && ("StaticNat" in serviceProviderMap)) {	//if checkbox is unchecked, it won't be included in formData in the first place. i.e. it won't fall into this section								
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'StaticNat';
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'associatePublicIP'; 
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
+											serviceCapabilityIndex++;
+										} 		
                   } 									
 									else if (value != '') { // Normal data
                     inputData[key] = value;
                   }
                 });
-
+								
+							  for(var key1 in inputData) { 								  
+								  /* When capability ElasticIp=true is passed to API, if capability associatePublicIP is not passed to API, cloudStack API will assume associatePublicIP=true. 
+									So, UI has to explicitly pass associatePublicIP=false to API if its checkbox is unchecked. */
+								  if(inputData[key1] == 'ElasticIp') { //ElasticIp checkbox is checked 									 
+										var associatePublicIPExists = false;
+									  for(var key2 in inputData) { 										  
+										  if(inputData[key2] == 'associatePublicIP') {
+											  associatePublicIPExists = true;
+											  break; //break key2 for loop
+											}
+										}											
+                    if(associatePublicIPExists == false) { //but associatePublicIP checkbox is unchecked
+                      //UI explicitly passes associatePublicIP=false to API 
+										  inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'StaticNat';
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'associatePublicIP'; 
+											inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = false; //associatePublicIP checkbox is unchecked 		
+                    }										
+									  break; //break key1 for loop
+									}
+								}
+																
                 // Make supported services list
                 inputData['supportedServices'] = $.map(serviceProviderMap, function(value, key) {
                   return key;
@@ -1603,6 +1777,7 @@
                 } else {
                   inputData['conservemode'] = false;
                 }
+               
 								
                 // Make service provider map
                 var serviceProviderIndex = 0;
@@ -1667,13 +1842,16 @@
 							edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
-									array1.push("&availability=" + args.data.availability);								
+                  var data = {
+									  id: args.context.networkOfferings[0].id,
+										name: args.data.name,
+										displaytext: args.data.displaytext,
+										availability: args.data.availability
+									};
+                					
                   $.ajax({
-                    url: createURL("updateNetworkOffering&id=" + args.context.networkOfferings[0].id + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateNetworkOffering'),
+                    data: data,
                     success: function(json) {										 									
 											//if availability is being updated from Required to Optional
 										  if(args.context.networkOfferings[0].availability == "Required" && args.data.availability == "Optional") 
@@ -1882,8 +2060,8 @@
 													}).join(', '),
 
 													serviceCapabilities: $.map(item.service, function(service) {
-														return service.capability ? $.map(service.capability, function(capability) {
-															return capability.name + ': ' + capability.value;
+														return service.provider ? $.map(service.provider, function(capability) {
+															return service.name + ': ' + capability.name;
 														}).join(', ') : null;
 													}).join(', ')
 												})												

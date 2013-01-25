@@ -16,10 +16,20 @@
 // under the License.
 package com.cloud.storage.resource;
 
+import static com.cloud.utils.S3Utils.deleteDirectory;
+import static com.cloud.utils.S3Utils.getDirectory;
+import static com.cloud.utils.S3Utils.putDirectory;
+import static com.cloud.utils.StringUtils.join;
+import static com.cloud.utils.db.GlobalLock.executeWithNoWaitLock;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static org.apache.commons.lang.StringUtils.substringAfterLast;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -32,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 
 import javax.naming.ConfigurationException;
 
@@ -46,6 +57,9 @@ import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.DeleteObjectFromSwiftCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
+import com.cloud.agent.api.DeleteTemplateFromS3Command;
+import com.cloud.agent.api.DownloadSnapshotFromS3Command;
+import com.cloud.agent.api.DownloadTemplateFromS3ToSecondaryStorageCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.PingCommand;
@@ -60,6 +74,8 @@ import com.cloud.agent.api.SecStorageSetupCommand.Certificates;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupSecondaryStorageCommand;
+import com.cloud.agent.api.UploadTemplateToS3FromSecondaryStorageCommand;
 import com.cloud.agent.api.downloadSnapshotFromSwiftCommand;
 import com.cloud.agent.api.downloadTemplateFromSwiftToSecondaryStorageCommand;
 import com.cloud.agent.api.uploadTemplateToSwiftFromSecondaryStorageCommand;
@@ -75,8 +91,8 @@ import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.ssCommand;
+import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -90,6 +106,9 @@ import com.cloud.storage.template.TemplateLocation;
 import com.cloud.storage.template.UploadManager;
 import com.cloud.storage.template.UploadManagerImpl;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.S3Utils;
+import com.cloud.utils.S3Utils.FileNamingStrategy;
+import com.cloud.utils.S3Utils.ObjectNamingStrategy;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -97,8 +116,15 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.SecondaryStorageVm;
 
-public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
-    private static final Logger s_logger = Logger.getLogger(NfsSecondaryStorageResource.class);
+public class NfsSecondaryStorageResource extends ServerResourceBase implements
+        SecondaryStorageResource {
+
+    private static final Logger s_logger = Logger
+            .getLogger(NfsSecondaryStorageResource.class);
+
+    private static final String TEMPLATE_ROOT_DIR = "template/tmpl";
+    private static final String SNAPSHOT_ROOT_DIR = "snapshots";
+
     int _timeout;
     
     String _instance;  
@@ -168,16 +194,24 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((ListVolumeCommand)cmd);
         }else if (cmd instanceof downloadSnapshotFromSwiftCommand){
             return execute((downloadSnapshotFromSwiftCommand)cmd);
+        } else if (cmd instanceof DownloadSnapshotFromS3Command) {
+            return execute((DownloadSnapshotFromS3Command) cmd);
         } else if (cmd instanceof DeleteSnapshotBackupCommand){
             return execute((DeleteSnapshotBackupCommand)cmd);
         } else if (cmd instanceof DeleteSnapshotsDirCommand){
             return execute((DeleteSnapshotsDirCommand)cmd);
         } else if (cmd instanceof downloadTemplateFromSwiftToSecondaryStorageCommand) {
             return execute((downloadTemplateFromSwiftToSecondaryStorageCommand) cmd);
+        } else if (cmd instanceof DownloadTemplateFromS3ToSecondaryStorageCommand) {
+            return execute((DownloadTemplateFromS3ToSecondaryStorageCommand) cmd);
         } else if (cmd instanceof uploadTemplateToSwiftFromSecondaryStorageCommand) {
             return execute((uploadTemplateToSwiftFromSecondaryStorageCommand) cmd);
+        } else if (cmd instanceof UploadTemplateToS3FromSecondaryStorageCommand) {
+            return execute((UploadTemplateToS3FromSecondaryStorageCommand) cmd);
         } else if (cmd instanceof DeleteObjectFromSwiftCommand) {
             return execute((DeleteObjectFromSwiftCommand) cmd);
+        } else if (cmd instanceof DeleteTemplateFromS3Command) {
+            return execute((DeleteTemplateFromS3Command) cmd);
         } else if (cmd instanceof CleanupSnapshotBackupCommand){
             return execute((CleanupSnapshotBackupCommand)cmd);
         } else {
@@ -185,6 +219,69 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
     
+    @SuppressWarnings("unchecked")
+    private String determineS3TemplateDirectory(final Long accountId,
+            final Long templateId) {
+        return join(asList(TEMPLATE_ROOT_DIR, accountId, templateId),
+                S3Utils.SEPARATOR);
+    }
+
+    @SuppressWarnings("unchecked")
+    private String determineStorageTemplatePath(final String storagePath,
+            final Long accountId, final Long templateId) {
+        return join(
+                asList(getRootDir(storagePath), TEMPLATE_ROOT_DIR, accountId,
+                        templateId), File.separator);
+    }
+
+    private Answer execute(
+            final DownloadTemplateFromS3ToSecondaryStorageCommand cmd) {
+
+        final S3TO s3 = cmd.getS3();
+        final String storagePath = cmd.getStoragePath();
+        final Long accountId = cmd.getAccountId();
+        final Long templateId = cmd.getTemplateId();
+
+        try {
+
+            final File downloadDirectory = _storage
+                    .getFile(determineStorageTemplatePath(storagePath,
+                            accountId, templateId));
+            downloadDirectory.mkdirs();
+
+            if (!downloadDirectory.exists()) {
+                final String errMsg = format(
+                        "Unable to create directory "
+                                + "download directory %1$s for download of template id "
+                                + "%2$s from S3.", downloadDirectory.getName(),
+                        templateId);
+                s_logger.error(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
+
+            getDirectory(s3, s3.getBucketName(),
+                    determineS3TemplateDirectory(accountId, templateId),
+                    downloadDirectory, new FileNamingStrategy() {
+                        @Override
+                        public String determineFileName(final String key) {
+                            return substringAfterLast(key, S3Utils.SEPARATOR);
+                        }
+                    });
+
+            return new Answer(cmd, true, format("Successfully downloaded "
+                    + "template id %1$s from S3 to directory %2$s", templateId,
+                    downloadDirectory.getName()));
+
+        } catch (Exception e) {
+
+            final String errMsg = format("Failed to upload template id %1$s "
+                    + "due to $2%s", templateId, e.getMessage());
+            s_logger.error(errMsg, e);
+            return new Answer(cmd, false, errMsg);
+
+        }
+
+    }
 
     private Answer execute(downloadTemplateFromSwiftToSecondaryStorageCommand cmd) {
         SwiftTO swift = cmd.getSwift();
@@ -256,6 +353,83 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
+    private Answer execute(UploadTemplateToS3FromSecondaryStorageCommand cmd) {
+
+        final S3TO s3 = cmd.getS3();
+        final Long accountId = cmd.getAccountId();
+        final Long templateId = cmd.getTemplateId();
+
+        try {
+
+            final String templatePath = determineStorageTemplatePath(
+                    cmd.getStoragePath(), accountId, templateId);
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found template id " + templateId
+                        + " account id " + accountId + " from directory "
+                        + templatePath + " to upload to S3.");
+            }
+
+            if (!_storage.isDirectory(templatePath)) {
+                final String errMsg = format("S3 Sync Failure: Directory %1$s"
+                        + "for template id %2$s does not exist.", templatePath,
+                        templateId);
+                s_logger.error(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
+
+            if (!_storage.isFile(templatePath + "/template.properties")) {
+                final String errMsg = format("S3 Sync Failure: Template id "
+                        + "%1$s does not exist on the file system.",
+                        templatePath);
+                s_logger.error(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(format(
+                        "Pushing template id %1$s from %2$s to S3...",
+                        templateId, templatePath));
+            }
+
+            final String bucket = s3.getBucketName();
+            putDirectory(s3, bucket, _storage.getFile(templatePath),
+                    new FilenameFilter() {
+                        @Override
+                        public boolean accept(final File directory,
+                                final String fileName) {
+                            return !fileName.startsWith(".");
+                        }
+                    }, new ObjectNamingStrategy() {
+                        @Override
+                        public String determineKey(final File file) {
+                            s_logger.debug(String
+                                    .format("Determining key using account id %1$s and template id %2$s",
+                                            accountId, templateId));
+                            return join(
+                                    asList(determineS3TemplateDirectory(
+                                            accountId, templateId), file
+                                            .getName()), S3Utils.SEPARATOR);
+                        }
+                    });
+
+            return new Answer(
+                    cmd,
+                    true,
+                    format("Uploaded the contents of directory %1$s for template id %2$s to S3 bucket %3$s",
+                            templatePath, templateId, bucket));
+
+        } catch (Exception e) {
+
+            final String errMsg = format("Failed to upload template id %1$s",
+                    templateId);
+            s_logger.error(errMsg, e);
+            return new Answer(cmd, false, errMsg);
+
+        }
+
+    }
+
     private Answer execute(DeleteObjectFromSwiftCommand cmd) {
         SwiftTO swift = cmd.getSwift();
         String container = cmd.getContainer();
@@ -275,6 +449,47 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String errMsg = cmd + " Command failed due to " + e.toString();
             s_logger.warn(errMsg, e);
             return new Answer(cmd, false, errMsg);
+        }
+
+    }
+
+    private Answer execute(final DeleteTemplateFromS3Command cmd) {
+
+        final S3TO s3 = cmd.getS3();
+        final Long accountId = cmd.getAccountId();
+        final Long templateId = cmd.getTemplateId();
+
+        if (accountId == null || (accountId != null && accountId <= 0)) {
+            final String errorMessage = "No account id specified for S3 template deletion.";
+            s_logger.error(errorMessage);
+            return new Answer(cmd, false, errorMessage);
+        }
+
+        if (templateId == null || (templateId != null && templateId <= 0)) {
+            final String errorMessage = "No template id specified for S3 template deletion.";
+            s_logger.error(errorMessage);
+            return new Answer(cmd, false, errorMessage);
+        }
+
+        if (s3 == null) {
+            final String errorMessge = "No S3 client options provided";
+            s_logger.error(errorMessge);
+            return new Answer(cmd, false, errorMessge);
+        }
+
+        final String bucket = s3.getBucketName();
+        try {
+            deleteDirectory(s3, bucket,
+                    determineS3TemplateDirectory(templateId, accountId));
+            return new Answer(cmd, true, String.format(
+                    "Deleted template %1%s from bucket %2$s.", templateId,
+                    bucket));
+        } catch (Exception e) {
+            final String errorMessage = String
+                    .format("Failed to delete templaet id %1$s from bucket %2$s due to the following error: %3$s",
+                            templateId, bucket, e.getMessage());
+            s_logger.error(errorMessage, e);
+            return new Answer(cmd, false, errorMessage);
         }
 
     }
@@ -451,6 +666,110 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
+    public Answer execute(final DownloadSnapshotFromS3Command cmd) {
+
+        final S3TO s3 = cmd.getS3();
+        final String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
+        final Long accountId = cmd.getAccountId();
+        final Long volumeId = cmd.getVolumeId();
+
+        try {
+
+            executeWithNoWaitLock(determineSnapshotLockId(accountId, volumeId),
+                    new Callable<Void>() {
+
+                        @Override
+                        public Void call() throws Exception {
+
+                            final String directoryName = determineSnapshotLocalDirectory(
+                                    secondaryStorageUrl, accountId, volumeId);
+
+                            String result = createLocalDir(directoryName);
+                            if (result != null) {
+                                throw new InternalErrorException(
+                                        format("Failed to create directory %1$s during S3 snapshot download.",
+                                                directoryName));
+                            }
+
+                            final String snapshotFileName = determineSnapshotBackupFilename(cmd
+                                    .getSnapshotUuid());
+                            final String key = determineSnapshotS3Key(
+                                    accountId, volumeId, snapshotFileName);
+                            final File targetFile = S3Utils.getFile(s3,
+                                    s3.getBucketName(), key,
+                                    _storage.getFile(directoryName),
+                                    new FileNamingStrategy() {
+
+                                        @Override
+                                        public String determineFileName(
+                                                String key) {
+                                            return snapshotFileName;
+                                        }
+
+                                    });
+
+                            if (cmd.getParent() != null) {
+
+                                final String parentPath = join(
+                                        File.pathSeparator, directoryName,
+                                        determineSnapshotBackupFilename(cmd
+                                                .getParent()));
+                                result = setVhdParent(
+                                        targetFile.getAbsolutePath(),
+                                        parentPath);
+                                if (result != null) {
+                                    throw new InternalErrorException(
+                                            format("Failed to set the parent for backup %1$s to %2$s due to %3$s.",
+                                                    targetFile
+                                                            .getAbsolutePath(),
+                                                    parentPath, result));
+                                }
+
+                            }
+
+                            return null;
+
+                        }
+
+                    });
+
+            return new Answer(
+                    cmd,
+                    true,
+                    format("Succesfully retrieved volume id %1$s for account id %2$s to %3$s from S3.",
+                            volumeId, accountId, secondaryStorageUrl));
+
+        } catch (Exception e) {
+            final String errMsg = format(
+                    "Failed to retrieve volume id %1$s for account id %2$s to %3$s from S3 due to exception %4$s",
+                    volumeId, accountId, secondaryStorageUrl, e.getMessage());
+            s_logger.error(errMsg);
+            return new Answer(cmd, false, errMsg);
+        }
+
+    }
+
+    private String determineSnapshotS3Directory(final Long accountId,
+            final Long volumeId) {
+        return join(S3Utils.SEPARATOR, SNAPSHOT_ROOT_DIR, accountId, volumeId);
+    }
+
+    private String determineSnapshotS3Key(final Long accountId,
+            final Long volumeId, final String snapshotFileName) {
+
+        final String directoryName = determineSnapshotS3Directory(accountId,
+                volumeId);
+        return join(S3Utils.SEPARATOR, directoryName, snapshotFileName);
+
+    }
+
+    private String determineSnapshotLocalDirectory(
+            final String secondaryStorageUrl, final Long accountId,
+            final Long volumeId) {
+        return join(File.pathSeparator, getRootDir(secondaryStorageUrl),
+                SNAPSHOT_ROOT_DIR, accountId, volumeId);
+    }
+
     public Answer execute(downloadSnapshotFromSwiftCommand cmd){
         SwiftTO swift = cmd.getSwift();
         String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
@@ -622,6 +941,92 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
     
+    private String deleteSnapshotBackupFromLocalFileSystem(
+            final String secondaryStorageUrl, final Long accountId,
+            final Long volumeId, final String name, final Boolean deleteAllFlag) {
+
+        final String lPath = determineSnapshotLocalDirectory(
+                secondaryStorageUrl, accountId, volumeId)
+                + File.pathSeparator
+                + (deleteAllFlag ? "*" : "*" + name + "*");
+
+        final String result = deleteLocalFile(lPath);
+
+        if (result != null) {
+            return "failed to delete snapshot " + lPath + " , err=" + result;
+        }
+
+        return null;
+
+    }
+
+    private String deleteSnapshotBackupfromS3(final S3TO s3,
+            final String secondaryStorageUrl, final Long accountId,
+            final Long volumeId, final String name, final Boolean deleteAllFlag) {
+
+        try {
+
+            final String bucket = s3.getBucketName();
+
+            final String result = executeWithNoWaitLock(
+                    determineSnapshotLockId(accountId, volumeId),
+                    new Callable<String>() {
+
+                        @Override
+                        public String call() throws Exception {
+
+                            final String innerResult = deleteSnapshotBackupFromLocalFileSystem(
+                                    secondaryStorageUrl, accountId, volumeId,
+                                    name, deleteAllFlag);
+                            if (innerResult != null) {
+                                return innerResult;
+                            }
+
+                            if (deleteAllFlag) {
+                                S3Utils.deleteDirectory(
+                                        s3,
+                                        bucket,
+                                        determineSnapshotS3Directory(accountId,
+                                                volumeId));
+                            } else {
+                                S3Utils.deleteObject(
+                                        s3,
+                                        bucket,
+                                        determineSnapshotS3Key(
+                                                accountId,
+                                                volumeId,
+                                                determineSnapshotBackupFilename(name)));
+                            }
+
+                            return null;
+
+                        }
+
+                    });
+
+            return result;
+
+        } catch (Exception e) {
+
+            s_logger.error(
+                    String.format(
+                            "Failed to delete snapshot backup for account id %1$s volume id %2$sfrom S3.",
+                            accountId, volumeId), e);
+            return e.getMessage();
+
+        }
+
+    }
+
+    private String determineSnapshotBackupFilename(final String snapshotUuid) {
+        return snapshotUuid + ".vhd";
+    }
+
+    private String determineSnapshotLockId(final Long accountId,
+            final Long volumeId) {
+        return join("_", "SNAPSHOT", accountId, volumeId);
+    }
+
     protected Answer execute(final DeleteSnapshotBackupCommand cmd) {
         String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
         Long accountId = cmd.getAccountId();
@@ -629,21 +1034,22 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String name = cmd.getSnapshotUuid();
         try {
             SwiftTO swift = cmd.getSwift();
+            S3TO s3 = cmd.getS3();
             if (swift == null) {
-                String parent = getRootDir(secondaryStorageUrl);
-                String filename;
-                if (cmd.isAll()) {
-                    filename = "*";
-
-                } else {
-                    filename = "*" + name + "*";
-                }
-                String lPath = parent + "/snapshots/" + String.valueOf(accountId) + "/" + String.valueOf(volumeId) + "/" + filename;
-                String result = deleteLocalFile(lPath);
+                final String result = deleteSnapshotBackupFromLocalFileSystem(
+                        secondaryStorageUrl, accountId, volumeId, name,
+                        cmd.isAll());
                 if (result != null) {
-                    String errMsg = "failed to delete snapshot " + lPath + " , err=" + result;
-                    s_logger.warn(errMsg);
-                    return new Answer(cmd, false, errMsg);
+                    s_logger.warn(result);
+                    return new Answer(cmd, false, result);
+                }
+            } else if (s3 != null) {
+                final String result = deleteSnapshotBackupfromS3(s3,
+                        secondaryStorageUrl, accountId, volumeId, name,
+                        cmd.isAll());
+                if (result != null) {
+                    s_logger.warn(result);
+                    return new Answer(cmd, false, result);
                 }
             } else {
                 String filename;

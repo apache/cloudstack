@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="devcloud-usage-mode">
+    <title>DevCloud Usage Mode</title>
+    <para>DevCloud can be used in several different ways:</para>
+    <orderedlist>
+        <listitem>
+            <para>Full sandbox. Where &PRODUCT; is run within the DevCloud instance started in Virtual Box.</para>
+            <para>In this mode, the &PRODUCT; management server runs within the instance and nested virtualization allows instantiation of tiny VMs within DevCloud itself. &PRODUCT; code modifications are done within DevCloud.</para>
+            <para>The following diagram shows the architecture of the SandBox mode.</para>
+            <mediaobject>
+                <imageobject>
+                    <imagedata fileref="./images/DevCloud.png" />
+                </imageobject>
+                <textobject>
+                    <phrase>DevCloud.png: Schematic of the DevCloud SandBox architecture</phrase>
+                </textobject>
+            </mediaobject>
+        </listitem>
+        <listitem>
+            <para>A deployment environment. Where &PRODUCT; code is developed in the localhost of the developer and the resulting build is deployed within DevCloud</para>
+           <para>This mode was used in the testing procedure of &PRODUCT; 4.0.0 incubating release. See the following screencast to see how: <ulink url="http://vimeo.com/54621457">http://vimeo.com/54621457</ulink></para>
+        </listitem>
+        <listitem>
+            <para>A host-only mode. Where DevCloud is used only as a host. &PRODUCT; management server is run in the localhost of the developer</para>
+            <para>This mode makes use of a host-only interface defined in the Virtual Box preferences. Check the following screencast to see how: <ulink url="http://vimeo.com/54610161">http://vimeo.com/54610161</ulink></para>
+            <para>The following schematic shows the architecture of the Host-Only mode.</para>
+            <mediaobject>
+                <imageobject>
+                    <imagedata fileref="./images/DevCloud-hostonly.png" />
+                </imageobject>
+                <textobject>
+                    <phrase>DevCloud-hostonly.png: Schematic of the DevCloud host-only architecture </phrase>
+                </textobject>
+            </mediaobject>
+        </listitem>
+    </orderedlist>
+</section>

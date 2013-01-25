@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -18,9 +18,10 @@ package com.cloud.network;
 
 import java.util.Date;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Site2SiteVpnConnection extends ControlledEntity {
+public interface Site2SiteVpnConnection extends ControlledEntity, InternalIdentity {
     enum State {
         Pending,
         Connected,
@@ -28,6 +29,7 @@ public interface Site2SiteVpnConnection extends ControlledEntity {
         Error,
     }
     public long getId();
+    public String getUuid();
     public long getVpnGatewayId();
     public long getCustomerGatewayId();
     public State getState();

@@ -27,12 +27,12 @@ import com.cloud.utils.net.NetUtils;
 
 public class SetStaticRouteCommand extends NetworkElementCommand{
     StaticRouteProfile[] staticRoutes;
-    
+
     protected SetStaticRouteCommand() {
     }
-    
+
     public SetStaticRouteCommand(List<StaticRouteProfile> staticRoutes) {
-        this.staticRoutes = staticRoutes.toArray(new StaticRouteProfile[staticRoutes.size()]); 
+        this.staticRoutes = staticRoutes.toArray(new StaticRouteProfile[staticRoutes.size()]);
     }
 
     public StaticRouteProfile[] getStaticRoutes() {

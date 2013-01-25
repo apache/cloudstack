@@ -46,21 +46,30 @@ if __name__ == "__main__":
     else:
         deploy.deploy()
         
-    format = "text"
+    fmt = "text"
     xmlDir = None
     if options.xmlrunner is not None:
         xmlDir = options.xmlrunner
-        format = "xml"
+        fmt = "xml"
     
     if options.testCaseFolder is None:
         if options.module is None:
             parser.print_usage()
             exit(1)
         else:
-            engine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient, testCaseLogFile, testResultLogFile, format, xmlDir)
+            engine =  \
+            TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient,
+                                                        deploy.getCfg(),
+                                                        testCaseLogFile,
+                                                        testResultLogFile, fmt,
+                                                        xmlDir)
             engine.loadTestsFromFile(options.module)
             engine.run()
     else:
-       engine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient, testCaseLogFile, testResultLogFile, format, xmlDir)
+       engine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient,
+                                                            deploy.getCfg(),
+                                                            testCaseLogFile,
+                                                            testResultLogFile,
+                                                            fmt, xmlDir)
        engine.loadTestsFromDir(options.testCaseFolder)
        engine.run()

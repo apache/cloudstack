@@ -16,23 +16,22 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import com.cloud.acl.ControlledEntity;
-import com.cloud.api.Identity;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface VpcGateway extends Identity, ControlledEntity {
+public interface VpcGateway extends Identity, ControlledEntity, InternalIdentity {
     public enum Type {
         Private,
         Public,
         Vpn
     }
-    
+
     public enum State {
         Creating,
         Ready,
         Deleting
     }
-    
-    long getId();
 
     /**
      * @return

@@ -24,23 +24,46 @@
 
 <section id="configure-package-repository">
     <title>Configure package repository</title>
-    <para>&PRODUCT; is only distributed from source from the official mirrors. DEB and RPM packages are however build for your convience by third-parties</para>
-    <para>When installing &PRODUCT; it is recommended you use these package repositories for easy installation.</para>
+    <para>&PRODUCT; is only distributed from source from the official mirrors. 
+        However, members of the CloudStack community may build convenience binaries
+        so that users can install Apache CloudStack without needing to build from 
+        source.
+    </para>
+    <para>
+        If you didn't follow the steps to build your own packages from source 
+        in the sections for <xref linkend="sect-source-buildrpm" /> or
+        <xref linkend="sect-source-builddebs" /> you may find pre-built
+        DEB and RPM packages for your convience linked from the 
+        <ulink url="http://incubator.apache.org/cloudstack/downloads.html">downloads</ulink>
+        page.
+    </para>
     <note>
         <para>These repositories contain both the Management Server and KVM Hypervisor packages.</para>
     </note>
     <section id="configure-package-repository-deb">
         <title>DEB package repository</title>
-        <para>You can add a DEB package repository to your apt sources with the following commands. Please note that currently only packages for Ubuntu 12.04 (precise) are being build.</para>
-        <programlisting language="Bash">echo "deb http://cloudstack.apt-get.eu/ubuntu $(lsb_release -s -c) 4.0" > /etc/apt/sources.list.d/cloudstack.list</programlisting>
+        <para>You can add a DEB package repository to your apt sources with the following commands. Please note that only packages for Ubuntu 12.04 LTS (precise) are being built at this time.</para>
+        <para>Use your preferred editor and open (or create) <filename>/etc/apt/sources.list.d/cloudstack.list</filename>. Add the community provided repository to the file:</para>
+<programlisting>deb http://cloudstack.apt-get.eu/ubuntu precise 4.0</programlisting>
         <para>We now have to add the public key to the trusted keys.</para>
-        <programlisting language="Bash">wget -O - http://cloudstack.apt-get.eu/release.asc|apt-key add -</programlisting>
+        <programlisting language="Bash"><prompt>$</prompt> <command>wget</command> -O - http://cloudstack.apt-get.eu/release.asc|apt-key add -</programlisting>
         <para>Now update your local apt cache.</para>
-        <programlisting language="Bash">apt-get update</programlisting>
+        <programlisting language="Bash"><prompt>$</prompt> <command>apt-get</command> update</programlisting>
         <para>Your DEB package repository should now be configured and ready for use.</para>
     </section>
     <section id="configure-package-repository-rpm">
         <title>RPM package repository</title>
-        <para>TODO</para>
+        <para>There is a RPM package repository for &PRODUCT; so you can easily install on RHEL based platforms.</para>
+        <para>If you're using an RPM-based system, you'll want to add the Yum repository so that you can install &PRODUCT; with Yum.</para>
+        <para>Yum repository information is found under <filename>/etc/yum.repos.d</filename>. You'll see several <filename>.repo</filename> files in this directory, each one denoting a specific repository.</para>
+        <para>To add the &PRODUCT; repository, create <filename>/etc/yum.repos.d/cloudstack.repo</filename> and insert the following information.</para>
+        <programlisting>
+[cloudstack]
+name=cloudstack
+baseurl=<replaceable>http://cloudstack.apt-get.eu/rhel/4.0/</replaceable>
+enabled=1
+gpgcheck=0
+        </programlisting>
+        <para>Now you should be able to install CloudStack using Yum.</para>
     </section>
 </section>

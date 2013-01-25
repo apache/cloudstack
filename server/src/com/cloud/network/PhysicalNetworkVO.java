@@ -35,6 +35,7 @@ import javax.persistence.TableGenerator;
 
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * NetworkConfigurationVO contains information about a specific physical network.

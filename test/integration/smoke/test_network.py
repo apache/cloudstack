@@ -21,13 +21,14 @@ import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin import remoteSSHClient
-from integration.lib.utils import *
-from integration.lib.base import *
-from integration.lib.common import *
+from marvin.integration.lib.utils import *
+from marvin.integration.lib.base import *
+from marvin.integration.lib.common import *
 from nose.plugins.attrib import attr
 #Import System modules
 import time
 
+_multiprocess_shared_ = True
 
 class Services:
     """Test Network Services
@@ -35,7 +36,7 @@ class Services:
 
     def __init__(self):
         self.services = {
-                            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                            "ostype": "CentOS 5.3 (64-bit)",
                             # Cent OS 5.3 (64 bit)
                             "mode": 'advanced',
                             # Networking mode: Basic or advanced
@@ -304,7 +305,7 @@ class TestPortForwarding(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         #Create an account, network, VM and IP addresses
         cls.account = Account.create(
@@ -603,7 +604,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -1075,7 +1076,7 @@ class TestRebootRouter(cloudstackTestCase):
         template = get_template(
                             self.apiclient,
                             self.zone.id,
-                            self.services["ostypeid"]
+                            self.services["ostype"]
                             )
         self.services["server"]["zoneid"] = self.zone.id
 
@@ -1235,7 +1236,7 @@ class TestAssignRemoveLB(cloudstackTestCase):
         template = get_template(
                             self.apiclient,
                             self.zone.id,
-                            self.services["ostypeid"]
+                            self.services["ostype"]
                             )
         self.services["server"]["zoneid"] = self.zone.id
 
@@ -1494,7 +1495,7 @@ class TestReleaseIP(cloudstackTestCase):
         template = get_template(
                             self.apiclient,
                             self.zone.id,
-                            self.services["ostypeid"]
+                            self.services["ostype"]
                             )
         self.services["server"]["zoneid"] = self.zone.id
 
@@ -1634,7 +1635,7 @@ class TestDeleteAccount(cloudstackTestCase):
         template = get_template(
                             self.apiclient,
                             self.zone.id,
-                            self.services["ostypeid"]
+                            self.services["ostype"]
                             )
         self.services["server"]["zoneid"] = self.zone.id
 

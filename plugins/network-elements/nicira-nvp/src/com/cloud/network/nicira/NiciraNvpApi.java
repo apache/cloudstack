@@ -14,23 +14,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-/** Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
- */
 package com.cloud.network.nicira;
 
 import java.io.IOException;
@@ -58,9 +41,12 @@ import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.DeleteMethod;
@@ -78,6 +64,8 @@ import com.google.gson.reflect.TypeToken;
 
 public class NiciraNvpApi {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpApi.class);
+    private final static String _protocol = "https";
+    private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
     
     private String _name;
     private String _host;
@@ -85,17 +73,42 @@ public class NiciraNvpApi {
     private String _adminpass;
     
     private HttpClient _client;
-
-    public NiciraNvpApi(String host, String adminuser, String adminpass) throws NiciraNvpApiException {
-        this._host = host;
-        this._adminpass = adminpass;
-        this._adminuser = adminuser;
-        
-        if (_host == null || _adminpass == null || _adminuser == null) {
-            throw new NiciraNvpApiException("host, adminuser and adminpass may not be null");
+    
+    /* This factory method is protected so we can extend this
+     * in the unittests.
+     */
+    protected HttpClient createHttpClient() {
+    	return new HttpClient(s_httpClientManager);
+    }
+    
+    protected HttpMethod createMethod(String type, String uri) throws NiciraNvpApiException {
+    	String url;
+        try {
+            url = new URL(_protocol, _host, uri).toString();
+        } catch (MalformedURLException e) {
+            s_logger.error("Unable to build Nicira API URL", e);
+            throw new NiciraNvpApiException("Unable to build Nicira API URL", e);
         }
+        
+        if ("post".equalsIgnoreCase(type)) {
+        	return new PostMethod(url);    	
+        }
+        else if ("get".equalsIgnoreCase(type)) {
+        	return new GetMethod(url);
+        }
+        else if ("delete".equalsIgnoreCase(type)) {
+        	return new DeleteMethod(url);
+        }
+        else if ("put".equalsIgnoreCase(type)) {
+        	return new PutMethod(url);
+        }
+        else {
+        	throw new NiciraNvpApiException("Requesting unknown method type");
+        }
+    }
 
-        _client = new HttpClient( );
+    public NiciraNvpApi() {
+        _client = createHttpClient();
         _client.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
         
         try {             
@@ -107,17 +120,32 @@ public class NiciraNvpApi {
         
     }
     
+    public void setControllerAddress(String address) {
+    	this._host = address;
+    }
+    
+    public void setAdminCredentials(String username, String password) {
+    	this._adminuser = username;
+    	this._adminpass = password;
+    }
+    
     /**
      * Logs into the Nicira API. The cookie is stored in the <code>_authcookie<code> variable.
      * <p>
      * The method returns false if the login failed or the connection could not be made.
      * 
      */
-    private void login() throws NiciraNvpApiException {
+    protected void login() throws NiciraNvpApiException {
         String url;
         
+        if (_host == null || _host.isEmpty() ||
+        		_adminuser == null || _adminuser.isEmpty() ||
+        		_adminpass == null || _adminpass.isEmpty()) {
+        	throw new NiciraNvpApiException("Hostname/credentials are null or empty");
+        }
+        
         try {
-            url = new URL("https", _host, "/ws.v1/login").toString();
+            url = new URL(_protocol, _host, "/ws.v1/login").toString();
         } catch (MalformedURLException e) {
             s_logger.error("Unable to build Nicira API URL", e);
             throw new NiciraNvpApiException("Unable to build Nicira API URL", e);
@@ -133,6 +161,8 @@ public class NiciraNvpApi {
             throw new NiciraNvpApiException("Nicira NVP API login failed ", e);
         } catch (IOException e) {
             throw new NiciraNvpApiException("Nicira NVP API login failed ", e);
+        } finally {
+            pm.releaseConnection();
         }
         
         if (pm.getStatusCode() != HttpStatus.SC_OK) {
@@ -180,7 +210,7 @@ public class NiciraNvpApi {
             
         NiciraNvpList<LogicalSwitchPort> lspl = executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalSwitchPort>>(){}.getType(), uri, params);
                 
-        if (lspl == null || lspl.getResult_count() != 1) {
+        if (lspl == null || lspl.getResultCount() != 1) {
             throw new NiciraNvpApiException("Unexpected response from API");
         }
         
@@ -210,19 +240,111 @@ public class NiciraNvpApi {
         return lspl;
     }
     
+    public LogicalRouterConfig createLogicalRouter(LogicalRouterConfig logicalRouterConfig) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter";
+    	
+    	LogicalRouterConfig lrc = executeCreateObject(logicalRouterConfig, new TypeToken<LogicalRouterConfig>(){}.getType(), uri, Collections.<String,String>emptyMap());
+    	
+    	return lrc;
+    }
+
+    public void deleteLogicalRouter(String logicalRouterUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid;
+    	
+    	executeDeleteObject(uri);
+    }
     
-    private <T> void executeUpdateObject(T newObject, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
-        String url;
-        try {
-            url = new URL("https", _host, uri).toString();
-        } catch (MalformedURLException e) {
-            s_logger.error("Unable to build Nicira API URL", e);
-            throw new NiciraNvpApiException("Connection to NVP Failed");
+    public LogicalRouterPort createLogicalRouterPort(String logicalRouterUuid, LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport";
+    	
+    	LogicalRouterPort lrp = executeCreateObject(logicalRouterPort, new TypeToken<LogicalRouterPort>(){}.getType(), uri, Collections.<String,String>emptyMap());
+    	return lrp;    	
+    }
+    
+    public void deleteLogicalRouterPort(String logicalRouterUuid, String logicalRouterPortUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport/" +  logicalRouterPortUuid;
+    	
+    	executeDeleteObject(uri);
+    }
+
+    public void modifyLogicalRouterPort(String logicalRouterUuid, LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport/" +  logicalRouterPort.getUuid();
+    	
+    	executeUpdateObject(logicalRouterPort, uri, Collections.<String,String>emptyMap());
+    }
+    
+    public void modifyLogicalRouterPortAttachment(String logicalRouterUuid, String logicalRouterPortUuid, Attachment attachment) throws NiciraNvpApiException {
+        String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport/" + logicalRouterPortUuid + "/attachment";
+        executeUpdateObject(attachment, uri, Collections.<String,String>emptyMap());
+    }
+    
+    public NatRule createLogicalRouterNatRule(String logicalRouterUuid, NatRule natRule) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat";
+    	
+    	return executeCreateObject(natRule, new TypeToken<NatRule>(){}.getType(), uri, Collections.<String,String>emptyMap());
+    }
+    
+    public void modifyLogicalRouterNatRule(String logicalRouterUuid, NatRule natRule) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat/" + natRule.getUuid();
+    	
+    	executeUpdateObject(natRule, uri, Collections.<String,String>emptyMap());
+    }
+    
+    public void deleteLogicalRouterNatRule(String logicalRouterUuid, String natRuleUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat/" + natRuleUuid;
+    	
+    	executeDeleteObject(uri);
+    }
+    
+    public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceAndVlanId(String logicalRouterUuid, String gatewayServiceUuid, long vlanId) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport";
+        Map<String,String> params = new HashMap<String,String>();
+        params.put("attachment_gwsvc_uuid", gatewayServiceUuid);
+        params.put("attachment_vlan", "0");
+        params.put("fields","*");
+        
+        return executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalRouterPort>>(){}.getType(), uri, params);
+    }
+    
+    public LogicalRouterConfig findOneLogicalRouterByUuid(String logicalRouterUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid;
+    	
+    	return executeRetrieveObject(new TypeToken<LogicalRouterConfig>(){}.getType(), uri, Collections.<String,String>emptyMap());
+    }
+    
+    public void updateLogicalRouterPortConfig(String logicalRouterUuid, LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport" + logicalRouterPort.getUuid();
+    	
+    	executeUpdateObject(logicalRouterPort, uri, Collections.<String,String>emptyMap());
+    }
+    
+    public NiciraNvpList<NatRule> findNatRulesByLogicalRouterUuid(String logicalRouterUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat";
+        Map<String,String> params = new HashMap<String,String>();
+        params.put("fields","*");
+        
+    	return executeRetrieveObject(new TypeToken<NiciraNvpList<NatRule>>(){}.getType(), uri, params);
+    }
+    
+    public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceUuid(String logicalRouterUuid, String l3GatewayServiceUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/lport";
+    	Map<String,String> params = new HashMap<String,String>();
+    	params.put("fields", "*");
+    	params.put("attachment_gwsvc_uuid", l3GatewayServiceUuid);
+    	
+    	return executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalRouterPort>>(){}.getType(), uri, params);
+    }
+    
+    protected <T> void executeUpdateObject(T newObject, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
+        if (_host == null || _host.isEmpty() ||
+        		_adminuser == null || _adminuser.isEmpty() ||
+        		_adminpass == null || _adminpass.isEmpty()) {
+        	throw new NiciraNvpApiException("Hostname/credentials are null or empty");
         }
         
         Gson gson = new Gson();
         
-        PutMethod pm = new PutMethod(url);
+        PutMethod pm = (PutMethod) createMethod("put", uri);
         pm.setRequestHeader("Content-Type", "application/json");
         try {
             pm.setRequestEntity(new StringRequestEntity(
@@ -235,24 +357,23 @@ public class NiciraNvpApi {
         
         if (pm.getStatusCode() != HttpStatus.SC_OK) {
             String errorMessage = responseToErrorMessage(pm);
+            pm.releaseConnection();
             s_logger.error("Failed to update object : " + errorMessage);
             throw new NiciraNvpApiException("Failed to update object : " + errorMessage);
         }
-        
+        pm.releaseConnection();
     }
     
-    private <T> T executeCreateObject(T newObject, Type returnObjectType, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
-        String url;
-        try {
-            url = new URL("https", _host, uri).toString();
-        } catch (MalformedURLException e) {
-            s_logger.error("Unable to build Nicira API URL", e);
-            throw new NiciraNvpApiException("Unable to build Nicira API URL", e);
+    protected <T> T executeCreateObject(T newObject, Type returnObjectType, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
+        if (_host == null || _host.isEmpty() ||
+        		_adminuser == null || _adminuser.isEmpty() ||
+        		_adminpass == null || _adminpass.isEmpty()) {
+        	throw new NiciraNvpApiException("Hostname/credentials are null or empty");
         }
         
         Gson gson = new Gson();
         
-        PostMethod pm = new PostMethod(url);
+        PostMethod pm = (PostMethod) createMethod("post", uri);
         pm.setRequestHeader("Content-Type", "application/json");
         try {
             pm.setRequestEntity(new StringRequestEntity(
@@ -265,6 +386,7 @@ public class NiciraNvpApi {
         
         if (pm.getStatusCode() != HttpStatus.SC_CREATED) {
             String errorMessage = responseToErrorMessage(pm);
+            pm.releaseConnection();
             s_logger.error("Failed to create object : " + errorMessage);
             throw new NiciraNvpApiException("Failed to create object : " + errorMessage);
         }
@@ -274,42 +396,42 @@ public class NiciraNvpApi {
             result = (T)gson.fromJson(pm.getResponseBodyAsString(), TypeToken.get(newObject.getClass()).getType());
         } catch (IOException e) {
             throw new NiciraNvpApiException("Failed to decode json response body", e);
+        } finally {
+            pm.releaseConnection();
         }
         
         return result;        
     }
     
-    private void executeDeleteObject(String uri) throws NiciraNvpApiException {
-        String url;
-        try {
-            url = new URL("https", _host, uri).toString();
-        } catch (MalformedURLException e) {
-            s_logger.error("Unable to build Nicira API URL", e);
-            throw new NiciraNvpApiException("Unable to build Nicira API URL", e);
+    protected void executeDeleteObject(String uri) throws NiciraNvpApiException {
+        if (_host == null || _host.isEmpty() ||
+        		_adminuser == null || _adminuser.isEmpty() ||
+        		_adminpass == null || _adminpass.isEmpty()) {
+        	throw new NiciraNvpApiException("Hostname/credentials are null or empty");
         }
-            
-        DeleteMethod dm = new DeleteMethod(url);
+           
+        DeleteMethod dm = (DeleteMethod) createMethod("delete", uri);
         dm.setRequestHeader("Content-Type", "application/json");
                 
         executeMethod(dm);
         
         if (dm.getStatusCode() != HttpStatus.SC_NO_CONTENT) {
             String errorMessage = responseToErrorMessage(dm);
+            dm.releaseConnection();
             s_logger.error("Failed to delete object : " + errorMessage);
             throw new NiciraNvpApiException("Failed to delete object : " + errorMessage);
         }
+        dm.releaseConnection();
     }
     
-    private <T> T executeRetrieveObject(Type returnObjectType, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
-        String url;
-        try {
-            url = new URL("https", _host, uri).toString();
-        } catch (MalformedURLException e) {
-            s_logger.error("Unable to build Nicira API URL", e);
-            throw new NiciraNvpApiException("Unable to build Nicira API URL", e);
+    protected <T> T executeRetrieveObject(Type returnObjectType, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
+        if (_host == null || _host.isEmpty() ||
+        		_adminuser == null || _adminuser.isEmpty() ||
+        		_adminpass == null || _adminpass.isEmpty()) {
+        	throw new NiciraNvpApiException("Hostname/credentials are null or empty");
         }
             
-        GetMethod gm = new GetMethod(url);
+        GetMethod gm = (GetMethod) createMethod("get", uri);
         gm.setRequestHeader("Content-Type", "application/json");
         if (parameters != null && !parameters.isEmpty()) {
 	        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(parameters.size());
@@ -323,6 +445,7 @@ public class NiciraNvpApi {
         
         if (gm.getStatusCode() != HttpStatus.SC_OK) {
             String errorMessage = responseToErrorMessage(gm);
+            gm.releaseConnection();
             s_logger.error("Failed to retrieve object : " + errorMessage);
             throw new NiciraNvpApiException("Failed to retrieve object : " + errorMessage);
         }
@@ -334,24 +457,28 @@ public class NiciraNvpApi {
         } catch (IOException e) {
             s_logger.error("IOException while retrieving response body",e);
             throw new NiciraNvpApiException(e);
+        } finally {
+            gm.releaseConnection();
         }
-        
         return returnValue;
     }
     
-    private void executeMethod(HttpMethodBase method) throws NiciraNvpApiException {
+    protected void executeMethod(HttpMethodBase method) throws NiciraNvpApiException {
         try {
             _client.executeMethod(method);
             if (method.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+                method.releaseConnection();
                 // login and try again
                 login();
                 _client.executeMethod(method);
             }
         } catch (HttpException e) {
             s_logger.error("HttpException caught while trying to connect to the Nicira NVP Controller", e);
+            method.releaseConnection();
             throw new NiciraNvpApiException("API call to Nicira NVP Controller Failed", e);
         } catch (IOException e) {
             s_logger.error("IOException caught while trying to connect to the Nicira NVP Controller", e);
+            method.releaseConnection();
             throw new NiciraNvpApiException("API call to Nicira NVP Controller Failed", e);            
         }
     }

@@ -24,15 +24,16 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.user.OwnedBy;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="account_vlan_map")
-public class AccountVlanMapVO implements OwnedBy {
+public class AccountVlanMapVO implements OwnedBy, InternalIdentity {
 	    
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	@Column(name="id")
-	private Long id;
+	private long id;
 	
 	@Column(name="account_id")
 	private long accountId;
@@ -49,7 +50,7 @@ public class AccountVlanMapVO implements OwnedBy {
 		
 	}
 	
-	public Long getId() {
+	public long getId() {
 		return id;
 	}
 

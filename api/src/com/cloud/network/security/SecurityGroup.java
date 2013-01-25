@@ -16,10 +16,12 @@
 // under the License.
 package com.cloud.network.security;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface SecurityGroup extends ControlledEntity {
-    long getId();
+//FIXME: Annotation @doc("")
+public interface SecurityGroup extends ControlledEntity, InternalIdentity, Identity {
 
     String getName();
 

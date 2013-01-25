@@ -62,11 +62,7 @@ public class ClusterServiceServletImpl implements ClusterService {
         method.addParameter("stopOnError", pdu.isStopOnError() ? "1" : "0");
         method.addParameter("pduType", Integer.toString(pdu.getPduType()));
 
-        try {
-        	return executePostMethod(client, method);
-        } finally {
-        	method.releaseConnection();
-        }
+        return executePostMethod(client, method);
     }
 
     @Override
@@ -81,15 +77,11 @@ public class ClusterServiceServletImpl implements ClusterService {
         method.addParameter("method", Integer.toString(RemoteMethodConstants.METHOD_PING));
         method.addParameter("callingPeer", callingPeer);
         
-        try {
-	        String returnVal =  executePostMethod(client, method);
-	        if("true".equalsIgnoreCase(returnVal)) {
-	            return true;
-	        }
-	        return false;
-        } finally {
-        	method.releaseConnection();
+        String returnVal =  executePostMethod(client, method);
+        if("true".equalsIgnoreCase(returnVal)) {
+            return true;
         }
+        return false;
     }
 
     private String executePostMethod(HttpClient client, PostMethod method) {
@@ -115,6 +107,8 @@ public class ClusterServiceServletImpl implements ClusterService {
             s_logger.error("IOException from : " + _serviceUrl + ", method : " + method.getParameter("method"));
         } catch(Throwable e) {
             s_logger.error("Exception from : " + _serviceUrl + ", method : " + method.getParameter("method") + ", exception :", e);
+        } finally {
+            method.releaseConnection();
         }
 
         return result;

@@ -39,21 +39,21 @@
     </dependency>
     <dependency>
       <groupId>com.cloud.com.vmware</groupId>
-      <artifactId>vmware-vim</artifactId>
-      <version>1.0</version>
-      <scope>provided</scope>
+      <artifactId>vmware-vim25</artifactId>
+      <version>${cs.vmware.api.version}</version>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.cloud.com.vmware</groupId>
-      <artifactId>vmware-vim25</artifactId>
-      <version>1.0</version>
-      <scope>provided</scope>
+      <artifactId>vmware-vim</artifactId>
+      <version>${cs.vmware.api.version}</version>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.cloud.com.vmware</groupId>
       <artifactId>vmware-apputils</artifactId>
-      <version>1.0</version>
-      <scope>provided</scope>
+      <version>${cs.vmware.api.version}</version>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.axis</groupId>
@@ -64,6 +64,11 @@
       <groupId>org.apache.axis</groupId>
       <artifactId>axis-jaxrpc</artifactId>
       <version>${cs.axis.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>wsdl4j</groupId>
+      <artifactId>wsdl4j</artifactId>
+      <version>1.4</version>
     </dependency>
   </dependencies>
   <build>

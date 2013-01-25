@@ -29,6 +29,7 @@ import javax.persistence.Table;
 
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkTrafficType;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "physical_network_traffic_types")

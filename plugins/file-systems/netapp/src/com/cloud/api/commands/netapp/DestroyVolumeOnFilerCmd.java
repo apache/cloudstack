@@ -18,13 +18,10 @@ package com.cloud.api.commands.netapp;
 
 import java.rmi.ServerException;
 
+import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.APICommand;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -36,21 +33,21 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DeleteVolumeOnFilerCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="Destroy a Volume", responseObject = DeleteVolumeOnFilerCmdResponse.class)
+@APICommand(name = "destroyVolumeOnFiler", description="Destroy a Volume", responseObject = DeleteVolumeOnFilerCmdResponse.class)
 public class DestroyVolumeOnFilerCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DestroyVolumeOnFilerCmd.class.getName());
     private static final String s_name = "destroyvolumeresponse";
-    
+
     @Parameter(name=ApiConstants.AGGREGATE_NAME, type=CommandType.STRING, required = true, description="aggregate name.")
 	private String aggrName;
-    
+
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required = true, description="ip address.")
 	private String ipAddr;
-    
+
     @Parameter(name=ApiConstants.VOLUME_NAME, type=CommandType.STRING, required = true, description="volume name.")
 	private String volumeName;
-    
-    
+
+
 	@Override
 	public void execute() throws ResourceUnavailableException,
 			InsufficientCapacityException, ServerApiException,
@@ -63,13 +60,13 @@ public class DestroyVolumeOnFilerCmd extends BaseCmd {
     		response.setResponseName(getCommandName());
     		this.setResponseObject(response);
     	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
     	} catch (ResourceInUseException e) {
-    		throw new ServerApiException(BaseCmd.RESOURCE_IN_USE_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, e.toString());
     	} catch (ServerException e) {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
 		}
-		
+
 	}
 
 	@Override
@@ -83,5 +80,5 @@ public class DestroyVolumeOnFilerCmd extends BaseCmd {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-    
+
 }

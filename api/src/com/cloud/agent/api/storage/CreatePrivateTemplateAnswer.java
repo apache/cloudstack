@@ -29,7 +29,7 @@ public class CreatePrivateTemplateAnswer extends Answer {
 
     public CreatePrivateTemplateAnswer() {}
 
-    public CreatePrivateTemplateAnswer(Command cmd, boolean success, String result, String path, long virtualSize, 
+    public CreatePrivateTemplateAnswer(Command cmd, boolean success, String result, String path, long virtualSize,
             long physicalSize, String uniqueName, ImageFormat format) {
         super(cmd, success, result);
         _path = path;
@@ -42,23 +42,23 @@ public class CreatePrivateTemplateAnswer extends Answer {
     public CreatePrivateTemplateAnswer(Command cmd, boolean success, String result) {
         super(cmd, success, result);
     }
-    
+
     public String getPath() {
         return _path;
     }
-    
+
     public void setPath(String path) {
         _path = path;
     }
-    
+
     public long getVirtualSize() {
     	return _virtualSize;
     }
-    
+
     public void setVirtualSize(long virtualSize) {
     	_virtualSize = virtualSize;
     }
-    
+
     public void setphysicalSize(long _physicalSize) {
         this._physicalSize = _physicalSize;
     }
@@ -70,7 +70,7 @@ public class CreatePrivateTemplateAnswer extends Answer {
     public String getUniqueName() {
     	return _uniqueName;
     }
-    
+
     public ImageFormat getImageFormat() {
     	return _format;
     }

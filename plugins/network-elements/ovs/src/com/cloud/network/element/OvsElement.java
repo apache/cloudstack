@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.element;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,13 +40,13 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = NetworkElement.class)
+@Local(value = {NetworkElement.class})
 public class OvsElement extends AdapterBase implements NetworkElement {
     @Inject
     OvsTunnelManager _ovsTunnelMgr;
 
     @Override
-    public boolean destroy(Network network)
+    public boolean destroy(Network network, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }
@@ -65,18 +64,18 @@ public class OvsElement extends AdapterBase implements NetworkElement {
     @Override
     public boolean implement(Network network, NetworkOffering offering,
             DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
+                    throws ConcurrentOperationException, ResourceUnavailableException,
+                    InsufficientCapacityException {
         //Consider actually implementing the network here
-    	return true;
+        return true;
     }
 
     @Override
     public boolean prepare(Network network, NicProfile nic,
             VirtualMachineProfile<? extends VirtualMachine> vm,
             DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
+                    throws ConcurrentOperationException, ResourceUnavailableException,
+                    InsufficientCapacityException {
         if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vswitch) {
             return true;
         }
@@ -116,7 +115,7 @@ public class OvsElement extends AdapterBase implements NetworkElement {
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-    	return true;
+        return true;
     }
 
     @Override

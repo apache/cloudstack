@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.api.commands;
@@ -19,17 +19,12 @@ package com.cloud.api.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.BaseListCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.PlugService;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ListResponse;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.api.response.SrxFirewallResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -40,7 +35,7 @@ import com.cloud.network.ExternalFirewallDeviceVO;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Implementation(responseObject=SrxFirewallResponse.class, description="lists SRX firewall devices in a physical network")
+@APICommand(name = "listSrxFirewalls", responseObject=SrxFirewallResponse.class, description="lists SRX firewall devices in a physical network")
 public class ListSrxFirewallsCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListSrxFirewallsCmd.class.getName());
@@ -51,12 +46,12 @@ public class ListSrxFirewallsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID")
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
+            description="the Physical Network ID")
     private Long physicalNetworkId;
 
-    @IdentityMapper(entityTableName="external_firewall_devices")
-    @Parameter(name=ApiConstants.FIREWALL_DEVICE_ID, type=CommandType.LONG,  description="SRX firewall device ID")
+    @Parameter(name=ApiConstants.FIREWALL_DEVICE_ID, type=CommandType.UUID, entityType = SrxFirewallResponse.class,
+            description="SRX firewall device ID")
     private Long fwDeviceId;
 
     /////////////////////////////////////////////////////
@@ -93,9 +88,9 @@ public class ListSrxFirewallsCmd extends BaseListCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }  catch (InvalidParameterValueException invalidParamExcp) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
 

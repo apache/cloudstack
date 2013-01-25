@@ -58,6 +58,7 @@ class MarvinPlugin(Plugin):
         deploy = deployDataCenter.deployDataCenters(options.config) 
         deploy.loadCfg() if options.load else deploy.deploy()
         self.setClient(deploy.testClient)
+        self.setConfig(deploy.getCfg())
         
         cfg = nose.config.Config()
         cfg.logStream = self.result_stream
@@ -101,8 +102,12 @@ class MarvinPlugin(Plugin):
         self._injectClients(cls)
         
     def setClient(self, client):
-        if client:
+        if client is not None:
             self.testclient = client
+
+    def setConfig(self, config):
+        if config is not None:
+            self.config = config
 
     def _injectClients(self, test):
         testcaselogger = logging.getLogger("testclient.testcase.%s" % test.__name__)
@@ -111,8 +116,9 @@ class MarvinPlugin(Plugin):
         testcaselogger.setLevel(logging.DEBUG)
         
         setattr(test, "testClient", self.testclient)
+        setattr(test, "config", self.config)
         setattr(test, "debug", partial(testCaseLogger, logger=testcaselogger))
         setattr(test, "clstestclient", self.testclient)
-        if hasattr(test, "UserName"):
-            self.testclient.createNewApiClient(test.UserName, test.DomainName, test.AcctType)
+        if hasattr(test, "user"): #when the class-level attr applied. all test runs as 'user'
+            self.testclient.createUserApiClient(test.UserName, test.DomainName, test.AcctType)
             

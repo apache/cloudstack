@@ -24,13 +24,13 @@ import com.cloud.utils.SerialVersionUID;
  * trying to start.
  */
 public class InsufficientServerCapacityException extends InsufficientCapacityException {
-    
+
     private static final long serialVersionUID = SerialVersionUID.InsufficientServerCapacityException;
-    
+
     public InsufficientServerCapacityException(String msg, Long clusterId) {
         this(msg, Cluster.class, clusterId);
     }
-    
+
     public InsufficientServerCapacityException(String msg, Class<?> scope, Long id) {
         super(msg, scope, id);
     }

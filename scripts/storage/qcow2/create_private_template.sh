@@ -31,7 +31,13 @@ create_template() {
   local fspath=$1
   local destpath=$2
 
-  qemu-img convert -O qcow2 /$fspath  $destpath
+  # if backing image exists, we need to combine them, otherwise 
+  # copy the image to preserve snapshots/compression
+  if $qemu_img info "$tmpltimg" | grep -q backing; then
+    qemu-img convert -O qcow2 /$fspath  $destpath
+  else
+    cp -f /$fspath $destpath
+  fi
 
   if [ $? -gt 0  ]; then
     printf " Failed to export template  $destpath\n" >&2

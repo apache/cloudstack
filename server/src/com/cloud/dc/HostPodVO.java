@@ -28,14 +28,15 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "host_pod_ref")
-public class HostPodVO implements Pod, Identity {
+public class HostPodVO implements Pod {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	long id;
@@ -45,7 +46,7 @@ public class HostPodVO implements Pod, Identity {
 
 	@Column(name = "data_center_id")
 	private long dataCenterId;
-	
+
 	@Column(name = "gateway")
 	private String gateway;
 
@@ -57,14 +58,14 @@ public class HostPodVO implements Pod, Identity {
 
 	@Column(name = "description")
 	private String description;
-	
+
     @Column(name="allocation_state")
     @Enumerated(value=EnumType.STRING)
     AllocationState allocationState;
 
 	@Column(name = "external_dhcp")
 	private Boolean externalDhcp;
-	
+
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -128,12 +129,12 @@ public class HostPodVO implements Pod, Identity {
 	public void setCidrSize(int cidrSize) {
 		this.cidrSize = cidrSize;
 	}
-	
+
 	@Override
     public String getGateway() {
 		return gateway;
 	}
-	
+
 	public void setGateway(String gateway) {
 		this.gateway = gateway;
 	}
@@ -145,33 +146,33 @@ public class HostPodVO implements Pod, Identity {
 	public void setDescription(String description) {
 		this.description = description;
 	}
-	
+
     public AllocationState getAllocationState() {
     	return allocationState;
     }
-    
+
     public void setAllocationState(AllocationState allocationState) {
 		this.allocationState = allocationState;
     }
-	
+
 	// Use for comparisons only.
 	public HostPodVO(Long id) {
 	    this.id = id;
 	}
-	
+
 	@Override
     public int hashCode() {
 	    return  NumbersUtil.hash(id);
 	}
-	
+
 	public boolean getExternalDhcp() {
 		return externalDhcp;
 	}
-	
+
 	public void setExternalDhcp(boolean use) {
 		externalDhcp = use;
 	}
-	
+
 	@Override
     public boolean equals(Object obj) {
 	    if (obj instanceof HostPodVO) {
@@ -180,16 +181,16 @@ public class HostPodVO implements Pod, Identity {
 	        return false;
 	    }
 	}
-	
+
     public Date getRemoved() {
         return removed;
     }
-    
+
     @Override
     public String getUuid() {
     	return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }

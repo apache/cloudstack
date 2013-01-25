@@ -55,6 +55,7 @@ import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
@@ -64,6 +65,7 @@ import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
@@ -75,7 +77,6 @@ public class JuniperSrxResource implements ServerResource {
 
     private String _name;
     private String _zoneId;
-    private String _physicalNetworkId;
     private String _ip;
     private String _username;
     private String _password;
@@ -89,6 +90,7 @@ public class JuniperSrxResource implements ServerResource {
     private Integer _timeoutInSeconds;
     private String _publicZone;
     private String _privateZone;
+    private String _publicZoneInputFilterName;
     private String _publicInterface;
     private String _usageInterface;
     private String _privateInterface;
@@ -159,6 +161,9 @@ public class JuniperSrxResource implements ServerResource {
         ACCESS_PROFILE_ADD("access-profile-add.xml"),
         ACCESS_PROFILE_GETONE("access-profile-getone.xml"),
         ACCESS_PROFILE_GETALL("access-profile-getall.xml"),
+        FIREWALL_FILTER_TERM_ADD("firewall-filter-term-add.xml"),
+        FIREWALL_FILTER_TERM_GETONE("firewall-filter-term-getone.xml"),
+        TEMPLATE_ENTRY("template-entry.xml"),
         OPEN_CONFIGURATION("open-configuration.xml"),
         CLOSE_CONFIGURATION("close-configuration.xml"),
         COMMIT("commit.xml"), 
@@ -231,12 +236,74 @@ public class JuniperSrxResource implements ServerResource {
         }
     }	
 
+    public class FirewallFilterTerm {
+        private String name;
+        private List<String> sourceCidrs;
+        private String destIp;
+        private String portRange;
+        private String protocol;
+        private String icmpType;
+        private String icmpCode;
+        private String countName;
+        
+        private FirewallFilterTerm(String name, List<String> sourceCidrs, String destIp, String protocol, Integer startPort, Integer endPort,
+                Integer icmpType, Integer icmpCode, String countName) {
+            this.name = name;
+            this.sourceCidrs = sourceCidrs;
+            this.destIp = destIp;
+            this.protocol = protocol;
+            
+            if (protocol.equals("tcp") || protocol.equals("udp")) {
+                this.portRange = String.valueOf(startPort) + "-" + String.valueOf(endPort);
+            } else if (protocol.equals("icmp")) {
+                this.icmpType = String.valueOf(icmpType);
+                this.icmpCode = String.valueOf(icmpCode);
+            } else {
+                assert protocol.equals("any");
+            }
+            this.countName = countName;
+            
+        }
+
+        public String getName() {
+            return name;
+        }
+        
+        public List<String> getSourceCidrs() {
+            return sourceCidrs;
+        }
+        
+        public String getDestIp() {
+            return destIp;
+        }
+        
+        public String getPortRange() {
+            return portRange;
+        }
+        
+        public String getProtocol() {
+            return protocol;
+        }
+        
+        public String getIcmpType() {
+            return icmpType;
+        }
+        
+        public String getIcmpCode() {
+            return icmpCode;
+        }
+        
+        public String getCountName() {
+            return countName;
+        }
+    }	
+
     private enum SrxCommand {
         LOGIN, OPEN_CONFIGURATION, CLOSE_CONFIGURATION, COMMIT, ROLLBACK, CHECK_IF_EXISTS, CHECK_IF_IN_USE, ADD, DELETE, GET_ALL;
     }
 
     private enum Protocol {
-        tcp, udp, any;
+        tcp, udp, icmp, any;
     }
 
     private enum RuleMatchCondition {
@@ -277,6 +344,8 @@ public class JuniperSrxResource implements ServerResource {
             return execute((SetStaticNatRulesCommand) cmd);
         } else if (cmd instanceof SetPortForwardingRulesCommand) {
             return execute((SetPortForwardingRulesCommand) cmd);
+        } else if (cmd instanceof SetFirewallRulesCommand) {
+            return execute((SetFirewallRulesCommand) cmd);
         } else if (cmd instanceof ExternalNetworkResourceUsageCommand) {
             return execute((ExternalNetworkResourceUsageCommand) cmd);
         } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
@@ -300,11 +369,6 @@ public class JuniperSrxResource implements ServerResource {
                 throw new ConfigurationException("Unable to find zone");
             }
 
-            _physicalNetworkId = (String) params.get("physicalNetworkId");
-            if (_physicalNetworkId == null) {
-                throw new ConfigurationException("Unable to find physical network id in the configuration parameters");
-            }
-
             _ip = (String) params.get("ip");
             if (_ip == null) {
                 throw new ConfigurationException("Unable to find IP");
@@ -324,8 +388,6 @@ public class JuniperSrxResource implements ServerResource {
             if (_publicInterface == null) {
                 throw new ConfigurationException("Unable to find public interface.");
             }
-
-            _usageInterface = (String) params.get("usageinterface");
 
             _privateInterface = (String) params.get("privateinterface");
             if (_privateInterface == null) {
@@ -364,6 +426,8 @@ public class JuniperSrxResource implements ServerResource {
                 throw new ConfigurationException("Unable to open a connection to the SRX.");
             }
 
+            _publicZoneInputFilterName = _publicZone;
+            
             _usageFilterVlanInput = new UsageFilter("vlan-input", null, "vlan-input");
             _usageFilterVlanOutput = new UsageFilter("vlan-output", null, "vlan-output");
             _usageFilterIPInput = new UsageFilter(_publicZone, "destination-address", "-i");
@@ -383,7 +447,7 @@ public class JuniperSrxResource implements ServerResource {
         cmd.setPod("");
         cmd.setPrivateIpAddress(_ip);
         cmd.setStorageIpAddress("");
-        cmd.setVersion("");
+        cmd.setVersion(JuniperSrxResource.class.getPackage().getImplementationVersion());
         cmd.setGuid(_guid);
         return new StartupCommand[]{cmd};
     }
@@ -712,6 +776,50 @@ public class JuniperSrxResource implements ServerResource {
         s_logger.debug(msg);
     }
 
+
+    /* security policies */
+    private synchronized Answer execute(SetFirewallRulesCommand cmd) {
+        refreshSrxConnection();
+        return execute(cmd, _numRetries);
+    }
+    
+    private Answer execute(SetFirewallRulesCommand cmd, int numRetries) {
+        FirewallRuleTO[] rules = cmd.getRules();
+        try {
+            openConfiguration();
+
+            for (FirewallRuleTO rule : rules) {
+                int startPort = 0, endPort = 0;
+                if (rule.getSrcPortRange() != null) {
+                    startPort = rule.getSrcPortRange()[0];
+                    endPort = rule.getSrcPortRange()[1];
+                }
+                FirewallFilterTerm term = new FirewallFilterTerm(genIpIdentifier(rule.getSrcIp()) + "-" + String.valueOf(rule.getId()), rule.getSourceCidrList(), 
+                        rule.getSrcIp(), rule.getProtocol(), startPort, endPort,
+                        rule.getIcmpType(), rule.getIcmpCode(), genIpIdentifier(rule.getSrcIp()) + _usageFilterIPInput.getCounterIdentifier());
+                if (!rule.revoked()) {
+                    manageFirewallFilter(SrxCommand.ADD, term, _publicZoneInputFilterName);
+                } else {
+                    manageFirewallFilter(SrxCommand.DELETE, term, _publicZoneInputFilterName);
+                }
+            }
+                
+            commitConfiguration();
+            return new Answer(cmd);
+        } catch (ExecutionException e) {
+            s_logger.error(e);
+            closeConfiguration();
+
+            if (numRetries > 0 && refreshSrxConnection()) {
+                int numRetriesRemaining = numRetries - 1;
+                s_logger.debug("Retrying SetFirewallRulesCommand. Number of retries remaining: " + numRetriesRemaining);
+                return execute(cmd, numRetriesRemaining);
+            } else {
+                return new Answer(cmd, e);
+            }
+        }
+    }
+
     /*
      * Static NAT
      */
@@ -766,7 +874,6 @@ public class JuniperSrxResource implements ServerResource {
     private void addStaticNatRule(Long publicVlanTag, String publicIp, String privateIp, List<FirewallRuleTO> rules) throws ExecutionException {
         manageProxyArp(SrxCommand.ADD, publicVlanTag, publicIp);
         manageStaticNatRule(SrxCommand.ADD, publicIp, privateIp);
-        manageUsageFilter(SrxCommand.ADD, _usageFilterIPInput, publicIp, null, genIpFilterTermName(publicIp));		
         manageAddressBookEntry(SrxCommand.ADD, _privateZone, privateIp, null);
 
         // Add a new security policy with the current set of applications
@@ -778,7 +885,6 @@ public class JuniperSrxResource implements ServerResource {
     private void removeStaticNatRule(Long publicVlanTag, String publicIp, String privateIp) throws ExecutionException {	    
         manageStaticNatRule(SrxCommand.DELETE, publicIp, privateIp);
         manageProxyArp(SrxCommand.DELETE, publicVlanTag, publicIp);   
-        manageUsageFilter(SrxCommand.DELETE, _usageFilterIPInput, publicIp, null, genIpFilterTermName(publicIp));
 
         // Remove any existing security policy and clean up applications
         removeSecurityPolicyAndApplications(SecurityPolicyType.STATIC_NAT, privateIp);
@@ -2781,6 +2887,108 @@ public class JuniperSrxResource implements ServerResource {
         }
     }	
 
+    private String genNameValueEntry(String name, String value) {
+        String xml = SrxXml.TEMPLATE_ENTRY.getXml();
+        xml = replaceXmlValue(xml, "name", name);
+        xml = replaceXmlValue(xml, "value", value);
+        return xml;
+    }
+    
+    private String genMultipleEntries(String name, List<String> values) {
+        String result = "";
+        for (String value : values) {
+            result = result + genNameValueEntry(name, value);
+        }
+        return result;
+    }
+    
+    private String genPortRangeEntry(String protocol, String portRange) {
+        String result = "";
+        result = result + genNameValueEntry("protocol", protocol);
+        result = result + genNameValueEntry("destination-port", portRange);
+        return result;
+    }
+    
+    private String genIcmpEntries(String icmpType, String icmpCode) {
+        String result = "";
+        result = result + genNameValueEntry("protocol", "icmp");
+        if (icmpType.equals("-1")) {
+            result = result + genNameValueEntry("icmp-type", "0-255");
+        } else {
+            result = result + genNameValueEntry("icmp-type", icmpType);
+        }
+        if (icmpCode.equals("-1")) {
+            result = result + genNameValueEntry("icmp-code", "0-255");
+        } else {
+            result = result + genNameValueEntry("icmp-code", icmpCode);
+        }
+        return result;
+    }
+    
+    private boolean manageFirewallFilter(SrxCommand command, FirewallFilterTerm term, String filterName) throws ExecutionException {	    	    
+        String xml;
+
+        switch(command) {
+
+        case CHECK_IF_EXISTS:
+            xml = SrxXml.FIREWALL_FILTER_TERM_GETONE.getXml();
+            xml = setDelete(xml, false);
+            xml = replaceXmlValue(xml, "filter-name", filterName);
+            xml = replaceXmlValue(xml, "term-name", term.getName());
+            return sendRequestAndCheckResponse(command, xml, "name", term.getName());
+
+        case ADD:	
+            if (manageFirewallFilter(SrxCommand.CHECK_IF_EXISTS, term, filterName)) {
+                return true;
+            }
+
+            xml = SrxXml.FIREWALL_FILTER_TERM_ADD.getXml();
+            
+            xml = replaceXmlValue(xml, "filter-name", filterName);
+            xml = replaceXmlValue(xml, "term-name", term.getName());
+            xml = replaceXmlValue(xml, "source-address-entries", genMultipleEntries("source-address", term.getSourceCidrs()));
+            xml = replaceXmlValue(xml, "dest-ip-address", term.getDestIp());
+            
+            String protocol = term.getProtocol();
+            if (protocol.equals("tcp") || protocol.equals("udp")) {
+                xml = replaceXmlValue(xml, "protocol-options", genPortRangeEntry(protocol, term.getPortRange()));
+            } else if (protocol.equals("icmp")) {
+                xml = replaceXmlValue(xml, "protocol-options", genIcmpEntries(term.getIcmpType(), term.getIcmpCode()));
+            } else {
+                assert protocol.equals("any");
+                xml = replaceXmlValue(xml, "protocol-options", "");
+            }
+            xml = replaceXmlValue(xml, "count-name", term.getCountName());
+
+            if (!sendRequestAndCheckResponse(command, xml)) {
+                throw new ExecutionException("Failed to add firewall filter: " + term.getName());
+            } else {
+                return true;
+            }
+
+        case DELETE:
+            if (!manageFirewallFilter(SrxCommand.CHECK_IF_EXISTS, term, filterName)) {
+                return true;
+            }
+
+            xml = SrxXml.FIREWALL_FILTER_TERM_GETONE.getXml();
+            xml = setDelete(xml, true);
+            xml = replaceXmlValue(xml, "filter-name", filterName);
+            xml = replaceXmlValue(xml, "term-name", term.getName());
+
+            if (!sendRequestAndCheckResponse(command, xml)) {
+                throw new ExecutionException("Failed to delete firewall filter: " + term.getName());
+            } else {
+                return true;
+            }
+
+        default:
+            s_logger.debug("Unrecognized command.");
+            return false;
+
+        }
+    }	
+
     /*
      * Usage	
      */
@@ -2913,6 +3121,10 @@ public class JuniperSrxResource implements ServerResource {
         }	    	    
 
         UsageFilter filter = getUsageFilter(counterName);	    
+        if (filter == null) {
+            s_logger.debug("Failed to parse counter name in usage answer: " + counterName);
+            return;
+        }
         String usageAnswerKey = getUsageAnswerKey(filter, counterName);	    
         Map<String, long[]> bytesMap = getBytesMap(answer, filter, usageAnswerKey);
         updateBytesMap(bytesMap, filter, usageAnswerKey, byteCount);          
@@ -2981,6 +3193,11 @@ public class JuniperSrxResource implements ServerResource {
     }
 
     private boolean checkResponse(String xmlResponse, boolean errorKeyAndValue, String key, String value) {
+        if (xmlResponse == null) {
+            s_logger.error("Failed to communicate with SRX!");
+            return false;
+        }
+
         if (!xmlResponse.contains("authentication-response")) {
             s_logger.debug("Checking response: " + xmlResponse);
         } else {

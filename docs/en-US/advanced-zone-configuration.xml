@@ -84,10 +84,6 @@
       <para>These traffic labels will be defined only for the hypervisor selected for the first
         cluster. For all other hypervisors, the labels can be configured after the zone is
         created.</para>
-      <para>(VMware only) If you have enabled Nexus dvSwitch in the environment, you must specify
-        the corresponding Ethernet port profile names as network traffic label for each traffic type
-        on the physical network. For more information on Nexus dvSwitch, see Configuring a vSphere
-        Cluster with Nexus 1000v Virtual Switch.</para>
     </listitem>
     <listitem>
       <para>Click Next.</para>
@@ -184,9 +180,9 @@
         <listitem>
           <para>KVM Installation and Configuration</para>
         </listitem>
-        <listitem>
+        <!-- <listitem>
           <para>Oracle VM (OVM) Installation and Configuration</para>
-        </listitem>
+      </listitem> -->
       </itemizedlist>
       <para>To configure the first host, enter the following, then click Next:</para>
       <itemizedlist>
@@ -223,7 +219,7 @@
         </listitem>
         <listitem>
           <para><emphasis role="bold">Protocol.</emphasis> For XenServer, choose either NFS, iSCSI,
-            or PreSetup. For KVM, choose NFS or SharedMountPoint. For vSphere choose either VMFS
+            or PreSetup. For KVM, choose NFS, SharedMountPoint, CLVM, and RBD. For vSphere choose either VMFS
             (iSCSI or FiberChannel) or NFS. The remaining fields in the screen vary depending on
             what you choose here.</para>
           <informaltable frame="all">

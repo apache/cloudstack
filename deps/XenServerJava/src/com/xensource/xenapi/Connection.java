@@ -1,18 +1,18 @@
 /* Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -54,11 +54,11 @@ public class Connection
     /**
      * The version of the bindings that this class belongs to.
      */
-    public static final String BINDINGS_VERSION = "5.6.100-1";
-    
+    public static final String BINDINGS_VERSION = "6.1.0-1";
+
     /**
      * true if the connection is to the Rio edition of XenServer. Certain function calls are not allowed.
-     * 
+     *
      * @deprecated Use getAPIVersion() instead.
      */
     @Deprecated
@@ -91,12 +91,12 @@ public class Connection
     /**
      * Creates a connection to a particular server using a given username and password. This object can then be passed
      * in to any other API calls.
-     * 
+     *
      * This constructor calls Session.loginWithPassword, passing itself as the first parameter.
-     * 
+     *
      * When this constructor is used, a call to dispose() (also called in the Connection's finalizer) will attempt a
      * Session.logout on this connection.
-     * 
+     *
      * @deprecated Use a constructor that takes a URL as the first parameter instead.
      */
     @Deprecated
@@ -155,10 +155,10 @@ public class Connection
     /**
      * Creates a connection to a particular server using a given username and password. This object can then be passed
      * in to any other API calls.
-     * 
+     *
      * Note this constructor does NOT call Session.loginWithPassword; the programmer is responsible for calling it,
      * passing the Connection as a parameter. No attempt to connect to the server is made until login is called.
-     * 
+     *
      * When this constructor is used, a call to dispose() will do nothing. The programmer is responsible for manually
      * logging out the Session.
      */
@@ -172,7 +172,7 @@ public class Connection
     /**
      * Creates a connection to a particular server using a given username and password. This object can then be passed
      * in to any other API calls.
-     * 
+     *
      * The additional sessionReference parameter must be a reference to a logged-in Session. Any method calls on this
      * Connection will use it. This constructor does not call Session.loginWithPassword, and dispose() on the resulting
      * Connection object does not call Session.logout. The programmer is responsible for ensuring the Session is logged
@@ -285,7 +285,7 @@ public class Connection
     }
 
     /*
-     * Because the binding calls are constructing their own parameter lists, they need to be able to get to 
+     * Because the binding calls are constructing their own parameter lists, they need to be able to get to
      * the session reference directly. This is all rather ugly and needs redone
      * Changed to public to allow easier integration with HTTP-level streaming interface,
      * see CA-15447
@@ -310,17 +310,17 @@ public class Connection
                 response.get("Status").equals("Success"))
             {
                 // Store the Session reference and ask the server what the
-		// API version it's using is.
+                // API version it's using is.
                 Session session = Types.toSession(response.get("Value"));
-		sessionReference = session.ref;
+                sessionReference = session.ref;
                 setAPIVersion(session);
             }
             else if (method_call.equals("session.slave_local_login_with_password") &&
                      response.get("Status").equals("Success"))
             {
-                // Store the Session reference and assume API version 1.2.
+                // Store the Session reference and assume the latest API version.
                 sessionReference = Types.toSession(response.get("Value")).ref;
-                apiVersion = APIVersion.API_1_2;
+                apiVersion = APIVersion.latest();
             }
             else if (method_call.equals("session.logout"))
             {

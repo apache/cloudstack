@@ -56,6 +56,7 @@
       <includes>
         <include>log4j-cloud.xml</include>
 	<include>consoleproxy.properties</include>
+	<include>agent.properties</include>
       </includes>
     </fileSet>
     <fileSet>

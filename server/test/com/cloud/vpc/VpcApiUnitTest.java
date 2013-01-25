@@ -193,7 +193,7 @@ public class VpcApiUnitTest extends TestCase{
     
     protected void destroyVpc() {
         try {
-            _vpcService.destroyVpc(_vpcService.getVpc(1));
+            _vpcService.destroyVpc(_vpcService.getVpc(1), new AccountVO(), 1L);
         } catch (Exception ex) {
             s_logger.error("Destroy VPC TEST FAILED due to exc ", ex);
         }

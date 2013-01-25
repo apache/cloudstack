@@ -36,7 +36,6 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkService;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
@@ -61,11 +60,13 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
-@Local(value = NetworkElement.class)
+@Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
+        DhcpServiceProvider.class, UserDataServiceProvider.class, 
+        StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
+        PortForwardingServiceProvider.class, IpDeployer.class, VpcProvider.class,
+        Site2SiteVpnServiceProvider.class, NetworkACLServiceProvider.class})
 public class VpcVirtualRouterElement extends VirtualRouterElement implements VpcProvider, Site2SiteVpnServiceProvider, NetworkACLServiceProvider{
     private static final Logger s_logger = Logger.getLogger(VpcVirtualRouterElement.class);
-    @Inject 
-    NetworkService _ntwkService;
     @Inject
     VpcManager _vpcMgr;
     @Inject
@@ -121,14 +122,14 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
     
     @Override
-    public boolean shutdownVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownVpc(Vpc vpc, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.listByVpcId(vpc.getId());
         if (routers == null || routers.isEmpty()) {
             return true;
         }
         boolean result = true;
         for (DomainRouterVO router : routers) {
-            result = result && (_routerMgr.destroyRouter(router.getId()) != null);
+            result = result && (_routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null);
         }
         return result;
     }
@@ -234,7 +235,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         List<? extends VirtualRouter> routers = _routerDao.listByVpcId(vpcId);
         for (VirtualRouter router : routers) {
             //1) Check if router is already a part of the network
-            if (!_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
+            if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
                 s_logger.debug("Router " + router + " is not a part the network " + network);
                 continue;
             }
@@ -251,7 +252,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
 
     @Override
-    public boolean destroy(Network config) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroy(Network config, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         boolean success = true;
         Long vpcId = config.getVpcId();
         if (vpcId == null) {
@@ -262,7 +263,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         List<? extends VirtualRouter> routers = _routerDao.listByVpcId(vpcId);
         for (VirtualRouter router : routers) {
             //1) Check if router is already a part of the network
-            if (!_ntwkService.isVmPartOfNetwork(router.getId(), config.getId())) {
+            if (!_networkMgr.isVmPartOfNetwork(router.getId(), config.getId())) {
                 s_logger.debug("Router " + router + " is not a part the network " + config);
                 continue;
             }
@@ -304,7 +305,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         Map<Capability, String> networkACLCapabilities = new HashMap<Capability, String>();
         networkACLCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
         capabilities.put(Service.NetworkACL, networkACLCapabilities);
-        
+
         return capabilities;
     }
     

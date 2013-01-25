@@ -19,12 +19,12 @@ package com.cloud.network.rules;
 import java.util.List;
 
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  */
-public interface StickinessPolicy {
-
-    public long getId();
+public interface StickinessPolicy extends InternalIdentity, Identity {
 
     public long getLoadBalancerId();
 
@@ -38,5 +38,4 @@ public interface StickinessPolicy {
 
     public List<Pair<String, String>> getParams(); /* get params in Map <string,String> format */
 
-    public String getUuid();
 }

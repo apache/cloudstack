@@ -18,7 +18,6 @@ package com.cloud.storage.dao;
 
 import java.util.List;
 
-import com.cloud.host.HostVO;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.utils.db.GenericDao;
 

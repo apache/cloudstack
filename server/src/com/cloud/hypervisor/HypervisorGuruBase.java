@@ -62,6 +62,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setIsolationuri(profile.getIsolationUri());
         to.setNetworkRateMbps(profile.getNetworkRate());
         to.setName(profile.getName());
+        to.setSecurityGroupEnabled(profile.isSecurityGroupEnabled());
         
         // Workaround to make sure the TO has the UUID we need for Niciri integration
         NicVO nicVO = _nicDao.findById(profile.getId());

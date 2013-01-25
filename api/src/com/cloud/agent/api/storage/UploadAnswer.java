@@ -24,7 +24,7 @@ import com.cloud.storage.Upload;
 
 public class UploadAnswer extends Answer {
 
-	
+
 	private String jobId;
 	private int uploadPct;
 	private String errorString;
@@ -32,29 +32,29 @@ public class UploadAnswer extends Answer {
 	private String uploadPath;
 	private String installPath;
 	public Long templateSize = 0L;
-	
+
 	public int getUploadPct() {
 		return uploadPct;
 	}
 	public String getErrorString() {
 		return errorString;
 	}
-	
+
 	public String getUploadStatusString() {
 		return uploadStatus.toString();
 	}
-	
+
 	public Upload.Status getUploadStatus() {
 		return uploadStatus;
 	}
-	
+
 	public String getUploadPath() {
 		return uploadPath;
 	}
 	protected UploadAnswer() {
-		
+
 	}
-		
+
 	public void setErrorString(String errorString) {
         this.errorString = errorString;
     }
@@ -64,7 +64,7 @@ public class UploadAnswer extends Answer {
 	public void setJobId(String jobId) {
 		this.jobId = jobId;
 	}
-	
+
 	public UploadAnswer(String jobId, int uploadPct, String errorString,
 			Upload.Status uploadStatus, String fileSystemPath, String installPath, long templateSize) {
 		super();
@@ -87,7 +87,7 @@ public class UploadAnswer extends Answer {
         this.uploadPath = fileSystemPath;
         this.installPath = installPath;
     }
-		
+
 	private static String fixPath(String path){
 		if (path == null) {
             return path;
@@ -100,11 +100,11 @@ public class UploadAnswer extends Answer {
 		}
 		return path;
 	}
-	
+
 	public void setUploadStatus(Upload.Status uploadStatus) {
 		this.uploadStatus = uploadStatus;
 	}
-	
+
 	public String getInstallPath() {
 		return installPath;
 	}
@@ -115,9 +115,9 @@ public class UploadAnswer extends Answer {
 	public void setTemplateSize(long templateSize) {
 		this.templateSize = templateSize;
 	}
-	
+
 	public Long getTemplateSize() {
 		return templateSize;
 	}
-	
+
 }

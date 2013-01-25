@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.async;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -24,24 +26,26 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 @Entity
 @Table(name="sync_queue_item")
-public class SyncQueueItemVO implements SyncQueueItem{
+public class SyncQueueItemVO implements SyncQueueItem, InternalIdentity {
 
-	@Id
+    @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private Long id = null;
-	
+    
     @Column(name="queue_id")
-	private Long queueId;
-	
+    private Long queueId;
+    
     @Column(name="content_type")
-	private String contentType;
-	
+    private String contentType;
+    
     @Column(name="content_id")
-	private Long contentId;
+    private Long contentId;
     
     @Column(name="queue_proc_msid")
     private Long lastProcessMsid;
@@ -49,76 +53,89 @@ public class SyncQueueItemVO implements SyncQueueItem{
     @Column(name="queue_proc_number")
     private Long lastProcessNumber;
     
-	@Column(name="created")
-	private Date created;
+    @Column(name="queue_proc_time")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date lastProcessTime;
     
-	public Long getId() {
-		return id;
-	}
+    @Column(name="created")
+    private Date created;
+    
+    public long getId() {
+        return id;
+    }
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public Long getQueueId() {
-		return queueId;
-	}
+    public Long getQueueId() {
+        return queueId;
+    }
 
-	public void setQueueId(Long queueId) {
-		this.queueId = queueId;
-	}
+    public void setQueueId(Long queueId) {
+        this.queueId = queueId;
+    }
 
-	@Override
-	public String getContentType() {
-		return contentType;
-	}
+    @Override
+    public String getContentType() {
+        return contentType;
+    }
 
-	public void setContentType(String contentType) {
-		this.contentType = contentType;
-	}
-	
-	@Override
-	public Long getContentId() {
-		return contentId;
-	}
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+    
+    @Override
+    public Long getContentId() {
+        return contentId;
+    }
 
-	public void setContentId(Long contentId) {
-		this.contentId = contentId;
-	}
+    public void setContentId(Long contentId) {
+        this.contentId = contentId;
+    }
 
-	public Long getLastProcessMsid() {
-		return lastProcessMsid;
-	}
+    public Long getLastProcessMsid() {
+        return lastProcessMsid;
+    }
 
-	public void setLastProcessMsid(Long lastProcessMsid) {
-		this.lastProcessMsid = lastProcessMsid;
-	}
-	
+    public void setLastProcessMsid(Long lastProcessMsid) {
+        this.lastProcessMsid = lastProcessMsid;
+    }
+
     public Long getLastProcessNumber() {
-		return lastProcessNumber;
-	}
+        return lastProcessNumber;
+    }
 
-	public void setLastProcessNumber(Long lastProcessNumber) {
-		this.lastProcessNumber = lastProcessNumber;
-	}
+    public void setLastProcessNumber(Long lastProcessNumber) {
+        this.lastProcessNumber = lastProcessNumber;
+    }
 
-	public Date getCreated() {
-		return created;
-	}
+    public Date getCreated() {
+        return created;
+    }
 
-	public void setCreated(Date created) {
-		this.created = created;
-	}
-	
-	public String toString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append("SyncQueueItemVO {id:").append(getId()).append(", queueId: ").append(getQueueId());
-		sb.append(", contentType: ").append(getContentType());
-		sb.append(", contentId: ").append(getContentId());
-		sb.append(", lastProcessMsid: ").append(getLastProcessMsid());
-		sb.append(", lastprocessNumber: ").append(getLastProcessNumber());
-		sb.append(", created: ").append(getCreated());
-		sb.append("}");
-		return sb.toString();
-	}
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("SyncQueueItemVO {id:").append(getId()).append(", queueId: ").append(getQueueId());
+        sb.append(", contentType: ").append(getContentType());
+        sb.append(", contentId: ").append(getContentId());
+        sb.append(", lastProcessMsid: ").append(getLastProcessMsid());
+        sb.append(", lastprocessNumber: ").append(getLastProcessNumber());
+        sb.append(", lastProcessTime: ").append(getLastProcessTime());
+        sb.append(", created: ").append(getCreated());
+        sb.append("}");
+        return sb.toString();
+    }
+
+       public Date getLastProcessTime() {
+            return lastProcessTime;
+        }
+
+        public void setLastProcessTime(Date lastProcessTime) {
+            this.lastProcessTime = lastProcessTime;
+        }
 }

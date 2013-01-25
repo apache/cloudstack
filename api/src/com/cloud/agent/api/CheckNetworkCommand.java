@@ -23,18 +23,18 @@ import com.cloud.network.PhysicalNetworkSetupInfo;
 public class CheckNetworkCommand extends Command {
 
     List<PhysicalNetworkSetupInfo> networkInfoList;
-    
+
     public CheckNetworkCommand(List<PhysicalNetworkSetupInfo> networkInfoList) {
         this.networkInfoList = networkInfoList;
     }
-    
+
     public List<PhysicalNetworkSetupInfo> getPhysicalNetworkInfoList() {
         return networkInfoList;
     }
-    
+
     protected CheckNetworkCommand() {
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return true;

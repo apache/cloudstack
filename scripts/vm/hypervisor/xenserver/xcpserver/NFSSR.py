@@ -40,8 +40,8 @@ CONFIGURATION = [ [ 'server', 'hostname or IP address of NFS server (required)' 
 DRIVER_INFO = {
     'name': 'NFS VHD',
     'description': 'SR plugin which stores disks as VHD files on a remote NFS filesystem',
-    'vendor': 'Citrix Systems Inc',
-    'copyright': '(C) 2008 Citrix Systems Inc',
+    'vendor': 'The Apache Software Foundation',
+    'copyright': 'Copyright (c) 2012 The Apache Software Foundation',
     'driver_version': '1.0',
     'required_api_version': '1.0',
     'capabilities': CAPABILITIES,

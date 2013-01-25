@@ -60,3 +60,5 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.reserve.mem', 'false', 'Specify whether or not to reserve memory based on memory overprovisioning factor');
 
 UPDATE `cloud`.`storage_pool` SET removed=now() WHERE path='lvm' AND id NOT IN (select pool_id from storage_pool_host_ref);
+
+UPDATE `cloud`.`user` SET PASSWORD=RAND() WHERE id=1;

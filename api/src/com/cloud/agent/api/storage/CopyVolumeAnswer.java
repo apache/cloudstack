@@ -22,20 +22,20 @@ import com.cloud.agent.api.Command;
 public class CopyVolumeAnswer extends Answer {
 	private String volumeFolder;
 	private String volumePath;
-	
+
 	protected CopyVolumeAnswer() {
     }
-	
+
 	public CopyVolumeAnswer(Command command, boolean success, String details, String volumeFolder, String volumePath) {
 		super(command, success, details);
 		this.volumeFolder = volumeFolder;
 		this.volumePath = volumePath;
 	}
-	
+
 	public String getVolumeFolder() {
 		return volumeFolder;
 	}
-	
+
 	public String getVolumePath() {
 		return volumePath;
 	}

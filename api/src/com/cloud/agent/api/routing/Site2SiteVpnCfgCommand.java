@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -30,16 +30,16 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
     private long ikeLifetime;
     private long espLifetime;
     private boolean dpd;
-    
+
 	@Override
     public boolean executeInSequence() {
         return true;
     }
-    
+
     public Site2SiteVpnCfgCommand () {
         this.create = false;
     }
-    
+
     public Site2SiteVpnCfgCommand (boolean create, String localPublicIp, String localPublicGateway, String localGuestCidr, String peerGatewayIp,
             String peerGuestCidrList, String ikePolicy, String espPolicy, String ipsecPsk, Long ikeLifetime, Long espLifetime, Boolean dpd) {
         this.create = create;
@@ -55,11 +55,11 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
         this.espLifetime = espLifetime;
         this.dpd = dpd;
     }
-    
+
     public boolean isCreate() {
         return create;
     }
-    
+
     public void setCreate(boolean create) {
         this.create = create;
     }

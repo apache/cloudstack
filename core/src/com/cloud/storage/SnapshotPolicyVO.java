@@ -25,19 +25,20 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.utils.DateUtil.IntervalType;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="snapshot_policy")
-public class SnapshotPolicyVO implements SnapshotPolicy, Identity {
-	
+public class SnapshotPolicyVO implements SnapshotPolicy {
+
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     long id;
-    
+
     @Column(name="volume_id")
     long volumeId;
 
@@ -46,20 +47,20 @@ public class SnapshotPolicyVO implements SnapshotPolicy, Identity {
 
     @Column(name="timezone")
     String timezone;
-    
+
     @Column(name="interval")
     private short interval;
-    
+
     @Column(name="max_snaps")
     private int maxSnaps;
-    
+
     @Column(name="active")
     boolean active = false;
 
     @Column(name="uuid")
     String uuid;
-    
-    public SnapshotPolicyVO() { 
+
+    public SnapshotPolicyVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
 
@@ -76,7 +77,7 @@ public class SnapshotPolicyVO implements SnapshotPolicy, Identity {
     public long getId() {
         return id;
     }
-    
+
     public long getVolumeId() {
 		return volumeId;
 	}
@@ -88,7 +89,7 @@ public class SnapshotPolicyVO implements SnapshotPolicy, Identity {
     public String getSchedule() {
         return schedule;
     }
-    
+
     public void setInterval(short interval) {
         this.interval = interval;
     }
@@ -96,11 +97,11 @@ public class SnapshotPolicyVO implements SnapshotPolicy, Identity {
     public void setTimezone(String timezone) {
         this.timezone = timezone;
     }
-    
+
     public String getTimezone() {
         return timezone;
     }
-    
+
     public short getInterval() {
         return interval;
     }
@@ -120,12 +121,12 @@ public class SnapshotPolicyVO implements SnapshotPolicy, Identity {
     public void setActive(boolean active) {
         this.active = active;
     }
-    
+
     @Override
     public String getUuid() {
     	return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }

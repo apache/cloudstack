@@ -19,7 +19,13 @@
 mvn install:install-file -Dfile=cloud-iControl.jar      -DgroupId=com.cloud.com.f5     -DartifactId=icontrol        -Dversion=1.0   -Dpackaging=jar
 mvn install:install-file -Dfile=cloud-netscaler.jar     -DgroupId=com.cloud.com.citrix -DartifactId=netscaler       -Dversion=1.0   -Dpackaging=jar
 mvn install:install-file -Dfile=cloud-netscaler-sdx.jar -DgroupId=com.cloud.com.citrix -DartifactId=netscaler-sdx   -Dversion=1.0   -Dpackaging=jar
-mvn install:install-file -Dfile=cloud-manageontap.jar   -DgroupId=com.cloud.com.netapp -DartifactId=manageontap     -Dversion=1.0   -Dpackaging=jar
-mvn install:install-file -Dfile=vmware-vim.jar          -DgroupId=com.cloud.com.vmware -DartifactId=vmware-vim      -Dversion=1.0   -Dpackaging=jar
-mvn install:install-file -Dfile=vmware-vim25.jar        -DgroupId=com.cloud.com.vmware -DartifactId=vmware-vim25    -Dversion=1.0   -Dpackaging=jar
-mvn install:install-file -Dfile=vmware-apputils.jar     -DgroupId=com.cloud.com.vmware -DartifactId=vmware-apputils -Dversion=1.0   -Dpackaging=jar
+# 
+# From http://support.netapp.com/  (not available online, contact your support representative)
+# Version: 4.0
+mvn install:install-file -Dfile=manageontap.jar   -DgroupId=com.cloud.com.netapp -DartifactId=manageontap     -Dversion=4.0   -Dpackaging=jar
+#
+# From https://my.vmware.com/group/vmware/get-download?downloadGroup=VSDK41
+# Version: 4.1, Release-date: 2010-07-13, Build: 257238 
+mvn install:install-file -Dfile=vim25.jar        -DgroupId=com.cloud.com.vmware -DartifactId=vmware-vim25    -Dversion=4.1   -Dpackaging=jar
+mvn install:install-file -Dfile=apputils.jar     -DgroupId=com.cloud.com.vmware -DartifactId=vmware-apputils -Dversion=4.1   -Dpackaging=jar
+mvn install:install-file -Dfile=vim.jar          -DgroupId=com.cloud.com.vmware -DartifactId=vmware-vim      -Dversion=4.1   -Dpackaging=jar

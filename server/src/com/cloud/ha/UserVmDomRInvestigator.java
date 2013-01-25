@@ -31,7 +31,7 @@ import com.cloud.agent.api.PingTestCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
@@ -49,7 +49,7 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
     private String _name = null;
     @Inject private final UserVmDao _userVmDao = null;
     @Inject private final AgentManager _agentMgr = null;
-    @Inject private final NetworkManager _networkMgr = null;
+    @Inject private final NetworkModel _networkMgr = null;
     @Inject private final VpcVirtualNetworkApplianceManager _vnaMgr = null;
 
     @Override

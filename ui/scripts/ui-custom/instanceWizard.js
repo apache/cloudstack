@@ -137,8 +137,8 @@
                   )
                   .append(
                     $('<div>').addClass('select-desc')
-                      .append($('<div>').addClass('name').html(this[fields.name]))
-                      .append($('<div>').addClass('desc').html(this[fields.desc]))
+                      .append($('<div>').addClass('name').html(_s(this[fields.name])))
+                      .append($('<div>').addClass('desc').html(_s(this[fields.desc])))
                   )
                   .data('json-obj', this);
 
@@ -464,6 +464,16 @@
           },
 
           'network': function($step, formData) {
+            var showAddNetwork = true;
+
+            var checkShowAddNetwork = function($newNetwork) {
+              if (!showAddNetwork) {
+                $newNetwork.hide();
+              } else {
+                $newNetwork.show();
+              }
+            };
+
             var originalValues = function(formData) {
               // Default networks
               $step.find('input[type=radio]').filter(function() {
@@ -523,6 +533,13 @@
             // Show relevant conditional sub-step if present
             $step.find('.wizard-step-conditional').hide();
 
+            if ($.isFunction(args.showAddNetwork)) {
+              showAddNetwork = args.showAddNetwork({
+                data: formData,
+                context: context
+              });
+            }
+
             // Filter network list by VPC ID
             var filterNetworkList = function(vpcID) {
               var $selects = $step.find('.my-networks .select-container .select');
@@ -546,6 +563,7 @@
               } else {
                 $step.find('.my-networks .select-container').removeClass('single-select');
                 $addNetworkForm.show();
+                checkShowAddNetwork($addNetworkForm);
               }
               
               $selects.find('input[type=checkbox]').attr('checked', false);
@@ -580,6 +598,8 @@
               response: {
                 success: function(args) {
                   var vpcs = args.data.vpcs;
+                  var addClass = args.addClass;
+                  var removeClass = args.removeClass;
 
                   // Populate VPC drop-down
                   $vpcSelect.html('');
@@ -616,7 +636,7 @@
 
                   // My networks
                   $step.find('.my-networks .select-container').append(
-                    makeSelects('my-networks', $.merge(args.data.myNetworks, args.data.sharedNetworks), {
+                    makeSelects('my-networks', args.data.networkObjs, {
                       name: 'name',
                       desc: 'type',
                       id: 'id'
@@ -648,6 +668,7 @@
                   );
 
                   originalValues(formData);
+                  checkShowAddNetwork($newNetwork);
                 }
               }
             };
@@ -734,7 +755,8 @@
               )
             );
 
-            $targetStep.addClass('loaded');
+            if (!$targetStep.hasClass('repeat') &&
+                !$targetStep.hasClass('always-load')) $targetStep.addClass('loaded');
           }
 
           // Show launch vm button if last step
@@ -787,6 +809,14 @@
 
             //step 5 - select network
             if($activeStep.find('.wizard-step-conditional.select-network:visible').size() > 0) {
+              var data = $activeStep.data('my-networks');
+
+              if (!data) {
+                $activeStep.closest('form').data('my-networks', cloudStack.serializeForm(
+                  $activeStep.closest('form')
+                )['my-networks']);
+              }
+
               if($activeStep.find('input[type=checkbox]:checked').size() == 0) {  //if no checkbox is checked
                 cloudStack.dialog.notice({ message: 'message.step.4.continue' });
                 return false;
@@ -809,7 +839,11 @@
               }
             }
 
-            showStep($steps.filter(':visible').index() + 2);
+            if ($activeStep.hasClass('repeat')) {
+              showStep($steps.filter(':visible').index() + 1);
+            } else {
+              showStep($steps.filter(':visible').index() + 2);
+            }
 
             return false;
           }
@@ -875,6 +909,12 @@
             );
           }
         });
+
+         $wizard.find('div.data-disk-offering div.custom-size input[type=text]').bind('change',function() {
+                var old =   $wizard.find('div.data-disk-offering div.custom-size input[type=text]').val();
+                $wizard.find('div.data-disk-offering span.custom-disk-size').html(_s(old));
+         });
+
 
         return $wizard.dialog({
           title: _l('label.vm.add'),

@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.async;
 
+
 public interface SyncQueueItem {
+    public final String AsyncJobContentType = "AsyncJob";
 
     String getContentType();
 

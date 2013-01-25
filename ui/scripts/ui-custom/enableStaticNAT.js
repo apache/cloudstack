@@ -89,7 +89,9 @@
               }
 
               var complete = args.complete;
+              var start = args.start;
 
+              start();
               $dataList.fadeOut(function() {
                 action({
                   tierID: $dataList.find('.tier-select select').val(),

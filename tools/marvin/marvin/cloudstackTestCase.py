@@ -31,7 +31,7 @@ import cloudstackTestClient
 #            cls.AcctType = self.accounttype
 #        return Wrapped
 
-def UserName(Name, DomainName, AcctType):
+def user(Name, DomainName, AcctType):
     def wrapper(cls):
         orig_init = cls.__init__
         def __init__(self, *args, **kws):

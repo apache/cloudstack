@@ -34,4 +34,10 @@ public interface UserAuthenticator extends Adapter {
 	 * @return true if the user has been successfully authenticated, false otherwise
 	 */
 	public boolean authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters);
+	
+	/**
+	 * @param password
+	 * @return the encoded password
+	 */
+	public String encode(String password);
 }

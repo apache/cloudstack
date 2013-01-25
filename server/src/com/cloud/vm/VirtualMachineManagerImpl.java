@@ -109,6 +109,7 @@ import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.ServiceOffering;
@@ -169,6 +170,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     protected StorageManager _storageMgr;
     @Inject
     protected NetworkManager _networkMgr;
+    @Inject
+    protected NetworkModel _networkModel;
     @Inject
     protected AgentManager _agentMgr;
     @Inject
@@ -764,7 +767,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
                     cmds = new Commands(OnError.Stop);
-                    cmds.addCommand(new StartCommand(vmTO));
+                    cmds.addCommand(new StartCommand(vmTO, dest.getHost()));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
@@ -1995,7 +1998,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
             if (vm.getHostId() == null || hostId != vm.getHostId()) {
                 try {
-                    stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, hostId);
+                    ItWorkVO workItem = _workDao.findByOutstandingWork(vm.getId(), State.Migrating);
+                    if(workItem == null){
+                        stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, hostId);
+                    }
                 } catch (NoTransitionException e) {
                 }
             }
@@ -2150,9 +2156,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
         List<NicVO> nics = _nicsDao.listByVmId(profile.getId());
         for (NicVO nic : nics) {
-            Network network = _networkMgr.getNetwork(nic.getNetworkId());
+            Network network = _networkModel.getNetwork(nic.getNetworkId());
             NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, 
-                    _networkMgr.isSecurityGroupSupportedInNetwork(network), _networkMgr.getNetworkTag(profile.getHypervisorType(), network));
+                    _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(profile.getHypervisorType(), network));
             profile.addNic(nicProfile);
         }
 
@@ -2530,13 +2536,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (broadcastUri != null) {
             nic = _nicsDao.findByNetworkIdInstanceIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri.toString());
         } else {
-            nic = _networkMgr.getNicInNetwork(vm.getId(), network.getId());
+            nic = _networkModel.getNicInNetwork(vm.getId(), network.getId());
         }
         
         NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
-                _networkMgr.getNetworkRate(network.getId(), vm.getId()), 
-                _networkMgr.isSecurityGroupSupportedInNetwork(network), 
-                _networkMgr.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
+                _networkModel.getNetworkRate(network.getId(), vm.getId()), 
+                _networkModel.isSecurityGroupSupportedInNetwork(network), 
+                _networkModel.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
         
         //1) Unplug the nic
         NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());

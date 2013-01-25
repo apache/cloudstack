@@ -30,12 +30,16 @@ public class NiciraNvpList<T> {
         this.results = results;
     }
 
-    public int getResult_count() {
+    public int getResultCount() {
         return result_count;
     }
 
-    public void setResult_count(int result_count) {
+    public void setResultCount(int result_count) {
         this.result_count = result_count;
-    }        
+    }
+    
+    public boolean isEmpty() {
+    	return result_count == 0;
+    }
 
 }

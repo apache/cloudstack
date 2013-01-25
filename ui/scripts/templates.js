@@ -48,6 +48,36 @@
             zonename: { label: 'label.zone' },
             hypervisor: { label: 'label.hypervisor' }
           },
+					
+					advSearchFields: {
+					  name: { label: 'Name' },
+						zoneid: { 
+						  label: 'Zone',							
+              select: function(args) {							  					
+								$.ajax({
+									url: createURL('listZones'),
+									data: {
+									  listAll: true
+									},
+									success: function(json) {									  
+										var zones = json.listzonesresponse.zone;
+
+										args.response.success({
+											data: $.map(zones, function(zone) {
+												return {
+													id: zone.id,
+													description: zone.name
+												};
+											})
+										});
+									}
+								});
+							}						
+						},									
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
+					},
+					
           reorder: cloudStack.api.actions.sort('updateTemplate', 'templates'),
           actions: {
             add: {
@@ -58,23 +88,28 @@
                 }
               },
               createForm: {
-                title: 'label.action.register.template',                
+                title: 'label.action.register.template',
+                docID:'helpNetworkOfferingName',                
                 preFilter: cloudStack.preFilter.createTemplate,
                 fields: {
                   name: {
                     label: 'label.name',
+                    docID:'helpRegisterTemplateName',
                     validation: { required: true }
                   },
                   description: {
                     label: 'label.description',
+                    docID: 'helpRegisterTemplateDescription',
                     validation: { required: true }
                   },
                   url: {
                     label: 'URL',
+                    docID: 'helpRegisterTemplateURL',
                     validation: { required: true }
                   },
                   zone: {
                     label: 'label.zone',
+                    docID: 'helpRegisterTemplateZone',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listZones&available=true"),
@@ -96,6 +131,7 @@
                   },
                   hypervisor: {
                     label: 'label.hypervisor',
+                    docID: 'helpRegisterTemplateHypervisor',
                     dependsOn: 'zone',
                     select: function(args) {
                       if(args.zone == null)
@@ -177,6 +213,7 @@
 
                   format: {
                     label: 'label.format',
+                    docID: 'helpRegisterTemplateFormat',
                     dependsOn: 'hypervisor',
                     select: function(args) {
                       var items = [];
@@ -206,6 +243,7 @@
 
                   osTypeId: {
                     label: 'label.os.type',
+                    docID: 'helpRegisterTemplateOSType',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listOsTypes"),
@@ -221,22 +259,26 @@
 
                   isExtractable: {
                     label: "extractable",
+                    docID: 'helpRegisterTemplateExtractable',
                     isBoolean: true
                   },
 
                   isPasswordEnabled: {
                     label: "label.password.enabled",
+                    docID: 'helpRegisterTemplatePasswordEnabled',
                     isBoolean: true
                   },
 
                   isPublic: {
                     label: "label.public",
+                    docID: 'helpRegisterTemplatePublic',
                     isBoolean: true,
                     isHidden: true
                   },
 
                   isFeatured: {
                     label: "label.featured",
+                    docID: 'helpRegisterTemplateFeatured',
                     isBoolean: true,
                     isHidden: true
                   }
@@ -244,34 +286,51 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + todb(args.data.name));
-                array1.push("&displayText=" + todb(args.data.description));
-                array1.push("&url=" + todb(args.data.url));
-                array1.push("&zoneid=" + args.data.zone);
-                array1.push("&format=" + args.data.format);
-                array1.push("&isextractable=" + (args.data.isExtractable=="on"));
-                array1.push("&passwordEnabled=" + (args.data.isPasswordEnabled=="on"));
-                array1.push("&osTypeId=" + args.data.osTypeId);
-                array1.push("&hypervisor=" + args.data.hypervisor);
-
-                if(args.$form.find('.form-item[rel=isPublic]').css("display") != "none")
-                  array1.push("&ispublic=" + (args.data.isPublic == "on"));
-                if(args.$form.find('.form-item[rel=isFeatured]').css("display") != "none")
-                  array1.push("&isfeatured=" + (args.data.isFeatured == "on"));
+							  var data = {
+								  name: args.data.name,
+									displayText: args.data.description,
+									url: args.data.url,
+									zoneid: args.data.zone,
+									format: args.data.format,
+									isextractable: (args.data.isExtractable=="on"),
+									passwordEnabled: (args.data.isPasswordEnabled=="on"),
+									osTypeId: args.data.osTypeId,
+									hypervisor: args.data.hypervisor
+								};		
+                    
+                if(args.$form.find('.form-item[rel=isPublic]').css("display") != "none") {
+								  $.extend(data, {
+									  ispublic: (args.data.isPublic == "on")
+									});                  
+								}
+								
+                if(args.$form.find('.form-item[rel=isFeatured]').css("display") != "none") {
+								  $.extend(data, {
+									  isfeatured: (args.data.isFeatured == "on")
+									});		                 
+								}
 
                 //VMware only (starts here)
-                if(args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "")
-                  array1.push("&details[0].rootDiskController=" + args.data.rootDiskControllerType);
-                if(args.$form.find('.form-item[rel=nicAdapterType]').css("display") != "none" && args.data.nicAdapterType != "")
-                  array1.push("&details[0].nicAdapter=" + args.data.nicAdapterType);
-                if(args.$form.find('.form-item[rel=keyboardType]').css("display") != "none" && args.data.keyboardType != "")
-                  array1.push("&details[0].keyboard=" + args.data.keyboardType);
+                if(args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "") {
+								  $.extend(data, {
+									  'details[0].rootDiskController': args.data.rootDiskControllerType
+									});		
+								}
+                if(args.$form.find('.form-item[rel=nicAdapterType]').css("display") != "none" && args.data.nicAdapterType != "") {
+								  $.extend(data, {
+									  'details[0].nicAdapter': args.data.nicAdapterType
+									});
+								}
+                if(args.$form.find('.form-item[rel=keyboardType]').css("display") != "none" && args.data.keyboardType != "") {
+								  $.extend(data, {
+									  'details[0].keyboard': args.data.keyboardType
+									});                  
+								}
                 //VMware only (ends here)
 
                 $.ajax({
-                  url: createURL("registerTemplate" + array1.join("")),
-                  dataType: "json",
+                  url: createURL('registerTemplate'),
+                  data: data,
                   success: function(json) {
                     var items = json.registertemplateresponse.template;  //items might have more than one array element if it's create templates for all zones.
                     args.response.success({data:items[0]});
@@ -301,43 +360,44 @@
             }
           },
 
-          dataProvider: function(args) {
-            var array1 = [];
+          dataProvider: function(args) {					  
+						var data = {};
+						listViewDataProvider(args, data);		
+						           
             var ignoreProject = false;
-            if(args.filterBy != null) {
+            if(args.filterBy != null) {	//filter dropdown
               if(args.filterBy.kind != null) {
                 switch(args.filterBy.kind) {
                 case "all":
                   ignoreProject = true;
-                  array1.push("&templatefilter=all");
+									$.extend(data, {
+									  templatefilter: 'all'
+									});  
                   break;
                 case "mine":
-                  array1.push("&templatefilter=self");
+								  $.extend(data, {
+									  templatefilter: 'self'
+									});  
                   break;
                 case "featured":
                   ignoreProject = true;
-                  array1.push("&templatefilter=featured");
+									$.extend(data, {
+									  templatefilter: 'featured'
+									});                    
                   break;
                 case "community":
                   ignoreProject = true;
-                  array1.push("&templatefilter=community");
+									$.extend(data, {
+									  templatefilter: 'community'
+									});                    
                   break;
                 }
-              }
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
+              }              
             }
+						
             $.ajax({
-              url: createURL("listTemplates&page=" + args.page + "&pagesize=" + pageSize + array1.join(""),
-                             { ignoreProject: ignoreProject }),
-              dataType: "json",
-              async: true,
+              url: createURL('listTemplates', { ignoreProject: ignoreProject }),
+              data: data,              
               success: function(json) {
                 var items = json.listtemplatesresponse.template;
                 args.response.success({
@@ -354,54 +414,83 @@
               edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
-                  array1.push("&ostypeid=" + args.data.ostypeid);
-                  array1.push("&passwordenabled=" + (args.data.passwordenabled=="on"));
+								  //***** updateTemplate *****
+								  var data = {
+									  id: args.context.templates[0].id,
+										zoneid: args.context.templates[0].zoneid,									
+									  name: args.data.name,
+										displaytext: args.data.displaytext,
+										ostypeid: args.data.ostypeid,
+										passwordenabled: (args.data.passwordenabled=="on")										
+									};	   
                   $.ajax({
-                    url: createURL("updateTemplate&id=" + args.context.templates[0].id + "&zoneid=" + args.context.templates[0].zoneid + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateTemplate'),
+                    data: data,
                     async: false,
                     success: function(json) {
                       //API returns an incomplete embedded object  (some properties are missing in the embedded template object)
                     }
-                  });
-
-                  var array2 = [];
-                  
-									//array2.push("&ispublic=" + (args.data.ispublic=="on"));
-									if(args.data.ispublic == "on")
-                    array2.push("&ispublic=true");
-									else if(args.data.ispublic == "off")
-                    array2.push("&ispublic=false");	
-									//if args.data.ispublic is undefined, do not pass ispublic to API call.
+                  });								
 									
-									if(args.data.isfeatured == "on")
-                    array2.push("&isfeatured=true");
-									else if(args.data.isfeatured == "off")
-                    array2.push("&isfeatured=false");	
+									
+									//***** updateTemplatePermissions *****
+                  var data = {
+									  id: args.context.templates[0].id,
+										zoneid: args.context.templates[0].zoneid
+									};     
+									
+									//if args.data.ispublic is undefined, do not pass ispublic to API call.
+									if(args.data.ispublic == "on") {
+									  $.extend(data, {
+										  ispublic: true
+										});					
+                  }										
+									else if(args.data.ispublic == "off") {
+									  $.extend(data, {
+										  ispublic: false
+										});
+									}																		
 									//if args.data.isfeatured is undefined, do not pass isfeatured to API call.
-									                  
-									if(args.data.isextractable == "on")
-                    array2.push("&isextractable=true");
-									else if(args.data.isextractable == "off")
-                    array2.push("&isextractable=false");	
-									//if args.data.isextractable is undefined, do not pass isextractable to API call.
-																		
+									if(args.data.isfeatured == "on") {
+									  $.extend(data, {
+										  isfeatured: true
+										});
+									}
+									else if(args.data.isfeatured == "off") {
+									  $.extend(data, {
+										  isfeatured: false
+										});									}									
+									//if args.data.isextractable is undefined, do not pass isextractable to API call.                  
+									if(args.data.isextractable == "on") {
+									  $.extend(data, {
+										  isextractable: true
+										});			
+									}
+									else if(args.data.isextractable == "off") {
+									  $.extend(data, {
+										  isextractable: false
+										});
+                  }								
                   $.ajax({
-                    url: createURL("updateTemplatePermissions&id=" + args.context.templates[0].id + "&zoneid=" + args.context.templates[0].zoneid + array2.join("")),
-                    dataType: "json",
+                    url: createURL('updateTemplatePermissions'),
+                    data: data,
                     async: false,
                     success: function(json) {
                       //API doesn't return an embedded object
                     }
                   });
 
+									
+									//***** listTemplates *****
                   //So, we call listTemplates API to get a complete template object
+									var data = {
+									  id: args.context.templates[0].id,
+										zoneid: args.context.templates[0].zoneid,
+										templatefilter: 'self'
+									};
                   $.ajax({
-                    url: createURL("listTemplates&id=" + args.context.templates[0].id + "&zoneid=" + args.context.templates[0].zoneid + "&templatefilter=self"),
-                    dataType: "json",
+                    url: createURL('listTemplates'),
+                    data: data,
                     async: false,
                     success: function(json){
                       var item = json.listtemplatesresponse.template;
@@ -430,6 +519,7 @@
                   fields: {
                     destinationZoneId: {
                       label: 'label.destination.zone',
+                      docID: 'helpCopyTemplateDestination',
                       validation: { required: true },
                       select: function(args) {
                         $.ajax({
@@ -746,18 +836,22 @@
                 fields: {
                   name: {
                     label: 'label.name',
+                    docID: 'helpRegisterISOName',
                     validation: { required: true }
                   },
                   description: {
                     label: 'label.description',
+                    docID: 'helpRegisterISODescription',
                     validation: { required: true }
                   },
                   url: {
                     label: 'URL',
+                    docID: 'helpRegisterISOURL',
                     validation: { required: true }
                   },
                   zone: {
                     label: 'label.zone',
+                    docID: 'helpRegisterISOZone',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listZones&available=true"),
@@ -780,12 +874,14 @@
 
                   isBootable: {
                     label: "label.bootable",
+                    docID: 'helpRegisterISOBootable',
                     isBoolean: true,
                     isChecked: true
                   },
 
                   osTypeId: {
                     label: 'label.os.type',
+                    docID: 'helpRegisterISOOSType',
                     dependsOn: 'isBootable',
                     isHidden: false,
                     validation: { required: true },
@@ -809,17 +905,20 @@
 
                   isExtractable: {
                     label: "extractable",
+                    docID: 'helpRegisterISOExtractable',
                     isBoolean: true
                   },
 
                   isPublic: {
                     label: "label.public",
+                    docID: 'helpRegisterISOPublic',
                     isBoolean: true,
                     isHidden: true
                   },
 
                   isFeatured: {
                     label: "label.featured",
+                    docID: 'helpRegisterISOFeatured',
                     isBoolean: true,
                     isHidden: true
                   }
@@ -828,25 +927,34 @@
              
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + todb(args.data.name));
-                array1.push("&displayText=" + todb(args.data.description));
-                array1.push("&url=" + todb(args.data.url));
-                array1.push("&zoneid=" + args.data.zone);
-                array1.push("&isextractable=" + (args.data.isExtractable=="on"));
-                array1.push("&bootable=" + (args.data.isBootable=="on"));
+							  var data = {
+								  name: args.data.name,
+									displayText: args.data.description,
+									url: args.data.url,
+									zoneid: args.data.zone,
+									isextractable: (args.data.isExtractable=="on"),
+									bootable: (args.data.isBootable=="on") 
+								};		  
 
-                if(args.$form.find('.form-item[rel=osTypeId]').css("display") != "none")
-                  array1.push("&osTypeId=" + args.data.osTypeId);
-
-                if(args.$form.find('.form-item[rel=isPublic]').css("display") != "none")
-                  array1.push("&ispublic=" + (args.data.isPublic == "on"));
-                if(args.$form.find('.form-item[rel=isFeatured]').css("display") != "none")
-                  array1.push("&isfeatured=" + (args.data.isFeatured == "on"));
+                if(args.$form.find('.form-item[rel=osTypeId]').css("display") != "none") {
+								  $.extend(data, {
+									  osTypeId: args.data.osTypeId
+									});
+								}
+                if(args.$form.find('.form-item[rel=isPublic]').css("display") != "none") {
+								  $.extend(data, {
+									  ispublic: (args.data.isPublic == "on")
+									});								
+								}
+                if(args.$form.find('.form-item[rel=isFeatured]').css("display") != "none") {
+								  $.extend(data, {
+									  isfeatured: (args.data.isFeatured == "on")
+									});
+								}
 
                 $.ajax({
-                  url: createURL("registerIso" + array1.join("")),
-                  dataType: "json",
+                  url: createURL('registerIso'),
+                  data: data,
                   success: function(json) {
                     var items = json.registerisoresponse.iso;	//items might have more than one array element if it's create ISOs for all zones.
                     args.response.success({data:items[0]});
@@ -876,43 +984,73 @@
             }
           },
 
+					advSearchFields: {
+					  name: { label: 'Name' },
+						zoneid: { 
+						  label: 'Zone',							
+              select: function(args) {							  					
+								$.ajax({
+									url: createURL('listZones'),
+									data: {
+									  listAll: true
+									},
+									success: function(json) {									  
+										var zones = json.listzonesresponse.zone;
+
+										args.response.success({
+											data: $.map(zones, function(zone) {
+												return {
+													id: zone.id,
+													description: zone.name
+												};
+											})
+										});
+									}
+								});
+							}						
+						},									
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
+					},
+					
           dataProvider: function(args) {
-            var array1 = [];
+					  var data = {};
+						listViewDataProvider(args, data);		
+						           
             var ignoreProject = false;
-            if(args.filterBy != null) {
+            if(args.filterBy != null) {	//filter dropdown
               if(args.filterBy.kind != null) {
                 switch(args.filterBy.kind) {
                 case "all":
                   ignoreProject = true;
-                  array1.push("&isofilter=all");
+									$.extend(data, {
+									  isofilter: 'all'
+									});  
                   break;
                 case "mine":
-                  array1.push("&isofilter=self");
+								  $.extend(data, {
+									  isofilter: 'self'
+									});  
                   break;
                 case "featured":
                   ignoreProject = true;
-                  array1.push("&isofilter=featured");
+									$.extend(data, {
+									  isofilter: 'featured'
+									});                    
                   break;
                 case "community":
                   ignoreProject = true;
-                  array1.push("&isofilter=community");
+									$.extend(data, {
+									  isofilter: 'community'
+									});                    
                   break;
                 }
-              }
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
-            }
+              }              
+            }		
 
             $.ajax({
-              url: createURL("listIsos&page=" + args.page + "&pagesize=" + pageSize + array1.join(""), { ignoreProject: ignoreProject }),
-              dataType: "json",
-              async: true,
+              url: createURL('listIsos', { ignoreProject: ignoreProject }),
+              data: data,      
               success: function(json) {
                 var items = json.listisosresponse.iso;
                 args.response.success({
@@ -929,36 +1067,81 @@
               edit: {
                 label: 'label.edit',
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displaytext=" + todb(args.data.displaytext));
-                  array1.push("&ostypeid=" + args.data.ostypeid);
+                  //***** updateIso *****
+									var data = {
+									  id: args.context.isos[0].id,
+										zoneid: args.context.isos[0].zoneid,
+										name: args.data.name,
+										displaytext: args.data.displaytext,
+										ostypeid: args.data.ostypeid
+									};                 
                   $.ajax({
-                    url: createURL("updateIso&id=" + args.context.isos[0].id + "&zoneid=" + args.context.isos[0].zoneid + array1.join("")),
-                    dataType: "json",
+                    url: createURL('updateIso'),
+                    data: data,
                     async: false,
                     success: function(json) {
                       //updateIso API returns an incomplete ISO object (isextractable and isfeatured are missing)
                     }
                   });
 
-                  var array2 = [];
-                  array2.push("&ispublic=" + (args.data.ispublic=="on"));
-                  array2.push("&isfeatured=" + (args.data.isfeatured=="on"));
-                  array2.push("&isextractable=" + (args.data.isextractable=="on"));
+									
+									//***** updateIsoPermissions *****   
+                  var data = {
+									  id: args.context.isos[0].id,
+										zoneid: args.context.isos[0].zoneid,
+									};									
+									//if args.data.ispublic is undefined, do not pass ispublic to API call.
+									if(args.data.ispublic == "on") {
+									  $.extend(data, {
+										  ispublic: true
+										});					
+                  }										
+									else if(args.data.ispublic == "off") {
+									  $.extend(data, {
+										  ispublic: false
+										});
+									}																		
+									//if args.data.isfeatured is undefined, do not pass isfeatured to API call.
+									if(args.data.isfeatured == "on") {
+									  $.extend(data, {
+										  isfeatured: true
+										});
+									}
+									else if(args.data.isfeatured == "off") {
+									  $.extend(data, {
+										  isfeatured: false
+										});									}									
+									//if args.data.isextractable is undefined, do not pass isextractable to API call.                  
+									if(args.data.isextractable == "on") {
+									  $.extend(data, {
+										  isextractable: true
+										});			
+									}
+									else if(args.data.isextractable == "off") {
+									  $.extend(data, {
+										  isextractable: false
+										});
+                  }									                 
                   $.ajax({
-                    url: createURL("updateIsoPermissions&id=" + args.context.isos[0].id + "&zoneid=" + args.context.isos[0].zoneid + array2.join("")),
-                    dataType: "json",
+                    url: createURL('updateIsoPermissions'),
+                    data: data,
                     async: false,
                     success: function(json) {
                       //updateIsoPermissions API doesn't return ISO object
                     }
                   });
 
+									
+									//***** listIsos *****
                   //So, we call listIsos API to get a complete ISO object
+									var data = {
+									  id: args.context.isos[0].id,
+										zoneid: args.context.isos[0].zoneid,
+										isofilter: 'self'
+									};									
                   $.ajax({
-                    url: createURL("listIsos&id=" + args.context.isos[0].id + "&zoneid=" + args.context.isos[0].zoneid + "&isofilter=self"),
-                    dataType: "json",
+                    url: createURL('listIsos'),
+                    data: data,
                     async: false,
                     success: function(json){
                       var item = json.listisosresponse.iso;
@@ -1230,21 +1413,21 @@
     var allowedActions = [];
 
     // "Edit Template", "Copy Template", "Create VM"
-    if ((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))  //if neither root-admin, nor item owner
+    if ((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id))  //if neither root-admin, nor the same account, nor the same project
         || jsonObj.templatetype == "SYSTEM" || jsonObj.isready == false) {
       //do nothing
     }
     else {
       allowedActions.push("edit");
 
-      if(havingSwift == false)
+      if(havingSwift == false && havingS3 == false)
         allowedActions.push("copyTemplate");
 
       //allowedActions.push("createVm"); // For Beta2, this simply doesn't work without a network.
     }
 
     // "Download Template"
-    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))  //if neither root-admin, nor item owner
+    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id)))  //if neither root-admin, nor the same account, nor the same project
         || (jsonObj.isready == false) || jsonObj.templatetype == "SYSTEM") {
       //do nothing
     }
@@ -1254,7 +1437,7 @@
 
     // "Delete Template"
     //if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))
-    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))  //if neither root-admin, nor item owner
+    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id)))  //if neither root-admin, nor the same account, nor the same project
         || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)
         || (jsonObj.account ==	"system")) {
       //do nothing
@@ -1270,7 +1453,7 @@
     var jsonObj = args.context.item;
     var allowedActions = [];
 
-    if ((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))  //if neither root-admin, nor item owner
+    if ((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id))  //if neither root-admin, nor the same account, nor the same project
         || (jsonObj.isready == false)
         || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
        ) {
@@ -1286,7 +1469,7 @@
     // "Create VM"
     // Commenting this out for Beta2 as it does not support the new network.
     /*
-     //if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))
+     //if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id))  //if neither root-admin, nor the same account, nor the same project
      if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))  //if neither root-admin, nor item owner
      || jsonObj.isready == false)
      || (jsonObj.bootable == false)
@@ -1301,7 +1484,7 @@
 
     // "Download ISO"
     //if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))
-    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))  //if neither root-admin, nor item owner
+    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id)))  //if neither root-admin, nor the same account, nor the same project
         || (jsonObj.isready == false)
         || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
        ) {
@@ -1313,7 +1496,7 @@
 
     // "Delete ISO"
     //if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))
-    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)))  //if neither root-admin, nor item owner
+    if (((isAdmin() == false && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account) && !(jsonObj.domainid == g_domainid && cloudStack.context.projects && jsonObj.projectid == cloudStack.context.projects[0].id)))  //if neither root-admin, nor the same account, nor the same project
         || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)
         || (jsonObj.account ==	"system")
        ) {

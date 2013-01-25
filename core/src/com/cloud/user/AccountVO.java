@@ -28,12 +28,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.api.Identity;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="account")
-public class AccountVO implements Account, Identity {
+public class AccountVO implements Account {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -54,16 +53,16 @@ public class AccountVO implements Account, Identity {
 
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
-    
+
     @Column(name="cleanup_needed")
     private boolean needsCleanup = false;
-    
+
     @Column(name="network_domain")
     private String networkDomain;
 
     @Column(name="uuid")
     private String uuid;
-    
+
     @Column(name="default_zone_id")
     private Long defaultZoneId = null;
 
@@ -73,7 +72,7 @@ public class AccountVO implements Account, Identity {
     public AccountVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
-    
+
     public AccountVO(long id) {
         this.id = id;
     	this.uuid = UUID.randomUUID().toString();
@@ -88,11 +87,11 @@ public class AccountVO implements Account, Identity {
         this.uuid = uuid;
         this.regionId = regionId;
     }
-    
+
     public void setNeedsCleanup(boolean value) {
     	needsCleanup = value;
     }
-    
+
     public boolean getNeedsCleanup() {
     	return needsCleanup;
     }
@@ -110,16 +109,16 @@ public class AccountVO implements Account, Identity {
     public String getAccountName() {
         return accountName;
     }
-    
+
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
-    
+
     @Override
     public short getType() {
         return type;
     }
-    
+
     public void setType(short type) {
         this.type = type;
     }
@@ -128,16 +127,16 @@ public class AccountVO implements Account, Identity {
     public long getDomainId() {
         return domainId;
     }
-    
+
     public void setDomainId(long domainId) {
         this.domainId = domainId;
     }
-    
+
     @Override
     public Long getDefaultZoneId() {
     	return defaultZoneId;
     }
-    
+
     public void setDefaultZoneId(Long defaultZoneId) {
     	this.defaultZoneId = defaultZoneId;
     }
@@ -146,7 +145,7 @@ public class AccountVO implements Account, Identity {
     public State getState() {
         return state;
     }
-    
+
     public void setState(State state) {
         this.state = state;
     }
@@ -155,31 +154,31 @@ public class AccountVO implements Account, Identity {
     public Date getRemoved() {
         return removed;
     }
-    
+
     @Override
     public long getAccountId() {
         return id;
     }
-    
+
     @Override
     public String toString() {
         return new StringBuilder("Acct[").append(id).append("-").append(accountName).append("]").toString();
     }
-    
+
     @Override
     public String getNetworkDomain() {
         return networkDomain;
     }
-    
+
     public void setNetworkDomain(String networkDomain) {
         this.networkDomain = networkDomain;
     }
-    
+
     @Override
     public String getUuid() {
     	return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }

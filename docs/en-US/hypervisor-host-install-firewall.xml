@@ -37,23 +37,23 @@
     <section id="hypervisor-host-install-firewall-rhel">
         <title>Open ports in RHEL/CentOS</title>
         <para>RHEL and CentOS use iptables for firewalling the system, you can open extra ports by executing the following iptable commands:</para>
-        <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 22 -j ACCEPT</programlisting>
-        <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 1798 -j ACCEPT</programlisting>
-        <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 16509 -j ACCEPT</programlisting>
-        <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 5900:6100 -j ACCEPT</programlisting>
-        <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 49152:492160 -j ACCEPT</programlisting>
+        <programlisting language="Bash"><command>$ iptables -I INPUT -p tcp -m tcp --dport 22 -j ACCEPT</command></programlisting>
+        <programlisting language="Bash"><command>$ iptables -I INPUT -p tcp -m tcp --dport 1798 -j ACCEPT</command></programlisting>
+        <programlisting language="Bash"><command>$ iptables -I INPUT -p tcp -m tcp --dport 16509 -j ACCEPT</command></programlisting>
+        <programlisting language="Bash"><command>$ iptables -I INPUT -p tcp -m tcp --dport 5900:6100 -j ACCEPT</command></programlisting>
+        <programlisting language="Bash"><command>$ iptables -I INPUT -p tcp -m tcp --dport 49152:49216 -j ACCEPT</command></programlisting>
         <para>These iptable settings are not persistent accross reboots, we have to save them first.</para>
-        <programlisting language="Bash">iptables-save > /etc/sysconfig/iptables</programlisting>
+        <programlisting language="Bash"><command>$ iptables-save > /etc/sysconfig/iptables</command></programlisting>
     </section>
     <section id="hypervisor-host-install-firewall-ubuntu">
         <title>Open ports in Ubuntu</title>
         <para>The default firewall under Ubuntu is UFW (Uncomplicated FireWall), which is a Python wrapper around iptables.</para>
         <para>To open the required ports, execute the following commands:</para>
-        <programlisting language="Bash">ufw allow proto tcp from any to any port 22</programlisting>
-        <programlisting language="Bash">ufw allow proto tcp from any to any port 1798</programlisting>
-        <programlisting language="Bash">ufw allow proto tcp from any to any port 16509</programlisting>
-        <programlisting language="Bash">ufw allow proto tcp from any to any port 5900:6100</programlisting>
-        <programlisting language="Bash">ufw allow proto tcp from any to any port 49152:492160</programlisting>
+        <programlisting language="Bash"><command>$ ufw allow proto tcp from any to any port 22</command></programlisting>
+        <programlisting language="Bash"><command>$ ufw allow proto tcp from any to any port 1798</command></programlisting>
+        <programlisting language="Bash"><command>$ ufw allow proto tcp from any to any port 16509</command></programlisting>
+        <programlisting language="Bash"><command>$ ufw allow proto tcp from any to any port 5900:6100</command></programlisting>
+        <programlisting language="Bash"><command>$ ufw allow proto tcp from any to any port 49152:49216</command></programlisting>
         <note><para>By default UFW is not enabled on Ubuntu. Executing these commands with the firewall disabled does not enable the firewall.</para></note>
     </section>
 </section>

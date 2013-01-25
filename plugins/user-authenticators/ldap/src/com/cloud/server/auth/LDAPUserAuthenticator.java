@@ -15,12 +15,12 @@
 //
 package com.cloud.server.auth;
 
-import java.util.HashMap;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Hashtable;
 import java.util.Map;
 
 import javax.ejb.Local;
-import javax.naming.AuthenticationException;
 import javax.naming.ConfigurationException;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -31,15 +31,15 @@ import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
 import org.apache.log4j.Logger;
+import org.bouncycastle.util.encoders.Base64;
 
-import com.cloud.api.ApiConstants.LDAPParams;
-import com.cloud.configuration.Config;
+import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 
 @Local(value={UserAuthenticator.class})
@@ -159,4 +159,17 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
         _userAccountDao = locator.getDao(UserAccountDao.class);
         return true;
     }
+
+	@Override
+	public String encode(String password) {
+		// Password is not used, so set to a random string
+		try {
+			SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
+			byte bytes[] = new byte[20];
+			randomGen.nextBytes(bytes);
+			return Base64.encode(bytes).toString();
+		} catch (NoSuchAlgorithmException e) {
+			throw new CloudRuntimeException("Failed to generate random password",e);
+		}	
+	}
 }

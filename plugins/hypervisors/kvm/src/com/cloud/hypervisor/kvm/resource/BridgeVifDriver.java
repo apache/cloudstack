@@ -33,6 +33,7 @@ import org.libvirt.LibvirtException;
 import javax.naming.ConfigurationException;
 import java.net.URI;
 import java.util.Map;
+import java.io.File;
 
 public class BridgeVifDriver extends VifDriverBase {
 
@@ -89,7 +90,7 @@ public class BridgeVifDriver extends VifDriverBase {
         if (nic.getType() == Networks.TrafficType.Guest) {
             if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan
                     && !vlanId.equalsIgnoreCase("untagged")) {
-                if(trafficLabel != null || !trafficLabel.isEmpty()) {
+                if(trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
                     String brName = createVlanBr(vlanId, _pifs.get(trafficLabel));
                     intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
@@ -107,7 +108,7 @@ public class BridgeVifDriver extends VifDriverBase {
         } else if (nic.getType() == Networks.TrafficType.Public) {
             if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan
                     && !vlanId.equalsIgnoreCase("untagged")) {
-                if(trafficLabel != null || !trafficLabel.isEmpty()){
+                if(trafficLabel != null && !trafficLabel.isEmpty()){
                     s_logger.debug("creating a vlan dev and bridge for public traffic per traffic label " + trafficLabel);
                     String brName = createVlanBr(vlanId, _pifs.get(trafficLabel));
                     intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType));
@@ -206,15 +207,11 @@ public class BridgeVifDriver extends VifDriverBase {
     }
 
     private boolean isBridgeExists(String bridgeName) {
-        Script command = new Script("/bin/sh", _timeout);
-        command.add("-c");
-        command.add("brctl show|grep " + bridgeName);
-        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        String result = command.execute(parser);
-        if (result != null || parser.getLine() == null) {
-            return false;
-        } else {
+        File f = new File("/sys/devices/virtual/net/" + bridgeName);
+        if (f.exists()) {
             return true;
+        } else {
+            return false;
         }
     }
 }

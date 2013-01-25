@@ -67,6 +67,8 @@ addVlan() {
 				return 2
 			fi
 		fi
+
+		brctl setfd $vlanBr 0
 	fi
 	
 	#pif is eslaved into vlanBr?

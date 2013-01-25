@@ -1,18 +1,19 @@
-/* Copyright (c) Citrix Systems, Inc.
+/*
+ * Copyright (c) Citrix Systems, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -26,6 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 package com.xensource.xenapi;
 
@@ -51,7 +53,7 @@ import org.apache.xmlrpc.XmlRpcException;
 public class VMPP extends XenAPIObject {
 
     /**
-     * The XenAPI reference to this object.
+     * The XenAPI reference (OpaqueRef) to this object.
      */
     protected final String ref;
 
@@ -62,6 +64,9 @@ public class VMPP extends XenAPIObject {
        this.ref = ref;
     }
 
+    /**
+     * @return The XenAPI reference (OpaqueRef) to this object.
+     */
     public String toWireString() {
        return this.ref;
     }
@@ -155,7 +160,7 @@ public class VMPP extends XenAPIObject {
          */
         public String nameLabel;
         /**
-         * a notes field containg human-readable description
+         * a notes field containing human-readable description
          */
         public String nameDescription;
         /**
@@ -809,7 +814,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param value the value to set
      */
@@ -841,7 +846,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param value the value to set
      */
@@ -873,7 +878,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param value the value to set
      */
@@ -905,7 +910,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param value the value to set
      */
@@ -937,7 +942,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param value the value to set
      */
@@ -953,7 +958,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param key the key to add
      * @param value the value to add
@@ -970,7 +975,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param key the key to add
      * @param value the value to add
@@ -987,7 +992,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param key the key to add
      * @param value the value to add
@@ -1004,7 +1009,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param key the key to add
      * @param value the value to add
@@ -1021,7 +1026,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param key the key to remove
      */
@@ -1037,7 +1042,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param key the key to remove
      */
@@ -1053,7 +1058,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param key the key to remove
      */
@@ -1069,7 +1074,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param key the key to remove
      */
@@ -1085,7 +1090,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param value the value to set
      */
@@ -1101,7 +1106,7 @@ public class VMPP extends XenAPIObject {
     }
 
     /**
-     * 
+     *
      *
      * @param value the value to set
      */

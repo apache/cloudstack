@@ -50,6 +50,7 @@ import javax.persistence.EmbeddedId;
 import javax.persistence.EntityExistsException;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 import net.sf.cglib.proxy.Callback;
@@ -130,6 +131,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     protected StringBuilder _discriminatorClause;
     protected Map<String, Object> _discriminatorValues;
     protected String _selectByIdSql;
+    protected String _count;
 
     protected Field _idField;
 
@@ -201,6 +203,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
         final SqlGenerator generator = new SqlGenerator(_entityBeanType);
         _partialSelectSql = generator.buildSelectSql(false);
+        _count = generator.buildCountSql();
         _partialQueryCacheSelectSql = generator.buildSelectSql(true);
         _embeddedFields = generator.getEmbeddedFields();
         _insertSqls = generator.buildInsertSqls();
@@ -911,6 +914,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override @DB(txn=false)
+    @SuppressWarnings("unchecked")
+    public T findByUuid(final String uuid) {
+        SearchCriteria<T> sc = createSearchCriteria();
+        sc.addAnd("uuid", SearchCriteria.Op.EQ, uuid);
+        return findOneBy(sc);
+    }
+
+    @Override @DB(txn=false)
     public T findByIdIncludingRemoved(ID id) {
         return findById(id, true, null);
     }
@@ -1210,6 +1221,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     @Override @DB(txn=false)
     public List<T> search(final SearchCriteria<T> sc, final Filter filter) {
         return search(sc, filter, null, false);
+    }
+    
+    @Override @DB(txn=false)
+    public Pair<List<T>, Integer> searchAndCount(final SearchCriteria<T> sc, final Filter filter) {
+        List<T> objects = search(sc, filter, null, false);
+        Integer count = getCount(sc);
+        return new Pair<List<T>, Integer>(objects, count);
     }
 
     @Override @DB(txn=false)
@@ -1644,6 +1662,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     @DB(txn=false)
     protected void setField(final Object entity, final ResultSet rs, ResultSetMetaData meta, final int index) throws SQLException {
         Attribute attr = _allColumns.get(new Pair<String, String>(meta.getTableName(index), meta.getColumnName(index)));
+        if ( attr == null ){
+            // work around for mysql bug to return original table name instead of view name in db view case
+            Table tbl = entity.getClass().getSuperclass().getAnnotation(Table.class);
+            if ( tbl != null ){
+                attr = _allColumns.get(new Pair<String, String>(tbl.name(), meta.getColumnLabel(index)));
+            }
+        }
         assert (attr != null) : "How come I can't find " + meta.getCatalogName(index) + "." + meta.getColumnName(index);
         setField(entity, attr.field, rs, index);
     }
@@ -1774,4 +1799,74 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     public int getRegionId(){
     	return Transaction.s_region_id;
     }
+
+    public Integer getCount(SearchCriteria<T> sc) {
+        String clause = sc != null ? sc.getWhereClause() : null;
+        if (clause != null && clause.length() == 0) {
+            clause = null;
+        }
+
+        final StringBuilder str = createCountSelect(sc, clause != null);
+        if (clause != null) {
+            str.append(clause);
+        }
+
+        Collection<JoinBuilder<SearchCriteria<?>>> joins = null;
+        if (sc != null) {
+            joins = sc.getJoins();
+            if (joins != null) {
+                addJoins(str, joins);
+            }
+        }
+
+        // we have to disable group by in getting count, since count for groupBy clause will be different.
+        //List<Object> groupByValues = addGroupBy(str, sc);
+        final Transaction txn = Transaction.currentTxn();
+        final String sql = str.toString();
+
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            int i = 0;
+            if (clause != null) {
+                for (final Pair<Attribute, Object> value : sc.getValues()) {
+                    prepareAttribute(++i, pstmt, value.first(), value.second());
+                }
+            }
+
+            if (joins != null) {
+                i = addJoinAttributes(i, pstmt, joins);
+            }
+            
+            /*
+            if (groupByValues != null) {
+                for (Object value : groupByValues) {
+                    pstmt.setObject(i++, value);
+                }
+            }
+            */
+
+            final ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                return rs.getInt(1);
+            }
+            return 0;
+        } catch (final SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+        } catch (final Throwable e) {
+            throw new CloudRuntimeException("Caught: " + pstmt, e);
+        }
+    }
+
+    @DB(txn=false)
+    protected StringBuilder createCountSelect(SearchCriteria<?> sc, final boolean whereClause) {
+        StringBuilder sql = new StringBuilder(_count);
+
+        if (!whereClause) {
+            sql.delete(sql.length() - (_discriminatorClause == null ? 6 : 4), sql.length());
+        }
+
+        return sql;
+    }
+    
 }

@@ -102,8 +102,8 @@ get_boot_params() {
   local hyp=$(hypervisor)
   [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
 
-  case $hyp in 
-     xen-domU)
+  case $hyp in
+     xen-domU|xen-hvm)
           cat /proc/cmdline > /var/cache/cloud/cmdline
           sed -i "s/%/ /g" /var/cache/cloud/cmdline
           ;;
@@ -364,6 +364,11 @@ setup_common() {
       ping -n -c 3 $LOCAL_GW &
       sleep 3
       pkill ping
+      #This code is added to address ARP issue by pinging MGMT_GW
+      MGMT_GW=$(echo $MGMTNET | awk -F "." '{print $1"."$2"."$3".1"}')
+      ping -n -c 3 $MGMT_GW &
+      sleep 3
+      pkill ping
   fi
 }
 
@@ -458,7 +463,6 @@ setup_redundant_router() {
     mkdir -p /ramdisk
     mount tmpfs /ramdisk -t tmpfs
     mkdir -p /ramdisk/rrouter
-    rm /tmp/rrouter.lock
     ip route delete default
     cp /root/redundant_router/keepalived.conf.templ /etc/keepalived/keepalived.conf
     cp /root/redundant_router/conntrackd.conf.templ /etc/conntrackd/conntrackd.conf
@@ -473,6 +477,7 @@ setup_redundant_router() {
     cp /root/redundant_router/check_bumpup.sh $rrouter_bin_path/
     cp /root/redundant_router/disable_pubip.sh $rrouter_bin_path/
     cp /root/redundant_router/checkrouter.sh.templ /opt/cloud/bin/checkrouter.sh
+    cp /root/redundant_router/services.sh $rrouter_bin_path/
     sed -i "s/\[ROUTER_ID\]/$NAME/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[ROUTER_IP\]/$GUEST_GW\/$GUEST_CIDR_SIZE/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[BOARDCAST\]/$GUEST_BRD/g" /etc/keepalived/keepalived.conf
@@ -598,6 +603,10 @@ setup_vpcrouter() {
     setup_vmware_extra_nics
   fi
 
+  if [ -f /etc/hosts ]; then
+    grep -q $NAME /etc/hosts || echo "127.0.0.1 $NAME" >> /etc/hosts;
+  fi
+
     cat > /etc/network/interfaces << EOF
 auto lo $1
 iface lo inet loopback
@@ -651,7 +660,7 @@ EOF
   enable_svc dnsmasq 1
   enable_svc haproxy 1
   enable_svc cloud 0
-  disable_rpfilter_domR
+  disable_rpfilter
   enable_fwding 1
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules
   setup_sshd $ETH0_IP "eth0"
@@ -816,6 +825,8 @@ change_password() {
 }
 
 start() {
+  # Clear /tmp for file lock
+  rm -f /tmp/*.lock
   local hyp=$(hypervisor)
   [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
   log_it "Detected that we are running inside $hyp guest"

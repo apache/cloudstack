@@ -50,35 +50,6 @@
 						*/
           },
 					
-					advSearchFields: {
-					  name: { label: 'Name' },
-						zoneid: { 
-						  label: 'Zone',							
-              select: function(args) {							  					
-								$.ajax({
-									url: createURL('listZones'),
-									data: {
-									  listAll: true
-									},
-									success: function(json) {									  
-										var zones = json.listzonesresponse.zone;
-
-										args.response.success({
-											data: $.map(zones, function(zone) {
-												return {
-													id: zone.id,
-													description: zone.name
-												};
-											})
-										});
-									}
-								});
-							}						
-						},									
-						tagKey: { label: 'Tag Key' },
-						tagValue: { label: 'Tag Value' }						
-					},
-
           // List view actions
           actions: {
             // Add volume
@@ -99,11 +70,13 @@
                 desc: 'message.add.volume',
                 fields: {
                   name: {
+                    docID: 'helpVolumeName',
                     label: 'label.name',
                     validation: { required: true }
                   },
                   availabilityZone: {
                     label: 'label.availability.zone',
+                    docID: 'helpVolumeAvailabilityZone',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listZones&available=true"),
@@ -118,6 +91,7 @@
                   },
                   diskOffering: {
                     label: 'label.disk.offering',
+                    docID: 'helpVolumeDiskOffering',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listDiskOfferings"),
@@ -167,20 +141,22 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + args.data.name);
-                array1.push("&zoneId=" + args.data.availabilityZone);
-                array1.push("&diskOfferingId=" + args.data.diskOffering);
-
+							  var data = {
+								  name: args.data.name,
+									zoneId: args.data.availabilityZone,
+									diskOfferingId: args.data.diskOffering
+								};
+							
                 // if(thisDialog.find("#size_container").css("display") != "none") { //wait for Brian to include $form in args
                 if (selectedDiskOfferingObj.iscustomized == true) {
-                  array1.push("&size=" + args.data.diskSize);
+								  $.extend(data, {
+									  size: args.data.diskSize
+									});
                 }
 
                 $.ajax({
-                  url: createURL("createVolume" + array1.join("")),
-                  dataType: "json",
-                  async: true,
+                  url: createURL('createVolume'),
+                  data: data,                 
                   success: function(json) {
                     var jid = json.createvolumeresponse.jobid;
                     args.response.success(
@@ -220,10 +196,12 @@
                 fields: {
                   name: {
                     label: 'label.name',
-                    validation: { required: true }
+                    validation: { required: true },
+                    docID: 'helpUploadVolumeName'
                   },
                   availabilityZone: {
                     label: 'label.availability.zone',
+                    docID: 'helpUploadVolumeZone',
                     select: function(args) {
                       $.ajax({
                         url: createURL("listZones&available=true"),
@@ -238,6 +216,7 @@
                   },
                   format: {
 									  label: 'label.format',
+                    docID: 'helpUploadVolumeFormat',
 										select: function(args) {
 										  var items = [];
                       items.push({ id: 'RAW', description: 'RAW' });
@@ -249,27 +228,33 @@
 									},
 									url: {
 									  label: 'label.url',
+                    docID: 'helpUploadVolumeURL',
 										validation: { required: true }
 									},
                   checksum : {
+                    docID: 'helpUploadVolumeChecksum',
                     label: 'label.checksum'
                   }                  
                 }
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&name=" + todb(args.data.name));
-                array1.push("&zoneId=" + args.data.availabilityZone);
-								array1.push("&format=" + args.data.format);
-								array1.push("&url=" + todb(args.data.url));
-								if(args.data.checksum != null && args.data.checksum.length > 0)
-								  array1.push("&checksum=" + todb(args.data.checksum));
+							  var data = {
+								  name: args.data.name,
+									zoneId: args.data.availabilityZone,
+									format: args.data.format,
+									url: args.data.url
+								};
+							                
+								if(args.data.checksum != null && args.data.checksum.length > 0) {
+								  $.extend(data, {
+									  checksum: args.data.checksum
+									});
+								}
                 
                 $.ajax({
-                  url: createURL("uploadVolume" + array1.join("")),
-                  dataType: "json",
-                  async: true,
+                  url: createURL('uploadVolume'),
+                  data: data,                 
                   success: function(json) {										  
 										var jid = json.uploadvolumeresponse.jobid;
 										args.response.success(
@@ -294,10 +279,87 @@
               notification: {
                 poll: pollAsyncJobResult
               }
-            }
-							
+            }							
           },
+					
+					advSearchFields: {
+					  name: { label: 'Name' },
+						zoneid: { 
+						  label: 'Zone',							
+              select: function(args) {							  					
+								$.ajax({
+									url: createURL('listZones'),
+									data: {
+									  listAll: true
+									},
+									success: function(json) {									  
+										var zones = json.listzonesresponse.zone;
 
+										args.response.success({
+											data: $.map(zones, function(zone) {
+												return {
+													id: zone.id,
+													description: zone.name
+												};
+											})
+										});
+									}
+								});
+							}						
+						},		
+						
+						domainid: {					
+							label: 'Domain',					
+							select: function(args) {
+								if(isAdmin() || isDomainAdmin()) {
+									$.ajax({
+										url: createURL('listDomains'),
+										data: { 
+											listAll: true,
+											details: 'min'
+										},
+										success: function(json) {
+											var array1 = [{id: '', description: ''}];
+											var domains = json.listdomainsresponse.domain;
+											if(domains != null && domains.length > 0) {
+												for(var i = 0; i < domains.length; i++) {
+													array1.push({id: domains[i].id, description: domains[i].path});
+												}
+											}
+											args.response.success({
+												data: array1
+											});
+										}
+									});
+								}
+								else {
+									args.response.success({
+										data: null
+									});
+								}
+							},
+							isHidden: function(args) {
+								if(isAdmin() || isDomainAdmin())
+									return false;
+								else
+									return true;
+							}
+						},								
+						
+						account: { 
+							label: 'Account',
+							isHidden: function(args) {
+								if(isAdmin() || isDomainAdmin())
+									return false;
+								else
+									return true;
+							}			
+						},
+						
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
+					},
+					
           dataProvider: function(args) {
 					  var data = {};
 						listViewDataProvider(args, data);						
@@ -816,28 +878,24 @@
                   }
                 },
                 action: function(args) {
-                  /*
-                   var isValid = true;
-                   isValid &= validateString("Name", $thisDialog.find("#create_template_name"), $thisDialog.find("#create_template_name_errormsg"));
-                   isValid &= validateString("Display Text", $thisDialog.find("#create_template_desc"), $thisDialog.find("#create_template_desc_errormsg"));
-                   if (!isValid)
-                   return;
-                   $thisDialog.dialog("close");
-                   */
-
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displayText=" + todb(args.data.displayText));
-                  array1.push("&osTypeId=" + args.data.osTypeId);
-                  array1.push("&isPublic=" + (args.data.isPublic=="on"));
-                  array1.push("&passwordEnabled=" + (args.data.isPasswordEnabled=="on"));
-                  if(args.$form.find('.form-item[rel=isFeatured]').css("display") != "none")
-                      array1.push("&isfeatured=" + (args.data.isFeatured == "on"));
+                  var data = {
+									  volumeId: args.context.volumes[0].id,
+									  name: args.data.name,
+										displayText: args.data.displayText,
+										osTypeId: args.data.osTypeId,
+										isPublic: (args.data.isPublic=="on"),
+										passwordEnabled: (args.data.isPasswordEnabled=="on")
+									};
+								                 
+                  if(args.$form.find('.form-item[rel=isFeatured]').css("display") != "none") {
+									  $.extend(data, {
+										  isfeatured: (args.data.isFeatured == "on")
+										});
+									}
 
                   $.ajax({
-                    url: createURL("createTemplate&volumeId=" + args.context.volumes[0].id + array1.join("")),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('createTemplate'),
+                    data: data,                    
                     success: function(json) {
                       var jid = json.createtemplateresponse.jobid;
                       args.response.success(
@@ -1073,7 +1131,55 @@
           },
 
 					advSearchFields: {
-					  name: { label: 'Name' },							
+					  name: { label: 'Name' },	
+            
+						domainid: {					
+							label: 'Domain',					
+							select: function(args) {
+								if(isAdmin() || isDomainAdmin()) {
+									$.ajax({
+										url: createURL('listDomains'),
+										data: { 
+											listAll: true,
+											details: 'min'
+										},
+										success: function(json) {
+											var array1 = [{id: '', description: ''}];
+											var domains = json.listdomainsresponse.domain;
+											if(domains != null && domains.length > 0) {
+												for(var i = 0; i < domains.length; i++) {
+													array1.push({id: domains[i].id, description: domains[i].path});
+												}
+											}
+											args.response.success({
+												data: array1
+											});
+										}
+									});
+								}
+								else {
+									args.response.success({
+										data: null
+									});
+								}
+							},
+							isHidden: function(args) {
+								if(isAdmin() || isDomainAdmin())
+									return false;
+								else
+									return true;
+							}
+						},		
+						
+						account: { 
+							label: 'Account',
+							isHidden: function(args) {
+								if(isAdmin() || isDomainAdmin())
+									return false;
+								else
+									return true;
+							}			
+						},						
 						tagKey: { label: 'Tag Key' },
 						tagValue: { label: 'Tag Value' }						
 					},
@@ -1145,26 +1251,18 @@
                   }
                 },
                 action: function(args) {
-                  /*
-                   var isValid = true;
-                   isValid &= validateString("Name", $thisDialog.find("#create_template_name"), $thisDialog.find("#create_template_name_errormsg"));
-                   isValid &= validateString("Display Text", $thisDialog.find("#create_template_desc"), $thisDialog.find("#create_template_desc_errormsg"));
-                   if (!isValid)
-                   return;
-                   $thisDialog.dialog("close");
-                   */
-
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
-                  array1.push("&displayText=" + todb(args.data.displayText));
-                  array1.push("&osTypeId=" + args.data.osTypeId);
-                  array1.push("&isPublic=" + (args.data.isPublic=="on"));
-                  array1.push("&passwordEnabled=" + (args.data.isPasswordEnabled=="on"));
-
+                  var data = {
+									  snapshotid: args.context.snapshots[0].id,
+										name: args.data.name,
+										displayText: args.data.displayText,
+										osTypeId: args.data.osTypeId,
+										isPublic: (args.data.isPublic=="on"),
+										passwordEnabled: (args.data.isPasswordEnabled=="on")
+									};
+								
                   $.ajax({
-                    url: createURL("createTemplate&snapshotid=" + args.context.snapshots[0].id + array1.join("")),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('createTemplate'),
+                    data: data,                   
                     success: function(json) {
                       var jid = json.createtemplateresponse.jobid;
                       args.response.success(
@@ -1210,13 +1308,14 @@
                   }
                 },
                 action: function(args) {
-                  var array1 = [];
-                  array1.push("&name=" + todb(args.data.name));
+								  var data = {
+									  snapshotid: args.context.snapshots[0].id,
+										name: args.data.name
+									};								                
 
                   $.ajax({
-                    url: createURL("createVolume&snapshotid=" + args.context.snapshots[0].id + array1.join("")),
-                    dataType: "json",
-                    async: true,
+                    url: createURL('createVolume'),
+                    data: data,                    
                     success: function(json) {
                       var jid = json.createvolumeresponse.jobid;
                       args.response.success(
@@ -1358,6 +1457,7 @@
         }
       }
     }
+		
     return allowedActions;
   };
 
@@ -1374,6 +1474,7 @@
       allowedActions.push("createVolume");
     }
     allowedActions.push("remove");
+			
     return allowedActions;
   }
 

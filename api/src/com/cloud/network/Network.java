@@ -16,23 +16,25 @@
 // under the License.
 package com.cloud.network;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
- * owned by an account. 
+ * owned by an account.
  */
-public interface Network extends ControlledEntity {
-    
+public interface Network extends ControlledEntity, InternalIdentity, Identity {
+
     public enum GuestType {
         Shared,
         Isolated
@@ -45,10 +47,10 @@ public interface Network extends ControlledEntity {
         public static final Service Dhcp = new Service("Dhcp");
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
         public static final Service Gateway = new Service("Gateway");
-        public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, 
+        public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols,
                 Capability.MultipleIps, Capability.TrafficStatistics);
         public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation,
-                Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps, 
+                Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps,
                 Capability.SupportedStickinessMethods, Capability.ElasticLb);
         public static final Service UserData = new Service("UserData");
         public static final Service SourceNat = new Service("SourceNat", Capability.SupportedSourceNatTypes, Capability.RedundantRouter);
@@ -58,6 +60,7 @@ public interface Network extends ControlledEntity {
         public static final Service NetworkACL = new Service("NetworkACL", Capability.SupportedProtocols);
         public static final Service Connectivity = new Service("Connectivity");
 
+
         private String name;
         private Capability[] caps;
 
@@ -65,7 +68,7 @@ public interface Network extends ControlledEntity {
             this.name = name;
             this.caps = caps;
             supportedServices.add(this);
-        }  
+        }
 
         public String getName() {
             return name;
@@ -85,11 +88,11 @@ public interface Network extends ControlledEntity {
                         break;
                     }
                 }
-            } 
+            }
 
             return success;
         }
-        
+
         public static Service getService(String serviceName) {
             for (Service service : supportedServices) {
                 if (service.getName().equalsIgnoreCase(serviceName)) {
@@ -98,7 +101,7 @@ public interface Network extends ControlledEntity {
             }
             return null;
         }
-        
+
         public static List<Service> listAllServices(){
             return supportedServices;
         }
@@ -109,7 +112,7 @@ public interface Network extends ControlledEntity {
      */
     public static class Provider {
         private static List<Provider> supportedProviders = new ArrayList<Provider>();
-        
+
         public static final Provider VirtualRouter = new Provider("VirtualRouter", false);
         public static final Provider JuniperSRX = new Provider("JuniperSRX", true);
         public static final Provider F5BigIp = new Provider("F5BigIp", true);
@@ -135,11 +138,11 @@ public interface Network extends ControlledEntity {
         public String getName() {
             return name;
         }
-        
+
         public boolean isExternal() {
             return isExternal;
         }
-        
+
         public static Provider getProvider(String providerName) {
             for (Provider provider : supportedProviders) {
                 if (provider.getName().equalsIgnoreCase(providerName)) {
@@ -153,7 +156,7 @@ public interface Network extends ControlledEntity {
     public static class Capability {
 
         private static List<Capability> supportedCapabilities = new ArrayList<Capability>();
-        
+
         public static final Capability SupportedProtocols = new Capability("SupportedProtocols");
         public static final Capability SupportedLBAlgorithms = new Capability("SupportedLbAlgorithms");
         public static final Capability SupportedLBIsolation = new Capability("SupportedLBIsolation");
@@ -168,6 +171,8 @@ public interface Network extends ControlledEntity {
         public static final Capability RedundantRouter = new Capability("RedundantRouter");
         public static final Capability ElasticIp = new Capability("ElasticIp");
         public static final Capability ElasticLb = new Capability("ElasticLb");
+        public static final Capability AutoScaleCounters = new Capability("AutoScaleCounters");
+        public static final Capability InlineMode = new Capability("InlineMode");
 
         private String name;
 
@@ -248,11 +253,6 @@ public interface Network extends ControlledEntity {
         }
     }
 
-    /**
-     * @return id of the network profile.  Null means the network profile is not from the database.
-     */
-    long getId();
-
     String getName();
 
     Mode getMode();
@@ -287,14 +287,15 @@ public interface Network extends ControlledEntity {
 
     void setPhysicalNetworkId(Long physicalNetworkId);
 
-	ACLType getAclType();
-	
-	boolean isRestartRequired();
+    ACLType getAclType();
 
-	boolean getSpecifyIpRanges();
+    boolean isRestartRequired();
+
+    boolean getSpecifyIpRanges();
 
     /**
      * @return
      */
     Long getVpcId();
+
 }

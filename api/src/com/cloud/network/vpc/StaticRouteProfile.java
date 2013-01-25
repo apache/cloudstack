@@ -16,8 +16,11 @@
 // under the License.
 package com.cloud.network.vpc;
 
-public class StaticRouteProfile implements StaticRoute{
+import org.apache.cloudstack.api.InternalIdentity;
+
+public class StaticRouteProfile implements StaticRoute {
     private long id;
+    private String uuid;
     private String targetCidr;
     private long accountId;
     private long domainId;
@@ -28,10 +31,11 @@ public class StaticRouteProfile implements StaticRoute{
     String gateway;
     String netmask;
     String ipAddress;
-    
+
 
     public StaticRouteProfile(StaticRoute staticRoute, VpcGateway gateway) {
         this.id = staticRoute.getId();
+        this.uuid = staticRoute.getUuid();
         this.targetCidr = staticRoute.getCidr();
         this.accountId = staticRoute.getAccountId();
         this.domainId = staticRoute.getDomainId();
@@ -79,10 +83,16 @@ public class StaticRouteProfile implements StaticRoute{
         return id;
     }
 
+
+    @Override
+    public String getUuid() {
+        return uuid;
+    }
+
     public String getVlanTag() {
         return vlanTag;
     }
-    
+
     public String getIp4Address() {
         return ipAddress;
     }
@@ -94,5 +104,5 @@ public class StaticRouteProfile implements StaticRoute{
     public String getNetmask() {
         return netmask;
     }
-    
+
 }

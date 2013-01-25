@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import static com.cloud.utils.StringUtils.*;
+import static com.cloud.utils.db.DbUtil.*;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -32,7 +35,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.DomainVO;
@@ -92,6 +95,17 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     
     private final String SELECT_TEMPLATE_SWIFT_REF = "SELECT t.id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, "
             + "t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type FROM vm_template t";
+
+    private final String SELECT_TEMPLATE_S3_REF = "SELECT t.id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, "
+            + "t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type FROM vm_template t";
+
+    private static final String SELECT_S3_CANDIDATE_TEMPLATES = "SELECT t.id, t.unique_name, t.name, t.public, t.featured, " +
+        "t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, t.checksum, t.display_text, " +
+        "t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type " +
+        "FROM vm_template t JOIN template_host_ref r ON t.id=r.template_id JOIN host h ON h.id=r.host_id " +
+        "WHERE t.hypervisor_type IN (SELECT hypervisor_type FROM host) AND r.download_state = 'DOWNLOADED' AND " +
+        "r.template_id NOT IN (SELECT template_id FROM template_s3_ref) AND r.destroyed = 0 AND t.type <> 'PERHOST'";
+
     protected SearchBuilder<VMTemplateVO> TemplateNameSearch;
     protected SearchBuilder<VMTemplateVO> UniqueNameSearch;
     protected SearchBuilder<VMTemplateVO> tmpltTypeSearch;
@@ -917,5 +931,144 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
-    
+
+    @Override
+    public List<VMTemplateVO> findTemplatesToSyncToS3() {
+        return executeList(SELECT_S3_CANDIDATE_TEMPLATES, new Object[] {});
+    }
+
+    @Override
+    public Set<Pair<Long, Long>> searchS3Templates(final String name,
+            final String keyword, final TemplateFilter templateFilter,
+            final boolean isIso, final List<HypervisorType> hypers,
+            final Boolean bootable, final DomainVO domain, final Long pageSize,
+            final Long startIndex, final Long zoneId,
+            final HypervisorType hyperType, final boolean onlyReady,
+            final boolean showDomr, final List<Account> permittedAccounts,
+            final Account caller, final Map<String, String> tags) {
+
+        final String permittedAccountsStr = join(",", permittedAccounts);
+
+        final Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        Set<Pair<Long, Long>> templateZonePairList = new HashSet<Pair<Long, Long>>();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+
+            final StringBuilder joinClause = new StringBuilder();
+            final StringBuilder whereClause = new StringBuilder(" WHERE t.removed IS NULL");
+
+            if (isIso) {
+                whereClause.append(" AND t.format = 'ISO'");
+                if (!hyperType.equals(HypervisorType.None)) {
+                    joinClause.append(" INNER JOIN guest_os guestOS on (guestOS.id = t.guest_os_id) INNER JOIN guest_os_hypervisor goh on ( goh.guest_os_id = guestOS.id) ");
+                    whereClause.append(" AND goh.hypervisor_type = '");
+                    whereClause.append(hyperType);
+                    whereClause.append("'");
+                }
+            } else {
+                whereClause.append(" AND t.format <> 'ISO'");
+                if (hypers.isEmpty()) {
+                    return templateZonePairList;
+                } else {
+                    final StringBuilder relatedHypers = new StringBuilder();
+                    for (HypervisorType hyper : hypers) {
+                        relatedHypers.append("'");
+                        relatedHypers.append(hyper.toString());
+                        relatedHypers.append("'");
+                        relatedHypers.append(",");
+                    }
+                    relatedHypers.setLength(relatedHypers.length() - 1);
+                    whereClause.append(" AND t.hypervisor_type IN (");
+                    whereClause.append(relatedHypers);
+                    whereClause.append(")");
+                }
+            }
+
+            joinClause.append(" INNER JOIN  template_s3_ref tsr on (t.id = tsr.template_id)");
+
+            whereClause.append("AND t.name LIKE \"%");
+            whereClause.append(keyword == null ? keyword : name);
+            whereClause.append("%\"");
+
+            if (bootable != null) {
+                whereClause.append(" AND t.bootable = ");
+                whereClause.append(bootable);
+            }
+
+            if (!showDomr) {
+                whereClause.append(" AND t.type != '");
+                whereClause.append(Storage.TemplateType.SYSTEM);
+                whereClause.append("'");
+            }
+
+            if (templateFilter == TemplateFilter.featured) {
+                whereClause.append(" AND t.public = 1 AND t.featured = 1");
+            } else if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable)
+                    && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN
+                        || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                    joinClause.append(" INNER JOIN account a on (t.account_id = a.id) INNER JOIN domain d on (a.domain_id = d.id)");
+                    whereClause.append("  AND d.path LIKE '");
+                    whereClause.append(domain.getPath());
+                    whereClause.append("%'");
+                } else {
+                    whereClause.append(" AND t.account_id IN (");
+                    whereClause.append(permittedAccountsStr);
+                    whereClause.append(")");
+                }
+            } else if (templateFilter == TemplateFilter.sharedexecutable
+                    && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                    joinClause.append(" LEFT JOIN launch_permission lp ON t.id = lp.template_id WHERE (t.account_id IN (");
+                    joinClause.append(permittedAccountsStr);
+                    joinClause.append(") OR lp.account_id IN (");
+                    joinClause.append(permittedAccountsStr); 
+                    joinClause.append("))");
+                } else {
+                    joinClause.append(" INNER JOIN account a on (t.account_id = a.id) ");
+                }
+            } else if (templateFilter == TemplateFilter.executable
+                    && !permittedAccounts.isEmpty()) {
+                whereClause.append(" AND (t.public = 1 OR t.account_id IN (");
+                whereClause.append(permittedAccountsStr);
+                whereClause.append("))");
+            } else if (templateFilter == TemplateFilter.community) {
+                whereClause.append(" AND t.public = 1 AND t.featured = 0");
+            } else if (templateFilter == TemplateFilter.all
+                    && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                return templateZonePairList;
+            }
+
+            final StringBuilder sql = new StringBuilder(SELECT_TEMPLATE_S3_REF);
+            sql.append(joinClause);
+            sql.append(whereClause);
+            sql.append(getOrderByLimit(pageSize, startIndex));
+
+            pstmt = txn.prepareStatement(sql.toString());
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                final Pair<Long, Long> templateZonePair = new Pair<Long, Long>(
+                        rs.getLong(1), -1L);
+                templateZonePairList.add(templateZonePair);
+            }
+            txn.commit();
+        } catch (Exception e) {
+            s_logger.warn("Error listing S3 templates", e);
+            if (txn != null) {
+                txn.rollback();
+            }
+        } finally {
+            closeResources(pstmt, rs);
+            if (txn != null) {
+                txn.close();
+            }
+        }
+
+        return templateZonePairList;
+    }
+
 }

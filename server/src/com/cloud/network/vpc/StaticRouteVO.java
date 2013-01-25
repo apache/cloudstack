@@ -28,47 +28,48 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 
 @Entity
 @Table(name="static_routes")
-public class StaticRouteVO implements Identity, StaticRoute{
+public class StaticRouteVO implements StaticRoute {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     long id;
-    
+
     @Column(name="uuid")
     String uuid;
-    
+
     @Column(name="vpc_gateway_id", updatable=false)
     long vpcGatewayId;
-    
+
     @Column(name="cidr")
     private String cidr;
-    
+
     @Enumerated(value=EnumType.STRING)
     @Column(name="state")
     State state;
-    
+
     @Column(name="vpc_id")
     private Long vpcId;
-    
+
     @Column(name = "account_id")
     long accountId;
 
     @Column(name = "domain_id")
     long domainId;
-    
+
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
-    
+
     protected StaticRouteVO(){
         this.uuid = UUID.randomUUID().toString();
     }
-    
+
     /**
      * @param vpcGatewayId
      * @param cidr
@@ -86,7 +87,7 @@ public class StaticRouteVO implements Identity, StaticRoute{
         this.domainId = domainId;
         this.uuid = UUID.randomUUID().toString();
     }
-    
+
     @Override
     public long getVpcGatewayId() {
         return vpcGatewayId;
@@ -130,7 +131,7 @@ public class StaticRouteVO implements Identity, StaticRoute{
     public void setState(State state) {
         this.state = state;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("StaticRoute[");

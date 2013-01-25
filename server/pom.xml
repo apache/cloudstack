@@ -43,6 +43,11 @@
       <version>${cs.httpcore.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>${cs.httpcore.version}</version>
+    </dependency>
+    <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
       <version>${cs.mysql.version}</version>
@@ -64,13 +69,17 @@
       <version>${cs.jstl.version}</version>
     </dependency>
     <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>${cs.codec.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-utils</artifactId>
       <version>${project.version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
-    
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -86,8 +95,16 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
+          <argLine>-Xmx1024m</argLine>
           <excludes>
             <exclude>com/cloud/upgrade/*</exclude>
+            <exclude>com/cloud/async/*</exclude>
+            <exclude>com/cloud/cluster/*</exclude>
+            <exclude>com/cloud/snapshot/*</exclude>
+            <exclude>com/cloud/storage/dao/*</exclude>
+            <exclude>com/cloud/vm/dao/*</exclude>
+            <exclude>com/cloud/vpc/*</exclude>
+            <exclude>com/cloud/api/ListPerfTest.java</exclude>
           </excludes>
         </configuration>
       </plugin>

@@ -25,6 +25,11 @@ import java.util.concurrent.Executors;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
+import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -32,12 +37,7 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
 import com.cloud.agent.api.baremetal.IpmiBootorResetCommand;
 import com.cloud.agent.manager.Commands;
-import com.cloud.api.commands.AttachVolumeCmd;
-import com.cloud.api.commands.CreateTemplateCmd;
-import com.cloud.api.commands.DeployVMCmd;
-import com.cloud.api.commands.DetachVolumeCmd;
-import com.cloud.api.commands.StartVMCmd;
-import com.cloud.api.commands.UpgradeVMCmd;
+import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import com.cloud.baremetal.PxeServerManager.PxeServerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -307,7 +307,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 			s_logger.warn("Bare Metal only supports basical network mode now, switch to baisc network automatically");
 		}
 		
-		Network defaultNetwork = _networkMgr.getExclusiveGuestNetwork(dc.getId());
+		Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(dc.getId());
 		if (defaultNetwork == null) {
 			throw new InvalidParameterValueException("Unable to find a default network to start a vm");
 		}

@@ -147,6 +147,16 @@ DROP TABLE IF EXISTS `cloud`.`s2s_vpn_gateway`;
 DROP TABLE IF EXISTS `cloud`.`s2s_vpn_connection`;
 DROP TABLE IF EXISTS `cloud`,`external_nicira_nvp_devices`;
 DROP TABLE IF EXISTS `cloud`,`nicira_nvp_nic_map`;
+DROP TABLE IF EXISTS `cloud`,`s3`;
+DROP TABLE IF EXISTS `cloud`,`template_s3_ref`;
+DROP TABLE IF EXISTS `cloud`,`nicira_nvp_router_map`;
+DROP TABLE IF EXISTS `cloud`.`autoscale_vmgroup_policy_map`;
+DROP TABLE IF EXISTS `cloud`.`autoscale_policy_condition_map`;
+DROP TABLE IF EXISTS `cloud`.`autoscale_vmgroups`;
+DROP TABLE IF EXISTS `cloud`.`autoscale_vmprofiles`;
+DROP TABLE IF EXISTS `cloud`.`autoscale_policies`;
+DROP TABLE IF EXISTS `cloud`.`counter`;
+DROP TABLE IF EXISTS `cloud`.`conditions`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -157,7 +167,8 @@ CREATE TABLE `cloud`.`version` (
   INDEX `i_version__version`(`version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `version` (`version`, `updated`, `step`) VALUES('@VERSION@', now(), 'Complete');
+
+INSERT INTO `version` (`version`, `updated`, `step`) VALUES('4.1.0', now(), 'Complete');
 
 CREATE TABLE `cloud`.`op_it_work` (
   `id` char(40) COMMENT 'reservation id',
@@ -298,6 +309,7 @@ CREATE TABLE `cloud`.`network_offerings` (
   `elastic_ip_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides elastic ip service',
   `elastic_lb_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides elastic lb service',
   `specify_ip_ranges` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides an ability to define ip ranges',
+  `inline` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering LB provider is in inline mode',
   PRIMARY KEY (`id`),
   INDEX `i_network_offerings__system_only`(`system_only`),
   INDEX `i_network_offerings__removed`(`removed`),
@@ -472,12 +484,14 @@ CREATE TABLE `cloud`.`snapshots` (
   `removed` datetime COMMENT 'Date removed.  not null if removed',
   `backup_snap_id` varchar(255) COMMENT 'Back up uuid of the snapshot',
   `swift_id` bigint unsigned COMMENT 'which swift',
+  `s3_id` bigint unsigned COMMENT 'S3 to which this snapshot will be stored',
   `sechost_id` bigint unsigned COMMENT 'secondary storage host id',
   `prev_snap_id` bigint unsigned COMMENT 'Id of the most recent snapshot',
   `hypervisor_type` varchar(32) NOT NULL COMMENT 'hypervisor that the snapshot was taken under',
   `version` varchar(32) COMMENT 'snapshot version',
   PRIMARY KEY (`id`),
   CONSTRAINT `uc_snapshots__uuid` UNIQUE (`uuid`),
+  CONSTRAINT `fk_snapshots__s3_id` FOREIGN KEY `fk_snapshots__s3_id` (`s3_id`) REFERENCES `s3` (`id`),
   INDEX `i_snapshots__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -733,12 +747,10 @@ CREATE TABLE `cloud`.`load_balancer_stickiness_policies` (
 
 CREATE TABLE `cloud`.`inline_load_balancer_nic_map` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `load_balancer_id` bigint unsigned NOT NULL,
   `public_ip_address` char(40) NOT NULL,
   `nic_id` bigint unsigned NULL COMMENT 'nic id',
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`nic_id`),
-  CONSTRAINT `fk_inline_load_balancer_nic_map__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_inline_load_balancer_nic_map__nic_id` FOREIGN KEY(`nic_id`) REFERENCES `nics`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1109,6 +1121,7 @@ CREATE TABLE  `cloud`.`upload` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
   `type_id` bigint unsigned NOT NULL,
+  `uuid` varchar(40),
   `type` varchar(255),
   `mode` varchar(255),
   `created` DATETIME NOT NULL,
@@ -1333,7 +1346,7 @@ CREATE TABLE `cloud`.`async_job` (
   `session_key` varchar(64) COMMENT 'all async-job manage to apply session based security enforcement',
   `instance_type` varchar(64) COMMENT 'instance_type and instance_id work together to allow attaching an instance object to a job',			
   `instance_id` bigint unsigned,
-  `job_cmd` varchar(64) NOT NULL COMMENT 'command name',
+  `job_cmd` varchar(255) NOT NULL COMMENT 'command name',
   `job_cmd_originator` varchar(64) COMMENT 'command originator',
   `job_cmd_info` text COMMENT 'command parameter info',
   `job_cmd_ver` int(1) COMMENT 'command version',
@@ -1366,16 +1379,15 @@ CREATE TABLE `cloud`.`sync_queue` (
   `id` bigint unsigned NOT NULL auto_increment,
   `sync_objtype` varchar(64) NOT NULL, 
   `sync_objid` bigint unsigned NOT NULL,
-  `queue_proc_msid` bigint,
   `queue_proc_number` bigint COMMENT 'process number, increase 1 for each iteration',
-  `queue_proc_time` datetime COMMENT 'last time to process the queue',
   `created` datetime COMMENT 'date created',
   `last_updated` datetime COMMENT 'date created',
+  `queue_size` smallint DEFAULT 0 COMMENT 'number of items being processed by the queue',
+  `queue_size_limit` smallint DEFAULT 1 COMMENT 'max number of items the queue can process concurrently',
   PRIMARY KEY  (`id`),
   UNIQUE `i_sync_queue__objtype__objid`(`sync_objtype`, `sync_objid`),
   INDEX `i_sync_queue__created`(`created`),
-  INDEX `i_sync_queue__last_updated`(`last_updated`),
-  INDEX `i_sync_queue__queue_proc_time`(`queue_proc_time`)
+  INDEX `i_sync_queue__last_updated`(`last_updated`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`stack_maid` (
@@ -1396,13 +1408,15 @@ CREATE TABLE `cloud`.`sync_queue_item` (
   `content_id` bigint,
   `queue_proc_msid` bigint COMMENT 'owner msid when the queue item is being processed',
   `queue_proc_number` bigint COMMENT 'used to distinguish raw items and items being in process',
+  `queue_proc_time` datetime COMMENT 'when processing started for the item',
   `created` datetime COMMENT 'time created',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_sync_queue_item__queue_id` FOREIGN KEY `fk_sync_queue_item__queue_id` (`queue_id`) REFERENCES `sync_queue` (`id`) ON DELETE CASCADE,
   INDEX `i_sync_queue_item__queue_id`(`queue_id`),
   INDEX `i_sync_queue_item__created`(`created`),
   INDEX `i_sync_queue_item__queue_proc_number`(`queue_proc_number`),
-  INDEX `i_sync_queue_item__queue_proc_msid`(`queue_proc_msid`)
+  INDEX `i_sync_queue_item__queue_proc_msid`(`queue_proc_msid`),
+  INDEX `i_sync_queue__queue_proc_time`(`queue_proc_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`disk_offering` (
@@ -1844,6 +1858,36 @@ CREATE TABLE `cloud`.`swift` (
   CONSTRAINT `uc_swift__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`s3` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
+  `access_key` varchar(20) NOT NULL COMMENT ' The S3 access key',
+  `secret_key` varchar(40) NOT NULL COMMENT ' The S3 secret key',
+  `end_point` varchar(1024) COMMENT ' The S3 host',
+  `bucket` varchar(63) NOT NULL COMMENT ' The S3 host',
+  `https` tinyint unsigned DEFAULT NULL COMMENT ' Flag indicating whether or not to connect over HTTPS',
+  `connection_timeout` integer COMMENT ' The amount of time to wait (in milliseconds) when initially establishing a connection before giving up and timing out.',
+  `max_error_retry` integer  COMMENT ' The maximum number of retry attempts for failed retryable requests (ex: 5xx error responses from services).',
+  `socket_timeout` integer COMMENT ' The amount of time to wait (in milliseconds) for data to be transfered over an established, open connection before the connection times out and is closed.',
+  `created` datetime COMMENT 'date the s3 first signed on',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_s3__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`template_s3_ref` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `s3_id` bigint unsigned NOT NULL COMMENT ' Associated S3 instance id',
+  `template_id` bigint unsigned NOT NULL COMMENT ' Associated template id',
+  `created` DATETIME NOT NULL COMMENT ' The creation timestamp',
+  `size` bigint unsigned COMMENT ' The size of the object',
+  `physical_size` bigint unsigned DEFAULT 0 COMMENT ' The physical size of the object',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_template_s3_ref__template_id` UNIQUE (`template_id`),
+  CONSTRAINT `fk_template_s3_ref__s3_id` FOREIGN KEY `fk_template_s3_ref__s3_id` (`s3_id`) REFERENCES `s3` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_template_s3_ref__template_id` FOREIGN KEY `fk_template_s3_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`),
+  INDEX `i_template_s3_ref__s3_id`(`s3_id`),
+  INDEX `i_template_s3_ref__template_id`(`template_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_host_transfer` (
   `id` bigint unsigned UNIQUE NOT NULL COMMENT 'Id of the host',
@@ -2035,7 +2079,6 @@ CREATE TABLE `cloud`.`external_load_balancer_devices` (
   `device_state` varchar(32) NOT NULL DEFAULT 'Disabled' COMMENT 'state (enabled/disabled/shutdown) of the device',
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Free' COMMENT 'Allocation state (Free/Shared/Dedicated/Provider) of the device',
   `is_dedicated` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if device/appliance is provisioned for dedicated use only',
-  `is_inline` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer will be used in in-line configuration with firewall',
   `is_managed` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is provisioned and its life cycle is managed by by cloudstack',
   `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external load balancer device',
   `parent_host_id` bigint unsigned COMMENT 'if the load balancer appliance is cloudstack managed, then host id on which this appliance is provisioned',
@@ -2371,7 +2414,7 @@ CREATE TABLE `cloud`.`external_nicira_nvp_devices` (
   `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this nicira nvp device',
   `device_name` varchar(255) NOT NULL COMMENT 'name of the nicira nvp device',
   `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external nicira nvp device',
-  PRIMARY KEY (`id`),
+  PRIMARY KEY  (`id`),
   CONSTRAINT `fk_external_nicira_nvp_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_external_nicira_nvp_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -2383,6 +2426,136 @@ CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
   `nic` varchar(255) UNIQUE COMMENT 'cloudstack uuid of the nic connected to this logical switch port',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`nicira_nvp_router_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `logicalrouter_uuid` varchar(255) NOT NULL UNIQUE COMMENT 'nicira uuid of logical router',
+  `network_id` bigint unsigned NOT NULL UNIQUE COMMENT 'cloudstack id of the network',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_nicira_nvp_router_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`counter` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
+  `source` varchar(255) NOT NULL COMMENT 'source e.g. netscaler, snmp',
+  `name` varchar(255) NOT NULL COMMENT 'Counter name',
+  `value` varchar(255) NOT NULL COMMENT 'Value in case of source=snmp',
+  `removed` datetime COMMENT 'date removed if not null',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_counter__uuid` UNIQUE (`uuid`),
+  INDEX `i_counter__removed`(`removed`),
+  INDEX `i_counter__source`(`source`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`conditions` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
+  `counter_id` bigint unsigned NOT NULL COMMENT 'Counter Id',
+  `threshold` bigint unsigned NOT NULL COMMENT 'threshold value for the given counter',
+  `relational_operator` char(2) COMMENT 'relational operator to be used upon the counter and condition',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain the Condition belongs to',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this Condition',
+  `removed` datetime COMMENT 'date removed if not null',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_conditions__counter_id` FOREIGN KEY `fk_condition__counter_id`(`counter_id`) REFERENCES `counter`(`id`),
+  CONSTRAINT `fk_conditions__account_id` FOREIGN KEY `fk_condition__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_conditions__domain_id` FOREIGN KEY `fk_condition__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_conditions__uuid` UNIQUE (`uuid`),
+  INDEX `i_conditions__removed`(`removed`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_vmprofiles` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `uuid` varchar(40),
+  `zone_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `autoscale_user_id` bigint unsigned NOT NULL,
+  `service_offering_id` bigint unsigned NOT NULL,
+  `template_id` bigint unsigned NOT NULL,
+  `other_deploy_params` varchar(1024) COMMENT 'other deployment parameters that is in addition to zoneid,serviceofferingid,domainid',
+  `destroy_vm_grace_period` int unsigned COMMENT 'the time allowed for existing connections to get closed before a vm is destroyed',
+  `counter_params` varchar(1024) COMMENT 'the parameters for the counter to be used to get metric information from VMs',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_vmprofiles__domain_id` FOREIGN KEY `fk_autoscale_vmprofiles__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmprofiles__account_id` FOREIGN KEY `fk_autoscale_vmprofiles__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmprofiles__autoscale_user_id` FOREIGN KEY `fk_autoscale_vmprofiles__autoscale_user_id` (`autoscale_user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_autoscale_vmprofiles__uuid` UNIQUE (`uuid`),
+  INDEX `i_autoscale_vmprofiles__removed`(`removed`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_policies` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `uuid` varchar(40),
+  `domain_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `duration` int unsigned NOT NULL,
+  `quiet_time` int unsigned NOT NULL,
+  `action` varchar(15),
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_policies__domain_id` FOREIGN KEY `fk_autoscale_policies__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_policies__account_id` FOREIGN KEY `fk_autoscale_policies__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_autoscale_policies__uuid` UNIQUE (`uuid`),
+  INDEX `i_autoscale_policies__removed`(`removed`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_vmgroups` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `uuid` varchar(40),
+  `zone_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `load_balancer_id` bigint unsigned NOT NULL,
+  `min_members` int unsigned DEFAULT 1,
+  `max_members` int unsigned NOT NULL,
+  `member_port` int unsigned NOT NULL,
+  `interval` int unsigned NOT NULL,
+  `profile_id` bigint unsigned NOT NULL,
+  `state` varchar(255) NOT NULL COMMENT 'enabled or disabled, a vmgroup is disabled to stop autoscaling activity',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_vmgroup__autoscale_vmprofile_id` FOREIGN KEY(`profile_id`) REFERENCES `autoscale_vmprofiles`(`id`),
+  CONSTRAINT `fk_autoscale_vmgroup__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroups__domain_id` FOREIGN KEY `fk_autoscale_vmgroups__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroups__account_id` FOREIGN KEY `fk_autoscale_vmgroups__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroups__zone_id` FOREIGN KEY `fk_autoscale_vmgroups__zone_id`(`zone_id`) REFERENCES `data_center`(`id`),
+  CONSTRAINT `uc_autoscale_vmgroups__uuid` UNIQUE (`uuid`),
+  INDEX `i_autoscale_vmgroups__removed`(`removed`),
+  INDEX `i_autoscale_vmgroups__load_balancer_id`(`load_balancer_id`)  
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_policy_condition_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `policy_id` bigint unsigned NOT NULL,
+  `condition_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_policy_condition_map__policy_id` FOREIGN KEY `fk_autoscale_policy_condition_map__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_policy_condition_map__condition_id` FOREIGN KEY `fk_autoscale_policy_condition_map__condition_id` (`condition_id`) REFERENCES `conditions` (`id`),
+  INDEX `i_autoscale_policy_condition_map__policy_id`(`policy_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `vmgroup_id` bigint unsigned NOT NULL,
+  `policy_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_vmgroup_policy_map__vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__vmgroup_id` (`vmgroup_id`) REFERENCES `autoscale_vmgroups` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroup_policy_map__policy_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`),
+  INDEX `i_autoscale_vmgroup_policy_map__vmgroup_id`(`vmgroup_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (1, UUID(), 'snmp','Linux User CPU - percentage', '1.3.6.1.4.1.2021.11.9.0', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (2, UUID(), 'snmp','Linux System CPU - percentage', '1.3.6.1.4.1.2021.11.10.0', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (3, UUID(), 'snmp','Linux CPU Idle - percentage', '1.3.6.1.4.1.2021.11.11.0', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (100, UUID(), 'netscaler','Response Time - microseconds', 'RESPTIME', now());
 
 SET foreign_key_checks = 1;
 

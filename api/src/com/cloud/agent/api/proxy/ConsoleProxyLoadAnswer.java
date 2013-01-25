@@ -23,21 +23,21 @@ public class ConsoleProxyLoadAnswer extends Answer {
 
 	private long proxyVmId;
 	private String proxyVmName;
-	
+
 	protected ConsoleProxyLoadAnswer() {
 	}
-	
+
 	public ConsoleProxyLoadAnswer(Command command, long proxyVmId, String proxyVmName, boolean success, String details) {
 		super(command, success, details);
-		
+
 		this.proxyVmId = proxyVmId;
 		this.proxyVmName = proxyVmName;
 	}
-	
+
 	public long getProxyVmId() {
 		return proxyVmId;
 	}
-	
+
 	public String getProxyVmName() {
 		return proxyVmName;
 	}

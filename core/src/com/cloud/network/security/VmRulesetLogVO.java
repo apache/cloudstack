@@ -26,6 +26,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Records the intent to update a VM's ingress ruleset
@@ -33,7 +34,7 @@ import com.cloud.utils.db.GenericDao;
  */
 @Entity
 @Table(name="op_vm_ruleset_log")
-public class VmRulesetLogVO {
+public class VmRulesetLogVO implements InternalIdentity {
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -57,7 +58,7 @@ public class VmRulesetLogVO {
 		this.instanceId = instanceId;
 	}
 
-	public Long getId() {
+	public long getId() {
 		return id;
 	}
 

@@ -73,7 +73,7 @@ import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
@@ -113,7 +113,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
 
     @Inject AgentManager _agentMgr;
     @Inject
-    protected NetworkManager _netMgr;
+    protected NetworkModel _netMgr;
     @Inject HostDao _hostDao;
     @Inject ClusterDao _clusterDao;
     @Inject ClusterDetailsDao _clusterDetailsDao;
@@ -664,9 +664,9 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         File file = new File(url.getFile());
         File isoFile = new File(file.getParent() + "/vms/systemvm.iso");
         if (!isoFile.exists()) {
-            isoFile = new File("/usr/lib64/cloud/agent/" + "/vms/systemvm.iso");
+            isoFile = new File("/usr/lib64/cloud/common/" + "/vms/systemvm.iso");
             if (!isoFile.exists()) {
-                isoFile = new File("/usr/lib/cloud/agent/" + "/vms/systemvm.iso");
+                isoFile = new File("/usr/lib/cloud/common/" + "/vms/systemvm.iso");
             }
         }
         return isoFile;
@@ -679,9 +679,9 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
 
         File keyFile = new File(file.getParent(), "/scripts/vm/systemvm/id_rsa.cloud");
         if (!keyFile.exists()) {
-            keyFile = new File("/usr/lib64/cloud/agent" + "/scripts/vm/systemvm/id_rsa.cloud");
+            keyFile = new File("/usr/lib64/cloud/common" + "/scripts/vm/systemvm/id_rsa.cloud");
             if (!keyFile.exists()) {
-                keyFile = new File("/usr/lib/cloud/agent" + "/scripts/vm/systemvm/id_rsa.cloud");
+                keyFile = new File("/usr/lib/cloud/common" + "/scripts/vm/systemvm/id_rsa.cloud");
             }
         }
         return keyFile;

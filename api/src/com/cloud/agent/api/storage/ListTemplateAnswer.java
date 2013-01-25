@@ -25,17 +25,17 @@ import com.cloud.storage.template.TemplateInfo;
 public class ListTemplateAnswer extends Answer  {
     private String secUrl;
     private Map<String, TemplateInfo> templateInfos;
-	
+
 	public ListTemplateAnswer() {
-		
+
 	}
-	
+
 	public ListTemplateAnswer(String secUrl, Map<String, TemplateInfo> templateInfos) {
 	    super(null, true, "success");
 	    this.setSecUrl(secUrl);
-	    this.templateInfos = templateInfos;    
+	    this.templateInfos = templateInfos;
 	}
-	
+
 	public Map<String, TemplateInfo> getTemplateInfo() {
 	    return templateInfos;
 	}

@@ -45,6 +45,7 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
@@ -81,6 +82,8 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     private static final Logger s_logger = Logger.getLogger(GuestNetworkGuru.class);
     @Inject
     protected NetworkManager _networkMgr;
+    @Inject
+    protected NetworkModel _networkModel;
     @Inject
     protected DataCenterDao _dcDao;
     @Inject
@@ -153,25 +156,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     }
 
     protected abstract boolean canHandle(NetworkOffering offering, final NetworkType networkType, PhysicalNetwork physicalNetwork);
-/*    protected boolean canHandle(NetworkOffering offering, final NetworkType networkType, final List<String> isolationMethods) {
-        // This guru handles only Guest Isolated network that supports Source nat service
-<<<<<<< HEAD
-        if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) 
-                && offering.getGuestType() == Network.GuestType.Isolated && !offering.isSystemOnly()) {
-=======
-        if (networkType == NetworkType.Advanced 
-                && isMyTrafficType(offering.getTrafficType()) 
-                && offering.getGuestType() == Network.GuestType.Isolated
-                && isMyIsolationMethod(isolationMethods)) {
->>>>>>> master
-            return true;
-        } else {
-            s_logger.trace("We only take care of non-system Guest networks of type   " + GuestType.Isolated + " in zone of type "
-                    + NetworkType.Advanced);
-            return false;
-        }
-    }
-*/
+
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
@@ -328,7 +313,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         long dcId = dest.getDataCenter().getId();
 
         //get physical network id
-        long physicalNetworkId = _networkMgr.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
+        long physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
 
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), 
                 network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
@@ -373,11 +358,11 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                 boolean isGateway = false;
                 if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
                     if (network.getVpcId() != null) {
-                        if (_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.VPCVirtualRouter)) {
+                        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.VPCVirtualRouter)) {
                             isGateway = true;
                         }
                     } else {
-                        if (_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.VirtualRouter)) {
+                        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.VirtualRouter)) {
                             isGateway = true;
                         }
                     }
@@ -405,7 +390,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         nic.setStrategy(ReservationStrategy.Start);
 
         if (nic.getMacAddress() == null) {
-            nic.setMacAddress(_networkMgr.getNextAvailableMacAddressInNetwork(network.getId()));
+            nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
             if (nic.getMacAddress() == null) {
                 throw new InsufficientAddressCapacityException("Unable to allocate more mac addresses", Network.class, network.getId());
             }
@@ -442,15 +427,17 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     @Override
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
-        s_logger.debug("Releasing vnet for the network id=" + profile.getId());
-        if (profile.getBroadcastUri() != null && !offering.getSpecifyVlan()) {
+        
+        if (profile.getBroadcastDomainType() == BroadcastDomainType.Vlan && 
+        		profile.getBroadcastUri() != null && !offering.getSpecifyVlan()) {
+        	s_logger.debug("Releasing vnet for the network id=" + profile.getId());
             _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), 
                     profile.getPhysicalNetworkId(), profile.getAccountId(), profile.getReservationId());
             EventUtils.saveEvent(UserContext.current().getCallerUserId(), profile.getAccountId(), 
                     EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_RELEASE, "Released Zone Vlan: "
                     +profile.getBroadcastUri().getHost()+" for Network: "+profile.getId(), 0);
-            profile.setBroadcastUri(null);
         }
+        profile.setBroadcastUri(null);
     }
 
     @Override

@@ -22,9 +22,9 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from integration.lib.utils import *
-from integration.lib.base import *
-from integration.lib.common import *
+from marvin.integration.lib.utils import *
+from marvin.integration.lib.base import *
+from marvin.integration.lib.common import *
 from marvin.remoteSSHClient import remoteSSHClient
 import datetime
 
@@ -176,7 +176,6 @@ class TestEIP(cloudstackTestCase):
         try:
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            self.dbclient.close()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -999,7 +998,6 @@ class TestELB(cloudstackTestCase):
         try:
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            self.dbclient.close()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return

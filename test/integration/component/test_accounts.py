@@ -19,9 +19,9 @@
 #Import Local Modules
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from integration.lib.utils import *
-from integration.lib.base import *
-from integration.lib.common import *
+from marvin.integration.lib.utils import *
+from marvin.integration.lib.base import *
+from marvin.integration.lib.common import *
 from marvin import remoteSSHClient
 import datetime
 

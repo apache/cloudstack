@@ -31,17 +31,21 @@ from cloudstackAPI import *
 import jsonHelper
 
 class cloudConnection(object):
-    def __init__(self, mgtSvr, port=8096, apiKey = None, securityKey = None, asyncTimeout=3600, logging=None):
+    def __init__(self, mgtSvr, port=8096, apiKey = None, securityKey = None, asyncTimeout=3600, logging=None, protocol='http', path='/client/api'):
         self.apiKey = apiKey
         self.securityKey = securityKey
         self.mgtSvr = mgtSvr
         self.port = port
         self.logging = logging
-        if port == 8096:
+        if protocol != 'http' and protocol != 'https':
+            raise ValueError("Protocol must be 'http' or 'https'.")
+        else:
+            self.protocol=protocol
+        self.path = path
+        if port == 8096 or (self.apiKey == None and self.securityKey == None):
             self.auth = False
         else:
             self.auth = True
-            
         self.retries = 5
         self.asyncTimeout = asyncTimeout
     
@@ -52,7 +56,7 @@ class cloudConnection(object):
             pass
     
     def __copy__(self):
-        return cloudConnection(self.mgtSvr, self.port, self.apiKey, self.securityKey, self.asyncTimeout, self.logging)
+        return cloudConnection(self.mgtSvr, self.port, self.apiKey, self.securityKey, self.asyncTimeout, self.logging, self.protocol, self.path)
     
     def make_request_with_auth(self, command, requests={}):
         requests["command"] = command
@@ -68,17 +72,23 @@ class cloudConnection(object):
         requestUrl += "&signature=%s"%sig
 
         try:
-            self.connection = urllib2.urlopen("http://%s:%d/client/api?%s"%(self.mgtSvr, self.port, requestUrl))
-            self.logging.debug("sending GET request: %s"%requestUrl)
+            self.connection = urllib2.urlopen("%s://%s:%d%s?%s"%(self.protocol, self.mgtSvr, self.port, self.path, requestUrl))
+            if self.logging is not None:
+                self.logging.debug("sending GET request: %s"%requestUrl)
             response = self.connection.read()
-            self.logging.info("got response: %s"%response)
+            if self.logging is not None:
+                self.logging.info("got response: %s"%response)
         except IOError, e:
             if hasattr(e, 'reason'):
-                self.logging.critical("failed to reach %s because of %s"%(self.mgtSvr, e.reason))
+                if self.logging is not None:
+                    self.logging.critical("failed to reach %s because of %s"%(self.mgtSvr, e.reason))
             elif hasattr(e, 'code'):
-                self.logging.critical("server returned %d error code"%e.code)
+                if self.logging is not None:
+                    self.logging.critical("server returned %d error code"%e.code)
+            raise e
         except httplib.HTTPException, h:
-            self.logging.debug("encountered http Exception %s"%h.args)
+            if self.logging is not None:
+                self.logging.debug("encountered http Exception %s"%h.args)
             if self.retries > 0:
                 self.retries = self.retries - 1
                 self.make_request_with_auth(command, requests)
@@ -94,10 +104,12 @@ class cloudConnection(object):
         requests = zip(requests.keys(), requests.values())
         requestUrl = "&".join(["=".join([request[0], urllib.quote_plus(str(request[1]))]) for request in requests])
 
-        self.connection = urllib2.urlopen("http://%s:%d/client/api?%s"%(self.mgtSvr, self.port, requestUrl))
-        self.logging.debug("sending GET request without auth: %s"%requestUrl)
+        self.connection = urllib2.urlopen("%s://%s:%d%s?%s"%(self.protocol, self.mgtSvr, self.port, self.path, requestUrl))
+        if self.logging is not None:
+            self.logging.debug("sending GET request without auth: %s"%requestUrl)
         response = self.connection.read()
-        self.logging.info("got response: %s"%response)
+        if self.logging is not None:
+            self.logging.info("got response: %s"%response)
         return response
     
     def pollAsyncJob(self, jobId, response):
@@ -114,7 +126,8 @@ class cloudConnection(object):
                 return asyncResonse
             
             time.sleep(5)
-            self.logging.debug("job: %s still processing, will timeout in %ds"%(jobId, timeout))
+            if self.logging is not None:
+                self.logging.debug("job: %s still processing, will timeout in %ds"%(jobId, timeout))
             timeout = timeout - 5
             
         raise cloudstackException.cloudstackAPIException("asyncquery", "Async job timeout %s"%jobId)

@@ -42,9 +42,10 @@
 				}			
 				return hiddenFields;
 			},			
-      fields: {        
-        displayname: { label: 'label.display.name' },
-				name: { label: 'label.host.name' },
+      fields: {      
+				name: { label: 'label.name' },
+				instancename: { label: 'label.internal.name' },
+				displayname: { label: 'label.display.name' },
         zonename: { label: 'label.zone.name' },
         state: {
           label: 'label.state',         
@@ -81,7 +82,55 @@
 							}
 						});
 					}						
-				},									
+				},	
+				
+				domainid: {					
+				  label: 'Domain',					
+					select: function(args) {
+					  if(isAdmin() || isDomainAdmin()) {
+							$.ajax({
+								url: createURL('listDomains'),
+								data: { 
+									listAll: true,
+									details: 'min'
+								},
+								success: function(json) {
+									var array1 = [{id: '', description: ''}];
+									var domains = json.listdomainsresponse.domain;
+									if(domains != null && domains.length > 0) {
+										for(var i = 0; i < domains.length; i++) {
+											array1.push({id: domains[i].id, description: domains[i].path});
+										}
+									}
+									args.response.success({
+										data: array1
+									});
+								}
+							});
+						}
+						else {
+						  args.response.success({
+								data: null
+							});
+						}
+					},
+					isHidden: function(args) {
+					  if(isAdmin() || isDomainAdmin())
+						  return false;
+						else
+						  return true;
+					}
+				},		
+        account: { 
+				  label: 'Account',
+          isHidden: function(args) {
+					  if(isAdmin() || isDomainAdmin())
+						  return false;
+						else
+						  return true;
+					}			
+				},
+				
 				tagKey: { label: 'Tag Key' },
 				tagValue: { label: 'Tag Value' }						
 			},						
@@ -103,193 +152,6 @@
           },
           notification: {
             poll: pollAsyncJobResult
-          }
-        },
-        start: {
-          label: 'label.action.start.instance' ,
-          action: function(args) {
-            $.ajax({
-              url: createURL("startVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.startvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          messages: {
-            confirm: function(args) {
-              return 'message.action.start.instance';
-            },
-            notification: function(args) {
-              return 'label.action.start.instance';
-            },
-						complete: function(args) {						  
-							if(args.password != null) {
-								alert('Password of the VM is ' + args.password);
-							}
-							return 'label.action.start.instance';
-						}			
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        stop: {
-          label: 'label.action.stop.instance',
-          addRow: 'false',
-          createForm: {
-            title: 'label.action.stop.instance',
-            desc: 'message.action.stop.instance',
-            fields: {
-              forced: {
-                label: 'force.stop',
-                isBoolean: true,
-                isChecked: false
-              }
-            }
-          },
-          action: function(args) {
-            var array1 = [];
-            array1.push("&forced=" + (args.data.forced == "on"));
-            $.ajax({
-              url: createURL("stopVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.stopvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          messages: {
-            confirm: function(args) {
-              return 'message.action.stop.instance';
-            },
-
-            notification: function(args) {
-              return 'label.action.stop.instance';
-            }
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        restart: {
-          label: 'instances.actions.reboot.label',
-          action: function(args) {
-            $.ajax({
-              url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.rebootvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          messages: {
-            confirm: function(args) {
-              return 'message.action.reboot.instance';
-            },
-            notification: function(args) {
-              return 'instances.actions.reboot.label';
-            }
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        destroy: {
-          label: 'label.action.destroy.instance',
-          messages: {
-            confirm: function(args) {
-              return 'message.action.destroy.instance';
-            },            
-            notification: function(args) {
-              return 'label.action.destroy.instance';
-            }
-          },
-          action: function(args) {
-            $.ajax({
-              url: createURL("destroyVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var jid = json.destroyvirtualmachineresponse.jobid;
-                args.response.success(
-                  {_custom:
-                   {jobId: jid,
-                    getUpdatedItem: function(json) {
-                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                    },
-                    getActionFilter: function() {
-                      return vmActionfilter;
-                    }
-                   }
-                  }
-                );
-              }
-            });
-          },
-          notification: {
-            poll: pollAsyncJobResult
-          }
-        },
-        restore: {     
-					label: 'label.action.restore.instance',
-					messages: {
-						confirm: function(args) {
-							return 'message.action.restore.instance';
-						},
-						notification: function(args) {
-							return 'label.action.restore.instance';
-						}
-					},					
-          action: function(args) {
-            $.ajax({
-              url: createURL("recoverVirtualMachine&id=" + args.context.instances[0].id),
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var item = json.recovervirtualmachineresponse.virtualmachine;
-                args.response.success({data:item});
-              }
-            });
           }
         }
       },
@@ -335,17 +197,34 @@
 					  hostid: args.context.hosts[0].id
 					});
 				}
-
+					 							
         $.ajax({
           url: createURL('listVirtualMachines'),
           data: data,          
           success: function(json) {
             var items = json.listvirtualmachinesresponse.virtualmachine;
+           // Code for hiding "Expunged VMs"
+           /* if(items != null) {
+            var i=0;
+            for( i=0;i< items.length;i++){
+              if(items[i].state == 'Expunging')
+                args.response.success ({
 
+              });
+            else {
             args.response.success({
               actionFilter: vmActionfilter,
+              data: items[i]
+             });
+            }
+           }
+          }
+          else {*/
+             args.response.success({
+              actionFilter: vmActionfilter,
               data: items
-            });
+             });
+
           }
         });
       },
@@ -355,17 +234,19 @@
         viewAll: { path: 'storage.volumes', label: 'label.volumes' },
         tabFilter: function(args) {
           var hiddenTabs = [];
-          var zoneNetworktype;
+					
+					var zoneObj;
           $.ajax({
             url: createURL("listZones&id=" + args.context.instances[0].zoneid),
             dataType: "json",
             async: false,
-            success: function(json) {
-              zoneNetworktype = json.listzonesresponse.zone[0].networktype;
+            success: function(json) {              
+							zoneObj = json.listzonesresponse.zone[0];
             }
           });
-          if(zoneNetworktype == "Basic") { //Basic zone has only one guest network (only one NIC)
-            var includingSecurityGroupService = false;
+					
+					var includingSecurityGroupService = false;
+          if(zoneObj.networktype == "Basic") { //Basic zone           
             $.ajax({
               url: createURL("listNetworks&id=" + args.context.instances[0].nic[0].networkid),
               dataType: "json",
@@ -373,7 +254,7 @@
               success: function(json) {
                 var items = json.listnetworksresponse.network;
                 if(items != null && items.length > 0) {
-                  var networkObj = items[0];    //basic zone has only one guest network
+                  var networkObj = items[0];    //Basic zone has only one guest network (only one NIC)    
                   var serviceObjArray = networkObj.service;
                   for(var k = 0; k < serviceObjArray.length; k++) {
                     if(serviceObjArray[k].name == "SecurityGroup") {
@@ -384,12 +265,18 @@
                 }
               }
             });
-            if(includingSecurityGroupService == false)
-              hiddenTabs.push("securityGroups");
           }
-          else { //Advanced zone
+          else if(zoneObj.networktype == "Advanced") { //Advanced zone    
+            if(zoneObj.securitygroupsenabled == true)	
+              includingSecurityGroupService = true;
+						else
+						  includingSecurityGroupService = false;						
+          }
+					
+					if(includingSecurityGroupService == false) {
             hiddenTabs.push("securityGroups");
-          }
+					}
+					
           return hiddenTabs;
         },
         actions: {
@@ -437,6 +324,7 @@
           },
           stop: {
             label: 'label.action.stop.instance',
+            compactLabel: 'label.stop',
             createForm: {
               title: 'Stop instance',
               desc: 'message.action.stop.instance',
@@ -486,6 +374,7 @@
           },
           restart: {
             label: 'label.action.reboot.instance',
+            compactLabel: 'label.reboot',
             action: function(args) {
               $.ajax({
                 url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
@@ -522,6 +411,7 @@
           },
           destroy: {
             label: 'label.action.destroy.instance',
+            compactLabel: 'label.destroy',
             messages: {
               confirm: function(args) {
                 return 'message.action.destroy.instance';
@@ -558,6 +448,7 @@
           },
           restore: {
             label: 'label.action.restore.instance',
+            compactLabel: 'label.restore',
             messages: {
               confirm: function(args) {
                 return 'message.action.restore.instance';
@@ -584,20 +475,57 @@
             }
           },
 
+          reset: {
+            label: 'Reset VM',
+            messages:{
+              confirm:function(args) {
+                 return 'Do you want to restore the VM ?';
+                },
+               notification:function(args) {
+                return 'Reset VM';
+               }
+            },
+
+            action:function(args){
+                $.ajax({
+                url: createURL("restoreVirtualMachine&virtualmachineid=" + args.context.instances[0].id),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var item = json.restorevmresponse;
+                  args.response.success({data:item});
+                }
+              });
+
+            },
+
+           notification: {
+              poll: function(args) {
+                args.complete({ data: { state: 'Stopped' }});
+              }
+            }
+
+           },
+
+
           edit: {
-            label: 'Edit',
+            label: 'label.edit',
             action: function(args) {
-              var array1 = [];							
-							if(args.data.displayname != args.context.instances[0].displayname)
-                array1.push("&displayName=" + args.data.displayname);
-								
-              array1.push("&group=" + args.data.group);
-              array1.push("&ostypeid=" + args.data.guestosid);
-              //array1.push("&haenable=" + haenable);
+						  var data = {
+							  id: args.context.instances[0].id,
+							  group: args.data.group,
+								ostypeid: args.data.guestosid
+							};
+						             						
+							if(args.data.displayname != args.context.instances[0].displayname) {
+							  $.extend(data, {
+								  displayName: args.data.displayname
+								});							
+							}								
 
               $.ajax({
-                url: createURL("updateVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
-                dataType: "json",
+                url: createURL('updateVirtualMachine'),
+                data: data,
                 success: function(json) {
                   var item = json.updatevirtualmachineresponse.virtualmachine;
                   args.response.success({data:item});
@@ -883,31 +811,19 @@
                 url: { label: 'image.directory', validation: { required: true } }
               }
             },
-            action: function(args) {
-              /*
-               var isValid = true;
-               isValid &= validateString("Name", $thisDialog.find("#create_template_name"), $thisDialog.find("#create_template_name_errormsg"));
-               isValid &= validateString("Display Text", $thisDialog.find("#create_template_desc"), $thisDialog.find("#create_template_desc_errormsg"));
-               isValid &= validateString("Image Directory", $thisDialog.find("#image_directory"), $thisDialog.find("#image_directory_errormsg"), false); //image directory is required when creating template from VM whose hypervisor is BareMetal
-               if (!isValid)
-               return;
-               $thisDialog.dialog("close");
-               */
-
-              var array1 = [];
-              array1.push("&name=" + todb(args.data.name));
-              array1.push("&displayText=" + todb(args.data.displayText));
-              array1.push("&osTypeId=" + args.data.osTypeId);
-
-              //array1.push("&isPublic=" + args.data.isPublic);
-              array1.push("&isPublic=" + (args.data.isPublic=="on"));  //temporary, before Brian fixes it.
-
-              array1.push("&url=" + todb(args.data.url));
-
+            action: function(args) {              
+              var data = {
+							  virtualmachineid: args.context.instances[0].id,
+							  name: args.data.name,
+								displayText: args.data.displayText,
+								osTypeId: args.data.osTypeId,
+								isPublic: (args.data.isPublic=="on"),
+								url: args.data.url
+							};
+												
               $.ajax({
-                url: createURL("createTemplate&virtualmachineid=" + args.context.instances[0].id + array1.join("")),
-                dataType: "json",
-                async: true,
+                url: createURL('createTemplate'),
+                data: data,                
                 success: function(json) {
                   var jid = json.createtemplateresponse.jobid;
                   args.response.success(
@@ -932,6 +848,7 @@
 
           migrate: {
             label: 'label.migrate.instance.to.host',
+            compactLabel: 'label.migrate.to.host',
             messages: {
               confirm: function(args) {
                 return 'message.migrate.instance.to.host';
@@ -1010,6 +927,7 @@
 
           migrateToAnotherStorage: {
             label: 'label.migrate.instance.to.ps',
+            compactLabel: 'label.migrate.to.storage',
             messages: {
               confirm: function(args) {
                 return 'message.migrate.instance.to.ps';
@@ -1121,7 +1039,7 @@
 										'Starting': 1,
 										'Stopping': 1
 									},
-									pollAgainFn: function(context) { //???	
+									pollAgainFn: function(context) { 
                     var toClearInterval = false; 								  
 										$.ajax({
 											url: createURL("listVirtualMachines&id=" + context.instances[0].id),
@@ -1316,6 +1234,7 @@
       allowedActions.push("restart");
       allowedActions.push("destroy");
       allowedActions.push("changeService");
+      allowedActions.push("reset");
 
       if (isAdmin())
         allowedActions.push("migrate");
@@ -1337,6 +1256,7 @@
       allowedActions.push("edit");
       allowedActions.push("start");
       allowedActions.push("destroy");
+      allowedActions.push("reset");
 
       if(isAdmin())
         allowedActions.push("migrateToAnotherStorage");

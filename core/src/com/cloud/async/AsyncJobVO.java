@@ -32,6 +32,7 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="async_job")
@@ -119,30 +120,33 @@ public class AsyncJobVO implements AsyncJob {
     @Transient
     private boolean fromPreviousSession = false;
 
-    public AsyncJobVO() {
-    	this.uuid = UUID.randomUUID().toString();
-    }
     
-    public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo) {
-    	this.userId = userId;
-    	this.accountId = accountId;
-    	this.cmd = cmd;
-    	this.cmdInfo = cmdInfo;
+    public AsyncJobVO() {
+        this.uuid = UUID.randomUUID().toString();
+    }
+
+    public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo, Long instanceId, Type instanceType) {
+	this.userId = userId;
+	this.accountId = accountId;
+	this.cmd = cmd;
+	this.cmdInfo = cmdInfo;
     	this.callbackType = CALLBACK_POLLING;
     	this.uuid = UUID.randomUUID().toString();
+        this.instanceId = instanceId;
     }
-    
+
     public AsyncJobVO(long userId, long accountId, String cmd, String cmdInfo,
-    	int callbackType, String callbackAddress) {
-    	
-    	this(userId, accountId, cmd, cmdInfo);
-    	this.callbackType = callbackType;
-    	this.callbackAddress = callbackAddress;
+	int callbackType, String callbackAddress, Long instanceId, Type instanceType) {
+
+	this(userId, accountId, cmd, cmdInfo, instanceId, instanceType);
+	this.callbackType = callbackType;
+	this.callbackAddress = callbackAddress;
     	this.uuid = UUID.randomUUID().toString();
     }
-    
+
+
     @Override
-    public Long getId() {
+    public long getId() {
 		return id;
 	}
 

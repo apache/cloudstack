@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="devcloud">
+    <title>DevCloud</title>
+    <para>DevCloud is the &PRODUCT; sandbox. It is provided as a Virtual Box appliance. It is meant to be used as a development environment to easily test new &PRODUCT; development. It has also been used for training and &PRODUCT; demos since it provides a <emphasis>Cloud in a box</emphasis>.</para>
+    <note>
+        <para>DevCloud is provided as a convenience by community members. It is not an official &PRODUCT; release artifact.</para>
+        <para>The &PRODUCT; source code however, contains tools to build your own DevCloud.</para>
+    </note>
+    <warning>
+        <para>DevCloud is under development and should be considered a Work In Progress (WIP), the wiki is the most up to date documentation:</para>
+        <para><ulink url="https://cwiki.apache.org/confluence/display/CLOUDSTACK/DevCloud"></ulink></para>
+    </warning>
+    <xi:include href="devcloud-usage-mode.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="building-devcloud.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</section>

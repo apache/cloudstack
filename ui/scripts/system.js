@@ -194,6 +194,10 @@
           podCount: function(data) {
             $.ajax({
               url: createURL('listPods'),
+							data: {
+							  page: 1,
+								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+							},
               success: function(json) {
                 dataFns.clusterCount($.extend(data, {
                   podCount: json.listpodsresponse.count ?
@@ -206,11 +210,24 @@
           clusterCount: function(data) {
             $.ajax({
               url: createURL('listClusters'),
-              success: function(json) {
-                dataFns.hostCount($.extend(data, {
+							data: {
+							  page: 1,
+								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+							},
+              success: function(json) {                
+								dataFns.hostCount($.extend(data, {
                   clusterCount: json.listclustersresponse.count ?
                     json.listclustersresponse.count : 0
                 }));
+																
+								//comment the 4 lines above and uncomment the following 4 lines if listHosts API still responds slowly.
+								
+								/*
+								dataFns.primaryStorageCount($.extend(data, {
+                  clusterCount: json.listclustersresponse.count ?
+                    json.listclustersresponse.count : 0
+                }));
+								*/
               }
             });
           },
@@ -219,7 +236,9 @@
             $.ajax({
               url: createURL('listHosts'),
               data: {
-                type: 'routing'
+                type: 'routing',
+								page: 1,
+								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
               },
               success: function(json) {
                 dataFns.primaryStorageCount($.extend(data, {
@@ -233,11 +252,24 @@
           primaryStorageCount: function(data) {
             $.ajax({
               url: createURL('listStoragePools'),
-              success: function(json) {
-                dataFns.secondaryStorageCount($.extend(data, {
+							data: {
+							  page: 1,
+								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+							},
+              success: function(json) {                
+								dataFns.secondaryStorageCount($.extend(data, {
                   primaryStorageCount: json.liststoragepoolsresponse.count ?
                     json.liststoragepoolsresponse.count : 0
                 }));
+																
+								//comment the 4 lines above and uncomment the following 4 lines if listHosts API still responds slowly.
+								
+								/*
+								dataFns.systemVmCount($.extend(data, {
+                  primaryStorageCount: json.liststoragepoolsresponse.count ?
+                    json.liststoragepoolsresponse.count : 0
+                }));
+								*/
               }
             });
           },
@@ -246,7 +278,9 @@
             $.ajax({
               url: createURL('listHosts'),
               data: {
-                type: 'SecondaryStorage'
+                type: 'SecondaryStorage',
+								page: 1,
+								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
               },
               success: function(json) {
                 dataFns.systemVmCount($.extend(data, {
@@ -260,6 +294,10 @@
           systemVmCount: function(data) {
             $.ajax({
               url: createURL('listSystemVms'),
+							data: {
+							  page: 1,
+								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
+							},
               success: function(json) {
                 dataFns.virtualRouterCount($.extend(data, {
                   systemVmCount: json.listsystemvmsresponse.count ?
@@ -273,14 +311,18 @@
             $.ajax({
               url: createURL('listRouters'),
               data: {
-                projectid: -1
+                projectid: -1,
+								page: 1,
+								pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
               },
               success: function(json) {
                 var total1 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;								
 								$.ajax({
 								  url: createURL('listRouters'),
 									data: {
-									  listAll: true
+									  listAll: true,
+										page: 1,
+								    pagesize: 1  //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
 									},
 									success: function(json) {
 									  var total2 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;		
@@ -336,13 +378,10 @@
             data: data
           });
         };
-
-        //  re: CS-16413 -- Disable API calls
-        return args.response.success({
-          data: {}
-        });
-
-        dataFns.zoneCount({});
+       
+        //dataFns.zoneCount({});  
+				dataFns.podCount({});     //uncomment the line above and remove this line after "count" in listZones API is fixed.
+				
       }
     },
 
@@ -773,7 +812,7 @@
                       selectedManagementNetworkObj.xennetworklabel = trafficType.xennetworklabel;
                       selectedManagementNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
                       selectedManagementNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
-                      selectedPublicNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
+                      selectedManagementNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
                       args.response.success({ data: selectedManagementNetworkObj });
                     }
                   });
@@ -1088,26 +1127,35 @@
 
                         fields: {
                           name: {
+                            docID: 'helpGuestNetworkZoneName',
                             label: 'label.name',
                             validation: { required: true }
                           },
                           description: {
                             label: 'label.description',
+                            docID: 'helpGuestNetworkZoneDescription',
                             validation: { required: true }
                           },
                           vlanId: {
-                            label: 'label.vlan.id'
+                            label: 'label.vlan.id',
+                            docID: 'helpGuestNetworkZoneVLANID'
                           },
 
                           scope: {
                             label: 'label.scope',
+                            docID: 'helpGuestNetworkZoneScope',
                             select: function(args) {
-                              var array1 = [];
-															array1.push({id: 'zone-wide', description: 'All'});
-															array1.push({id: 'domain-specific', description: 'Domain'});
-															array1.push({id: 'account-specific', description: 'Account'});
-															array1.push({id: 'project-specific', description: 'Project'});
-
+                              var array1 = [];															
+															if(args.context.zones[0].networktype == "Advanced" && args.context.zones[0].securitygroupsenabled	== true) {
+															  array1.push({id: 'account-specific', description: 'Account'});
+																array1.push({id: 'zone-wide', description: 'All'});
+															}
+															else {															
+																array1.push({id: 'zone-wide', description: 'All'});
+																array1.push({id: 'domain-specific', description: 'Domain'});
+																array1.push({id: 'account-specific', description: 'Account'});
+																array1.push({id: 'project-specific', description: 'Project'});
+															}
                               args.response.success({data: array1});
 
                               args.$select.change(function() {
@@ -1184,7 +1232,9 @@
                               args.response.success({data: items});
                             }
                           },
-                          subdomainaccess: { label: 'label.subdomain.access', isBoolean: true, isHidden: true },
+                          subdomainaccess: {
+                            label: 'label.subdomain.access', isBoolean: true, isHidden: true,
+                          },
                           account: { label: 'label.account' },
 
 													projectId: {
@@ -1209,6 +1259,7 @@
 
                           networkOfferingId: {
                             label: 'label.network.offering',
+                            docID: 'helpGuestNetworkZoneNetworkOffering',
                             dependsOn: 'scope',
                             select: function(args) {
 															$.ajax({
@@ -1271,8 +1322,10 @@
                                   networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
                                   if (networkOfferingObjs != null && networkOfferingObjs.length > 0) {
                                     for (var i = 0; i < networkOfferingObjs.length; i++) {
-																			//if args.scope == "account-specific" or "project-specific", exclude Isolated network offerings with SourceNat service (bug 12869)
-																			if(args.scope == "account-specific" || args.scope == "project-specific") {
+																			
+																			//comment out the following 12 lines because of CS-16718
+																			/*
+																			if(args.scope == "account-specific" || args.scope == "project-specific") { //if args.scope == "account-specific" or "project-specific", exclude Isolated network offerings with SourceNat service (bug 12869)
 																			  var includingSourceNat = false;
                                         var serviceObjArray = networkOfferingObjs[i].service;
                                         for(var k = 0; k < serviceObjArray.length; k++) {
@@ -1284,6 +1337,7 @@
                                         if(includingSourceNat == true)
                                           continue; //skip to next network offering
 																			}
+																			*/																			
 
                                       networkOfferingArray.push({id: networkOfferingObjs[i].id, description: networkOfferingObjs[i].displaytext});
                                     }
@@ -1349,17 +1403,28 @@
                             }
                           },
 
-                          guestGateway: { label: 'label.guest.gateway' },
-                          guestNetmask: { label: 'label.guest.netmask' },
+                          guestGateway: {
+                            label: 'label.guest.gateway',
+                            docID: 'helpGuestNetworkZoneGateway'
+                          },
+                          guestNetmask: {
+                            label: 'label.guest.netmask',
+                            docID: 'helpGuestNetworkZoneNetmask'
+                          },
                           guestStartIp: { 
 													  label: 'label.guest.start.ip', 
-														validation: { required: true } 
+														validation: { required: true },
+                            docID: 'helpGuestNetworkZoneStartIP'
 													},
                           guestEndIp: { 
 													  label: 'label.guest.end.ip', 
-														validation: { required: true } 
+														validation: { required: true },
+                            docID: 'helpGuestNetworkZoneEndIP'
 													},
-                          networkdomain: { label: 'label.network.domain' }
+                          networkdomain: {
+                            label: 'label.network.domain',
+                            docID: 'helpGuestNetworkZoneNetworkDomain'
+                          }
                         }
                       },
 
@@ -1498,6 +1563,7 @@
 
                   detailView: {
                     name: 'Guest network details',
+                    noCompact: true,
                     viewAll: {
 										  path: '_zone.guestIpRanges',
 											label: 'label.ip.ranges',
@@ -3006,17 +3072,21 @@
 									preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
                   fields: {
                     ip: {
-                      label: 'label.ip.address'
+                      label: 'label.ip.address',
+                      docID: 'helpNetScalerIPAddress'
                     },
                     username: {
-                      label: 'label.username'
+                      label: 'label.username',
+                      docID: 'helpNetScalerUsername'
                     },
                     password: {
                       label: 'label.password',
-                      isPassword: true
+                      isPassword: true,
+                      docID: 'helpNetScalerPassword'
                     },
                     networkdevicetype: {
                       label: 'label.type',
+                      docID: 'helpNetScalerType',
                       select: function(args) {
                         var items = [];
                         items.push({id: "NetscalerMPXLoadBalancer", description: "NetScaler MPX LoadBalancer"});
@@ -3026,14 +3096,17 @@
                       }
                     },
                     publicinterface: {
-                      label: 'label.public.interface'
+                      label: 'label.public.interface',
+                      docID: 'helpNetScalerPublicInterface'
                     },
                     privateinterface: {
-                      label: 'label.private.interface'
+                      label: 'label.private.interface',
+                      docID: 'helpNetScalerPrivateInterface'
                     },
                     numretries: {
                       label: 'label.numretries',
-                      defaultValue: '2'
+                      defaultValue: '2',
+                      docID: 'helpNetScalerRetries'
                     },
                     // inline: {
                     //   label: 'Mode',
@@ -3047,11 +3120,13 @@
                     dedicated: {
                       label: 'label.dedicated',
                       isBoolean: true,
-                      isChecked: false
+                      isChecked: false,
+                      docID: 'helpNetScalerDedicated'
                     },
 										capacity: {
                       label: 'label.capacity',											
-                      validation: { required: false, number: true }
+                      validation: { required: false, number: true },
+                      docID: 'helpNetScalerCapacity'
                     }
                   }
                 },
@@ -3241,17 +3316,21 @@
 									preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
                   fields: {
                     ip: {
-                      label: 'label.ip.address'
+                      label: 'label.ip.address',
+                      docID: 'helpF5IPAddress'
                     },
                     username: {
-                      label: 'label.username'
+                      label: 'label.username',
+                      docID: 'helpF5Username'
                     },
                     password: {
                       label: 'label.password',
+                      docID: 'helpF5Password',
                       isPassword: true
                     },
                     networkdevicetype: {
                       label: 'label.type',
+                      docID: 'helpF5Type',
                       select: function(args) {
                         var items = [];
                         items.push({id: "F5BigIpLoadBalancer", description: "F5 Big Ip Load Balancer"});
@@ -3259,31 +3338,40 @@
                       }
                     },
                     publicinterface: {
-                      label: 'label.public.interface'
+                      label: 'label.public.interface',
+                      docID: 'helpF5PublicInterface'
                     },
                     privateinterface: {
-                      label: 'label.private.interface'
+                      label: 'label.private.interface',
+                      docID: 'helpF5PrivateInterface'
                     },
                     numretries: {
                       label: 'label.numretries',
+                      docID: 'helpF5Retries',
                       defaultValue: '2'
                     },
-                    // inline: {
-                    //   label: 'Mode',
-                    //   select: function(args) {
-                    //     var items = [];
-                    //     items.push({id: "false", description: "side by side"});
-                    //     items.push({id: "true", description: "inline"});
-                    //     args.response.success({data: items});
-                    //   }
-                    // },                    
+										//Inline Mode has been moved from Add F5 Device to Create Network Offering (both backend and UI)
+										/*
+                    inline: {
+                      label: 'Mode',
+                      docID: 'helpF5Mode',
+                      select: function(args) {
+                        var items = [];
+                        items.push({id: "false", description: "side by side"});
+                        items.push({id: "true", description: "inline"});
+                        args.response.success({data: items});
+                      }
+                    },    
+                    */										
                     dedicated: {
                       label: 'label.dedicated',
+                      docID: 'helpF5Dedicated',
                       isBoolean: true,
                       isChecked: false
                     },
 										capacity: {
                       label: 'label.capacity',
+                      docID: 'helpF5Capacity',
                       validation: { required: false, number: true }
                     }
                   }
@@ -3473,17 +3561,21 @@
                   title: 'label.add.SRX.device',
                   fields: {
                     ip: {
-                      label: 'label.ip.address'
+                      label: 'label.ip.address',
+                      docID: 'helpSRXIPAddress'
                     },
                     username: {
-                      label: 'label.username'
+                      label: 'label.username',
+                      docID: 'helpSRXUsername'
                     },
                     password: {
                       label: 'label.password',
-                      isPassword: true
+                      isPassword: true,
+                      docID: 'helpSRXPassword'
                     },
                     networkdevicetype: {
                       label: 'label.type',
+                      docID: 'helpSRXType',
                       select: function(args) {
                         var items = [];
                         items.push({id: "JuniperSRXFirewall", description: "Juniper SRX Firewall"});
@@ -3491,24 +3583,30 @@
                       }
                     },
                     publicinterface: {
-                      label: 'label.public.interface'
+                      label: 'label.public.interface',
+                      docID: 'helpSRXPublicInterface'
                     },
                     privateinterface: {
-                      label: 'label.private.interface'
+                      label: 'label.private.interface',
+                      docID: 'helpSRXPrivateInterface'
                     },
                     usageinterface: {
-                      label: 'Usage interface'
+                      label: 'Usage interface',
+                      docID: 'helpSRXUsageInterface'
                     },
                     numretries: {
                       label: 'label.numretries',
-                      defaultValue: '2'
+                      defaultValue: '2',
+                      docID: 'helpSRXRetries'
                     },
                     timeout: {
                       label: 'label.timeout',
-                      defaultValue: '300'
+                      defaultValue: '300',
+                      docID: 'helpSRXTimeout'
                     },
                     // inline: {
                     //   label: 'Mode',
+                    //   docID: 'helpSRXMode',
                     //   select: function(args) {
                     //     var items = [];
                     //     items.push({id: "false", description: "side by side"});
@@ -3518,20 +3616,26 @@
                     // },
                     publicnetwork: {
                       label: 'label.public.network',
-                      defaultValue: 'untrusted'
+                      defaultValue: 'untrusted',
+                      docID: 'helpSRXPublicNetwork',
+                      isDisabled:true
                     },
                     privatenetwork: {
                       label: 'label.private.network',
-                      defaultValue: 'trusted'
+                      defaultValue: 'trusted',
+                      docID: 'helpSRXPrivateNetwork',
+                      isDisabled:true
                     },
                     capacity: {
                       label: 'label.capacity',
-                      validation: { required: false, number: true }
+                      validation: { required: false, number: true },
+                      docID: 'helpSRXCapacity'
                     },
                     dedicated: {
                       label: 'label.dedicated',
                       isBoolean: true,
-                      isChecked: false
+                      isChecked: false,
+                      docID: 'helpSRXDedicated'
                     }
                   }
                 },
@@ -3791,7 +3895,213 @@
               name: { label: 'label.name' }//,
               //state: { label: 'label.status' } //comment it for now, since dataProvider below doesn't get called by widget code after action is done
             }
-          }
+          },
+          // Nicira Nvp provider detail view
+          niciraNvp: {
+            type: 'detailView',
+            id: 'niciraNvpProvider',
+            label: 'label.niciraNvp',
+            viewAll: { label: 'label.devices', path: '_zone.niciraNvpDevices' },
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    name: { label: 'label.name' }
+                  },
+                  {
+                    state: { label: 'label.state' }
+                  }
+                ],
+                dataProvider: function(args) {
+                                  refreshNspData("NiciraNvp");
+                                    var providerObj;
+                                    $(nspHardcodingArray).each(function(){
+                                        if(this.id == "niciraNvp") {
+                                            providerObj = this;
+                                            return false; //break each loop
+                                        }
+                                    });
+                  args.response.success({
+                    data: providerObj,
+                    actionFilter: networkProviderActionFilter('niciraNvp')
+                  });
+                }
+              }
+            },
+            actions: {
+              add: {
+                label: 'label.add.NiciraNvp.device',
+                createForm: {
+                  title: 'label.add.NiciraNvp.device',
+                  preFilter: function(args) {  },   // TODO What is this?  
+                  fields: {
+                    host: {
+                      label: 'label.ip.address'
+                    },
+                    username: {
+                      label: 'label.username'
+                    },
+                    password: {
+                      label: 'label.password',
+                      isPassword: true
+                    },
+                    numretries: {
+                      label: 'label.numretries',
+                      defaultValue: '2'
+                    },
+                    transportzoneuuid: {
+                      label: 'label.nicira.transportzoneuuid'
+                    },
+                    l3gatewayserviceuuid: {
+                      label: 'label.nicira.l3gatewayserviceuuid'
+                    }
+                  }
+                },
+                action: function(args) {
+                  if(nspMap["niciraNvp"] == null) {
+                    $.ajax({
+                      url: createURL("addNetworkServiceProvider&name=NiciraNvp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                      dataType: "json",
+                      async: true,
+                      success: function(json) {
+                        var jobId = json.addnetworkserviceproviderresponse.jobid;                        
+                        var addNiciraNvpProviderIntervalID = setInterval(function() {  
+                          $.ajax({
+                            url: createURL("queryAsyncJobResult&jobId="+jobId),
+                            dataType: "json",
+                            success: function(json) {
+                              var result = json.queryasyncjobresultresponse;
+                              if (result.jobstatus == 0) {
+                                return; //Job has not completed
+                              }
+                              else {
+                                clearInterval(addNiciraNvpProviderIntervalID); 
+                                if (result.jobstatus == 1) {
+                                  nspMap["niciraNvp"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                  addNiciraNvpDevice(args, selectedPhysicalNetworkObj, "addNiciraNvpDevice", "addniciranvpdeviceresponse", "niciranvpdevice")
+                                }
+                                else if (result.jobstatus == 2) {
+                                  alert("addNetworkServiceProvider&name=NiciraNvp failed. Error: " + _s(result.jobresult.errortext));
+                                }
+                              }
+                            },
+                            error: function(XMLHttpResponse) {
+                              var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                              alert("addNetworkServiceProvider&name=NiciraNvp failed. Error: " + errorMsg);
+                            }
+                          });
+                        }, 3000);       
+                      }
+                    });
+                  }
+                  else {
+                      addNiciraNvpDevice(args, selectedPhysicalNetworkObj, "addNiciraNvpDevice", "addniciranvpdeviceresponse", "niciranvpdevice")
+                  }
+                },
+                messages: {
+                  notification: function(args) {
+                    return 'label.add.NiciraNvp.device';
+                  }
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+              enable: {
+                label: 'label.enable.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["niciraNvp"].id + "&state=Enabled"),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                                                        getUpdatedItem: function(json) {
+                                                            $(window).trigger('cloudStack.fullRefresh');
+                                                        }
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+                                  confirm: function(args) {
+                                      return 'message.confirm.enable.provider';
+                                    },
+                  notification: function() {
+                                      return 'label.enable.provider';
+                                  }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+              disable: {
+                label: 'label.disable.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["niciraNvp"].id + "&state=Disabled"),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                                   getUpdatedItem: function(json) {
+                                     $(window).trigger('cloudStack.fullRefresh');
+                                   }
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+                                  confirm: function(args) {
+                                      return 'message.confirm.disable.provider';
+                                    },
+                  notification: function() {
+                                      return 'label.disable.provider';
+                                    }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+              destroy: {
+                label: 'label.shutdown.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("deleteNetworkServiceProvider&id=" + nspMap["niciraNvp"].id),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.deletenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {
+                           jobId: jid
+                         }
+                        }
+                      );
+
+                      $(window).trigger('cloudStack.fullRefresh');
+                    }
+                  });
+                },
+                messages: {
+                                  confirm: function(args) {
+                                      return 'message.confirm.shutdown.provider';
+                                    },
+                  notification: function(args) {
+                                      return 'label.shutdown.provider';
+                                    }
+                },
+                notification: { poll: pollAsyncJobResult }
+              }
+            }
+          }          
         }
       }
     },
@@ -3828,6 +4138,34 @@
                   }
                 }
               },
+
+              dataProvider: function(args) {
+                var array1 = [];
+                if(args.filterBy != null) {
+                  if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+                    switch(args.filterBy.search.by) {
+                      case "name":
+                        if(args.filterBy.search.value.length > 0)
+                          array1.push("&keyword=" + args.filterBy.search.value);
+                        break;
+                    }
+                  }
+                }
+
+                $.ajax({
+                  url: createURL("listZones&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                  dataType: "json",
+                  async: true,
+                  success: function(json) {
+                    zoneObjs = json.listzonesresponse.zone;
+                    args.response.success({
+                      actionFilter: zoneActionfilter,
+                      data:zoneObjs
+                    });
+                  }
+                });
+              },
+
               actions: {
                 add: {
                   label: 'label.add.zone',
@@ -3914,125 +4252,174 @@
                   }
                 },
 
-                enable: {
-                  label: 'label.action.enable.zone',
-                  messages: {
-                    confirm: function(args) {
-                      return 'message.action.enable.zone';
-                    },
-                    notification: function(args) {
-                      return 'label.action.enable.zone';
-                    }
-                  },
-                  action: function(args) {
-                    $.ajax({
-                      url: createURL("updateZone&id=" + args.context.physicalResources[0].id + "&allocationstate=Enabled"),  //embedded objects in listView is called physicalResources while embedded objects in detailView is called zones
-                      dataType: "json",
-                      async: true,
-                      success: function(json) {
-                        var item = json.updatezoneresponse.zone;
-                        args.response.success({
-                          actionFilter: zoneActionfilter,
-                          data:item
-                        });
-                      }
-                    });
-                  },
-                  notification: {
-                    poll: function(args) {
-                      args.complete();
-                    }
-                  }
-                },
+              enableS3: {
+                label: 'label.enable.s3',
+                isHeader: true,
+                addRow: false,
 
-                disable: {
-                  label: 'label.action.disable.zone',
-                  messages: {
-                    confirm: function(args) {
-                      return 'message.action.disable.zone';
+                preFilter: function(args) {
+                  var s3Enabled = false;
+                  $.ajax({
+                    url: createURL('listConfigurations'),
+                    data: {
+                      name: 's3.enable'
                     },
-                    notification: function(args) {
-                      return 'label.action.disable.zone';
-                    }
-                  },
-                  action: function(args) {
-                    $.ajax({
-                      url: createURL("updateZone&id=" + args.context.physicalResources[0].id + "&allocationstate=Disabled"),  //embedded objects in listView is called physicalResources while embedded objects in detailView is called zones
-                      dataType: "json",
-                      async: true,
-                      success: function(json) {
-                        var item = json.updatezoneresponse.zone;
-                        args.response.success({
-                          actionFilter: zoneActionfilter,
-                          data:item
-                        });
-                      }
-                    });
-                  },
-                  notification: {
-                    poll: function(args) {
-                      args.complete();
-                    }
-                  }
-                },
-
-                'remove': {
-                  label: 'label.action.delete.zone',
-                  messages: {
-                    confirm: function(args) {
-                      return 'message.action.delete.zone';
+                    async: false,
+                    success: function(json) {
+                      s3Enabled = json.listconfigurationsresponse.configuration[0].value == 'true' && !havingS3 ?
+                      true : false;
                     },
-                    notification: function(args) {
-                      return 'label.action.delete.zone';
+                    error: function(json) {
+                      cloudStack.dialog.notice({ message: parseXMLHttpResponse(json) });
                     }
-                  },
-                  action: function(args) {
-                    $.ajax({
-                      url: createURL("deleteZone&id=" + args.context.physicalResources[0].id),  //embedded objects in listView is called physicalResources while embedded objects in detailView is called zones
-                      dataType: "json",
-                      async: true,
-                      success: function(json) {
-                        args.response.success({data:{}});
-                      }
-                    });
-                  },
-                  notification: {
-                    poll: function(args) { args.complete(); }
-                  }
-                }
+                 });
 
+                 return s3Enabled;
               },
 
-              dataProvider: function(args) {
-                var array1 = [];
-                if(args.filterBy != null) {
-                  if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                    switch(args.filterBy.search.by) {
-                      case "name":
-                        if(args.filterBy.search.value.length > 0)
-                          array1.push("&keyword=" + args.filterBy.search.value);
-                        break;
-                    }
-                  }
+              messages: {
+                notification: function(args) {
+                  return 'label.enable.s3';
                 }
+              },
 
+              createForm: {
+                desc: 'confirm.enable.s3',
+                fields: {
+                  accesskey: { label: 'label.s3.access_key', validation: { required: true } },
+                  secretkey: { label: 'label.s3.secret_key', validation: { required: true} },
+                  bucket: { label: 'label.s3.bucket', validation: { required: true} },
+                  endpoint: { label: 'label.s3.endpoint' },
+                  usehttps: { 
+                    label: 'label.s3.use_https', 
+                    isEditable: true,
+                    isBoolean: true,
+                    isChecked: true,
+                    converter:cloudStack.converters.toBooleanText 
+                  },
+                  connectiontimeout: { label: 'label.s3.connection_timeout' },
+                  maxerrorretry: { label: 'label.s3.max_error_retry' },
+                  sockettimeout: { label: 'label.s3.socket_timeout' }
+                }
+              },
+              action: function(args) {
                 $.ajax({
-                  url: createURL("listZones&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-                  dataType: "json",
-                  async: true,
-                  success: function(json) {
-                    zoneObjs = json.listzonesresponse.zone;
-                    args.response.success({
-                      actionFilter: zoneActionfilter,
-                      data:zoneObjs
+                  url: createURL('addS3'),
+                  data: {
+                        accesskey: args.data.accesskey,
+                        secretkey: args.data.secretkey,
+                        bucket: args.data.bucket,
+                        endpoint: args.data.endpoint,
+                        usehttps: (args.data.usehttps != null && args.data.usehttps == 'on' ? 'true' : 'false'),
+                        connectiontimeout: args.data.connectiontimeout,
+                        maxerrorretry: args.data.maxerrorretry,
+                        sockettimeout: args.data.sockettimeout
+                      },
+                      success: function(json) {
+                        havingS3 = true;
+                        args.response.success();
+
+                        cloudStack.dialog.notice({
+                          message: 'message.after.enable.s3'
+                        });
+                      },
+                      error: function(json) {
+                        args.response.error(parseXMLHttpResponse(json));
+                      }
                     });
                   }
-                });
+                }
               },
 
               detailView: {
                 isMaximized: true,
                 actions: {
+                  enable: {
+                    label: 'label.action.enable.zone',
+                    messages: {
+                      confirm: function(args) {
+                        return 'message.action.enable.zone';
+                      },
+                      notification: function(args) {
+                        return 'label.action.enable.zone';
+                      }
+                    },
+                    action: function(args) {
+                      $.ajax({
+                        url: createURL("updateZone&id=" + args.context.physicalResources[0].id + "&allocationstate=Enabled"),  //embedded objects in listView is called physicalResources while embedded objects in detailView is called zones
+                        dataType: "json",
+                        async: true,
+                        success: function(json) {
+                          var item = json.updatezoneresponse.zone;
+                          args.response.success({
+                            actionFilter: zoneActionfilter,
+                            data:item
+                          });
+                        }
+                      });
+                    },
+                    notification: {
+                      poll: function(args) {
+                        args.complete();
+                      }
+                    }
+                  },
+
+                  disable: {
+                    label: 'label.action.disable.zone',
+                    messages: {
+                      confirm: function(args) {
+                        return 'message.action.disable.zone';
+                      },
+                      notification: function(args) {
+                        return 'label.action.disable.zone';
+                      }
+                    },
+                    action: function(args) {
+                      $.ajax({
+                        url: createURL("updateZone&id=" + args.context.physicalResources[0].id + "&allocationstate=Disabled"),  //embedded objects in listView is called physicalResources while embedded objects in detailView is called zones
+                        dataType: "json",
+                        async: true,
+                        success: function(json) {
+                          var item = json.updatezoneresponse.zone;
+                          args.response.success({
+                            actionFilter: zoneActionfilter,
+                            data:item
+                          });
+                        }
+                      });
+                    },
+                    notification: {
+                      poll: function(args) {
+                        args.complete();
+                      }
+                    }
+                  },
+
+                  'remove': {
+                    label: 'label.action.delete.zone',
+                    messages: {
+                      confirm: function(args) {
+                        return 'message.action.delete.zone';
+                      },
+                      notification: function(args) {
+                        return 'label.action.delete.zone';
+                      }
+                    },
+                    action: function(args) {
+                      $.ajax({
+                        url: createURL("deleteZone&id=" + args.context.physicalResources[0].id),  //embedded objects in listView is called physicalResources while embedded objects in detailView is called zones
+                        dataType: "json",
+                        async: true,
+                        success: function(json) {
+                          args.response.success({data:{}});
+                        }
+                      });
+                    },
+                    notification: {
+                      poll: function(args) { args.complete(); }
+                    }
+                  },
                   edit: {
                     label: 'label.edit',
                     action: function(args) {
@@ -4040,8 +4427,11 @@
                       array1.push("&name="  +todb(args.data.name));
                       array1.push("&dns1=" + todb(args.data.dns1));
                       array1.push("&dns2=" + todb(args.data.dns2));  //dns2 can be empty ("") when passed to API
-                      if(selectedZoneObj.networktype == "Advanced"){
-                      array1.push("&guestcidraddress=" +todb(args.data.guestcidraddress)); }                                                                         
+                      
+                      if (selectedZoneObj.networktype == "Advanced" && args.data.guestcidraddress) {
+                        array1.push("&guestcidraddress=" + todb(args.data.guestcidraddress));
+                      }
+                      
                       array1.push("&internaldns1=" + todb(args.data.internaldns1));
                       array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API
                       array1.push("&domain=" + todb(args.data.domain));
@@ -4106,7 +4496,10 @@
                         },
                         success: function(json) {
                           selectedZoneObj = json.listzonesresponse.zone[0];
-                          args.response.success({ data: json.listzonesresponse.zone[0] });
+                          args.response.success({
+                            data: json.listzonesresponse.zone[0],
+                            actionFilter: zoneActionfilter
+                          });
                         }
                       });
                     }
@@ -4187,6 +4580,7 @@
                       },
 
                       detailView: {
+                        noCompact: true,
                         name: 'System VM details',
                         actions: {
                           start: {
@@ -5796,15 +6190,15 @@
                     label: 'label.numretries',
                     defaultValue: '2'
                   },
-                  // inline: {
-                  //   label: 'Mode',
-                  //   select: function(args) {
-                  //     var items = [];
-                  //     items.push({id: "false", description: "side by side"});
-                  //     items.push({id: "true", description: "inline"});
-                  //     args.response.success({data: items});
-                  //   }
-                  // },
+                 /* inline: {
+                    label: 'Mode',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: "false", description: "side by side"});
+                      items.push({id: "true", description: "inline"});
+                      args.response.success({data: items});
+                    }
+                  },*/
                   dedicated: {
                     label: 'label.dedicated',
                     isBoolean: true,
@@ -5988,15 +6382,18 @@
                     label: 'label.numretries',
                     defaultValue: '2'
                   },
-                  // inline: {
-                  //   label: 'Mode',
-                  //   select: function(args) {
-                  //     var items = [];
-                  //     items.push({id: "false", description: "side by side"});
-                  //     items.push({id: "true", description: "inline"});
-                  //     args.response.success({data: items});
-                  //   }
-                  // },                  
+									//Inline Mode has been moved from Add F5 Device to Create Network Offering (both backend and UI)
+									/*
+                  inline: {
+                    label: 'Mode',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: "false", description: "side by side"});
+                      items.push({id: "true", description: "inline"});
+                      args.response.success({data: items});
+                    }
+                  },  
+                  */									
                   dedicated: {
                     label: 'label.dedicated',
                     isBoolean: true,
@@ -6200,11 +6597,13 @@
                   // },
                   publicnetwork: {
                     label: 'label.public.network',
-                    defaultValue: 'untrusted'
+                    defaultValue: 'untrusted',
+                    isDisabled:true
                   },
                   privatenetwork: {
                     label: 'label.private.network',
-                    defaultValue: 'trusted'
+                    defaultValue: 'trusted',
+                    isDisabled:true
                   },
                   capacity: {
                     label: 'label.capacity',
@@ -6342,7 +6741,171 @@
           }
         }
       },
-
+      // FIXME convert to nicira detailview
+      // NiciraNvp devices listView
+      niciraNvpDevices: {
+        id: 'niciraNvpDevices',
+        title: 'label.devices',
+        listView: {
+          id: 'niciraNvpDevices',
+          fields: {
+            hostname: { label: 'label.nicira.controller.address' },
+            transportzoneuuid: { label: 'label.nicira.transportzoneuuid'},
+            l3gatewayserviceuuid: { label: 'label.nicira.l3gatewayserviceuuid' }
+          },
+          actions: {
+        	  add: {
+                label: 'label.add.NiciraNvp.device',
+                createForm: {
+                  title: 'label.add.NiciraNvp.device',
+                  preFilter: function(args) {  },   // TODO What is this?
+                  fields: {
+                    host: {
+                      label: 'label.ip.address'
+                    },
+                    username: {
+                      label: 'label.username'
+                    },
+                    password: {
+                      label: 'label.password',
+                      isPassword: true
+                    },
+                    numretries: {
+                      label: 'label.numretries',
+                      defaultValue: '2'
+                    },
+                    transportzoneuuid: {
+                      label: 'label.nicira.transportzoneuuid'
+                    },
+                    l3gatewayserviceuuid: {
+                      label: 'label.nicira.l3gatewayserviceuuid'
+                    }
+                  }
+                },
+                action: function(args) {
+                  if(nspMap["niciraNvp"] == null) {
+                    $.ajax({
+                      url: createURL("addNetworkServiceProvider&name=NiciraNvp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                      dataType: "json",
+                      async: true,
+                      success: function(json) {
+                        var jobId = json.addnetworkserviceproviderresponse.jobid;                        
+                        var addNiciraNvpProviderIntervalID = setInterval(function() {  
+                          $.ajax({
+                            url: createURL("queryAsyncJobResult&jobId="+jobId),
+                            dataType: "json",
+                            success: function(json) {
+                              var result = json.queryasyncjobresultresponse;
+                              if (result.jobstatus == 0) {
+                                return; // Job has not completed
+                              }
+                              else {
+                                clearInterval(addNiciraNvpProviderIntervalID); 
+                                if (result.jobstatus == 1) {
+                                  nspMap["niciraNvp"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                  addNiciraNvpDevice(args, selectedPhysicalNetworkObj, "addNiciraNvpDevice", "addniciranvpdeviceresponse", "niciranvpdevice")
+                                }
+                                else if (result.jobstatus == 2) {
+                                  alert("addNetworkServiceProvider&name=NiciraNvp failed. Error: " + _s(result.jobresult.errortext));
+                                }
+                              }
+                            },
+                            error: function(XMLHttpResponse) {
+                              var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                              alert("addNetworkServiceProvider&name=NiciraNvp failed. Error: " + errorMsg);
+                            }
+                          });
+                        }, 3000);       
+                      }
+                    });
+                  }
+                  else {
+                      addNiciraNvpDevice(args, selectedPhysicalNetworkObj, "addNiciraNvpDevice", "addniciranvpdeviceresponse", "niciranvpdevice")
+                  }
+                },
+        	  
+              messages: {
+                notification: function(args) {
+                  return 'Added new Nicira Nvp Controller';
+                }
+              },
+              notification: {
+                poll: pollAsyncJobResult
+              }
+            }
+          },
+          dataProvider: function(args) {
+            $.ajax({
+              url: createURL("listNiciraNvpDevices&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+              data: { page: args.page, pageSize: pageSize },
+              dataType: "json",
+              async: false,
+              success: function(json) {
+                var items = json.listniciranvpdeviceresponse.niciranvpdevice;
+                args.response.success({data: items});
+              }
+            });
+          },   
+          detailView: {
+            name: 'Nicira Nvp details',
+            actions: {
+              'remove': {
+                label: 'label.delete.NiciaNvp',
+                messages: {
+                  confirm: function(args) {
+                    return 'message.confirm.delete.NiciraNvp';
+                  },
+                  notification: function(args) {
+                    return 'label.delete.NiciraNvp';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("deleteNiciraNvpDevice&nvpdeviceid=" + args.context.niciraNvpDevices[0].nvpdeviceid),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var jid = json.deleteniciranvpdeviceresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {jobId: jid}
+                        }
+                      );
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }
+            },
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    nvpdeviceid: { label: 'label.id' },
+                    hostname: { label: 'label.ip.address' },
+                    transportzoneuuid: { label: 'label.nicira.transportzoneuuid' },
+                    l3gatewayserviceuuid: { label: 'label.nicira.l3gatewayserviceuuid' }
+                  }
+                ],
+                dataProvider: function(args) {                                
+                                    $.ajax({
+                                        url: createURL("listNiciraNvpDevices&nvpdeviceid=" + args.context.niciraNvpDevices[0].nvpdeviceid),                                       
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {                                         
+                                            var item = json.listniciranvpdeviceresponse.niciranvpdevice[0];
+                                            args.response.success({data: item});
+                                        }
+                                    });                                 
+                }
+              }
+            }
+          }
+        }
+      },
       pods: {
         title: 'label.pods',
         listView: {
@@ -6397,6 +6960,7 @@
                 fields: {
                   zoneid: {
                     label: 'Zone',
+                    docID: 'helpPodZone',
                     validation: { required: true },
                     select: function(args) {
                       var data = args.context.zones ?
@@ -6422,22 +6986,27 @@
                   },
                   podname: {
                     label: 'label.pod.name',
+                    docID: 'helpPodName',
                     validation: { required: true }
                   },
                   reservedSystemGateway: {
                     label: 'label.reserved.system.gateway',
+                    docID: 'helpPodGateway',
                     validation: { required: true }
                   },
                   reservedSystemNetmask: {
                     label: 'label.reserved.system.netmask',
+                    docID: 'helpPodNetmask',
                     validation: { required: true }
                   },
                   reservedSystemStartIp: {
                     label: 'label.start.reserved.system.IP',
+                    docID: 'helpPodStartIP',
                     validation: { required: true }
                   },
                   reservedSystemEndIp: {
                     label: 'label.end.reserved.system.IP',
+                    docID: 'helpPodEndIP',
                     validation: { required: false }
                   }
                 }
@@ -6752,6 +7321,7 @@
                 fields: {
                   zoneid: {
                     label: 'Zone',
+                    docID: 'helpClusterZone',
                     validation: { required: true },
                     select: function(args) {
                       var data = args.context.zones ?
@@ -6777,6 +7347,7 @@
                   },
                   hypervisor: {
                     label: 'label.hypervisor',
+                    docID: 'helpClusterHypervisor',
                     select: function(args) {
                       var vSwitchEnabled = false;
 
@@ -6845,6 +7416,7 @@
                   },
                   podId: {
                     label: 'label.pod',
+                    docID: 'helpClusterPod',
                     dependsOn: 'zoneid',
                     select: function(args) {
                       $.ajax({
@@ -6867,25 +7439,30 @@
                   },
                   name: {
                     label: 'label.cluster.name',
+                    docID: 'helpClusterName',
                     validation: { required: true }
                   },
 
                   //hypervisor==VMWare begins here
                   vCenterHost: {
                     label: 'label.vcenter.host',
+                    docID: 'helpClustervCenterHost',
                     validation: { required: true }
                   },
                   vCenterUsername: {
                     label: 'label.vcenter.username',
+                    docID: 'helpClustervCenterUsername',
                     validation: { required: true }
                   },
                   vCenterPassword: {
                     label: 'label.vcenter.password',
+                    docID: 'helpClustervCenterPassword',
                     validation: { required: true },
                     isPassword: true
                   },
                   vCenterDatacenter: {
                     label: 'label.vcenter.datacenter',
+                    docID: 'helpClustervCenterDatacenter',
                     validation: { required: true }
                   },
                   vsmipaddress: {
@@ -7418,6 +7995,7 @@
                 title: 'label.add.host',
                 fields: {
                   zoneid: {
+                    docID: 'helpHostZone',
                     label: 'Zone',
                     validation: { required: true },
                     select: function(args) {
@@ -7446,6 +8024,7 @@
                   //always appear (begin)
                   podId: {
                     label: 'label.pod',
+                    docID: 'helpHostPod',
                     validation: { required: true },
                     dependsOn: 'zoneid',
                     select: function(args) {
@@ -7470,6 +8049,7 @@
 
                   clusterId: {
                     label: 'label.cluster',
+                    docID: 'helpHostCluster',
                     validation: { required: true },
                     dependsOn: 'podId',
                     select: function(args) {
@@ -7594,18 +8174,21 @@
                   //input_group="general" starts here
                   hostname: {
                     label: 'label.host.name',
+                    docID: 'helpHostName',
                     validation: { required: true },
                     isHidden: true
                   },
 
                   username: {
                     label: 'label.username',
+                    docID: 'helpHostUsername',
                     validation: { required: true },
                     isHidden: true
                   },
 
                   password: {
                     label: 'label.password',
+                    docID: 'helpHostPassword',
                     validation: { required: true },
                     isHidden: true,
                     isPassword: true
@@ -7660,6 +8243,7 @@
                   //always appear (begin)
                   hosttags: {
                     label: 'label.host.tags',
+                    docID: 'helpHostTags',
                     validation: { required: false }
                   }
                   //always appear (end)
@@ -7667,54 +8251,69 @@
               },
 
               action: function(args) {
-                var array1 = [];
-                array1.push("&zoneid=" + args.data.zoneid);
-                array1.push("&podid=" + args.data.podId);
-                array1.push("&clusterid=" + args.data.clusterId);
-                array1.push("&hypervisor=" + todb(selectedClusterObj.hypervisortype));
-                var clustertype = selectedClusterObj.clustertype;
-                array1.push("&clustertype=" + todb(clustertype));
-                array1.push("&hosttags=" + todb(args.data.hosttags));
+                var data = {
+								  zoneid: args.data.zoneid,
+									podid: args.data.podId,
+									clusterid: args.data.clusterId,
+									hypervisor: selectedClusterObj.hypervisortype,
+									clustertype: selectedClusterObj.clustertype,
+									hosttags: args.data.hosttags
+								};								               
 
                 if(selectedClusterObj.hypervisortype == "VMware") {
-                  array1.push("&username=");
-                  array1.push("&password=");
+								  $.extend(data,{
+									  username: '',
+										password: ''										
+									});
+								                  
                   var hostname = args.data.vcenterHost;
                   var url;
                   if(hostname.indexOf("http://")==-1)
                     url = "http://" + hostname;
                   else
                     url = hostname;
-                  array1.push("&url=" + todb(url));
+										
+									$.extend(data, {
+									  url: url
+									});	                  
                 }
                 else {
-                  array1.push("&username=" + todb(args.data.username));
-                  array1.push("&password=" + todb(args.data.password));
-
+								  $.extend(data, {
+									  username: args.data.username,
+										password: args.data.password
+									});
+								
                   var hostname = args.data.hostname;
-
                   var url;
                   if(hostname.indexOf("http://")==-1)
                     url = "http://" + hostname;
                   else
                     url = hostname;
-                  array1.push("&url="+todb(url));
-
+										
+									$.extend(data, {
+                    url: url
+                  });									
+                 
                   if (selectedClusterObj.hypervisortype == "BareMetal") {
-                    array1.push("&cpunumber=" + todb(args.data.baremetalCpuCores));
-                    array1.push("&cpuspeed=" + todb(args.data.baremetalCpu));
-                    array1.push("&memory=" + todb(args.data.baremetalMemory));
-                    array1.push("&hostmac=" + todb(args.data.baremetalMAC));
+									  $.extend(data, {
+										  cpunumber: args.data.baremetalCpuCores,
+											cpuspeed: args.data.baremetalCpu,
+											memory: args.data.baremetalMemory,
+											hostmac: args.data.baremetalMAC
+										});									
                   }
                   else if(selectedClusterObj.hypervisortype == "Ovm") {
-                    array1.push("&agentusername=" + todb(args.data.agentUsername));
-                    array1.push("&agentpassword=" + todb(args.data.agentPassword));
+									  $.extend(data, {
+										  agentusername: args.data.agentUsername,
+											agentpassword: args.data.agentPassword
+										});									
                   }
                 }
 
                 $.ajax({
-                  url: createURL("addHost" + array1.join("")),
-                  dataType: "json",
+                  url: createURL("addHost"),
+                  type: "POST",
+									data: data,
                   success: function(json) {
                     var item = json.addhostresponse.host[0];
                     args.response.success({
@@ -7756,7 +8355,7 @@
                   var array1 = [];
                   array1.push("&hosttags=" + todb(args.data.hosttags));
 
-                  if (args.data.oscategoryid != null)
+                  if (args.data.oscategoryid != null && args.data.oscategoryid.length > 0)
                     array1.push("&osCategoryId=" + args.data.oscategoryid);
 
                   $.ajax({
@@ -7973,13 +8572,12 @@
                           async: true,
                           success: function(json) {
                             var oscategoryObjs = json.listoscategoriesresponse.oscategory;
-                            var items = [];
+                            var items = [
+                              { id: '', description: _l('label.none') }
+                            ];
                             $(oscategoryObjs).each(function() {
-                              if(this.name == 'None')
-                                items.unshift({ id: this.id, description: _l('label.none') });
-                              else
-                                items.push({id: this.id, description: this.name});
-                            });
+                              items.push({id: this.id, description: this.name});
+                            });														
                             args.response.success({data: items});
                           }
                         });
@@ -8102,6 +8700,7 @@
                 fields: {
                   zoneid: {
                     label: 'Zone',
+                    docID: 'helpPrimaryStorageZone',
                     validation: { required: true },
                     select: function(args) {
                       var data = args.context.zones ?
@@ -8128,6 +8727,7 @@
                   podId: {
                     label: 'label.pod',
                     dependsOn: 'zoneid',
+                    docID: 'helpPrimaryStoragePod',
                     validation: { required: true },
                     select: function(args) {
                       $.ajax({
@@ -8148,6 +8748,7 @@
 
                   clusterId: {
                     label: 'label.cluster',
+                    docID: 'helpPrimaryStorageCluster',
                     validation: { required: true },
                     dependsOn: 'podId',
                     select: function(args) {
@@ -8172,11 +8773,13 @@
 
                   name: {
                     label: 'label.name',
+                    docID: 'helpPrimaryStorageName',
                     validation: { required: true }
                   },
 
                   protocol: {
                     label: 'label.protocol',
+                    docID: 'helpPrimaryStorageProtocol',
                     validation: { required: true },
                     dependsOn: 'clusterId',
                     select: function(args) {
@@ -8240,19 +8843,24 @@
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
                           //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
-						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
                           $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
                           $form.find('.form-item[rel=lun]').hide();
 
-													//$('li[input_group="clvm"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=volumegroup]').hide();
+                          //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
 
                           //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
                         }
                         else if(protocol == "ocfs2") {//ocfs2 is the same as nfs, except no server field.
                           //$dialogAddPool.find("#add_pool_server_container").hide();
@@ -8263,19 +8871,24 @@
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
                           //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
-						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
                           $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
                           $form.find('.form-item[rel=lun]').hide();
 
-													//$('li[input_group="clvm"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=volumegroup]').hide();
+                          //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
 
                           //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
                         }
                         else if(protocol == "PreSetup") {
                           //$dialogAddPool.find("#add_pool_server_container").hide();
@@ -8286,19 +8899,24 @@
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
                           //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.SR.name"]+":");                          
-						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
                           $form.find('.form-item[rel=path]').find(".name").find("label").text("SR Name-Label:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
                           $form.find('.form-item[rel=lun]').hide();
 
-													//$('li[input_group="clvm"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=volumegroup]').hide();
+                          //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
 
                           //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
                         }
                         else if(protocol == "iscsi") {
                           //$dialogAddPool.find("#add_pool_server_container").show();
@@ -8313,33 +8931,43 @@
                           $form.find('.form-item[rel=iqn]').css('display', 'inline-block');
                           $form.find('.form-item[rel=lun]').css('display', 'inline-block');
 
-													//$('li[input_group="clvm"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=volumegroup]').hide();
+                          //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
 
                           //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
                         }
-												else if($(this).val() == "clvm") {
-													//$("#add_pool_server_container", $dialogAddPool).hide();
-													$form.find('.form-item[rel=server]').hide();
-													//$dialogAddPool.find("#add_pool_nfs_server").val("localhost");
-													$form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
+                        else if($(this).val() == "clvm") {
+                          //$("#add_pool_server_container", $dialogAddPool).hide();
+                          $form.find('.form-item[rel=server]').hide();
+                          //$dialogAddPool.find("#add_pool_nfs_server").val("localhost");
+                          $form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
 
-													//$('li[input_group="nfs"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=path]').hide();
+                          //$('li[input_group="nfs"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=path]').hide();
 
-													//$('li[input_group="iscsi"]', $dialogAddPool).hide();
-													 $form.find('.form-item[rel=iqn]').hide();
+                          //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=iqn]').hide();
                           $form.find('.form-item[rel=lun]').hide();
 
-													//$('li[input_group="clvm"]', $dialogAddPool).show();
-													$form.find('.form-item[rel=volumegroup]').css('display', 'inline-block');
+                          //$('li[input_group="clvm"]', $dialogAddPool).show();
+                          $form.find('.form-item[rel=volumegroup]').css('display', 'inline-block');
 
-													//$('li[input_group="vmfs"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=vCenterDataCenter]').hide();
+                          //$('li[input_group="vmfs"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
-												}
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
+                        }
                         else if(protocol == "vmfs") {
                           //$dialogAddPool.find("#add_pool_server_container").show();
                           $form.find('.form-item[rel=server]').css('display', 'inline-block');
@@ -8353,12 +8981,17 @@
                           $form.find('.form-item[rel=iqn]').hide();
                           $form.find('.form-item[rel=lun]').hide();
 
-													//$('li[input_group="clvm"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=volumegroup]').hide();
+                          //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
 
                           //$('li[input_group="vmfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=vCenterDataCenter]').css('display', 'inline-block');
                           $form.find('.form-item[rel=vCenterDataStore]').css('display', 'inline-block');
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
                         }
                         else if(protocol == "SharedMountPoint") {  //"SharedMountPoint" show the same fields as "nfs" does.
                           //$dialogAddPool.find("#add_pool_server_container").hide();
@@ -8368,19 +9001,24 @@
 
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
-						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
                           $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
                           $form.find('.form-item[rel=lun]').hide();
 
-													//$('li[input_group="clvm"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=volumegroup]').hide();
+                          //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
 
                           //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
                         }
                         else if(protocol == "rbd") {
                           $form.find('.form-item[rel=rbdmonitor]').css('display', 'inline-block');
@@ -8413,12 +9051,17 @@
                           $form.find('.form-item[rel=iqn]').hide();
                           $form.find('.form-item[rel=lun]').hide();
 
-													//$('li[input_group="clvm"]', $dialogAddPool).hide();
-													$form.find('.form-item[rel=volumegroup]').hide();
+                          //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
 
                           //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                          $form.find('.form-item[rel=rbdmonitor]').hide();
+                          $form.find('.form-item[rel=rbdpool]').hide();
+                          $form.find('.form-item[rel=rbdid]').hide();
+                          $form.find('.form-item[rel=rbdsecret]').hide();
                         }
                       });
 
@@ -8429,6 +9072,7 @@
 
                   server: {
                     label: 'label.server',
+                    docID: 'helpPrimaryStorageServer',
                     validation: { required: true },
                     isHidden: true
                   },
@@ -8436,6 +9080,7 @@
                   //nfs
                   path: {
                     label: 'label.path',
+                    docID: 'helpPrimaryStoragePath',
                     validation: { required: true },
                     isHidden: true
                   },
@@ -8443,11 +9088,13 @@
                   //iscsi
                   iqn: {
                     label: 'label.target.iqn',
+                    docID: 'helpPrimaryStorageTargetIQN',
                     validation: { required: true },
                     isHidden: true
                   },
                   lun: {
                     label: 'label.LUN.number',
+                    docID: 'helpPrimaryStorageLun',
                     validation: { required: true },
                     isHidden: true
                   },
@@ -8496,6 +9143,7 @@
                   //always appear (begin)
                   storageTags: {
                     label: 'label.storage.tags',
+                    docID: 'helpPrimaryStorageTags',
                     validation: { required: false }
                   }
                   //always appear (end)
@@ -8861,6 +9509,7 @@
                 fields: {
                   zoneid: {
                     label: 'Zone',
+                    docID: 'helpSecondaryStorageZone',
                     validation: { required: true },
                     select: function(args) {
                       var data = args.context.zones ?
@@ -8886,10 +9535,12 @@
                   },
                   nfsServer: {
                     label: 'label.nfs.server',
+                    docID: 'helpSecondaryStorageNFSServer',
                     validation: { required: true }
                   },
                   path: {
                     label: 'label.path',
+                    docID: 'helpSecondaryStoragePath',
                     validation: { required: true }
                   }
                 }
@@ -9357,6 +10008,40 @@
     });
   }
 
+  function addNiciraNvpDevice(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
+    var array1 = [];
+    array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
+    array1.push("&username=" + todb(args.data.username));
+    array1.push("&password=" + todb(args.data.password));
+    array1.push("&hostname=" + todb(args.data.host));
+    array1.push("&transportzoneuuid=" + todb(args.data.transportzoneuuid));
+
+    var l3GatewayServiceUuid = args.data.l3gatewayserviceuuid;
+    if(l3GatewayServiceUuid != null && l3GatewayServiceUuid.length > 0) {
+        array1.push("&l3gatewayserviceuuid=" + todb(args.data.l3gatewayserviceuuid));
+    }
+    
+    $.ajax({
+      url: createURL(apiCmd + array1.join("")),
+      dataType: "json",
+      success: function(json) {
+        var jid = json[apiCmdRes].jobid;
+        args.response.success(
+          {_custom:
+           {jobId: jid,
+            getUpdatedItem: function(json) {
+              var item = json.queryasyncjobresultresponse.jobresult[apiCmdObj];
+
+              return item;
+            }
+           }
+          }
+        );
+      }
+    });
+  }
+
+
 	var afterCreateZonePhysicalNetworkTrafficTypes = function(args, newZoneObj, newPhysicalnetwork) {
 		$.ajax({
 			url: createURL("updatePhysicalNetwork&state=Enabled&id=" + newPhysicalnetwork.id),
@@ -9746,7 +10431,9 @@
     if (jsonObj.resourcestate == "Enabled") {
       allowedActions.push("edit");
       allowedActions.push("enableMaintenanceMode");
-      allowedActions.push("forceReconnect");
+      
+			if(jsonObj.state != "Disconnected")
+			  allowedActions.push("forceReconnect");
     }
     else if (jsonObj.resourcestate == "ErrorInMaintenance") {
       allowedActions.push("edit");
@@ -9814,7 +10501,7 @@
     return allowedActions;
   }
 
-  var routerActionfilter = function(args) {
+  var routerActionfilter = cloudStack.sections.system.routerActionFilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
 
@@ -9891,28 +10578,6 @@
 		}
   }
 	
-	var addExtraPropertiesToGuestNetworkObject = function(jsonObj) {  
-		jsonObj.networkdomaintext = jsonObj.networkdomain;
-		jsonObj.networkofferingidText = jsonObj.networkofferingid;
-
-		if(jsonObj.acltype == "Domain") {
-			if(jsonObj.domainid == rootAccountId)
-				jsonObj.scope = "All";
-			else
-				jsonObj.scope = "Domain (" + jsonObj.domain + ")";
-		}
-		else if (jsonObj.acltype == "Account"){
-			if(jsonObj.project != null)
-				jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.project + ")";
-			else
-				jsonObj.scope = "Account (" + jsonObj.domain + ", " + jsonObj.account + ")";
-		}
-
-		if(jsonObj.vlan == null && jsonObj.broadcasturi != null) {
-			jsonObj.vlan = jsonObj.broadcasturi.replace("vlan://", "");   	
-		}
-  }	
-	
 	var addExtraPropertiesToRouterInstanceObject = function(jsonObj) {  		
 		if(jsonObj.isredundantrouter == true)
 			jsonObj["redundantRouterState"] = jsonObj.redundantstate;
@@ -9954,6 +10619,9 @@
 							case "SecurityGroupProvider":
 								nspMap["securityGroups"] = items[i];
 								break;
+                            case "NiciraNvp":
+                                nspMap["niciraNvp"] = items[i];
+                                break;
 						}
 					}
 				}
@@ -9970,7 +10638,12 @@
 				id: 'virtualRouter',
 				name: 'Virtual Router',
 				state: nspMap.virtualRouter ? nspMap.virtualRouter.state : 'Disabled'
-			}
+			},
+            {
+                id: 'niciraNvp',
+                name: 'Nicira Nvp',
+                state: nspMap.niciraNvp ? nspMap.niciraNvp.state : 'Disabled'
+            }
 		];
 
 		if(selectedZoneObj.networktype == "Basic") {

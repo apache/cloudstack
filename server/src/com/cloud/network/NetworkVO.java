@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -29,8 +29,7 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
-import com.cloud.acl.ControlledEntity;
-import com.cloud.api.Identity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -44,7 +43,7 @@ import com.cloud.utils.net.NetUtils;
  */
 @Entity
 @Table(name="networks")
-public class NetworkVO implements Network, Identity {
+public class NetworkVO implements Network {
     @Id
     @TableGenerator(name="networks_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="networks_seq", allocationSize=1)
     @Column(name="id")
@@ -79,13 +78,13 @@ public class NetworkVO implements Network, Identity {
 
     @Column(name="network_offering_id")
     long networkOfferingId;
-    
+
     @Column(name="vpc_id")
     Long vpcId;
 
     @Column(name="physical_network_id")
     Long physicalNetworkId;
-    
+
     @Column(name="data_center_id")
     long dataCenterId;
 
@@ -132,24 +131,24 @@ public class NetworkVO implements Network, Identity {
 
     @Column(name="reservation_id")
     String reservationId;
-    
+
     @Column(name="uuid")
     String uuid;
-    
+
     @Column(name="guest_type")
     @Enumerated(value=EnumType.STRING)
     Network.GuestType guestType;
-    
+
     @Column(name="acl_type")
     @Enumerated(value=EnumType.STRING)
     ControlledEntity.ACLType aclType;
 
     @Column(name="restart_required")
     boolean restartRequired = false;
-    
+
     @Column(name="specify_ip_ranges")
     boolean specifyIpRanges = false;
-    
+
     public NetworkVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
@@ -181,8 +180,8 @@ public class NetworkVO implements Network, Identity {
     	this.uuid = UUID.randomUUID().toString();
     }
 
-    public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, 
-            long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, 
+    public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId,
+            long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId,
             Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges, Long vpcId) {
         this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId,
                 related, name, displayText, networkDomain, guestType, dcId, physicalNetworkId, aclType, specifyIpRanges, vpcId);
@@ -215,8 +214,8 @@ public class NetworkVO implements Network, Identity {
      * @param vpcId TODO
      * @param dataCenterId
      */
-    public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, 
-            long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, 
+    public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType,
+            long networkOfferingId, long domainId, long accountId, long related, String name, String displayText,
             String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges, Long vpcId) {
         this(trafficType, mode, broadcastDomainType, networkOfferingId, State.Allocated, dcId, physicalNetworkId);
         this.domainId = domainId;
@@ -368,7 +367,7 @@ public class NetworkVO implements Network, Identity {
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
-    
+
     @Override
     public void setPhysicalNetworkId(Long physicalNetworkId) {
         this.physicalNetworkId = physicalNetworkId;
@@ -428,7 +427,7 @@ public class NetworkVO implements Network, Identity {
     public void setCreated(Date created) {
         this.created = created;
     }
-    
+
     @Override
     public Network.GuestType getGuestType() {
         return guestType;
@@ -465,7 +464,7 @@ public class NetworkVO implements Network, Identity {
     public String getUuid() {
     	return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
@@ -482,7 +481,7 @@ public class NetworkVO implements Network, Identity {
 	public boolean isRestartRequired() {
 		return restartRequired;
 	}
-	
+
     @Override
     public boolean getSpecifyIpRanges() {
     	return specifyIpRanges;

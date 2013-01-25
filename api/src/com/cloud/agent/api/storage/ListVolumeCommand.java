@@ -22,14 +22,14 @@ import com.cloud.agent.api.to.SwiftTO;
 
 public class ListVolumeCommand extends StorageCommand {
 
-    private String secUrl;        
-    
+    private String secUrl;
+
     public ListVolumeCommand() {
     }
-    
+
 	public ListVolumeCommand(String secUrl) {
-	    this.secUrl = secUrl;        
-	}	
+	    this.secUrl = secUrl;
+	}
 
     @Override
     public boolean executeInSequence() {

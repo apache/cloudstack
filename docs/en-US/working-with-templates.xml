@@ -22,7 +22,7 @@
  under the License.
 -->
 
-<section id="working-with-templates">
+<chapter id="working-with-templates">
     <title>Working with Templates</title>
     <para>A template is a reusable configuration for virtual machines. When users launch VMs, they can choose from a list of templates in &PRODUCT;.</para>
     <para>Specifically, a template is a virtual disk image that includes one of a variety of operating systems, optional additional software such as office applications, and settings such as access control to determine who can use the template. Each template is associated with a particular type of hypervisor, which is specified when the template is added to &PRODUCT;.</para>
@@ -38,7 +38,7 @@
     <xi:include href="export-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="create-windows-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="import-ami.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="create-bare-metal-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="convert-hyperv-vm-to-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="add-password-management-to-templates.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="delete-templates.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-</section>
+</chapter>

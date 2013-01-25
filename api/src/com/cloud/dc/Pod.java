@@ -17,16 +17,15 @@
 package com.cloud.dc;
 
 import com.cloud.org.Grouping;
+import org.apache.cloudstack.acl.InfrastructureEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Represents one pod in the cloud stack.
- * 
+ *
  */
-public interface Pod extends Grouping {
-    /**
-     * @return unique id mapped to the pod.
-     */
-    long getId();
+public interface Pod extends InfrastructureEntity, Grouping, Identity, InternalIdentity {
 
     String getCidrAddress();
 
@@ -35,8 +34,6 @@ public interface Pod extends Grouping {
     String getGateway();
 
     long getDataCenterId();
-
-    // String getUniqueName();
 
     String getDescription();
 

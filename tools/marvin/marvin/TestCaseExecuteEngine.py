@@ -27,13 +27,14 @@ def testCaseLogger(message, logger=None):
         logger.debug(message)
 
 class TestCaseExecuteEngine(object):
-    def __init__(self, testclient, testcaseLogFile=None, testResultLogFile=None, format="text", xmlDir="xml-reports"):
+    def __init__(self, testclient, config, testcaseLogFile=None, testResultLogFile=None, format="text", xmlDir="xml-reports"):
         """
         Initialize the testcase execution engine, just the basics here
         @var testcaseLogFile: client log file
         @var testResultLogFile: summary report file  
         """
         self.testclient = testclient
+        self.config = config
         self.logformat = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
         self.loader = unittest.loader.TestLoader()
         self.suite = None
@@ -83,14 +84,15 @@ class TestCaseExecuteEngine(object):
                 
                 #inject testclient and logger into each unittest 
                 setattr(test, "testClient", self.testclient)
+                setattr(test, "config", self.config)
                 setattr(test, "debug", partial(testCaseLogger, logger=testcaselogger))
                 setattr(test.__class__, "clstestclient", self.testclient)
-                if hasattr(test, "UserName"):
-                    self.testclient.createNewApiClient(test.UserName, test.DomainName, test.AcctType)
+                if hasattr(test, "user"): #attribute when test is entirely executed as user
+                    self.testclient.createUserApiClient(test.UserName, test.DomainName, test.AcctType)
 
     def run(self):
         if self.suite:
             if self.format == "text":
                 unittest.TextTestRunner(stream=self.testResultLogFile, verbosity=2).run(self.suite)
             elif self.format == "xml":
-                xmlrunner.XMLTestRunner(output=self.xmlDir, verbose=True).run(self.suite)
+                xmlrunner.XMLTestRunner(output=self.xmlDir).run(self.suite)

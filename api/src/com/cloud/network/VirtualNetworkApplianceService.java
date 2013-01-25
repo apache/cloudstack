@@ -16,38 +16,39 @@
 // under the License.
 package com.cloud.network;
 
-import com.cloud.api.commands.UpgradeRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.user.Account;
 
 public interface VirtualNetworkApplianceService {
     /**
      * Starts domain router
-     * 
+     *
      * @param cmd
      *            the command specifying router's id
      * @return DomainRouter object
      */
-    VirtualRouter startRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException, 
+    VirtualRouter startRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException,
     ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * Reboots domain router
-     * 
+     *
      * @param cmd
      *            the command specifying router's id
      * @return router if successful
      */
-    VirtualRouter rebootRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException, 
+    VirtualRouter rebootRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException,
     ResourceUnavailableException, InsufficientCapacityException;
 
     VirtualRouter upgradeRouter(UpgradeRouterCmd cmd);
 
     /**
      * Stops domain router
-     * 
+     *
      * @param id
      *            of the router
      * @param forced
@@ -60,6 +61,6 @@ public interface VirtualNetworkApplianceService {
 
     VirtualRouter startRouter(long id) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException;
 
-    VirtualRouter destroyRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException;
+    VirtualRouter destroyRouter(long routerId, Account caller, Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException;
 
 }

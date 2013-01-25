@@ -20,15 +20,16 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from integration.lib.utils import *
-from integration.lib.base import *
-from integration.lib.common import *
+from marvin.integration.lib.utils import *
+from marvin.integration.lib.base import *
+from marvin.integration.lib.common import *
 from nose.plugins.attrib import attr
 import urllib
 from random import random
 #Import System modules
 import time
 
+_multiprocess_shared_ = True
 
 class Services:
     """Test ISO Services
@@ -54,7 +55,7 @@ class Services:
                         "isextractable": True,
                         "isfeatured": True,
                         "ispublic": True,
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                        "ostype": "CentOS 5.3 (64-bit)",
                     },
             "iso_2":
                     {
@@ -65,12 +66,10 @@ class Services:
                         "isextractable": True,
                         "isfeatured": True,
                         "ispublic": True,
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                        "ostype": "CentOS 5.3 (64-bit)",
                         "mode": 'HTTP_DOWNLOAD',
                         # Used in Extract template, value must be HTTP_DOWNLOAD
                     },
-            "destzoneid": 5,
-            # Copy ISO from one zone to another (Destination Zone)
             "isfeatured": True,
             "ispublic": True,
             "isextractable": True,
@@ -78,7 +77,7 @@ class Services:
             "passwordenabled": True,
             "sleep": 60,
             "timeout": 10,
-            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+            "ostype": "CentOS 5.3 (64-bit)",
             # CentOS 5.3 (64 bit)
             "mode": 'advanced'
             # Networking mode: Basic or Advanced
@@ -102,14 +101,23 @@ class TestCreateIso(cloudstackTestCase):
                             self.services["account"],
                             domainid=self.domain.id
                             )
-        
+        # Finding the OsTypeId from Ostype
+        ostypes = list_os_types(
+                    self.apiclient,
+                    description=self.services["ostype"]
+                    )
+        if not isinstance(ostypes, list):
+            raise unittest.SkipTest("OSTypeId for given description not found")
+
+        self.services["iso_1"]["ostypeid"] = ostypes[0].id
+        self.services["iso_2"]["ostypeid"] = ostypes[0].id
+        self.services["ostypeid"] = ostypes[0].id
+
         self.cleanup = [self.account]
         return
 
     def tearDown(self):
         try:
-
-            self.dbclient.close()
             #Clean up, terminate the created ISOs
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -193,6 +201,13 @@ class TestISO(cloudstackTestCase):
         cls.services["iso_1"]["zoneid"] = cls.zone.id
         cls.services["iso_2"]["zoneid"] = cls.zone.id
         cls.services["sourcezoneid"] = cls.zone.id
+        #populate second zone id for iso copy
+        cmd = listZones.listZonesCmd()
+        zones = cls.api_client.listZones(cmd)
+        if not isinstance(zones, list):
+            raise Exception("Failed to find zones.")
+        if len(zones) >= 2:
+            cls.services["destzoneid"] = zones[1].id
 
         #Create an account, ISOs etc.
         cls.account = Account.create(
@@ -201,6 +216,18 @@ class TestISO(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
         cls.services["account"] = cls.account.account.name
+        # Finding the OsTypeId from Ostype
+        ostypes = list_os_types(
+                    cls.api_client,
+                    description=cls.services["ostype"]
+                    )
+        if not isinstance(ostypes, list):
+            raise unittest.SkipTest("OSTypeId for given description not found")
+
+        cls.services["iso_1"]["ostypeid"] = ostypes[0].id
+        cls.services["iso_2"]["ostypeid"] = ostypes[0].id
+        cls.services["ostypeid"] = ostypes[0].id
+
         cls.iso_1 = Iso.create(
                                cls.api_client, 
                                cls.services["iso_1"],
@@ -247,7 +274,6 @@ class TestISO(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            self.dbclient.close()
             #Clean up, terminate the created ISOs, VMs
             cleanup_resources(self.apiclient, self.cleanup)
 
@@ -503,6 +529,35 @@ class TestISO(cloudstackTestCase):
 
         self.debug("Cleanup copied ISO: %s" % iso_response.id)
         # Cleanup- Delete the copied ISO
+        timeout = self.services["timeout"]
+        while True:
+            time.sleep(self.services["sleep"])
+            list_iso_response = list_isos(
+                                          self.apiclient,
+                                          id=self.iso_2.id,
+                                          zoneid=self.services["destzoneid"]
+                                          )
+            self.assertEqual(
+                                isinstance(list_iso_response, list),
+                                True,
+                                "Check list response returns a valid list"
+                            )
+
+            self.assertNotEqual(
+                                len(list_iso_response),
+                                0,
+                                "Check template extracted in List ISO"
+                            )
+
+            iso_response = list_iso_response[0]
+            if iso_response.isready == True:
+                break
+
+            if timeout == 0:
+                raise Exception(
+                        "Failed to download copied iso(ID: %s)" % iso_response.id)
+
+            timeout = timeout - 1
         cmd = deleteIso.deleteIsoCmd()
         cmd.id = iso_response.id
         cmd.zoneid = self.services["destzoneid"]

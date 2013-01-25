@@ -22,7 +22,7 @@
  under the License.
 -->
 
-<section id="changing-secondary-storage-serversp">
+<section id="changing-secondary-storage-servers">
     <title>Changing Secondary Storage Servers</title>
     <para>You can change the secondary storage NFS mount.  Perform the following steps to do so:</para>
         <orderedlist>
