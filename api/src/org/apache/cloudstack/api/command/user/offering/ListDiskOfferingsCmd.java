@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -78,16 +79,8 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends DiskOffering> result = _mgr.searchForDiskOfferings(this);
-        ListResponse<DiskOfferingResponse> response = new ListResponse<DiskOfferingResponse>();
-        List<DiskOfferingResponse> diskOfferingResponses = new ArrayList<DiskOfferingResponse>();
-        for (DiskOffering offering : result) {
-            DiskOfferingResponse diskOffResp = _responseGenerator.createDiskOfferingResponse(offering);
-            diskOffResp.setObjectName("diskoffering");
-            diskOfferingResponses.add(diskOffResp);
-        }
 
-        response.setResponses(diskOfferingResponses);
+        ListResponse<DiskOfferingResponse> response = _queryService.searchForDiskOfferings(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

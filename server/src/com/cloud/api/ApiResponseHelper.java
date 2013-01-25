@@ -44,6 +44,8 @@ import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.ControlledViewEntity;
+import com.cloud.api.query.vo.DataCenterJoinVO;
+import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -53,6 +55,7 @@ import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -301,24 +304,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public DiskOfferingResponse createDiskOfferingResponse(DiskOffering offering) {
-        DiskOfferingResponse diskOfferingResponse = new DiskOfferingResponse();
-        diskOfferingResponse.setId(offering.getUuid());
-        diskOfferingResponse.setName(offering.getName());
-        diskOfferingResponse.setDisplayText(offering.getDisplayText());
-        diskOfferingResponse.setCreated(offering.getCreated());
-        diskOfferingResponse.setDiskSize(offering.getDiskSize() / (1024 * 1024 * 1024));
-        if (offering.getDomainId() != null) {
-            Domain domain = ApiDBUtils.findDomainById(offering.getDomainId());
-            if (domain != null) {
-                diskOfferingResponse.setDomain(domain.getName());
-                diskOfferingResponse.setDomainId(domain.getUuid());
-            }
-        }
-        diskOfferingResponse.setTags(offering.getTags());
-        diskOfferingResponse.setCustomized(offering.isCustomized());
-        diskOfferingResponse.setStorageType(offering.getUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
-        diskOfferingResponse.setObjectName("diskoffering");
-        return diskOfferingResponse;
+        DiskOfferingJoinVO vOffering = ApiDBUtils.newDiskOfferingView(offering);
+        return ApiDBUtils.newDiskOfferingResponse(vOffering);
     }
 
     @Override
@@ -360,33 +347,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ServiceOfferingResponse createServiceOfferingResponse(ServiceOffering offering) {
-        ServiceOfferingResponse offeringResponse = new ServiceOfferingResponse();
-        offeringResponse.setId(offering.getUuid());
-        offeringResponse.setName(offering.getName());
-        offeringResponse.setIsSystemOffering(offering.getSystemUse());
-        offeringResponse.setDefaultUse(offering.getDefaultUse());
-        offeringResponse.setSystemVmType(offering.getSystemVmType());
-        offeringResponse.setDisplayText(offering.getDisplayText());
-        offeringResponse.setCpuNumber(offering.getCpu());
-        offeringResponse.setCpuSpeed(offering.getSpeed());
-        offeringResponse.setMemory(offering.getRamSize());
-        offeringResponse.setCreated(offering.getCreated());
-        offeringResponse.setStorageType(offering.getUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
-        offeringResponse.setOfferHa(offering.getOfferHA());
-        offeringResponse.setLimitCpuUse(offering.getLimitCpuUse());
-        offeringResponse.setTags(offering.getTags());
-        if (offering.getDomainId() != null) {
-            Domain domain = ApiDBUtils.findDomainById(offering.getDomainId());
-            if (domain != null) {
-                offeringResponse.setDomain(domain.getName());
-                offeringResponse.setDomainId(domain.getUuid());
-            }
-        }
-        offeringResponse.setNetworkRate(offering.getRateMbps());
-        offeringResponse.setHostTag(offering.getHostTag());
-        offeringResponse.setObjectName("serviceoffering");
-
-        return offeringResponse;
+        ServiceOfferingJoinVO vOffering = ApiDBUtils.newServiceOfferingView(offering);
+        return ApiDBUtils.newServiceOfferingResponse(vOffering);
     }
 
     @Override
@@ -759,28 +721,12 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ZoneResponse createZoneResponse(DataCenter dataCenter, Boolean showCapacities) {
-        Account account = UserContext.current().getCaller();
-        ZoneResponse zoneResponse = new ZoneResponse();
-        zoneResponse.setId(dataCenter.getUuid());
-        zoneResponse.setName(dataCenter.getName());
-        zoneResponse.setSecurityGroupsEnabled(ApiDBUtils.isSecurityGroupEnabledInZone(dataCenter.getId()));
-        zoneResponse.setLocalStorageEnabled(dataCenter.isLocalStorageEnabled());
-
-        if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
-            zoneResponse.setDescription(dataCenter.getDescription());
+        DataCenterJoinVO vOffering = ApiDBUtils.newDataCenterView(dataCenter);
+        return ApiDBUtils.newDataCenterResponse(vOffering, showCapacities);
         }
 
-        if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
-            zoneResponse.setDns1(dataCenter.getDns1());
-            zoneResponse.setDns2(dataCenter.getDns2());
-            zoneResponse.setInternalDns1(dataCenter.getInternalDns1());
-            zoneResponse.setInternalDns2(dataCenter.getInternalDns2());
-            // FIXME zoneResponse.setVlan(dataCenter.get.getVnet());
-            zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
-        }
-
-        if (showCapacities != null && showCapacities) {
-            List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(dataCenter.getId(), null, null);
+    public static List<CapacityResponse> getDataCenterCapacityResponse(Long zoneId){
+        List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(zoneId, null, null);
             Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
             float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor();
 
@@ -791,7 +737,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_CPU) {
                     capacityResponse.setCapacityTotal(new Long((long) (capacity.getTotalCapacity() * cpuOverprovisioningFactor)));
                 } else if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
-                    List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(dataCenter.getId(), null, null);
+                List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(zoneId, null, null);
                     capacityResponse.setCapacityTotal(capacity.getTotalCapacity() - c.get(0).getTotalCapacity());
                     capacityResponse.setCapacityUsed(capacity.getUsedCapacity() - c.get(0).getUsedCapacity());
                 } else {
@@ -805,31 +751,12 @@ public class ApiResponseHelper implements ResponseGenerator {
                 capacityResponses.add(capacityResponse);
             }
             // Do it for stats as well.
-            capacityResponses.addAll(getStatsCapacityresponse(null, null, null, dataCenter.getId()));
+        capacityResponses.addAll(getStatsCapacityresponse(null, null, null, zoneId));
 
-            zoneResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
-        }
-
-        // set network domain info
-        zoneResponse.setDomain(dataCenter.getDomain());
-
-        // set domain info
-        Long domainId = dataCenter.getDomainId();
-        if (domainId != null) {
-            Domain domain = ApiDBUtils.findDomainById(domainId);
-            zoneResponse.setDomainId(domain.getId());
-            zoneResponse.setDomainName(domain.getName());
-        }
-
-        zoneResponse.setType(dataCenter.getNetworkType().toString());
-        zoneResponse.setAllocationState(dataCenter.getAllocationState().toString());
-        zoneResponse.setZoneToken(dataCenter.getZoneToken());
-        zoneResponse.setDhcpProvider(dataCenter.getDhcpProvider());
-        zoneResponse.setObjectName("zone");
-        return zoneResponse;
+        return new ArrayList<CapacityResponse>(capacityResponses);
     }
 
-    private List<CapacityResponse> getStatsCapacityresponse(Long poolId, Long clusterId, Long podId, Long zoneId) {
+    private static List<CapacityResponse> getStatsCapacityresponse(Long poolId, Long clusterId, Long podId, Long zoneId) {
         List<CapacityVO> capacities = new ArrayList<CapacityVO>();
         capacities.add(ApiDBUtils.getStoragePoolUsedStats(poolId, clusterId, podId, zoneId));
         if (clusterId == null && podId == null) {

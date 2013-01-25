@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -34,15 +35,19 @@ import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
+import com.cloud.api.query.vo.DataCenterJoinVO;
+import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -52,6 +57,7 @@ import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -271,6 +277,30 @@ public class ViewResponseHelper {
         List<AsyncJobResponse> respList = new ArrayList<AsyncJobResponse>();
         for (AsyncJobJoinVO vt : jobs){
             respList.add(ApiDBUtils.newAsyncJobResponse(vt));
+        }
+        return respList;
+    }
+
+    public static List<DiskOfferingResponse> createDiskOfferingResponse(DiskOfferingJoinVO... offerings) {
+        List<DiskOfferingResponse> respList = new ArrayList<DiskOfferingResponse>();
+        for (DiskOfferingJoinVO vt : offerings){
+            respList.add(ApiDBUtils.newDiskOfferingResponse(vt));
+        }
+        return respList;
+    }
+
+    public static List<ServiceOfferingResponse> createServiceOfferingResponse(ServiceOfferingJoinVO... offerings) {
+        List<ServiceOfferingResponse> respList = new ArrayList<ServiceOfferingResponse>();
+        for (ServiceOfferingJoinVO vt : offerings){
+            respList.add(ApiDBUtils.newServiceOfferingResponse(vt));
+        }
+        return respList;
+    }
+
+    public static List<ZoneResponse> createDataCenterResponse(Boolean showCapacities, DataCenterJoinVO... dcs) {
+        List<ZoneResponse> respList = new ArrayList<ZoneResponse>();
+        for (DataCenterJoinVO vt : dcs){
+            respList.add(ApiDBUtils.newDataCenterResponse(vt, showCapacities));
         }
         return respList;
     }

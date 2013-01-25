@@ -360,7 +360,6 @@ public enum Config {
 	ConcurrentSnapshotsThresholdPerHost("Advanced", ManagementServer.class, Long.class, "concurrent.snapshots.threshold.perhost",
 	                null, "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited", null);
 
-
 	private final String _category;
 	private final Class<?> _componentClass;
 	private final Class<?> _type;

@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
@@ -86,16 +87,8 @@ public class ListZonesByCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends DataCenter> dataCenters = _mgr.listDataCenters(this);
-        ListResponse<ZoneResponse> response = new ListResponse<ZoneResponse>();
-        List<ZoneResponse> zoneResponses = new ArrayList<ZoneResponse>();
-        for (DataCenter dataCenter : dataCenters) {
-            ZoneResponse zoneResponse = _responseGenerator.createZoneResponse(dataCenter, showCapacities);
-            zoneResponse.setObjectName("zone");
-            zoneResponses.add(zoneResponse);
-        }
 
-        response.setResponses(zoneResponses);
+        ListResponse<ZoneResponse> response = _queryService.listDataCenters(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

@@ -54,28 +54,26 @@ import com.google.gson.annotations.SerializedName;
 public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
     private static final Logger s_logger = Logger.getLogger(ApiDiscoveryServiceImpl.class);
 
-    @Inject List<APIChecker> _apiAccessCheckers = null;
-    private Map<String, ApiDiscoveryResponse> _apiNameDiscoveryResponseMap = null;
+    @Inject protected List<APIChecker> s_apiAccessCheckers = null;
+    private static Map<String, ApiDiscoveryResponse> s_apiNameDiscoveryResponseMap = null;
 
     @Inject List<PluggableService> _services;
 
     protected ApiDiscoveryServiceImpl() {
         super();
-        if (_apiNameDiscoveryResponseMap == null) {
+        if (s_apiNameDiscoveryResponseMap == null) {
             long startTime = System.nanoTime();
-            _apiNameDiscoveryResponseMap = new HashMap<String, ApiDiscoveryResponse>();
-            cacheResponseMap();
+            s_apiNameDiscoveryResponseMap = new HashMap<String, ApiDiscoveryResponse>();
+            //TODO: Fix and use PluggableService to get the classes
+            Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
+                    new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
+            cacheResponseMap(cmdClasses);
             long endTime = System.nanoTime();
             s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
         }
     }
 
-    private void cacheResponseMap() {
-        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
-                new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
-
-        //TODO: Fix and use PluggableService to get the classes
-
+    protected void cacheResponseMap(Set<Class<?>> cmdClasses) {
         Map<String, List<String>> responseApiNameListMap = new HashMap<String, List<String>>();
 
         for(Class<?> cmdClass: cmdClasses) {
@@ -115,8 +113,8 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
                 }
             }
 
-            Field[] fields = ReflectUtil.getAllFieldsForClass(cmdClass,
-                    new Class<?>[] {BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
+            Set<Field> fields = ReflectUtil.getAllFieldsForClass(cmdClass,
+                    new Class<?>[]{BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
 
             boolean isAsync = ReflectUtil.isCmdClassAsync(cmdClass,
                     new Class<?>[] {BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
@@ -142,11 +140,11 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
                 }
             }
             response.setObjectName("api");
-            _apiNameDiscoveryResponseMap.put(apiName, response);
+            s_apiNameDiscoveryResponseMap.put(apiName, response);
         }
 
-        for (String apiName : _apiNameDiscoveryResponseMap.keySet()) {
-            ApiDiscoveryResponse response = _apiNameDiscoveryResponseMap.get(apiName);
+        for (String apiName : s_apiNameDiscoveryResponseMap.keySet()) {
+            ApiDiscoveryResponse response = s_apiNameDiscoveryResponseMap.get(apiName);
             Set<ApiParameterResponse> processedParams = new HashSet<ApiParameterResponse>();
             for (ApiParameterResponse param: response.getParams()) {
                 if (responseApiNameListMap.containsKey(param.getRelated())) {
@@ -166,7 +164,7 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
             } else {
                 response.setRelated(null);
             }
-            _apiNameDiscoveryResponseMap.put(apiName, response);
+            s_apiNameDiscoveryResponseMap.put(apiName, response);
         }
     }
 
@@ -179,22 +177,22 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
             return null;
 
         if (name != null) {
-            if (!_apiNameDiscoveryResponseMap.containsKey(name))
+            if (!s_apiNameDiscoveryResponseMap.containsKey(name))
                 return null;
 
-            for (APIChecker apiChecker : _apiAccessCheckers) {
+            for (APIChecker apiChecker : s_apiAccessCheckers) {
                 try {
                     apiChecker.checkAccess(user, name);
                 } catch (Exception ex) {
                     return null;
                 }
             }
-            responseList.add(_apiNameDiscoveryResponseMap.get(name));
+            responseList.add(s_apiNameDiscoveryResponseMap.get(name));
 
         } else {
-            for (String apiName : _apiNameDiscoveryResponseMap.keySet()) {
+            for (String apiName : s_apiNameDiscoveryResponseMap.keySet()) {
                 boolean isAllowed = true;
-                for (APIChecker apiChecker : _apiAccessCheckers) {
+                for (APIChecker apiChecker : s_apiAccessCheckers) {
                     try {
                         apiChecker.checkAccess(user, apiName);
                     } catch (Exception ex) {
@@ -202,7 +200,7 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
                     }
                 }
                 if (isAllowed)
-                    responseList.add(_apiNameDiscoveryResponseMap.get(apiName));
+                    responseList.add(s_apiNameDiscoveryResponseMap.get(apiName));
             }
         }
         response.setResponses(responseList);

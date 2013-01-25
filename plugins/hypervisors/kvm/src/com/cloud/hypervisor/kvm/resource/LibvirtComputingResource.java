@@ -363,9 +363,15 @@ ServerResource {
 
     private int _dom0MinMem;
 
+    protected enum BridgeType {
+        NATIVE, OPENVSWITCH
+    }
+
     protected enum defineOps {
         UNDEFINE_VM, DEFINE_VM
     }
+
+    protected BridgeType _bridgeType;
 
     private String getEndIpFromStartIp(String startIp, int numIps) {
         String[] tokens = startIp.split("[.]");
@@ -465,6 +471,14 @@ ServerResource {
         String storageScriptsDir = (String) params.get("storage.scripts.dir");
         if (storageScriptsDir == null) {
             storageScriptsDir = getDefaultStorageScriptsDir();
+        }
+
+        String bridgeType = (String) params.get("network.bridge.type");
+        if (bridgeType == null) {
+            _bridgeType = BridgeType.NATIVE;
+        }
+        else {
+            _bridgeType = BridgeType.valueOf(bridgeType.toUpperCase());
         }
 
         params.put("domr.scripts.dir", domrScriptsDir);
@@ -650,6 +664,13 @@ ServerResource {
         Connect conn = null;
         try {
             conn = LibvirtConnection.getConnection();
+
+            if (_bridgeType == BridgeType.OPENVSWITCH) {
+                if (conn.getLibVirVersion() < (9 * 1000 + 11)) {
+                    throw new ConfigurationException("LibVirt version 0.9.11 required for openvswitch support, but version "
+                            + conn.getLibVirVersion() + " detected");
+                }
+            }
         } catch (LibvirtException e) {
             throw new CloudRuntimeException(e.getMessage());
         }
@@ -695,7 +716,16 @@ ServerResource {
             }
         }
 
+        switch (_bridgeType) {
+        case OPENVSWITCH:
+            getOvsPifs();
+            break;
+        case NATIVE:
+        default:
         getPifs();
+            break;
+        }
+
         if (_pifs.get("private") == null) {
             s_logger.debug("Failed to get private nic name");
             throw new ConfigurationException("Failed to get private nic name");
@@ -754,8 +784,13 @@ ServerResource {
         // Load the vif driver
         String vifDriverName = (String) params.get("libvirt.vif.driver");
         if (vifDriverName == null) {
+            if (_bridgeType == BridgeType.OPENVSWITCH) {
+                s_logger.info("No libvirt.vif.driver specififed. Defaults to OvsVifDriver.");
+                vifDriverName = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
+            } else {
             s_logger.info("No libvirt.vif.driver specififed. Defaults to BridgeVifDriver.");
             vifDriverName = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
+        }
         }
 
         params.put("libvirt.computing.resource", this);
@@ -772,15 +807,23 @@ ServerResource {
             throw new ConfigurationException("Failed to initialize libvirt.vif.driver " + e);
         }
 
-
         return true;
     }
 
     private void getPifs() {
-        /* gather all available bridges and find their pifs, so that we can match them against traffic labels later */
-        String cmdout = Script.runSimpleBashScript("brctl show | tail -n +2 | grep -v \"^\\s\"|awk '{print $1}'|sed '{:q;N;s/\\n/%/g;t q}'");
-        s_logger.debug("cmdout was " + cmdout);
-        List<String> bridges = Arrays.asList(cmdout.split("%"));
+        File dir = new File("/sys/devices/virtual/net");
+        File[] netdevs = dir.listFiles();
+        List<String> bridges = new ArrayList<String>();
+        for (int i = 0; i < netdevs.length; i++) {
+            File isbridge = new File(netdevs[i].getAbsolutePath() + "/bridge");
+            String netdevName = netdevs[i].getName();
+            s_logger.debug("looking in file " + netdevs[i].getAbsolutePath() + "/bridge");
+            if (isbridge.exists()) {
+                s_logger.debug("Found bridge " + netdevName);
+                bridges.add(netdevName);
+            }
+        }
+
         for (String bridge : bridges) {
             s_logger.debug("looking for pif for bridge " + bridge);
             String pif = getPif(bridge);
@@ -795,28 +838,112 @@ ServerResource {
         s_logger.debug("done looking for pifs, no more bridges");
     }
 
-    private String getPif(String bridge) {
-        String pif = Script.runSimpleBashScript("brctl show | grep " + bridge + " | awk '{print $4}'");
-        String vlan = Script.runSimpleBashScript("ls /proc/net/vlan/" + pif);
+    private void getOvsPifs() {
+        String cmdout = Script.runSimpleBashScript("ovs-vsctl list-br | sed '{:q;N;s/\\n/%/g;t q}'");
+        s_logger.debug("cmdout was " + cmdout);
+        List<String> bridges = Arrays.asList(cmdout.split("%"));
+        for (String bridge : bridges) {
+            s_logger.debug("looking for pif for bridge " + bridge);
+            // String pif = getOvsPif(bridge);
+            // Not really interested in the pif name at this point for ovs
+            // bridges
+            String pif = bridge;
+            if (_publicBridgeName != null && bridge.equals(_publicBridgeName)) {
+                _pifs.put("public", pif);
+            }
+            if (_guestBridgeName != null && bridge.equals(_guestBridgeName)) {
+                _pifs.put("private", pif);
+            }
+            _pifs.put(bridge, pif);
+        }
+        s_logger.debug("done looking for pifs, no more bridges");
+    }
 
-        if (vlan != null && !vlan.isEmpty()) {
-            pif = Script.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/" + pif + " | awk {'print $2'}");
+    private String getPif(String bridge) {
+        String pif = matchPifFileInDirectory(bridge);
+        File vlanfile = new File("/proc/net/vlan" + pif);
+
+        if (vlanfile.isFile()) {
+                pif = Script.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/"
+                                                  + pif + " | awk {'print $2'}");
         }
 
         return pif;
     }
+
+    private String getOvsPif(String bridge) {
+        String pif = Script.runSimpleBashScript("ovs-vsctl list-ports " + bridge);
+        return pif;
+    }
+    
+    private String matchPifFileInDirectory(String bridgeName){
+        File f = new File("/sys/devices/virtual/net/" + bridgeName + "/brif");
+
+        if (! f.isDirectory()){
+            s_logger.debug("failing to get physical interface from bridge"
+                           + bridgeName + ", does " + f.getAbsolutePath() 
+                           + "exist?");
+            return "";
+        }
+
+        File[] interfaces = f.listFiles();
+
+        for (int i = 0; i < interfaces.length; i++) {
+            String fname = interfaces[i].getName();
+            s_logger.debug("matchPifFileInDirectory: file name '"+fname+"'");
+            if (fname.startsWith("eth") || fname.startsWith("bond")
+                || fname.startsWith("vlan")) {
+                return fname;
+            }
+        }
+
+        s_logger.debug("failing to get physical interface from bridge"
+                        + bridgeName + ", did not find an eth*, bond*, or vlan* in "
+                        + f.getAbsolutePath());
+        return "";
+    }
+
 
     private boolean checkNetwork(String networkName) {
         if (networkName == null) {
             return true;
         }
 
-        String name = Script.runSimpleBashScript("brctl show | grep "
-                + networkName + " | awk '{print $4}'");
-        if (name == null) {
+        if (_bridgeType == BridgeType.OPENVSWITCH) {
+            return checkOvsNetwork(networkName);
+        } else {
+            return checkBridgeNetwork(networkName);
+        }
+    }
+
+    private boolean checkBridgeNetwork(String networkName) {
+        if (networkName == null) {
+            return true;
+        }
+
+        String name = matchPifFileInDirectory(networkName);
+
+        if (name == null || name.isEmpty()) {
             return false;
         } else {
             return true;
+        }
+    }
+
+    private boolean checkOvsNetwork(String networkName) {
+        s_logger.debug("Checking if network " + networkName + " exists as openvswitch bridge");
+        if (networkName == null) {
+            return true;
+        }
+
+        Script command = new Script("/bin/sh", _timeout);
+        command.add("-c");
+        command.add("ovs-vsctl br-exists " + networkName);
+        String result = command.execute(null);
+        if ("Ok".equals(result)) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -1370,20 +1497,15 @@ ServerResource {
     }
 
     private String getVlanIdFromBridge(String brName) {
-        OutputInterpreter.OneLineParser vlanIdParser = new OutputInterpreter.OneLineParser();
-        final Script cmd = new Script("/bin/bash", s_logger);
-        cmd.add("-c");
-        cmd.add("vlanid=$(brctl show |grep " + brName
-                + " |awk '{print $4}' | cut -s -d. -f 2);echo $vlanid");
-        String result = cmd.execute(vlanIdParser);
-        if (result != null) {
-            return null;
-        }
-        String vlanId = vlanIdParser.getLine();
-        if (vlanId.equalsIgnoreCase("")) {
-            return null;
+        String pif= matchPifFileInDirectory(brName);
+        String[] pifparts = pif.split("\\.");
+
+        if(pifparts.length == 2) {
+            return pifparts[1];
         } else {
-            return vlanId;
+            s_logger.debug("failed to get vlan id from bridge " + brName 
+                           + "attached to physical interface" + pif);
+            return "";
         }
     }
 
@@ -1608,20 +1730,17 @@ ServerResource {
                 String pluggedVlan = pluggedNic.getBrName();
                 if (pluggedVlan.equalsIgnoreCase(_linkLocalBridgeName)) {
                     vlanToNicNum.put("LinkLocal",devNum); 
-                }
-                else if (pluggedVlan.equalsIgnoreCase(_publicBridgeName)
+                } else if (pluggedVlan.equalsIgnoreCase(_publicBridgeName)
                         || pluggedVlan.equalsIgnoreCase(_privBridgeName)
                         || pluggedVlan.equalsIgnoreCase(_guestBridgeName)) {
                     vlanToNicNum.put(Vlan.UNTAGGED,devNum);
-                }
-                else {
+                } else {
                     vlanToNicNum.put(getVlanIdFromBridge(pluggedVlan),devNum);
                 }
                 devNum++;
             }
 
             for (IpAddressTO ip : ips) {
-                String ipVlan = ip.getVlanId();
                 String nicName = "eth" + vlanToNicNum.get(ip.getVlanId());
                 String netmask = Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
                 String subnet = NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());

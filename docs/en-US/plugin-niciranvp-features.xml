@@ -24,6 +24,10 @@
     <title>Features of the Nicira NVP Plugin</title>
     <para>In CloudStack release 4.0.0-incubating this plugin supports the Connectivity service. This service is responsible for creating Layer 2 networks supporting the networks created by Guests. In other words when an tennant creates a new network, instead of the traditional VLAN a logical network will be created by sending the appropriate calls to the Nicira NVP Controller.</para>
     <para>The plugin has been tested with Nicira NVP versions 2.1.0, 2.2.0 and 2.2.1</para>
-    <note><para>In CloudStack 4.0.0-incubating only the XenServer hypervisor is supported for use in combination with Nicira NVP</para></note>
-    <note><para>In CloudStack 4.0.0-incubating the UI components for this plugin are not complete, configuration is done by sending commands to the API</para></note>
+    <note><para>In CloudStack 4.0.0-incubating only the XenServer hypervisor is supported for use in
+            combination with Nicira NVP.</para>
+        <para>In CloudStack 4.1.0-incubating both KVM and XenServer hypervisors are
+            supported.</para></note>
+    <note><para>In CloudStack 4.0.0-incubating the UI components for this plugin are not complete,
+            configuration is done by sending commands to the API.</para></note>
 </section>

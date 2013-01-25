@@ -32,6 +32,7 @@
     <testSourceDirectory>test</testSourceDirectory>
   </build>
   <modules>
+    <module>api/rate-limit</module>
     <module>api/discovery</module>
     <module>acl/static-role-based</module>
     <module>deployment-planners/user-concentrated-pod</module>

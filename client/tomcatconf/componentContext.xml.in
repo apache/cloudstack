@@ -103,6 +103,8 @@
 
   <bean id="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
 
+  <bean id="ApiRateLimitServiceImpl" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
+
   <bean id="ExteralIpAddressAllocator" class="com.cloud.network.ExteralIpAddressAllocator">
     <property name="name" value="Basic"/>
   </bean>

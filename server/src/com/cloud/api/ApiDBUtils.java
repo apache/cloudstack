@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -38,14 +39,19 @@ import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
+import com.cloud.api.query.dao.DataCenterJoinDao;
+import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
@@ -54,12 +60,15 @@ import com.cloud.api.query.dao.ProjectInvitationJoinDao;
 import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
+import com.cloud.api.query.vo.DataCenterJoinVO;
+import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -69,6 +78,7 @@ import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -86,6 +96,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan;
@@ -168,6 +179,7 @@ import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -268,6 +280,8 @@ public class ApiDBUtils {
     static ClusterDao _clusterDao;
     static CapacityDao _capacityDao;
     static DiskOfferingDao _diskOfferingDao;
+    static DiskOfferingJoinDao _diskOfferingJoinDao;
+    static DataCenterJoinDao _dcJoinDao;
     static DomainDao _domainDao;
     static DomainRouterDao _domainRouterDao;
     static DomainRouterJoinDao _domainRouterJoinDao;
@@ -278,6 +292,7 @@ public class ApiDBUtils {
     static LoadBalancerDao _loadBalancerDao;
     static SecurityGroupDao _securityGroupDao;
     static SecurityGroupJoinDao _securityGroupJoinDao;
+    static ServiceOfferingJoinDao _serviceOfferingJoinDao;
     static NetworkRuleConfigDao _networkRuleConfigDao;
     static HostPodDao _podDao;
     static ServiceOfferingDao _serviceOfferingDao;
@@ -361,7 +376,9 @@ public class ApiDBUtils {
     @Inject private AccountVlanMapDao accountVlanMapDao;
     @Inject private ClusterDao clusterDao;
     @Inject private CapacityDao capacityDao;
+    @Inject private DataCenterJoinDao dcJoinDao;
     @Inject private DiskOfferingDao diskOfferingDao;
+    @Inject private DiskOfferingJoinDao diskOfferingJoinDao;
     @Inject private DomainDao domainDao;
     @Inject private DomainRouterDao domainRouterDao;
     @Inject private DomainRouterJoinDao domainRouterJoinDao;
@@ -372,6 +389,7 @@ public class ApiDBUtils {
     @Inject private LoadBalancerDao loadBalancerDao;
     @Inject private SecurityGroupDao securityGroupDao;
     @Inject private SecurityGroupJoinDao securityGroupJoinDao;
+    @Inject private ServiceOfferingJoinDao serviceOfferingJoinDao;
     @Inject private NetworkRuleConfigDao networkRuleConfigDao;
     @Inject private HostPodDao podDao;
     @Inject private ServiceOfferingDao serviceOfferingDao;
@@ -457,7 +475,9 @@ public class ApiDBUtils {
         _accountVlanMapDao = accountVlanMapDao;
         _clusterDao = clusterDao;
         _capacityDao = capacityDao;
+        _dcJoinDao = dcJoinDao;
         _diskOfferingDao = diskOfferingDao;
+        _diskOfferingJoinDao = diskOfferingJoinDao;
         _domainDao = domainDao;
         _domainRouterDao = domainRouterDao;
         _domainRouterJoinDao = domainRouterJoinDao;
@@ -469,6 +489,7 @@ public class ApiDBUtils {
         _networkRuleConfigDao = networkRuleConfigDao;
         _podDao = podDao;
         _serviceOfferingDao = serviceOfferingDao;
+        _serviceOfferingJoinDao = serviceOfferingJoinDao;
         _snapshotDao = snapshotDao;
         _storagePoolDao = storagePoolDao;
         _templateDao = templateDao;
@@ -1497,4 +1518,28 @@ public class ApiDBUtils {
     public static AsyncJobJoinVO newAsyncJobView(AsyncJob e){
         return _jobJoinDao.newAsyncJobView(e);
     }
+
+   public static DiskOfferingResponse newDiskOfferingResponse(DiskOfferingJoinVO offering) {
+       return _diskOfferingJoinDao.newDiskOfferingResponse(offering);
+   }
+
+   public static DiskOfferingJoinVO newDiskOfferingView(DiskOffering offering){
+       return _diskOfferingJoinDao.newDiskOfferingView(offering);
+   }
+
+   public static ServiceOfferingResponse newServiceOfferingResponse(ServiceOfferingJoinVO offering) {
+       return _serviceOfferingJoinDao.newServiceOfferingResponse(offering);
+   }
+
+   public static ServiceOfferingJoinVO newServiceOfferingView(ServiceOffering offering){
+       return _serviceOfferingJoinDao.newServiceOfferingView(offering);
+   }
+
+   public static ZoneResponse newDataCenterResponse(DataCenterJoinVO dc, Boolean showCapacities) {
+       return _dcJoinDao.newDataCenterResponse(dc, showCapacities);
+   }
+
+   public static DataCenterJoinVO newDataCenterView(DataCenter dc){
+       return _dcJoinDao.newDataCenterView(dc);
+   }
 }

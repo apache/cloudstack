@@ -64,15 +64,6 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
             , description="list by ID of the VPC offering")
     private Long VpcOffId;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="list by account associated with the VPC. " +
-            "Must be used with the domainId parameter.")
-    private String accountName;
-
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="list by domain ID associated with the VPC. " +
-            "If used with the account parameter returns the VPC associated with the account for the specified domain.")
-    private Long domainId;
-
     @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING,
             description="list VPC supporting certain services")
     private List<String> supportedServices;
@@ -86,14 +77,6 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
 
     public Long getZoneId() {
         return zoneId;

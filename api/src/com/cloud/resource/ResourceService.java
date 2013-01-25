@@ -40,6 +40,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.storage.S3;
 import com.cloud.storage.Swift;
+import com.cloud.utils.Pair;
 import com.cloud.utils.fsm.NoTransitionException;
 
 public interface ResourceService {
@@ -102,7 +103,7 @@ public interface ResourceService {
     
     List<HypervisorType> getSupportedHypervisorTypes(long zoneId, boolean forVirtualRouter, Long podId);
 
-    List<? extends Swift> listSwifts(ListSwiftsCmd cmd);
+    Pair<List<? extends Swift>, Integer> listSwifts(ListSwiftsCmd cmd);
 
     List<? extends S3> listS3s(ListS3sCmd cmd);
 

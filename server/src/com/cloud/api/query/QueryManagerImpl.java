@@ -18,8 +18,10 @@ package com.cloud.api.query;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -33,6 +35,8 @@ import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
+import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
+import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
@@ -40,8 +44,10 @@ import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -52,16 +58,20 @@ import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
+import com.cloud.api.query.dao.DataCenterJoinDao;
+import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
@@ -70,12 +80,15 @@ import com.cloud.api.query.dao.ProjectInvitationJoinDao;
 import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
+import com.cloud.api.query.vo.DataCenterJoinVO;
+import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -85,27 +98,34 @@ import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.dao.EventJoinDao;
+import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
-import com.cloud.projects.Project;
-import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.org.Grouping;
 import com.cloud.projects.ProjectInvitation;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.Criteria;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -121,14 +141,12 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
-/**
- * @author minc
- *
- */
 @Component
 @Local(value = {QueryService.class })
 public class QueryManagerImpl implements QueryService, Manager {
@@ -200,6 +218,9 @@ public class QueryManagerImpl implements QueryService, Manager {
     private AccountDao _accountDao;
 
     @Inject
+    private ConfigurationDao _configDao;
+
+    @Inject
     private AccountJoinDao _accountJoinDao;
 
     @Inject
@@ -207,6 +228,21 @@ public class QueryManagerImpl implements QueryService, Manager {
 
     @Inject
     private StoragePoolJoinDao _poolJoinDao;
+
+    @Inject
+    private DiskOfferingJoinDao _diskOfferingJoinDao;
+
+    @Inject
+    private ServiceOfferingJoinDao _srvOfferingJoinDao;
+
+    @Inject
+    private ServiceOfferingDao _srvOfferingDao;
+
+    @Inject
+    private DataCenterJoinDao _dcJoinDao;
+
+    @Inject
+    private DomainRouterDao _routerDao;
 
     @Inject
     private HighAvailabilityManager _haMgr;
@@ -1602,7 +1638,7 @@ public class QueryManagerImpl implements QueryService, Manager {
     }
 
 
-    public Pair<List<AccountJoinVO>, Integer> searchForAccountsInternal(ListAccountsCmd cmd) {
+    private Pair<List<AccountJoinVO>, Integer> searchForAccountsInternal(ListAccountsCmd cmd) {
         Account caller = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         Long accountId = cmd.getId();
@@ -1728,7 +1764,7 @@ public class QueryManagerImpl implements QueryService, Manager {
     }
 
 
-    public Pair<List<AsyncJobJoinVO>, Integer> searchForAsyncJobsInternal(ListAsyncJobsCmd cmd) {
+    private Pair<List<AsyncJobJoinVO>, Integer> searchForAsyncJobsInternal(ListAsyncJobsCmd cmd) {
 
         Account caller = UserContext.current().getCaller();
 
@@ -1807,7 +1843,7 @@ public class QueryManagerImpl implements QueryService, Manager {
         return response;
     }
 
-    public Pair<List<StoragePoolJoinVO>, Integer> searchForStoragePoolsInternal(ListStoragePoolsCmd cmd) {
+    private Pair<List<StoragePoolJoinVO>, Integer> searchForStoragePoolsInternal(ListStoragePoolsCmd cmd) {
 
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), cmd.getZoneId());
         Object id = cmd.getId();
@@ -1885,6 +1921,427 @@ public class QueryManagerImpl implements QueryService, Manager {
         List<StoragePoolJoinVO> vrs = _poolJoinDao.searchByIds(vrIds);
         return new Pair<List<StoragePoolJoinVO>, Integer>(vrs, count);
 
+    }
+
+    @Override
+    public ListResponse<DiskOfferingResponse> searchForDiskOfferings(ListDiskOfferingsCmd cmd) {
+        Pair<List<DiskOfferingJoinVO>, Integer> result = searchForDiskOfferingsInternal(cmd);
+        ListResponse<DiskOfferingResponse> response = new ListResponse<DiskOfferingResponse>();
+        List<DiskOfferingResponse> offeringResponses = ViewResponseHelper.createDiskOfferingResponse(result.first().toArray(new DiskOfferingJoinVO[result.first().size()]));
+        response.setResponses(offeringResponses, result.second());
+        return response;
+    }
+
+    private Pair<List<DiskOfferingJoinVO>, Integer> searchForDiskOfferingsInternal(ListDiskOfferingsCmd cmd) {
+        // Note
+        // The list method for offerings is being modified in accordance with
+        // discussion with Will/Kevin
+        // For now, we will be listing the following based on the usertype
+        // 1. For root, we will list all offerings
+        // 2. For domainAdmin and regular users, we will list everything in
+        // their domains+parent domains ... all the way
+        // till
+        // root
+
+        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+        isAscending = (isAscending == null ? true : isAscending);
+        Filter searchFilter = new Filter(DiskOfferingJoinVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<DiskOfferingJoinVO> sb = _diskOfferingJoinDao.createSearchBuilder();
+
+
+        Account account = UserContext.current().getCaller();
+        Object name = cmd.getDiskOfferingName();
+        Object id = cmd.getId();
+        Object keyword = cmd.getKeyword();
+        Long domainId = cmd.getDomainId();
+        // Keeping this logic consistent with domain specific zones
+        // if a domainId is provided, we just return the disk offering
+        // associated with this domain
+        if (domainId != null) {
+            if (account.getType() == Account.ACCOUNT_TYPE_ADMIN || isPermissible(account.getDomainId(), domainId) ) {
+                // check if the user's domain == do's domain || user's domain is
+                // a child of so's domain for non-root users
+                sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+                SearchCriteria<DiskOfferingJoinVO> sc = sb.create();
+                sc.setParameters("domainId", domainId);
+                return _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
+            } else {
+                    throw new PermissionDeniedException("The account:" + account.getAccountName()
+                            + " does not fall in the same domain hierarchy as the disk offering");
+            }
+        }
+
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+
+
+        boolean includePublicOfferings = false;
+        List<Long> domainIds = null;
+        // For non-root users, only return all offerings for the user's domain, and everything above till root
+        if ((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
+                || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            // find all domain Id up to root domain for this account
+            domainIds = new ArrayList<Long>();
+            DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+            if ( domainRecord == null ){
+                s_logger.error("Could not find the domainId for account:" + account.getAccountName());
+                throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
+            }
+            domainIds.add(domainRecord.getId());
+            while (domainRecord.getParent() != null ){
+                domainRecord = _domainDao.findById(domainRecord.getParent());
+                domainIds.add(domainRecord.getId());
+            }
+            sb.and("domainIdIn", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+
+            // include also public offering if no keyword, name and id specified
+            if ( keyword == null && name == null && id == null ){
+                includePublicOfferings = true;
+            }
+        }
+
+        SearchCriteria<DiskOfferingJoinVO> sc = sb.create();
+        if (keyword != null) {
+            SearchCriteria<DiskOfferingJoinVO> ssc = _diskOfferingJoinDao.createSearchCriteria();
+            ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", "%" + name + "%");
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (domainIds != null ){
+            sc.setParameters("domainIdIn", domainIds);
+        }
+
+        if (includePublicOfferings){
+            SearchCriteria<DiskOfferingJoinVO> spc = _diskOfferingJoinDao.createSearchCriteria();
+            spc.addAnd("domainId", SearchCriteria.Op.NULL);
+            spc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
+
+            sc.addOr("systemUse", SearchCriteria.Op.SC, spc);
+        }
+
+        // FIXME: disk offerings should search back up the hierarchy for
+        // available disk offerings...
+        /*
+         * sb.addAnd("domainId", sb.entity().getDomainId(),
+         * SearchCriteria.Op.EQ); if (domainId != null) {
+         * SearchBuilder<DomainVO> domainSearch =
+         * _domainDao.createSearchBuilder(); domainSearch.addAnd("path",
+         * domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+         * sb.join("domainSearch", domainSearch, sb.entity().getDomainId(),
+         * domainSearch.entity().getId()); }
+         */
+
+        // FIXME: disk offerings should search back up the hierarchy for
+        // available disk offerings...
+        /*
+         * if (domainId != null) { sc.setParameters("domainId", domainId); //
+         * //DomainVO domain = _domainDao.findById((Long)domainId); // // I want
+         * to join on user_vm.domain_id = domain.id where domain.path like
+         * 'foo%' //sc.setJoinParameters("domainSearch", "path",
+         * domain.getPath() + "%"); // }
+         */
+
+        return _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
+    }
+
+
+
+    @Override
+    public ListResponse<ServiceOfferingResponse> searchForServiceOfferings(ListServiceOfferingsCmd cmd) {
+        Pair<List<ServiceOfferingJoinVO>, Integer> result = searchForServiceOfferingsInternal(cmd);
+        ListResponse<ServiceOfferingResponse> response = new ListResponse<ServiceOfferingResponse>();
+        List<ServiceOfferingResponse> offeringResponses = ViewResponseHelper.createServiceOfferingResponse(result.first().toArray(new ServiceOfferingJoinVO[result.first().size()]));
+        response.setResponses(offeringResponses, result.second());
+        return response;
+    }
+
+    private Pair<List<ServiceOfferingJoinVO>, Integer> searchForServiceOfferingsInternal(ListServiceOfferingsCmd cmd) {
+        // Note
+        // The list method for offerings is being modified in accordance with
+        // discussion with Will/Kevin
+        // For now, we will be listing the following based on the usertype
+        // 1. For root, we will list all offerings
+        // 2. For domainAdmin and regular users, we will list everything in
+        // their domains+parent domains ... all the way
+        // till
+        // root
+        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+        isAscending = (isAscending == null ? true : isAscending);
+        Filter searchFilter = new Filter(ServiceOfferingJoinVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
+
+        Account caller = UserContext.current().getCaller();
+        Object name = cmd.getServiceOfferingName();
+        Object id = cmd.getId();
+        Object keyword = cmd.getKeyword();
+        Long vmId = cmd.getVirtualMachineId();
+        Long domainId = cmd.getDomainId();
+        Boolean isSystem = cmd.getIsSystem();
+        String vmTypeStr = cmd.getSystemVmType();
+
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && isSystem) {
+            throw new InvalidParameterValueException("Only ROOT admins can access system's offering");
+        }
+
+        // Keeping this logic consistent with domain specific zones
+        // if a domainId is provided, we just return the so associated with this
+        // domain
+        if (domainId != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            // check if the user's domain == so's domain || user's domain is a
+            // child of so's domain
+            if (!isPermissible(caller.getDomainId(), domainId)) {
+                throw new PermissionDeniedException("The account:" + caller.getAccountName()
+                        + " does not fall in the same domain hierarchy as the service offering");
+            }
+        }
+
+        boolean includePublicOfferings = false;
+        if ((caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
+                || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            // For non-root users
+            if (isSystem) {
+                throw new InvalidParameterValueException("Only root admins can access system's offering");
+            }
+            // find all domain Id up to root domain for this account
+            List<Long> domainIds = new ArrayList<Long>();
+            DomainVO domainRecord = _domainDao.findById(caller.getDomainId());
+            if ( domainRecord == null ){
+                s_logger.error("Could not find the domainId for account:" + caller.getAccountName());
+                throw new CloudAuthenticationException("Could not find the domainId for account:" + caller.getAccountName());
+            }
+            domainIds.add(domainRecord.getId());
+            while (domainRecord.getParent() != null ){
+                domainRecord = _domainDao.findById(domainRecord.getParent());
+                domainIds.add(domainRecord.getId());
+            }
+            sc.addAnd("domainId", SearchCriteria.Op.IN, domainIds);
+
+            // include also public offering if no keyword, name and id specified
+            if ( keyword == null && name == null && id == null ){
+                includePublicOfferings = true;
+            }
+        }
+        else {
+            // for root users
+            if (caller.getDomainId() != 1 && isSystem) { // NON ROOT admin
+                throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
+            }
+            if (domainId != null) {
+                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+            }
+        }
+
+        if (keyword != null) {
+            SearchCriteria<ServiceOfferingJoinVO> ssc = _srvOfferingJoinDao.createSearchCriteria();
+            ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        } else if (vmId != null) {
+            UserVmVO vmInstance = _userVmDao.findById(vmId);
+            if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
+                InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a virtual machine with specified id");
+                ex.addProxyObject(vmInstance, vmId, "vmId");
+                throw ex;
+            }
+
+            _accountMgr.checkAccess(caller, null, true, vmInstance);
+
+            ServiceOfferingVO offering = _srvOfferingDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
+            sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
+
+            // Only return offerings with the same Guest IP type and storage
+            // pool preference
+            // sc.addAnd("guestIpType", SearchCriteria.Op.EQ,
+            // offering.getGuestIpType());
+            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
+        }
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+
+        if (isSystem != null) {
+            sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
+        }
+
+        if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+        }
+
+        if (vmTypeStr != null) {
+            sc.addAnd("vm_type", SearchCriteria.Op.EQ, vmTypeStr);
+        }
+
+        if (includePublicOfferings){
+            SearchCriteria<ServiceOfferingJoinVO> spc = _srvOfferingJoinDao.createSearchCriteria();
+            spc.addAnd("domainId", SearchCriteria.Op.NULL);
+            spc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
+            sc.addOr("systemUse", SearchCriteria.Op.SC, spc);
+        }
+
+        return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
+
+    }
+
+
+
+
+    @Override
+    public ListResponse<ZoneResponse> listDataCenters(ListZonesByCmd cmd) {
+        Pair<List<DataCenterJoinVO>, Integer> result = listDataCentersInternal(cmd);
+        ListResponse<ZoneResponse> response = new ListResponse<ZoneResponse>();
+        List<ZoneResponse> dcResponses = ViewResponseHelper.createDataCenterResponse(cmd.getShowCapacities(), result.first().toArray(new DataCenterJoinVO[result.first().size()]));
+        response.setResponses(dcResponses, result.second());
+        return response;
+    }
+
+
+    private Pair<List<DataCenterJoinVO>, Integer> listDataCentersInternal(ListZonesByCmd cmd) {
+        Account account = UserContext.current().getCaller();
+        Long domainId = cmd.getDomainId();
+        Long id = cmd.getId();
+        String keyword = cmd.getKeyword();
+
+        Filter searchFilter = new Filter(DataCenterJoinVO.class, null, false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchCriteria<DataCenterJoinVO> sc = _dcJoinDao.createSearchCriteria();
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        } else {
+            if (keyword != null) {
+                SearchCriteria<DataCenterJoinVO> ssc = _dcJoinDao.createSearchCriteria();
+                ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+                ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+                sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+            }
+
+            if (domainId != null) {
+                // for domainId != null
+                // right now, we made the decision to only list zones associated
+                // with this domain, private zone
+                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+            }  else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                // it was decided to return all zones for the user's domain, and
+                // everything above till root
+                // list all zones belonging to this domain, and all of its
+                // parents
+                // check the parent, if not null, add zones for that parent to
+                // list
+
+
+                // find all domain Id up to root domain for this account
+                List<Long> domainIds = new ArrayList<Long>();
+                DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+                if ( domainRecord == null ){
+                    s_logger.error("Could not find the domainId for account:" + account.getAccountName());
+                    throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
+                }
+                domainIds.add(domainRecord.getId());
+                while (domainRecord.getParent() != null ){
+                    domainRecord = _domainDao.findById(domainRecord.getParent());
+                    domainIds.add(domainRecord.getId());
+                }
+                // domainId == null (public zones) or domainId IN [all domain id up to root domain]
+                SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
+                sdc.addOr("domainId", SearchCriteria.Op.IN, domainIds);
+                sdc.addOr("domainId", SearchCriteria.Op.NULL);
+                sc.addAnd("domain", SearchCriteria.Op.SC, sdc);
+
+                // remove disabled zones
+                sc.addAnd("allocationState", SearchCriteria.Op.NEQ, Grouping.AllocationState.Disabled);
+
+            } else if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                // it was decided to return all zones for the domain admin, and
+                // everything above till root, as well as zones till the domain leaf
+                List<Long> domainIds = new ArrayList<Long>();
+                DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+                if ( domainRecord == null ){
+                    s_logger.error("Could not find the domainId for account:" + account.getAccountName());
+                    throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
+                }
+                domainIds.add(domainRecord.getId());
+                // find all domain Ids till leaf
+                List<DomainVO> allChildDomains = _domainDao.findAllChildren(domainRecord.getPath(), domainRecord.getId());
+                for (DomainVO domain : allChildDomains) {
+                    domainIds.add(domain.getId());
+                }
+                // then find all domain Id up to root domain for this account
+                while (domainRecord.getParent() != null ){
+                    domainRecord = _domainDao.findById(domainRecord.getParent());
+                    domainIds.add(domainRecord.getId());
+                }
+
+                // domainId == null (public zones) or domainId IN [all domain id up to root domain]
+                SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
+                sdc.addOr("domainId", SearchCriteria.Op.IN, domainIds);
+                sdc.addOr("domainId", SearchCriteria.Op.NULL);
+                sc.addAnd("domain", SearchCriteria.Op.SC, sdc);
+
+                // remove disabled zones
+                sc.addAnd("allocationState", SearchCriteria.Op.NEQ, Grouping.AllocationState.Disabled);
+            }
+
+            // handle available=FALSE option, only return zones with at least one VM running there
+            Boolean available = cmd.isAvailable();
+            if (account != null) {
+                if ((available != null) && Boolean.FALSE.equals(available)) {
+                    Set<Long> dcIds = new HashSet<Long>(); //data centers with at least one VM running
+                    List<DomainRouterVO> routers = _routerDao.listBy(account.getId());
+                    for (DomainRouterVO router : routers){
+                        dcIds.add(router.getDataCenterId());
+                    }
+                    if ( dcIds.size() == 0) {
+                        return new Pair<List<DataCenterJoinVO>, Integer>(new ArrayList<DataCenterJoinVO>(), 0);
+                    }
+                    else{
+                        sc.addAnd("idIn", SearchCriteria.Op.IN, dcIds);
+                    }
+
+                }
+            }
+        }
+
+        return _dcJoinDao.searchAndCount(sc, searchFilter);
+    }
+
+
+    // This method is used for permissions check for both disk and service
+    // offerings
+    private boolean isPermissible(Long accountDomainId, Long offeringDomainId) {
+
+        if (accountDomainId == offeringDomainId) {
+            return true; // account and service offering in same domain
+        }
+
+        DomainVO domainRecord = _domainDao.findById(accountDomainId);
+
+        if (domainRecord != null) {
+            while (true) {
+                if (domainRecord.getId() == offeringDomainId) {
+                    return true;
+                }
+
+                // try and move on to the next domain
+                if (domainRecord.getParent() != null) {
+                    domainRecord = _domainDao.findById(domainRecord.getParent());
+                } else {
+                    break;
+                }
+            }
+        }
+
+        return false;
     }
 
 

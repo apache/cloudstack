@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.cloud.utils.Pair;
 
 @APICommand(name = "listSnapshotPolicies", description="Lists snapshot policies.", responseObject=SnapshotPolicyResponse.class)
 public class ListSnapshotPoliciesCmd extends BaseListCmd {
@@ -63,15 +64,15 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends SnapshotPolicy> result = _snapshotService.listPoliciesforVolume(this);
+        Pair<List<? extends SnapshotPolicy>, Integer> result = _snapshotService.listPoliciesforVolume(this);
         ListResponse<SnapshotPolicyResponse> response = new ListResponse<SnapshotPolicyResponse>();
         List<SnapshotPolicyResponse> policyResponses = new ArrayList<SnapshotPolicyResponse>();
-        for (SnapshotPolicy policy : result) {
+        for (SnapshotPolicy policy : result.first()) {
             SnapshotPolicyResponse policyResponse = _responseGenerator.createSnapshotPolicyResponse(policy);
             policyResponse.setObjectName("snapshotpolicy");
             policyResponses.add(policyResponse);
         }
-        response.setResponses(policyResponses);
+        response.setResponses(policyResponses, result.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

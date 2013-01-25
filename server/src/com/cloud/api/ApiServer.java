@@ -77,6 +77,7 @@ import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -108,6 +109,8 @@ import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
+import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.async.AsyncCommandQueued;
 import com.cloud.async.AsyncJob;
@@ -124,6 +127,7 @@ import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.RequestLimitException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
@@ -394,6 +398,7 @@ public class ApiServer implements HttpRequestHandler {
             if (UserContext.current().getCaller().getType() != Account.ACCOUNT_TYPE_ADMIN){
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
+
             }
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, errorMsg, ex);
         }
@@ -510,19 +515,22 @@ public class ApiServer implements HttpRequestHandler {
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
             // For those listXXXCommand which we have already created DB views, this step is not needed since async job is joined in their db views.
-            if (realCmdObj instanceof BaseListCmd && !(realCmdObj instanceof ListVMsCmd) && !(realCmdObj instanceof ListRoutersCmd)
-                    && !(realCmdObj instanceof ListSecurityGroupsCmd)
-                    && !(realCmdObj instanceof ListTagsCmd)
-                    && !(realCmdObj instanceof ListEventsCmd)
-                    && !(realCmdObj instanceof ListVMGroupsCmd)
-                    && !(realCmdObj instanceof ListProjectsCmd)
-                    && !(realCmdObj instanceof ListProjectAccountsCmd)
-                    && !(realCmdObj instanceof ListProjectInvitationsCmd)
-                    && !(realCmdObj instanceof ListHostsCmd)
-                    && !(realCmdObj instanceof ListVolumesCmd)
-                    && !(realCmdObj instanceof ListUsersCmd)
-                    && !(realCmdObj instanceof ListAccountsCmd)
-                    && !(realCmdObj instanceof ListStoragePoolsCmd)
+            if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
+                    && !(cmdObj instanceof ListSecurityGroupsCmd)
+                    && !(cmdObj instanceof ListTagsCmd)
+                    && !(cmdObj instanceof ListEventsCmd)
+                    && !(cmdObj instanceof ListVMGroupsCmd)
+                    && !(cmdObj instanceof ListProjectsCmd)
+                    && !(cmdObj instanceof ListProjectAccountsCmd)
+                    && !(cmdObj instanceof ListProjectInvitationsCmd)
+                    && !(cmdObj instanceof ListHostsCmd)
+                    && !(cmdObj instanceof ListVolumesCmd)
+                    && !(cmdObj instanceof ListUsersCmd)
+                    && !(cmdObj instanceof ListAccountsCmd)
+                    && !(cmdObj instanceof ListStoragePoolsCmd)
+                    && !(cmdObj instanceof ListDiskOfferingsCmd)
+                    && !(cmdObj instanceof ListServiceOfferingsCmd)
+                    && !(cmdObj instanceof ListZonesByCmd)
                     ) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }
@@ -599,12 +607,17 @@ public class ApiServer implements HttpRequestHandler {
             // if userId not null, that mean that user is logged in
             if (userId != null) {
                 User user = ApiDBUtils.findUserById(userId);
+
                 try{
                     checkCommandAvailable(user, commandName);
                 }
                 catch (PermissionDeniedException ex){
                     s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
+                }
+                catch (RequestLimitException ex){
+                    s_logger.debug(ex.getMessage());
+                    throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
                 }
                 return true;
             } else {
@@ -834,6 +847,7 @@ public class ApiServer implements HttpRequestHandler {
         }
         return true;
     }
+
 
     private void checkCommandAvailable(User user, String commandName) throws PermissionDeniedException {
         if (user == null) {

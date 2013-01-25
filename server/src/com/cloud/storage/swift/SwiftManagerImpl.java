@@ -52,6 +52,7 @@ import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -59,14 +60,10 @@ import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-
-
 @Component
 @Local(value = { SwiftManager.class })
 public class SwiftManagerImpl implements SwiftManager {
     private static final Logger s_logger = Logger.getLogger(SwiftManagerImpl.class);
-
-
 
     private String _name;
     @Inject
@@ -262,13 +259,13 @@ public class SwiftManagerImpl implements SwiftManager {
     }
 
     @Override
-    public List<SwiftVO> listSwifts(ListSwiftsCmd cmd) {
+    public Pair<List<SwiftVO>, Integer> listSwifts(ListSwiftsCmd cmd) {
         Filter searchFilter = new Filter(SwiftVO.class, "id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<SwiftVO> sc = _swiftDao.createSearchCriteria();
         if (cmd.getId() != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, cmd.getId());
         }
-        return _swiftDao.search(sc, searchFilter);
+        return _swiftDao.searchAndCount(sc, searchFilter);
 
     }
 

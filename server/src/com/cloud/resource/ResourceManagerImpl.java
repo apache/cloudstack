@@ -629,8 +629,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService,
 	}
 
 	@Override
-	public List<SwiftVO> listSwifts(ListSwiftsCmd cmd) {
-		return _swiftMgr.listSwifts(cmd);
+    public Pair<List<? extends Swift>, Integer> listSwifts(ListSwiftsCmd cmd) {
+        Pair<List<SwiftVO>, Integer> swifts =  _swiftMgr.listSwifts(cmd);
+        return new Pair<List<? extends Swift>, Integer>(swifts.first(), swifts.second());
 	}
 
 	@Override
