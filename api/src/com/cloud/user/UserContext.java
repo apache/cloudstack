@@ -16,12 +16,10 @@
 // under the License.
 package com.cloud.user;
 
+import com.cloud.utils.component.ComponentContext;
 import javax.inject.Inject;
 
-
 public class UserContext {
-    @Inject AccountService _accountMgr;
-
     private static ThreadLocal<UserContext> s_currentContext = new ThreadLocal<UserContext>();
 
     private long userId;
@@ -30,8 +28,9 @@ public class UserContext {
     private long startEventId = 0;
     private long accountId;
     private String eventDetails;
-
     private boolean apiServer;
+
+    @Inject private AccountService _accountMgr = null;
 
     public UserContext() {
     }
@@ -48,6 +47,9 @@ public class UserContext {
     }
 
     public User getCallerUser() {
+        if (_accountMgr == null) {
+            _accountMgr = ComponentContext.getComponent(AccountService.class);
+        }
         return _accountMgr.getActiveUser(userId);
     }
 
