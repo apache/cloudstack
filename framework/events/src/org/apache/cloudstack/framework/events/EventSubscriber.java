@@ -24,9 +24,7 @@ public interface EventSubscriber {
     /**
      * Callback method. EventBus calls this method on occurrence of subscribed event
      *
-     * @param category category of the event being subscribed (e.g. action, usage, alert etc)
-     * @param type type of the event (e.g. vm stop, volume delete etc)
-     * @param description description of the event
+     * @param event details of the event
      */
-    void recieve(Event event);
+    void onEvent(Event event);
 }

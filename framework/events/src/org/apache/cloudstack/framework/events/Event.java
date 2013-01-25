@@ -23,34 +23,44 @@ import com.google.gson.Gson;
 
 public class Event {
 
-    String category;
-    String type;
-    String routingKey;
-    String description;
-    String publisher;
-    String date;
+    String eventCategory;
+    String eventType;
+    String eventSource;
     String resourceType;
+    String resourceUUID;
+    String description;
 
-    public Event(String category, String type, String routingKey) {
-        this.category = category;
-        this.type = type;
-        this.routingKey = routingKey;
+    public Event(String eventSource, String eventCategory, String eventType, String resourceType,
+                 String resourceUUID) {
+        this.eventCategory = eventCategory;
+        this.eventType = eventType;
+        this.eventSource = eventSource;
+        this.resourceType = resourceType;
+        this.resourceUUID = resourceUUID;
     }
 
-    public String getCategory() {
-        return category;
+    public String getEventCategory() {
+        return eventCategory;
     }
 
-    public String getType() {
-        return type;
+    public void setEventCategory(String category) {
+        eventCategory = category;
     }
 
-    public String getRoutingKey() {
-        return routingKey;
+    public String getEventType() {
+        return eventType;
     }
 
-    public void setRoutingKey(String routingKey) {
-        this.routingKey = routingKey;
+    public void setEventType(String type) {
+        eventType = type;
+    }
+
+    public String getEventSource() {
+        return eventSource;
+    }
+
+    void setEventSource(String source) {
+        eventSource = source;
     }
 
     public String getDescription() {
@@ -62,19 +72,23 @@ public class Event {
         this.description = gson.toJson(message).toString();
     }
 
-    public String getEventPublisher() {
-        return publisher;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    void setEventPublisher(String source) {
-        this.publisher = source;
+    public String getResourceType() {
+        return resourceType;
     }
 
-    public String getDate() {
-        return date;
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
     }
 
-    void setDate(String date) {
-        this.date = date;
+    public void setResourceUUID(String uuid) {
+        this.resourceUUID = uuid;
+    }
+
+    public String getResourceUUID () {
+        return resourceUUID;
     }
 }

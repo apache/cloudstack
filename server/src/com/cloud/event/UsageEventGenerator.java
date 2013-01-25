@@ -4,6 +4,8 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.Event;
+import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.log4j.Logger;
 
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -11,6 +13,7 @@ import java.util.Map;
 
 public class UsageEventGenerator {
 
+    private static final Logger s_logger = Logger.getLogger(UsageEventGenerator.class);
     protected static EventBus _eventBus = null;
     protected static boolean _eventBusLoaded = false;
 
@@ -54,14 +57,17 @@ public class UsageEventGenerator {
             }
             eventDescription.put("resourceName", resourceName);
             eventDescription.put("resourceType", resourceType);
-            Event event = new Event(EventCategory.USAGE_EVENT.getName(), usageType, usageType);
+            Event event = new Event(null, EventCategory.USAGE_EVENT.getName(), usageType, null, null);
             event.setDescription(eventDescription);
-            _eventBus.publish(event);
+            try {
+                _eventBus.publish(event);
+            } catch (EventBusException e) {
+                s_logger.warn("Failed to publish usage event on the the event bus.");
+            }
         }
     }
 
     private static EventBus getEventBus() {
-        //TODO: check if there is way of getting single adapter
         if (_eventBus == null) {
             if (!_eventBusLoaded) {
                 ComponentLocator locator = ComponentLocator.getLocator("management-server");

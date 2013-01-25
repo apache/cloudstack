@@ -48,7 +48,8 @@ public class EventCategory {
         return null;
     }
 
-    public static final EventCategory ACTION_EVENT = new EventCategory("Action Events");
-    public static final EventCategory ALERT_EVENT  = new EventCategory("Alert Event");
-    public static final EventCategory USAGE_EVENT  = new EventCategory("Usage Event");
+    public static final EventCategory ACTION_EVENT = new EventCategory("ActionEvent");
+    public static final EventCategory ALERT_EVENT  = new EventCategory("AlertEvent");
+    public static final EventCategory USAGE_EVENT  = new EventCategory("UsageEvent");
+    public static final EventCategory RESOURCE_STATE_CHANGE_EVENT = new EventCategory("ResourceStateEvent");
 }

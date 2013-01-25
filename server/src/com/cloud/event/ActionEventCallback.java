@@ -25,6 +25,8 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.log4j.Logger;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
@@ -36,6 +38,7 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
 
     protected static EventBus _eventBus = null;
     protected static boolean _eventBusLoaded = false;
+    private static final Logger s_logger = Logger.getLogger(ActionEventCallback.class);
 
     @Override
     public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
@@ -144,21 +147,34 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
         return this;
     }
 
-    void publishOnEventBus(long userId, long accountId, String type, com.cloud.event.Event.State state, String description) {
+    void publishOnEventBus(long userId, long accountId, String eventType, com.cloud.event.Event.State state, String description) {
         if (getEventBus() != null) {
             Map<String, String> eventDescription = new HashMap<String, String>();
             eventDescription.put("user", String.valueOf(userId));
             eventDescription.put("account", String.valueOf(accountId));
             eventDescription.put("state", state.toString());
             eventDescription.put("description", description);
-            Event event = new Event(EventCategory.ACTION_EVENT.getName(), type, type);
+
+            int index = eventType.lastIndexOf("\\.");
+
+            String resourceType = null;
+            if (index != -1 ) {
+                resourceType = eventType.substring(0, index);
+            }
+
+            Event event = new Event(null, EventCategory.ACTION_EVENT.getName(), eventType,
+                    resourceType, null);
             event.setDescription(eventDescription);
-            _eventBus.publish(event);
+
+            try {
+                _eventBus.publish(event);
+            } catch (EventBusException e) {
+                s_logger.warn("Failed to publish action event on the the event bus.");
+            }
         }
     }
 
     private EventBus getEventBus() {
-        //TODO: check if there is way of getting single adapter
         if (_eventBus == null) {
             if (!_eventBusLoaded) {
                 ComponentLocator locator = ComponentLocator.getLocator("management-server");

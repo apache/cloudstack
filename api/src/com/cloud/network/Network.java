@@ -202,6 +202,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     }
 
     public enum State {
+
         Allocated("Indicates the network configuration is in allocated but not setup"),
         Setup("Indicates the network configuration is setup"),
         Implementing("Indicates the network configuration is being implemented"),
@@ -210,6 +211,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         Destroy("Indicates that the network is destroyed");
 
         protected static final StateMachine2<State, Network.Event, Network> s_fsm = new StateMachine2<State, Network.Event, Network>();
+
         static {
             s_fsm.addTransition(State.Allocated, Event.ImplementNetwork, State.Implementing);
             s_fsm.addTransition(State.Implementing, Event.OperationSucceeded, State.Implemented);

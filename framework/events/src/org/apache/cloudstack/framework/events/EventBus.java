@@ -21,6 +21,8 @@ package org.apache.cloudstack.framework.events;
 
 import com.cloud.utils.component.Adapter;
 
+import java.util.UUID;
+
 /**
  * Interface to publish and subscribe to CloudStack events
  *
@@ -28,29 +30,26 @@ import com.cloud.utils.component.Adapter;
 public interface EventBus extends Adapter{
 
     /**
-     * publish an event
+     * publish an event on to the event bus
      *
-     * @param event event that needs to be published
-     * @return true if the event has been successfully published on event bus
+     * @param event event that needs to be published on the event bus
      */
-    boolean publish(Event event);
+    void publish(Event event) throws EventBusException;
 
     /**
-     * subscribe to events of a category and a type
+     * subscribe to events that matches specified event topics
      *
      * @param topic defines category and type of the events being subscribed to
      * @param subscriber subscriber that intends to receive event notification
-     * @return true if the subscriber has been successfully registered.
+     * @return UUID returns the subscription ID
      */
-    boolean subscribe(EventTopic topic, EventSubscriber subscriber);
+     UUID subscribe(EventTopic topic, EventSubscriber subscriber) throws EventBusException;
 
     /**
      * unsubscribe to events of a category and a type
      *
-     * @param topic defines category and type of the events to unsubscribe
      * @param subscriber subscriber that intends to unsubscribe from the event notification
-     * @return true if the subscriber has been successfully unsubscribed.
      */
-    boolean unsubscribe(EventTopic topic, EventSubscriber subscriber);
+    void unsubscribe(UUID subscriberId, EventSubscriber subscriber) throws EventBusException;
 
 }

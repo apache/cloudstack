@@ -234,6 +234,7 @@ under the License.
             <param name="port">5672</param>
             <param name="username">guest</param>
             <param name="password">guest</param>
+            <param name="exchangename">cloudstack-evetns</param>
             </adapter>
         </adapters>
         <manager name="OvsTunnelManager" key="com.cloud.network.ovs.OvsTunnelManager" class="com.cloud.network.ovs.OvsTunnelManagerImpl"/>

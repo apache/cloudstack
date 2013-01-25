@@ -263,7 +263,7 @@ public class AlertManagerImpl implements AlertManager {
     public void sendAlert(short alertType, long dataCenterId, Long podId, String subject, String body) {
 
         // publish alert
-        AlertGenerator.publishAlert(getAlertType(alertType), dataCenterId, podId, subject, body);
+        AlertGenerator.publishAlertOnEventBus(getAlertType(alertType), dataCenterId, podId, subject, body);
 
         // TODO:  queue up these messages and send them as one set of issues once a certain number of issues is reached?  If that's the case,
         //         shouldn't we have a type/severity as part of the API so that severe errors get sent right away?
