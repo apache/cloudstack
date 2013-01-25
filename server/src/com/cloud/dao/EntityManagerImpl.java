@@ -52,6 +52,13 @@ public class EntityManagerImpl implements EntityManager, Manager {
     }
 
     @Override
+    public <T> T findByUuidIncludingRemoved(Class<T> entityType, String uuid) {
+        // Finds and returns a unique VO using uuid, null if entity not found in db
+        GenericDao<? extends T, String> dao = (GenericDao<? extends T, String>)GenericDaoBase.getDao(entityType);
+        return dao.findByUuidIncludingRemoved(uuid);
+    }
+
+    @Override
     public <T> T findByXId(Class<T> entityType, String xid) {
         return null;
     }

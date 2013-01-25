@@ -75,7 +75,8 @@ class CloudMonkeyShell(cmd.Cmd, object):
     # datastructure {'verb': {cmd': ['api', [params], doc, required=[]]}}
     cache_verbs = precached_verbs
 
-    def __init__(self):
+    def __init__(self, pname):
+        self.program_name = pname
         if os.path.exists(self.config_file):
             config = self.read_config()
         else:
@@ -262,8 +263,9 @@ class CloudMonkeyShell(cmd.Cmd, object):
             return
 
         isAsync = isAsync and (self.asyncblock == "true")
-        if isAsync and 'jobid' in response[response.keys()[0]]:
-            jobId = response[response.keys()[0]]['jobid']
+        responsekey = filter(lambda x: 'response' in x, response.keys())[0]
+        if isAsync and 'jobid' in response[responsekey]:
+            jobId = response[responsekey]['jobid']
             command = "queryAsyncJobResult"
             requests = {'jobid': jobId}
             timeout = int(self.timeout)
@@ -282,7 +284,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
                 jobstatus = result['jobstatus']
                 if jobstatus == 2:
                     jobresult = result["jobresult"]
-                    self.print_shell("Async query failed for jobid=",
+                    self.print_shell("\rAsync query failed for jobid",
                                      jobId, "\nError", jobresult["errorcode"],
                                      jobresult["errortext"])
                     return
@@ -293,7 +295,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
                 timeout = timeout - pollperiod
                 progress += 1
                 logger.debug("job: %s to timeout in %ds" % (jobId, timeout))
-            self.print_shell("Error:", "Async query timeout for jobid=", jobId)
+            self.print_shell("Error:", "Async query timeout for jobid", jobId)
 
         return response
 
@@ -306,7 +308,19 @@ class CloudMonkeyShell(cmd.Cmd, object):
             return None
         return api_mod
 
+    def pipe_runner(self, args):
+        if args.find(' |') > -1:
+            pname = self.program_name
+            if '.py' in pname:
+                pname = "python " + pname
+            self.do_shell("%s %s" % (pname, args))
+            return True
+        return False
+
     def default(self, args):
+        if self.pipe_runner(args):
+            return
+
         lexp = shlex.shlex(args.strip())
         lexp.whitespace = " "
         lexp.whitespace_split = True
@@ -387,7 +401,8 @@ class CloudMonkeyShell(cmd.Cmd, object):
                                   self.cache_verbs[verb][subject][1])
             search_string = text
 
-        autocompletions.append("filter=")
+        if self.tabularize == "true":
+            autocompletions.append("filter=")
         return [s for s in autocompletions if s.startswith(search_string)]
 
     def do_api(self, args):
@@ -504,22 +519,21 @@ def main():
     for rule in grammar:
         def add_grammar(rule):
             def grammar_closure(self, args):
-                if '|' in args:  # FIXME: Consider parsing issues
-                    prog_name = sys.argv[0]
-                    if '.py' in prog_name:
-                        prog_name = "python " + prog_name
-                    self.do_shell("%s %s %s" % (prog_name, rule, args))
+                if self.pipe_runner("%s %s" % (rule, args)):
                     return
                 try:
                     args_partition = args.partition(" ")
                     res = self.cache_verbs[rule][args_partition[0]]
+                    cmd = res[0]
+                    helpdoc = res[2]
+                    args = args_partition[2]
                 except KeyError, e:
                     self.print_shell("Error: invalid %s api arg" % rule, e)
                     return
                 if ' --help' in args or ' -h' in args:
-                    self.print_shell(res[2])
+                    self.print_shell(helpdoc)
                     return
-                self.default(res[0] + " " + args_partition[2])
+                self.default("%s %s" % (cmd, args))
             return grammar_closure
 
         grammar_handler = add_grammar(rule)
@@ -527,7 +541,7 @@ def main():
         grammar_handler.__name__ = 'do_' + rule
         setattr(self, grammar_handler.__name__, grammar_handler)
 
-    shell = CloudMonkeyShell()
+    shell = CloudMonkeyShell(sys.argv[0])
     if len(sys.argv) > 1:
         shell.onecmd(' '.join(sys.argv[1:]))
     else:
