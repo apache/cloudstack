@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -57,6 +58,10 @@ public class XmlObject {
     private Object recurGet(XmlObject obj, Iterator<String> it) {
         String key = it.next();
         Object e = obj.elements.get(key);
+        if (e == null) {
+            return null;
+        }
+        
         if (!it.hasNext()) {
             return e;
         } else {
@@ -160,5 +165,23 @@ public class XmlObject {
             sb.append(">").append(text).append(String.format("</ %s>", tag));
         }
         return sb.toString();
+    }
+    
+    public <T> T evaluateObject(T obj) {
+        Class<?> clazz = obj.getClass();
+        try {
+            do {
+                Field[] fs = clazz.getDeclaredFields();
+                for (Field f : fs) {
+                    f.setAccessible(true);
+                    Object value = get(f.getName());
+                    f.set(obj, value);
+                }
+                clazz = clazz.getSuperclass();
+            } while (clazz != null && clazz != Object.class);
+            return obj;
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 }
