@@ -860,8 +860,19 @@
 
           // Previous button
           if ($target.closest('div.button.previous').size()) {
-            var index = $steps.filter(':visible').index();
-            if (index) showStep(index);
+            var $step = $steps.filter(':visible');
+            var $networkStep = $steps.filter('.network');
+            var index = $step.index();
+
+            $networkStep.removeClass('next-use-security-groups');
+
+            if (index) {
+              if (index == $steps.size() - 1 && $networkStep.hasClass('next-use-security-groups')) {
+                showStep(5);
+              } else {
+                showStep(index);
+              }
+            }
 
             return false;
           }
