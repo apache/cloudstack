@@ -77,7 +77,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setCapabilities(host.getCapabilities());
         hostResponse.setClusterId(host.getClusterUuid());
         hostResponse.setCpuNumber(host.getCpus());
-        hostResponse.setZoneId(host.getUuid());
+        hostResponse.setZoneId(host.getZoneUuid());
         hostResponse.setDisconnectedOn(host.getDisconnectedOn());
         hostResponse.setHypervisor(host.getHypervisorType());
         hostResponse.setHostType(host.getType());
