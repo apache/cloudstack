@@ -229,6 +229,23 @@ setup_interface() {
   fi
 }
 
+setup_interface_ipv6() {
+  sysctl net.ipv6.conf.all.disable_ipv6=0
+  sysctl net.ipv6.conf.all.accept_ra=1
+  
+  local intfnum=$1
+  local ipv6="$2"
+  local prelen="$3"
+  local intf=eth${intfnum}
+  
+  echo "iface $intf inet6 static" >> /etc/network/interfaces
+  echo "  address $ipv6 " >> /etc/network/interfaces
+  echo "  netmask $prelen" >> /etc/network/interfaces
+  echo "  accept_ra 1" >> /etc/network/interfaces
+  ifdown $intf
+  ifup $intf
+}
+
 enable_fwding() {
   local enabled=$1
   log_it "cloud: enable_fwding = $1"
@@ -303,7 +320,14 @@ disable_hvc() {
 
 setup_common() {
   init_interfaces $1 $2 $3
-  setup_interface "0" $ETH0_IP $ETH0_MASK $GW
+  if [ -n "$ETH0_IP" ]
+  then
+    setup_interface "0" $ETH0_IP $ETH0_MASK $GW
+  fi
+  if [ -n "$ETH0_IP6" ]
+  then
+	  setup_interface_ipv6 "0" $ETH0_IP6 $ETH0_IP6_PRELEN
+  fi
   setup_interface "1" $ETH1_IP $ETH1_MASK $GW
   if [ -n "$ETH2_IP" ]
   then
@@ -903,6 +927,9 @@ for i in $CMDLINE
       gateway)
           GW=$VALUE
           ;;
+      ip6gateway)
+          IP6GW=$VALUE
+          ;;
       eth0mask)
           ETH0_MASK=$VALUE
           ;;
@@ -911,6 +938,12 @@ for i in $CMDLINE
           ;;
       eth2mask)
           ETH2_MASK=$VALUE
+          ;;
+      eth0ip6)
+          ETH0_IP6=$VALUE
+          ;;
+      eth0ip6prelen)
+          ETH0_IP6_PRELEN=$VALUE
           ;;
       internaldns1)
           internalNS1=$VALUE
