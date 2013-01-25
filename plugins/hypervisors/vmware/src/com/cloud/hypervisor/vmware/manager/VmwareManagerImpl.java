@@ -36,7 +36,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -94,7 +93,6 @@ import com.vmware.apputils.vim25.ServiceUtil;
 import com.vmware.vim25.HostConnectSpec;
 import com.vmware.vim25.ManagedObjectReference;
 
-@Component
 @Local(value = {VmwareManager.class})
 public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Listener, Manager {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);

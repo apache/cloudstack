@@ -70,7 +70,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
 
-@Component
 @Local(value=HypervisorGuru.class)
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);

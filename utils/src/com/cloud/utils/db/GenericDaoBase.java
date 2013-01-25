@@ -158,6 +158,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     protected static final SequenceFetcher s_seqFetcher = SequenceFetcher.getInstance();
 
     protected String _name;
+    protected Map<String, Object> _configParams = new HashMap<String, Object>();
 
     public static <J> GenericDaoBase<? extends J, ? extends Serializable> getDao(Class<J> entityType) {
         @SuppressWarnings("unchecked")
@@ -178,6 +179,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
     public Map<String, Attribute> getAllAttributes() {
         return _allAttributes;
+    }
+    
+    public void setConfigParams(Map<String, Object> params) {
+    	_configParams = params;
+    }
+    
+    public Map<String, Object> getConfigParams() {
+    	return _configParams;
     }
 
     @SuppressWarnings("unchecked")

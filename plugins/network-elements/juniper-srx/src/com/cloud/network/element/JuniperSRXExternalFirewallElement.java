@@ -28,7 +28,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddExternalFirewallCmd;
@@ -91,7 +90,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Component
 @Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
         PortForwardingServiceProvider.class, IpDeployer.class, 
         SourceNatServiceProvider.class, RemoteAccessVPNServiceProvider.class})
