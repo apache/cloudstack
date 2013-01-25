@@ -36,7 +36,7 @@ import com.cloud.uservm.UserVm;
 
 @APICommand(name = "removeNicFromVirtualMachine", description="Removes VM from specified network by deleting a NIC", responseObject=UserVmResponse.class)
 
-public class RemoveNicFromVMCmd extends BaseCmd {
+public class RemoveNicFromVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveNicFromVMCmd.class);
     private static final String s_name = "removenicfromvirtualmachineresponse";
 
@@ -76,6 +76,17 @@ public class RemoveNicFromVMCmd extends BaseCmd {
     public static String getResultObjectName() {
         return "virtualmachine";
     }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NIC_DELETE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "Removing NIC " + getNicId() + " from user vm: " + getVmId();
+    }
+    
     
     @Override
     public long getEntityOwnerId() {

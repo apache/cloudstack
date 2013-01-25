@@ -36,7 +36,7 @@ import com.cloud.uservm.UserVm;
 
 @APICommand(name = "addNicToVirtualMachine", description="Adds VM to specified network by creating a NIC", responseObject=UserVmResponse.class)
 
-public class AddNicToVMCmd extends BaseCmd {
+public class AddNicToVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddNicToVMCmd.class);
     private static final String s_name = "addnictovirtualmachineresponse";
 
@@ -83,6 +83,16 @@ public class AddNicToVMCmd extends BaseCmd {
     public static String getResultObjectName() {
         return "virtualmachine";
     }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NIC_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "Adding network " + getNetworkId() + " to user vm: " + getVmId();
+    }
     
     @Override
     public long getEntityOwnerId() {
@@ -95,7 +105,7 @@ public class AddNicToVMCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Vm Id: "+getVmId());
+        UserContext.current().setEventDetails("Vm Id: " + getVmId() + " Network Id: " + getNetworkId());
         UserVm result = _userVmService.addNicToVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));

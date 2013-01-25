@@ -954,7 +954,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         //todo: any security group related checks
-        //todo: ensure network belongs in zone
+        //ensure network belongs in zone
+        if (network.getDataCenterId() != vmInstance.getDataCenterIdToDeployIn()) {
+            throw new CloudRuntimeException(vmInstance + " is in zone:" + vmInstance.getDataCenterIdToDeployIn() + " but " + network + " is in zone:" + network.getDataCenterId());
+        }
+
+        if(_networkModel.getNicInNetwork(vmInstance.getId(),network.getId()) != null){
+            s_logger.debug(vmInstance + " already in " + network + " going to add another NIC");
+        }
+
         //todo: check other nics for VPC networks (can only belong to one?)
         //todo: verify unique hostname in network domain?
         
@@ -1013,10 +1021,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         
-        //todo: any security group related checks
-        //todo: ensure network belongs in zone
-        //todo: check other nics for VPC networks (can only belong to one?)
-        //todo: verify unique hostname in network domain?
         boolean nicremoved = false;
 
         try {
@@ -1070,6 +1074,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // if current default equals chosen new default, Throw an exception
         if (nic.isDefaultNic()){
             throw new CloudRuntimeException("refusing to set default nic because chosen nic is already the default");
+        }
+
+        //make sure the VM is Running or Stopped
+        if ((vmInstance.getState() != State.Running) || (vmInstance.getState() != State.Stopped)) {
+            throw new CloudRuntimeException("refusing to set default " + vmInstance + " is not Running or Stopped");
         }
         
         NicProfile existing = null;
@@ -3879,7 +3888,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             InsufficientCapacityException {
         UserVmVO vmVO = _vmDao.findById(vm.getId());
         if (vmVO.getState() == State.Running) {
-            s_logger.warn("plugNic called need to plug in the NIC!!!! vm " + vmVO);
             try {
                 PlugNicCommand plugNicCmd = new PlugNicCommand(nic,vm.getName());
                 Commands cmds = new Commands(OnError.Stop);

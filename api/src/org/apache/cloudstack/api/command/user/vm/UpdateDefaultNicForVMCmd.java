@@ -36,7 +36,7 @@ import com.cloud.uservm.UserVm;
 
 @APICommand(name = "updateDefaultNicForVirtualMachine", description="Changes the default NIC on a VM", responseObject=UserVmResponse.class)
 
-public class UpdateDefaultNicForVMCmd extends BaseCmd {
+public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateDefaultNicForVMCmd.class);
     private static final String s_name = "updatedefaultnicforvirtualmachineresponse";
 
@@ -76,6 +76,17 @@ public class UpdateDefaultNicForVMCmd extends BaseCmd {
     public static String getResultObjectName() {
         return "virtualmachine";
     }
+    
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NIC_UPDATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "Updating NIC " + getNicId() + " on user vm: " + getVmId();
+    }
+    
     
     @Override
     public long getEntityOwnerId() {
