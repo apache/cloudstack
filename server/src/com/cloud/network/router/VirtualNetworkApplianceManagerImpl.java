@@ -1886,11 +1886,25 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String defaultDns2 = null;
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
-            buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
-            buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
+            boolean ipv4 = false, ipv6 = false;
+            if (nic.getIp4Address() != null) {
+            	ipv4 = true;
+            	buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
+            	buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
+            }
+            if (nic.getIp6Address() != null) {
+            	ipv6 = true;
+            	buf.append(" eth").append(deviceId).append("ip6=").append(nic.getIp6Address());
+            	buf.append(" eth").append(deviceId).append("ip6prelen=").append(NetUtils.getIp6CidrSize(nic.getIp6Cidr()));
+            }
             
             if (nic.isDefaultNic()) {
-                buf.append(" gateway=").append(nic.getGateway());
+            	if (ipv4) {
+            		buf.append(" gateway=").append(nic.getGateway());
+            	}
+            	if (ipv6) {
+            		buf.append(" ip6gateway=").append(nic.getIp6Gateway());
+            	}
                 defaultDns1 = nic.getDns1();
                 defaultDns2 = nic.getDns2();
             }
