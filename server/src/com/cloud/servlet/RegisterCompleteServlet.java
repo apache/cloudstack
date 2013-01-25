@@ -19,6 +19,7 @@ package com.cloud.servlet;
 import java.net.URLEncoder;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -48,6 +49,27 @@ public class RegisterCompleteServlet extends HttpServlet implements ServletConte
     @Inject ConfigurationDao _configDao;
     @Inject UserDao _userDao;
 
+    static AccountService s_accountSvc;
+    static ConfigurationDao s_configDao;
+    static UserDao s_userDao;
+    
+    public RegisterCompleteServlet() {
+    }
+    
+    @PostConstruct
+    void initComponent() {
+    	// Hakcing way to make servlet injection work for now
+    	if(_accountSvc != null) {
+    	    s_accountSvc = _accountSvc;
+    	    s_configDao = _configDao;
+    	    s_userDao = _userDao;
+    	} else {
+    	    _accountSvc = s_accountSvc;
+    	    _configDao = s_configDao;
+    	    _userDao = s_userDao;
+    	}
+    }
+    
     @Override
     public void contextInitialized(ServletContextEvent sce) {
     }

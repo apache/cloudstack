@@ -71,13 +71,29 @@ public class ConsoleProxyServlet extends HttpServlet {
     @Inject ManagementServer _ms;
     @Inject IdentityService _identityService; 
 
+    static AccountManager s_accountMgr;
+    static VirtualMachineManager s_vmMgr;
     static ManagementServer s_ms;
+    static IdentityService s_identityService;
+    
     public ConsoleProxyServlet() {
     }
     
     @PostConstruct
-    void initComponent() {
-    	s_ms = _ms;
+    void initComponent() {	
+    	// Servlet injection does not always work for servlet container
+    	// We use a hacking here to initialize static variables at Spring wiring time
+    	if(_accountMgr != null) {
+    	    s_accountMgr = _accountMgr;
+    	    s_vmMgr = _vmMgr;
+    	    s_ms = _ms;
+    	    s_identityService = _identityService;
+    	} else {
+    	    _accountMgr = s_accountMgr;
+    	    _vmMgr = s_vmMgr;
+    	    _ms = s_ms;
+    	    _identityService = s_identityService;
+    	}
     }
     
     @Override
