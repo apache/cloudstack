@@ -117,6 +117,7 @@ public class LocalStoragePoolListener implements Listener {
                                          host.getPodId(), pInfo.getAvailableBytes(), pInfo.getCapacityBytes(), pInfo.getHost(), 0,
                                          pInfo.getHostPath());
                 pool.setClusterId(host.getClusterId());
+                pool.setStatus(StoragePoolStatus.Up);
                 _storagePoolDao.persist(pool, pInfo.getDetails());
                 StoragePoolHostVO poolHost = new StoragePoolHostVO(pool.getId(), host.getId(), pInfo.getLocalPath());
                 _storagePoolHostDao.persist(poolHost);
