@@ -18,11 +18,12 @@ package com.cloud.region;
 
 import java.util.List;
 
-import com.cloud.api.commands.DeleteUserCmd;
-import com.cloud.api.commands.ListRegionsCmd;
-import com.cloud.api.commands.UpdateAccountCmd;
-import com.cloud.api.commands.UpdateDomainCmd;
-import com.cloud.api.commands.UpdateUserCmd;
+import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.api.command.user.region.ListRegionsCmd;
+
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;

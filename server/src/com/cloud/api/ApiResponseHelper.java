@@ -60,80 +60,6 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.api.response.ApiResponseSerializer;
-<<<<<<< HEAD
-import com.cloud.api.response.AsyncJobResponse;
-import com.cloud.api.response.CapabilityResponse;
-import com.cloud.api.response.CapacityResponse;
-import com.cloud.api.response.ClusterResponse;
-import com.cloud.api.response.ConfigurationResponse;
-import com.cloud.api.response.ControlledEntityResponse;
-import com.cloud.api.response.CreateCmdResponse;
-import com.cloud.api.response.DiskOfferingResponse;
-import com.cloud.api.response.DomainResponse;
-import com.cloud.api.response.DomainRouterResponse;
-import com.cloud.api.response.EventResponse;
-import com.cloud.api.response.ExtractResponse;
-import com.cloud.api.response.FindAccountResponse;
-import com.cloud.api.response.FindDomainResponse;
-import com.cloud.api.response.FindUserResponse;
-import com.cloud.api.response.FirewallResponse;
-import com.cloud.api.response.FirewallRuleResponse;
-import com.cloud.api.response.HostResponse;
-import com.cloud.api.response.HypervisorCapabilitiesResponse;
-import com.cloud.api.response.IPAddressResponse;
-import com.cloud.api.response.InstanceGroupResponse;
-import com.cloud.api.response.IpForwardingRuleResponse;
-import com.cloud.api.response.LBStickinessPolicyResponse;
-import com.cloud.api.response.LBStickinessResponse;
-import com.cloud.api.response.LDAPConfigResponse;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.LoadBalancerResponse;
-import com.cloud.api.response.NetworkACLResponse;
-import com.cloud.api.response.NetworkOfferingResponse;
-import com.cloud.api.response.NetworkResponse;
-import com.cloud.api.response.NicResponse;
-import com.cloud.api.response.PhysicalNetworkResponse;
-import com.cloud.api.response.PodResponse;
-import com.cloud.api.response.PrivateGatewayResponse;
-import com.cloud.api.response.ProjectAccountResponse;
-import com.cloud.api.response.ProjectInvitationResponse;
-import com.cloud.api.response.ProjectResponse;
-import com.cloud.api.response.ProviderResponse;
-import com.cloud.api.response.RegionResponse;
-import com.cloud.api.response.RemoteAccessVpnResponse;
-import com.cloud.api.response.ResourceCountResponse;
-import com.cloud.api.response.ResourceLimitResponse;
-import com.cloud.api.response.ResourceTagResponse;
-import com.cloud.api.response.SecurityGroupResponse;
-import com.cloud.api.response.SecurityGroupResultObject;
-import com.cloud.api.response.SecurityGroupRuleResponse;
-import com.cloud.api.response.SecurityGroupRuleResultObject;
-import com.cloud.api.response.ServiceOfferingResponse;
-import com.cloud.api.response.ServiceResponse;
-import com.cloud.api.response.Site2SiteCustomerGatewayResponse;
-import com.cloud.api.response.Site2SiteVpnConnectionResponse;
-import com.cloud.api.response.Site2SiteVpnGatewayResponse;
-import com.cloud.api.response.SnapshotPolicyResponse;
-import com.cloud.api.response.SnapshotResponse;
-import com.cloud.api.response.StaticRouteResponse;
-import com.cloud.api.response.StorageNetworkIpRangeResponse;
-import com.cloud.api.response.StoragePoolResponse;
-import com.cloud.api.response.SwiftResponse;
-import com.cloud.api.response.SystemVmInstanceResponse;
-import com.cloud.api.response.SystemVmResponse;
-import com.cloud.api.response.TemplatePermissionsResponse;
-import com.cloud.api.response.TemplateResponse;
-import com.cloud.api.response.TrafficTypeResponse;
-import com.cloud.api.response.UserResponse;
-import com.cloud.api.response.UserVmResponse;
-import com.cloud.api.response.VirtualRouterProviderResponse;
-import com.cloud.api.response.VlanIpRangeResponse;
-import com.cloud.api.response.VolumeResponse;
-import com.cloud.api.response.VpcOfferingResponse;
-import com.cloud.api.response.VpcResponse;
-import com.cloud.api.response.VpnUsersResponse;
-import com.cloud.api.response.ZoneResponse;
-=======
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
@@ -151,6 +77,9 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.api.response.FindAccountResponse;
+import org.apache.cloudstack.api.response.FindDomainResponse;
+import org.apache.cloudstack.api.response.FindUserResponse;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
@@ -174,6 +103,7 @@ import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
+import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
 import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
@@ -208,7 +138,6 @@ import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
 import org.apache.cloudstack.api.response.S3Response;
->>>>>>> master
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
@@ -2828,12 +2757,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("storagenetworkiprange");
         return response;
     }
-<<<<<<< HEAD
-    
-    @Override
-    public Long getIdentiyId(String tableName, String token) {
-        return ApiDispatcher.getIdentiyId(tableName, token);
-    }
 
 	@Override
 	public RegionResponse createRegionResponse(Region region) {
@@ -2844,8 +2767,6 @@ public class ApiResponseHelper implements ResponseGenerator {
 		response.setObjectName("region");
 		return response;
 	}
-=======
->>>>>>> master
 
     @Override
     public ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag, boolean keyValueOnly) {
@@ -3225,17 +3146,19 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("vpnconnection");
         return response;
     }
-<<<<<<< HEAD
     
     @Override
     public FindUserResponse createFindUserResponse(User user) {
     	FindUserResponse userResponse = new FindUserResponse();
-    	userResponse.setId(user.getId());
+    	userResponse.setId(user.getUuid());
     	userResponse.setUsername(user.getUsername());
     	userResponse.setPassword(user.getPassword());
         userResponse.setFirstname(user.getFirstname());        
         userResponse.setLastname(user.getLastname());
-        userResponse.setAccountId(user.getAccountId());
+        Account account = ApiDBUtils.findAccountById(user.getAccountId());
+        if(account != null){
+        	userResponse.setAccountId(account.getUuid());
+        }
         userResponse.setEmail(user.getEmail());
         userResponse.setState(user.getState().toString());
         userResponse.setApiKey(user.getApiKey());
@@ -3253,11 +3176,17 @@ public class ApiResponseHelper implements ResponseGenerator {
 	@Override
 	public FindAccountResponse createFindAccountResponse(Account account) {
 		FindAccountResponse accountResponse = new FindAccountResponse();
-		accountResponse.setId(account.getId());
+		accountResponse.setId(account.getUuid());
 		accountResponse.setName(account.getAccountName());
 		accountResponse.setAccountType(account.getType());
-		accountResponse.setDefaultZone(account.getDefaultZoneId());
-		accountResponse.setDomainId(account.getDomainId());
+		DataCenterVO zone = ApiDBUtils.findZoneById(account.getDefaultZoneId());
+		if(zone != null){
+			accountResponse.setDefaultZoneId(zone.getUuid());			
+		}
+		Domain domain = ApiDBUtils.findDomainById(account.getDomainId());
+		if(domain != null){
+			accountResponse.setDomainId(domain.getUuid());
+		}
 		accountResponse.setRegionId(account.getRegionId());
 		accountResponse.setState(account.getState().toString());
 		accountResponse.setObjectName("account");
@@ -3268,18 +3197,18 @@ public class ApiResponseHelper implements ResponseGenerator {
 	public FindDomainResponse createFindDomainResponse(Domain domain) {
 		FindDomainResponse domainResponse = new FindDomainResponse();
         domainResponse.setDomainName(domain.getName());
-        domainResponse.setId(domain.getId());
+        domainResponse.setId(domain.getUuid());
         domainResponse.setLevel(domain.getLevel());
         domainResponse.setNetworkDomain(domain.getNetworkDomain());
-        domainResponse.setParent(domain.getParent());
+        Domain parentDomain = ApiDBUtils.findDomainById(domain.getParent());
+        if (parentDomain != null) {
+            domainResponse.setParent(parentDomain.getUuid());
+        }
         domainResponse.setPath(domain.getPath());
         domainResponse.setObjectName("domain");
         domainResponse.setRegionId(domain.getRegionId());
 		return domainResponse;
 	}
-=======
-
-
 
     @Override
     public GuestOSResponse createGuestOSResponse(GuestOS guestOS) {
@@ -3319,6 +3248,4 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
-
->>>>>>> master
 }

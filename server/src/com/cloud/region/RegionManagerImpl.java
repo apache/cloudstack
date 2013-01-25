@@ -23,15 +23,15 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.api.command.user.region.ListRegionsCmd;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.commands.DeleteUserCmd;
-import com.cloud.api.commands.ListRegionsCmd;
-import com.cloud.api.commands.UpdateAccountCmd;
-import com.cloud.api.commands.UpdateDomainCmd;
-import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;

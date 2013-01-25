@@ -162,7 +162,7 @@ public class ApiServer implements HttpRequestHandler {
 
     private Account _systemAccount = null;
     private User _systemUser = null;
-    private RegionManager _regionMgr = null;
+    @Inject private RegionManager _regionMgr = null;
     
     private static int _workerCount = 0;
     private static ApiServer s_instance = null;
@@ -197,8 +197,6 @@ public class ApiServer implements HttpRequestHandler {
         _systemAccount = _accountMgr.getSystemAccount();
         _systemUser = _accountMgr.getSystemUser();
         _dispatcher = ApiDispatcher.getInstance();
-        _domainMgr = ComponentLocator.inject(DomainManager.class);
-        _regionMgr = ComponentLocator.inject(RegionManager.class);
 
         Integer apiPort = null; // api port, null by default
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);

@@ -14,20 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.response;
+package org.apache.cloudstack.api.response;
 
-import java.util.List;
 import java.util.Map;
 
-import com.cloud.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
+
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
+import com.cloud.user.Account;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
+@EntityReference(value = Account.class)
 public class FindAccountResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the id of the account")
-    private IdentityProxy id = new IdentityProxy("account");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the account")
     private String name;
@@ -36,10 +39,10 @@ public class FindAccountResponse extends BaseResponse {
     private Short accountType;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="id of the Domain the account belongs too")
-    private IdentityProxy domainId = new IdentityProxy("domain");
+    private String domainId;
 
     @SerializedName(ApiConstants.DEFAULT_ZONE_ID) @Param(description="the default zone of the account")
-    private IdentityProxy defaultZoneId = new IdentityProxy("data_center");
+    private String defaultZoneId;
 
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the account")
     private String state;
@@ -53,20 +56,12 @@ public class FindAccountResponse extends BaseResponse {
     @SerializedName("regionId") @Param(description="source region id of the user")
     private int regionId;
     
-    public void setId(Long id) {
-        this.id.setValue(id);
-    }
-
     public void setName(String name) {
         this.name = name;
     }
 
     public void setAccountType(Short accountType) {
         this.accountType = accountType;
-    }
-
-    public void setDomainId(Long domainId) {
-        this.domainId.setValue(domainId);
     }
 
     public void setState(String state) {
@@ -81,15 +76,31 @@ public class FindAccountResponse extends BaseResponse {
     	this.details = details;
     }
 
-    public void setDefaultZone(Long defaultZoneId) {
-    	this.defaultZoneId.setValue(defaultZoneId);
-    }
-    
-	public int getRegionId() {
-		return regionId;
-	}
-
 	public void setRegionId(int regionId) {
 		this.regionId = regionId;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getDomainId() {
+		return domainId;
+	}
+
+	public void setDomainId(String domainId) {
+		this.domainId = domainId;
+	}
+
+	public String getDefaultZoneId() {
+		return defaultZoneId;
+	}
+
+	public void setDefaultZoneId(String defaultZoneId) {
+		this.defaultZoneId = defaultZoneId;
 	}
 }

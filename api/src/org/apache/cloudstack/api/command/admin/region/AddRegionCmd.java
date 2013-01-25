@@ -14,20 +14,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.command.admin.region;
 
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.RegionResponse;
 import com.cloud.region.Region;
 import com.cloud.user.Account;
 
-@Implementation(description="Adds a Region", responseObject=RegionResponse.class)
+@APICommand(name = "addRegion", description="Adds a Region", responseObject=RegionResponse.class)
 public class AddRegionCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddRegionCmd.class.getName());
 
@@ -97,7 +98,7 @@ public class AddRegionCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add Region");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Region");
         }
     }
 }

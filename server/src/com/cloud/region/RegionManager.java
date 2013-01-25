@@ -18,7 +18,7 @@ package com.cloud.region;
 
 import java.util.Map;
 
-import com.cloud.domain.DomainVO;
+import com.cloud.domain.Domain;
 import com.cloud.user.UserAccount;
 
 
@@ -32,5 +32,5 @@ public interface RegionManager {
 			String accountName, String domainUUId, String userUUID);
 	public void propogateAddDomain(String name, Long parentId, String networkDomain, String uuid);
 	UserAccount getUserAccount(String username, Long domainId);
-	DomainVO findDomainByPath(String domainPath);	
+	Domain findDomainByPath(String domainPath);	
 }

@@ -14,20 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.command.admin.user;
 
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.FindUserResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.response.FindUserResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.User;
 
-@Implementation(description="Find user by name and domain", responseObject=FindUserResponse.class)
+@APICommand(name = "findUser", description="Find user by name and domain", responseObject=FindUserResponse.class)
 public class FindUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(FindUserCmd.class.getName());
 
@@ -40,8 +40,7 @@ public class FindUserCmd extends BaseCmd {
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="find user with specified username")
     private String username;
     
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LONG, required=true, description = "Domain the user belongs to")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class, required=true, description = "Domain the user belongs to")
     private Long domainId;
 
     /////////////////////////////////////////////////////

@@ -14,20 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.command.admin.account;
 
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.FindAccountResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.response.FindAccountResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@Implementation(description="Find account by ID", responseObject=FindAccountResponse.class)
+@APICommand(name = "findAccount", description="Find account by ID", responseObject=FindAccountResponse.class)
 public class FindAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(FindAccountCmd.class.getName());
 
@@ -37,8 +37,7 @@ public class FindAccountCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="account")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required=true, description = "Id of the account")
+    @Parameter(name = ApiConstants.ID, type=CommandType.UUID, entityType=AccountResponse.class, required=true, description = "Id of the account")
     private Long id;
 
     /////////////////////////////////////////////////////

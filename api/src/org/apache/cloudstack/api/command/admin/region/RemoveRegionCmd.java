@@ -14,37 +14,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.command.admin.region;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.RegionResponse;
-import com.cloud.region.Region;
+import com.cloud.user.Account;
 
-@Implementation(description="Lists Regions", responseObject=RegionResponse.class)
-public class ListRegionsCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListRegionsCmd.class.getName());
-	
-    private static final String s_name = "listregionsresponse";
+@APICommand(name = "removeRegion", description="Removes specified region", responseObject=SuccessResponse.class)
+public class RemoveRegionCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(RemoveRegionCmd.class.getName());
+    private static final String s_name = "updateregionresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="List Region by region ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.INTEGER, required=true, description="ID of the region to delete")
     private Integer id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="List Region by region name.")
-    private String domainName;
-    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -53,10 +47,6 @@ public class ListRegionsCmd extends BaseListCmd {
         return id;
     }
 
-    public String getRegionName() {
-        return domainName;
-    }
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -67,18 +57,18 @@ public class ListRegionsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
-        List<? extends Region> result = _regionService.listRegions(this);
-        ListResponse<RegionResponse> response = new ListResponse<RegionResponse>();
-        List<RegionResponse> regionResponses = new ArrayList<RegionResponse>();
-        for (Region region : result) {
-        	RegionResponse regionResponse = _responseGenerator.createRegionResponse(region);
-        	regionResponse.setObjectName("region");
-        	regionResponses.add(regionResponse);
-        }
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM; 
+    }
 
-        response.setResponses(regionResponses);
-        response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+    @Override
+    public void execute(){
+        boolean result = _regionService.removeRegion(id);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove region");
+        }
     }
 }

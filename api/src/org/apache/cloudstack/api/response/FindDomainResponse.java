@@ -14,16 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.response;
+package org.apache.cloudstack.api.response;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
+
+import com.cloud.domain.Domain;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+@EntityReference(value = Domain.class)
 public class FindDomainResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the domain")
-    private IdentityProxy id = new IdentityProxy("domain");
+    private String id;
 
     @SerializedName(ApiConstants.NAME) @Param(description="the name of the domain")
     private String domainName;
@@ -32,7 +36,7 @@ public class FindDomainResponse extends BaseResponse {
     private Integer level;
 
     @SerializedName("parentdomainid") @Param(description="the domain ID of the parent domain")
-    private IdentityProxy parent = new IdentityProxy("domain");
+    private String parent;
 
     @SerializedName("haschild") @Param(description="whether the domain has one or more sub-domains")
     private boolean hasChild;
@@ -49,40 +53,12 @@ public class FindDomainResponse extends BaseResponse {
     @SerializedName("regionId") @Param(description="source region id of the user")
     private int regionId;
     
-    public Long getId() {
-        return id.getValue();
-    }
-
-    public void setId(Long id) {
-        this.id.setValue(id);
-    }
-
-    public String getDomainName() {
-        return domainName;
-    }
-
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
 
-    public Integer getLevel() {
-        return level;
-    }
-
     public void setLevel(Integer level) {
         this.level = level;
-    }
-
-    public Long getParent() {
-        return parent.getValue();
-    }
-
-    public void setParent(Long parent) {
-        this.parent.setValue(parent);
-    }
-
-    public boolean getHasChild() {
-        return hasChild;
     }
 
     public void setHasChild(boolean hasChild) {
@@ -93,19 +69,35 @@ public class FindDomainResponse extends BaseResponse {
         this.networkDomain = networkDomain;
     }
 
-	public String getPath() {
-		return path;
-	}
-
 	public void setPath(String path) {
 		this.path = path;
 	}
     
-	public int getRegionId() {
-		return regionId;
-	}
-
 	public void setRegionId(int regionId) {
 		this.regionId = regionId;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getParent() {
+		return parent;
+	}
+
+	public void setParent(String parent) {
+		this.parent = parent;
+	}
+
+	public String getState() {
+		return state;
+	}
+
+	public void setState(String state) {
+		this.state = state;
 	}
 }

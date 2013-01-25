@@ -14,17 +14,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.response;
+package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
+
 import com.cloud.serializer.Param;
-import com.cloud.utils.IdentityProxy;
+import com.cloud.user.User;
 import com.google.gson.annotations.SerializedName;
 
+@EntityReference(value = User.class)
 public class FindUserResponse extends BaseResponse {
     @SerializedName("id") @Param(description="the user ID")
-    private IdentityProxy id = new IdentityProxy("user");
+    private String id ;
 
     @SerializedName("username") @Param(description="the user name")
     private String username;
@@ -39,7 +43,7 @@ public class FindUserResponse extends BaseResponse {
     private String lastname;
 
     @SerializedName("accountId") @Param(description="the account ID of the user")
-    private IdentityProxy accountId = new IdentityProxy("account");
+    private String accountId;
     
     @SerializedName("email") @Param(description="the user email address")
     private String email;
@@ -68,12 +72,12 @@ public class FindUserResponse extends BaseResponse {
     @SerializedName("regionId") @Param(description="source region id of the user")
     private int regionId;
     
-    public Long getId() {
-        return id.getValue();
+    public String getId() {
+        return id;
     }
 
-    public void setId(Long id) {
-        this.id.setValue(id);
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getUsername() {
@@ -147,12 +151,12 @@ public class FindUserResponse extends BaseResponse {
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
     }
-    public Long getAccountId() {
-        return accountId.getValue();
+    public String getAccountId() {
+        return accountId;
     }
 
-    public void setAccountId(Long accountId) {
-        this.accountId.setValue(accountId);
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
     }
 
 	public String getPassword() {

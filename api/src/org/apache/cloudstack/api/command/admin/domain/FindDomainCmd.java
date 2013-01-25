@@ -14,20 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.command.admin.domain;
 
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.FindDomainResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.response.FindDomainResponse;
 import com.cloud.domain.Domain;
 import com.cloud.exception.InvalidParameterValueException;
 
-@Implementation(description="Find account by ID", responseObject=FindDomainResponse.class)
+@APICommand(name = "findDomain", description="Find account by ID", responseObject=FindDomainResponse.class)
 public class FindDomainCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(FindDomainCmd.class.getName());
 
@@ -37,8 +37,7 @@ public class FindDomainCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "Id of the domain")
+    @Parameter(name = ApiConstants.ID, type=CommandType.UUID, entityType=DomainResponse.class, description = "Id of the domain")
     private Long id;
 
     @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING, description = "Path of the domain")
