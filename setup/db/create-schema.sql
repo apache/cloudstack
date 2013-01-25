@@ -207,6 +207,8 @@ CREATE TABLE `cloud`.`networks` (
   `broadcast_uri` varchar(255) COMMENT 'broadcast domain specifier',
   `gateway` varchar(15) COMMENT 'gateway for this network configuration',
   `cidr` varchar(18) COMMENT 'network cidr', 
+  `ip6_gateway` varchar(50) COMMENT 'IPv6 gateway for this network', 
+  `ip6_cidr` varchar(50) COMMENT 'IPv6 cidr for this network',
   `mode` varchar(32) COMMENT 'How to retrieve ip address in this network',
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this configuration is created from',
   `physical_network_id` bigint unsigned COMMENT 'physical network id that this configuration is based on',
@@ -270,6 +272,8 @@ CREATE TABLE `cloud`.`nics` (
   `update_time` timestamp NOT NULL COMMENT 'time the state was changed',
   `isolation_uri` varchar(255) COMMENT 'id for isolation',
   `ip6_address` char(40) COMMENT 'ip6 address',
+  `ip6_gateway` varchar(50) COMMENT 'gateway for ip6 address',
+  `ip6_cidr` varchar(50) COMMENT 'cidr for ip6 address',
   `default_nic` tinyint NOT NULL COMMENT "None", 
   `vm_type` varchar(32) COMMENT 'type of vm: System or User vm',
   `created` datetime NOT NULL COMMENT 'date created',
@@ -500,7 +504,10 @@ CREATE TABLE `cloud`.`vlan` (
   `vlan_id` varchar(255),
   `vlan_gateway` varchar(255),
   `vlan_netmask` varchar(255),
+  `ip6_gateway` varchar(255),
+  `ip6_cidr` varchar(255),
   `description` varchar(255),
+  `ip6_range` varchar(255),
   `vlan_type` varchar(255),
   `data_center_id` bigint unsigned NOT NULL,
   `network_id` bigint unsigned NOT NULL COMMENT 'id of corresponding network offering',
@@ -2542,6 +2549,31 @@ INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (1,
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (2, UUID(), 'snmp','Linux System CPU - percentage', '1.3.6.1.4.1.2021.11.10.0', now());
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (3, UUID(), 'snmp','Linux CPU Idle - percentage', '1.3.6.1.4.1.2021.11.11.0', now());
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (100, UUID(), 'netscaler','Response Time - microseconds', 'RESPTIME', now());
+
+CREATE TABLE  `cloud`.`public_ipv6_address` (
+  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
+  `uuid` varchar(40),
+  `account_id` bigint unsigned NULL,
+  `domain_id` bigint unsigned NULL,
+  `ip_address` char(50) NOT NULL,
+  `data_center_id` bigint unsigned NOT NULL COMMENT 'zone that it belongs to',
+  `vlan_id` bigint unsigned NOT NULL,
+  `state` char(32) NOT NULL default 'Free' COMMENT 'state of the ip address',
+  `mac_address` varchar(40) NOT NULL COMMENT 'mac address of this ip',
+  `source_network_id` bigint unsigned NOT NULL COMMENT 'network id ip belongs to',
+  `network_id` bigint unsigned COMMENT 'network this public ip address is associated with',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this configuration is based on',
+  `created` datetime NULL COMMENT 'Date this ip was allocated to someone',
+  PRIMARY KEY (`id`),
+  UNIQUE (`ip_address`, `source_network_id`),
+  CONSTRAINT `fk_public_ipv6_address__source_network_id` FOREIGN KEY (`source_network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_public_ipv6_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_public_ipv6_address__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`),
+  CONSTRAINT `fk_public_ipv6_address__vlan_id` FOREIGN KEY (`vlan_id`) REFERENCES `vlan`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_public_ipv6_address__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_public_ipv6_address__uuid` UNIQUE (`uuid`),
+  CONSTRAINT `fk_public_ipv6_address__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;
 

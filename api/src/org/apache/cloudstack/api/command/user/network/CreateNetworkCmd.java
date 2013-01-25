@@ -113,7 +113,22 @@ public class CreateNetworkCmd extends BaseCmd {
             description="the VPC network belongs to")
     private Long vpcId;
 
+    @Parameter(name=ApiConstants.START_IPV6, type=CommandType.STRING, description="the beginning IPv6 address in the IPv6 network range")
+    private String startIpv6;
 
+    @Parameter(name=ApiConstants.END_IPV6, type=CommandType.STRING, description="the ending IPv6 address in the IPv6 network range")
+    private String endIpv6;
+
+    @Parameter(name=ApiConstants.IP6GATEWAY, type=CommandType.STRING, description="the gateway of the IPv6 network. Required " +
+            "for Shared networks and Isolated networks when it belongs to VPC")
+    private String ip6Gateway;
+    
+    @Parameter(name=ApiConstants.IP6CIDR, type=CommandType.STRING, description="the CIDR of IPv6 network, must be at least /64")
+    private String ip6Cidr;
+
+    @Parameter(name=ApiConstants.DUAL_STACK, type=CommandType.BOOLEAN, description="The network is dual-stack(IPv6 and IPv4) or not")
+    private Boolean dualStack;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -207,7 +222,50 @@ public class CreateNetworkCmd extends BaseCmd {
         }
     }
 
-    /////////////////////////////////////////////////////
+    public String getStartIpv6() {
+        return startIpv6;
+    }
+
+    public void setStartIpv6(String startIpv6) {
+        this.startIpv6 = startIpv6;
+    }
+
+    public String getEndIpv6() {
+        return endIpv6;
+    }
+
+    public void setEndIpv6(String endIpv6) {
+        this.endIpv6 = endIpv6;
+    }
+
+    public String getIp6Gateway() {
+        return ip6Gateway;
+    }
+
+    public void setIp6Gateway(String ip6Gateway) {
+        this.ip6Gateway = ip6Gateway;
+    }
+
+    public String getIp6Cidr() {
+        return ip6Cidr;
+    }
+
+    public void setIp6Cidr(String ip6Cidr) {
+        this.ip6Cidr = ip6Cidr;
+    }
+
+    public Boolean isDualStack() {
+    	if (dualStack == null) {
+    		return false;
+    	}
+		return dualStack;
+	}
+
+	public void setDualStack(Boolean dualStack) {
+		this.dualStack = dualStack;
+	}
+
+	/////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override

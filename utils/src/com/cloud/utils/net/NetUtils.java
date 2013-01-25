@@ -41,6 +41,9 @@ import java.util.regex.Pattern;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
+import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6Network;
+
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.script.Script;
@@ -1142,4 +1145,73 @@ public class NetUtils {
         
         return true;
     }
+
+	public static boolean isValidIPv6(String ip) {
+		try {
+			IPv6Address address = IPv6Address.fromString(ip);
+		} catch (IllegalArgumentException ex) {
+			return false;
+		}
+		return true;
+	}
+
+	public static boolean isValidIp6Cidr(String ip6Cidr) {
+		try {
+			IPv6Network network = IPv6Network.fromString(ip6Cidr);
+		} catch (IllegalArgumentException ex) {
+			return false;
+		}
+		return true;
+	}
+
+	public static int getIp6CidrSize(String ip6Cidr) {
+		IPv6Network network = null;
+		try {
+			network = IPv6Network.fromString(ip6Cidr);
+		} catch (IllegalArgumentException ex) {
+			return 0;
+		}
+		return network.getNetmask().asPrefixLength();
+	}
+
+	//FIXME: only able to cover lower 32 bits
+	public static String getIp6FromRange(String ip6Range) {
+    	String[] ips = ip6Range.split("-");
+    	String startIp = ips[0];
+    	long gap = countIp6InRange(ip6Range);
+    	IPv6Address start = IPv6Address.fromString(startIp);
+    	// Find a random number based on lower 32 bits
+    	int d = _rand.nextInt((int)(gap % Integer.MAX_VALUE));
+    	// And a number based on the difference of lower 32 bits
+    	IPv6Address ip = start.add(d);
+    	return ip.toString();
+	}
+
+	//RFC3315, section 9.4
+	public static String getDuidLL(String macAddress) {
+		String duid = "00:03:00:06:" + macAddress;
+		return duid;
+	}
+	
+	//FIXME: only able to cover lower 64 bits
+	public static long countIp6InRange(String ip6Range) {
+    	String[] ips = ip6Range.split("-");
+    	String startIp = ips[0];
+    	String endIp = null;
+    	if (ips.length > 1) {
+    		endIp = ips[1];
+    	}
+    	IPv6Address start, end;
+    	try {
+    		start = IPv6Address.fromString(startIp);
+    		end = IPv6Address.fromString(endIp);
+		} catch (IllegalArgumentException ex) {
+			return 0;
+		}
+    	long startLow = start.getLowBits(), endLow = end.getLowBits();
+    	if (startLow > endLow) {
+    		return 0;
+    	}
+    	return endLow - startLow + 1;
+	}
 }

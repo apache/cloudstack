@@ -2184,7 +2184,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     s_logger.debug("Creating network for account " + owner + " from the network offering id=" +requiredOfferings.get(0).getId() + " as a part of deployVM process");
                     Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(),
                             owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
-                            null, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null);
+                            null, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException("More than 1 default Isolated networks are found for account " + owner + "; please specify networkIds");
@@ -2372,13 +2372,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 requestedIp = requestedIps.get(network.getId());
             }
 
-            NicProfile profile = new NicProfile(requestedIp);
+            NicProfile profile = new NicProfile(requestedIp, null);
 
             if (defaultNetworkNumber == 0) {
                 defaultNetworkNumber++;
                 // if user requested specific ip for default network, add it
                 if (defaultNetworkIp != null) {
-                    profile = new NicProfile(defaultNetworkIp);
+                    profile = new NicProfile(defaultNetworkIp, null);
                 }
 
                 profile.setDefaultNic(true);
@@ -3543,7 +3543,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         requiredOfferings.get(0).getId() + " as a part of deployVM process");
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(),
                                     newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
-                                    null, null, newAccount, null, physicalNetwork, zone.getId(), ACLType.Account, null, null);
+                                    null, null, newAccount, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null);
                             defaultNetwork = _networkDao.findById(newNetwork.getId());
                         } else if (virtualNetworks.size() > 1) {
                             throw new InvalidParameterValueException("More than 1 default Isolated networks are found " +

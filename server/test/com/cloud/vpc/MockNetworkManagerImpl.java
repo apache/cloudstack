@@ -56,6 +56,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.PublicIpv6Address;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.element.LoadBalancingServiceProvider;
@@ -846,7 +847,7 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
     @Override
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway,
             String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
-            PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId)
+            PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String gatewayv6, String cidrv6)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
@@ -1011,10 +1012,9 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
      */
     @Override
     public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm,
-            Network network, String requestedIp) throws InsufficientVirtualNetworkCapcityException,
+            Network network, String requestedIpv4, String requestedIpv6) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
-        
     }
 
 
@@ -1313,10 +1313,6 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
         return null;
     }
 
-
-
-
-
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkService#getNetwork(java.lang.String)
      */
@@ -1325,4 +1321,12 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public PublicIpv6Address assignPublicIp6Address(long dcId, Long podId,
+			Account owner, VlanType type, Long networkId, String requestedIpv6,
+			boolean isSystem) throws InsufficientAddressCapacityException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

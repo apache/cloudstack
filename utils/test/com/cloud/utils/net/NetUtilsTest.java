@@ -69,4 +69,18 @@ public class NetUtilsTest extends TestCase {
         assertFalse(NetUtils.isValidS2SVpnPolicy(";modp1536"));
         assertFalse(NetUtils.isValidS2SVpnPolicy(",aes;modp1536,,,"));
     }
+    
+    public void testIpv6() {
+    	assertTrue(NetUtils.isValidIPv6("fc00::1"));
+    	assertFalse(NetUtils.isValidIPv6(""));
+    	assertFalse(NetUtils.isValidIPv6(null));
+    	assertFalse(NetUtils.isValidIPv6("1234:5678::1/64"));
+    	assertTrue(NetUtils.isValidIp6Cidr("1234:5678::1/64"));
+    	assertFalse(NetUtils.isValidIp6Cidr("1234:5678::1"));
+    	assertEquals(NetUtils.getIp6CidrSize("1234:5678::1/32"), 32);
+    	assertEquals(NetUtils.getIp6CidrSize("1234:5678::1"), 0);
+    	assertEquals(NetUtils.countIp6InRange("1234:5678::1-1234:5678::2"), 2);
+    	assertEquals(NetUtils.countIp6InRange("1234:5678::2-1234:5678::0"), 0);
+    	assertEquals(NetUtils.getIp6FromRange("1234:5678::1-1234:5678::1"), "1234:5678::1");
+    }
 }

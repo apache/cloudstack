@@ -38,6 +38,7 @@ public class ApiConstants {
     public static final String DOMAIN_SUFFIX = "domainsuffix";
     public static final String DNS_SEARCH_ORDER = "dnssearchorder";
     public static final String CIDR = "cidr";
+    public static final String IP6CIDR = "ip6cidr";
     public static final String CIDR_LIST = "cidrlist";
     public static final String CLEANUP = "cleanup";
     public static final String CLUSTER_ID = "clusterid";
@@ -64,6 +65,7 @@ public class ApiConstants {
     public static final String EMAIL = "email";
     public static final String END_DATE = "enddate";
     public static final String END_IP = "endip";
+    public static final String END_IPV6 = "endipv6";
     public static final String END_PORT = "endport";
     public static final String ENTRY_TIME = "entrytime";
     public static final String FETCH_LATEST = "fetchlatest";
@@ -73,6 +75,7 @@ public class ApiConstants {
     public static final String FORMAT = "format";
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
     public static final String GATEWAY = "gateway";
+    public static final String IP6GATEWAY = "ip6gateway";
     public static final String GROUP = "group";
     public static final String GROUP_ID = "groupid";
     public static final String GUEST_CIDR_ADDRESS = "guestcidraddress";
@@ -181,6 +184,7 @@ public class ApiConstants {
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String START_DATE = "startdate";
     public static final String START_IP = "startip";
+    public static final String START_IPV6 = "startipv6";
     public static final String START_PORT = "startport";
     public static final String STATE = "state";
     public static final String STATUS = "status";
@@ -427,6 +431,7 @@ public class ApiConstants {
     public static final String CONDITION_IDS = "conditionids";
     public static final String COUNTERPARAM_LIST = "counterparam";
     public static final String AUTOSCALE_USER_ID = "autoscaleuserid";
+    public static final String DUAL_STACK = "dualstack";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

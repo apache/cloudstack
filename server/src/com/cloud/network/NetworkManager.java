@@ -123,7 +123,7 @@ public interface NetworkManager  {
 
     Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr,
             String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork physicalNetwork,
-            long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId) 
+            long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr) 
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     /**
@@ -167,7 +167,7 @@ public interface NetworkManager  {
 
     void allocateDirectIp(NicProfile nic, DataCenter dc,
             VirtualMachineProfile<? extends VirtualMachine> vm,
-            Network network, String requestedIp)
+            Network network, String requestedIpv4, String requestedIpv6)
             throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException;
 
@@ -327,4 +327,8 @@ public interface NetworkManager  {
     int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
 
     LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network);
+
+	PublicIpv6Address assignPublicIp6Address(long dcId, Long podId, Account owner,
+			VlanType type, Long networkId, String requestedIp, boolean isSystem)
+			throws InsufficientAddressCapacityException;
 }
