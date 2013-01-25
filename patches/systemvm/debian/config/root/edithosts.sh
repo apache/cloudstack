@@ -27,22 +27,28 @@
 # $6 : comma separated static routes
 
 usage() {
-  printf "Usage: %s: -m <MAC address> -4 <IPv4 address>  -h <hostname> -d <default router> -n <name server address> -s <Routes> \n" $(basename $0) >&2
+  printf "Usage: %s: -m <MAC address> -4 <IPv4 address> -6 <IPv6 address> -h <hostname> -d <default router> -n <name server address> -s <Routes> -u <DUID>\n" $(basename $0) >&2
 }
 
 mac=
 ipv4=
+ipv6=
 host=
 dflt=
 dns=
 routes=
+duid=
 
-while getopts 'm:4:h:d:n:s:' OPTION
+while getopts 'm:4:h:d:n:s:6:u:' OPTION
 do
   case $OPTION in
   m)    mac="$OPTARG"
         ;;
   4)    ipv4="$OPTARG"
+        ;;
+  6)    ipv6="$OPTARG"
+        ;;
+  u)    duid="$OPTARG"
         ;;
   h)    host="$OPTARG"
         ;;
@@ -95,26 +101,69 @@ logger -t cloud "edithosts: update $1 $2 $3 to hosts"
 [ ! -f $DHCP_LEASES ] && touch $DHCP_LEASES
 
 #delete any previous entries from the dhcp hosts file
-sed -i  /$mac/d $DHCP_HOSTS 
-sed -i  /$ipv4,/d $DHCP_HOSTS 
-sed -i  /$host,/d $DHCP_HOSTS 
+sed -i  /$mac/d $DHCP_HOSTS
+if [ $ipv4 ]
+then
+  sed -i  /$ipv4,/d $DHCP_HOSTS
+fi
+if [ $ipv6 ]
+then
+  sed -i  /$ipv6,/d $DHCP_HOSTS
+fi
+sed -i  /$host,/d $DHCP_HOSTS
 
 
 #put in the new entry
-echo "$mac,$ipv4,$host,infinite" >>$DHCP_HOSTS
+if [ $ipv4 ]
+then
+  echo "$mac,$ipv4,$host,infinite" >>$DHCP_HOSTS
+fi
+if [ $ipv6 ]
+then
+  echo "id:$duid,[$ipv6],$host,infinite" >>$DHCP_HOSTS
+fi
 
 #delete leases to supplied mac and ip addresses
-sed -i  /$mac/d $DHCP_LEASES 
-sed -i  /"$ipv4 "/d $DHCP_LEASES 
+if [ $ipv4 ]
+then
+  sed -i  /$mac/d $DHCP_LEASES 
+  sed -i  /"$ipv4 "/d $DHCP_LEASES 
+fi
+if [ $ipv6 ]
+then
+  sed -i  /$duid/d $DHCP_LEASES 
+  sed -i  /"$ipv6 "/d $DHCP_LEASES 
+fi
 sed -i  /"$host "/d $DHCP_LEASES 
 
 #put in the new entry
-echo "0 $mac $ipv4 $host *" >> $DHCP_LEASES
+if [ $ipv4 ]
+then
+  echo "0 $mac $ipv4 $host *" >> $DHCP_LEASES
+fi
+if [ $ipv6 ]
+then
+  echo "0 $duid $ipv6 $host *" >> $DHCP_LEASES
+fi
 
 #edit hosts file as well
-sed -i  /"$ipv4 "/d $HOSTS
+if [ $ipv4 ]
+then
+  sed -i  /"$ipv4 "/d $HOSTS
+fi
+if [ $ipv6 ]
+then
+  sed -i  /"$ipv6 "/d $HOSTS
+fi
 sed -i  /" $host$"/d $HOSTS
-echo "$ipv4 $host" >> $HOSTS
+if [ $ipv4 ]
+then
+  echo "$ipv4 $host" >> $HOSTS
+fi
+if [ $ipv6 ]
+then
+  echo "$ipv6 $host" >> $HOSTS
+fi
 
 if [ "$dflt" != "" ]
 then
