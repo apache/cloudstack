@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
+import java.net.URISyntaxException;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -29,17 +30,20 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
-import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
+import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.endpoint.EndPointSelector;
 import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
 import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.storage.encoding.DecodedDataObject;
+import com.cloud.utils.storage.encoding.Decoder;
 
 
 public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
@@ -48,6 +52,8 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     EndPointSelector selector;
     @Inject
     StoragePoolHostDao storeHostDao;
+    @Inject
+    DataObjectManager dataObjMgr;
     public DefaultPrimaryDataStoreDriverImpl() {
         
     }
@@ -158,7 +164,7 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         EndPoint ep = selector.select(vol);
         CreateObjectCommand createCmd = new CreateObjectCommand(vol.getUri());
         
-        CreateVolumeContext<CreateCmdResult> context = null;
+        CreateVolumeContext<CreateCmdResult> context = new CreateVolumeContext<CreateCmdResult>(callback, vol);
         AsyncCallbackDispatcher<DefaultPrimaryDataStoreDriverImpl, Answer> caller = AsyncCallbackDispatcher.create(this);
         caller.setContext(context)
             .setCallback(caller.getTarget().createAsyncCallback(null, null));
@@ -168,8 +174,28 @@ public class DefaultPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     @Override
     public String grantAccess(DataObject object, EndPoint ep) {
-        StoragePoolHostVO poolHost = storeHostDao.findByPoolHost(object.getDataStore().getId(), ep.getId());
-        return object.getUri() + "&storagePath=" + poolHost.getLocalPath();
+        //StoragePoolHostVO poolHost = storeHostDao.findByPoolHost(object.getDataStore().getId(), ep.getId());
+        
+        String uri = object.getUri();
+        try {
+            DecodedDataObject obj = Decoder.decode(uri);
+            if (obj.getPath() == null) {
+                //create an obj
+                EndPoint newEp = selector.select(object);
+                CreateObjectCommand createCmd = new CreateObjectCommand(uri);
+                CreateObjectAnswer answer = (CreateObjectAnswer)ep.sendMessage(createCmd);
+                if (answer.getResult()) {
+                    dataObjMgr.update(object, answer.getPath(), answer.getSize());
+                } else {
+                    s_logger.debug("failed to create object" + answer.getDetails());
+                    throw new CloudRuntimeException("failed to create object" + answer.getDetails());
+                }
+            }
+            
+            return object.getUri();
+        } catch (URISyntaxException e) {
+           throw new CloudRuntimeException("uri parsed error", e);
+        }
     }
 
     @Override

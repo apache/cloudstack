@@ -106,8 +106,8 @@ public class TemplateInstallStrategyImpl implements TemplateInstallStrategy {
         boolean freshNewTemplate = false;
         if (obj == null) {
             try {
-                templateOnPrimaryStoreObj = objectInDataStoreMgr.create(
-                        template, store);
+                /*templateOnPrimaryStoreObj = objectInDataStoreMgr.create(
+                        template, store);*/
                 freshNewTemplate = true;
             } catch (Throwable e) {
                 obj = objectInDataStoreMgr.findObject(template.getId(),
@@ -201,12 +201,13 @@ public class TemplateInstallStrategyImpl implements TemplateInstallStrategy {
                         .getRole());
 
         obj.setInstallPath(result.getPath());
+        obj.setSize(result.getSize());
         try {
-            objectInDataStoreMgr.update(templateOnPrimaryStoreObj,
+            objectInDataStoreMgr.update(obj,
                     ObjectInDataStoreStateMachine.Event.OperationSuccessed);
         } catch (NoTransitionException e) {
             try {
-                objectInDataStoreMgr.update(templateOnPrimaryStoreObj,
+                objectInDataStoreMgr.update(obj,
                         ObjectInDataStoreStateMachine.Event.OperationFailed);
             } catch (NoTransitionException e1) {
                 s_logger.debug("failed to change state", e1);
@@ -273,7 +274,7 @@ public class TemplateInstallStrategyImpl implements TemplateInstallStrategy {
         CreateBaseImageResult res = new CreateBaseImageResult(
                 templateOnPrimaryStoreObj);
         try {
-            objectInDataStoreMgr.update(templateOnPrimaryStoreObj,
+            objectInDataStoreMgr.update(obj,
                     ObjectInDataStoreStateMachine.Event.OperationSuccessed);
         } catch (NoTransitionException e) {
             s_logger.debug("Failed to update copying state: ", e);

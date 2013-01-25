@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
@@ -36,6 +37,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
 import org.apache.cloudstack.storage.datastore.provider.DataStoreProvider;
+import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
 import org.apache.cloudstack.storage.image.ImageDataFactory;
 import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.snapshot.SnapshotDataFactory;
@@ -48,6 +50,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.storage.encoding.EncodingType;
 
 public class DefaultPrimaryDataStore implements PrimaryDataStore {
     private static final Logger s_logger = Logger
@@ -126,11 +129,16 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     public String getUri() {
         String path = this.pdsv.getPath();
         path.replaceFirst("/*", "");
-        return this.pdsv.getPoolType() + ":" + File.separator + File.separator
-                + this.pdsv.getHostAddress() + File.separator
-                + this.pdsv.getPath() + File.separator
-                + "?role=" + this.getRole()
-                + "&storeUuid=" + this.pdsv.getUuid();
+        StringBuilder builder = new StringBuilder();
+        builder.append(this.pdsv.getPoolType());
+        builder.append("://");
+        builder.append(this.pdsv.getHostAddress());
+        builder.append(File.separator);
+        builder.append(this.pdsv.getPath());
+        builder.append(File.separator);
+        builder.append("?" + EncodingType.ROLE + "=" + this.getRole());
+        builder.append("&" + EncodingType.STOREUUID + "=" + this.pdsv.getUuid());
+        return builder.toString();
     }
 
     @Override
@@ -212,6 +220,10 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
 
     @Override
     public TemplateInfo getTemplate(long templateId) {
+        ObjectInDataStoreVO obj = objectInStoreMgr.findObject(templateId, DataObjectType.TEMPLATE, this.getId(), this.getRole());
+        if (obj == null) {
+            return null;
+        }
         return imageDataFactory.getTemplate(templateId, this);
     }
 

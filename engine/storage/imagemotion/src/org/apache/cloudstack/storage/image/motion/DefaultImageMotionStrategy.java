@@ -93,7 +93,7 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
                 || srcStore.getRole() == DataStoreRole.ImageCache) {
             return true;
         }
-        return false;
+        return true;
     }
 
     @Override
@@ -124,13 +124,14 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
     
     protected Void copyAsyncCallback(AsyncCallbackDispatcher<DefaultImageMotionStrategy, Answer> callback, CreateTemplateContext<CopyCommandResult> context) {
         AsyncCompletionCallback<CopyCommandResult> parentCall = context.getParentCallback();
-        CopyCmdAnswer answer = (CopyCmdAnswer)callback.getResult();
+        Answer answer = (Answer)callback.getResult();
         if (!answer.getResult()) {
             CopyCommandResult result = new CopyCommandResult("");
             result.setResult(answer.getDetails());
             parentCall.complete(result);
         } else {
-            CopyCommandResult result = new CopyCommandResult(answer.getPath());
+            CopyCmdAnswer ans = (CopyCmdAnswer)answer;
+            CopyCommandResult result = new CopyCommandResult(ans.getPath());
             parentCall.complete(result);
         }
         return null;

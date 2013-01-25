@@ -26,7 +26,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.db.ObjectInDataStoreDao;
 import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
 import org.apache.cloudstack.storage.image.ImageDataFactory;
-import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
 import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.Event;
@@ -83,17 +82,23 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     }
 
     @Override
-    public TemplateInfo create(TemplateInfo template, DataStore dataStore) {
+    public DataObject create(DataObject obj, DataStore dataStore) {
+        
         ObjectInDataStoreVO vo = new ObjectInDataStoreVO();
         vo.setDataStoreId(dataStore.getId());
         vo.setDataStoreRole(dataStore.getRole());
-        vo.setObjectId(template.getId());
+        vo.setObjectId(obj.getId());
+        vo.setSize(obj.getSize());
 
-        vo.setObjectType(template.getType());
+        vo.setObjectType(obj.getType());
         vo = objectDataStoreDao.persist(vo);
 
-        return imageFactory.getTemplate(template.getId(), dataStore);
-
+        if (obj.getType() == DataObjectType.TEMPLATE) {
+            return imageFactory.getTemplate(obj.getId(), dataStore);
+        } else if (obj.getType() == DataObjectType.VOLUME) {
+            return volumeFactory.getVolume(obj.getId(), dataStore); 
+        }
+        throw new CloudRuntimeException("unknown type");
     }
 
     @Override
@@ -144,5 +149,28 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         return this.stateMachines.transitTo(obj, event, null,
                 objectDataStoreDao);
 
+    }
+    
+    @Override
+    public boolean update(ObjectInDataStoreVO obj, Event event)
+            throws NoTransitionException {
+        return this.stateMachines.transitTo(obj, event, null,
+                objectDataStoreDao);
+
+    }
+
+    @Override
+    public DataObject get(DataObject dataObj, DataStore store) {
+        if (dataObj.getType() == DataObjectType.TEMPLATE) {
+            return imageFactory.getTemplate(dataObj.getId(), store);
+        } else if (dataObj.getType() == DataObjectType.VOLUME) {
+            return volumeFactory.getVolume(dataObj.getId(), store); 
+        }
+        throw new CloudRuntimeException("unknown type");
+    }
+
+    @Override
+    public boolean update(ObjectInDataStoreVO obj) {
+        return objectDataStoreDao.update(obj.getId(), obj);
     }
 }

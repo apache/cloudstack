@@ -22,7 +22,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -31,6 +32,7 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
+import org.apache.cloudstack.storage.datastore.DataObjectManager;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
@@ -54,6 +56,8 @@ public class VolumeServiceImpl implements VolumeService {
     PrimaryDataStoreProviderManager dataStoreMgr;
     @Inject
     ObjectInDataStoreManager objectInDataStoreMgr;
+    @Inject
+    DataObjectManager dataObjectMgr;
     @Inject
     ImageMotionService imageMotion;
     @Inject
@@ -85,6 +89,8 @@ public class VolumeServiceImpl implements VolumeService {
         
     }
     
+    
+    
     @Override
     public AsyncCallFuture<VolumeApiResult> createVolumeAsync(VolumeInfo volume, long dataStoreId) {
         PrimaryDataStore dataStore = dataStoreMgr.getPrimaryDataStore(dataStoreId);
@@ -107,16 +113,16 @@ public class VolumeServiceImpl implements VolumeService {
         vo.stateTransit(Volume.Event.CreateRequested);
 
         CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(null, vo, future);
-        AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
+        AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createVolumeCallback(null, null))
         .setContext(context);
         
-        //dataStore.createVolumeAsync(vo, null, caller);
+        dataObjectMgr.createAsync(volume, dataStore, caller, true);
         return future;
     }
     
-    protected Void createVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CommandResult> callback, CreateVolumeContext<VolumeApiResult> context) {
-        CommandResult result = callback.getResult();
+    protected Void createVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
+        CreateCmdResult result = callback.getResult();
         VolumeObject vo = context.getVolume();
         VolumeApiResult volResult = new VolumeApiResult(vo);
         if (result.isSuccess()) {
@@ -172,7 +178,7 @@ public class VolumeServiceImpl implements VolumeService {
         caller.setCallback(caller.getTarget().deleteVolumeCallback(null, null))
             .setContext(context);
         
-        dataStore.getDriver().deleteAsync(volume, caller);
+        dataObjectMgr.deleteAsync(volume, caller);
         return future;
     }
     
@@ -279,21 +285,23 @@ public class VolumeServiceImpl implements VolumeService {
     
     @DB
     protected void createBaseImageAsync(VolumeInfo volume, PrimaryDataStore dataStore, TemplateInfo template, AsyncCallFuture<VolumeApiResult> future) {
-        CreateBaseImageContext<VolumeApiResult> context = new CreateBaseImageContext<VolumeApiResult>(null, volume, 
+        CreateBaseImageContext<CreateCmdResult> context = new CreateBaseImageContext<CreateCmdResult>(null, volume, 
                 dataStore,
                 template,
                 future);
         
-        AsyncCallbackDispatcher<VolumeServiceImpl, CreateBaseImageResult> caller = AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().createBaseImageCallback(null, null))
+        AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().copyBaseImageCallback(null, null))
         .setContext(context);
-        
-        templateInstallStrategy.installAsync(template, dataStore, caller);
+        DataObject templateOnPrimaryStoreObj = dataObjectMgr.createInternalStateOnly(template, dataStore);
+     
+        dataObjectMgr.copyAsync(context.srcTemplate, templateOnPrimaryStoreObj, caller);
+        return;
     }
-
+    
     @DB
-    protected Void createBaseImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateBaseImageResult> callback, CreateBaseImageContext<VolumeApiResult> context) {
-        CreateBaseImageResult result = callback.getResult();
+    protected Void copyBaseImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateBaseImageContext<VolumeApiResult> context) {
+        CreateCmdResult result = callback.getResult();
         VolumeApiResult res = new VolumeApiResult(context.getVolume());
         
         AsyncCallFuture<VolumeApiResult> future = context.getFuture();
@@ -302,23 +310,26 @@ public class VolumeServiceImpl implements VolumeService {
             future.complete(res);
             return null;
         }
-        
-        //now create volume on base image
-        TemplateInfo templateOnPrimaryStoreObj = result.template;
-        VolumeInfo volume = context.getVolume();
-        PrimaryDataStore pd = context.getDataStore();
+        DataObject templateOnPrimaryStoreObj = objectInDataStoreMgr.get(context.srcTemplate, context.dataStore);
 
-        createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, pd, future);
+        createVolumeFromBaseImageAsync(context.volume, templateOnPrimaryStoreObj, context.dataStore, future);
         return null;
     }
     
     private class CreateVolumeFromBaseImageContext<T> extends AsyncRpcConext<T> {
         private final VolumeObject vo;
         private final AsyncCallFuture<VolumeApiResult> future;
-        public CreateVolumeFromBaseImageContext(AsyncCompletionCallback<T> callback, VolumeObject vo, AsyncCallFuture<VolumeApiResult> future) {
+        private final DataStore primaryStore;
+        private final DataObject templateOnStore;
+        public CreateVolumeFromBaseImageContext(AsyncCompletionCallback<T> callback, VolumeObject vo, 
+                DataStore primaryStore,
+                DataObject templateOnStore,
+                AsyncCallFuture<VolumeApiResult> future) {
             super(callback);
             this.vo = vo;
             this.future = future;
+            this.primaryStore = primaryStore;
+            this.templateOnStore = templateOnStore;
         }
         
         public VolumeObject getVolumeObject() {
@@ -331,7 +342,7 @@ public class VolumeServiceImpl implements VolumeService {
     }
     
     @DB
-    protected void createVolumeFromBaseImageAsync(VolumeInfo volume, TemplateInfo templateOnPrimaryStore, PrimaryDataStore pd, AsyncCallFuture<VolumeApiResult> future) {
+    protected void createVolumeFromBaseImageAsync(VolumeInfo volume, DataObject templateOnPrimaryStore, PrimaryDataStore pd, AsyncCallFuture<VolumeApiResult> future) {
         VolumeObject vo = (VolumeObject) volume;
         try {
             vo.stateTransit(Volume.Event.CreateRequested);
@@ -342,19 +353,22 @@ public class VolumeServiceImpl implements VolumeService {
             return;
         }
 
-        CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, vo, future);
-        AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller =  AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().createVolumeFromBaseImageCallback(null, null))
+        CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, vo, pd, templateOnPrimaryStore, future);
+        AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller =  AsyncCallbackDispatcher.create(this);
+        caller.setCallback(caller.getTarget().copyBaseImageCallBack(null, null))
         .setContext(context);
 
-       pd.getDriver().copyAsync(volume, templateOnPrimaryStore, caller);
+        DataObject volumeOnPrimaryStorage = dataObjectMgr.createInternalStateOnly(volume, pd);
+        dataObjectMgr.copyAsync(context.templateOnStore, volumeOnPrimaryStorage, caller);
+        return;
     }
     
     @DB
-    public Object createVolumeFromBaseImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CreateVolumeFromBaseImageContext<VolumeApiResult> context) {
+    public Void copyBaseImageCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeFromBaseImageContext<VolumeApiResult> context) {
         VolumeObject vo = context.getVolumeObject();
-        CopyCommandResult result = callback.getResult();
+        CreateCmdResult result = callback.getResult();
         VolumeApiResult volResult = new VolumeApiResult(vo);
+       
         if (result.isSuccess()) {
             if (result.getPath() != null) {
                 vo.setPath(result.getPath());
