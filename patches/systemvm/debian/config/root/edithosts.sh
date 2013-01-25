@@ -26,12 +26,37 @@
 # $5 : nameserver on default nic
 # $6 : comma separated static routes
 
-mac=$1
-ip=$2
-host=$3
-dflt=$4
-dns=$5
-routes=$6
+usage() {
+  printf "Usage: %s: -m <MAC address> -4 <IPv4 address>  -h <hostname> -d <default router> -n <name server address> -s <Routes> \n" $(basename $0) >&2
+}
+
+mac=
+ipv4=
+host=
+dflt=
+dns=
+routes=
+
+while getopts 'm:4:h:d:n:s:' OPTION
+do
+  case $OPTION in
+  m)    mac="$OPTARG"
+        ;;
+  4)    ipv4="$OPTARG"
+        ;;
+  h)    host="$OPTARG"
+        ;;
+  d)    dflt="$OPTARG"
+        ;;
+  n)    dns="$OPTARG"
+        ;;
+  s)    routes="$OPTARG"
+        ;;
+  ?)    usage
+        exit 2
+        ;;
+  esac
+done
 
 DHCP_HOSTS=/etc/dhcphosts.txt
 DHCP_OPTS=/etc/dhcpopts.txt
@@ -71,25 +96,25 @@ logger -t cloud "edithosts: update $1 $2 $3 to hosts"
 
 #delete any previous entries from the dhcp hosts file
 sed -i  /$mac/d $DHCP_HOSTS 
-sed -i  /$ip,/d $DHCP_HOSTS 
+sed -i  /$ipv4,/d $DHCP_HOSTS 
 sed -i  /$host,/d $DHCP_HOSTS 
 
 
 #put in the new entry
-echo "$mac,$ip,$host,infinite" >>$DHCP_HOSTS
+echo "$mac,$ipv4,$host,infinite" >>$DHCP_HOSTS
 
 #delete leases to supplied mac and ip addresses
 sed -i  /$mac/d $DHCP_LEASES 
-sed -i  /"$ip "/d $DHCP_LEASES 
+sed -i  /"$ipv4 "/d $DHCP_LEASES 
 sed -i  /"$host "/d $DHCP_LEASES 
 
 #put in the new entry
-echo "0 $mac $ip $host *" >> $DHCP_LEASES
+echo "0 $mac $ipv4 $host *" >> $DHCP_LEASES
 
 #edit hosts file as well
-sed -i  /"$ip "/d $HOSTS
+sed -i  /"$ipv4 "/d $HOSTS
 sed -i  /" $host$"/d $HOSTS
-echo "$ip $host" >> $HOSTS
+echo "$ipv4 $host" >> $HOSTS
 
 if [ "$dflt" != "" ]
 then
@@ -97,26 +122,26 @@ then
   sed -i /dhcp-optsfile/d /etc/dnsmasq.conf
   echo "dhcp-optsfile=$DHCP_OPTS" >> /etc/dnsmasq.conf
 
-  tag=$(echo $ip | tr '.' '_')
+  tag=$(echo $ipv4 | tr '.' '_')
   sed -i /$tag/d $DHCP_OPTS
   if [ "$dflt" != "0.0.0.0" ]
   then
-      logger -t cloud "$0: setting default router for $ip to $dflt"
+      logger -t cloud "$0: setting default router for $ipv4 to $dflt"
       echo "$tag,3,$dflt" >> $DHCP_OPTS
   else
-      logger -t cloud "$0: unset default router for $ip"
+      logger -t cloud "$0: unset default router for $ipv4"
       echo "$tag,3," >> $DHCP_OPTS
   fi
   if [ "$dns" != "" ] 
   then
-    logger -t cloud "$0: setting dns server for $ip to $dns"
+    logger -t cloud "$0: setting dns server for $ipv4 to $dns"
     echo "$tag,6,$dns" >> $DHCP_OPTS
   fi
   [ "$routes" != "" ] && echo "$tag,121,$routes" >> $DHCP_OPTS
   #delete entry we just put in because we need a tag
-  sed -i  /$mac/d $DHCP_HOSTS 
+  sed -i  /$ipv4/d $DHCP_HOSTS 
   #put it back with a tag
-  echo "$mac,set:$tag,$ip,$host,infinite" >>$DHCP_HOSTS
+  echo "$mac,set:$tag,$ipv4,$host,infinite" >>$DHCP_HOSTS
 fi
 
 # make dnsmasq re-read files
