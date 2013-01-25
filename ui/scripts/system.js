@@ -1328,6 +1328,7 @@
                                                           if(serviceObjArray == "DefaultSharedNetworkOfferingWithSGService"){
                                                                continue;
                                                               }
+                                                   }
 																			
 																			//comment out the following 12 lines because of CS-16718
 																			/*
