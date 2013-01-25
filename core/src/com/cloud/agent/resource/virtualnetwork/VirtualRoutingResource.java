@@ -569,7 +569,9 @@ public class VirtualRoutingResource implements Manager {
     protected synchronized Answer execute (final DhcpEntryCommand cmd) {
         final Script command  = new Script(_dhcpEntryPath, _timeout, s_logger);
         command.add("-r", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
-        command.add("-v", cmd.getVmIpAddress());
+        if (cmd.getVmIpAddress() != null) {
+        	command.add("-v", cmd.getVmIpAddress());
+        }
         command.add("-m", cmd.getVmMac());
         command.add("-n", cmd.getVmName());
         
@@ -582,6 +584,11 @@ public class VirtualRoutingResource implements Manager {
         
         if (cmd.getDefaultDns() != null) {
         	command.add("-N", cmd.getDefaultDns());
+        }
+        
+        if (cmd.getVmIp6Address() != null) {
+        	command.add("-6", cmd.getVmIp6Address());
+        	command.add("-u", cmd.getDuid());
         }
 
         final String result = command.execute();

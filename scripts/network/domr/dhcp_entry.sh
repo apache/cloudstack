@@ -22,7 +22,7 @@
 # @VERSION@
 
 usage() {
-  printf "Usage: %s: -r <domr-ip> -m <vm mac> -v <vm ip> -n <vm name> -s <static route> -d <default router> -N <dns>\n" $(basename $0) >&2
+  printf "Usage: %s: -r <domr-ip> -m <vm mac> -v <vm ip> -n <vm name> -s <static route> -d <default router> -N <dns> -6 <vm IPv6> -u <duid>\n" $(basename $0) >&2
   exit 2
 }
 
@@ -35,10 +35,12 @@ vmName=
 staticrt=
 dfltrt=
 dns=
+ipv6=
+duid=
 
 opts=
 
-while getopts 'r:m:v:n:d:s:N:' OPTION
+while getopts 'r:m:v:n:d:s:N:6:u:' OPTION
 do
   case $OPTION in
   r)  domrIp="$OPTARG"
@@ -60,6 +62,12 @@ do
       ;;
   N)  dns="$OPTARG"
       opts="$opts -n $dns"
+      ;;
+  6)  ipv6="$OPTARG"
+      opts="$opts -6 $ipv6"
+      ;;
+  u)  duid="$OPTARG"
+      opts="$opts -u $duid"
       ;;
   ?)  usage
       exit 1

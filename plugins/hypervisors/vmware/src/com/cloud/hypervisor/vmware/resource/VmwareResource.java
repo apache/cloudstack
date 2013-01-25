@@ -1630,7 +1630,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         // ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$domr "/root/edithosts.sh $mac $ip $vm $dfltrt $ns $staticrt" >/dev/null
         String args = " -m " + cmd.getVmMac();
-        args += " -4 " + cmd.getVmIpAddress();
+        if (cmd.getVmIpAddress() != null) {
+        	args += " -4 " + cmd.getVmIpAddress();
+        }
         args += " -h " + cmd.getVmName();
         
         if (cmd.getDefaultRouter() != null) {
@@ -1642,7 +1644,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         if (cmd.getStaticRoutes() != null) {
-            args +=  " -s " + cmd.getStaticRoutes();
+            args += " -s " + cmd.getStaticRoutes();
+        }
+        
+        if (cmd.getVmIp6Address() != null) {
+        	args += " -6 " + cmd.getVmIp6Address();
+        	args += " -u " + cmd.getDuid();
         }
         
         if (s_logger.isDebugEnabled()) {
