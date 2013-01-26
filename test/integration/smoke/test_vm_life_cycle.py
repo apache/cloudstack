@@ -869,11 +869,18 @@ class TestVMLifeCycle(cloudstackTestCase):
         if expunge_cycle < 600:
             expunge_cycle = 600
 
-        time.sleep(expunge_cycle * 2)
-        list_vm_response = list_virtual_machines(
+        wait_time = expunge_cycle * 2
+        while wait_time >= 0:
+            list_vm_response = list_virtual_machines(
                                                 self.apiclient,
                                                 id=self.small_virtual_machine.id
                                                 )
+            if list_vm_response:
+                time.sleep(expunge_cycle)
+                wait_time = wait_time - expunge_cycle
+            else:
+                break
+
         self.assertEqual(
                         list_vm_response,
                         None,
