@@ -39,7 +39,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventGenerator;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.*;
 import com.cloud.host.Host;
@@ -336,9 +336,9 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
             VlanVO vlan = _vlanDao.findById(addr.getVlanId());
 
             String guestType = vlan.getVlanType().toString();
-            UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(),
-                    addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), addr.isSourceNat(), guestType, 
-                    addr.getSystem());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(),
+                    addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), addr.isSourceNat(), guestType,
+                    addr.getSystem(), addr.getClass().getName(), addr.getUuid());
             // don't increment resource count for direct ip addresses
             if (addr.getAssociatedWithNetworkId() != null) {
                 _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
@@ -2664,9 +2664,9 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
 
                 String guestType = vlan.getVlanType().toString();
 
-                UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE,
-                        ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), 
-                        ip.isSourceNat(), guestType, ip.getSystem());
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE,
+                        ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(),
+                        ip.isSourceNat(), guestType, ip.getSystem(), ip.getClass().getName(), ip.getUuid());
             }
 
             ip = _ipAddressDao.markAsUnavailable(addrId);

@@ -16,37 +16,12 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
-import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.BackupSnapshotAnswer;
-import com.cloud.agent.api.BackupSnapshotCommand;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.DeleteSnapshotBackupCommand;
-import com.cloud.agent.api.DeleteSnapshotsDirCommand;
-import com.cloud.agent.api.DownloadSnapshotFromS3Command;
-import com.cloud.agent.api.ManageSnapshotAnswer;
-import com.cloud.agent.api.ManageSnapshotCommand;
-import com.cloud.agent.api.downloadSnapshotFromSwiftCommand;
+import com.cloud.agent.api.*;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.alert.AlertManager;
-import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
-import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -55,11 +30,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.ActionEvent;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
-import com.cloud.event.EventVO;
-import com.cloud.event.UsageEventGenerator;
+import com.cloud.event.*;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -69,44 +40,21 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ResourceTag.TaggedResourceType;
-import com.cloud.storage.Snapshot;
+import com.cloud.storage.*;
 import com.cloud.storage.Snapshot.Status;
 import com.cloud.storage.Snapshot.Type;
-import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.SnapshotScheduleVO;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotPolicyDao;
-import com.cloud.storage.dao.SnapshotScheduleDao;
-import com.cloud.storage.dao.StoragePoolDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.*;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.DomainManager;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.User;
-import com.cloud.user.UserContext;
+import com.cloud.user.*;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
@@ -116,18 +64,22 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.*;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
+import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import java.util.*;
 
 @Local(value = { SnapshotManager.class, SnapshotService.class })
 public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Manager {
@@ -444,8 +396,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 //Check if the snapshot was removed while backingUp. If yes, do not log snapshot create usage event
                 SnapshotVO freshSnapshot = _snapshotDao.findById(snapshot.getId());
                 if ((freshSnapshot != null) && backedUp) {
-                    UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
-                            volume.getSize());
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(),
+                            snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
+                            volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
                 }
                 if( !backedUp ) {
 
@@ -766,7 +719,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             s_logger.debug("Max snaps: " + policy.getMaxSnaps() + " exceeded for snapshot policy with Id: " + policyId + ". Deleting oldest snapshot: " + oldSnapId);
             if(deleteSnapshotInternal(oldSnapId)){
                 //log Snapshot delete event
-                EventUtils.saveActionEvent(User.UID_SYSTEM, oldestSnapshot.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_SNAPSHOT_DELETE, "Successfully deleted oldest snapshot: " + oldSnapId, 0);
+                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, oldestSnapshot.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_SNAPSHOT_DELETE, "Successfully deleted oldest snapshot: " + oldSnapId, 0);
             }
             snaps.remove(oldestSnapshot);
         }
@@ -812,7 +765,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         txn.start();
         _snapshotDao.remove(snapshotId);
         if (snapshot.getStatus() == Snapshot.Status.BackedUp) {
-            UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null, 0L);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(),
+                    snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null, 0L,
+                    snapshot.getClass().getName(), snapshot.getUuid());
         }
         _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
         txn.commit();
@@ -1113,8 +1068,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                     }
 
                     // Log event after successful deletion
-                    UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), volume.getDataCenterId(), snapshot.getId(), snapshot.getName(), null, null,
-                            volume.getSize());
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(),
+                            volume.getDataCenterId(), snapshot.getId(), snapshot.getName(), null, null,
+                            volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
                 }
             }
         }

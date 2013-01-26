@@ -157,9 +157,13 @@ public class RabbitMQEventBus implements EventBus {
                             if (queueDetails != null) {
                                 EventSubscriber subscriber = queueDetails.third();
                                 String routingKey =  envelope.getRoutingKey();
-                                Event event = new Event(null, getEventCategoryFromRoutingKey(routingKey),
-                                        getEventTypeFromRoutingKey(routingKey), null, null);
-                                event.setDescription(body.toString());
+                                String eventSource = getEventSourceFromRoutingKey(routingKey);
+                                String eventCategory = getEventCategoryFromRoutingKey(routingKey);
+                                String eventType = getEventTypeFromRoutingKey(routingKey);
+                                String resourceType = getResourceTypeFromRoutingKey(routingKey);
+                                Event event = new Event(eventSource, eventCategory, eventType,
+                                        resourceType, null);
+                                event.setDescription(new String(body));
 
                                 // deliver the event to call back object provided by subscriber
                                 subscriber.onEvent(event);
@@ -399,6 +403,16 @@ public class RabbitMQEventBus implements EventBus {
         return keyParts[0];
     }
 
+    private String getResourceTypeFromRoutingKey(String routingKey) {
+        String[] keyParts =  routingKey.split("\\.");
+        return keyParts[3];
+    }
+
+    private String getResourceUUIDFromRoutingKey(String routingKey) {
+        String[] keyParts =  routingKey.split("\\.");
+        return keyParts[4];
+    }
+
     @Override
     public String getName() {
         return _name;
@@ -508,9 +522,15 @@ public class RabbitMQEventBus implements EventBus {
                                         if (subscriberDetails != null) {
                                             EventSubscriber subscriber = subscriberDetails.third();
                                             String routingKey =  envelope.getRoutingKey();
-                                            Event event = new Event(null, getEventCategoryFromRoutingKey(routingKey),
-                                                    getEventTypeFromRoutingKey(routingKey), null, null);
-                                            event.setDescription(body.toString());
+                                            String eventSource = getEventSourceFromRoutingKey(routingKey);
+                                            String eventCategory = getEventCategoryFromRoutingKey(routingKey);
+                                            String eventType = getEventTypeFromRoutingKey(routingKey);
+                                            String resourceType = getResourceTypeFromRoutingKey(routingKey);
+
+                                            // create event object from the message details obtained from AMQP server
+                                            Event event = new Event(eventSource, eventCategory, eventType,
+                                                    resourceType, null);
+                                            event.setDescription(new String(body));
 
                                             // deliver the event to call back object provided by subscriber
                                             subscriber.onEvent(event);

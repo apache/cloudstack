@@ -17,27 +17,17 @@
 package com.cloud.event;
 
 import com.cloud.user.UserContext;
-import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.AnnotationInterceptor;
-import com.cloud.utils.component.ComponentLocator;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
-import org.apache.cloudstack.framework.events.Event;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.log4j.Logger;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ActionEventCallback implements MethodInterceptor, AnnotationInterceptor<EventVO> {
 
-    protected static EventBus _eventBus = null;
-    protected static boolean _eventBusLoaded = false;
     private static final Logger s_logger = Logger.getLogger(ActionEventCallback.class);
 
     @Override
@@ -88,8 +78,7 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
                 if(ctx.getEventDetails() != null){
                     eventDescription += ". "+ctx.getEventDetails();
                 }
-                EventUtils.saveStartedActionEvent(userId, accountId, actionEvent.eventType(), eventDescription, startEventId);
-                publishOnEventBus(userId, accountId, actionEvent.eventType(), com.cloud.event.Event.State.Started, eventDescription);
+                ActionEventUtils.onStartedActionEvent(userId, accountId, actionEvent.eventType(), eventDescription, startEventId);
             }
         }
         return event;
@@ -110,12 +99,10 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
             }            
             if(actionEvent.create()){
                 //This start event has to be used for subsequent events of this action
-                startEventId = EventUtils.saveCreatedActionEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully created entity for "+eventDescription);
-                publishOnEventBus(userId, accountId, actionEvent.eventType(), com.cloud.event.Event.State.Created, "Successfully created entity for " + eventDescription);
+                startEventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully created entity for " + eventDescription);
                 ctx.setStartEventId(startEventId);
             } else {
-                EventUtils.saveActionEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully completed "+eventDescription, startEventId);
-                publishOnEventBus(userId, accountId, actionEvent.eventType(), com.cloud.event.Event.State.Completed, "Successfully completed " + eventDescription + startEventId);
+                ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully completed " + eventDescription, startEventId);
             }
         }
     }
@@ -134,10 +121,10 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
                 eventDescription += ". "+ctx.getEventDetails();
             }
             if(actionEvent.create()){
-                long eventId = EventUtils.saveCreatedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while creating entity for " + eventDescription);
+                long eventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while creating entity for " + eventDescription);
                 ctx.setStartEventId(eventId);
             } else {
-                EventUtils.saveActionEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while " + eventDescription, startEventId);
+                ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while " + eventDescription, startEventId);
             }
         }
     }
@@ -145,49 +132,5 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
     @Override
     public Callback getCallback() {
         return this;
-    }
-
-    void publishOnEventBus(long userId, long accountId, String eventType, com.cloud.event.Event.State state, String description) {
-        if (getEventBus() != null) {
-            Map<String, String> eventDescription = new HashMap<String, String>();
-            eventDescription.put("user", String.valueOf(userId));
-            eventDescription.put("account", String.valueOf(accountId));
-            eventDescription.put("state", state.toString());
-            eventDescription.put("description", description);
-
-            int index = eventType.lastIndexOf("\\.");
-
-            String resourceType = null;
-            if (index != -1 ) {
-                resourceType = eventType.substring(0, index);
-            }
-
-            Event event = new Event(null, EventCategory.ACTION_EVENT.getName(), eventType,
-                    resourceType, null);
-            event.setDescription(eventDescription);
-
-            try {
-                _eventBus.publish(event);
-            } catch (EventBusException e) {
-                s_logger.warn("Failed to publish action event on the the event bus.");
-            }
-        }
-    }
-
-    private EventBus getEventBus() {
-        if (_eventBus == null) {
-            if (!_eventBusLoaded) {
-                ComponentLocator locator = ComponentLocator.getLocator("management-server");
-                Adapters<EventBus> eventBusImpls = locator.getAdapters(EventBus.class);
-                if (eventBusImpls != null) {
-                    Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
-                    if (eventBusenum != null && eventBusenum.hasMoreElements()) {
-                        _eventBus = eventBusenum.nextElement();
-                    }
-                }
-                _eventBusLoaded = true;
-            }
-        }
-        return _eventBus;
     }
 }

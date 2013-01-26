@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.event.UsageEventUtils;
 import org.apache.cloudstack.api.command.admin.storage.*;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
@@ -104,7 +105,6 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventGenerator;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -650,9 +650,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot);
         if (volumeDetails != null) {
             createdVolume = volumeDetails.first();
-            UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), 
-                createdVolume.getDataCenterId(), createdVolume.getId(), createdVolume.getName(), createdVolume.getDiskOfferingId(), 
-                null, createdVolume.getSize());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(),
+                    createdVolume.getDataCenterId(), createdVolume.getId(), createdVolume.getName(), createdVolume.getDiskOfferingId(),
+                    null, createdVolume.getSize(), Volume.class.getName(), createdVolume.getUuid());
         }
         return createdVolume;
     }
@@ -772,7 +772,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         volume.setPoolId(destPool.getId());
         volume.setPodId(destPool.getPodId());
         stateTransitTo(volume, Event.CopySucceeded); 
-        UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(), null, volume.getSize());
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
+                volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(),
+                null, volume.getSize(), Volume.class.getName(), volume.getUuid());
         _volumeHostDao.remove(volumeHostVO.getId());
     	txn.commit();
 		return volume;
@@ -2055,7 +2057,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         volume = _volsDao.persist(volume);
         if(cmd.getSnapshotId() == null){
             //for volume created from snapshot, create usage event after volume creation
-            UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
+                    volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size,
+                    Volume.class.getName(), volume.getUuid());
         }
 
         UserContext.current().setEventDetails("Volume Id: " + volume.getId());
@@ -2300,7 +2304,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             // Decrement the resource count for volumes belonging user VM's only
             _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
             // Log usage event for volumes belonging user VM's only
-            UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(),
+                    volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    Volume.class.getName(), volume.getUuid());
         }
 
         try {
@@ -3134,7 +3140,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         // Save usage event and update resource count for user vm volumes
         if (vm instanceof UserVm) {
-            UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null, size);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(),
+                    vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null, size,
+                    Volume.class.getName(), vol.getUuid());
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
         }
         return toDiskProfile(vol, offering);
@@ -3195,8 +3203,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                 offeringId = offering.getId();
             }
 
-            UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, template.getId(),
-                    vol.getSize());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(),
+                    vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, template.getId(),
+                    vol.getSize(), Volume.class.getName(), vol.getUuid());
 
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
         }
