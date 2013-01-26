@@ -108,7 +108,7 @@ def write_entity_classes(entities):
     entitydict = {}
     #TODO: Add license header for ASLv2
     for entity, actions in entities.iteritems():
-        code = ''
+        code = 'from . import CloudStackEntity\n'
         code += 'class %s(CloudStackEntity):'%entity
         for action, args in actions.iteritems():
             code += '\n\n'
@@ -160,7 +160,7 @@ def write_entity_factory(entity, actions):
             writer.write(code)
     else:
         code += 'import factory\n'
-        code += 'from marvin.integration.lib.newbase import %s\n'%entity
+        code += 'from marvin.integration.lib.base import %s\n'%entity
         code += 'class %sFactory(factory.Factory):'%entity
         code += '\n\n'
         code += tabspace + 'FACTORY_FOR = %s\n\n'%entity

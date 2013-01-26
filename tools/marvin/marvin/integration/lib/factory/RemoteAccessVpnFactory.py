@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import RemoteAccessVpn
+from marvin.integration.lib.base import RemoteAccessVpn
 class RemoteAccessVpnFactory(factory.Factory):
 
     FACTORY_FOR = RemoteAccessVpn

@@ -14,6 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+from . import CloudStackEntity
 class VpnUser(CloudStackEntity):
 
     def add(self, apiclient, username, password, **kwargs):

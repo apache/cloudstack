@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import NetworkOffering
+from marvin.integration.lib.base import NetworkOffering
 class NetworkOfferingFactory(factory.Factory):
 
     FACTORY_FOR = NetworkOffering

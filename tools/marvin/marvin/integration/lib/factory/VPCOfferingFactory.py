@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import VPCOffering
+from marvin.integration.lib.base import VPCOffering
 class VPCOfferingFactory(factory.Factory):
 
     FACTORY_FOR = VPCOffering

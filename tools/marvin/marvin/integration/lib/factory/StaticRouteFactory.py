@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import StaticRoute
+from marvin.integration.lib.base import StaticRoute
 class StaticRouteFactory(factory.Factory):
 
     FACTORY_FOR = StaticRoute

@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import StorageNetworkIpRange
+from marvin.integration.lib.base import StorageNetworkIpRange
 class StorageNetworkIpRangeFactory(factory.Factory):
 
     FACTORY_FOR = StorageNetworkIpRange

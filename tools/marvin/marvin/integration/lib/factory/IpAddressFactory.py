@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import IpAddress
+from marvin.integration.lib.base import IpAddress
 class IpAddressFactory(factory.Factory):
 
     FACTORY_FOR = IpAddress

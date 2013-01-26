@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import VirtualRouterElement
+from marvin.integration.lib.base import VirtualRouterElement
 class VirtualRouterElementFactory(factory.Factory):
 
     FACTORY_FOR = VirtualRouterElement

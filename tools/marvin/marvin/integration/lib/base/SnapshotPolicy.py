@@ -14,6 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+from . import CloudStackEntity
 class SnapshotPolicy(CloudStackEntity):
 
     def create(self, apiclient, SnapshotPolicyFactory, timezone, maxsnaps, schedule, volumeid, intervaltype, **kwargs):

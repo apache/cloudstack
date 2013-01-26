@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import StoragePool
+from marvin.integration.lib.base import StoragePool
 class StoragePoolFactory(factory.Factory):
 
     FACTORY_FOR = StoragePool

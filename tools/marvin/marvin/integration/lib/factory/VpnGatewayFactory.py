@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import VpnGateway
+from marvin.integration.lib.base import VpnGateway
 class VpnGatewayFactory(factory.Factory):
 
     FACTORY_FOR = VpnGateway

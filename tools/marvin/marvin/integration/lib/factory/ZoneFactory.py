@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import Zone
+from marvin.integration.lib.base import Zone
 class ZoneFactory(factory.Factory):
 
     FACTORY_FOR = Zone

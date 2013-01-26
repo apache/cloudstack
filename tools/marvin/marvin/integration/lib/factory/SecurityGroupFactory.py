@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import SecurityGroup
+from marvin.integration.lib.base import SecurityGroup
 class SecurityGroupFactory(factory.Factory):
 
     FACTORY_FOR = SecurityGroup

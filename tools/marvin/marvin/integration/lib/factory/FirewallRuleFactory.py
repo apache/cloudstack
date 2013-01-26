@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import FirewallRule
+from marvin.integration.lib.base import FirewallRule
 class FirewallRuleFactory(factory.Factory):
 
     FACTORY_FOR = FirewallRule

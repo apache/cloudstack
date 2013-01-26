@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import PhysicalNetwork
+from marvin.integration.lib.base import PhysicalNetwork
 class PhysicalNetworkFactory(factory.Factory):
 
     FACTORY_FOR = PhysicalNetwork

@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import Domain
+from marvin.integration.lib.base import Domain
 class DomainFactory(factory.Factory):
 
     FACTORY_FOR = Domain

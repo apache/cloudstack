@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import SnapshotPolicy
+from marvin.integration.lib.base import SnapshotPolicy
 class SnapshotPolicyFactory(factory.Factory):
 
     FACTORY_FOR = SnapshotPolicy

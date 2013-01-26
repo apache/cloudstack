@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import LoadBalancerRule
+from marvin.integration.lib.base import LoadBalancerRule
 class LoadBalancerRuleFactory(factory.Factory):
 
     FACTORY_FOR = LoadBalancerRule

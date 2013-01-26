@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import Project
+from marvin.integration.lib.base import Project
 class ProjectFactory(factory.Factory):
 
     FACTORY_FOR = Project

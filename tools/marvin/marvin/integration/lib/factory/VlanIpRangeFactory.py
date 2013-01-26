@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import VlanIpRange
+from marvin.integration.lib.base import VlanIpRange
 class VlanIpRangeFactory(factory.Factory):
 
     FACTORY_FOR = VlanIpRange

@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import UserKeys
+from marvin.integration.lib.base import UserKeys
 class UserKeysFactory(factory.Factory):
 
     FACTORY_FOR = UserKeys

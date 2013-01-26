@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import AutoScalePolicy
+from marvin.integration.lib.base import AutoScalePolicy
 class AutoScalePolicyFactory(factory.Factory):
 
     FACTORY_FOR = AutoScalePolicy

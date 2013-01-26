@@ -14,6 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+from . import CloudStackEntity
 class NetworkOffering(CloudStackEntity):
 
     def create(self, apiclient, NetworkOfferingFactory, guestiptype, traffictype, displaytext, name, supportedservices, **kwargs):

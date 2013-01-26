@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import PrivateGateway
+from marvin.integration.lib.base import PrivateGateway
 class PrivateGatewayFactory(factory.Factory):
 
     FACTORY_FOR = PrivateGateway

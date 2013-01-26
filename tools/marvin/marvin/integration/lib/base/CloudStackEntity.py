@@ -14,14 +14,12 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
-class NetworkDevice(CloudStackEntity):
 
-    def add(self, apiclient, **kwargs):
-        pass
+cloudstack_version = "4.1.0"
 
-    def list(self, apiclient, **kwargs):
-        pass
+class CloudStackEntity(object):
 
-    def delete(self, apiclient, id, **kwargs):
-        pass
+    __version__ = cloudstack_version
+
+    def getVersion(self):
+        return self.__version__

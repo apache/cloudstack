@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import PortForwardingRule
+from marvin.integration.lib.base import PortForwardingRule
 class PortForwardingRuleFactory(factory.Factory):
 
     FACTORY_FOR = PortForwardingRule

@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import Account
+from marvin.integration.lib.base import Account
 class AccountFactory(factory.Factory):
 
     FACTORY_FOR = Account

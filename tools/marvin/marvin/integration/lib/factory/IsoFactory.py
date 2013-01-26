@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import Iso
+from marvin.integration.lib.base import Iso
 class IsoFactory(factory.Factory):
 
     FACTORY_FOR = Iso

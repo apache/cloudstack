@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-from marvin.integration.lib.newbase import VirtualMachine
+from marvin.integration.lib.base import VirtualMachine
 class VirtualMachineFactory(factory.Factory):
 
     FACTORY_FOR = VirtualMachine
