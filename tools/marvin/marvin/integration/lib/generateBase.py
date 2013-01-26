@@ -29,7 +29,23 @@ grammar = ['create', 'list', 'delete', 'update',
            'copy', 'extract', 'migrate', 'restore', 'suspend',
            'get', 'query', 'prepare', 'deploy', 'upload', 'lock', 'disassociate']
 
-aslv2 = ""
+LICENSE = """# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+"""
 
 
 def get_api_cmds():
@@ -89,11 +105,11 @@ def get_actionable_entities():
 
 def write_entity_classes(entities):
     tabspace = '    '
-    classlist = []
+    entitydict = {}
     #TODO: Add license header for ASLv2
-    code = ''
     for entity, actions in entities.iteritems():
-        code += 'class %s:'%entity
+        code = ''
+        code += 'class %s(CloudStackEntity):'%entity
         for action, args in actions.iteritems():
             code += '\n\n'
             code += tabspace
@@ -110,9 +126,12 @@ def write_entity_classes(entities):
             code += tabspace*2
             code += 'pass'
         code += '\n\n'
-        classlist.append(code)
+        entitydict[entity] = code
         write_entity_factory(entity, actions)
-    return list(set(classlist))
+        with open("./base/%s.py"%entity, "w") as writer:
+            writer.write(LICENSE)
+            writer.write(code)
+
 
 def write_entity_factory(entity, actions):
     tabspace = '    '
@@ -133,6 +152,10 @@ def write_entity_factory(entity, actions):
     if os.path.exists("./factory/%sFactory.py"%entity):
         for arg in factory_defaults[0]:
             code += tabspace + '%s = None\n'%arg
+        with open("./factory/%sFactory.py"%entity, "r") as reader:
+            rcode = reader.read()
+            if rcode.find(code) > 0:
+                return
         with open("./factory/%sFactory.py"%entity, "a") as writer:
             writer.write(code)
     else:
@@ -144,10 +167,9 @@ def write_entity_factory(entity, actions):
         for arg in factory_defaults[0]:
             code += tabspace + '%s = None\n'%arg
         with open("./factory/%sFactory.py"%entity, "w") as writer:
+            writer.write(LICENSE)
             writer.write(code)
 
 if __name__=='__main__':
     entities = get_actionable_entities()
-    clslist = write_entity_classes(entities)
-    for cls in clslist:
-        print cls
+    write_entity_classes(entities)

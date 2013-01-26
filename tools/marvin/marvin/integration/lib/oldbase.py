@@ -3420,25 +3420,25 @@ class VmSnapshot:
         if description:
             cmd.description = description
         return VmSnapshot(apiclient.createVMSnapshot(cmd).__dict__)
-    
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         cmd = listVMSnapshot.listVMSnapshotCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVMSnapshot(cmd))
-    
+
     @classmethod
     def revertToSnapshot(cls, apiclient,vmsnapshotid):
         cmd = revertToVMSnapshot.revertToVMSnapshotCmd()
         cmd.vmsnapshotid = vmsnapshotid
-        
+
         return apiclient.revertToVMSnapshot(cmd)
-    
+
     @classmethod
     def deleteVMSnapshot(cls,apiclient,vmsnapshotid):
         cmd = deleteVMSnapshot.deleteVMSnapshotCmd()
         cmd.vmsnapshotid = vmsnapshotid
-        
+
         return apiclient.deleteVMSnapshot(cmd)
 
 class Region:
