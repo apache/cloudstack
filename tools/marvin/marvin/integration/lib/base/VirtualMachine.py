@@ -17,16 +17,22 @@
 from . import CloudStackEntity
 class VirtualMachine(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def restore(self, apiclient, virtualmachineid, **kwargs):
         pass
 
-    def deploy(self, apiclient, zoneid, serviceofferingid, templateid, **kwargs):
+    @classmethod
+    def deploy(cls, apiclient, VirtualMachineFactory, **kwargs):
         pass
 
     def migrate(self, apiclient, virtualmachineid, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def stop(self, apiclient, id, **kwargs):

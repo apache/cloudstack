@@ -17,6 +17,10 @@
 from . import CloudStackEntity
 class StorageMaintenance(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def cancel(self, apiclient, id, **kwargs):
         pass
 

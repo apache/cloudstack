@@ -17,10 +17,16 @@
 from . import CloudStackEntity
 class VpnCustomerGateway(CloudStackEntity):
 
-    def create(self, apiclient, VpnCustomerGatewayFactory, ipsecpsk, cidrlist, esppolicy, ikepolicy, gateway, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, VpnCustomerGatewayFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, ikepolicy, cidrlist, gateway, ipsecpsk, esppolicy, id, **kwargs):

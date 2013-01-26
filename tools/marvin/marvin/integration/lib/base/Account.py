@@ -15,7 +15,12 @@
 # specific language governing permissions and limitations
 # under the License.
 from . import CloudStackEntity
+
 class Account(CloudStackEntity):
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
 
     def enable(self, apiclient, **kwargs):
         pass
@@ -23,10 +28,15 @@ class Account(CloudStackEntity):
     def lock(self, apiclient, account, domainid, **kwargs):
         pass
 
-    def create(self, apiclient, AccountFactory, username, firstname, lastname, accounttype, password, email, **kwargs):
-        pass
+    @classmethod
+    def create(cls, apiclient, AccountFactory, **kwargs):
+        cmd = createAccount.createAccountCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in AccountFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        return Account(apiclient.createAccount(cmd).__dict__)
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, newname, **kwargs):

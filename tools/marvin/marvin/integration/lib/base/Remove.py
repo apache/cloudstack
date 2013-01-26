@@ -17,5 +17,9 @@
 from . import CloudStackEntity
 class Remove(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def ldap(self, apiclient):
         pass

@@ -17,6 +17,10 @@
 from . import CloudStackEntity
 class IpAddress(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def disassociate(self, apiclient, id, **kwargs):
         pass
 

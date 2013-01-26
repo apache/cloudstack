@@ -17,5 +17,9 @@
 from . import CloudStackEntity
 class ResourceCount(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def update(self, apiclient, domainid, **kwargs):
         pass

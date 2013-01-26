@@ -17,8 +17,13 @@
 from . import CloudStackEntity
 class Swift(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def add(self, apiclient, url, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass

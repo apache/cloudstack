@@ -17,10 +17,16 @@
 from . import CloudStackEntity
 class RemoteAccessVpn(CloudStackEntity):
 
-    def create(self, apiclient, RemoteAccessVpnFactory, publicipid, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, RemoteAccessVpnFactory, **kwargs):
         pass
 
-    def list(self, apiclient, publicipid, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def delete(self, apiclient, publicipid, **kwargs):

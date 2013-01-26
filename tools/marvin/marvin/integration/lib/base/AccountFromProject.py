@@ -17,5 +17,9 @@
 from . import CloudStackEntity
 class AccountFromProject(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def delete(self, apiclient, projectid, account, **kwargs):
         pass

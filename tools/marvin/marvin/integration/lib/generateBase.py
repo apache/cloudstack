@@ -110,15 +110,22 @@ def write_entity_classes(entities):
     for entity, actions in entities.iteritems():
         code = 'from . import CloudStackEntity\n'
         code += 'class %s(CloudStackEntity):'%entity
+        code += '\n\n'
+        code += tabspace + 'def __init__(self, items):\n'
+        code += tabspace*2 + 'self.__dict__.update(items)\n'
         for action, args in actions.iteritems():
             code += '\n\n'
+            if action in ['create', 'list', 'deploy']:
+                code += tabspace + '@classmethod\n'
             code += tabspace
-            if action.startswith('create'):
-                code += 'def %s(self, apiclient, %sFactory'%(action, entity)
+            if action in ['create', 'deploy']:
+                code += 'def %s(cls, apiclient, %sFactory'%(action, entity)
+            elif action in ['list']:
+                code += 'def %s(cls, apiclient'%(action)
             else:
                 code += 'def %s(self, apiclient'%(action)
-            if len(args[0]) > 0:
-                code += ', ' + ', '.join(list(set(args[0])))
+                if len(args[0]) > 0:
+                    code += ', ' + ', '.join(list(set(args[0])))
             if len(args[1]) > 0:
                 code += ', **kwargs):\n'
             else:

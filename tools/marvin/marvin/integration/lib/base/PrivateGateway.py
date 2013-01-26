@@ -17,10 +17,16 @@
 from . import CloudStackEntity
 class PrivateGateway(CloudStackEntity):
 
-    def create(self, apiclient, PrivateGatewayFactory, netmask, vlan, ipaddress, gateway, vpcid, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, PrivateGatewayFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def delete(self, apiclient, id, **kwargs):

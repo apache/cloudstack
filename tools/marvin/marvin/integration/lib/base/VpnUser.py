@@ -17,10 +17,15 @@
 from . import CloudStackEntity
 class VpnUser(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def add(self, apiclient, username, password, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def remove(self, apiclient, username, **kwargs):

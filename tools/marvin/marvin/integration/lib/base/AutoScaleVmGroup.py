@@ -17,13 +17,19 @@
 from . import CloudStackEntity
 class AutoScaleVmGroup(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def enable(self, apiclient, id, **kwargs):
         pass
 
-    def create(self, apiclient, AutoScaleVmGroupFactory, scaledownpolicyids, maxmembers, scaleuppolicyids, vmprofileid, minmembers, lbruleid, **kwargs):
+    @classmethod
+    def create(cls, apiclient, AutoScaleVmGroupFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, id, **kwargs):

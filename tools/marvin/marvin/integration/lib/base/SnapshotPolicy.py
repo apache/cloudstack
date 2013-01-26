@@ -17,5 +17,10 @@
 from . import CloudStackEntity
 class SnapshotPolicy(CloudStackEntity):
 
-    def create(self, apiclient, SnapshotPolicyFactory, timezone, maxsnaps, schedule, volumeid, intervaltype, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, SnapshotPolicyFactory, **kwargs):
         pass

@@ -17,13 +17,19 @@
 from . import CloudStackEntity
 class VpnConnection(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def reset(self, apiclient, id, **kwargs):
         pass
 
-    def create(self, apiclient, VpnConnectionFactory, s2scustomergatewayid, s2svpngatewayid, **kwargs):
+    @classmethod
+    def create(cls, apiclient, VpnConnectionFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def delete(self, apiclient, id, **kwargs):

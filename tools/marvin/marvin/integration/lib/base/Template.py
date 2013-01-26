@@ -17,16 +17,22 @@
 from . import CloudStackEntity
 class Template(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def prepare(self, apiclient, zoneid, templateid, **kwargs):
         pass
 
-    def create(self, apiclient, TemplateFactory, displaytext, name, ostypeid, **kwargs):
+    @classmethod
+    def create(cls, apiclient, TemplateFactory, **kwargs):
         pass
 
     def register(self, apiclient, name, format, url, hypervisor, zoneid, displaytext, ostypeid, **kwargs):
         pass
 
-    def list(self, apiclient, templatefilter, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, id, **kwargs):

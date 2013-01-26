@@ -17,6 +17,10 @@
 from . import CloudStackEntity
 class StaticNat(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def enable(self, apiclient, ipaddressid, virtualmachineid, **kwargs):
         pass
 

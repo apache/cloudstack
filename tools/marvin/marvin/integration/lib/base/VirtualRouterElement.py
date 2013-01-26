@@ -17,10 +17,16 @@
 from . import CloudStackEntity
 class VirtualRouterElement(CloudStackEntity):
 
-    def create(self, apiclient, VirtualRouterElementFactory, nspid, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, VirtualRouterElementFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def configure(self, apiclient, enabled, id, **kwargs):

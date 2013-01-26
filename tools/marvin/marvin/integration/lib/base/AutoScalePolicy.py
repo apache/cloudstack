@@ -17,7 +17,12 @@
 from . import CloudStackEntity
 class AutoScalePolicy(CloudStackEntity):
 
-    def create(self, apiclient, AutoScalePolicyFactory, action, duration, conditionids, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, AutoScalePolicyFactory, **kwargs):
         pass
 
     def update(self, apiclient, id, **kwargs):

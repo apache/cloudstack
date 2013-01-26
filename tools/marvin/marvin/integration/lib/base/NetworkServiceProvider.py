@@ -17,10 +17,15 @@
 from . import CloudStackEntity
 class NetworkServiceProvider(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def add(self, apiclient, physicalnetworkid, name, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, id, **kwargs):

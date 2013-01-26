@@ -17,6 +17,10 @@
 from . import CloudStackEntity
 class SecurityGroupIngress(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def authorize(self, apiclient, **kwargs):
         pass
 

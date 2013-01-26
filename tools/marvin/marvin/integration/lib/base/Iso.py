@@ -17,13 +17,18 @@
 from . import CloudStackEntity
 class Iso(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def copy(self, apiclient, sourcezoneid, id, destzoneid, **kwargs):
         pass
 
     def register(self, apiclient, url, displaytext, name, zoneid, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, id, **kwargs):

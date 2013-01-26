@@ -17,7 +17,12 @@
 from . import CloudStackEntity
 class UsageRecords(CloudStackEntity):
 
-    def list(self, apiclient, startdate, enddate, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def generate(self, apiclient, startdate, enddate, **kwargs):

@@ -17,6 +17,10 @@
 from . import CloudStackEntity
 class ApiLimit(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def reset(self, apiclient, **kwargs):
         pass
 

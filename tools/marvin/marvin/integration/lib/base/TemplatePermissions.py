@@ -17,7 +17,12 @@
 from . import CloudStackEntity
 class TemplatePermissions(CloudStackEntity):
 
-    def list(self, apiclient, id, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, id, **kwargs):

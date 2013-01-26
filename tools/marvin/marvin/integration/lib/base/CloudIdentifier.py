@@ -17,5 +17,9 @@
 from . import CloudStackEntity
 class CloudIdentifier(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def get(self, apiclient, userid, **kwargs):
         pass

@@ -17,10 +17,16 @@
 from . import CloudStackEntity
 class StaticRoute(CloudStackEntity):
 
-    def create(self, apiclient, StaticRouteFactory, gatewayid, cidr, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, StaticRouteFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def delete(self, apiclient, id, **kwargs):

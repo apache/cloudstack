@@ -17,6 +17,10 @@
 from . import CloudStackEntity
 class User(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def enable(self, apiclient, id, **kwargs):
         pass
 
@@ -26,10 +30,12 @@ class User(CloudStackEntity):
     def lock(self, apiclient, id, **kwargs):
         pass
 
-    def create(self, apiclient, UserFactory, username, account, firstname, lastname, password, email, **kwargs):
+    @classmethod
+    def create(cls, apiclient, UserFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, id, **kwargs):

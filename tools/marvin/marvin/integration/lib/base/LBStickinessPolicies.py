@@ -17,5 +17,10 @@
 from . import CloudStackEntity
 class LBStickinessPolicies(CloudStackEntity):
 
-    def list(self, apiclient, lbruleid, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass

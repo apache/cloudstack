@@ -17,10 +17,15 @@
 from . import CloudStackEntity
 class TrafficType(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def add(self, apiclient, traffictype, physicalnetworkid, **kwargs):
         pass
 
-    def list(self, apiclient, physicalnetworkid, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, id, **kwargs):

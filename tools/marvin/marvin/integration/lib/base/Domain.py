@@ -17,10 +17,16 @@
 from . import CloudStackEntity
 class Domain(CloudStackEntity):
 
-    def create(self, apiclient, DomainFactory, name, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, DomainFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, id, **kwargs):

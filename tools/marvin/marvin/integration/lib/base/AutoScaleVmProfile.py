@@ -17,10 +17,16 @@
 from . import CloudStackEntity
 class AutoScaleVmProfile(CloudStackEntity):
 
-    def create(self, apiclient, AutoScaleVmProfileFactory, zoneid, serviceofferingid, templateid, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, AutoScaleVmProfileFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, id, **kwargs):

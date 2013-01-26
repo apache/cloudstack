@@ -17,10 +17,16 @@
 from . import CloudStackEntity
 class StorageNetworkIpRange(CloudStackEntity):
 
-    def create(self, apiclient, StorageNetworkIpRangeFactory, startip, netmask, gateway, podid, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, StorageNetworkIpRangeFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, id, **kwargs):

@@ -17,5 +17,10 @@
 from . import CloudStackEntity
 class ProjectAccounts(CloudStackEntity):
 
-    def list(self, apiclient, projectid, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass

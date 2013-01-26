@@ -17,10 +17,16 @@
 from . import CloudStackEntity
 class PortForwardingRule(CloudStackEntity):
 
-    def create(self, apiclient, PortForwardingRuleFactory, publicport, virtualmachineid, protocol, ipaddressid, privateport, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, PortForwardingRuleFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, publicport, protocol, ipaddressid, privateport, **kwargs):

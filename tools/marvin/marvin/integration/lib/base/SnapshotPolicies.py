@@ -17,7 +17,12 @@
 from . import CloudStackEntity
 class SnapshotPolicies(CloudStackEntity):
 
-    def list(self, apiclient, volumeid, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def delete(self, apiclient, **kwargs):

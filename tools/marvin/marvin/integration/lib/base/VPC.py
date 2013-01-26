@@ -17,10 +17,16 @@
 from . import CloudStackEntity
 class VPC(CloudStackEntity):
 
-    def create(self, apiclient, VPCFactory, cidr, zoneid, displaytext, name, vpcofferingid, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, VPCFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, **kwargs):

@@ -17,13 +17,19 @@
 from . import CloudStackEntity
 class Volume(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def migrate(self, apiclient, storageid, volumeid, **kwargs):
         pass
 
-    def create(self, apiclient, VolumeFactory, name, **kwargs):
+    @classmethod
+    def create(cls, apiclient, VolumeFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def upload(self, apiclient, url, zoneid, name, format, **kwargs):

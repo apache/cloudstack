@@ -17,10 +17,16 @@
 from . import CloudStackEntity
 class Tags(CloudStackEntity):
 
-    def create(self, apiclient, TagsFactory, resourcetype, resourceids, tags, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, TagsFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def delete(self, apiclient, resourcetype, resourceids, **kwargs):

@@ -17,5 +17,9 @@
 from . import CloudStackEntity
 class PasswordForVirtualMachine(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def reset(self, apiclient, id, **kwargs):
         pass

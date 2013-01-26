@@ -17,13 +17,19 @@
 from . import CloudStackEntity
 class SSHKeyPair(CloudStackEntity):
 
-    def create(self, apiclient, SSHKeyPairFactory, name, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, SSHKeyPairFactory, **kwargs):
         pass
 
     def register(self, apiclient, publickey, name, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def delete(self, apiclient, name, **kwargs):

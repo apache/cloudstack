@@ -17,7 +17,12 @@
 from . import CloudStackEntity
 class LBStickinessPolicy(CloudStackEntity):
 
-    def create(self, apiclient, LBStickinessPolicyFactory, lbruleid, methodname, name, **kwargs):
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    @classmethod
+    def create(cls, apiclient, LBStickinessPolicyFactory, **kwargs):
         pass
 
     def delete(self, apiclient, id, **kwargs):

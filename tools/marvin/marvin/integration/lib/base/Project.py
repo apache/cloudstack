@@ -17,13 +17,19 @@
 from . import CloudStackEntity
 class Project(CloudStackEntity):
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def suspend(self, apiclient, id, **kwargs):
         pass
 
-    def create(self, apiclient, ProjectFactory, displaytext, name, **kwargs):
+    @classmethod
+    def create(cls, apiclient, ProjectFactory, **kwargs):
         pass
 
-    def list(self, apiclient, **kwargs):
+    @classmethod
+    def list(cls, apiclient, **kwargs):
         pass
 
     def update(self, apiclient, id, **kwargs):
