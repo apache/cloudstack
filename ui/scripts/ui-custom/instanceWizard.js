@@ -636,7 +636,7 @@
 
                   // My networks
                   $step.find('.my-networks .select-container').append(
-                    makeSelects('my-networks', $.merge(args.data.myNetworks, args.data.sharedNetworks), {
+                    makeSelects('my-networks', args.data.networkObjs, {
                       name: 'name',
                       desc: 'type',
                       id: 'id'
@@ -821,6 +821,16 @@
                 cloudStack.dialog.notice({ message: 'message.step.4.continue' });
                 return false;
               }
+
+              if ($activeStep.hasClass('next-use-security-groups')) {
+                var advSGFilter = args.advSGFilter({
+                  data: cloudStack.serializeForm($form)
+                });
+
+                if (!advSGFilter) {
+                  showStep(6);
+                }
+              }
             }
 						
 						//step 6 - review (spcifiy displyname, group as well)		
@@ -850,8 +860,19 @@
 
           // Previous button
           if ($target.closest('div.button.previous').size()) {
-            var index = $steps.filter(':visible').index();
-            if (index) showStep(index);
+            var $step = $steps.filter(':visible');
+            var $networkStep = $steps.filter('.network');
+            var index = $step.index();
+
+            $networkStep.removeClass('next-use-security-groups');
+
+            if (index) {
+              if (index == $steps.size() - 1 && $networkStep.hasClass('next-use-security-groups')) {
+                showStep(5);
+              } else {
+                showStep(index);
+              }
+            }
 
             return false;
           }

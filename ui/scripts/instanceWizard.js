@@ -16,7 +16,7 @@
 // under the License. 
 
 (function($, cloudStack) {
-  var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, community;
+  var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, community, networkObjs;
   var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj; 
   var step5ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group'
 
@@ -38,6 +38,33 @@
       return vpcID != -1?
         data.vpcid == vpcID :
         !data.vpcid;
+    },
+
+    // Runs when advanced SG-enabled zone is run, before
+    // the security group step
+    //
+    // -- if it returns false, then 'Select Security Group' is skipped.
+    //
+    advSGFilter: function(args) {
+      var selectedNetworks;
+      
+      if ($.isArray(args.data['my-networks'])) {
+        selectedNetworks = $(args.data['my-networks']).map(function(index, myNetwork) {
+          return $.grep(networkObjs, function(networkObj) {
+            return networkObj.id == myNetwork;
+          });
+        });        
+      } else {
+        selectedNetworks = $.grep(networkObjs, function(networkObj) {
+          return networkObj.id == args.data['my-networks'];
+        });
+      }
+
+      return $.grep(selectedNetworks, function(network) {
+        return $.grep(network.service, function(service) {
+          return service.name == 'SecurityGroup';
+        }).length;
+      }).length;
     },
 
     // Data providers for each wizard step
@@ -284,6 +311,7 @@
 						$networkStep.find("#from_instance_page_2").show();
 						$networkStep.find("#from_vpc_tier").text("");			
 						$networkStep.find("#from_vpc_tier").hide();
+            $networkStepContainer.removeClass('next-use-security-groups');
 					} else { // Advanced SG-enabled zone
 					  step5ContainerType = 'select-advanced-sg';
 					}
@@ -328,7 +356,8 @@
       if(step5ContainerType == 'select-network' || step5ContainerType == 'select-advanced-sg') {
         var defaultNetworkArray = [], optionalNetworkArray = [];
         var networkData = {
-          zoneId: args.currentData.zoneid
+          zoneId: args.currentData.zoneid,
+					canusefordeploy: true
         };
 				
 				// step5ContainerType of Advanced SG-enabled zone is 'select-security-group', so won't come into this block
@@ -345,7 +374,7 @@
           networkData.account = g_account;
         }
 
-        var networkObjs, vpcObjs;
+        var vpcObjs;
 
         //listVPCs without account/domainid/listAll parameter will return only VPCs belonging to the current login. That's what should happen in Instances page's VM Wizard. 
 				//i.e. If the current login is root-admin, do not show VPCs belonging to regular-user/domain-admin in Instances page's VM Wizard. 
@@ -363,6 +392,18 @@
           async: false,
           success: function(json) {
             networkObjs = json.listnetworksresponse.network ? json.listnetworksresponse.network : [];
+
+						if(networkObjs.length > 0) {
+						  for(var i = 0; i < networkObjs.length; i++) {
+								var networkObj = networkObjs[i];    
+								var serviceObjArray = networkObj.service;
+								for(var k = 0; k < serviceObjArray.length; k++) {
+									if(serviceObjArray[k].name == "SecurityGroup") {
+									  networkObjs[i].type = networkObjs[i].type + ' (sg)';																		
+									}
+								}
+							}
+            }						
           }
         });
                   
@@ -384,15 +425,21 @@
         });
         //get network offerings (end)	***			
 
+        $networkStepContainer.removeClass('repeat next-use-security-groups');
+
         if (step5ContainerType == 'select-advanced-sg') {
           $networkStepContainer.addClass('repeat next-use-security-groups');
+
+          // Add guest network is disabled
+          $networkStepContainer.find('.select-network').addClass('no-add-network');
+        } else {
+          $networkStepContainer.find('.select-network').removeClass('no-add-network');
         }
 
         args.response.success({
           type: 'select-network',
-          data: {
-            myNetworks: [], //not used any more
-            sharedNetworks: networkObjs,
+          data: {            
+            networkObjs: networkObjs,
             securityGroups: [],
             networkOfferings: networkOfferingObjs,
             vpcs: vpcObjs
@@ -423,9 +470,8 @@
         });
         args.response.success({
           type: 'select-security-group',
-          data: {
-            myNetworks: [], //not used any more
-            sharedNetworks: [],
+          data: {            
+            networkObjs: [],
             securityGroups: securityGroupArray,
             networkOfferings: [],
             vpcs: []
@@ -436,9 +482,8 @@
       else if(step5ContainerType == 'nothing-to-select') {
         args.response.success({
           type: 'nothing-to-select',
-          data: {
-            myNetworks: [], //not used any more
-            sharedNetworks: [],
+          data: {            
+            networkObjs: [],
             securityGroups: [],
             networkOfferings: [],
             vpcs: []

@@ -46,7 +46,6 @@ import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
-import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.UpgradeSystemVMCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
@@ -55,8 +54,6 @@ import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
-import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
-import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
 import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
@@ -91,9 +88,6 @@ import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
-import com.cloud.api.query.dao.DomainRouterJoinDao;
-import com.cloud.api.query.dao.InstanceGroupJoinDao;
-
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
 import org.apache.cloudstack.api.response.ExtractResponse;
@@ -103,13 +97,11 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
-import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Configuration;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -139,8 +131,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
-import com.cloud.event.dao.EventJoinDao;
-import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
@@ -179,7 +169,6 @@ import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
@@ -187,7 +176,6 @@ import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Mode;
@@ -195,7 +183,6 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolDao;
@@ -220,12 +207,10 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
@@ -258,7 +243,6 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
-import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -274,12 +258,10 @@ public class ManagementServerImpl implements ManagementServer {
     private final AlertManager _alertMgr;
     private final IPAddressDao _publicIpAddressDao;
     private final DomainRouterDao _routerDao;
-    private final DomainRouterJoinDao _routerJoinDao;
     private final ConsoleProxyDao _consoleProxyDao;
     private final ClusterDao _clusterDao;
     private final SecondaryStorageVmDao _secStorageVmDao;
     private final EventDao _eventDao;
-    private final EventJoinDao _eventJoinDao;
     private final DataCenterDao _dcDao;
     private final VlanDao _vlanDao;
     private final AccountVlanMapDao _accountVlanMapDao;
@@ -294,7 +276,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final SwiftManager _swiftMgr;
     private final S3Manager _s3Mgr;
     private final ServiceOfferingDao _offeringsDao;
-    private final DiskOfferingDao _diskOfferingDao;
     private final VMTemplateDao _templateDao;
     private final DomainDao _domainDao;
     private final AccountDao _accountDao;
@@ -303,25 +284,21 @@ public class ManagementServerImpl implements ManagementServer {
     private final GuestOSDao _guestOSDao;
     private final GuestOSCategoryDao _guestOSCategoryDao;
     private final StoragePoolDao _poolDao;
-    private final NicDao _nicDao;
     private final NetworkDao _networkDao;
     private final StorageManager _storageMgr;
     private final VirtualMachineManager _itMgr;
     private final HostPodDao _hostPodDao;
     private final VMInstanceDao _vmInstanceDao;
     private final VolumeDao _volumeDao;
-    private final AsyncJobDao _jobDao;
     private final AsyncJobManager _asyncMgr;
     private final int _purgeDelay;
     private final InstanceGroupDao _vmGroupDao;
-    private final InstanceGroupJoinDao _vmGroupJoinDao;
     private final UploadMonitor _uploadMonitor;
     private final UploadDao _uploadDao;
     private final SSHKeyPairDao _sshKeyPairDao;
     private final LoadBalancerDao _loadbalancerDao;
     private final HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     private final Adapters<HostAllocator> _hostAllocators;
-    private final ConfigurationManager _configMgr;
     private final ResourceTagDao _resourceTagDao;
 
     @Inject
@@ -340,6 +317,8 @@ public class ManagementServerImpl implements ManagementServer {
 
     private final Map<String, String> _configs;
 
+    // even though this _statsCollector is never used here, but we create the singleton here to avoid null pointer exception in other places
+    // like ApiDbUtils to reference StatsCollector instance.
     private final StatsCollector _statsCollector;
 
     private final Map<String, Boolean> _availableIdsMap;
@@ -352,9 +331,7 @@ public class ManagementServerImpl implements ManagementServer {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
         _configDao = locator.getDao(ConfigurationDao.class);
         _routerDao = locator.getDao(DomainRouterDao.class);
-        _routerJoinDao = locator.getDao(DomainRouterJoinDao.class);
         _eventDao = locator.getDao(EventDao.class);
-        _eventJoinDao = locator.getDao(EventJoinDao.class);
         _dcDao = locator.getDao(DataCenterDao.class);
         _vlanDao = locator.getDao(VlanDao.class);
         _accountVlanMapDao = locator.getDao(AccountVlanMapDao.class);
@@ -362,9 +339,7 @@ public class ManagementServerImpl implements ManagementServer {
         _hostDao = locator.getDao(HostDao.class);
         _detailsDao = locator.getDao(HostDetailsDao.class);
         _hostPodDao = locator.getDao(HostPodDao.class);
-        _jobDao = locator.getDao(AsyncJobDao.class);
         _clusterDao = locator.getDao(ClusterDao.class);
-        _nicDao = locator.getDao(NicDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
         _loadbalancerDao = locator.getDao(LoadBalancerDao.class);
 
@@ -382,7 +357,6 @@ public class ManagementServerImpl implements ManagementServer {
         _userDao = locator.getDao(UserDao.class);
         _userVmDao = locator.getDao(UserVmDao.class);
         _offeringsDao = locator.getDao(ServiceOfferingDao.class);
-        _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
         _templateDao = locator.getDao(VMTemplateDao.class);
         _domainDao = locator.getDao(DomainDao.class);
         _accountDao = locator.getDao(AccountDao.class);
@@ -392,7 +366,6 @@ public class ManagementServerImpl implements ManagementServer {
         _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
         _poolDao = locator.getDao(StoragePoolDao.class);
         _vmGroupDao = locator.getDao(InstanceGroupDao.class);
-        _vmGroupJoinDao = locator.getDao(InstanceGroupJoinDao.class);
         _uploadDao = locator.getDao(UploadDao.class);
         _configs = _configDao.getConfiguration();
         _vmInstanceDao = locator.getDao(VMInstanceDao.class);
@@ -403,7 +376,6 @@ public class ManagementServerImpl implements ManagementServer {
         _itMgr = locator.getManager(VirtualMachineManager.class);
         _ksMgr = locator.getManager(KeystoreManager.class);
         _resourceMgr = locator.getManager(ResourceManager.class);
-        _configMgr = locator.getManager(ConfigurationManager.class);
         _resourceTagDao = locator.getDao(ResourceTagDao.class);
 
         _hypervisorCapabilitiesDao = locator.getDao(HypervisorCapabilitiesDao.class);
@@ -444,119 +416,7 @@ public class ManagementServerImpl implements ManagementServer {
         return PasswordGenerator.generateRandomPassword(6);
     }
 
-    @Override
-    public List<DataCenterVO> listDataCenters(ListZonesByCmd cmd) {
-        Account account = UserContext.current().getCaller();
-        List<DataCenterVO> dcs = null;
-        Long domainId = cmd.getDomainId();
-        Long id = cmd.getId();
-        boolean removeDisabledZones = false;
-        String keyword = cmd.getKeyword();
-        if (domainId != null) {
-            // for domainId != null
-            // right now, we made the decision to only list zones associated
-            // with this domain
-            dcs = _dcDao.findZonesByDomainId(domainId, keyword); // private
-                                                                 // zones
-        } else if ((account == null || account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
-            if (keyword != null) {
-                dcs = _dcDao.findByKeyword(keyword);
-            } else {
-                dcs = _dcDao.listAll(); // all zones
-            }
-        } else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-            // it was decided to return all zones for the user's domain, and
-            // everything above till root
-            // list all zones belonging to this domain, and all of its parents
-            // check the parent, if not null, add zones for that parent to list
-            dcs = new ArrayList<DataCenterVO>();
-            DomainVO domainRecord = _domainDao.findById(account.getDomainId());
-            if (domainRecord != null) {
-                while (true) {
-                    dcs.addAll(_dcDao.findZonesByDomainId(domainRecord.getId(), keyword));
-                    if (domainRecord.getParent() != null) {
-                        domainRecord = _domainDao.findById(domainRecord.getParent());
-                    } else {
-                        break;
-                    }
-                }
-            }
-            // add all public zones too
-            dcs.addAll(_dcDao.listPublicZones(keyword));
-            removeDisabledZones = true;
-        } else if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            // it was decided to return all zones for the domain admin, and
-            // everything above till root
-            dcs = new ArrayList<DataCenterVO>();
-            DomainVO domainRecord = _domainDao.findById(account.getDomainId());
-            // this covers path till root
-            if (domainRecord != null) {
-                DomainVO localRecord = domainRecord;
-                while (true) {
-                    dcs.addAll(_dcDao.findZonesByDomainId(localRecord.getId(), keyword));
-                    if (localRecord.getParent() != null) {
-                        localRecord = _domainDao.findById(localRecord.getParent());
-                    } else {
-                        break;
-                    }
-                }
-            }
-            // this covers till leaf
-            if (domainRecord != null) {
-                // find all children for this domain based on a like search by
-                // path
-                List<DomainVO> allChildDomains = _domainDao.findAllChildren(domainRecord.getPath(), domainRecord.getId());
-                List<Long> allChildDomainIds = new ArrayList<Long>();
-                // create list of domainIds for search
-                for (DomainVO domain : allChildDomains) {
-                    allChildDomainIds.add(domain.getId());
-                }
-                // now make a search for zones based on this
-                if (allChildDomainIds.size() > 0) {
-                    List<DataCenterVO> childZones = _dcDao.findChildZones((allChildDomainIds.toArray()), keyword);
-                    dcs.addAll(childZones);
-                }
-            }
-            // add all public zones too
-            dcs.addAll(_dcDao.listPublicZones(keyword));
-            removeDisabledZones = true;
-        }
 
-        if (removeDisabledZones) {
-            dcs.removeAll(_dcDao.listDisabledZones());
-        }
-
-        Boolean available = cmd.isAvailable();
-        if (account != null) {
-            if ((available != null) && Boolean.FALSE.equals(available)) {
-                List<DomainRouterVO> routers = _routerDao.listBy(account.getId());
-                for (Iterator<DataCenterVO> iter = dcs.iterator(); iter.hasNext();) {
-                    DataCenterVO dc = iter.next();
-                    boolean found = false;
-                    for (DomainRouterVO router : routers) {
-                        if (dc.getId() == router.getDataCenterIdToDeployIn()) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        iter.remove();
-                    }
-                }
-            }
-        }
-
-        if (id != null) {
-            List<DataCenterVO> singleZone = new ArrayList<DataCenterVO>();
-            for (DataCenterVO zone : dcs) {
-                if (zone.getId() == id) {
-                    singleZone.add(zone);
-                }
-            }
-            return singleZone;
-        }
-        return dcs;
-    }
 
     @Override
     public HostVO getHostBy(long hostId) {
@@ -633,221 +493,6 @@ public class ManagementServerImpl implements ManagementServer {
         return cal.getTime();
     }
 
-    // This method is used for permissions check for both disk and service
-    // offerings
-    private boolean isPermissible(Long accountDomainId, Long offeringDomainId) {
-
-        if (accountDomainId == offeringDomainId) {
-            return true; // account and service offering in same domain
-        }
-
-        DomainVO domainRecord = _domainDao.findById(accountDomainId);
-
-        if (domainRecord != null) {
-            while (true) {
-                if (domainRecord.getId() == offeringDomainId) {
-                    return true;
-                }
-
-                // try and move on to the next domain
-                if (domainRecord.getParent() != null) {
-                    domainRecord = _domainDao.findById(domainRecord.getParent());
-                } else {
-                    break;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    @Override
-    public List<ServiceOfferingVO> searchForServiceOfferings(ListServiceOfferingsCmd cmd) {
-
-        // Note
-        // The list method for offerings is being modified in accordance with
-        // discussion with Will/Kevin
-        // For now, we will be listing the following based on the usertype
-        // 1. For root, we will list all offerings
-        // 2. For domainAdmin and regular users, we will list everything in
-        // their domains+parent domains ... all the way
-        // till
-        // root
-        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-        isAscending = (isAscending == null ? true : isAscending);
-        Filter searchFilter = new Filter(ServiceOfferingVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchCriteria<ServiceOfferingVO> sc = _offeringsDao.createSearchCriteria();
-
-        Account caller = UserContext.current().getCaller();
-        Object name = cmd.getServiceOfferingName();
-        Object id = cmd.getId();
-        Object keyword = cmd.getKeyword();
-        Long vmId = cmd.getVirtualMachineId();
-        Long domainId = cmd.getDomainId();
-        Boolean isSystem = cmd.getIsSystem();
-        String vmTypeStr = cmd.getSystemVmType();
-
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && isSystem) {
-            throw new InvalidParameterValueException("Only ROOT admins can access system's offering");
-        }
-
-        // Keeping this logic consistent with domain specific zones
-        // if a domainId is provided, we just return the so associated with this
-        // domain
-        if (domainId != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-            // check if the user's domain == so's domain || user's domain is a
-            // child of so's domain
-            if (!isPermissible(caller.getDomainId(), domainId)) {
-                throw new PermissionDeniedException("The account:" + caller.getAccountName()
-                        + " does not fall in the same domain hierarchy as the service offering");
-            }
-        }
-
-        // For non-root users
-        if ((caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
-                || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            if (isSystem) {
-                throw new InvalidParameterValueException("Only root admins can access system's offering");
-            }
-            return searchServiceOfferingsInternal(caller, name, id, vmId, keyword, searchFilter);
-        }
-
-        // for root users, the existing flow
-        if (caller.getDomainId() != 1 && isSystem) { // NON ROOT admin
-            throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
-        }
-
-        if (keyword != null) {
-            SearchCriteria<ServiceOfferingVO> ssc = _offeringsDao.createSearchCriteria();
-            ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        } else if (vmId != null) {
-            UserVmVO vmInstance = _userVmDao.findById(vmId);
-            if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a virtual machine with specified id");
-                ex.addProxyObject(vmInstance, vmId, "vmId");
-                throw ex;
-            }
-
-            _accountMgr.checkAccess(caller, null, true, vmInstance);
-
-            ServiceOfferingVO offering = _offeringsDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
-            sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
-
-            // Only return offerings with the same Guest IP type and storage
-            // pool preference
-            // sc.addAnd("guestIpType", SearchCriteria.Op.EQ,
-            // offering.getGuestIpType());
-            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
-        }
-        if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
-        }
-
-        if (isSystem != null) {
-            sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
-        }
-
-        if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
-        }
-
-        if (domainId != null) {
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        }
-
-        if (vmTypeStr != null) {
-            sc.addAnd("vm_type", SearchCriteria.Op.EQ, vmTypeStr);
-        }
-
-        sc.addAnd("removed", SearchCriteria.Op.NULL);
-        return _offeringsDao.search(sc, searchFilter);
-
-    }
-
-    private List<ServiceOfferingVO> searchServiceOfferingsInternal(Account caller, Object name, Object id, Long vmId, Object keyword,
-            Filter searchFilter) {
-
-        // it was decided to return all offerings for the user's domain, and
-        // everything above till root (for normal user
-        // or
-        // domain admin)
-        // list all offerings belonging to this domain, and all of its parents
-        // check the parent, if not null, add offerings for that parent to list
-        List<ServiceOfferingVO> sol = new ArrayList<ServiceOfferingVO>();
-        DomainVO domainRecord = _domainDao.findById(caller.getDomainId());
-        boolean includePublicOfferings = true;
-        if (domainRecord != null) {
-            while (true) {
-                if (id != null) {
-                    ServiceOfferingVO so = _offeringsDao.findById((Long) id);
-                    if (so != null) {
-                        sol.add(so);
-                    }
-                    return sol;
-                }
-
-                SearchCriteria<ServiceOfferingVO> sc = _offeringsDao.createSearchCriteria();
-
-                if (keyword != null) {
-                    includePublicOfferings = false;
-                    SearchCriteria<ServiceOfferingVO> ssc = _offeringsDao.createSearchCriteria();
-                    ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-                    ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-                    sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-                } else if (vmId != null) {
-                    UserVmVO vmInstance = _userVmDao.findById(vmId);
-                    if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
-                        InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
-                        ex.addProxyObject(vmInstance, vmId, "vmId");
-                        throw ex;
-                    }
-
-                    _accountMgr.checkAccess(caller, null, false, vmInstance);
-
-                    ServiceOfferingVO offering = _offeringsDao.findById(vmInstance.getServiceOfferingId());
-                    sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
-
-                    sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
-                }
-
-                if (name != null) {
-                    includePublicOfferings = false;
-                    sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
-                }
-                sc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
-
-                // for this domain
-                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainRecord.getId());
-
-                // don't return removed service offerings
-                sc.addAnd("removed", SearchCriteria.Op.NULL);
-
-                // search and add for this domain
-                sol.addAll(_offeringsDao.search(sc, searchFilter));
-
-                // try and move on to the next domain
-                if (domainRecord.getParent() != null) {
-                    domainRecord = _domainDao.findById(domainRecord.getParent());
-                } else {
-                    break;// now we got all the offerings for this user/dom adm
-                }
-            }
-        } else {
-            s_logger.error("Could not find the domainId for account:" + caller.getAccountName());
-            throw new CloudAuthenticationException("Could not find the domainId for account:" + caller.getAccountName());
-        }
-
-        // add all the public offerings to the sol list before returning
-        if (includePublicOfferings) {
-            sol.addAll(_offeringsDao.findPublicServiceOfferings());
-        }
-
-        return sol;
-    }
 
     @Override
     public List<? extends Cluster> searchForClusters(long zoneId, Long startIndex, Long pageSizeVal, String hypervisorType) {
@@ -997,7 +642,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         Pair<List<HostVO>, Integer> allHostsInClusterPair = searchForServers(startIndex, pageSize, null, hostType, null, null, null, cluster, null, null, null, null);
 
-        // filter out the current host        
+        // filter out the current host
         List<HostVO> allHostsInCluster = allHostsInClusterPair.first();
         allHostsInCluster.remove(srcHost);
         Pair<List<? extends Host>, Integer> otherHostsInCluster = new Pair<List <? extends Host>, Integer>(allHostsInCluster, new Integer(allHostsInClusterPair.second().intValue()-1));
@@ -2153,169 +1798,7 @@ public class ManagementServerImpl implements ManagementServer {
                 || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
     }
 
-    private List<DiskOfferingVO> searchDiskOfferingsInternal(Account account, Object name, Object id, Object keyword, Filter searchFilter) {
-        // it was decided to return all offerings for the user's domain, and
-        // everything above till root (for normal user
-        // or
-        // domain admin)
-        // list all offerings belonging to this domain, and all of its parents
-        // check the parent, if not null, add offerings for that parent to list
-        List<DiskOfferingVO> dol = new ArrayList<DiskOfferingVO>();
-        DomainVO domainRecord = _domainDao.findById(account.getDomainId());
-        boolean includePublicOfferings = true;
-        if (domainRecord != null) {
-            while (true) {
-                SearchBuilder<DiskOfferingVO> sb = _diskOfferingDao.createSearchBuilder();
 
-                sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-                sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-                sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NULL);
-
-                SearchCriteria<DiskOfferingVO> sc = sb.create();
-                if (keyword != null) {
-                    includePublicOfferings = false;
-                    SearchCriteria<DiskOfferingVO> ssc = _diskOfferingDao.createSearchCriteria();
-                    ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-                    ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-                    sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-                }
-
-                if (name != null) {
-                    includePublicOfferings = false;
-                    sc.setParameters("name", "%" + name + "%");
-                }
-
-                if (id != null) {
-                    includePublicOfferings = false;
-                    sc.setParameters("id", id);
-                }
-
-                // for this domain
-                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainRecord.getId());
-
-                // search and add for this domain
-                dol.addAll(_diskOfferingDao.search(sc, searchFilter));
-
-                // try and move on to the next domain
-                if (domainRecord.getParent() != null) {
-                    domainRecord = _domainDao.findById(domainRecord.getParent());
-                } else {
-                    break;// now we got all the offerings for this user/dom adm
-                }
-            }
-        } else {
-            s_logger.error("Could not find the domainId for account:" + account.getAccountName());
-            throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
-        }
-
-        // add all the public offerings to the sol list before returning
-        if (includePublicOfferings) {
-            dol.addAll(_diskOfferingDao.findPublicDiskOfferings());
-        }
-
-        return dol;
-
-    }
-
-    @Override
-    public List<DiskOfferingVO> searchForDiskOfferings(ListDiskOfferingsCmd cmd) {
-        // Note
-        // The list method for offerings is being modified in accordance with
-        // discussion with Will/Kevin
-        // For now, we will be listing the following based on the usertype
-        // 1. For root, we will list all offerings
-        // 2. For domainAdmin and regular users, we will list everything in
-        // their domains+parent domains ... all the way
-        // till
-        // root
-
-        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
-        isAscending = (isAscending == null ? true : isAscending);
-        Filter searchFilter = new Filter(DiskOfferingVO.class, "sortKey", isAscending, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<DiskOfferingVO> sb = _diskOfferingDao.createSearchBuilder();
-
-        // SearchBuilder and SearchCriteria are now flexible so that the search
-        // builder can be built with all possible
-        // search terms and only those with criteria can be set. The proper SQL
-        // should be generated as a result.
-        Account account = UserContext.current().getCaller();
-        Object name = cmd.getDiskOfferingName();
-        Object id = cmd.getId();
-        Object keyword = cmd.getKeyword();
-        Long domainId = cmd.getDomainId();
-        // Keeping this logic consistent with domain specific zones
-        // if a domainId is provided, we just return the disk offering
-        // associated with this domain
-        if (domainId != null) {
-            if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                return _diskOfferingDao.listByDomainId(domainId);// no perm
-                                                                 // check
-            } else {
-                // check if the user's domain == do's domain || user's domain is
-                // a child of so's domain
-                if (isPermissible(account.getDomainId(), domainId)) {
-                    // perm check succeeded
-                    return _diskOfferingDao.listByDomainId(domainId);
-                } else {
-                    throw new PermissionDeniedException("The account:" + account.getAccountName()
-                            + " does not fall in the same domain hierarchy as the disk offering");
-                }
-            }
-        }
-
-        // For non-root users
-        if ((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
-                || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            return searchDiskOfferingsInternal(account, name, id, keyword, searchFilter);
-        }
-
-        // For root users, preserving existing flow
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NULL);
-
-        // FIXME: disk offerings should search back up the hierarchy for
-        // available disk offerings...
-        /*
-         * sb.addAnd("domainId", sb.entity().getDomainId(),
-         * SearchCriteria.Op.EQ); if (domainId != null) {
-         * SearchBuilder<DomainVO> domainSearch =
-         * _domainDao.createSearchBuilder(); domainSearch.addAnd("path",
-         * domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-         * sb.join("domainSearch", domainSearch, sb.entity().getDomainId(),
-         * domainSearch.entity().getId()); }
-         */
-
-        SearchCriteria<DiskOfferingVO> sc = sb.create();
-        if (keyword != null) {
-            SearchCriteria<DiskOfferingVO> ssc = _diskOfferingDao.createSearchCriteria();
-            ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
-        }
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-
-        // FIXME: disk offerings should search back up the hierarchy for
-        // available disk offerings...
-        /*
-         * if (domainId != null) { sc.setParameters("domainId", domainId); //
-         * //DomainVO domain = _domainDao.findById((Long)domainId); // // I want
-         * to join on user_vm.domain_id = domain.id where domain.path like
-         * 'foo%' //sc.setJoinParameters("domainSearch", "path",
-         * domain.getPath() + "%"); // }
-         */
-
-        return _diskOfferingDao.search(sc, searchFilter);
-    }
 
     @Override
     public List<Class<?>> getCommands() {
@@ -3321,6 +2804,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     }
 
+    @Override
     public void enableAdminUser(String password) {
         String encodedPassword = null;
 

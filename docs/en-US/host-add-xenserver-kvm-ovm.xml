@@ -83,6 +83,11 @@
           <para>Make sure the new host has the same network configuration (guest, private, and
             public network) as other hosts in the cluster.</para>
         </listitem>
+        <listitem>
+          <para>If you are using OpenVswitch bridges edit the file agent.properties on the KVM host
+            and set the parameter <emphasis role="italic">network.bridge.type</emphasis> to
+              <emphasis role="italic">openvswitch</emphasis> before adding the host to &PRODUCT;</para>
+        </listitem>
       </itemizedlist>
     </section>
     <!-- <section>

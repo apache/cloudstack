@@ -202,7 +202,7 @@ public class MockResourceManagerImpl implements ResourceManager, Manager {
      * @see com.cloud.resource.ResourceService#listSwifts(com.cloud.api.commands.ListSwiftsCmd)
      */
     @Override
-    public List<? extends Swift> listSwifts(ListSwiftsCmd cmd) {
+    public Pair<List<? extends Swift>, Integer> listSwifts(ListSwiftsCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }

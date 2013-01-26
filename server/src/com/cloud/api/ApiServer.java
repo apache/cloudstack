@@ -61,6 +61,7 @@ import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.ConnectionClosedException;
@@ -95,6 +96,8 @@ import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
+import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
@@ -514,6 +517,9 @@ public class ApiServer implements HttpRequestHandler {
                     && !(cmdObj instanceof ListUsersCmd)
                     && !(cmdObj instanceof ListAccountsCmd)
                     && !(cmdObj instanceof ListStoragePoolsCmd)
+                    && !(cmdObj instanceof ListDiskOfferingsCmd)
+                    && !(cmdObj instanceof ListServiceOfferingsCmd)
+                    && !(cmdObj instanceof ListZonesByCmd)
                     ) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }

@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.ReflectUtil;
 import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
@@ -135,7 +136,7 @@ public class ApiXmlDocWriter {
             String commandRoleMask = preProcessedCommand.substring(splitIndex + 1);
             Class<?> cmdClass = _apiNameCmdClassMap.get(key);
             if (cmdClass == null) {
-                System.out.println("Check, Null Value for key: " + key + " preProcessedCommand=" + preProcessedCommand);
+                System.out.println("Check, is this api part of another build profile? Null value for key: " + key + " preProcessedCommand=" + preProcessedCommand);
                 continue;
             }
             String commandName = cmdClass.getName();
@@ -349,7 +350,7 @@ public class ApiXmlDocWriter {
 
             apiCommand.setAsync(isAsync);
 
-            Field[] fields = ReflectUtil.getAllFieldsForClass(clas,
+            Set<Field> fields = ReflectUtil.getAllFieldsForClass(clas,
                     new Class<?>[] {BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
 
             request = setRequestFields(fields);
@@ -422,10 +423,10 @@ public class ApiXmlDocWriter {
         out.writeObject(apiCommand);
     }
 
-    private static ArrayList<Argument> setRequestFields(Field[] fields) {
+    private static ArrayList<Argument> setRequestFields(Set<Field> fields) {
         ArrayList<Argument> arguments = new ArrayList<Argument>();
-        ArrayList<Argument> requiredArguments = new ArrayList<Argument>();
-        ArrayList<Argument> optionalArguments = new ArrayList<Argument>();
+        Set<Argument> requiredArguments = new HashSet<Argument>();
+        Set<Argument> optionalArguments = new HashSet<Argument>();
         Argument id = null;
         for (Field f : fields) {
             Parameter parameterAnnotation = f.getAnnotation(Parameter.class);
@@ -444,7 +445,7 @@ public class ApiXmlDocWriter {
                 	reqArg.setSinceVersion(parameterAnnotation.since());
                 }
                 
-                if (reqArg.isRequired() == true) {
+                if (reqArg.isRequired()) {
                     if (parameterAnnotation.name().equals("id")) {
                         id = reqArg;
                     } else {
@@ -456,15 +457,12 @@ public class ApiXmlDocWriter {
             }
         }
 
-        Collections.sort(requiredArguments);
-        Collections.sort(optionalArguments);
-
         // sort required and optional arguments here
         if (id != null) {
             arguments.add(id);
         }
-        arguments.addAll(requiredArguments);
-        arguments.addAll(optionalArguments);
+        arguments.addAll(IteratorUtil.asSortedList(requiredArguments));
+        arguments.addAll(IteratorUtil.asSortedList(optionalArguments));
 
         return arguments;
     }

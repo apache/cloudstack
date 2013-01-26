@@ -19,7 +19,10 @@ package com.cloud.utils;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -87,26 +90,39 @@ public class ReflectUtil {
         return isAsync;
     }
 
-    // Returns all fields across the base class for a cmd
-    public static Field[] getAllFieldsForClass(Class<?> cmdClass,
-                                               Class<?>[] searchClasses) {
-        Field[] fields = cmdClass.getDeclaredFields();
+    // Returns all fields until a base class for a cmd class
+    public static List<Field> getAllFieldsForClass(Class<?> cmdClass,
+                                                   Class<?> baseClass) {
+        List<Field> fields = new ArrayList<Field>();
+        Collections.addAll(fields, cmdClass.getDeclaredFields());
+        Class<?> superClass = cmdClass.getSuperclass();
+        while (baseClass.isAssignableFrom(superClass)) {
+            Field[] superClassFields = superClass.getDeclaredFields();
+            if (superClassFields != null)
+                Collections.addAll(fields, superClassFields);
+            superClass = superClass.getSuperclass();
+        }
+        return fields;
+    }
+
+    // Returns all unique fields except excludeClasses for a cmd class
+    public static Set<Field> getAllFieldsForClass(Class<?> cmdClass,
+                                                  Class<?>[] excludeClasses) {
+        Set<Field> fields = new HashSet<Field>();
+        Collections.addAll(fields, cmdClass.getDeclaredFields());
         Class<?> superClass = cmdClass.getSuperclass();
 
         while (superClass != null && superClass != Object.class) {
             String superName = superClass.getName();
-            for (Class<?> baseClass: searchClasses) {
-                if(!baseClass.isAssignableFrom(superClass))
-                    continue;
-                if (!superName.equals(baseClass.getName())) {
-                    Field[] superClassFields = superClass.getDeclaredFields();
-                    if (superClassFields != null) {
-                        Field[] tmpFields = new Field[fields.length + superClassFields.length];
-                        System.arraycopy(fields, 0, tmpFields, 0, fields.length);
-                        System.arraycopy(superClassFields, 0, tmpFields, fields.length, superClassFields.length);
-                        fields = tmpFields;
-                    }
-                }
+            boolean isNameEqualToSuperName = false;
+            for (Class<?> baseClass: excludeClasses)
+                if (superName.equals(baseClass.getName()))
+                    isNameEqualToSuperName = true;
+
+            if (!isNameEqualToSuperName) {
+                Field[] superClassFields = superClass.getDeclaredFields();
+                if (superClassFields != null)
+                    Collections.addAll(fields, superClassFields);
             }
             superClass = superClass.getSuperclass();
         }

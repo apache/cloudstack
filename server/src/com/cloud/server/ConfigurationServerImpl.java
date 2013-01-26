@@ -553,8 +553,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             return;
         }
         String already = _configDao.getValue("ssh.privatekey");
-        String homeDir = null;
-        homeDir = Script.runSimpleBashScript("echo ~" + username);
+        String homeDir = System.getProperty("user.home");
         if (homeDir == null) {
             throw new CloudRuntimeException("Cannot get home directory for account: " + username);
         }
