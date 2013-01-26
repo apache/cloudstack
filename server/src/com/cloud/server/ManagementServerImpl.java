@@ -446,11 +446,10 @@ public class ManagementServerImpl implements ManagementServer {
         Map<String, GenericDaoBase> daos = ComponentContext.getApplicationContext().getBeansOfType(
                 GenericDaoBase.class);
 
-        Map<String, Object> params = new HashMap<String, Object>();
         for (GenericDaoBase dao : daos.values()) {
             try {
                 s_logger.info("Starting dao " + ComponentContext.getTargetClass(dao).getName());
-                dao.configure(dao.getClass().getSimpleName(), params);
+                dao.configure(dao.getClass().getSimpleName(), dao.getConfigParams());
             } catch (Exception e) {
                 s_logger.error("Problems with running checker:" + ComponentContext.getTargetClass(dao).getName(), e);
                 System.exit(1);

@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
@@ -60,6 +61,15 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     @Override
     public boolean isPremium() {
         return _premium;
+    }
+    
+    @PostConstruct
+    void initComponent() {
+    	try {
+			configure(this.getClass().getSimpleName(), this.getConfigParams());
+		} catch (ConfigurationException e) {
+			s_logger.warn("Self configuration failed", e);
+		}
     }
     
     @Override

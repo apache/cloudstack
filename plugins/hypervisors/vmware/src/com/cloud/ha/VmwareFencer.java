@@ -21,8 +21,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.springframework.stereotype.Component;
-
 import com.cloud.host.HostVO;
 import com.cloud.vm.VMInstanceVO;
 
@@ -41,13 +39,16 @@ public class VmwareFencer implements FenceBuilder {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
         return true;
     }
 
     @Override
     public String getName() {
         return _name;
+    }
+    
+    public void setName(String name) {
+    	_name = name;
     }
 
     @Override
