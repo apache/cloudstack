@@ -1332,6 +1332,7 @@ CREATE TABLE `cloud`.`alert` (
   `last_sent` DATETIME NULL COMMENT 'Last time the alert was sent',
   `resolved` DATETIME NULL COMMENT 'when the alert status was resolved (available memory no longer at critical level, etc.)',
   PRIMARY KEY  (`id`),
+  INDEX `last_sent` (`last_sent` DESC),
   CONSTRAINT `uc_alert__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
