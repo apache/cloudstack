@@ -864,6 +864,9 @@ class TestVMLifeCycle(cloudstackTestCase):
                                      name='expunge.interval'
                                      )
         expunge_cycle = int(config[0].value)*2
+        if expunge_cycle < 600:
+            expunge_cycle = 600*2
+
         while expunge_cycle > 0:
             list_vm_response = list_virtual_machines(
                                                 self.apiclient,
