@@ -43,7 +43,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByKeywordSearch;
     protected final SearchBuilder<ServiceOfferingVO> PublicServiceOfferingSearch;
     
-    protected ServiceOfferingDaoImpl() {
+    public ServiceOfferingDaoImpl() {
         super();
         
         UniqueNameSearch = createSearchBuilder();

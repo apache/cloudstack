@@ -34,7 +34,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> implements ResourceTagDao{
     final SearchBuilder<ResourceTagVO> AllFieldsSearch;
     
-    protected ResourceTagsDaoImpl() {
+    public ResourceTagsDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), Op.EQ);
         AllFieldsSearch.and("uuid", AllFieldsSearch.entity().getResourceUuid(), Op.EQ);

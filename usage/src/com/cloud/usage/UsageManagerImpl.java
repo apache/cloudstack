@@ -144,7 +144,8 @@ public class UsageManagerImpl implements UsageManager, Runnable {
         final Class<?> c = UsageServer.class;
         m_version = c.getPackage().getImplementationVersion();
         if (m_version == null) {
-            throw new CloudRuntimeException("Unable to find the implementation version of this usage server");
+            // TODO
+        	// throw new CloudRuntimeException("Unable to find the implementation version of this usage server");
         }
 
         if (s_logger.isInfoEnabled()) {

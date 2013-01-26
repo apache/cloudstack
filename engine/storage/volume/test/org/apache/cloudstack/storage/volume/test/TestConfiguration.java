@@ -27,7 +27,6 @@ import org.springframework.context.annotation.Configuration;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterDaoImpl;
 
-
 @Configuration
 public class TestConfiguration {
     @Bean

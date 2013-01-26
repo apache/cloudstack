@@ -32,7 +32,7 @@ public class UserAccountDaoImpl extends GenericDaoBase<UserAccountVO, Long> impl
 	
 	protected final SearchBuilder<UserAccountVO> userAccountSearch;
 	
-    protected UserAccountDaoImpl() {
+    public UserAccountDaoImpl() {
     	userAccountSearch = createSearchBuilder();
     	userAccountSearch.and("apiKey", userAccountSearch.entity().getApiKey(), SearchCriteria.Op.EQ);
         userAccountSearch.done();

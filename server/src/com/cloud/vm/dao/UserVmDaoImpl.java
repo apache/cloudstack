@@ -116,7 +116,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     @Inject protected UserVmDetailsDao _detailsDao;
     @Inject protected NicDao _nicDao;
     
-    protected UserVmDaoImpl() {
+    public UserVmDaoImpl() {
     }
     
     @PostConstruct

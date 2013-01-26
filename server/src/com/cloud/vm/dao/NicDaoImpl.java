@@ -42,7 +42,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     final GenericSearchBuilder<NicVO, Integer> CountBy;
 
     
-    protected NicDaoImpl() {
+    public NicDaoImpl() {
         super();
         
         AllFieldsSearch = createSearchBuilder();

@@ -16,31 +16,47 @@
 // under the License.
 package com.cloud.usage;
 
-import javax.inject.Inject;
+import java.io.File;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.xml.DOMConfigurator;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.ComponentContext;
 
 public class UsageServer {
     private static final Logger s_logger = Logger.getLogger(UsageServer.class.getName());
     public static final String Name = "usage-server";
-
-    @Inject UsageManager mgr; 
+    
+    UsageManager mgr; 
+    
     /**
      * @param args
      */
     public static void main(String[] args) {
+    	initLog4j();
+    	ApplicationContext appContext = new ClassPathXmlApplicationContext("usageApplicationContext.xml");
+	    
         UsageServer usage = new UsageServer();
         usage.init(args);
-        usage.start();
+        usage.start(appContext);
     }
 
     public void init(String[] args) {
-
     }
 
-    public void start() {
+    public void start(ApplicationContext appContext) {
+    	try {
+    		ComponentContext.initComponentsLifeCycle();
+    	} catch(Exception e) {
+    		e.printStackTrace();
+    	}
+    	
+    	mgr = appContext.getBean(UsageManager.class);
+    	
         if (mgr != null) {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("UsageServer ready...");
@@ -55,4 +71,18 @@ public class UsageServer {
     public void destroy() {
 
     }
+
+    static private void initLog4j() {
+    	File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
+    	if (file != null) {
+        s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+        DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+	    } else {
+	        file = PropertiesUtil.findConfigFile("log4j-cloud.properties");
+	        if (file != null) {
+	            s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+	            PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
+	        }
+	    }
+   }
 }
