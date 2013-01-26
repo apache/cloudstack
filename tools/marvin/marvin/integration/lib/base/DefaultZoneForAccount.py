@@ -24,6 +24,10 @@ class DefaultZoneForAccount(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def mark(self, apiclient, account, domainid, zoneid, **kwargs):
         cmd = markDefaultZoneForAccount.markDefaultZoneForAccountCmd()
         cmd.account = account

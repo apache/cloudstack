@@ -24,6 +24,10 @@ class CloudIdentifier(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def get(self, apiclient, userid, **kwargs):
         cmd = getCloudIdentifier.getCloudIdentifierCmd()
         cmd.userid = userid

@@ -24,6 +24,10 @@ class ServiceForSystemVm(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def change(self, apiclient, id, serviceofferingid, **kwargs):
         cmd = changeServiceForSystemVm.changeServiceForSystemVmCmd()
         cmd.id = id

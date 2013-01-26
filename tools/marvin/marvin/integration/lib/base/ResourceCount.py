@@ -24,6 +24,10 @@ class ResourceCount(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def update(self, apiclient, domainid, **kwargs):
         cmd = updateResourceCount.updateResourceCountCmd()
         cmd.domainid = domainid

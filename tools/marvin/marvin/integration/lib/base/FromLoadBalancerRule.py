@@ -24,6 +24,10 @@ class FromLoadBalancerRule(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def remove(self, apiclient, id, virtualmachineids, **kwargs):
         cmd = removeFromLoadBalancerRule.removeFromLoadBalancerRuleCmd()
         cmd.id = id

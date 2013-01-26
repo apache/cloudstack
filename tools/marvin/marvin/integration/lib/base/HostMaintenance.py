@@ -24,6 +24,10 @@ class HostMaintenance(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def cancel(self, apiclient, id, **kwargs):
         cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
         cmd.id = id

@@ -24,6 +24,10 @@ class AsyncJobResult(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def query(self, apiclient, jobid, **kwargs):
         cmd = queryAsyncJobResult.queryAsyncJobResultCmd()
         cmd.jobid = jobid

@@ -25,6 +25,10 @@ class ApiLimit(CloudStackEntity.CloudStackEntity):
         self.__dict__.update(items)
 
 
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
     def reset(self, apiclient, **kwargs):
         cmd = resetApiLimit.resetApiLimitCmd()
         [setattr(cmd, key, value) for key,value in kwargs.items]
