@@ -17,6 +17,11 @@
 
 package com.cloud.event;
 
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import org.apache.cloudstack.framework.events.*;
@@ -30,44 +35,48 @@ public class AlertGenerator {
 
     private static final Logger s_logger = Logger.getLogger(AlertGenerator.class);
     protected static EventBus _eventBus = null;
-    protected static boolean _eventBusLoaded = false;
+    protected static boolean _eventBusProviderLoaded = false;
+
+    private static DataCenterDao _dcDao =  ComponentLocator.getLocator(ManagementServer.Name).getDao(DataCenterDao.class);
+    private static HostPodDao _podDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(HostPodDao.class);
 
     public static void publishAlertOnEventBus(String alertType, long dataCenterId, Long podId, String subject, String body) {
-        if (getEventBus() != null) {
-            Map<String, String> eventDescription = new HashMap<String, String>();
-            eventDescription.put("alertType", alertType);
-            eventDescription.put("dataCenterId", Long.toString(dataCenterId));
-            eventDescription.put("podId", Long.toString(podId));
-            eventDescription.put("subject", subject);
-            eventDescription.put("body", body);
-            org.apache.cloudstack.framework.events.Event event =
-                    new org.apache.cloudstack.framework.events.Event(null,
-                            EventCategory.ALERT_EVENT.getName(),
-                            alertType,
-                            null,
-                            null);
-            event.setDescription(eventDescription);
-            try {
-                _eventBus.publish(event);
-            } catch (EventBusException e) {
-                s_logger.warn("Failed to publish alert on the the event bus.");
-            }
+        if (getEventBusProvider() == null) {
+
+        }
+
+        Map<String, String> eventDescription = new HashMap<String, String>();
+        DataCenterVO dc = _dcDao.findById(dataCenterId);
+        HostPodVO pod = _podDao.findById(podId);
+
+        eventDescription.put("event", alertType);
+        eventDescription.put("dataCenterId", dc.getUuid());
+        eventDescription.put("podId", pod.getUuid());
+        org.apache.cloudstack.framework.events.Event event =
+                new org.apache.cloudstack.framework.events.Event(ManagementServer.Name,
+                        EventCategory.ALERT_EVENT.getName(),
+                        alertType,
+                        null,
+                        null);
+        event.setDescription(eventDescription);
+        try {
+            _eventBus.publish(event);
+        } catch (EventBusException e) {
+            s_logger.warn("Failed to publish alert on the the event bus.");
         }
     }
 
-    private static EventBus getEventBus() {
-        if (_eventBus == null) {
-            if (!_eventBusLoaded) {
-                ComponentLocator locator = ComponentLocator.getLocator("management-server");
-                Adapters<EventBus> eventBusImpls = locator.getAdapters(EventBus.class);
-                if (eventBusImpls != null) {
-                    Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
-                    if (eventBusenum != null && eventBusenum.hasMoreElements()) {
-                        _eventBus = eventBusenum.nextElement();
-                    }
+    private static EventBus getEventBusProvider() {
+        if (!_eventBusProviderLoaded) {
+            ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
+            Adapters<EventBus> eventBusImpls = locator.getAdapters(EventBus.class);
+            if (eventBusImpls != null) {
+                Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
+                if (eventBusenum != null && eventBusenum.hasMoreElements()) {
+                    _eventBus = eventBusenum.nextElement();
                 }
-                _eventBusLoaded = true;
             }
+            _eventBusProviderLoaded = true;
         }
         return _eventBus;
     }
