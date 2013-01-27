@@ -16,16 +16,20 @@
 // under the License.
 package com.cloud.utils.net;
 
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import junit.framework.TestCase;
 
+import org.apache.log4j.Logger;
 import org.junit.Test;
+
+import com.googlecode.ipv6.IPv6Address;
 
 public class NetUtilsTest extends TestCase {
 
+    private static final Logger s_logger = Logger.getLogger(NetUtilsTest.class);
+    
     @Test
     public void testGetRandomIpFromCidr() {
         String cidr = "192.168.124.1";
@@ -82,5 +86,15 @@ public class NetUtilsTest extends TestCase {
     	assertEquals(NetUtils.countIp6InRange("1234:5678::1-1234:5678::2"), 2);
     	assertEquals(NetUtils.countIp6InRange("1234:5678::2-1234:5678::0"), 0);
     	assertEquals(NetUtils.getIp6FromRange("1234:5678::1-1234:5678::1"), "1234:5678::1");
+    	String ipString = null;
+    	IPv6Address ipStart = IPv6Address.fromString("1234:5678::1");
+    	IPv6Address ipEnd = IPv6Address.fromString("1234:5678::8000:0000");
+    	for (int i = 0; i < 10; i ++) {
+    		ipString = NetUtils.getIp6FromRange(ipStart.toString() + "-" + ipEnd.toString());
+    		s_logger.info("IP is " + ipString);
+    		IPv6Address ip = IPv6Address.fromString(ipString);
+    		assertTrue(ip.compareTo(ipStart) >= 0);
+    		assertTrue(ip.compareTo(ipEnd) <= 0);
+    	}
     }
 }

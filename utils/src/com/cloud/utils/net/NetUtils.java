@@ -1178,12 +1178,15 @@ public class NetUtils {
 	public static String getIp6FromRange(String ip6Range) {
     	String[] ips = ip6Range.split("-");
     	String startIp = ips[0];
-    	long gap = countIp6InRange(ip6Range);
     	IPv6Address start = IPv6Address.fromString(startIp);
     	// Find a random number based on lower 32 bits
-    	int d = _rand.nextInt((int)(gap % Integer.MAX_VALUE));
+    	long gap = countIp6InRange(ip6Range);
+    	if (gap > Integer.MAX_VALUE) {
+    		gap = Integer.MAX_VALUE;
+    	}
+    	int next = _rand.nextInt((int)(gap));
     	// And a number based on the difference of lower 32 bits
-    	IPv6Address ip = start.add(d);
+    	IPv6Address ip = start.add(next);
     	return ip.toString();
 	}
 
