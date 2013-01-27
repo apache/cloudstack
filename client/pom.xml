@@ -203,7 +203,7 @@
         <artifactId>maven-war-plugin</artifactId>
         <version>2.3</version>
         <configuration>
-          <webXml>./WEB-INF/web.xml</webXml>
+          <webXml>./target/generated-webapp/WEB-INF/web.xml</webXml>
           <warSourceDirectory>./target/generated-webapp</warSourceDirectory>
         </configuration>
       </plugin>
@@ -245,6 +245,12 @@
             </goals>
             <configuration>
               <target>
+                <copy
+                  todir="${basedir}/target/generated-webapp/WEB-INF/">
+                  <fileset dir="${basedir}/WEB-INF/">
+                    <include name="web.xml" />
+                  </fileset>
+                </copy>
                 <copy
                   todir="${basedir}/target/generated-webapp/WEB-INF/classes">
                   <fileset dir="${basedir}/WEB-INF/classes">
@@ -325,22 +331,38 @@
               </target>
             </configuration>
           </execution>
-           <execution>
-                <id>process-nonoss</id>
-                <phase>process-resources</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <target if="${nonoss}">
-                    <echo>test</echo>
-                    <replaceregexp
-                      file="${basedir}/target/generated-webapp/WEB-INF/classes/environment.properties"
-                      match="cloud-stack-components-specification=.*"
-                      replace="cloud-stack-components-specification=components-nonoss.xml" byline="true" />
-                  </target>
-                </configuration>
-              </execution>
+          <execution>
+            <id>process-nonoss</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target if="${nonoss}">
+                <echo>test</echo>
+                <replaceregexp
+                  file="${basedir}/target/generated-webapp/WEB-INF/classes/environment.properties"
+                  match="cloud-stack-components-specification=.*"
+                  replace="cloud-stack-components-specification=components-nonoss.xml" byline="true" />
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>process-nonoss-spring-context</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target if="${nonoss}">
+                <echo>test</echo>
+                <replaceregexp
+                  file="${basedir}/target/generated-webapp/WEB-INF/web.xml"
+                  match="classpath:applicationContext.xml, classpath:componentContext.xml"
+                  replace="classpath:applicationContext.xml, classpath:nonossComponentContext.xml" byline="true" />
+              </target>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <!-- there are the jasypt libs requires by some of the python scripts -->
