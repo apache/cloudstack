@@ -50,8 +50,17 @@ public class AlertGenerator {
         HostPodVO pod = _podDao.findById(podId);
 
         eventDescription.put("event", alertType);
-        eventDescription.put("dataCenterId", dc.getUuid());
-        eventDescription.put("podId", pod.getUuid());
+        if (dc != null) {
+            eventDescription.put("dataCenterId", dc.getUuid());
+        } else {
+            eventDescription.put("dataCenterId", null);
+        }
+
+        if (pod != null) {
+            eventDescription.put("podId", pod.getUuid());
+        } else {
+            eventDescription.put("podId", null);
+        }
         org.apache.cloudstack.framework.events.Event event =
                 new org.apache.cloudstack.framework.events.Event(ManagementServer.Name,
                         EventCategory.ALERT_EVENT.getName(),

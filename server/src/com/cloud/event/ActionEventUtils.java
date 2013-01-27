@@ -154,12 +154,7 @@ public class ActionEventUtils {
         eventDescription.put("event", eventType);
         eventDescription.put("status", state.toString());
 
-        int index = eventType.lastIndexOf(".");
-
-        String resourceType = null;
-        if (index != -1 ) {
-            resourceType = eventType.substring(0, index);
-        }
+        String resourceType = EventTypes.getEntityForEvent(eventType);
 
         org.apache.cloudstack.framework.events.Event event = new org.apache.cloudstack.framework.events.Event(
                 ManagementServer.Name,
