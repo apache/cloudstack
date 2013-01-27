@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="sys-offering-sysvm">
+  <title>Changing the Default System Offering for System VMs</title>
+  <para>You can manually change the system offering for a particular System VM. Additionally, as a
+    &PRODUCT; administrator, you can also change the default system offering used for System
+    VMs.</para>
+  <orderedlist>
+    <listitem>
+      <para>Create a new system offering.</para>
+      <para>For more information, see <phrase condition="install"><xref
+            linkend="creating-system-service-offerings"/></phrase>
+        <phrase condition="admin">Creating a New System Service Offering</phrase>. </para>
+    </listitem>
+    <listitem>
+      <para>Back up the database:</para>
+      <programlisting>mysqldump -u root -p cloud | bzip2 > cloud_backup.sql.bz2</programlisting>
+    </listitem>
+    <listitem>
+      <para>Open an MySQL prompt:</para>
+      <programlisting>mysql -u cloud -p cloud</programlisting>
+    </listitem>
+    <listitem>
+      <para>Run the following queries on the cloud database.</para>
+      <orderedlist numeration="loweralpha">
+        <listitem>
+          <para>In the disk_offering table, identify the original default offering and the new
+            offering you want to use by default. </para>
+          <para>Take a note of the ID of the new offering.</para>
+          <programlisting>select id,name,unique_name,type from disk_offering;</programlisting>
+        </listitem>
+        <listitem>
+          <para>For the original default offering, set the value of unique_name to NULL.</para>
+          <programlisting># update disk_offering set unique_name = NULL where id = 10;</programlisting>
+          <para>Ensure that you use the correct value for the ID.</para>
+        </listitem>
+        <listitem>
+          <para>For the new offering that you want to use by default, set the value of unique_name
+            as follows:</para>
+          <para>For the default Console Proxy VM (CPVM) offering,set unique_name to
+            'Cloud.com-ConsoleProxy'. For the default Secondary Storage VM (SSVM) offering, set
+            unique_name to 'Cloud.com-SecondaryStorage'. For example:</para>
+          <programlisting>update disk_offering set unique_name = 'Cloud.com-ConsoleProxy' where id = 16;</programlisting>
+        </listitem>
+      </orderedlist>
+    </listitem>
+    <listitem>
+      <para>Restart &PRODUCT; Management Server. Restarting is required because the default
+        offerings are loaded into the memory at startup.</para>
+      <programlisting>service cloud-management restart</programlisting>
+    </listitem>
+    <listitem>
+      <para>Destroy the existing CPVM or SSVM offerings and wait for them to be recreated. The new
+        CPVM or SSVM are configured with the new offering. </para>
+    </listitem>
+  </orderedlist>
+</section>

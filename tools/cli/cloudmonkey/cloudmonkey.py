@@ -26,6 +26,7 @@ try:
     import logging
     import os
     import pdb
+    import re
     import shlex
     import sys
     import time
@@ -38,7 +39,7 @@ try:
 
     from prettytable import PrettyTable
     from common import __version__, config_file, config_fields
-    from common import grammar, precached_verbs
+    from common import precached_verbs
     from marvin.cloudstackConnection import cloudConnection
     from marvin.cloudstackException import cloudstackAPIException
     from marvin.cloudstackAPI import *
@@ -71,12 +72,12 @@ class CloudMonkeyShell(cmd.Cmd, object):
     ruler = "="
     config_file = config_file
     config_fields = config_fields
-    grammar = grammar
     # datastructure {'verb': {cmd': ['api', [params], doc, required=[]]}}
     cache_verbs = precached_verbs
 
-    def __init__(self, pname):
+    def __init__(self, pname, verbs):
         self.program_name = pname
+        self.verbs = verbs
         if os.path.exists(self.config_file):
             config = self.read_config()
         else:
@@ -102,11 +103,9 @@ class CloudMonkeyShell(cmd.Cmd, object):
         logger.debug("Loaded config fields:\n%s" % self.config_fields)
 
         cmd.Cmd.__init__(self)
-        # Update config if config_file does not exist
         if not os.path.exists(self.config_file):
             config = self.write_config()
 
-        # Enable history support
         try:
             if os.path.exists(self.history_file):
                 readline.read_history_file(self.history_file)
@@ -381,13 +380,13 @@ class CloudMonkeyShell(cmd.Cmd, object):
 
     def completedefault(self, text, line, begidx, endidx):
         partitions = line.partition(" ")
-        verb = partitions[0]
-        rline = partitions[2].partition(" ")
+        verb = partitions[0].strip()
+        rline = partitions[2].lstrip().partition(" ")
         subject = rline[0]
         separator = rline[1]
-        params = rline[2]
+        params = rline[2].lstrip()
 
-        if verb not in self.grammar:
+        if verb not in self.verbs:
             return []
 
         autocompletions = []
@@ -436,7 +435,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
         args = args.strip().partition(" ")
         key, value = (args[0], args[2])
         setattr(self, key, value)  # keys and attributes should have same names
-        self.prompt = self.prompt.strip() + " " # prompt fix
+        self.prompt = self.prompt.strip() + " "  # prompt fix
         self.write_config()
 
     def complete_set(self, text, line, begidx, endidx):
@@ -513,22 +512,22 @@ class CloudMonkeyShell(cmd.Cmd, object):
 
 
 def main():
-    # Create handlers on the fly using closures
-    self = CloudMonkeyShell
-    global grammar
-    for rule in grammar:
-        def add_grammar(rule):
+    pattern = re.compile("[A-Z]")
+    verbs = list(set([x[:pattern.search(x).start()] for x in completions
+                 if pattern.search(x) is not None]).difference(['cloudstack']))
+    for verb in verbs:
+        def add_grammar(verb):
             def grammar_closure(self, args):
-                if self.pipe_runner("%s %s" % (rule, args)):
+                if self.pipe_runner("%s %s" % (verb, args)):
                     return
                 try:
                     args_partition = args.partition(" ")
-                    res = self.cache_verbs[rule][args_partition[0]]
+                    res = self.cache_verbs[verb][args_partition[0]]
                     cmd = res[0]
                     helpdoc = res[2]
                     args = args_partition[2]
                 except KeyError, e:
-                    self.print_shell("Error: invalid %s api arg" % rule, e)
+                    self.print_shell("Error: invalid %s api arg" % verb, e)
                     return
                 if ' --help' in args or ' -h' in args:
                     self.print_shell(helpdoc)
@@ -536,12 +535,12 @@ def main():
                 self.default("%s %s" % (cmd, args))
             return grammar_closure
 
-        grammar_handler = add_grammar(rule)
-        grammar_handler.__doc__ = "%ss resources" % rule.capitalize()
-        grammar_handler.__name__ = 'do_' + rule
-        setattr(self, grammar_handler.__name__, grammar_handler)
+        grammar_handler = add_grammar(verb)
+        grammar_handler.__doc__ = "%ss resources" % verb.capitalize()
+        grammar_handler.__name__ = 'do_' + verb
+        setattr(CloudMonkeyShell, grammar_handler.__name__, grammar_handler)
 
-    shell = CloudMonkeyShell(sys.argv[0])
+    shell = CloudMonkeyShell(sys.argv[0], verbs)
     if len(sys.argv) > 1:
         shell.onecmd(' '.join(sys.argv[1:]))
     else:
