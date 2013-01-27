@@ -72,6 +72,20 @@
             </configuration>
           </execution>
           <execution>
+            <id>cachegen</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <workingDirectory>${basedir}/cloudmonkey</workingDirectory>
+              <executable>python</executable>
+              <arguments>
+                  <argument>cachegen.py</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
             <id>package</id>
             <phase>compile</phase>
             <goals>

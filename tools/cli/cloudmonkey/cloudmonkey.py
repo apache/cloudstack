@@ -514,7 +514,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
 def main():
     pattern = re.compile("[A-Z]")
     verbs = list(set([x[:pattern.search(x).start()] for x in completions
-                     if pattern.search(x) is not None]))
+                 if pattern.search(x) is not None]).difference(['cloudstack']))
     for verb in verbs:
         def add_grammar(verb):
             def grammar_closure(self, args):
