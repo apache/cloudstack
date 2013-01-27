@@ -39,12 +39,3 @@ config_fields = {'host': 'localhost', 'port': '8080',
                  'history_file':
                  os.path.expanduser('~/.cloudmonkey_history')}
 
-# Add verbs in grammar
-grammar = ['create', 'list', 'delete', 'update', 'lock',
-           'enable', 'activate', 'disable', 'add', 'remove',
-           'attach', 'detach', 'associate', 'disassociate', 'generate', 'ldap',
-           'assign', 'authorize', 'change', 'register', 'configure',
-           'start', 'restart', 'reboot', 'stop', 'reconnect',
-           'cancel', 'destroy', 'revoke', 'mark', 'reset',
-           'copy', 'extract', 'migrate', 'restore', 'suspend',
-           'get', 'query', 'prepare', 'deploy', 'upload']
