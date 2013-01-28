@@ -2654,4 +2654,299 @@ Copyright (c) 2010-2011 OpenStack, LLC.
 			</by-organisation>
 		</with-license>
 	</within>
+
+<!-- Resources below this line are binary dependencies that are only pulled in during the build process.  -->
+
+    <within dir='target/jar'>
+        <with-license id='MIT'>
+            <copyright-notice>
+Copyright (C) 2008      Tóth István &lt;stoty@tvnet.hu&gt;
+              2008-2012 Daniel Veillard &lt;veillard@redhat.com&gt;
+              2009-2011 Bryan Kearney &lt;bkearney@redhat.com&gt;
+            </copyright-notice>
+            <by-organisation id='libvirt.org'>
+                <resource name='libvirt-java-0.4.9' />
+            </by-organisation>
+        </with-license>
+        <with-license id="ApacheLicenseVersion2">
+            <copyright-notice>
+Copyright (c) 2012 The Apache Software Foundation
+            </copyright-notice>
+            <by-organisation id="apache.org.2">
+                <resource name="cloud-axis.jar" source="http://axis.apache.org/axis/" notice='axis2.notice'/>
+                <resource name="cloud-commons-codec-1.5.jar" source="http://commons.apache.org/codec/" notice="codec" />
+                <resource name="cloud-commons-collections-3.2.1.jar" source="http://commons.apache.org/collections/"/>
+                <resource name="cloud-commons-configuration-1.8.jar" source="http://commons.apache.org/configuration/"/>
+                <resource name="cloud-commons-dbcp-1.4.jar" source="http://commons.apache.org/dbcp/" />
+                <resource name="cloud-commons-httpclient-3.1.jar" source="http://hc.apache.org/httpclient-3.x/" />
+                <resource name="cloud-commons-lang-2.6.jar" source="http://commons.apache.org/lang/" />
+                <resource name="cloud-commons-logging-1.1.1.jar" source="http://commons.apache.org/logging/" notice="logging" />
+                <resource name="cloud-commons-pool-1.5.6.jar" source="http://commons.apache.org/pool/" />
+                <resource name="cloud-log4j.jar" source="http://logging.apache.org/log4j/" />
+                <resource name="cloud-log4j-extras.jar" source="http://logging.apache.org/log4j/companions/extras/" />
+                <resource name="cloud-ws-commons-util-1.0.2.jar" source="http://ws.apache.org/commons/util/" />
+                <resource name="cloud-xmlrpc-client-3.1.3.jar" source="http://ws.apache.org/xmlrpc/client.html" />
+                <resource name="cloud-xmlrpc-common-3.1.3.jar" source="http://ws.apache.org/xmlrpc/xmlrpc-common/" />
+                <resource name="cloud-cglib.jar" source='http://cglib.sourceforge.net/' />
+            </by-organisation>
+        </with-license>
+        <with-license id="ApacheLicenseVersion1.1">
+            <copyright-notice>
+Copyright (c) 2012 The Apache Software Foundation
+            </copyright-notice>
+            <by-organisation id="apache.org.2">
+                <resource name="cloud-commons-discovery.jar" source="http://commons.apache.org/discovery/" />
+            </by-organisation>
+        </with-license>
+        <with-license id="ApacheLicenseVersion2">
+            <copyright-notice>
+Copyright (c) 2007-2010, The JASYPT team (http://www.jasypt.org)
+            </copyright-notice>
+            <by-organisation id='jasypt.org'>
+                <resource name='cloud-jasypt-1.9.jar' source='http://www.jasypt.org' notice='jasypt.notice' />
+            </by-organisation>
+        </with-license>
+        <with-license id="ApacheLicenseVersion2">
+            <copyright-notice>
+Copyright (c) 2003-2007 Luck Consulting Pty Ltd
+            </copyright-notice>
+            <by-organisation id="luck">
+                <resource name="cloud-ehcache.jar" source="http://ehcache.org/" />
+            </by-organisation>
+        </with-license>
+        <with-license id='CDDL'>
+            <copyright-notice>
+Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved.
+            </copyright-notice>
+            <by-organisation id='glassfish.org'>
+                <resource name='cloud-ejb-api-3.0.jar' source='http://repo1.maven.org/maven2/javax/ejb/ejb-api/3.0/ejb-api-3.0-sources.jar' notice='cddlnotice' />
+                <resource name='cloud-jstl-1.2.jar' source='http://jstl.java.net/' notice='cddlnotice' />
+            </by-organisation>
+        </with-license>
+        <with-license id='CDDL'>
+            <copyright-notice>
+Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
+            </copyright-notice>
+            <by-organisation id='oracle.com'>
+                <resource name='cloud-email.jar' source='http://kenai.com/projects/javamail' notice='cddlnotice' />
+            </by-organisation>
+        </with-license>
+        <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice>
+Copyright (c) 2009 Google Inc.
+            </copyright-notice>
+            <by-organisation id='google.com'>
+                <resource name='cloud-google-gson-1.7.1.jar' source='http://code.google.com/p/google-gson/' />
+            </by-organisation>
+        </with-license>
+        <with-license id='EclipseDistributionLicense1'>
+            <copyright-notice>
+Copyright (c) 2012 The Eclipse Foundation.
+            </copyright-notice>
+            <by-organisation id='eclipse.org'>
+                <resource name='cloud-javax.persistence-2.0.0.jar' source='http://wiki.eclipse.org/EclipseLink/Release/2.0.0' notice='eclipse.persistence' />
+            </by-organisation>
+        </with-license>
+        <with-license id='BSD3ClauseGeneric'>
+            <copyright-notice>
+Copyright (c) 2009, Caringo, Inc.
+            </copyright-notice>
+            <by-organisation id='caringo.com'>
+                <resource name='CAStorSDK.jar' source='http://www.castor.org/download.html' />
+            </by-organisation>
+        </with-license>
+        <with-license id='BSD3ClauseGeneric'>
+            <copyright-notice>
+Copyright (c) 2002-2011 Atsuhiko Yamanaka, JCraft,Inc.
+            </copyright-notice>
+            <by-organisation id='jcraft.com'>
+                <resource name='cloud-jsch-0.1.42.jar' source='http://www.jcraft.com/jsch/' />
+            </by-organisation>
+        </with-license>
+        <with-license id='CPL1'>
+            <copyright-notice>
+Copyright (c) IBM Corp 2006 
+            </copyright-notice>
+            <by-organisation id='ibm.com'>
+                <resource name='cloud-wsdl4j-1.6.2.jar' source='http://sourceforge.net/projects/wsdl4j/' />
+                <resource name='cloud-wsdl4j.jar' source='http://sourceforge.net/projects/wsdl4j/' />
+            </by-organisation>
+        </with-license>
+        <with-license id='xstream.bsd'>
+            <copyright-notice />
+            <by-organisation id='xstream.codehaus.com'>
+                <resource name='cloud-xstream-1.3.1.jar' source='http://xstream.codehaus.org/repository.html' />
+            </by-organisation>
+        </with-license>
+        <with-license id='bouncy.mit'>
+            <copyright-notice />
+            <by-organisation id='bouncy.castle'>
+                <resource name='cloud-bcprov-jdk16-1.45.jar' source='http://repo1.maven.org/maven2/org/bouncycastle/bcprov-jdk16/1.45/bcprov-jdk16-1.45-sources.jar' />
+            </by-organisation>
+        </with-license>
+        <with-license id='BSD3ClauseGeneric'>
+            <copyright-notice>
+Copyright (c) 2007-2008 Trilead AG (http://www.trilead.com)
+All rights reserved.
+            </copyright-notice>
+            <by-organisation id='trilead.com'>
+                <resource name='cloud-trilead-ssh2-build213.jar' source='http://sourceforge.net/projects/orion-ssh2/' notice='trilead.notice' />
+            </by-organisation>
+        </with-license>
+        <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice />
+            <by-organisation id='jetty.codehaus.com'>
+                <resource name='jetty-6.1.26.jar' source='http://repo1.maven.org/maven2/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26-sources.jar' />
+                <resource name='jetty-util-6.1.26.jar' source='http://repo1.maven.org/maven2/org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26-sources.jar' />
+            </by-organisation>
+        </with-license>
+        <with-license id='CPL1'>
+            <copyright-notice />
+            <by-organisation id='junit.org'>
+                <resource name='cloud-junit.jar' source='http://kentbeck.github.com/junit/' />
+            </by-organisation>
+        </with-license>
+        <public-domain>
+            <by-organisation id='distcomplab.emory'>
+                <resource name='cloud-backport-util-concurrent-3.0.jar' source='http://backport-jsr166.sourceforge.net/' />
+            </by-organisation>
+        </public-domain>
+    </within>
+    <within dir='deps/awsapi-lib'>
+        <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice>
+Copyright (c) 2004-2008 The Apache Software Foundation
+            </copyright-notice>
+            <by-organisation id='apache.org.2'>
+                <resource name='XmlSchema-1.4.3.jar' notice='xmlschema.notice' />
+            </by-organisation>
+        </with-license>
+        <with-license id='antlr2'>
+            <copyright-notice />
+            <by-organisation id='antlr2.org'>
+                <resource name='antlr-2.7.6.jar' source='http://repo1.maven.org/maven2/antlr/antlr/2.7.6/antlr-2.7.6-sources.jar' />
+            </by-organisation>
+        </with-license>
+        <with-license id='MIT'>
+            <copyright-notice>
+Copyright (c) 2004-2011 QOS.ch
+            </copyright-notice>
+            <by-organisation id='qos.ch'>
+                <resource name='slf4j-api-1.5.11.jar' source='https://github.com/qos-ch/slf4j' />
+                <resource name='slf4j-jdk14-1.5.11.jar' source='https://github.com/qos-ch/slf4j' />
+            </by-organisation>
+        </with-license>
+        <with-license id="ApacheLicenseVersion2">
+            <copyright-notice>
+Copyright (c) 2004-2012 The Apache Software Foundation
+            </copyright-notice>
+            <by-organisation id="apache.org.2">
+                <resource name="apache-log4j-extras-1.0.jar" source="http://logging.apache.org/log4j/companions/extras/" />
+                <resource name="axiom-api-1.2.8.jar" source="http://ws.apache.org/axiom/source-repository.html" notice="axiom.notice" />
+                <resource name="axiom-impl-1.2.8.jar" source="http://ws.apache.org/axiom/source-repository.html" notice="axiom.notice" />
+                <resource name="axis2-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
+                <resource name="axis2-codegen-1.4.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
+                <resource name="axis2-adb-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
+                <resource name="axis2-ant-plugin-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
+                <resource name="axis2-jaxbri-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
+                <resource name="axis2-jaxws-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
+                <resource name="axis2-jibx-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
+                <resource name="axis2-json-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
+                <resource name="axis2-kernel-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
+                <resource name="axis2-transport-http-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
+                <resource name="axis2-transport-local-1.5.1.jar" source="http://axis.apache.org/axis/" notice='axis2.notice' />
+                <resource name="axis2-webapp-1.5.1.war" source="http://axis.apache.org/axis/" notice='axis2.notice' />
+                <resource name="commons-codec-1.4.jar" source="http://commons.apache.org/codec/" notice="codec" />
+                <resource name="commons-collections-3.1.jar" source="http://commons.apache.org/collections/"/>
+                <resource name='commons-fileupload-1.2.jar' source='http://commons.apache.org/fileupload/' />
+                <resource name="commons-httpclient-3.1.jar" source="http://hc.apache.org/httpclient-3.x/" />
+                <resource name='commons-io-1.4.jar' source='http://commons.apache.org/io/' />
+                <resource name="commons-logging-1.1.1.jar" source="http://commons.apache.org/logging/" notice="logging" />
+                <resource name="httpcore-4.0.jar" source="http://hc.apache.org/httpcomponents-core-ga/" />
+                <resource name="log4j-1.2.15.jar" source="http://logging.apache.org/log4j/" />
+                <resource name="neethi-2.0.4.jar" source="http://svn.apache.org/viewvc/webservices/commons/tags/neethi/2.0.4/" notice='neethi.notice' />
+                <resource name="rampart-lib" source="http://axis.apache.org/axis2/java/rampart/download/1.5/download.cgi" notice='rampart.notice' />
+                <resource name="woden-api-1.0M8.jar" source='http://svn.apache.org/viewvc/webservices/woden/tags/1.0M8_20080423/' notice='woden.notice' />
+                <resource name="woden-impl-dom-1.0M8.jar" source='http://svn.apache.org/viewvc/webservices/woden/tags/1.0M8_20080423/' notice='woden.notice' />
+                <resource name='xercesImpl.jar' source='http://xerces.apache.org/xerces2-j/source-repository.html' notice='xerces.notice' />
+                <resource name='xml-apis.jar' source='http://repo1.maven.org/maven2/xml-apis/xml-apis/1.3.04/xml-apis-1.3.04-sources.jar' notice='xml-apis.notice' />
+                <resource name='wss4j-1.5.8.jar' source='http://ws.apache.org/wss4j/source-repository.html' notice='wss4j.notice' />
+            </by-organisation>
+        </with-license>
+        <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice>
+Copyright (c) 2009 Google Inc.
+            </copyright-notice>
+            <by-organisation id='google.com'>
+                <resource name='cloud-gson.jar' source='http://code.google.com/p/google-gson/' />
+            </by-organisation>
+        </with-license>
+        <with-license id='dom4j.license'>
+            <copyright-notice />
+            <by-organisation id='dom4j.sourceforge.net'>
+                <!-- TODO: Need to have a review of this license! -->
+                <resource name='dom4j-1.6.1.jar' source='http://dom4j.sourceforge.net/source-repository.html' />
+            </by-organisation>
+        </with-license>
+        <with-license id='CDDL'>
+            <copyright-notice>
+Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
+            </copyright-notice>
+            <by-organisation id='oracle.com'>
+                <resource name='jaxb-api-2.1.jar' source='http://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.1/jaxb-api-2.1-sources.jar' notice='cddlnotice' />
+                <resource name='jaxb-impl-2.1.7.jar' source='http://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-impl/2.1.7/jaxb-impl-2.1.7-sources.jar' notice='cddlnotice' />
+                <resource name='jaxb-xjc-2.1.7.jar' source='http://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-xjc/2.1.7/jaxb-xjc-2.1.7-sources.jar' notice='cddlnotice' />
+            </by-organisation>
+        </with-license>
+        <with-license id='CDDL'>
+            <copyright-notice>
+Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved.
+            </copyright-notice>
+            <by-organisation id='glassfish.org'>
+                <resource name='jta-1.1.jar' source='http://repo1.maven.org/maven2/javax/transaction/jta/1.1/jta-1.1-sources.jar' notice='cddlnotice' />
+            </by-organisation>
+        </with-license>
+        <with-license id='BSD3ClauseGeneric'>
+            <copyright-notice>
+Copyright (c) 2002-2011 Atsuhiko Yamanaka, JCraft,Inc.
+            </copyright-notice>
+            <by-organisation id='jcraft.com'>
+                <resource name='jsch-0.1.42.jar' source='http://www.jcraft.com/jsch/' />
+            </by-organisation>
+        </with-license>
+        <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice />
+            <by-organisation id='json-simple'>
+                <resource name='json_simple-1.1.jar' source='http://code.google.com/p/json-simple/source/checkout' />
+            </by-organisation>
+        </with-license>
+        <with-license id='CDDL'>
+            <copyright-notice>
+Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
+            </copyright-notice>
+            <by-organisation id='oracle.com'>
+                <resource name='mail-1.4.jar' source='http://kenai.com/projects/javamail' notice='cddlnotice' />
+            </by-organisation>
+        </with-license>
+        <with-license id='CPL1'>
+            <copyright-notice />
+            <by-organisation id='junit.org'>
+                <resource name='junit-4.8.1.jar' source='http://kentbeck.github.com/junit/' />
+            </by-organisation>
+        </with-license>
+        <with-license id='MPL1'>
+            <copyright-notice />
+            <license-parameters>
+                <parameter><name>PROJECT</name><value>Javassist</value></parameter>
+                <parameter><name>INITIAL_DEVELOPER</name><value>Shigeru Chiba</value></parameter>
+                <parameter><name>INITIAL_DEVELOPER_COPYRIGHT</name><value>1999-2008 Shigeru Chiba</value></parameter>
+                <parameter><name>CONTRIBUTORS</name><value></value></parameter>
+                <parameter><name>ALT_LIC_NAME</name><value>GNU Lesser General Public License Version 2.1 or later</value></parameter>
+                <parameter><name>ALT_LIC_SHORT</name><value>LGPL</value></parameter>
+               </license-parameters>
+               <by-organisation id='person:shigeru.chiba'>
+                   <resource name='javassist-3.9.0.GA.jar' source='http://sourceforge.net/projects/jboss/files/Javassist/' />
+               </by-organisation>
+        </with-license>
+    </within>
 </manifest>
