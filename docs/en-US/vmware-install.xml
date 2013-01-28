@@ -21,253 +21,313 @@
  specific language governing permissions and limitations
  under the License.
 -->
-
 <section id="vmware-install">
-    <title>VMware vSphere Installation and Configuration</title>
-    <para>If you want to use the VMware vSphere hypervisor to run guest virtual machines, install vSphere on the host(s) in your cloud.</para>
-    <xi:include href="vmware-requirements.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <section id="vmware-preparation-checklist">
+  <title>VMware vSphere Installation and Configuration</title>
+  <para>If you want to use the VMware vSphere hypervisor to run guest virtual machines, install
+    vSphere on the host(s) in your cloud.</para>
+  <xi:include href="vmware-requirements.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <section id="vmware-preparation-checklist">
     <title>Preparation Checklist for VMware</title>
     <para>For a smoother installation, gather the following information before you start:</para>
     <itemizedlist>
-        <listitem><para>Information listed in <xref linkend="vmware-vcenter-checklist" /></para></listitem>
-        <listitem><para>Information listed in <xref linkend="vmware-network-checklist" /></para></listitem>
+      <listitem>
+        <para>Information listed in <xref linkend="vmware-vcenter-checklist"/></para>
+      </listitem>
+      <listitem>
+        <para>Information listed in <xref linkend="vmware-network-checklist"/></para>
+      </listitem>
     </itemizedlist>
     <section id="vmware-vcenter-checklist">
-        <title>vCenter Checklist</title>
-        <para>You will need the following information about vCenter.</para>
-        <informaltable frame="all">
+      <title>vCenter Checklist</title>
+      <para>You will need the following information about vCenter.</para>
+      <informaltable frame="all">
         <tgroup cols="3" align="left" colsep="1" rowsep="1">
-            <colspec colname="c1" />
-            <colspec colname="c2" />
-            <colspec colname="c3" />
-            <thead>
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <colspec colname="c3"/>
+          <thead>
             <row>
-                <entry><para>vCenter Requirement</para></entry>
-                <entry><para>Value</para></entry>
-                <entry><para>Notes</para></entry>
+              <entry><para>vCenter Requirement</para></entry>
+              <entry><para>Value</para></entry>
+              <entry><para>Notes</para></entry>
             </row>
-            </thead>
-            <tbody>
+          </thead>
+          <tbody>
             <row>
-                <entry><para>vCenter User</para></entry>
-                <entry><para></para></entry>
-                <entry><para>This user must have admin privileges.</para></entry>
-            </row>
-            <row>
-                <entry><para>vCenter User Password</para></entry>
-                <entry><para></para></entry>
-                <entry><para>Password for the above user.</para></entry>
+              <entry><para>vCenter User</para></entry>
+              <entry><para/></entry>
+              <entry><para>This user must have admin privileges.</para></entry>
             </row>
             <row>
-                <entry><para>vCenter Datacenter Name</para></entry>
-                <entry><para></para></entry>
-                <entry><para>Name of the datacenter.</para></entry>
+              <entry><para>vCenter User Password</para></entry>
+              <entry><para/></entry>
+              <entry><para>Password for the above user.</para></entry>
             </row>
             <row>
-                <entry><para>vCenter Cluster Name</para></entry>
-                <entry><para></para></entry>
-                <entry><para>Name of the cluster.</para></entry>
+              <entry><para>vCenter Datacenter Name</para></entry>
+              <entry><para/></entry>
+              <entry><para>Name of the datacenter.</para></entry>
             </row>
-            </tbody>
+            <row>
+              <entry><para>vCenter Cluster Name</para></entry>
+              <entry><para/></entry>
+              <entry><para>Name of the cluster.</para></entry>
+            </row>
+          </tbody>
         </tgroup>
-        </informaltable>
+      </informaltable>
     </section>
     <section id="vmware-network-checklist">
-        <title>Networking Checklist for VMware</title>
-        <para>You will need the following information about VLAN.</para>
-        <informaltable frame="all">
+      <title>Networking Checklist for VMware</title>
+      <para>You will need the following information about VLAN.</para>
+      <informaltable frame="all">
         <tgroup cols="3" align="left" colsep="1" rowsep="1">
-            <colspec colname="c1" />
-            <colspec colname="c2" />
-            <colspec colname="c3" />
-            <thead>
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <colspec colname="c3"/>
+          <thead>
             <row>
-                <entry><para>VLAN Information</para></entry>
-                <entry><para>Value</para></entry>
-                <entry><para>Notes</para></entry>
+              <entry><para>VLAN Information</para></entry>
+              <entry><para>Value</para></entry>
+              <entry><para>Notes</para></entry>
             </row>
-            </thead>
-            <tbody>
+          </thead>
+          <tbody>
             <row>
-                <entry><para>ESXi VLAN</para></entry>
-                <entry><para></para></entry>
-                <entry><para>VLAN on which all your ESXi hypervisors reside.</para></entry>
-            </row>
-            <row>
-                <entry><para>ESXI VLAN IP Address</para></entry>
-                <entry><para></para></entry>
-                <entry><para>IP Address Range in the ESXi VLAN.  One address per Virtual Router is used from this range.</para></entry>
+              <entry><para>ESXi VLAN</para></entry>
+              <entry><para/></entry>
+              <entry><para>VLAN on which all your ESXi hypervisors reside.</para></entry>
             </row>
             <row>
-                <entry><para>ESXi VLAN IP Gateway</para></entry>
-                <entry><para></para></entry>
-                <entry><para></para></entry>
+              <entry><para>ESXI VLAN IP Address</para></entry>
+              <entry><para/></entry>
+              <entry><para>IP Address Range in the ESXi VLAN. One address per Virtual Router is used
+                  from this range.</para></entry>
             </row>
             <row>
-                <entry><para>ESXi VLAN Netmask</para></entry>
-                <entry><para></para></entry>
-                <entry><para></para></entry>
+              <entry><para>ESXi VLAN IP Gateway</para></entry>
+              <entry><para/></entry>
+              <entry><para/></entry>
             </row>
             <row>
-                <entry><para>Management Server VLAN</para></entry>
-                <entry><para></para></entry>
-                <entry><para>VLAN on which the &PRODUCT; Management server is installed.</para></entry>
+              <entry><para>ESXi VLAN Netmask</para></entry>
+              <entry><para/></entry>
+              <entry><para/></entry>
             </row>
             <row>
-                <entry><para>Public VLAN</para></entry>
-                <entry><para></para></entry>
-                <entry><para>VLAN for the Public Network.</para></entry>
+              <entry><para>Management Server VLAN</para></entry>
+              <entry><para/></entry>
+              <entry><para>VLAN on which the &PRODUCT; Management server is
+                installed.</para></entry>
             </row>
             <row>
-                <entry><para>Public VLAN Gateway</para></entry>
-                <entry><para></para></entry>
-                <entry><para></para></entry>
+              <entry><para>Public VLAN</para></entry>
+              <entry><para/></entry>
+              <entry><para>VLAN for the Public Network.</para></entry>
             </row>
             <row>
-                <entry><para>Public VLAN Netmask</para></entry>
-                <entry><para></para></entry>
-                <entry><para></para></entry>
+              <entry><para>Public VLAN Gateway</para></entry>
+              <entry><para/></entry>
+              <entry><para/></entry>
             </row>
             <row>
-                <entry><para>Public VLAN IP Address Range</para></entry>
-                <entry><para></para></entry>
-                <entry><para>Range of Public IP Addresses available for &PRODUCT; use.  These addresses will be used for virtual router on &PRODUCT; to route private traffic to external networks.</para></entry>
+              <entry><para>Public VLAN Netmask</para></entry>
+              <entry><para/></entry>
+              <entry><para/></entry>
             </row>
             <row>
-                <entry><para>VLAN Range for Customer use</para></entry>
-                <entry><para></para></entry>
-                <entry><para>A contiguous range of non-routable VLANs. One VLAN will be assigned for each customer.</para></entry>
+              <entry><para>Public VLAN IP Address Range</para></entry>
+              <entry><para/></entry>
+              <entry><para>Range of Public IP Addresses available for &PRODUCT; use. These addresses
+                  will be used for virtual router on &PRODUCT; to route private traffic to external
+                  networks.</para></entry>
             </row>
-            </tbody>
+            <row>
+              <entry><para>VLAN Range for Customer use</para></entry>
+              <entry><para/></entry>
+              <entry><para>A contiguous range of non-routable VLANs. One VLAN will be assigned for
+                  each customer.</para></entry>
+            </row>
+          </tbody>
         </tgroup>
-        </informaltable>
+      </informaltable>
     </section>
-    </section>
-    <section id="vmware-vsphere-installation-steps">
+  </section>
+  <section id="vmware-vsphere-installation-steps">
     <title>vSphere Installation Steps</title>
     <orderedlist>
-    <listitem><para>If you haven't already, you'll need to download and purchase vSphere from the VMware Website (<ulink url="https://www.vmware.com/tryvmware/index.php?p=vmware-vsphere&amp;lp=1">https://www.vmware.com/tryvmware/index.php?p=vmware-vsphere&amp;lp=1</ulink>) and install it by following the VMware vSphere Installation Guide.</para></listitem>
-        <listitem>
-        <para>Following installation, perform the following configuration, which are described in the next few sections:</para>
+      <listitem>
+        <para>If you haven't already, you'll need to download and purchase vSphere from the VMware
+          Website (<ulink url="https://www.vmware.com/tryvmware/index.php?p=vmware-vsphere&amp;lp=1"
+            >https://www.vmware.com/tryvmware/index.php?p=vmware-vsphere&amp;lp=1</ulink>) and
+          install it by following the VMware vSphere Installation Guide.</para>
+      </listitem>
+      <listitem>
+        <para>Following installation, perform the following configuration, which are described in
+          the next few sections:</para>
         <informaltable frame="all">
-            <tgroup cols="2" align="left" colsep="1" rowsep="1">
-            <colspec colname="c1" />
-            <colspec colname="c2" />
+          <tgroup cols="2" align="left" colsep="1" rowsep="1">
+            <colspec colname="c1"/>
+            <colspec colname="c2"/>
             <thead>
-                <row>
+              <row>
                 <entry><para>Required</para></entry>
                 <entry><para>Optional</para></entry>
-                </row>
+              </row>
             </thead>
             <tbody>
-                <row>
+              <row>
                 <entry><para>ESXi host setup</para></entry>
                 <entry><para>NIC bonding</para></entry>
-                </row>
-                <row>
-                <entry><para>Configure host physical networking, virtual switch, vCenter Management Network, and extended port range</para></entry>
+              </row>
+              <row>
+                <entry><para>Configure host physical networking, virtual switch, vCenter Management
+                    Network, and extended port range</para></entry>
                 <entry><para>Multipath storage</para></entry>
-                </row>
-                <row>
+              </row>
+              <row>
                 <entry><para>Prepare storage for iSCSI</para></entry>
-                <entry><para></para></entry>
-                </row>
-                <row>
-                <entry><para>Configure clusters in vCenter and add hosts to them, or add hosts without clusters to vCenter</para></entry>
-                <entry><para></para></entry>
-                </row>
+                <entry><para/></entry>
+              </row>
+              <row>
+                <entry><para>Configure clusters in vCenter and add hosts to them, or add hosts
+                    without clusters to vCenter</para></entry>
+                <entry><para/></entry>
+              </row>
             </tbody>
-            </tgroup>
+          </tgroup>
         </informaltable>
-        </listitem>
+      </listitem>
     </orderedlist>
-    </section>
-    <section id="vmware-esxi-host-setup">
+  </section>
+  <section id="vmware-esxi-host-setup">
     <title>ESXi Host setup</title>
-    <para>All ESXi hosts should enable CPU hardware virtualization support in BIOS. Please note hardware virtualization support is not enabled by default on most servers.</para>
-    </section>
-    <section id="vmware-physical-host-networking">
+    <para>All ESXi hosts should enable CPU hardware virtualization support in BIOS. Please note
+      hardware virtualization support is not enabled by default on most servers.</para>
+  </section>
+  <section id="vmware-physical-host-networking">
     <title>Physical Host Networking</title>
-    <para>You should have a plan for cabling the vSphere hosts. Proper network configuration is required before adding a vSphere host to &PRODUCT;. To configure an ESXi host, you can use vClient to add it as standalone host to vCenter first.  Once you see the host appearing in the vCenter inventory tree, click the host node in the inventory tree, and navigate to the Configuration tab.</para>
+    <para>You should have a plan for cabling the vSphere hosts. Proper network configuration is
+      required before adding a vSphere host to &PRODUCT;. To configure an ESXi host, you can use
+      vClient to add it as standalone host to vCenter first. Once you see the host appearing in the
+      vCenter inventory tree, click the host node in the inventory tree, and navigate to the
+      Configuration tab.</para>
     <mediaobject>
-        <imageobject>
+      <imageobject>
         <imagedata fileref="./images/vmware-physical-network.png"/>
-        </imageobject>
-        <textobject>
+      </imageobject>
+      <textobject>
         <phrase>vsphereclient.png: vSphere client</phrase>
-        </textobject>
+      </textobject>
     </mediaobject>
-    <para>In the host configuration tab, click the &quot;Hardware/Networking&quot; link to bring up the networking configuration page as above.</para>
- <section id="vmware-physical-host-networking-config-vswitch">
-        <title>Configure Virtual Switch</title>
-        <para>A default virtual switch vSwitch0 is created. &PRODUCT; requires all ESXi hosts in the cloud to use the same set of virtual switch names. If you change the default virtual switch name, you will need to configure one or more &PRODUCT; configuration variables as well.</para>
-        <section id="vmware-physical-host-networking-config-vswitch-separate-traffic">
+    <para>In the host configuration tab, click the &quot;Hardware/Networking&quot; link to bring up
+      the networking configuration page as above.</para>
+    <section id="vmware-physical-host-networking-config-vswitch">
+      <title>Configure Virtual Switch</title>
+      <para>A default virtual switch vSwitch0 is created. &PRODUCT; requires all ESXi hosts in the
+        cloud to use the same set of virtual switch names. If you change the default virtual switch
+        name, you will need to configure one or more &PRODUCT; configuration variables as
+        well.</para>
+      <section id="vmware-physical-host-networking-config-vswitch-separate-traffic">
         <title>Separating Traffic</title>
-        <para>&PRODUCT; allows you to use vCenter to configure three separate networks per ESXi host.  These networks are identified by the name of the vSwitch they are connected to.  The allowed networks for configuration are public (for traffic to/from the public internet), guest (for guest-guest traffic), and private (for management and usually storage traffic).  You can use the default virtual switch for all three, or create one or two other vSwitches for those traffic types.</para>
-        <para>If you want to separate traffic in this way you should first create and configure vSwitches in vCenter according to the vCenter instructions.  Take note of the vSwitch names you have used for each traffic type.  You will configure &PRODUCT; to use these vSwitches.</para>
-        </section>
-        <section id="vmware-physical-host-networking-config-vswitch-increasing-port">
+        <para>&PRODUCT; allows you to use vCenter to configure three separate networks per ESXi
+          host. These networks are identified by the name of the vSwitch they are connected to. The
+          allowed networks for configuration are public (for traffic to/from the public internet),
+          guest (for guest-guest traffic), and private (for management and usually storage traffic).
+          You can use the default virtual switch for all three, or create one or two other vSwitches
+          for those traffic types.</para>
+        <para>If you want to separate traffic in this way you should first create and configure
+          vSwitches in vCenter according to the vCenter instructions. Take note of the vSwitch names
+          you have used for each traffic type. You will configure &PRODUCT; to use these
+          vSwitches.</para>
+      </section>
+      <section id="vmware-physical-host-networking-config-vswitch-increasing-port">
         <title>Increasing Ports</title>
-        <para>By default a virtual switch on ESXi hosts is created with 56 ports.  We recommend setting it to 4088, the maximum number of ports allowed. To do that, click the &quot;Properties...&quot; link for virtual switch (note this is not the Properties link for Networking).</para>
+        <para>By default a virtual switch on ESXi hosts is created with 56 ports. We recommend
+          setting it to 4088, the maximum number of ports allowed. To do that, click the
+          &quot;Properties...&quot; link for virtual switch (note this is not the Properties link
+          for Networking).</para>
         <mediaobject>
-            <imageobject>
+          <imageobject>
             <imagedata fileref="./images/vmware-increase-ports.png"/>
-            </imageobject>
-            <textobject>
+          </imageobject>
+          <textobject>
             <phrase>vsphereclient.png: vSphere client</phrase>
-            </textobject>
+          </textobject>
         </mediaobject>
-        <para>In vSwitch properties dialog, select the vSwitch and click Edit. You should see the following dialog:</para>
+        <para>In vSwitch properties dialog, select the vSwitch and click Edit. You should see the
+          following dialog:</para>
         <mediaobject>
-            <imageobject>
+          <imageobject>
             <imagedata fileref="./images/vmware-vswitch-properties.png"/>
-            </imageobject>
-            <textobject>
+          </imageobject>
+          <textobject>
             <phrase>vsphereclient.png: vSphere client</phrase>
-            </textobject>
+          </textobject>
         </mediaobject>
-        <para>In this dialog, you can change the number of switch ports. After you&apos;ve done that, ESXi hosts are required to reboot in order for the setting to take effect.</para>
-        </section>
+        <para>In this dialog, you can change the number of switch ports. After you&apos;ve done
+          that, ESXi hosts are required to reboot in order for the setting to take effect.</para>
+      </section>
     </section>
     <section id="vmware-physical-host-networking-config-vcenter-mgt">
-        <title>Configure vCenter Management Network</title>
-        <para>In the vSwitch properties dialog box, you may see a vCenter management network. This same network will also be used as the &PRODUCT; management network. &PRODUCT; requires the vCenter management network to be configured properly. Select the management network item in the dialog, then click Edit.</para>
-        <mediaobject>
+      <title>Configure vCenter Management Network</title>
+      <para>In the vSwitch properties dialog box, you may see a vCenter management network. This
+        same network will also be used as the &PRODUCT; management network. &PRODUCT; requires the
+        vCenter management network to be configured properly. Select the management network item in
+        the dialog, then click Edit.</para>
+      <mediaobject>
         <imageobject>
-            <imagedata fileref="./images/vmware-mgt-network-properties.png"/>
+          <imagedata fileref="./images/vmware-mgt-network-properties.png"/>
         </imageobject>
         <textobject>
-            <phrase>vsphereclient.png: vSphere client</phrase>
+          <phrase>vsphereclient.png: vSphere client</phrase>
         </textobject>
-        </mediaobject>
-        <para>Make sure the following values are set:</para>
-        <itemizedlist>
-        <listitem><para>VLAN ID set to the desired ID</para></listitem>
-        <listitem><para>vMotion enabled.</para></listitem>
-        <listitem><para>Management traffic enabled.</para></listitem>
-        </itemizedlist>
-        <para>If the ESXi hosts have multiple VMKernel ports, and ESXi is not using the default value &quot;Management Network&quot; as the management network name, you must follow these guidelines to configure the management network port group so that &PRODUCT; can find it:</para>
-        <itemizedlist>
-        <listitem><para>Use one label for the management network port across all ESXi hosts.</para></listitem>
-        <listitem><para>In the &PRODUCT; UI, go to Configuration - Global Settings and set vmware.management.portgroup to the management network label from the ESXi hosts.</para></listitem>
-        </itemizedlist>
+      </mediaobject>
+      <para>Make sure the following values are set:</para>
+      <itemizedlist>
+        <listitem>
+          <para>VLAN ID set to the desired ID</para>
+        </listitem>
+        <listitem>
+          <para>vMotion enabled.</para>
+        </listitem>
+        <listitem>
+          <para>Management traffic enabled.</para>
+        </listitem>
+      </itemizedlist>
+      <para>If the ESXi hosts have multiple VMKernel ports, and ESXi is not using the default value
+        &quot;Management Network&quot; as the management network name, you must follow these
+        guidelines to configure the management network port group so that &PRODUCT; can find
+        it:</para>
+      <itemizedlist>
+        <listitem>
+          <para>Use one label for the management network port across all ESXi hosts.</para>
+        </listitem>
+        <listitem>
+          <para>In the &PRODUCT; UI, go to Configuration - Global Settings and set
+            vmware.management.portgroup to the management network label from the ESXi hosts.</para>
+        </listitem>
+      </itemizedlist>
     </section>
     <section id="vmware-physical-networking-extend-port-console-proxy">
-        <title>Extend Port Range for &PRODUCT; Console Proxy</title>
-        <para>(Applies only to VMware vSphere version 4.x)</para>
-        <para>You need to extend the range of firewall ports that the console proxy works with on the hosts. This is to enable the console proxy to work with VMware-based VMs. The default additional port range is 59000-60000. To extend the port range, log in to the VMware ESX service console on each host and run the following commands:</para>
-    <programlisting>
+      <title>Extend Port Range for &PRODUCT; Console Proxy</title>
+      <para>(Applies only to VMware vSphere version 4.x)</para>
+      <para>You need to extend the range of firewall ports that the console proxy works with on the
+        hosts. This is to enable the console proxy to work with VMware-based VMs. The default
+        additional port range is 59000-60000. To extend the port range, log in to the VMware ESX
+        service console on each host and run the following commands:</para>
+      <programlisting>
 esxcfg-firewall -o 59000-60000,tcp,in,vncextras
 esxcfg-firewall -o 59000-60000,tcp,out,vncextras
         </programlisting>
     </section>
     <section id="vmware-physical-networking-config-vsphere-nic-bond">
-        <title>Configure NIC Bonding for vSphere</title>
-        <para>NIC bonding on vSphere hosts may be done according to the vSphere installation guide.</para>
+      <title>Configure NIC Bonding for vSphere</title>
+      <para>NIC bonding on vSphere hosts may be done according to the vSphere installation
+        guide.</para>
     </section>
-    </section>
-    <!--    <section id="vmware-vsphere-cluster-config-nexus-vswitch">
+  </section>
+  <!--    <section id="vmware-vsphere-cluster-config-nexus-vswitch">
     <title>Configuring a vSphere Cluster with Nexus 1000v Virtual Switch</title>
     <para>&PRODUCT; supports Cisco Nexus 1000v dvSwitch (Distributed Virtual Switch) for virtual network configuration in a VMware vSphere environment. This section helps you configure a vSphere cluster with Nexus 1000v virtual switch in a VMware vCenter environment. For information on creating a vSphere cluster, see <xref linkend="vmware-install" /></para>
     <section id="vmware-vsphere-cluster-config-nexus-vswitch-about">
@@ -543,89 +603,169 @@ esxcfg-firewall -o 59000-60000,tcp,out,vncextras
         </orderedlist>
     </section> 
 </section> -->
-    <section id="vmware-vsphere-iscsi-storage-preparation">
+  <section id="vmware-vsphere-iscsi-storage-preparation">
     <title>Storage Preparation for vSphere (iSCSI only)</title>
-    <para>Use of iSCSI requires preparatory work in vCenter.  You must add an iSCSI target and create an iSCSI datastore.</para>
+    <para>Use of iSCSI requires preparatory work in vCenter. You must add an iSCSI target and create
+      an iSCSI datastore.</para>
     <para>If you are using NFS, skip this section.</para>
     <section id="vmware-vsphere-iscsi-storage-enable-initiator">
-        <title>Enable iSCSI initiator for ESXi hosts</title>
-        <orderedlist>
+      <title>Enable iSCSI initiator for ESXi hosts</title>
+      <orderedlist>
         <listitem>
-            <para>In vCenter, go to hosts and Clusters/Configuration, and click Storage Adapters link.  You will see:</para>
-            <mediaobject>
+          <para>In vCenter, go to hosts and Clusters/Configuration, and click Storage Adapters link.
+            You will see:</para>
+          <mediaobject>
             <imageobject>
-                <imagedata fileref="./images/vmware-iscsi-initiator.png"/>
+              <imagedata fileref="./images/vmware-iscsi-initiator.png"/>
             </imageobject>
             <textobject>
-                <phrase>vsphereclient.png: vSphere client</phrase>
+              <phrase>vsphereclient.png: vSphere client</phrase>
             </textobject>
-            </mediaobject>
+          </mediaobject>
         </listitem>
         <listitem>
-            <para>Select iSCSI software adapter and click Properties.</para>
-            <mediaobject>
+          <para>Select iSCSI software adapter and click Properties.</para>
+          <mediaobject>
             <imageobject>
-                <imagedata fileref="./images/vmware-iscsi-initiator-properties.png"/>
+              <imagedata fileref="./images/vmware-iscsi-initiator-properties.png"/>
             </imageobject>
             <textobject>
-                <phrase>vsphereclient.png: vSphere client</phrase>
+              <phrase>vsphereclient.png: vSphere client</phrase>
             </textobject>
-            </mediaobject>
+          </mediaobject>
         </listitem>
         <listitem>
-            <para>Click the Configure... button.</para>
-            <mediaobject>
+          <para>Click the Configure... button.</para>
+          <mediaobject>
             <imageobject>
-                <imagedata fileref="./images/vmware-iscsi-general.png"/>
+              <imagedata fileref="./images/vmware-iscsi-general.png"/>
             </imageobject>
             <textobject>
-                <phrase>vsphereclient.png: vSphere client</phrase>
+              <phrase>vsphereclient.png: vSphere client</phrase>
             </textobject>
-            </mediaobject>
+          </mediaobject>
         </listitem>
-        <listitem><para>Check Enabled to enable the initiator.</para></listitem>
-        <listitem><para>Click OK to save.</para></listitem>
-        </orderedlist>
+        <listitem>
+          <para>Check Enabled to enable the initiator.</para>
+        </listitem>
+        <listitem>
+          <para>Click OK to save.</para>
+        </listitem>
+      </orderedlist>
     </section>
     <section id="vmware-vsphere-iscsi-storage-add-target">
-        <title>Add iSCSI target</title>
-        <para>Under the properties dialog, add the iSCSI target info:</para>
-        <mediaobject>
+      <title>Add iSCSI target</title>
+      <para>Under the properties dialog, add the iSCSI target info:</para>
+      <mediaobject>
         <imageobject>
-            <imagedata fileref="./images/vmware-iscsi-target-add.png"/>
+          <imagedata fileref="./images/vmware-iscsi-target-add.png"/>
         </imageobject>
         <textobject>
-            <phrase>vsphereclient.png: vSphere client</phrase>
+          <phrase>vsphereclient.png: vSphere client</phrase>
         </textobject>
-        </mediaobject>
-        <para>Repeat these steps for all ESXi hosts in the cluster.</para>
+      </mediaobject>
+      <para>Repeat these steps for all ESXi hosts in the cluster.</para>
     </section>
     <section id="vmware-vsphere-iscsi-storage-create-datastore">
-        <title>Create an iSCSI datastore</title>
-        <para>You should now create a VMFS datastore.  Follow these steps to do so:</para>
-        <orderedlist>
-        <listitem><para>Select Home/Inventory/Datastores.</para></listitem>
-        <listitem><para>Right click on the datacenter node.</para></listitem>
-        <listitem><para>Choose Add Datastore... command.</para></listitem>
-        <listitem><para>Follow the wizard to create a iSCSI datastore.</para></listitem>
-        </orderedlist>
-        <para>This procedure should be done on one host in the cluster.  It is not necessary to do this on all hosts.</para>
-        <mediaobject>
+      <title>Create an iSCSI datastore</title>
+      <para>You should now create a VMFS datastore. Follow these steps to do so:</para>
+      <orderedlist>
+        <listitem>
+          <para>Select Home/Inventory/Datastores.</para>
+        </listitem>
+        <listitem>
+          <para>Right click on the datacenter node.</para>
+        </listitem>
+        <listitem>
+          <para>Choose Add Datastore... command.</para>
+        </listitem>
+        <listitem>
+          <para>Follow the wizard to create a iSCSI datastore.</para>
+        </listitem>
+      </orderedlist>
+      <para>This procedure should be done on one host in the cluster. It is not necessary to do this
+        on all hosts.</para>
+      <mediaobject>
         <imageobject>
-            <imagedata fileref="./images/vmware-iscsi-datastore.png"/>
+          <imagedata fileref="./images/vmware-iscsi-datastore.png"/>
         </imageobject>
         <textobject>
-            <phrase>vsphereclient.png: vSphere client</phrase>
+          <phrase>vsphereclient.png: vSphere client</phrase>
         </textobject>
-        </mediaobject>
+      </mediaobject>
     </section>
     <section id="vmware-vsphere-iscsi-storage-multipathing">
-        <title>Multipathing for vSphere (Optional)</title>
-        <para>Storage multipathing on vSphere nodes may be done according to the vSphere installation guide.</para>
+      <title>Multipathing for vSphere (Optional)</title>
+      <para>Storage multipathing on vSphere nodes may be done according to the vSphere installation
+        guide.</para>
     </section>
-    </section>
-    <section id="vmware-add-hosts-config-vsphere-cluster">
+  </section>
+  <section id="vmware-add-hosts-config-vsphere-cluster">
     <title>Add Hosts or Configure Clusters (vSphere)</title>
-    <para>Use vCenter to create a vCenter cluster and add your desired hosts to the cluster.  You will later add the entire cluster to &PRODUCT;. (see <xref linkend="add-clusters-vsphere" />).</para>
-</section> 
+    <para>Use vCenter to create a vCenter cluster and add your desired hosts to the cluster. You
+      will later add the entire cluster to &PRODUCT;. (see <xref linkend="add-clusters-vsphere"
+      />).</para>
+  </section>
+  <section id="esxi-patch-install">
+    <title>Applying Hotfixes to a VMware vSphere Host</title>
+    <orderedlist>
+      <listitem>
+        <para>Disconnect the VMware vSphere cluster from &PRODUCT;. It should remain disconnected
+          long enough to apply the hotfix on the host.</para>
+        <orderedlist numeration="loweralpha">
+          <listitem>
+            <para>Log in to the &PRODUCT; UI as root. </para>
+            <para>See <xref linkend="log-in"/>.</para>
+          </listitem>
+          <listitem>
+            <para>Navigate to the VMware cluster, click Actions, and select Unmanage.</para>
+          </listitem>
+          <listitem>
+            <para>Watch the cluster status until it shows Unmanaged.</para>
+          </listitem>
+        </orderedlist>
+      </listitem>
+      <listitem>
+        <para>Perform the following on each of the ESXi hosts in the cluster:</para>
+        <orderedlist numeration="loweralpha">
+          <listitem>
+            <para>Move each of the ESXi hosts in the cluster to maintenance mode.</para>
+          </listitem>
+          <listitem>
+            <para>Ensure that all the VMs are migrated to other hosts in that cluster.</para>
+          </listitem>
+          <listitem>
+            <para>If there is only one host in that cluster, shutdown all the VMs and move the host
+              into maintenance mode.</para>
+          </listitem>
+          <listitem>
+            <para>Apply the patch on the ESXi host.</para>
+          </listitem>
+          <listitem>
+            <para>Restart the host if prompted.</para>
+          </listitem>
+          <listitem>
+            <para>Cancel the maintenance mode on the host.</para>
+          </listitem>
+        </orderedlist>
+      </listitem>
+      <listitem>
+        <para>Reconnect the cluster to &PRODUCT;:</para>
+        <orderedlist numeration="loweralpha">
+          <listitem>
+            <para>Log in to the &PRODUCT; UI as root.</para>
+          </listitem>
+          <listitem>
+            <para>Navigate to the VMware cluster, click Actions, and select Manage.</para>
+          </listitem>
+          <listitem>
+            <para>Watch the status to see that all the hosts come up. It might take several minutes
+              for the hosts to come up.</para>
+            <para>Alternatively, verify the host state is properly synchronized and updated in the
+              &PRODUCT; database.</para>
+          </listitem>
+        </orderedlist>
+      </listitem>
+    </orderedlist>
+  </section>
 </section>
