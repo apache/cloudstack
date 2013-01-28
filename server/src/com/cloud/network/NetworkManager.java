@@ -317,6 +317,6 @@ public interface NetworkManager  {
 
 
 	PublicIpv6Address assignPublicIp6Address(long dcId, Long podId, Account owner,
-			VlanType type, Long networkId, String requestedIp, boolean isSystem)
+			VlanType type, Long networkId, String requestedIp6, boolean isSystem)
 			throws InsufficientAddressCapacityException;
 }
