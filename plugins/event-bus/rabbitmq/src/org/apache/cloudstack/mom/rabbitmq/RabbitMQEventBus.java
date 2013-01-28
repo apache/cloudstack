@@ -161,8 +161,9 @@ public class RabbitMQEventBus implements EventBus {
                                 String eventCategory = getEventCategoryFromRoutingKey(routingKey);
                                 String eventType = getEventTypeFromRoutingKey(routingKey);
                                 String resourceType = getResourceTypeFromRoutingKey(routingKey);
+                                String resourceUUID = getResourceUUIDFromRoutingKey(routingKey);
                                 Event event = new Event(eventSource, eventCategory, eventType,
-                                        resourceType, null);
+                                        resourceType, resourceUUID);
                                 event.setDescription(new String(body));
 
                                 // deliver the event to call back object provided by subscriber
@@ -526,10 +527,11 @@ public class RabbitMQEventBus implements EventBus {
                                             String eventCategory = getEventCategoryFromRoutingKey(routingKey);
                                             String eventType = getEventTypeFromRoutingKey(routingKey);
                                             String resourceType = getResourceTypeFromRoutingKey(routingKey);
+                                            String resourceUUID = getResourceUUIDFromRoutingKey(routingKey);
 
                                             // create event object from the message details obtained from AMQP server
                                             Event event = new Event(eventSource, eventCategory, eventType,
-                                                    resourceType, null);
+                                                    resourceType, resourceUUID);
                                             event.setDescription(new String(body));
 
                                             // deliver the event to call back object provided by subscriber
