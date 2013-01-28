@@ -1217,4 +1217,20 @@ public class NetUtils {
     	}
     	return endLow - startLow + 1;
 	}
+
+	public static boolean isIp6InRange(String ip6, String ip6Range) {
+    	String[] ips = ip6Range.split("-");
+    	String startIp = ips[0];
+    	String endIp = null;
+    	if (ips.length > 1) {
+    		endIp = ips[1];
+    	}
+    	IPv6Address start = IPv6Address.fromString(startIp);
+    	IPv6Address end = IPv6Address.fromString(endIp);
+    	IPv6Address ip = IPv6Address.fromString(ip6);
+    	if (start.compareTo(ip) <= 0 && end.compareTo(ip) >= 0) {
+    		return true;
+    	}
+		return false;
+	}
 }

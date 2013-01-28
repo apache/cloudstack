@@ -298,17 +298,38 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     }
 
     @Override
-    public PublicIpv6Address assignPublicIp6Address(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException {
+    public PublicIpv6Address assignPublicIp6Address(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp6, boolean isSystem) throws InsufficientAddressCapacityException {
     	Vlan vlan = _networkModel.getVlanForNetwork(networkId);
     	if (vlan == null) {
     		s_logger.debug("Cannot find related vlan or too many vlan attached to network " + networkId);
     		return null;
     	}
-    	String ip = NetUtils.getIp6FromRange(vlan.getIp6Range());
-    	//Check for duplicate IP
-    	if (_ipv6Dao.findByDcIdAndIp(dcId, ip) != null) {
-    		//TODO regenerate ip
-    		throw new CloudRuntimeException("Fail to get unique ipv6 address");
+    	//TODO should check before this point
+    	if (!NetUtils.isIp6InRange(requestedIp6, vlan.getIp6Range())) {
+    		throw new CloudRuntimeException("Requested IPv6 is not in the predefined range!");
+    	}
+    	String ip = null;
+    	if (requestedIp6 == null) {
+    		int count = 0;
+    		while (ip == null || count >= 10) {
+    			ip = NetUtils.getIp6FromRange(vlan.getIp6Range());
+    			//Check for duplicate IP
+    			if (_ipv6Dao.findByDcIdAndIp(dcId, ip) == null) {
+    				break;
+    			} else {
+    				ip = null;
+    			}
+    			count ++;
+    		}
+    		if (ip == null) {
+    			throw new CloudRuntimeException("Fail to get unique ipv6 address after 10 times trying!");
+    		}
+    	} else {
+    		ip = requestedIp6;
+    		//TODO should check before this point
+    		if (_ipv6Dao.findByDcIdAndIp(dcId, ip) != null) {
+    			throw new CloudRuntimeException("The requested IP is already taken!");
+    		}
     	}
     	DataCenterVO dc = _dcDao.findById(dcId);
         Long mac = dc.getMacAddress();
