@@ -2262,7 +2262,6 @@ CREATE TABLE  `cloud`.`region` (
   `end_point` varchar(255) NOT NULL,
   `api_key` varchar(255),
   `secret_key` varchar(255),
-  `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

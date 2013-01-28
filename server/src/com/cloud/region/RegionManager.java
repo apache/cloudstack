@@ -18,10 +18,6 @@ package com.cloud.region;
 
 import java.util.Map;
 
-import com.cloud.domain.Domain;
-import com.cloud.user.UserAccount;
-
-
 public interface RegionManager {
 	public boolean propogateAddAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
             Map<String, String> details, String accountUUID, String userUUID);
@@ -31,6 +27,4 @@ public interface RegionManager {
 			String firstName, String lastName, String email, String timeZone,
 			String accountName, String domainUUId, String userUUID);
 	public void propogateAddDomain(String name, Long parentId, String networkDomain, String uuid);
-	UserAccount getUserAccount(String username, Long domainId);
-	Domain findDomainByPath(String domainPath);	
 }

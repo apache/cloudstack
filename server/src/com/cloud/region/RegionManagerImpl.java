@@ -100,6 +100,72 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
     }
 
 	@Override
+	public Region addRegion(int id, String name, String endPoint, String apiKey, String secretKey) {
+		if( _regionDao.findById(id) == null ){
+			RegionVO region = new RegionVO(id, name, endPoint, apiKey, secretKey);
+			return _regionDao.persist(region);
+		} else {
+			throw new InvalidParameterValueException("Region with id: "+id+" already exists");
+		}
+	}
+
+	@Override
+	public Region updateRegion(int id, String name, String endPoint, String apiKey, String secretKey) {
+		RegionVO region = _regionDao.findById(id);
+		
+		if(region == null){
+			throw new InvalidParameterValueException("Region with id: "+id+" does not exist");
+		}
+		
+		if(name != null){
+			region.setName(name);
+		}
+		
+		if(endPoint != null){
+			region.setEndPoint(endPoint);
+		}
+		
+		if(apiKey != null){
+			region.setApiKey(apiKey);
+		}
+		
+		if(secretKey != null){
+			region.setSecretKey(secretKey);
+		}
+		
+		_regionDao.update(id, region);
+		return _regionDao.findById(id);
+	}
+
+	@Override
+	public boolean removeRegion(int id) {
+		RegionVO region = _regionDao.findById(id);
+		if(region != null){
+			return _regionDao.remove(id);
+		} else {
+			throw new InvalidParameterValueException("Failed to delete Region: " + id + ", Region not found");
+		}
+	}
+
+	@Override
+	public List<RegionVO> listRegions(ListRegionsCmd cmd) {
+		if(cmd.getId() != null){
+			List<RegionVO> regions = new ArrayList<RegionVO>();
+			regions.add(_regionDao.findById(cmd.getId()));
+			return regions;
+		}
+		return _regionDao.listAll();
+	}
+    
+	public int getId() {
+		return _id;
+	}
+
+	public void setId(int _id) {
+		this._id = _id;
+	}
+	
+	@Override
 	public boolean propogateAddAccount(String userName, String password, String firstName, String lastName, String email, String timezone, 
 			String accountName, short accountType, Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID) {
 		String command = "createAccount";
@@ -247,73 +313,6 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 				throw new CloudRuntimeException("Error while updating account :"+account.getUuid()+" in source Region: "+region.getId());
 			}
 		}
-	}
-
-	@Override
-	public Region addRegion(int id, String name, String endPoint, String apiKey, String secretKey) {
-		if( _regionDao.findById(id) == null ){
-			RegionVO region = new RegionVO(id, name, endPoint, apiKey, secretKey);
-			return _regionDao.persist(region);
-		} else {
-			throw new InvalidParameterValueException("Region with id: "+id+" already exists");
-		}
-	}
-
-	@Override
-	public Region updateRegion(int id, String name, String endPoint, String apiKey, String secretKey) {
-		RegionVO region = _regionDao.findById(id);
-		
-		if(region == null){
-			throw new InvalidParameterValueException("Region with id: "+id+" does not exist");
-		}
-		
-		if(name != null){
-			region.setName(name);
-		}
-		
-		if(endPoint != null){
-			region.setEndPoint(endPoint);
-		}
-		
-		if(apiKey != null){
-			region.setApiKey(apiKey);
-		}
-		
-		if(secretKey != null){
-			region.setSecretKey(secretKey);
-		}
-		
-		_regionDao.update(id, region);
-		return _regionDao.findById(id);
-	}
-
-	@Override
-	public boolean removeRegion(int id) {
-		//Remove complete row, instead of soft delete
-		RegionVO region = _regionDao.findById(id);
-		if(region != null){
-			return _regionDao.remove(id);
-		} else {
-			throw new InvalidParameterValueException("Failed to delete Region: " + id + ", Region not found");
-		}
-	}
-
-	public int getId() {
-		return _id;
-	}
-
-	public void setId(int _id) {
-		this._id = _id;
-	}
-
-	@Override
-	public List<RegionVO> listRegions(ListRegionsCmd cmd) {
-		if(cmd.getId() != null){
-			List<RegionVO> regions = new ArrayList<RegionVO>();
-			regions.add(_regionDao.findById(cmd.getId()));
-			return regions;
-		}
-		return _regionDao.listAll();
 	}
 
 	@Override
@@ -774,149 +773,5 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 		}
 		return;		
 	}
-	
-	@Override
-    public UserAccount getUserAccount(String username, Long domainId) {
-		UserAccount user = _userAccountDao.getUserAccount(username, domainId);
-		if(user != null){
-			return user;
-		} else {
-			DomainVO domain = _domainDao.findById(domainId);
-			if(domain == null){
-				//Lookup Domain
-				s_logger.debug("Domain with Id :"+domainId+" doesn't exist");
-			}
-			String command = "findUser";
-			List<NameValuePair> params = new ArrayList<NameValuePair>();
-			params.add(new NameValuePair(ApiConstants.USERNAME, username));
-			params.add(new NameValuePair(ApiConstants.DOMAIN_ID, domain.getUuid()));
-			RegionUser regionuser = null;
-			List<RegionVO> regions =  _regionDao.listAll();
-			boolean sourceCheck = false;
-			for (Region region : regions){
-				if(region.getId() == getId()){
-					continue;
-				}
-				s_logger.debug("Looking up user :"+username+" in Region: "+region.getId());
-				regionuser = RegionsApiUtil.makeUserAPICall(region, command, params);
-				if(regionuser != null){
-					s_logger.debug("Found user :"+username+" in Region: "+region.getId());
-					if(regionuser.getRegionId() != region.getId()){
-						sourceCheck = true;
-					}
-					break;
-				}
-			}
 
-			if(regionuser == null){
-				s_logger.debug("User :"+username+" not found in any Region");
-				return null;
-			}
-			
-			if(sourceCheck){
-				if(regionuser.getRegionId() == getId()){
-					s_logger.debug("Current Region is the source Region for found user: " +username+ ". Ignoring..");
-					return null;
-				}
-				
-				s_logger.debug("Verifying user: " +username+ " in source Region: "+regionuser.getRegionId());
-				
-				//Verify user in source Region
-				Region sourceRegion = _regionDao.findById(regionuser.getRegionId());
-				if(sourceRegion != null){
-					regionuser = RegionsApiUtil.makeUserAPICall(sourceRegion, command, params);				 
-					if(regionuser != null && sourceRegion.getId() == regionuser.getRegionId()){
-						s_logger.debug("Found User :"+username+" in Source Region: "+sourceRegion.getId()+" Add to local Region");
-					} else {
-						s_logger.debug("User :"+username+" not found in Source Region: "+sourceRegion.getId());
-						return  null;
-					}
-				} else {
-					s_logger.debug("Source Region :"+regionuser.getRegionId()+" not found");
-					return  null;
-				}
-			}
-			
-			if(regionuser != null){
-				Long accountId = _identityDao.getIdentityId("account", regionuser.getAccountuuid());
-				if(accountId == null){
-					//Lookup Account
-				}
-				regionuser.setAccountId(accountId);
-				UserVO newuser = (UserVO)regionuser;
-				_userDao.persist(newuser);
-				return _userAccountDao.getUserAccount(username, domainId);
-			}
-			return null;
-		}
-    }
-	
-    @Override
-    public DomainVO findDomainByPath(String domainPath) {
-    	DomainVO domain = (DomainVO)_domainMgr.findDomainByPath(domainPath);
-    	if(domain != null){
-    		return domain;
-    	} else {
-    		String command = "findDomain";
-    		List<NameValuePair> params = new ArrayList<NameValuePair>();
-			params.add(new NameValuePair(ApiConstants.DOMAIN, domainPath));
-			boolean sourceCheck = false;
-			RegionDomain regiondomain = null;
-			List<RegionVO> regions =  _regionDao.listAll();
-			for (Region region : regions){
-				if(region.getId() == getId()){
-					continue;
-				}
-				s_logger.debug("Looking up domain :"+domainPath+" in Region: "+region.getId());
-				regiondomain = RegionsApiUtil.makeDomainAPICall(region, command, params);
-				if(regiondomain != null){
-					s_logger.debug("Found domain :"+domainPath+" in Region: "+region.getId());
-					if(regiondomain.getRegionId() != region.getId()){
-						sourceCheck = true;
-					}
-					break;
-				}
-			}
-
-			if(regiondomain == null){
-				s_logger.debug("Domain :"+domainPath+" not found in any Region");
-				return null;
-			}
-			
-			if(sourceCheck){
-				if(regiondomain.getRegionId() == getId()){
-					s_logger.debug("Current Region is the source Region for found domain: " +domainPath+ ". Ignoring..");
-					return null;
-				}
-				
-				s_logger.debug("Verifying domain: " +domainPath+ " in source Region: "+regiondomain.getRegionId());
-				
-				//Verify user in source Region
-				Region sourceRegion = _regionDao.findById(regiondomain.getRegionId());
-				if(sourceRegion != null){
-					DomainVO sourceDomain = RegionsApiUtil.makeDomainAPICall(sourceRegion, command, params);				 
-					if(sourceDomain != null && sourceRegion.getId() == sourceDomain.getRegionId()){
-						s_logger.debug("Found Domain :"+domainPath+" in Source Region: "+sourceRegion.getId()+" Add to local Region");
-					} else {
-						s_logger.debug("Domain :"+domainPath+" not found in Source Region: "+sourceRegion.getId());
-						return  null;
-					}
-				} else {
-					s_logger.debug("Source Region :"+regiondomain.getRegionId()+" not found");
-					return  null;
-				}
-			}
-			
-			if(regiondomain != null){
-				Long parentId = _identityDao.getIdentityId("domain", regiondomain.getParentUuid());
-				if(parentId == null){
-					//lookup ParentDomain
-				}
-				regiondomain.setParent(parentId);
-				regiondomain.setState(Domain.State.Active);
-				_domainDao.persist((DomainVO)regiondomain);
-			}
-			return (DomainVO)_domainMgr.findDomainByPath(domainPath);
-    	}
-    }
 }

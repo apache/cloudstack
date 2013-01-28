@@ -16,14 +16,11 @@
 // under the License.
 package com.cloud.region;
 
-import java.util.Date;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="region")
@@ -45,9 +42,6 @@ public class RegionVO implements Region{
     @Column(name="secret_key")
     private String secretKey;
     
-    @Column(name=GenericDao.REMOVED_COLUMN)
-    private Date removed;
-
     public RegionVO() {
     }
     
@@ -69,10 +63,6 @@ public class RegionVO implements Region{
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public Date getRemoved() {
-		return removed;
 	}
 
 	public String getEndPoint() {

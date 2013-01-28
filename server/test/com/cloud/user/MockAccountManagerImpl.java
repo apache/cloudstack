@@ -28,11 +28,9 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.api.query.vo.ControlledViewEntity;
 
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
-import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
-import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
@@ -338,18 +336,6 @@ public class MockAccountManagerImpl implements Manager, AccountManager, AccountS
 	public User createUser(String userName, String password, String firstName,
 			String lastName, String email, String timeZone, String accountName,
 			Long domainId, String userUUID, Integer regionId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public User findUser(String username, Long domainId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Account findAccount(Long id) {
 		// TODO Auto-generated method stub
 		return null;
 	}

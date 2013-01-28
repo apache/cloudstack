@@ -2241,24 +2241,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
 	@Override
-	public User findUser(String username, Long domainId) {
-		UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
-		if(userAccount == null){
-			throw new InvalidParameterValueException("Unable to find user account by name: "+username);
-		}
-		User user = _userDao.findById(userAccount.getId());
-		if(user == null){
-			throw new InvalidParameterValueException("Unable to find user by name: "+username);
-		}
-		return user;
-	}
-
-	@Override
-	public Account findAccount(Long id) {
-		return _accountDao.findById(id);		
-	}
-
-	@Override
     public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
             boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
 

@@ -200,7 +200,4 @@ public interface AccountService {
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;
 
-	User findUser(String username, Long domainId);
-
-	Account findAccount(Long id);
 }

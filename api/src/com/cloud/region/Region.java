@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.region;
 
-import java.util.Date;
-
 /**
  *
  */
@@ -29,8 +27,6 @@ public interface Region  {
 
 	public void setName(String name);
 
-	public Date getRemoved();
-	
 	public String getEndPoint();
 	
 	public String getApiKey();

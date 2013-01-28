@@ -39,9 +39,6 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
-import org.apache.cloudstack.api.response.FindAccountResponse;
-import org.apache.cloudstack.api.response.FindDomainResponse;
-import org.apache.cloudstack.api.response.FindUserResponse;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
@@ -365,11 +362,6 @@ public interface ResponseGenerator {
 
     Site2SiteVpnConnectionResponse createSite2SiteVpnConnectionResponse(Site2SiteVpnConnection result);
 
-	FindUserResponse createFindUserResponse(User user);
-
-	FindAccountResponse createFindAccountResponse(Account account);
-
-	FindDomainResponse createFindDomainResponse(Domain domain);
     CounterResponse createCounterResponse(Counter ctr);
 
     ConditionResponse createConditionResponse(Condition cndn);

@@ -78,9 +78,6 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
-import org.apache.cloudstack.api.response.FindAccountResponse;
-import org.apache.cloudstack.api.response.FindDomainResponse;
-import org.apache.cloudstack.api.response.FindUserResponse;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
@@ -3113,69 +3110,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
     
-    @Override
-    public FindUserResponse createFindUserResponse(User user) {
-    	FindUserResponse userResponse = new FindUserResponse();
-    	userResponse.setId(user.getUuid());
-    	userResponse.setUsername(user.getUsername());
-    	userResponse.setPassword(user.getPassword());
-        userResponse.setFirstname(user.getFirstname());        
-        userResponse.setLastname(user.getLastname());
-        Account account = ApiDBUtils.findAccountById(user.getAccountId());
-        if(account != null){
-        	userResponse.setAccountId(account.getUuid());
-        }
-        userResponse.setEmail(user.getEmail());
-        userResponse.setState(user.getState().toString());
-        userResponse.setApiKey(user.getApiKey());
-        userResponse.setSecretKey(user.getSecretKey());        
-        userResponse.setCreated(user.getCreated());        
-        userResponse.setTimezone(user.getTimezone());
-        userResponse.setRegistrationToken(user.getRegistrationToken());
-        userResponse.setRegistered(user.isRegistered());
-        userResponse.setRegionId(user.getRegionId());
-        userResponse.setObjectName("user");
-
-        return userResponse;
-    }
-
-	@Override
-	public FindAccountResponse createFindAccountResponse(Account account) {
-		FindAccountResponse accountResponse = new FindAccountResponse();
-		accountResponse.setId(account.getUuid());
-		accountResponse.setName(account.getAccountName());
-		accountResponse.setAccountType(account.getType());
-		DataCenterVO zone = ApiDBUtils.findZoneById(account.getDefaultZoneId());
-		if(zone != null){
-			accountResponse.setDefaultZoneId(zone.getUuid());			
-		}
-		Domain domain = ApiDBUtils.findDomainById(account.getDomainId());
-		if(domain != null){
-			accountResponse.setDomainId(domain.getUuid());
-		}
-		accountResponse.setRegionId(account.getRegionId());
-		accountResponse.setState(account.getState().toString());
-		accountResponse.setObjectName("account");
-		return accountResponse;
-	}
-
-	@Override
-	public FindDomainResponse createFindDomainResponse(Domain domain) {
-		FindDomainResponse domainResponse = new FindDomainResponse();
-        domainResponse.setDomainName(domain.getName());
-        domainResponse.setId(domain.getUuid());
-        domainResponse.setLevel(domain.getLevel());
-        domainResponse.setNetworkDomain(domain.getNetworkDomain());
-        Domain parentDomain = ApiDBUtils.findDomainById(domain.getParent());
-        if (parentDomain != null) {
-            domainResponse.setParent(parentDomain.getUuid());
-        }
-        domainResponse.setPath(domain.getPath());
-        domainResponse.setObjectName("domain");
-        domainResponse.setRegionId(domain.getRegionId());
-		return domainResponse;
-	}
-
     @Override
     public GuestOSResponse createGuestOSResponse(GuestOS guestOS) {
         GuestOSResponse response = new GuestOSResponse();

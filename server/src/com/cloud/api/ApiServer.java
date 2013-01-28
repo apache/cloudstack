@@ -754,7 +754,7 @@ public class ApiServer implements HttpRequestHandler {
             if (domainPath == null || domainPath.trim().length() == 0) {
                 domainId = DomainVO.ROOT_DOMAIN;
             } else {
-                Domain domainObj = _regionMgr.findDomainByPath(domainPath);
+                Domain domainObj = _domainMgr.findDomainByPath(domainPath);
                 if (domainObj != null) {
                     domainId = domainObj.getId();
                 } else { // if an unknown path is passed in, fail the login call
