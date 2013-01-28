@@ -1887,8 +1887,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                 throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
             }
 
-            if (snapshotCheck.getStatus() != Snapshot.Status.BackedUp) {
-                throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.Status.BackedUp + " state yet and can't be used for volume creation");
+            if (snapshotCheck.getState() != Snapshot.State.BackedUp) {
+                throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.State.BackedUp + " state yet and can't be used for volume creation");
             }
 
             diskOfferingId = snapshotCheck.getDiskOfferingId();
@@ -2393,7 +2393,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                     }
 
                     // remove snapshots in Error state
-                    List<SnapshotVO> snapshots = _snapshotDao.listAllByStatus(Snapshot.Status.Error);
+                    List<SnapshotVO> snapshots = _snapshotDao.listAllByStatus(Snapshot.State.Error);
                     for (SnapshotVO snapshotVO : snapshots) {
                         try{
                             _snapshotDao.expunge(snapshotVO.getId());

@@ -1298,8 +1298,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             //check permissions
             _accountMgr.checkAccess(caller, null, true, snapshot);
 
-            if (snapshot.getStatus() != Snapshot.Status.BackedUp) {
-                throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.Status.BackedUp + " state yet and can't be used for template creation");
+            if (snapshot.getState() != Snapshot.State.BackedUp) {
+                throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.State.BackedUp + " state yet and can't be used for template creation");
             }
 
             /*
