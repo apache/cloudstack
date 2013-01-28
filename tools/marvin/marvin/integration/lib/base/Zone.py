@@ -14,8 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createZone
+from marvin.cloudstackAPI import listZones
+from marvin.cloudstackAPI import updateZone
+from marvin.cloudstackAPI import deleteZone
+
 class Zone(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,14 +29,30 @@ class Zone(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, ZoneFactory, **kwargs):
-        pass
+        cmd = createZone.createZoneCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in ZoneFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        zone = apiclient.createZone(cmd)
+        return Zone(zone.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listZones.listZonesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        zone = apiclient.listZones(cmd)
+        return map(lambda e: Zone(e.__dict__), zone)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateZone.updateZoneCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        zone = apiclient.updateZone(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteZone.deleteZoneCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        zone = apiclient.deleteZone(cmd)

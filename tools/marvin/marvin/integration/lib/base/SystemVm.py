@@ -14,28 +14,60 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import migrateSystemVm
+from marvin.cloudstackAPI import stopSystemVm
+from marvin.cloudstackAPI import listSystemVms
+from marvin.cloudstackAPI import rebootSystemVm
+from marvin.cloudstackAPI import startSystemVm
+from marvin.cloudstackAPI import destroySystemVm
+
 class SystemVm(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def migrate(self, apiclient, hostid, virtualmachineid, **kwargs):
-        pass
+        cmd = migrateSystemVm.migrateSystemVmCmd()
+        cmd.hostid = hostid
+        cmd.virtualmachineid = virtualmachineid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        systemvm = apiclient.migrateSystemVm(cmd)
+
 
     def stop(self, apiclient, id, **kwargs):
-        pass
+        cmd = stopSystemVm.stopSystemVmCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        systemvm = apiclient.stopSystemVm(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listSystemVms.listSystemVmsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        systemvm = apiclient.listSystemVms(cmd)
+        return map(lambda e: SystemVm(e.__dict__), systemvm)
+
 
     def reboot(self, apiclient, id, **kwargs):
-        pass
+        cmd = rebootSystemVm.rebootSystemVmCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        systemvm = apiclient.rebootSystemVm(cmd)
+
 
     def start(self, apiclient, id, **kwargs):
-        pass
+        cmd = startSystemVm.startSystemVmCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        systemvm = apiclient.startSystemVm(cmd)
+
 
     def destroy(self, apiclient, id, **kwargs):
-        pass
+        cmd = destroySystemVm.destroySystemVmCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        systemvm = apiclient.destroySystemVm(cmd)

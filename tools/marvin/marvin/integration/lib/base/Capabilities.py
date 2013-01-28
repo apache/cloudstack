@@ -14,13 +14,19 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import listCapabilities
+
 class Capabilities(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     @classmethod
-    def list(cls, apiclient):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listCapabilities.listCapabilitiesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        capabilities = apiclient.listCapabilities(cmd)
+        return map(lambda e: Capabilities(e.__dict__), capabilities)

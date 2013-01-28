@@ -14,8 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createStaticRoute
+from marvin.cloudstackAPI import listStaticRoutes
+from marvin.cloudstackAPI import deleteStaticRoute
+
 class StaticRoute(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,11 +28,23 @@ class StaticRoute(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, StaticRouteFactory, **kwargs):
-        pass
+        cmd = createStaticRoute.createStaticRouteCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in StaticRouteFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        staticroute = apiclient.createStaticRoute(cmd)
+        return StaticRoute(staticroute.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listStaticRoutes.listStaticRoutesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        staticroute = apiclient.listStaticRoutes(cmd)
+        return map(lambda e: StaticRoute(e.__dict__), staticroute)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteStaticRoute.deleteStaticRouteCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        staticroute = apiclient.deleteStaticRoute(cmd)

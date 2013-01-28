@@ -14,8 +14,12 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createLBStickinessPolicy
+from marvin.cloudstackAPI import deleteLBStickinessPolicy
+
 class LBStickinessPolicy(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,7 +27,15 @@ class LBStickinessPolicy(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, LBStickinessPolicyFactory, **kwargs):
-        pass
+        cmd = createLBStickinessPolicy.createLBStickinessPolicyCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in LBStickinessPolicyFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        lbstickinesspolicy = apiclient.createLBStickinessPolicy(cmd)
+        return LBStickinessPolicy(lbstickinesspolicy.__dict__)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteLBStickinessPolicy.deleteLBStickinessPolicyCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        lbstickinesspolicy = apiclient.deleteLBStickinessPolicy(cmd)

@@ -14,8 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createLoadBalancerRule
+from marvin.cloudstackAPI import listLoadBalancerRules
+from marvin.cloudstackAPI import updateLoadBalancerRule
+from marvin.cloudstackAPI import deleteLoadBalancerRule
+
 class LoadBalancerRule(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,14 +29,30 @@ class LoadBalancerRule(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, LoadBalancerRuleFactory, **kwargs):
-        pass
+        cmd = createLoadBalancerRule.createLoadBalancerRuleCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in LoadBalancerRuleFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        loadbalancerrule = apiclient.createLoadBalancerRule(cmd)
+        return LoadBalancerRule(loadbalancerrule.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listLoadBalancerRules.listLoadBalancerRulesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        loadbalancerrule = apiclient.listLoadBalancerRules(cmd)
+        return map(lambda e: LoadBalancerRule(e.__dict__), loadbalancerrule)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateLoadBalancerRule.updateLoadBalancerRuleCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        loadbalancerrule = apiclient.updateLoadBalancerRule(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteLoadBalancerRule.deleteLoadBalancerRuleCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        loadbalancerrule = apiclient.deleteLoadBalancerRule(cmd)

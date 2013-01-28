@@ -14,16 +14,30 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import listUsageRecords
+from marvin.cloudstackAPI import generateUsageRecords
+
 class UsageRecords(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, startdate, enddate, **kwargs):
+        cmd = listUsageRecords.listUsageRecordsCmd()
+        cmd.enddate = enddate
+        cmd.startdate = startdate
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        usagerecords = apiclient.listUsageRecords(cmd)
+        return map(lambda e: UsageRecords(e.__dict__), usagerecords)
+
 
     def generate(self, apiclient, startdate, enddate, **kwargs):
-        pass
+        cmd = generateUsageRecords.generateUsageRecordsCmd()
+        cmd.enddate = enddate
+        cmd.startdate = startdate
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        usagerecords = apiclient.generateUsageRecords(cmd)

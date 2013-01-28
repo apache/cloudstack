@@ -14,19 +14,39 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import addNiciraNvpDevice
+from marvin.cloudstackAPI import listNiciraNvpDevices
+from marvin.cloudstackAPI import deleteNiciraNvpDevice
+
 class NiciraNvpDevice(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def add(self, apiclient, username, physicalnetworkid, password, hostname, transportzoneuuid, **kwargs):
-        pass
+        cmd = addNiciraNvpDevice.addNiciraNvpDeviceCmd()
+        cmd.hostname = hostname
+        cmd.password = password
+        cmd.physicalnetworkid = physicalnetworkid
+        cmd.transportzoneuuid = transportzoneuuid
+        cmd.username = username
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        niciranvpdevice = apiclient.addNiciraNvpDevice(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listNiciraNvpDevices.listNiciraNvpDevicesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        niciranvpdevice = apiclient.listNiciraNvpDevices(cmd)
+        return map(lambda e: NiciraNvpDevice(e.__dict__), niciranvpdevice)
+
 
     def delete(self, apiclient, nvpdeviceid, **kwargs):
-        pass
+        cmd = deleteNiciraNvpDevice.deleteNiciraNvpDeviceCmd()
+        cmd.nvpdeviceid = nvpdeviceid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        niciranvpdevice = apiclient.deleteNiciraNvpDevice(cmd)

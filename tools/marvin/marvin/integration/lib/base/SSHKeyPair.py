@@ -14,8 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createSSHKeyPair
+from marvin.cloudstackAPI import registerSSHKeyPair
+from marvin.cloudstackAPI import listSSHKeyPairs
+from marvin.cloudstackAPI import deleteSSHKeyPair
+
 class SSHKeyPair(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,14 +29,31 @@ class SSHKeyPair(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, SSHKeyPairFactory, **kwargs):
-        pass
+        cmd = createSSHKeyPair.createSSHKeyPairCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in SSHKeyPairFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        sshkeypair = apiclient.createSSHKeyPair(cmd)
+        return SSHKeyPair(sshkeypair.__dict__)
+
 
     def register(self, apiclient, publickey, name, **kwargs):
-        pass
+        cmd = registerSSHKeyPair.registerSSHKeyPairCmd()
+        cmd.name = name
+        cmd.publickey = publickey
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        sshkeypair = apiclient.registerSSHKeyPair(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listSSHKeyPairs.listSSHKeyPairsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        sshkeypair = apiclient.listSSHKeyPairs(cmd)
+        return map(lambda e: SSHKeyPair(e.__dict__), sshkeypair)
+
 
     def delete(self, apiclient, name, **kwargs):
-        pass
+        cmd = deleteSSHKeyPair.deleteSSHKeyPairCmd()
+        cmd.name = name
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        sshkeypair = apiclient.deleteSSHKeyPair(cmd)

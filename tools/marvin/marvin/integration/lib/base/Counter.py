@@ -14,8 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createCounter
+from marvin.cloudstackAPI import listCounters
+from marvin.cloudstackAPI import deleteCounter
+
 class Counter(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,11 +28,23 @@ class Counter(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, CounterFactory, **kwargs):
-        pass
+        cmd = createCounter.createCounterCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in CounterFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        counter = apiclient.createCounter(cmd)
+        return Counter(counter.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listCounters.listCountersCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        counter = apiclient.listCounters(cmd)
+        return map(lambda e: Counter(e.__dict__), counter)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteCounter.deleteCounterCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        counter = apiclient.deleteCounter(cmd)

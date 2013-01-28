@@ -14,8 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createNetworkOffering
+from marvin.cloudstackAPI import listNetworkOfferings
+from marvin.cloudstackAPI import updateNetworkOffering
+from marvin.cloudstackAPI import deleteNetworkOffering
+
 class NetworkOffering(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,14 +29,29 @@ class NetworkOffering(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, NetworkOfferingFactory, **kwargs):
-        pass
+        cmd = createNetworkOffering.createNetworkOfferingCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in NetworkOfferingFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        networkoffering = apiclient.createNetworkOffering(cmd)
+        return NetworkOffering(networkoffering.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listNetworkOfferings.listNetworkOfferingsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        networkoffering = apiclient.listNetworkOfferings(cmd)
+        return map(lambda e: NetworkOffering(e.__dict__), networkoffering)
+
 
     def update(self, apiclient, **kwargs):
-        pass
+        cmd = updateNetworkOffering.updateNetworkOfferingCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        networkoffering = apiclient.updateNetworkOffering(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteNetworkOffering.deleteNetworkOfferingCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        networkoffering = apiclient.deleteNetworkOffering(cmd)

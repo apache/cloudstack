@@ -14,8 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createInstanceGroup
+from marvin.cloudstackAPI import listInstanceGroups
+from marvin.cloudstackAPI import updateInstanceGroup
+from marvin.cloudstackAPI import deleteInstanceGroup
+
 class InstanceGroup(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,14 +29,30 @@ class InstanceGroup(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, InstanceGroupFactory, **kwargs):
-        pass
+        cmd = createInstanceGroup.createInstanceGroupCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in InstanceGroupFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        instancegroup = apiclient.createInstanceGroup(cmd)
+        return InstanceGroup(instancegroup.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listInstanceGroups.listInstanceGroupsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        instancegroup = apiclient.listInstanceGroups(cmd)
+        return map(lambda e: InstanceGroup(e.__dict__), instancegroup)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateInstanceGroup.updateInstanceGroupCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        instancegroup = apiclient.updateInstanceGroup(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteInstanceGroup.deleteInstanceGroupCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        instancegroup = apiclient.deleteInstanceGroup(cmd)

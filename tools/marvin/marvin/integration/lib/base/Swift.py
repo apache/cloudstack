@@ -14,16 +14,27 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import addSwift
+from marvin.cloudstackAPI import listSwifts
+
 class Swift(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def add(self, apiclient, url, **kwargs):
-        pass
+        cmd = addSwift.addSwiftCmd()
+        cmd.url = url
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        swift = apiclient.addSwift(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listSwifts.listSwiftsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        swift = apiclient.listSwifts(cmd)
+        return map(lambda e: Swift(e.__dict__), swift)

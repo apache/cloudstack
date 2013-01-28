@@ -14,8 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createPhysicalNetwork
+from marvin.cloudstackAPI import listPhysicalNetworks
+from marvin.cloudstackAPI import updatePhysicalNetwork
+from marvin.cloudstackAPI import deletePhysicalNetwork
+
 class PhysicalNetwork(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,14 +29,30 @@ class PhysicalNetwork(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, PhysicalNetworkFactory, **kwargs):
-        pass
+        cmd = createPhysicalNetwork.createPhysicalNetworkCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in PhysicalNetworkFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        physicalnetwork = apiclient.createPhysicalNetwork(cmd)
+        return PhysicalNetwork(physicalnetwork.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listPhysicalNetworks.listPhysicalNetworksCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        physicalnetwork = apiclient.listPhysicalNetworks(cmd)
+        return map(lambda e: PhysicalNetwork(e.__dict__), physicalnetwork)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updatePhysicalNetwork.updatePhysicalNetworkCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        physicalnetwork = apiclient.updatePhysicalNetwork(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deletePhysicalNetwork.deletePhysicalNetworkCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        physicalnetwork = apiclient.deletePhysicalNetwork(cmd)

@@ -14,16 +14,26 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import listHypervisorCapabilities
+from marvin.cloudstackAPI import updateHypervisorCapabilities
+
 class HypervisorCapabilities(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listHypervisorCapabilities.listHypervisorCapabilitiesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        hypervisorcapabilities = apiclient.listHypervisorCapabilities(cmd)
+        return map(lambda e: HypervisorCapabilities(e.__dict__), hypervisorcapabilities)
+
 
     def update(self, apiclient, **kwargs):
-        pass
+        cmd = updateHypervisorCapabilities.updateHypervisorCapabilitiesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        hypervisorcapabilities = apiclient.updateHypervisorCapabilities(cmd)

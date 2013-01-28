@@ -14,8 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createPod
+from marvin.cloudstackAPI import listPods
+from marvin.cloudstackAPI import updatePod
+from marvin.cloudstackAPI import deletePod
+
 class Pod(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,14 +29,30 @@ class Pod(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, PodFactory, **kwargs):
-        pass
+        cmd = createPod.createPodCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in PodFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        pod = apiclient.createPod(cmd)
+        return Pod(pod.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listPods.listPodsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        pod = apiclient.listPods(cmd)
+        return map(lambda e: Pod(e.__dict__), pod)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updatePod.updatePodCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        pod = apiclient.updatePod(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deletePod.deletePodCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        pod = apiclient.deletePod(cmd)

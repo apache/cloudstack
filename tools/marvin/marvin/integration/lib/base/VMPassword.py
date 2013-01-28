@@ -14,12 +14,18 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import getVMPassword
+
 class VMPassword(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def get(self, apiclient, id, **kwargs):
-        pass
+        cmd = getVMPassword.getVMPasswordCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vmpassword = apiclient.getVMPassword(cmd)

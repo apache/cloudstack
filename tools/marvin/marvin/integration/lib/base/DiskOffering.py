@@ -14,8 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createDiskOffering
+from marvin.cloudstackAPI import listDiskOfferings
+from marvin.cloudstackAPI import updateDiskOffering
+from marvin.cloudstackAPI import deleteDiskOffering
+
 class DiskOffering(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,14 +29,30 @@ class DiskOffering(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, DiskOfferingFactory, **kwargs):
-        pass
+        cmd = createDiskOffering.createDiskOfferingCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in DiskOfferingFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        diskoffering = apiclient.createDiskOffering(cmd)
+        return DiskOffering(diskoffering.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listDiskOfferings.listDiskOfferingsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        diskoffering = apiclient.listDiskOfferings(cmd)
+        return map(lambda e: DiskOffering(e.__dict__), diskoffering)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateDiskOffering.updateDiskOfferingCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        diskoffering = apiclient.updateDiskOffering(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteDiskOffering.deleteDiskOfferingCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        diskoffering = apiclient.deleteDiskOffering(cmd)

@@ -14,12 +14,19 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import uploadCustomCertificate
+
 class CustomCertificate(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def upload(self, apiclient, domainsuffix, certificate, **kwargs):
-        pass
+        cmd = uploadCustomCertificate.uploadCustomCertificateCmd()
+        cmd.certificate = certificate
+        cmd.domainsuffix = domainsuffix
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        customcertificate = apiclient.uploadCustomCertificate(cmd)

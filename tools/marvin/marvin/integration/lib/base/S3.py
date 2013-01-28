@@ -14,16 +14,29 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import addS3
+from marvin.cloudstackAPI import listS3s
+
 class S3(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def add(self, apiclient, secretkey, accesskey, bucket, **kwargs):
-        pass
+        cmd = addS3.addS3Cmd()
+        cmd.accesskey = accesskey
+        cmd.bucket = bucket
+        cmd.secretkey = secretkey
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        s3 = apiclient.addS3(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listS3s.listS3sCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        s3 = apiclient.listS3s(cmd)
+        return map(lambda e: S3(e.__dict__), s3)

@@ -14,16 +14,27 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import listSnapshotPolicies
+from marvin.cloudstackAPI import deleteSnapshotPolicies
+
 class SnapshotPolicies(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, volumeid, **kwargs):
+        cmd = listSnapshotPolicies.listSnapshotPoliciesCmd()
+        cmd.volumeid = volumeid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        snapshotpolicies = apiclient.listSnapshotPolicies(cmd)
+        return map(lambda e: SnapshotPolicies(e.__dict__), snapshotpolicies)
+
 
     def delete(self, apiclient, **kwargs):
-        pass
+        cmd = deleteSnapshotPolicies.deleteSnapshotPoliciesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        snapshotpolicies = apiclient.deleteSnapshotPolicies(cmd)

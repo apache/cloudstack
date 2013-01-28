@@ -14,19 +14,37 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import addTrafficMonitor
+from marvin.cloudstackAPI import listTrafficMonitors
+from marvin.cloudstackAPI import deleteTrafficMonitor
+
 class TrafficMonitor(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def add(self, apiclient, url, zoneid, **kwargs):
-        pass
+        cmd = addTrafficMonitor.addTrafficMonitorCmd()
+        cmd.url = url
+        cmd.zoneid = zoneid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        trafficmonitor = apiclient.addTrafficMonitor(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, zoneid, **kwargs):
+        cmd = listTrafficMonitors.listTrafficMonitorsCmd()
+        cmd.zoneid = zoneid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        trafficmonitor = apiclient.listTrafficMonitors(cmd)
+        return map(lambda e: TrafficMonitor(e.__dict__), trafficmonitor)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteTrafficMonitor.deleteTrafficMonitorCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        trafficmonitor = apiclient.deleteTrafficMonitor(cmd)

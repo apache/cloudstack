@@ -14,8 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createStorageNetworkIpRange
+from marvin.cloudstackAPI import listStorageNetworkIpRange
+from marvin.cloudstackAPI import updateStorageNetworkIpRange
+from marvin.cloudstackAPI import deleteStorageNetworkIpRange
+
 class StorageNetworkIpRange(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,14 +29,30 @@ class StorageNetworkIpRange(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, StorageNetworkIpRangeFactory, **kwargs):
-        pass
+        cmd = createStorageNetworkIpRange.createStorageNetworkIpRangeCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in StorageNetworkIpRangeFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        storagenetworkiprange = apiclient.createStorageNetworkIpRange(cmd)
+        return StorageNetworkIpRange(storagenetworkiprange.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listStorageNetworkIpRange.listStorageNetworkIpRangeCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        storagenetworkiprange = apiclient.listStorageNetworkIpRange(cmd)
+        return map(lambda e: StorageNetworkIpRange(e.__dict__), storagenetworkiprange)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateStorageNetworkIpRange.updateStorageNetworkIpRangeCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        storagenetworkiprange = apiclient.updateStorageNetworkIpRange(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteStorageNetworkIpRange.deleteStorageNetworkIpRangeCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        storagenetworkiprange = apiclient.deleteStorageNetworkIpRange(cmd)

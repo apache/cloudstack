@@ -14,13 +14,19 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import listEventTypes
+
 class EventTypes(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     @classmethod
-    def list(cls, apiclient):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listEventTypes.listEventTypesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        eventtypes = apiclient.listEventTypes(cmd)
+        return map(lambda e: EventTypes(e.__dict__), eventtypes)

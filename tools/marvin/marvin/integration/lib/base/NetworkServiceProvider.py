@@ -14,22 +14,44 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import addNetworkServiceProvider
+from marvin.cloudstackAPI import listNetworkServiceProviders
+from marvin.cloudstackAPI import updateNetworkServiceProvider
+from marvin.cloudstackAPI import deleteNetworkServiceProvider
+
 class NetworkServiceProvider(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def add(self, apiclient, physicalnetworkid, name, **kwargs):
-        pass
+        cmd = addNetworkServiceProvider.addNetworkServiceProviderCmd()
+        cmd.name = name
+        cmd.physicalnetworkid = physicalnetworkid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        networkserviceprovider = apiclient.addNetworkServiceProvider(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        networkserviceprovider = apiclient.listNetworkServiceProviders(cmd)
+        return map(lambda e: NetworkServiceProvider(e.__dict__), networkserviceprovider)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        networkserviceprovider = apiclient.updateNetworkServiceProvider(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteNetworkServiceProvider.deleteNetworkServiceProviderCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        networkserviceprovider = apiclient.deleteNetworkServiceProvider(cmd)

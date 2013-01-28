@@ -14,8 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createTags
+from marvin.cloudstackAPI import listTags
+from marvin.cloudstackAPI import deleteTags
+
 class Tags(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,11 +28,24 @@ class Tags(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, TagsFactory, **kwargs):
-        pass
+        cmd = createTags.createTagsCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in TagsFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        tags = apiclient.createTags(cmd)
+        return Tags(tags.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listTags.listTagsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        tags = apiclient.listTags(cmd)
+        return map(lambda e: Tags(e.__dict__), tags)
+
 
     def delete(self, apiclient, resourcetype, resourceids, **kwargs):
-        pass
+        cmd = deleteTags.deleteTagsCmd()
+        cmd.resourceids = resourceids
+        cmd.resourcetype = resourcetype
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        tags = apiclient.deleteTags(cmd)

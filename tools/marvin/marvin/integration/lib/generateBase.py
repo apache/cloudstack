@@ -100,7 +100,10 @@ def get_actionable_entities():
                 entity = entity[:-2]
             if entity not in entities:
                 entities[entity] = { }
-            entities[entity][verb] = [requireds,optionals]
+            entities[entity][verb] = {}
+            entities[entity][verb]['args'] = requireds
+            entities[entity][verb]['apimodule'] = cmd.__class__.__module__.split('.')[-1]
+            entities[entity][verb]['apicmd'] = cmd.__class__.__name__
     return entities
 
 def write_entity_classes(entities):
@@ -108,31 +111,43 @@ def write_entity_classes(entities):
     entitydict = {}
     #TODO: Add license header for ASLv2
     for entity, actions in entities.iteritems():
-        code = 'from . import CloudStackEntity\n'
-        code += 'class %s(CloudStackEntity):'%entity
-        code += '\n\n'
-        code += tabspace + 'def __init__(self, items):\n'
-        code += tabspace*2 + 'self.__dict__.update(items)\n'
-        for action, args in actions.iteritems():
-            code += '\n\n'
+        body = []
+        imports = []
+        imports.append('from marvin.integration.lib.base import CloudStackEntity')
+        body.append('class %s(CloudStackEntity):'%entity)
+        body.append('\n')
+        body.append(tabspace + 'def __init__(self, items):')
+        body.append(tabspace*2 + 'self.__dict__.update(items)')
+        body.append('\n')
+        for action, details in actions.iteritems():
+            imports.append('from marvin.cloudstackAPI import %s'%details['apimodule'])
             if action in ['create', 'list', 'deploy']:
-                code += tabspace + '@classmethod\n'
-            code += tabspace
+                body.append(tabspace + '@classmethod')
             if action in ['create', 'deploy']:
-                code += 'def %s(cls, apiclient, %sFactory'%(action, entity)
-            elif action in ['list']:
-                code += 'def %s(cls, apiclient'%(action)
+                body.append(tabspace + 'def %s(cls, apiclient, %sFactory, **kwargs):'%(action, entity))
+                body.append(tabspace*2 + 'cmd = %(module)s.%(command)s()'%{"module": details["apimodule"], "command": details["apicmd"]})
+                body.append(tabspace*2 + '[setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in %sFactory.attributes()]'%entity)
+                body.append(tabspace*2 + '[setattr(cmd, key, value) for key,value in kwargs.items]')
+                body.append(tabspace*2 + '%s = apiclient.%s(cmd)'%(entity.lower(), details['apimodule']))
+                body.append(tabspace*2 + 'return %s(%s.__dict__)'%(entity, entity.lower()))
             else:
-                code += 'def %s(self, apiclient'%(action)
-                if len(args[0]) > 0:
-                    code += ', ' + ', '.join(list(set(args[0])))
-            if len(args[1]) > 0:
-                code += ', **kwargs):\n'
-            else:
-                code += '):\n'
-            code += tabspace*2
-            code += 'pass'
-        code += '\n\n'
+                if len(details['args']) > 0:
+                    body.append(tabspace + 'def %s(self, apiclient, %s, **kwargs):'%(action, ', '.join(list(set(details['args'])))))
+                else:
+                    body.append(tabspace + 'def %s(self, apiclient, **kwargs):'%(action))
+                body.append(tabspace*2 + 'cmd = %(module)s.%(command)s()'%{"module": details["apimodule"], "command": details["apicmd"]})
+                for arg in details['args']:
+                    body.append(tabspace*2 + 'cmd.%s = %s'%(arg, arg))
+                body.append(tabspace*2 + '[setattr(cmd, key, value) for key,value in kwargs.items]')
+                body.append(tabspace*2 + '%s = apiclient.%s(cmd)'%(entity.lower(), details['apimodule']))
+                if action in ['list']:
+                    body.append(tabspace*2 + 'return map(lambda e: %s(e.__dict__), %s)'%(entity, entity.lower()))
+            body.append('\n')
+
+        imports = '\n'.join(imports)
+        body = '\n'.join(body)
+        code = imports + '\n\n' + body
+
         entitydict[entity] = code
         write_entity_factory(entity, actions)
         with open("./base/%s.py"%entity, "w") as writer:
@@ -146,18 +161,18 @@ def write_entity_factory(entity, actions):
     code = ''
     factory_defaults = []
     if 'create' in actions:
-        factory_defaults.extend(actions['create'])
+        factory_defaults.extend(actions['create']['args'])
     elif 'deploy' in actions:
-        factory_defaults.extend(actions['deploy'])
+        factory_defaults.extend(actions['deploy']['args'])
     elif 'associate' in actions:
-        factory_defaults.extend(actions['associate'])
+        factory_defaults.extend(actions['associate']['args'])
     elif 'register' in actions:
-        factory_defaults.extend(actions['register'])
+        factory_defaults.extend(actions['register']['args'])
     else:
         return
 
     if os.path.exists("./factory/%sFactory.py"%entity):
-        for arg in factory_defaults[0]:
+        for arg in factory_defaults:
             code += tabspace + '%s = None\n'%arg
         with open("./factory/%sFactory.py"%entity, "r") as reader:
             rcode = reader.read()
@@ -171,7 +186,7 @@ def write_entity_factory(entity, actions):
         code += 'class %sFactory(factory.Factory):'%entity
         code += '\n\n'
         code += tabspace + 'FACTORY_FOR = %s\n\n'%entity
-        for arg in factory_defaults[0]:
+        for arg in factory_defaults:
             code += tabspace + '%s = None\n'%arg
         with open("./factory/%sFactory.py"%entity, "w") as writer:
             writer.write(LICENSE)

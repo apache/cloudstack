@@ -14,13 +14,20 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import listLoadBalancerRuleInstances
+
 class LoadBalancerRuleInstances(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, id, **kwargs):
+        cmd = listLoadBalancerRuleInstances.listLoadBalancerRuleInstancesCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        loadbalancerruleinstances = apiclient.listLoadBalancerRuleInstances(cmd)
+        return map(lambda e: LoadBalancerRuleInstances(e.__dict__), loadbalancerruleinstances)

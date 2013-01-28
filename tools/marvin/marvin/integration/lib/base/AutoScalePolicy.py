@@ -14,8 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createAutoScalePolicy
+from marvin.cloudstackAPI import updateAutoScalePolicy
+from marvin.cloudstackAPI import deleteAutoScalePolicy
+
 class AutoScalePolicy(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,10 +28,22 @@ class AutoScalePolicy(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, AutoScalePolicyFactory, **kwargs):
-        pass
+        cmd = createAutoScalePolicy.createAutoScalePolicyCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in AutoScalePolicyFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        autoscalepolicy = apiclient.createAutoScalePolicy(cmd)
+        return AutoScalePolicy(autoscalepolicy.__dict__)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateAutoScalePolicy.updateAutoScalePolicyCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        autoscalepolicy = apiclient.updateAutoScalePolicy(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteAutoScalePolicy.deleteAutoScalePolicyCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        autoscalepolicy = apiclient.deleteAutoScalePolicy(cmd)

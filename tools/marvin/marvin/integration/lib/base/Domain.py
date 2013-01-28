@@ -14,8 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createDomain
+from marvin.cloudstackAPI import listDomains
+from marvin.cloudstackAPI import updateDomain
+from marvin.cloudstackAPI import deleteDomain
+
 class Domain(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,14 +29,30 @@ class Domain(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, DomainFactory, **kwargs):
-        pass
+        cmd = createDomain.createDomainCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in DomainFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        domain = apiclient.createDomain(cmd)
+        return Domain(domain.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listDomains.listDomainsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        domain = apiclient.listDomains(cmd)
+        return map(lambda e: Domain(e.__dict__), domain)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateDomain.updateDomainCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        domain = apiclient.updateDomain(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteDomain.deleteDomainCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        domain = apiclient.deleteDomain(cmd)

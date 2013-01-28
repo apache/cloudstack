@@ -14,25 +14,56 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import addHost
+from marvin.cloudstackAPI import listHosts
+from marvin.cloudstackAPI import updateHost
+from marvin.cloudstackAPI import reconnectHost
+from marvin.cloudstackAPI import deleteHost
+
 class Host(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def add(self, apiclient, username, podid, url, hypervisor, zoneid, password, **kwargs):
-        pass
+        cmd = addHost.addHostCmd()
+        cmd.hypervisor = hypervisor
+        cmd.password = password
+        cmd.podid = podid
+        cmd.url = url
+        cmd.username = username
+        cmd.zoneid = zoneid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        host = apiclient.addHost(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listHosts.listHostsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        host = apiclient.listHosts(cmd)
+        return map(lambda e: Host(e.__dict__), host)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateHost.updateHostCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        host = apiclient.updateHost(cmd)
+
 
     def reconnect(self, apiclient, id, **kwargs):
-        pass
+        cmd = reconnectHost.reconnectHostCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        host = apiclient.reconnectHost(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteHost.deleteHostCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        host = apiclient.deleteHost(cmd)

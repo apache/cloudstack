@@ -14,35 +14,88 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import prepareTemplate
+from marvin.cloudstackAPI import createTemplate
+from marvin.cloudstackAPI import registerTemplate
+from marvin.cloudstackAPI import listTemplates
+from marvin.cloudstackAPI import updateTemplate
+from marvin.cloudstackAPI import copyTemplate
+from marvin.cloudstackAPI import extractTemplate
+from marvin.cloudstackAPI import deleteTemplate
+
 class Template(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def prepare(self, apiclient, zoneid, templateid, **kwargs):
-        pass
+        cmd = prepareTemplate.prepareTemplateCmd()
+        cmd.templateid = templateid
+        cmd.zoneid = zoneid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        template = apiclient.prepareTemplate(cmd)
+
 
     @classmethod
     def create(cls, apiclient, TemplateFactory, **kwargs):
-        pass
+        cmd = createTemplate.createTemplateCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in TemplateFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        template = apiclient.createTemplate(cmd)
+        return Template(template.__dict__)
+
 
     def register(self, apiclient, name, format, url, hypervisor, zoneid, displaytext, ostypeid, **kwargs):
-        pass
+        cmd = registerTemplate.registerTemplateCmd()
+        cmd.displaytext = displaytext
+        cmd.format = format
+        cmd.hypervisor = hypervisor
+        cmd.name = name
+        cmd.ostypeid = ostypeid
+        cmd.url = url
+        cmd.zoneid = zoneid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        template = apiclient.registerTemplate(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, templatefilter, **kwargs):
+        cmd = listTemplates.listTemplatesCmd()
+        cmd.templatefilter = templatefilter
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        template = apiclient.listTemplates(cmd)
+        return map(lambda e: Template(e.__dict__), template)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateTemplate.updateTemplateCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        template = apiclient.updateTemplate(cmd)
+
 
     def copy(self, apiclient, sourcezoneid, id, destzoneid, **kwargs):
-        pass
+        cmd = copyTemplate.copyTemplateCmd()
+        cmd.id = id
+        cmd.destzoneid = destzoneid
+        cmd.sourcezoneid = sourcezoneid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        template = apiclient.copyTemplate(cmd)
+
 
     def extract(self, apiclient, id, mode, **kwargs):
-        pass
+        cmd = extractTemplate.extractTemplateCmd()
+        cmd.id = id
+        cmd.mode = mode
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        template = apiclient.extractTemplate(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteTemplate.deleteTemplateCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        template = apiclient.deleteTemplate(cmd)

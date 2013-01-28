@@ -14,35 +14,83 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import migrateVolume
+from marvin.cloudstackAPI import createVolume
+from marvin.cloudstackAPI import listVolumes
+from marvin.cloudstackAPI import uploadVolume
+from marvin.cloudstackAPI import attachVolume
+from marvin.cloudstackAPI import detachVolume
+from marvin.cloudstackAPI import extractVolume
+from marvin.cloudstackAPI import deleteVolume
+
 class Volume(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def migrate(self, apiclient, storageid, volumeid, **kwargs):
-        pass
+        cmd = migrateVolume.migrateVolumeCmd()
+        cmd.storageid = storageid
+        cmd.volumeid = volumeid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        volume = apiclient.migrateVolume(cmd)
+
 
     @classmethod
     def create(cls, apiclient, VolumeFactory, **kwargs):
-        pass
+        cmd = createVolume.createVolumeCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VolumeFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        volume = apiclient.createVolume(cmd)
+        return Volume(volume.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listVolumes.listVolumesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        volume = apiclient.listVolumes(cmd)
+        return map(lambda e: Volume(e.__dict__), volume)
+
 
     def upload(self, apiclient, url, zoneid, name, format, **kwargs):
-        pass
+        cmd = uploadVolume.uploadVolumeCmd()
+        cmd.format = format
+        cmd.name = name
+        cmd.url = url
+        cmd.zoneid = zoneid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        volume = apiclient.uploadVolume(cmd)
+
 
     def attach(self, apiclient, id, virtualmachineid, **kwargs):
-        pass
+        cmd = attachVolume.attachVolumeCmd()
+        cmd.id = id
+        cmd.virtualmachineid = virtualmachineid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        volume = apiclient.attachVolume(cmd)
+
 
     def detach(self, apiclient, **kwargs):
-        pass
+        cmd = detachVolume.detachVolumeCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        volume = apiclient.detachVolume(cmd)
+
 
     def extract(self, apiclient, zoneid, id, mode, **kwargs):
-        pass
+        cmd = extractVolume.extractVolumeCmd()
+        cmd.id = id
+        cmd.mode = mode
+        cmd.zoneid = zoneid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        volume = apiclient.extractVolume(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteVolume.deleteVolumeCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        volume = apiclient.deleteVolume(cmd)

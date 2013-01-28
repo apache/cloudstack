@@ -14,8 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createIpForwardingRule
+from marvin.cloudstackAPI import listIpForwardingRules
+from marvin.cloudstackAPI import deleteIpForwardingRule
+
 class IpForwardingRule(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,11 +28,23 @@ class IpForwardingRule(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, IpForwardingRuleFactory, **kwargs):
-        pass
+        cmd = createIpForwardingRule.createIpForwardingRuleCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in IpForwardingRuleFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        ipforwardingrule = apiclient.createIpForwardingRule(cmd)
+        return IpForwardingRule(ipforwardingrule.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listIpForwardingRules.listIpForwardingRulesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        ipforwardingrule = apiclient.listIpForwardingRules(cmd)
+        return map(lambda e: IpForwardingRule(e.__dict__), ipforwardingrule)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteIpForwardingRule.deleteIpForwardingRuleCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        ipforwardingrule = apiclient.deleteIpForwardingRule(cmd)

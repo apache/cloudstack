@@ -14,13 +14,19 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import listAsyncJobs
+
 class AsyncJobs(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listAsyncJobs.listAsyncJobsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        asyncjobs = apiclient.listAsyncJobs(cmd)
+        return map(lambda e: AsyncJobs(e.__dict__), asyncjobs)

@@ -14,19 +14,36 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import addVpnUser
+from marvin.cloudstackAPI import listVpnUsers
+from marvin.cloudstackAPI import removeVpnUser
+
 class VpnUser(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def add(self, apiclient, username, password, **kwargs):
-        pass
+        cmd = addVpnUser.addVpnUserCmd()
+        cmd.password = password
+        cmd.username = username
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpnuser = apiclient.addVpnUser(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listVpnUsers.listVpnUsersCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpnuser = apiclient.listVpnUsers(cmd)
+        return map(lambda e: VpnUser(e.__dict__), vpnuser)
+
 
     def remove(self, apiclient, username, **kwargs):
-        pass
+        cmd = removeVpnUser.removeVpnUserCmd()
+        cmd.username = username
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpnuser = apiclient.removeVpnUser(cmd)

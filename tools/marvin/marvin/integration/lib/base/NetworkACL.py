@@ -14,8 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createNetworkACL
+from marvin.cloudstackAPI import listNetworkACLs
+from marvin.cloudstackAPI import deleteNetworkACL
+
 class NetworkACL(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,11 +28,23 @@ class NetworkACL(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, NetworkACLFactory, **kwargs):
-        pass
+        cmd = createNetworkACL.createNetworkACLCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in NetworkACLFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        networkacl = apiclient.createNetworkACL(cmd)
+        return NetworkACL(networkacl.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listNetworkACLs.listNetworkACLsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        networkacl = apiclient.listNetworkACLs(cmd)
+        return map(lambda e: NetworkACL(e.__dict__), networkacl)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteNetworkACL.deleteNetworkACLCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        networkacl = apiclient.deleteNetworkACL(cmd)

@@ -14,25 +14,51 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import destroyRouter
+from marvin.cloudstackAPI import listRouters
+from marvin.cloudstackAPI import stopRouter
+from marvin.cloudstackAPI import rebootRouter
+from marvin.cloudstackAPI import startRouter
+
 class Router(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def destroy(self, apiclient, id, **kwargs):
-        pass
+        cmd = destroyRouter.destroyRouterCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        router = apiclient.destroyRouter(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listRouters.listRoutersCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        router = apiclient.listRouters(cmd)
+        return map(lambda e: Router(e.__dict__), router)
+
 
     def stop(self, apiclient, id, **kwargs):
-        pass
+        cmd = stopRouter.stopRouterCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        router = apiclient.stopRouter(cmd)
+
 
     def reboot(self, apiclient, id, **kwargs):
-        pass
+        cmd = rebootRouter.rebootRouterCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        router = apiclient.rebootRouter(cmd)
+
 
     def start(self, apiclient, id, **kwargs):
-        pass
+        cmd = startRouter.startRouterCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        router = apiclient.startRouter(cmd)

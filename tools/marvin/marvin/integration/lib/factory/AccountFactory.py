@@ -15,15 +15,14 @@
 # specific language governing permissions and limitations
 # under the License.
 import factory
-import hashlib
 from marvin.integration.lib.base import Account
+import hashlib
 from marvin.integration.lib.utils import random_gen
 
 class AccountFactory(factory.Factory):
 
     FACTORY_FOR = Account
 
-    #0 - User, 1 - Root Admin, 2 - Domain Admin
     accounttype = 0
     email = factory.LazyAttribute(lambda e: '{0}.{1}@cloudstack.org'.format(e.firstname, e.lastname)).lower()
     firstname = 'fname-'+random_gen()
@@ -35,11 +34,15 @@ class AccountFactory(factory.Factory):
     mdf.update('password')
     password = mdf.hexdigest()
 
-
 class AdminAccountFactory(AccountFactory):
     accounttype = 1
 
 
 class DomainAdminFactory(AccountFactory):
     accounttype = 2
-    domainid = None
+    domainid = None    accounttype = None
+    email = None
+    firstname = None
+    lastname = None
+    password = None
+    username = None

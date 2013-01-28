@@ -14,8 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createCondition
+from marvin.cloudstackAPI import listConditions
+from marvin.cloudstackAPI import deleteCondition
+
 class Condition(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,11 +28,23 @@ class Condition(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, ConditionFactory, **kwargs):
-        pass
+        cmd = createCondition.createConditionCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in ConditionFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        condition = apiclient.createCondition(cmd)
+        return Condition(condition.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listConditions.listConditionsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        condition = apiclient.listConditions(cmd)
+        return map(lambda e: Condition(e.__dict__), condition)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteCondition.deleteConditionCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        condition = apiclient.deleteCondition(cmd)

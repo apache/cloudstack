@@ -14,12 +14,19 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import updateHostPassword
+
 class HostPassword(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def update(self, apiclient, username, password, **kwargs):
-        pass
+        cmd = updateHostPassword.updateHostPasswordCmd()
+        cmd.password = password
+        cmd.username = username
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        hostpassword = apiclient.updateHostPassword(cmd)

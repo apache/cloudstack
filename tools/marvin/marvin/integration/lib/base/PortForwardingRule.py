@@ -14,8 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createPortForwardingRule
+from marvin.cloudstackAPI import listPortForwardingRules
+from marvin.cloudstackAPI import updatePortForwardingRule
+from marvin.cloudstackAPI import deletePortForwardingRule
+
 class PortForwardingRule(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,14 +29,33 @@ class PortForwardingRule(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, PortForwardingRuleFactory, **kwargs):
-        pass
+        cmd = createPortForwardingRule.createPortForwardingRuleCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in PortForwardingRuleFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        portforwardingrule = apiclient.createPortForwardingRule(cmd)
+        return PortForwardingRule(portforwardingrule.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listPortForwardingRules.listPortForwardingRulesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        portforwardingrule = apiclient.listPortForwardingRules(cmd)
+        return map(lambda e: PortForwardingRule(e.__dict__), portforwardingrule)
+
 
     def update(self, apiclient, publicport, protocol, ipaddressid, privateport, **kwargs):
-        pass
+        cmd = updatePortForwardingRule.updatePortForwardingRuleCmd()
+        cmd.ipaddressid = ipaddressid
+        cmd.privateport = privateport
+        cmd.protocol = protocol
+        cmd.publicport = publicport
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        portforwardingrule = apiclient.updatePortForwardingRule(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deletePortForwardingRule.deletePortForwardingRuleCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        portforwardingrule = apiclient.deletePortForwardingRule(cmd)

@@ -14,34 +14,82 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import copyIso
+from marvin.cloudstackAPI import registerIso
+from marvin.cloudstackAPI import listIsos
+from marvin.cloudstackAPI import updateIso
+from marvin.cloudstackAPI import attachIso
+from marvin.cloudstackAPI import detachIso
+from marvin.cloudstackAPI import extractIso
+from marvin.cloudstackAPI import deleteIso
+
 class Iso(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def copy(self, apiclient, sourcezoneid, id, destzoneid, **kwargs):
-        pass
+        cmd = copyIso.copyIsoCmd()
+        cmd.id = id
+        cmd.destzoneid = destzoneid
+        cmd.sourcezoneid = sourcezoneid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        iso = apiclient.copyIso(cmd)
+
 
     def register(self, apiclient, url, displaytext, name, zoneid, **kwargs):
-        pass
+        cmd = registerIso.registerIsoCmd()
+        cmd.displaytext = displaytext
+        cmd.name = name
+        cmd.url = url
+        cmd.zoneid = zoneid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        iso = apiclient.registerIso(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listIsos.listIsosCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        iso = apiclient.listIsos(cmd)
+        return map(lambda e: Iso(e.__dict__), iso)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateIso.updateIsoCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        iso = apiclient.updateIso(cmd)
+
 
     def attach(self, apiclient, id, virtualmachineid, **kwargs):
-        pass
+        cmd = attachIso.attachIsoCmd()
+        cmd.id = id
+        cmd.virtualmachineid = virtualmachineid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        iso = apiclient.attachIso(cmd)
+
 
     def detach(self, apiclient, virtualmachineid, **kwargs):
-        pass
+        cmd = detachIso.detachIsoCmd()
+        cmd.virtualmachineid = virtualmachineid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        iso = apiclient.detachIso(cmd)
+
 
     def extract(self, apiclient, id, mode, **kwargs):
-        pass
+        cmd = extractIso.extractIsoCmd()
+        cmd.id = id
+        cmd.mode = mode
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        iso = apiclient.extractIso(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteIso.deleteIsoCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        iso = apiclient.deleteIso(cmd)

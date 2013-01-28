@@ -14,12 +14,20 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import ldapConfig
+
 class Config(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def ldap(self, apiclient, queryfilter, hostname, searchbase, **kwargs):
-        pass
+        cmd = ldapConfig.ldapConfigCmd()
+        cmd.hostname = hostname
+        cmd.queryfilter = queryfilter
+        cmd.searchbase = searchbase
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        config = apiclient.ldapConfig(cmd)

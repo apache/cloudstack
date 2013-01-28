@@ -14,23 +14,45 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import resetVpnConnection
+from marvin.cloudstackAPI import createVpnConnection
+from marvin.cloudstackAPI import listVpnConnections
+from marvin.cloudstackAPI import deleteVpnConnection
+
 class VpnConnection(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def reset(self, apiclient, id, **kwargs):
-        pass
+        cmd = resetVpnConnection.resetVpnConnectionCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpnconnection = apiclient.resetVpnConnection(cmd)
+
 
     @classmethod
     def create(cls, apiclient, VpnConnectionFactory, **kwargs):
-        pass
+        cmd = createVpnConnection.createVpnConnectionCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VpnConnectionFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpnconnection = apiclient.createVpnConnection(cmd)
+        return VpnConnection(vpnconnection.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listVpnConnections.listVpnConnectionsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpnconnection = apiclient.listVpnConnections(cmd)
+        return map(lambda e: VpnConnection(e.__dict__), vpnconnection)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteVpnConnection.deleteVpnConnectionCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpnconnection = apiclient.deleteVpnConnection(cmd)

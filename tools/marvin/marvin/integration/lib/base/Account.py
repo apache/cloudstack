@@ -14,36 +14,69 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import enableAccount
+from marvin.cloudstackAPI import lockAccount
+from marvin.cloudstackAPI import createAccount
+from marvin.cloudstackAPI import listAccounts
+from marvin.cloudstackAPI import updateAccount
+from marvin.cloudstackAPI import disableAccount
+from marvin.cloudstackAPI import deleteAccount
 
 class Account(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def enable(self, apiclient, **kwargs):
-        pass
+        cmd = enableAccount.enableAccountCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        account = apiclient.enableAccount(cmd)
+
 
     def lock(self, apiclient, account, domainid, **kwargs):
-        pass
+        cmd = lockAccount.lockAccountCmd()
+        cmd.account = account
+        cmd.domainid = domainid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        account = apiclient.lockAccount(cmd)
+
 
     @classmethod
     def create(cls, apiclient, AccountFactory, **kwargs):
         cmd = createAccount.createAccountCmd()
         [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in AccountFactory.attributes()]
         [setattr(cmd, key, value) for key,value in kwargs.items]
-        return Account(apiclient.createAccount(cmd).__dict__)
+        account = apiclient.createAccount(cmd)
+        return Account(account.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listAccounts.listAccountsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        account = apiclient.listAccounts(cmd)
+        return map(lambda e: Account(e.__dict__), account)
+
 
     def update(self, apiclient, newname, **kwargs):
-        pass
+        cmd = updateAccount.updateAccountCmd()
+        cmd.newname = newname
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        account = apiclient.updateAccount(cmd)
+
 
     def disable(self, apiclient, lock, **kwargs):
-        pass
+        cmd = disableAccount.disableAccountCmd()
+        cmd.lock = lock
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        account = apiclient.disableAccount(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteAccount.deleteAccountCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        account = apiclient.deleteAccount(cmd)

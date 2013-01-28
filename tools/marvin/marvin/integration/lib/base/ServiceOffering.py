@@ -14,8 +14,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createServiceOffering
+from marvin.cloudstackAPI import listServiceOfferings
+from marvin.cloudstackAPI import updateServiceOffering
+from marvin.cloudstackAPI import deleteServiceOffering
+
 class ServiceOffering(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,14 +29,30 @@ class ServiceOffering(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, ServiceOfferingFactory, **kwargs):
-        pass
+        cmd = createServiceOffering.createServiceOfferingCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in ServiceOfferingFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        serviceoffering = apiclient.createServiceOffering(cmd)
+        return ServiceOffering(serviceoffering.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listServiceOfferings.listServiceOfferingsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        serviceoffering = apiclient.listServiceOfferings(cmd)
+        return map(lambda e: ServiceOffering(e.__dict__), serviceoffering)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateServiceOffering.updateServiceOfferingCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        serviceoffering = apiclient.updateServiceOffering(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteServiceOffering.deleteServiceOfferingCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        serviceoffering = apiclient.deleteServiceOffering(cmd)

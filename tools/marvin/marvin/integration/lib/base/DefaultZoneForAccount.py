@@ -14,12 +14,20 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import markDefaultZoneForAccount
+
 class DefaultZoneForAccount(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def mark(self, apiclient, account, domainid, zoneid, **kwargs):
-        pass
+        cmd = markDefaultZoneForAccount.markDefaultZoneForAccountCmd()
+        cmd.account = account
+        cmd.domainid = domainid
+        cmd.zoneid = zoneid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        defaultzoneforaccount = apiclient.markDefaultZoneForAccount(cmd)

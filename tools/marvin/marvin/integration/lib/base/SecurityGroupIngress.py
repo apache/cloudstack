@@ -14,15 +14,25 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import authorizeSecurityGroupIngress
+from marvin.cloudstackAPI import revokeSecurityGroupIngress
+
 class SecurityGroupIngress(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def authorize(self, apiclient, **kwargs):
-        pass
+        cmd = authorizeSecurityGroupIngress.authorizeSecurityGroupIngressCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        securitygroupingress = apiclient.authorizeSecurityGroupIngress(cmd)
+
 
     def revoke(self, apiclient, id, **kwargs):
-        pass
+        cmd = revokeSecurityGroupIngress.revokeSecurityGroupIngressCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        securitygroupingress = apiclient.revokeSecurityGroupIngress(cmd)

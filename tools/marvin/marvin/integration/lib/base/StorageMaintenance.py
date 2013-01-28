@@ -14,15 +14,26 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import cancelStorageMaintenance
+from marvin.cloudstackAPI import enableStorageMaintenance
+
 class StorageMaintenance(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def cancel(self, apiclient, id, **kwargs):
-        pass
+        cmd = cancelStorageMaintenance.cancelStorageMaintenanceCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        storagemaintenance = apiclient.cancelStorageMaintenance(cmd)
+
 
     def enable(self, apiclient, id, **kwargs):
-        pass
+        cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        storagemaintenance = apiclient.enableStorageMaintenance(cmd)

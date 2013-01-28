@@ -14,15 +14,25 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import resetApiLimit
+from marvin.cloudstackAPI import getApiLimit
+
 class ApiLimit(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def reset(self, apiclient, **kwargs):
-        pass
+        cmd = resetApiLimit.resetApiLimitCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        apilimit = apiclient.resetApiLimit(cmd)
 
-    def get(self, apiclient):
-        pass
+
+    def get(self, apiclient, **kwargs):
+        cmd = getApiLimit.getApiLimitCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        apilimit = apiclient.getApiLimit(cmd)
+

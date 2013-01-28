@@ -14,8 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createSnapshot
+from marvin.cloudstackAPI import listSnapshots
+from marvin.cloudstackAPI import deleteSnapshot
+
 class Snapshot(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,11 +28,23 @@ class Snapshot(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, SnapshotFactory, **kwargs):
-        pass
+        cmd = createSnapshot.createSnapshotCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in SnapshotFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        snapshot = apiclient.createSnapshot(cmd)
+        return Snapshot(snapshot.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listSnapshots.listSnapshotsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        snapshot = apiclient.listSnapshots(cmd)
+        return map(lambda e: Snapshot(e.__dict__), snapshot)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteSnapshot.deleteSnapshotCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        snapshot = apiclient.deleteSnapshot(cmd)

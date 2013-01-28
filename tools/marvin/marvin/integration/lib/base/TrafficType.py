@@ -14,22 +14,45 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import addTrafficType
+from marvin.cloudstackAPI import listTrafficTypes
+from marvin.cloudstackAPI import updateTrafficType
+from marvin.cloudstackAPI import deleteTrafficType
+
 class TrafficType(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def add(self, apiclient, traffictype, physicalnetworkid, **kwargs):
-        pass
+        cmd = addTrafficType.addTrafficTypeCmd()
+        cmd.physicalnetworkid = physicalnetworkid
+        cmd.traffictype = traffictype
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        traffictype = apiclient.addTrafficType(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, physicalnetworkid, **kwargs):
+        cmd = listTrafficTypes.listTrafficTypesCmd()
+        cmd.physicalnetworkid = physicalnetworkid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        traffictype = apiclient.listTrafficTypes(cmd)
+        return map(lambda e: TrafficType(e.__dict__), traffictype)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateTrafficType.updateTrafficTypeCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        traffictype = apiclient.updateTrafficType(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteTrafficType.deleteTrafficTypeCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        traffictype = apiclient.deleteTrafficType(cmd)

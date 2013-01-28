@@ -14,8 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createPrivateGateway
+from marvin.cloudstackAPI import listPrivateGateways
+from marvin.cloudstackAPI import deletePrivateGateway
+
 class PrivateGateway(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,11 +28,23 @@ class PrivateGateway(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, PrivateGatewayFactory, **kwargs):
-        pass
+        cmd = createPrivateGateway.createPrivateGatewayCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in PrivateGatewayFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        privategateway = apiclient.createPrivateGateway(cmd)
+        return PrivateGateway(privategateway.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listPrivateGateways.listPrivateGatewaysCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        privategateway = apiclient.listPrivateGateways(cmd)
+        return map(lambda e: PrivateGateway(e.__dict__), privategateway)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deletePrivateGateway.deletePrivateGatewayCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        privategateway = apiclient.deletePrivateGateway(cmd)

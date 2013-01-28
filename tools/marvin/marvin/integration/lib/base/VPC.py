@@ -14,8 +14,15 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createVPC
+from marvin.cloudstackAPI import listVPCs
+from marvin.cloudstackAPI import updateVPC
+from marvin.cloudstackAPI import restartVPC
+from marvin.cloudstackAPI import deleteVPC
+
 class VPC(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,17 +30,35 @@ class VPC(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, VPCFactory, **kwargs):
-        pass
+        cmd = createVPC.createVPCCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VPCFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpc = apiclient.createVPC(cmd)
+        return VPC(vpc.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listVPCs.listVPCsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpc = apiclient.listVPCs(cmd)
+        return map(lambda e: VPC(e.__dict__), vpc)
+
 
     def update(self, apiclient, **kwargs):
-        pass
+        cmd = updateVPC.updateVPCCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpc = apiclient.updateVPC(cmd)
+
 
     def restart(self, apiclient, **kwargs):
-        pass
+        cmd = restartVPC.restartVPCCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpc = apiclient.restartVPC(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteVPC.deleteVPCCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpc = apiclient.deleteVPC(cmd)

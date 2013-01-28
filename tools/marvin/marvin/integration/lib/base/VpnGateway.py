@@ -14,8 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createVpnGateway
+from marvin.cloudstackAPI import listVpnGateways
+from marvin.cloudstackAPI import deleteVpnGateway
+
 class VpnGateway(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,11 +28,23 @@ class VpnGateway(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, VpnGatewayFactory, **kwargs):
-        pass
+        cmd = createVpnGateway.createVpnGatewayCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VpnGatewayFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpngateway = apiclient.createVpnGateway(cmd)
+        return VpnGateway(vpngateway.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listVpnGateways.listVpnGatewaysCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpngateway = apiclient.listVpnGateways(cmd)
+        return map(lambda e: VpnGateway(e.__dict__), vpngateway)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteVpnGateway.deleteVpnGatewayCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vpngateway = apiclient.deleteVpnGateway(cmd)

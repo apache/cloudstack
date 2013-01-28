@@ -14,22 +14,47 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import addCluster
+from marvin.cloudstackAPI import listClusters
+from marvin.cloudstackAPI import updateCluster
+from marvin.cloudstackAPI import deleteCluster
+
 class Cluster(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def add(self, apiclient, clustername, hypervisor, zoneid, clustertype, podid, **kwargs):
-        pass
+        cmd = addCluster.addClusterCmd()
+        cmd.clustername = clustername
+        cmd.clustertype = clustertype
+        cmd.hypervisor = hypervisor
+        cmd.podid = podid
+        cmd.zoneid = zoneid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cluster = apiclient.addCluster(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listClusters.listClustersCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cluster = apiclient.listClusters(cmd)
+        return map(lambda e: Cluster(e.__dict__), cluster)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateCluster.updateClusterCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cluster = apiclient.updateCluster(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteCluster.deleteClusterCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        cluster = apiclient.deleteCluster(cmd)

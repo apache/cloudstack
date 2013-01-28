@@ -14,8 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createVirtualRouterElement
+from marvin.cloudstackAPI import listVirtualRouterElements
+from marvin.cloudstackAPI import configureVirtualRouterElement
+
 class VirtualRouterElement(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,11 +28,24 @@ class VirtualRouterElement(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, VirtualRouterElementFactory, **kwargs):
-        pass
+        cmd = createVirtualRouterElement.createVirtualRouterElementCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VirtualRouterElementFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        virtualrouterelement = apiclient.createVirtualRouterElement(cmd)
+        return VirtualRouterElement(virtualrouterelement.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listVirtualRouterElements.listVirtualRouterElementsCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        virtualrouterelement = apiclient.listVirtualRouterElements(cmd)
+        return map(lambda e: VirtualRouterElement(e.__dict__), virtualrouterelement)
+
 
     def configure(self, apiclient, enabled, id, **kwargs):
-        pass
+        cmd = configureVirtualRouterElement.configureVirtualRouterElementCmd()
+        cmd.id = id
+        cmd.enabled = enabled
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        virtualrouterelement = apiclient.configureVirtualRouterElement(cmd)

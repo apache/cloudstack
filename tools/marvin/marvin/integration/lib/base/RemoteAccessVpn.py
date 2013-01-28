@@ -14,8 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createRemoteAccessVpn
+from marvin.cloudstackAPI import listRemoteAccessVpns
+from marvin.cloudstackAPI import deleteRemoteAccessVpn
+
 class RemoteAccessVpn(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,11 +28,24 @@ class RemoteAccessVpn(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, RemoteAccessVpnFactory, **kwargs):
-        pass
+        cmd = createRemoteAccessVpn.createRemoteAccessVpnCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in RemoteAccessVpnFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        remoteaccessvpn = apiclient.createRemoteAccessVpn(cmd)
+        return RemoteAccessVpn(remoteaccessvpn.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, publicipid, **kwargs):
+        cmd = listRemoteAccessVpns.listRemoteAccessVpnsCmd()
+        cmd.publicipid = publicipid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        remoteaccessvpn = apiclient.listRemoteAccessVpns(cmd)
+        return map(lambda e: RemoteAccessVpn(e.__dict__), remoteaccessvpn)
+
 
     def delete(self, apiclient, publicipid, **kwargs):
-        pass
+        cmd = deleteRemoteAccessVpn.deleteRemoteAccessVpnCmd()
+        cmd.publicipid = publicipid
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        remoteaccessvpn = apiclient.deleteRemoteAccessVpn(cmd)

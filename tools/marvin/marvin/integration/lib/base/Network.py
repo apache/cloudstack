@@ -14,8 +14,15 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createNetwork
+from marvin.cloudstackAPI import listNetworks
+from marvin.cloudstackAPI import updateNetwork
+from marvin.cloudstackAPI import restartNetwork
+from marvin.cloudstackAPI import deleteNetwork
+
 class Network(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,17 +30,37 @@ class Network(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, NetworkFactory, **kwargs):
-        pass
+        cmd = createNetwork.createNetworkCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in NetworkFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        network = apiclient.createNetwork(cmd)
+        return Network(network.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listNetworks.listNetworksCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        network = apiclient.listNetworks(cmd)
+        return map(lambda e: Network(e.__dict__), network)
+
 
     def update(self, apiclient, id, **kwargs):
-        pass
+        cmd = updateNetwork.updateNetworkCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        network = apiclient.updateNetwork(cmd)
+
 
     def restart(self, apiclient, id, **kwargs):
-        pass
+        cmd = restartNetwork.restartNetworkCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        network = apiclient.restartNetwork(cmd)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteNetwork.deleteNetworkCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        network = apiclient.deleteNetwork(cmd)

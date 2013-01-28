@@ -14,19 +14,34 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import addNetworkDevice
+from marvin.cloudstackAPI import listNetworkDevice
+from marvin.cloudstackAPI import deleteNetworkDevice
+
 class NetworkDevice(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
 
 
     def add(self, apiclient, **kwargs):
-        pass
+        cmd = addNetworkDevice.addNetworkDeviceCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        networkdevice = apiclient.addNetworkDevice(cmd)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listNetworkDevice.listNetworkDeviceCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        networkdevice = apiclient.listNetworkDevice(cmd)
+        return map(lambda e: NetworkDevice(e.__dict__), networkdevice)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteNetworkDevice.deleteNetworkDeviceCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        networkdevice = apiclient.deleteNetworkDevice(cmd)

@@ -14,8 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createFirewallRule
+from marvin.cloudstackAPI import listFirewallRules
+from marvin.cloudstackAPI import deleteFirewallRule
+
 class FirewallRule(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,11 +28,23 @@ class FirewallRule(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, FirewallRuleFactory, **kwargs):
-        pass
+        cmd = createFirewallRule.createFirewallRuleCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in FirewallRuleFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        firewallrule = apiclient.createFirewallRule(cmd)
+        return FirewallRule(firewallrule.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listFirewallRules.listFirewallRulesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        firewallrule = apiclient.listFirewallRules(cmd)
+        return map(lambda e: FirewallRule(e.__dict__), firewallrule)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteFirewallRule.deleteFirewallRuleCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        firewallrule = apiclient.deleteFirewallRule(cmd)

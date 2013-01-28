@@ -14,8 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from . import CloudStackEntity
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import createVlanIpRange
+from marvin.cloudstackAPI import listVlanIpRanges
+from marvin.cloudstackAPI import deleteVlanIpRange
+
 class VlanIpRange(CloudStackEntity):
+
 
     def __init__(self, items):
         self.__dict__.update(items)
@@ -23,11 +28,23 @@ class VlanIpRange(CloudStackEntity):
 
     @classmethod
     def create(cls, apiclient, VlanIpRangeFactory, **kwargs):
-        pass
+        cmd = createVlanIpRange.createVlanIpRangeCmd()
+        [setattr(cmd, factoryKey, factoryValue) for factoryKey, factoryValue in VlanIpRangeFactory.attributes()]
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vlaniprange = apiclient.createVlanIpRange(cmd)
+        return VlanIpRange(vlaniprange.__dict__)
+
 
     @classmethod
-    def list(cls, apiclient, **kwargs):
-        pass
+    def list(self, apiclient, **kwargs):
+        cmd = listVlanIpRanges.listVlanIpRangesCmd()
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vlaniprange = apiclient.listVlanIpRanges(cmd)
+        return map(lambda e: VlanIpRange(e.__dict__), vlaniprange)
+
 
     def delete(self, apiclient, id, **kwargs):
-        pass
+        cmd = deleteVlanIpRange.deleteVlanIpRangeCmd()
+        cmd.id = id
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        vlaniprange = apiclient.deleteVlanIpRange(cmd)
