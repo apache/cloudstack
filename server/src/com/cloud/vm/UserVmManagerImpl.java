@@ -960,9 +960,17 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         if(_networkModel.getNicInNetwork(vmInstance.getId(),network.getId()) != null){
             s_logger.debug(vmInstance + " already in " + network + " going to add another NIC");
+        } else {
+            List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
+            for (NicVO netnic : nics) {
+                VMInstanceVO vm = _vmDao.findById(netnic.getInstanceId());
+                if (vm != null) {
+                    if (vm.getHostName().equals(vmInstance.getHostName())) {
+                        throw new CloudRuntimeException(network + " already has a vm with host name: '" + vmInstance.getHostName() + "' vmId:" + vm.getId() + " " + vm);
+                    }
+                }
+            }
         }
-
-        //todo: verify unique hostname in network domain?
         
         NicProfile guestNic = null;
 
@@ -1075,7 +1083,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         //make sure the VM is Running or Stopped
-        if ((vmInstance.getState() != State.Running) || (vmInstance.getState() != State.Stopped)) {
+        if ((vmInstance.getState() != State.Running) && (vmInstance.getState() != State.Stopped)) {
             throw new CloudRuntimeException("refusing to set default " + vmInstance + " is not Running or Stopped");
         }
         
