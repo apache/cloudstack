@@ -38,14 +38,10 @@ import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
 
-import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
-import com.cloud.user.Account;
-import com.cloud.user.AccountVO;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.converters.extended.ISO8601DateConverter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
 public class RegionsApiUtil {
@@ -53,7 +49,8 @@ public class RegionsApiUtil {
 
 	protected static boolean makeAPICall(Region region, String command, List<NameValuePair> params){
 		try {
-			String url = buildUrl(buildParams(command, params), region);
+			String apiParams = buildParams(command, params);
+			String url = buildUrl(apiParams, region);
 			HttpClient client = new HttpClient();
 			HttpMethod method = new GetMethod(url);
 			if( client.executeMethod(method) == 200){
@@ -160,34 +157,7 @@ public class RegionsApiUtil {
 		} 	
 	}
 
-	protected static RegionUser makeUserAPICall(Region region, String command, List<NameValuePair> params){
-		try {
-			String url = buildUrl(buildParams(command, params), region);
-			HttpClient client = new HttpClient();
-			HttpMethod method = new GetMethod(url);
-			if( client.executeMethod(method) == 200){
-				InputStream is = method.getResponseBodyAsStream();
-				XStream xstream = new XStream(new DomDriver());
-				xstream.alias("finduserresponse", FindUserResponse.class);
-				xstream.alias("user", RegionUser.class);
-				xstream.aliasField("id", RegionUser.class, "uuid");
-				xstream.aliasField("accountId", RegionUser.class, "accountUuid");
-				xstream.registerConverter(new ISO8601DateConverter());				
-				FindUserResponse response = (FindUserResponse)xstream.fromXML(is);
-				return response.getUser();
-			} else {
-				return null;
-			}
-		} catch (HttpException e) {
-			s_logger.error(e.getMessage());
-			return null;
-		} catch (IOException e) {
-			s_logger.error(e.getMessage());
-			return null;
-		}
-	}
-	
-	private static String buildParams(String command, List<NameValuePair> params) {
+	protected static String buildParams(String command, List<NameValuePair> params) {
 		StringBuffer paramString = new StringBuffer("command="+command);
 		Iterator<NameValuePair> iter = params.iterator();
 		try {
@@ -282,4 +252,5 @@ public class RegionsApiUtil {
 			return null;
 		}
 	}
+	
 }

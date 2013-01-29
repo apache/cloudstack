@@ -39,6 +39,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.region.dao.RegionDao;
+import com.cloud.region.dao.RegionSyncDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -73,6 +74,8 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
     private UserAccountDao _userAccountDao;    
     @Inject
     private IdentityDao _identityDao;
+    @Inject
+    private RegionSyncDao _regionSyncDao;
     
     private String _name;
     private int _id; 
@@ -195,6 +198,7 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 			if (RegionsApiUtil.makeAPICall(region, command, params)) {
 				s_logger.debug("Successfully added account :"+accountName+" to Region: "+region.getId());
 			} else {
+				addRegionSyncItem(region.getId(), command, params);
 				s_logger.error("Error while Adding account :"+accountName+" to Region: "+region.getId());
 			}
 		}
@@ -737,6 +741,7 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 			if (RegionsApiUtil.makeAPICall(region, command, params)) {
 				s_logger.debug("Successfully added user :"+userName+" to Region: "+region.getId());
 			} else {
+				addRegionSyncItem(region.getId(), command, params);
 				s_logger.error("Error while Adding user :"+userName+" to Region: "+region.getId());
 			}
 		}
@@ -768,10 +773,19 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 			if (RegionsApiUtil.makeAPICall(region, command, params)) {
 				s_logger.debug("Successfully added domain :"+name+" to Region: "+region.getId());
 			} else {
+				addRegionSyncItem(region.getId(), command, params);
 				s_logger.error("Error while Adding domain :"+name+" to Region: "+region.getId());
 			}
 		}
 		return;		
+	}
+	
+	private void addRegionSyncItem(int regionId, String command, List<NameValuePair> params){
+		String api = RegionsApiUtil.buildParams(command, params);
+		RegionSyncVO sync = new RegionSyncVO(regionId, api);
+		if(_regionSyncDao.persist(sync) == null){
+			s_logger.error("Failed to add Region Sync Item. RegionId: "+regionId + "API command: "+api);
+		}
 	}
 
 }

@@ -160,6 +160,7 @@ import com.cloud.projects.dao.ProjectDaoImpl;
 import com.cloud.projects.dao.ProjectInvitationDaoImpl;
 import com.cloud.region.RegionManagerImpl;
 import com.cloud.region.dao.RegionDaoImpl;
+import com.cloud.region.dao.RegionSyncDaoImpl;
 import com.cloud.resource.ResourceManagerImpl;
 import com.cloud.resourcelimit.ResourceLimitManagerImpl;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
@@ -401,6 +402,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("DiskOfferingJoinDao", DiskOfferingJoinDaoImpl.class);
         addDao("ServiceOfferingJoinDao", ServiceOfferingJoinDaoImpl.class);
         addDao("DataCenterJoinDao", DataCenterJoinDaoImpl.class);
+        addDao("RegionSyncDao", RegionSyncDaoImpl.class);
     }
 
     @Override
