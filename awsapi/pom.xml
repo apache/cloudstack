@@ -326,7 +326,7 @@
           </connectors>
           <contextPath>/awsapi</contextPath>
           <webXml>${basedir}/web/web.xml</webXml>
-          <webAppSourceDirectory>${basedir}/target/cloud-awsapi-${project.version}</webAppSourceDirectory>
+          <webAppSourceDirectory>${basedir}/target/generated-webapp</webAppSourceDirectory>
         </configuration>
       </plugin>
       <plugin>

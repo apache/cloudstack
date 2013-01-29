@@ -74,6 +74,7 @@ public class EC2MainServlet extends HttpServlet{
     @DB
     public void init( ServletConfig config ) throws ServletException {
         try{
+        	initComponent();
             ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
             // check if API is enabled
             String value = csDao.getConfigValue(ENABLE_EC2_API);
