@@ -219,7 +219,8 @@ public class ApiRateLimitTest {
         ApiLimitResponse response = _limitService.searchApiLimit(testAccount);
         assertEquals("apiIssued is incorrect", 5, response.getApiIssued());
         assertEquals("apiAllowed is incorrect", 5, response.getApiAllowed());
-        assertTrue("expiredAfter is incorrect", response.getExpireAfter() < 1000);
+        // using <= to account for inaccurate System.currentTimeMillis() clock in Windows environment
+        assertTrue("expiredAfter is incorrect", response.getExpireAfter() <= 1000);
 
     }
 
