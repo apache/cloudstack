@@ -109,6 +109,10 @@
     <property name="name" value="Basic"/>
   </bean>
 
+  <bean id="hyervisorTemplateAdapter" class="com.cloud.template.HyervisorTemplateAdapter">
+    <property name="name" value="HypervisorAdapter"/>
+  </bean>
+
   <!--
     Authenticators
   -->
