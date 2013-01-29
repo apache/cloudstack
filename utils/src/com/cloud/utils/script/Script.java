@@ -195,51 +195,65 @@ public class Script implements Callable<String> {
             }
 
             Task task = null;
-            if (interpreter.drain()) {
+            if (interpreter != null && interpreter.drain()) {
                 task = new Task(interpreter, ir);
                 s_executors.execute(task);
             }
 
-			while (true) {
-				try {
-					if (_process.waitFor() == 0) {
-						_logger.debug("Execution is successful.");
+            while (true) {
+                try {
+                    if (_process.waitFor() == 0) {
+                        _logger.debug("Execution is successful.");
+                        if (interpreter != null) {
+                            return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
+                        } else {
+                            // null return is ok apparently
+                            return (_process.exitValue() == 0) ? "Ok" : "Failed, exit code " + _process.exitValue();
+                        }
+                    } else {
+                        break;
+                    }
+                } catch (InterruptedException e) {
+                    if (!_isTimeOut) {
+                        /*
+                         * This is not timeout, we are interrupted by others,
+                         * continue
+                         */
+                        _logger.debug("We are interrupted but it's not a timeout, just continue");
+                        continue;
+                    }
 
-						return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
-					} else {
-						break;
-					}
-				} catch (InterruptedException e) {
-					if (!_isTimeOut) {
-						/* This is not timeout, we are interrupted by others, continue */
-						_logger.debug("We are interrupted but it's not a timeout, just continue");
-						continue;
-					}
-					
-					TimedOutLogger log = new TimedOutLogger(_process);
-					Task timedoutTask = new Task(log, ir);
+                    TimedOutLogger log = new TimedOutLogger(_process);
+                    Task timedoutTask = new Task(log, ir);
 
-					timedoutTask.run();
-					if (!_passwordCommand) {
-						_logger.warn("Timed out: " + buildCommandLine(command) + ".  Output is: " + timedoutTask.getResult());
-					} else {
-						_logger.warn("Timed out: " + buildCommandLine(command));
-					}
+                    timedoutTask.run();
+                    if (!_passwordCommand) {
+                        _logger.warn("Timed out: " + buildCommandLine(command) + ".  Output is: " + timedoutTask.getResult());
+                    } else {
+                        _logger.warn("Timed out: " + buildCommandLine(command));
+                    }
 
-					return ERR_TIMEOUT;
-				} finally {
-					if (future != null) {
-						future.cancel(false);
-					}
-					Thread.interrupted();
-				}
-			}
+                    return ERR_TIMEOUT;
+                } finally {
+                    if (future != null) {
+                        future.cancel(false);
+                    }
+                    Thread.interrupted();
+                }
+            }
 
-			_logger.debug("Exit value is " + _process.exitValue());
+            _logger.debug("Exit value is " + _process.exitValue());
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(_process.getInputStream()), 128);
 
-            String error = interpreter.processError(reader);
+            String error;
+            if (interpreter != null) {
+                error = interpreter.processError(reader);
+            }
+            else {
+                error = "Non zero exit code : " + _process.exitValue();
+            }
+            
             if (_logger.isDebugEnabled()) {
                 _logger.debug(error);
             }
@@ -350,7 +364,12 @@ public class Script implements Callable<String> {
          * Look in WEB-INF/classes of the webapp
          * URI workaround the URL encoding of url.getFile
          */
-        url = Script.class.getClassLoader().getResource(path + script);
+        if (path.endsWith(File.separator)) {
+        	url = Script.class.getClassLoader().getResource(path + script);
+        }
+        else {
+        	url = Script.class.getClassLoader().getResource(path + File.separator + script);
+        }
         s_logger.debug("Classpath resource: " + url);
         if (url != null) {
        	    try {

@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.network.security;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface SecurityGroupRules {
-    long getId();
+public interface SecurityGroupRules extends InternalIdentity {
 
     String getName();
 
@@ -39,6 +39,6 @@ public interface SecurityGroupRules {
     Long getAllowedNetworkId();
 
     String getAllowedSourceIpCidr();
-    
+
     SecurityRuleType getRuleType();
 }

@@ -18,11 +18,11 @@ package com.cloud.storage.snapshot;
 
 import java.util.List;
 
-import com.cloud.api.commands.CreateSnapshotPolicyCmd;
-import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
+import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
-import com.cloud.api.commands.ListSnapshotPoliciesCmd;
-import com.cloud.api.commands.ListSnapshotsCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
@@ -34,7 +34,7 @@ public interface SnapshotService {
 
     /**
      * List all snapshots of a disk volume. Optionally lists snapshots created by specified interval
-     * 
+     *
      * @param cmd
      *            the command containing the search criteria (order by, limit, etc.)
      * @return list of snapshots
@@ -46,7 +46,7 @@ public interface SnapshotService {
      * Delete specified snapshot from the specified. If no other policies are assigned it calls destroy snapshot. This
      * will be
      * used for manual snapshots too.
-     * 
+     *
      * @param snapshotId
      *            TODO
      */
@@ -56,7 +56,7 @@ public interface SnapshotService {
      * Creates a policy with specified schedule. maxSnaps specifies the number of most recent snapshots that are to be
      * retained.
      * If the number of snapshots go beyond maxSnaps the oldest snapshot is deleted
-     * 
+     *
      * @param cmd
      *            the command that
      * @param policyOwner
@@ -67,7 +67,7 @@ public interface SnapshotService {
 
     /**
      * Get the recurring snapshots scheduled for this volume currently along with the time at which they are scheduled
-     * 
+     *
      * @param cmd
      *            the command wrapping the volumeId (volume for which the snapshots are required) and policyId (to show
      *            snapshots for only this policy).
@@ -77,12 +77,12 @@ public interface SnapshotService {
 
     /**
      * list all snapshot policies assigned to the specified volume
-     * 
+     *
      * @param cmd
      *            the command that specifies the volume criteria
      * @return list of snapshot policies
      */
-    List<? extends SnapshotPolicy> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd);
+    Pair<List<? extends SnapshotPolicy>, Integer> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd);
 
     boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd);
 
@@ -90,12 +90,12 @@ public interface SnapshotService {
 
     /**
      * Create a snapshot of a volume
-     * 
+     *
      * @param snapshotOwner
      *            TODO
      * @param cmd
      *            the API command wrapping the parameters for creating the snapshot (mainly volumeId)
-     * 
+     *
      * @return the Snapshot that was created
      */
     Snapshot createSnapshot(Long volumeId, Long policyId, Long snapshotId, Account snapshotOwner);

@@ -23,9 +23,9 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 
 /**
  * implemented by classes that extends the Command class. Command specifies
- * 
+ *
  */
-public abstract class Command { 
+public abstract class Command {
 
     // allow command to carry over hypervisor or other environment related context info
     @LogLevel(Log4jLevel.Trace)
@@ -63,7 +63,7 @@ public abstract class Command {
     public String getContextParam(String name) {
         return contextMap.get(name);
     }
-    
+
     public boolean allowCaching() {
         return true;
     }

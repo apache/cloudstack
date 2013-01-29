@@ -19,15 +19,18 @@ package com.cloud.network.as;
 
 import java.util.List;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * AutoScaleVmProfile
  */
-public interface AutoScaleVmProfile extends ControlledEntity {
+public interface AutoScaleVmProfile extends ControlledEntity, InternalIdentity {
 
     public long getId();
+
+    public String getUuid();
 
     public Long getZoneId();
 

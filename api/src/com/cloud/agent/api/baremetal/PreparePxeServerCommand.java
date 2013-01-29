@@ -28,12 +28,12 @@ public class PreparePxeServerCommand extends Command {
 	String template;
 	String vmName;
 	String hostName;
-	
+
 	@Override
 	public boolean executeInSequence() {
 		return true;
 	}
-	
+
 	public PreparePxeServerCommand(String ip, String mac, String netMask, String gateway, String dns, String template, String vmName, String hostName) {
 		this.ip = ip;
 		this.mac = mac;
@@ -44,7 +44,7 @@ public class PreparePxeServerCommand extends Command {
 		this.vmName = vmName;
 		this.hostName = hostName;
 	}
-	
+
 	public String getIp() {
 		return ip;
 	}
@@ -68,11 +68,11 @@ public class PreparePxeServerCommand extends Command {
 	public String getTemplate() {
 		return template;
 	}
-	
+
 	public String getVmName() {
 		return vmName;
 	}
-	
+
 	public String getHostName() {
 		return hostName;
 	}

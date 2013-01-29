@@ -18,12 +18,9 @@ package com.cloud.network.lb;
 
 import java.util.List;
 
-import com.cloud.api.commands.CreateLBStickinessPolicyCmd;
-import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
-import com.cloud.api.commands.ListLBStickinessPoliciesCmd;
-import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
-import com.cloud.api.commands.ListLoadBalancerRulesCmd;
-import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.*;
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -36,7 +33,7 @@ import com.cloud.utils.Pair;
 public interface LoadBalancingRulesService {
     /**
      * Create a load balancer rule from the given ipAddress/port to the given private port
-     * 
+     *
      * @param openFirewall
      *            TODO
      * @param cmd
@@ -53,7 +50,7 @@ public interface LoadBalancingRulesService {
     /**
      * Create a stickiness policy to a load balancer from the given stickiness method name and parameters in
      * (name,value) pairs.
-     * 
+     *
      * @param cmd
      *            the command specifying the stickiness method name, params (name,value pairs), policy name and
      *            description.
@@ -63,7 +60,7 @@ public interface LoadBalancingRulesService {
     public StickinessPolicy createLBStickinessPolicy(CreateLBStickinessPolicyCmd cmd) throws NetworkRuleConflictException;
 
     public boolean applyLBStickinessPolicy(CreateLBStickinessPolicyCmd cmd) throws ResourceUnavailableException;
-    
+
     boolean deleteLBStickinessPolicy(long stickinessPolicyId, boolean apply);
     /**
      * Assign a virtual machine, or list of virtual machines, to a load balancer.
@@ -77,7 +74,7 @@ public interface LoadBalancingRulesService {
     /**
      * List instances that have either been applied to a load balancer or are eligible to be assigned to a load
      * balancer.
-     * 
+     *
      * @param cmd
      * @return list of vm instances that have been or can be applied to a load balancer
      */
@@ -85,7 +82,7 @@ public interface LoadBalancingRulesService {
 
     /**
      * List load balancer rules based on the given criteria
-     * 
+     *
      * @param cmd
      *            the command that specifies the criteria to use for listing load balancers. Load balancers can be
      *            listed
@@ -96,7 +93,7 @@ public interface LoadBalancingRulesService {
 
     /**
      * List stickiness policies based on the given criteria
-     * 
+     *
      * @param cmd
      *            the command specifies the load balancing rule id.
      * @return list of stickiness policies that match the criteria.

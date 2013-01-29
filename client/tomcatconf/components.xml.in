@@ -53,6 +53,14 @@ under the License.
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
              <param name="premium">true</param>
         </dao>
+        <adapters key="org.apache.cloudstack.acl.APIChecker">
+            <adapter name="AccountBasedAPIRateLimit" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl" singleton="true">
+                 <param name="api.throttling.interval">1</param>
+                 <param name="api.throttling.max">25</param>
+                 <param name="api.throttling.cachesize">50000</param>
+            </adapter>        
+            <adapter name="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
+        </adapters>
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>
             <!--adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/-->
@@ -147,7 +155,7 @@ under the License.
             <adapter name="ConsoleProxyAlert" class="com.cloud.alert.ConsoleProxyAlertAdapter"/>
             <adapter name="SecondaryStorageVmAlert" class="com.cloud.alert.SecondaryStorageVmAlertAdapter"/>
         </adapters>
-        <adapters key="com.cloud.acl.SecurityChecker">
+        <adapters key="org.apache.cloudstack.acl.SecurityChecker">
             <adapter name="DomainChecker" class="com.cloud.acl.DomainChecker"/>
         </adapters>
         <adapters key="com.cloud.network.element.NetworkElement">
@@ -159,6 +167,59 @@ under the License.
             <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
             <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>
         </adapters>
+        <adapters key="com.cloud.network.element.FirewallServiceProvider">
+            <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+            <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
+        </adapters>
+        <adapters key="com.cloud.network.element.DhcpServiceProvider">
+            <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+            <adapter name="ExternalDhcpElement" class="com.cloud.network.element.ExternalDhcpElement"/>
+            <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>           
+        </adapters>
+        <adapters key="com.cloud.network.element.UserDataServiceProvider">
+            <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+            <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
+        </adapters>
+        <adapters key="com.cloud.network.element.SourceNatServiceProvider">
+            <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+            <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
+            <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>  
+        </adapters>
+        <adapters key="com.cloud.network.element.StaticNatServiceProvider">
+            <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+            <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
+            <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>
+        </adapters>
+        <adapters key="com.cloud.network.element.PortForwardingServiceProvider">
+            <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+            <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
+            <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>
+        </adapters>
+        <adapters key="com.cloud.network.element.LoadBalancingServiceProvider">
+            <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+            <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
+        </adapters>
+        <adapters key="com.cloud.network.element.RemoteAccessVPNServiceProvider">
+            <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+        </adapters>
+        <adapters key="com.cloud.network.element.Site2SiteVpnServiceProvider">
+            <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
+        </adapters>
+        <adapters key="com.cloud.network.element.IpDeployer">
+            <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
+            <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
+            <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>
+        </adapters>
+        <adapters key="com.cloud.network.element.ConnectivityProvider">
+            <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>
+        </adapters>
+        <adapters key="com.cloud.network.element.NetworkACLServiceProvider">
+            <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
+        </adapters>
+        <adapters key="com.cloud.network.element.VpcProvider">
+            <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
+        </adapters>
+
         <adapters key="com.cloud.cluster.agentlb.AgentLoadBalancerPlanner">
             <adapter name="ClusterBasedAgentLbPlanner" class="com.cloud.cluster.agentlb.ClusterBasedAgentLoadBalancerPlanner"/>
         </adapters>
@@ -174,8 +235,10 @@ under the License.
         </adapters>
         <manager name="OvsTunnelManager" key="com.cloud.network.ovs.OvsTunnelManager" class="com.cloud.network.ovs.OvsTunnelManagerImpl"/>
         <manager name="ElasticLoadBalancerManager" key="com.cloud.network.lb.ElasticLoadBalancerManager" class="com.cloud.network.lb.ElasticLoadBalancerManagerImpl"/>
+        <pluggableservice name="ApiDiscoveryService" key="org.apache.cloudstack.discovery.ApiDiscoveryService" class="org.apache.cloudstack.discovery.ApiDiscoveryServiceImpl"/>
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
         <pluggableservice name="NiciraNvpElementService" key="com.cloud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/>
+        <pluggableservice name="ApiRateLimitService" key="org.apache.cloudstack.ratelimit.ApiRateLimitService" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
         <dao name="OvsTunnelInterfaceDao" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" singleton="false"/>
         <dao name="OvsTunnelAccountDao" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" singleton="false"/>
         <dao name="NiciraNvpDao" class="com.cloud.network.dao.NiciraNvpDaoImpl" singleton="false"/>

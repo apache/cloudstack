@@ -25,16 +25,16 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
+import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteObjectFromSwiftCommand;
 import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.api.commands.AddSwiftCmd;
-import com.cloud.api.commands.DeleteIsoCmd;
-import com.cloud.api.commands.DeleteTemplateCmd;
-import com.cloud.api.commands.ListSwiftsCmd;
+import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -50,6 +50,7 @@ import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
@@ -242,7 +243,7 @@ public class SwiftManagerImpl implements SwiftManager {
         if (swift == null) {
             return null;
         }
-        
+
         List<VMTemplateHostVO> tmpltHosts = _vmTmpltHostDao.listByOnlyTemplateId(tmpltId);
         if (tmpltHosts != null) {
             Collections.shuffle(tmpltHosts);
@@ -260,13 +261,13 @@ public class SwiftManagerImpl implements SwiftManager {
     }
 
     @Override
-    public List<SwiftVO> listSwifts(ListSwiftsCmd cmd) {
+    public Pair<List<SwiftVO>, Integer> listSwifts(ListSwiftsCmd cmd) {
         Filter searchFilter = new Filter(SwiftVO.class, "id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<SwiftVO> sc = _swiftDao.createSearchCriteria();
         if (cmd.getId() != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, cmd.getId());
         }
-        return _swiftDao.search(sc, searchFilter);
+        return _swiftDao.searchAndCount(sc, searchFilter);
 
     }
 

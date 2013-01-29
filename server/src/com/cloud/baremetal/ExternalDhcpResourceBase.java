@@ -127,7 +127,7 @@ public class ExternalDhcpResourceBase implements ServerResource {
 		cmd.setPod(_podId);
 		cmd.setPrivateIpAddress(_ip);
 		cmd.setStorageIpAddress("");
-		cmd.setVersion("");
+		cmd.setVersion(ExternalDhcpResourceBase.class.getPackage().getImplementationVersion());
 		cmd.setGuid(_guid);
 		return new StartupCommand[]{cmd};
 	}

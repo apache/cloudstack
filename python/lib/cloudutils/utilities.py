@@ -96,6 +96,10 @@ def writeProgressBar(msg, result):
         output = "[%-6s]\n"%"Failed"
     sys.stdout.write(output)
     sys.stdout.flush()
+
+class UnknownSystemException(Exception):
+    "This Excption is raised if the current operating enviornment is unknown"
+    pass
  
 class Distribution:
     def __init__(self):
@@ -106,7 +110,7 @@ class Distribution:
             self.distro = "Fedora"
         elif os.path.exists("/etc/redhat-release"):
             version = file("/etc/redhat-release").readline()
-            if version.find("Red Hat Enterprise Linux Server release 6") != -1 or version.find("Scientific Linux release 6") != -1 or version.find("CentOS Linux release 6") != -1 or version.find("CentOS release 6.2") or version.find("CentOS release 6.3") != -1:
+            if version.find("Red Hat Enterprise Linux Server release 6") != -1 or version.find("Scientific Linux release 6") != -1 or version.find("CentOS Linux release 6") != -1 or version.find("CentOS release 6.2") != -1 or version.find("CentOS release 6.3") != -1:
                 self.distro = "RHEL6"
             elif version.find("CentOS release") != -1:
                 self.distro = "CentOS"
@@ -120,7 +124,7 @@ class Distribution:
             self.arch = bash("uname -m").getStdout()
             
         else: 
-            self.distro = "Unknown" 
+            raise UnknownSystemException
 
     def getVersion(self):
         return self.distro 

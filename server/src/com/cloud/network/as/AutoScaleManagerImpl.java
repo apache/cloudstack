@@ -25,27 +25,23 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
+import org.apache.cloudstack.api.command.user.autoscale.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.acl.ControlledEntity;
-import com.cloud.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiDispatcher;
-import com.cloud.api.BaseListAccountResourcesCmd;
-import com.cloud.api.commands.CreateAutoScalePolicyCmd;
-import com.cloud.api.commands.CreateAutoScaleVmGroupCmd;
-import com.cloud.api.commands.CreateAutoScaleVmProfileCmd;
-import com.cloud.api.commands.CreateConditionCmd;
-import com.cloud.api.commands.CreateCounterCmd;
-import com.cloud.api.commands.DeployVMCmd;
-import com.cloud.api.commands.ListAutoScalePoliciesCmd;
-import com.cloud.api.commands.ListAutoScaleVmGroupsCmd;
-import com.cloud.api.commands.ListAutoScaleVmProfilesCmd;
-import com.cloud.api.commands.ListConditionsCmd;
-import com.cloud.api.commands.ListCountersCmd;
-import com.cloud.api.commands.UpdateAutoScalePolicyCmd;
-import com.cloud.api.commands.UpdateAutoScaleVmGroupCmd;
-import com.cloud.api.commands.UpdateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmGroupsCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListConditionsCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -81,7 +77,6 @@ import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
@@ -354,7 +349,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
          * For ex. if projectId is given as a string instead of an long value, this
          * will be throwing an error.
          */
-        ApiDispatcher.setupParameters(new DeployVMCmd(), deployParams);
+        ApiDispatcher.processParameters(new DeployVMCmd(), deployParams);
 
         if (autoscaleUserId == null) {
             autoscaleUserId = UserContext.current().getCallerUserId();
@@ -566,8 +561,8 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
         Account caller = UserContext.current().getCaller();
         Account owner = _accountDao.findActiveAccount(accountName, domainId);
         if (owner == null) {
-            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-            idList.add(new IdentityProxy("domain", domainId, "domainId"));
+            List<String> idList = new ArrayList<String>();
+            idList.add(ApiDBUtils.findDomainById(domainId).getUuid());
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain with specifed domainId");
         }
         _accountMgr.checkAccess(caller, null, false, owner);

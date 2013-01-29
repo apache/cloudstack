@@ -220,7 +220,7 @@ under the License.
             </div>
 
             <!-- Step 5: Network -->
-            <div class="step network" wizard-step-id="network">
+            <div class="step network always-load" wizard-step-id="network">
               <!-- 5a: Network description -->
               <div class="wizard-step-conditional nothing-to-select">     
 								<p id="from_instance_page_1"><fmt:message key="message.zone.no.network.selection"/></p>
@@ -959,7 +959,7 @@ under the License.
           <div class="button refresh" id="refresh_button">
             <span><fmt:message key="label.refresh"/></span>
           </div>
-          <div id="update_ssl_button" class="button action main-action reduced-hide lock">
+          <div id="update_ssl_button" class="button action main-action reduced-hide lock" title="Updates your Console Proxy SSL Certificate">
             <span class="icon">&nbsp;</span>            
             <span><fmt:message key="label.update.ssl.cert"/></span>
           </div>

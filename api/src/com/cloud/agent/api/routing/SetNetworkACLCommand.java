@@ -30,12 +30,12 @@ public class SetNetworkACLCommand extends NetworkElementCommand{
 
     protected SetNetworkACLCommand() {
     }
-    
+
     public SetNetworkACLCommand(List<NetworkACLTO> rules, NicTO nic) {
-        this.rules = rules.toArray(new NetworkACLTO[rules.size()]); 
+        this.rules = rules.toArray(new NetworkACLTO[rules.size()]);
         this.nic = nic;
     }
-    
+
     public NetworkACLTO[] getRules() {
         return rules;
     }
@@ -43,22 +43,22 @@ public class SetNetworkACLCommand extends NetworkElementCommand{
         String [][] result = new String [2][];
         Set<String> toAdd = new HashSet<String>();
 
-        
+
         for (NetworkACLTO aclTO: rules) {
-        /*  example  :  Ingress:tcp:80:80:0.0.0.0/0:,Egress:tcp:220:220:0.0.0.0/0:, 
+        /*  example  :  Ingress:tcp:80:80:0.0.0.0/0:,Egress:tcp:220:220:0.0.0.0/0:,
          *  each entry format      Ingress/Egress:protocol:start port: end port:scidrs:
          *  reverted entry format  Ingress/Egress:reverted:0:0:0:
          */
-            if (aclTO.revoked() == true) 
+            if (aclTO.revoked() == true)
             {
                 StringBuilder sb = new StringBuilder();
                 /* This entry is added just to make sure atleast there will one entry in the list to get the ipaddress */
-                sb.append(aclTO.getTrafficType().toString()).append(":reverted:0:0:0:"); 
+                sb.append(aclTO.getTrafficType().toString()).append(":reverted:0:0:0:");
                 String aclRuleEntry = sb.toString();
                 toAdd.add(aclRuleEntry);
                 continue;
             }
-            
+
             List<String> cidr;
             StringBuilder sb = new StringBuilder();
             sb.append(aclTO.getTrafficType().toString()).append(":").append(aclTO.getProtocol()).append(":");
@@ -75,22 +75,22 @@ public class SetNetworkACLCommand extends NetworkElementCommand{
             }else{
                 Boolean firstEntry = true;
                 for (String tag : cidr) {
-                    if (!firstEntry) sb.append("-"); 
+                    if (!firstEntry) sb.append("-");
                    sb.append(tag);
                    firstEntry = false;
                 }
             }
             sb.append(":");
             String aclRuleEntry = sb.toString();
-        
+
             toAdd.add(aclRuleEntry);
-            
+
         }
         result[0] = toAdd.toArray(new String[toAdd.size()]);
-        
+
         return result;
     }
-    
+
     public NicTO getNic() {
         return nic;
     }

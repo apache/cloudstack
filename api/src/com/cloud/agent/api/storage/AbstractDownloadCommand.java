@@ -24,46 +24,46 @@ public abstract class AbstractDownloadCommand extends ssCommand {
     private ImageFormat format;
     private long accountId;
     private String name;
-    
+
     protected AbstractDownloadCommand() {
     }
-    
+
     protected AbstractDownloadCommand(String name, String url, ImageFormat format, long accountId) {
     	assert(url != null);
     	url = url.replace('\\', '/');
-    	
+
         this.url = url;
         this.format = format;
         this.accountId = accountId;
         this.name = name;
     }
-    
+
     protected AbstractDownloadCommand(AbstractDownloadCommand that) {
         super(that);
         assert(that.url != null);
-        
+
         this.url = that.url.replace('\\', '/');
         this.format = that.format;
         this.accountId = that.accountId;
         this.name = that.name;
     }
-    
+
     public String getUrl() {
         return url;
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     public ImageFormat getFormat() {
         return format;
     }
-    
+
     public long getAccountId() {
         return accountId;
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return true;

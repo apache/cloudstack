@@ -127,7 +127,7 @@ under the License.
             <adapter name="ConsoleProxyAlert" class="com.cloud.alert.ConsoleProxyAlertAdapter"/>
             <adapter name="SecondaryStorageVmAlert" class="com.cloud.alert.SecondaryStorageVmAlertAdapter"/>
         </adapters>
-        <adapters key="com.cloud.acl.SecurityChecker">
+        <adapters key="org.apache.cloudstack.acl.SecurityChecker">
             <adapter name="DomainChecker" class="com.cloud.acl.DomainChecker"/>
         </adapters>
         <adapters key="com.cloud.network.element.NetworkElement">

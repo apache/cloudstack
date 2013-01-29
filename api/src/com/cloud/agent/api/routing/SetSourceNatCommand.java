@@ -21,10 +21,10 @@ import com.cloud.agent.api.to.IpAddressTO;
 public class SetSourceNatCommand extends NetworkElementCommand{
     IpAddressTO ipAddress;
     boolean add;
-    
+
     protected SetSourceNatCommand() {
     }
-    
+
     public SetSourceNatCommand(IpAddressTO ip, boolean add) {
         this.ipAddress = ip;
         this.add = add;
@@ -38,5 +38,5 @@ public class SetSourceNatCommand extends NetworkElementCommand{
     public IpAddressTO getIpAddress() {
         return ipAddress;
     }
-    
+
 }

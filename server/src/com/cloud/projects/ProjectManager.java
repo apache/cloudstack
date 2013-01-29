@@ -35,4 +35,6 @@ public interface ProjectManager extends ProjectService {
 
     boolean deleteProject(Account caller, long callerUserId, ProjectVO project);
 
+    long getInvitationTimeout();
+
 }

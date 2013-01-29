@@ -19,8 +19,9 @@
 package com.cloud.storage;
 
 import com.cloud.agent.api.to.S3TO;
-import com.cloud.api.Identity;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,7 +33,7 @@ import java.util.Date;
 
 @Entity
 @Table(name = "s3")
-public class S3VO implements S3, Identity {
+public class S3VO implements S3 {
 
     public static final String ID_COLUMN_NAME = "id";
 

@@ -24,13 +24,13 @@ import com.cloud.utils.SerialVersionUID;
  * storage space to create the VM.
  */
 public class InsufficientStorageCapacityException extends InsufficientCapacityException {
-    
+
     private static final long serialVersionUID = SerialVersionUID.InsufficientStorageCapacityException;
-    
+
     public InsufficientStorageCapacityException(String msg, long id) {
         this(msg, StoragePool.class, id);
     }
-    
+
     public InsufficientStorageCapacityException(String msg, Class<?> scope, Long id) {
         super(msg, scope, id);
     }

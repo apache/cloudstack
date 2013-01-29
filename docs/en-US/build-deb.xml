@@ -110,7 +110,7 @@ cloud-utils_4.0.0-incubating_amd64.deb
           create <filename>/etc/apt/sources.list.d/cloudstack.list</filename> with this 
           line:</para>
 
-      <programlisting>deb http://<replaceable>server.url</replaceable>/cloudstack/repo binary/</programlisting>
+      <programlisting>deb http://<replaceable>server.url</replaceable>/cloudstack/repo binary ./</programlisting>
         
         <para>Now that you have the repository info in place, you'll want to run another
             update so that APT knows where to find the &PRODUCT; packages.</para>

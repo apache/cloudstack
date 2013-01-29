@@ -30,13 +30,13 @@ public class ModifyStoragePoolAnswer extends Answer {
     public ModifyStoragePoolAnswer(ModifyStoragePoolCommand cmd, long capacityBytes, long availableBytes, Map<String, TemplateInfo> tInfo) {
         super(cmd);
         this.result = true;
-        this.poolInfo = new StoragePoolInfo(null, 
-                cmd.getPool().getHost(), cmd.getPool().getPath(), cmd.getLocalPath(), 
+        this.poolInfo = new StoragePoolInfo(null,
+                cmd.getPool().getHost(), cmd.getPool().getPath(), cmd.getLocalPath(),
                 cmd.getPool().getType(), capacityBytes, availableBytes );
-       
+
         this.templateInfo = tInfo;
     }
-    
+
     public StoragePoolInfo getPoolInfo() {
        return poolInfo;
     }

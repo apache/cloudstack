@@ -19,7 +19,7 @@ package com.cloud.agent.api;
 public class UpgradeAnswer extends Answer {
     protected UpgradeAnswer() {
     }
-    
+
     public UpgradeAnswer(UpgradeCommand cmd, String failure) {
         super(cmd, false, failure);
     }

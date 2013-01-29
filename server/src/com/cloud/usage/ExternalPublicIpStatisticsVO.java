@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.usage;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -28,7 +30,7 @@ import javax.persistence.Table;
 @Entity
 @Table(name="external_public_ip_statistics")
 @PrimaryKeyJoinColumn(name="id")
-public class ExternalPublicIpStatisticsVO {
+public class ExternalPublicIpStatisticsVO implements InternalIdentity {
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -61,7 +63,7 @@ public class ExternalPublicIpStatisticsVO {
 		this.currentBytesSent = 0;
 	}
 	
-	public Long getId() {
+	public long getId() {
         return id;
     }
 	

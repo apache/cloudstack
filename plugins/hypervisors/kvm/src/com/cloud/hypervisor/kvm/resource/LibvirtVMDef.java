@@ -646,6 +646,9 @@ public class LibvirtVMDef {
         private String _ipAddr;
         private String _scriptPath;
         private nicModel _model;
+        private String _virtualPortType;
+        private String _virtualPortInterfaceId;
+        private int _vlanTag = -1;
 
         public void defBridgeNet(String brName, String targetBrName,
                 String macAddr, nicModel model) {
@@ -695,7 +698,31 @@ public class LibvirtVMDef {
         public String getMacAddress() {
             return _macAddr;
         }
+        
+        public void setVirtualPortType(String virtualPortType) {
+            _virtualPortType = virtualPortType;
+        }
 
+        public String getVirtualPortType() {
+            return _virtualPortType;
+        }
+
+        public void setVirtualPortInterfaceId(String virtualPortInterfaceId) {
+            _virtualPortInterfaceId = virtualPortInterfaceId;
+        }
+
+        public String getVirtualPortInterfaceId() {
+            return _virtualPortInterfaceId;
+        }
+
+        public void setVlanTag(int vlanTag) {
+            _vlanTag = vlanTag;
+        }
+
+        public int getVlanTag() {
+            return _vlanTag;
+        }
+        
         @Override
         public String toString() {
             StringBuilder netBuilder = new StringBuilder();
@@ -713,6 +740,16 @@ public class LibvirtVMDef {
             }
             if (_model != null) {
                 netBuilder.append("<model type='" + _model + "'/>\n");
+            }
+            if (_virtualPortType != null) {
+                netBuilder.append("<virtualport type='" + _virtualPortType + "'>\n");
+                if (_virtualPortInterfaceId != null) {
+                    netBuilder.append("<parameters interfaceid='" + _virtualPortInterfaceId + "'/>\n");
+                }
+                netBuilder.append("</virtualport>\n");
+            }
+            if (_vlanTag > 0 && _vlanTag < 4095) {
+                netBuilder.append("<vlan trunk='no'>\n<tag id='" + _vlanTag + "'/>\n</vlan>");
             }
             netBuilder.append("</interface>\n");
             return netBuilder.toString();

@@ -31,6 +31,6 @@ public @interface Param {
     Class<?> responseObject() default Object.class;
 
     boolean includeInApiDoc() default true;
-    
+
     String since() default "";
 }

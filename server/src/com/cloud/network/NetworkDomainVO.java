@@ -24,10 +24,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.domain.PartOf;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="domain_network_ref")
-public class NetworkDomainVO implements PartOf {
+public class NetworkDomainVO implements PartOf, InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     long id;
@@ -49,7 +50,12 @@ public class NetworkDomainVO implements PartOf {
         this.domainId = domainId;
         this.subdomainAccess = subdomainAccess;
     }
-    
+
+    @Override
+    public long getId() {
+        return id;
+    }
+
     @Override
     public long getDomainId() {
         return domainId;

@@ -33,10 +33,11 @@ import javax.persistence.Table;
 import com.cloud.network.Network.Service;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "physical_network_service_providers")
-public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceProvider {
+public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceProvider, InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

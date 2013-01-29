@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.rules;
 
-import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -33,6 +32,7 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -64,6 +64,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
@@ -89,6 +90,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     AccountManager _accountMgr;
     @Inject
     NetworkManager _networkMgr;
+    @Inject
+    NetworkModel _networkModel;
     @Inject
     EventDao _eventDao;
     @Inject
@@ -173,14 +176,14 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         Long networkId = rule.getNetworkId();
-        Network network = _networkMgr.getNetwork(networkId);
+        Network network = _networkModel.getNetwork(networkId);
         //associate ip address to network (if needed)
         boolean performedIpAssoc = false;
         if (ipAddress.getAssociatedWithNetworkId() == null) {
             boolean assignToVpcNtwk =  network.getVpcId() != null 
                     && ipAddress.getVpcId() != null && ipAddress.getVpcId().longValue() == network.getVpcId();
             if (assignToVpcNtwk) {
-                _networkMgr.checkIpForService(ipAddress, Service.PortForwarding, networkId);
+                _networkModel.checkIpForService(ipAddress, Service.PortForwarding, networkId);
 
                 s_logger.debug("The ip is not associated with the VPC network id="+ networkId + ", so assigning");
                 try {
@@ -192,7 +195,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 }
             }
         } else {
-            _networkMgr.checkIpForService(ipAddress, Service.PortForwarding, null);
+            _networkModel.checkIpForService(ipAddress, Service.PortForwarding, null);
         }
         
         if (ipAddress.getAssociatedWithNetworkId() == null) { 
@@ -228,7 +231,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
             // Verify that vm has nic in the network
             Ip dstIp = rule.getDestinationIpAddress();
-            Nic guestNic = _networkMgr.getNicInNetwork(vmId, networkId);
+            Nic guestNic = _networkModel.getNicInNetwork(vmId, networkId);
             if (guestNic == null || guestNic.getIp4Address() == null) {
                 throw new InvalidParameterValueException("Vm doesn't belong to network associated with ipAddress");
             } else {
@@ -326,15 +329,15 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Long accountId = ipAddress.getAllocatedToAccountId();
         Long domainId = ipAddress.getAllocatedInDomainId();
 
-        _networkMgr.checkIpForService(ipAddress, Service.StaticNat, null);
+        _networkModel.checkIpForService(ipAddress, Service.StaticNat, null);
 
-        Network network = _networkMgr.getNetwork(networkId);
+        Network network = _networkModel.getNetwork(networkId);
         NetworkOffering off = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
         if (off.getElasticIp()) {
             throw new InvalidParameterValueException("Can't create ip forwarding rules for the network where elasticIP service is enabled");
         }
 
-        String dstIp = _networkMgr.getIpInNetwork(ipAddress.getAssociatedWithVmId(), networkId);
+        String dstIp = _networkModel.getIpInNetwork(ipAddress.getAssociatedWithVmId(), networkId);
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -398,19 +401,19 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         boolean performedIpAssoc = false;
         boolean result = false;
         try {
-            Network network = _networkMgr.getNetwork(networkId);
+            Network network = _networkModel.getNetwork(networkId);
             if (network == null) {
                 throw new InvalidParameterValueException("Unable to find network by id");
             }
             
             // Check that vm has a nic in the network
-            Nic guestNic = _networkMgr.getNicInNetwork(vmId, networkId);
+            Nic guestNic = _networkModel.getNicInNetwork(vmId, networkId);
             if (guestNic == null) {
                 throw new InvalidParameterValueException("Vm doesn't belong to the network with specified id");
             }
 
             
-            if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
+            if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
                 throw new InvalidParameterValueException("Unable to create static nat rule; StaticNat service is not " +
                         "supported in network with specified id");
             }
@@ -426,7 +429,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                     boolean assignToVpcNtwk = network.getVpcId() != null 
                             && ipAddress.getVpcId() != null && ipAddress.getVpcId().longValue() == network.getVpcId();
                     if (assignToVpcNtwk) {
-                        _networkMgr.checkIpForService(ipAddress, Service.StaticNat, networkId);
+                        _networkModel.checkIpForService(ipAddress, Service.StaticNat, networkId);
                         
                         s_logger.debug("The ip is not associated with the VPC network id="+ networkId + ", so assigning");
                         try {
@@ -439,7 +442,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                         performedIpAssoc = true;
                     }
                 } else {
-                    _networkMgr.checkIpForService(ipAddress, Service.StaticNat, null);
+                    _networkModel.checkIpForService(ipAddress, Service.StaticNat, null);
                 }
                 
                 if (ipAddress.getAssociatedWithNetworkId() == null) { 
@@ -512,7 +515,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             Long networkId = oldIP.getAssociatedWithNetworkId();
             boolean reassignStaticNat = false;
             if (networkId != null) {
-                Network guestNetwork = _networkMgr.getNetwork(networkId);
+                Network guestNetwork = _networkModel.getNetwork(networkId);
                 NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
                 if (offering.getElasticIp()) {
                     reassignStaticNat = true;
@@ -875,7 +878,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         List<StaticNat> staticNats = new ArrayList<StaticNat>();
         for (IPAddressVO ip : ips) {
             // Get nic IP4 address
-            String dstIp = _networkMgr.getIpInNetwork(ip.getAssociatedWithVmId(), networkId);
+            String dstIp = _networkModel.getIpInNetwork(ip.getAssociatedWithVmId(), networkId);
             StaticNatImpl staticNat = new StaticNatImpl(ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), networkId, ip.getId(), dstIp, false);
             staticNats.add(staticNat);
         }
@@ -1170,15 +1173,14 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         // if network has elastic IP functionality supported, we first have to disable static nat on old ip in order to
         // re-enable it on the new one enable static nat takes care of that
-        Network guestNetwork = _networkMgr.getNetwork(ipAddress.getAssociatedWithNetworkId());
+        Network guestNetwork = _networkModel.getNetwork(ipAddress.getAssociatedWithNetworkId());
         NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
         if (offering.getElasticIp()) {
-            if (offering.getAssociatePublicIP()) {
-                getSystemIpAndEnableStaticNatForVm(_vmDao.findById(vmId), true);
-                return true;
-            }
+            getSystemIpAndEnableStaticNatForVm(_vmDao.findById(vmId), true);
+            return true;
+        } else {
+            return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
         }
-        return disableStaticNat(ipId, caller, ctx.getCallerUserId(), false);
     }
 
     @Override
@@ -1257,9 +1259,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         
         String dstIp;
         if (forRevoke) {
-            dstIp = _networkMgr.getIpInNetworkIncludingRemoved(ip.getAssociatedWithVmId(), rule.getNetworkId());
+            dstIp = _networkModel.getIpInNetworkIncludingRemoved(ip.getAssociatedWithVmId(), rule.getNetworkId());
         } else {
-            dstIp = _networkMgr.getIpInNetwork(ip.getAssociatedWithVmId(), rule.getNetworkId());
+            dstIp = _networkModel.getIpInNetwork(ip.getAssociatedWithVmId(), rule.getNetworkId());
         }
 
         return new StaticNatRuleImpl(ruleVO, dstIp);
@@ -1327,7 +1329,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         UserVmVO vm = _vmDao.findById(sourceIp.getAssociatedWithVmId());
-        Network network = _networkMgr.getNetwork(networkId);
+        Network network = _networkModel.getNetwork(networkId);
         if (network == null) {
         	CloudRuntimeException ex = new CloudRuntimeException("Unable to find an ip address to map to specified vm id");
         	ex.addProxyObject(vm, vm.getId(), "vmId");            
@@ -1343,9 +1345,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         String dstIp;
         if (forRevoke) {
-            dstIp = _networkMgr.getIpInNetworkIncludingRemoved(sourceIp.getAssociatedWithVmId(), networkId);
+            dstIp = _networkModel.getIpInNetworkIncludingRemoved(sourceIp.getAssociatedWithVmId(), networkId);
         } else {
-            dstIp = _networkMgr.getIpInNetwork(sourceIp.getAssociatedWithVmId(), networkId);
+            dstIp = _networkModel.getIpInNetwork(sourceIp.getAssociatedWithVmId(), networkId);
         }
 
         StaticNatImpl staticNat = new StaticNatImpl(sourceIp.getAllocatedToAccountId(), sourceIp.getAllocatedInDomainId(),
@@ -1361,14 +1363,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         // enable static nat if eIp capability is supported
         List<? extends Nic> nics = _nicDao.listByVmId(vm.getId());
         for (Nic nic : nics) {
-            Network guestNetwork = _networkMgr.getNetwork(nic.getNetworkId());
+            Network guestNetwork = _networkModel.getNetwork(nic.getNetworkId());
             NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
             if (offering.getElasticIp()) {
-                boolean isSystemVM = (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm);
-                // for user VM's associate public IP only if offering is marked to associate a public IP by default on start of VM
-                if (!isSystemVM && !offering.getAssociatePublicIP()) {
-                    continue;
-                }
                 // check if there is already static nat enabled
                 if (_ipAddressDao.findByAssociatedVmId(vm.getId()) != null && !getNewIp) {
                     s_logger.debug("Vm " + vm + " already has ip associated with it in guest network " + guestNetwork);
@@ -1383,6 +1380,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
                 s_logger.debug("Allocated system ip " + ip + ", now enabling static nat on it for vm " + vm);
 
+                boolean isSystemVM = (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm);
                 try {
                     success = enableStaticNat(ip.getId(), vm.getId(), guestNetwork.getId(), isSystemVM);
                 } catch (NetworkRuleConflictException ex) {

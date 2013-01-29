@@ -73,7 +73,7 @@ import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
@@ -113,7 +113,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
 
     @Inject AgentManager _agentMgr;
     @Inject
-    protected NetworkManager _netMgr;
+    protected NetworkModel _netMgr;
     @Inject HostDao _hostDao;
     @Inject ClusterDao _clusterDao;
     @Inject ClusterDetailsDao _clusterDetailsDao;

@@ -42,7 +42,7 @@ public interface PrivateIp {
      * @return
      */
     String getMacAddress();
-    
+
     long getNetworkId();
 
 }

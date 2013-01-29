@@ -19,7 +19,7 @@ package com.cloud.async;
 import com.cloud.agent.AgentManager;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.event.dao.EventDao;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
@@ -37,7 +37,7 @@ import com.cloud.vm.dao.UserVmDao;
 public interface AsyncJobExecutorContext extends Manager {
 	public ManagementServer getManagementServer();
 	public AgentManager getAgentMgr();
-	public NetworkManager getNetworkMgr();
+	public NetworkModel getNetworkMgr();
 	public UserVmManager getVmMgr();
 	public SnapshotManager getSnapshotMgr();
 	public AccountManager getAccountMgr();

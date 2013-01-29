@@ -21,8 +21,8 @@ package com.cloud.storage.s3;
 import java.util.List;
 
 import com.cloud.agent.api.to.S3TO;
-import com.cloud.api.commands.AddS3Cmd;
-import com.cloud.api.commands.ListS3sCmd;
+import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
+import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.S3;

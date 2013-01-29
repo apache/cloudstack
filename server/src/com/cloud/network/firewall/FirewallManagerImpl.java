@@ -26,9 +26,9 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.ListFirewallRulesCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.dao.DomainDao;
@@ -46,16 +46,25 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkRuleApplier;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.element.FirewallServiceProvider;
+import com.cloud.network.element.NetworkACLServiceProvider;
+import com.cloud.network.element.NetworkElement;
+import com.cloud.network.element.PortForwardingServiceProvider;
+import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -66,9 +75,9 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.UserContext;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
@@ -84,7 +93,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value = { FirewallService.class, FirewallManager.class})
-public class FirewallManagerImpl implements FirewallService, FirewallManager, Manager {
+public class FirewallManagerImpl implements FirewallService, FirewallManager, NetworkRuleApplier, Manager {
     private static final Logger s_logger = Logger.getLogger(FirewallManagerImpl.class);
     String _name;
 
@@ -103,6 +112,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     @Inject
     NetworkManager _networkMgr;
     @Inject
+    NetworkModel _networkModel;
+    @Inject
     UsageEventDao _usageEventDao;
     @Inject
     ConfigurationDao _configDao;
@@ -116,6 +127,17 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     ResourceTagDao _resourceTagDao;
     @Inject
     VpcManager _vpcMgr;
+    @Inject(adapter = FirewallServiceProvider.class)
+    Adapters<FirewallServiceProvider> _firewallElements;
+
+    @Inject(adapter = PortForwardingServiceProvider.class)
+    Adapters<PortForwardingServiceProvider> _pfElements;
+    
+    @Inject(adapter = StaticNatServiceProvider.class)
+    Adapters<StaticNatServiceProvider> _staticNatElements;
+    
+    @Inject(adapter = NetworkACLServiceProvider.class)
+    Adapters<NetworkACLServiceProvider> _networkAclElements;
 
     private boolean _elbEnabled = false;
 
@@ -139,6 +161,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         _name = name;
         String elbEnabledString = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
         _elbEnabled = Boolean.parseBoolean(elbEnabledString);
+        s_logger.info("Firewall provider list is " + _firewallElements.iterator().next());
         return true;
     }
 
@@ -165,7 +188,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
                     " doesn't exist in the system");
         }
 
-        _networkMgr.checkIpForService(ipAddress, Service.Firewall, null);  
+        _networkModel.checkIpForService(ipAddress, Service.Firewall, null);  
 
         validateFirewallRule(caller, ipAddress, portStart, portEnd, protocol, Purpose.Firewall, type);
 
@@ -400,7 +423,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             networkId = ipAddress.getAssociatedWithNetworkId();
         }
 
-        Network network = _networkMgr.getNetwork(networkId);
+        Network network = _networkModel.getNetwork(networkId);
         assert network != null : "Can't create port forwarding rule as network associated with public ip address is null?";
 
         // Verify that the network guru supports the protocol specified
@@ -408,10 +431,10 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
 
         if (purpose == Purpose.LoadBalancing) {
             if (!_elbEnabled) {
-                caps = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Lb);
+                caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.Lb);
             }
         } else if (purpose == Purpose.PortForwarding) {
-            caps = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.PortForwarding);
+            caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.PortForwarding);
         }
 
         if (caps != null) {
@@ -428,7 +451,12 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError, boolean updateRulesInDB) 
             throws ResourceUnavailableException {
         boolean success = true;
-        if (!_networkMgr.applyRules(rules, continueOnError)) {
+        if (rules == null || rules.size() == 0) {
+            s_logger.debug("There are no rules to forward to the network elements");
+            return true;
+        }
+        Purpose purpose = rules.get(0).getPurpose();
+        if (!_networkMgr.applyRules(rules, purpose, this, continueOnError)) {
             s_logger.warn("Rules are not completely applied");
             return false;
         } else {
@@ -460,6 +488,46 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         return success;
     }
 
+    @Override
+    public  boolean applyRules(Network network, Purpose purpose, List<? extends FirewallRule> rules) 
+            throws ResourceUnavailableException {
+    	boolean handled = false;
+    	switch (purpose){
+    	case Firewall:
+    	    for (FirewallServiceProvider fwElement: _firewallElements) {
+    	        handled = fwElement.applyFWRules(network, rules);
+    	        if (handled)
+    	            break;
+    	    }
+    	case PortForwarding:
+    	    for (PortForwardingServiceProvider element: _pfElements) {
+                handled = element.applyPFRules(network, (List<PortForwardingRule>) rules);
+                if (handled)
+                    break;
+            }
+    	    break;
+    	case StaticNat:
+            for (StaticNatServiceProvider element: _staticNatElements) {
+                handled = element.applyStaticNats(network, (List<? extends StaticNat>) rules);
+                if (handled)
+                    break;
+            }
+            break;
+    	case NetworkACL:
+            for (NetworkACLServiceProvider element: _networkAclElements) {
+                handled = element.applyNetworkACLs(network, (List<? extends FirewallRule>) rules);
+                if (handled)
+                    break;
+            }
+            break;
+    	default:
+    	    assert(false): "Unexpected fall through in applying rules to the network elements";
+    	    s_logger.error("FirewallManager cannot process rules of type " + purpose);
+    	    throw new CloudRuntimeException("FirewallManager cannot process rules of type " + purpose);
+    	}
+    	return handled;
+    }
+    
     @Override
     public void removeRule(FirewallRule rule) {
 

@@ -20,11 +20,11 @@ package com.cloud.agent.api;
 public class BackupSnapshotAnswer extends Answer {
     private String backupSnapshotName;
     private boolean full;
-    
+
     protected BackupSnapshotAnswer() {
-        
+
     }
-    
+
     public BackupSnapshotAnswer(BackupSnapshotCommand cmd, boolean success, String result, String backupSnapshotName, boolean full) {
         super(cmd, success, result);
         this.backupSnapshotName = backupSnapshotName;
@@ -37,7 +37,7 @@ public class BackupSnapshotAnswer extends Answer {
     public String getBackupSnapshotName() {
         return backupSnapshotName;
     }
-    
+
     public boolean isFull() {
         return full;
     }

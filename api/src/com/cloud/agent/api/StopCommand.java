@@ -23,35 +23,35 @@ public class StopCommand extends RebootCommand {
     private boolean isProxy=false;
     private String urlPort=null;
     private String publicConsoleProxyIpAddress=null;
-    
+
     protected StopCommand() {
     }
-    
+
     public StopCommand(VirtualMachine vm, boolean isProxy, String urlPort, String publicConsoleProxyIpAddress) {
     	super(vm);
     	this.isProxy = isProxy;
     	this.urlPort = urlPort;
     	this.publicConsoleProxyIpAddress = publicConsoleProxyIpAddress;
     }
-    
+
     public StopCommand(VirtualMachine vm, String vnet) {
         super(vm);
         this.vnet = vnet;
     }
-    
+
     public StopCommand(VirtualMachine vm, String vmName, String vnet) {
         super(vmName);
         this.vnet = vnet;
     }
-    
+
     public StopCommand(String vmName) {
         super(vmName);
     }
-    
+
     public String getVnet() {
         return vnet;
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return true;
@@ -60,11 +60,11 @@ public class StopCommand extends RebootCommand {
 	public boolean isProxy() {
 		return this.isProxy;
 	}
-	
+
 	public String getURLPort() {
 		return this.urlPort;
 	}
-	
+
 	public String getPublicConsoleProxyIpAddress() {
 		return this.publicConsoleProxyIpAddress;
 	}

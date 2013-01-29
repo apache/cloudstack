@@ -30,6 +30,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.utils.db.GenericDaoBase;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Join table for storage pools and templates
@@ -37,7 +38,7 @@ import com.cloud.utils.db.GenericDaoBase;
  */
 @Entity
 @Table(name="template_spool_ref")
-public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc{
+public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	long id;

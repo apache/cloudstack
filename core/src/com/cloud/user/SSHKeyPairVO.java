@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.user;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;

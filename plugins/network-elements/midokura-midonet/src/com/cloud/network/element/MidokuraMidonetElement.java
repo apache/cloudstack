@@ -38,14 +38,9 @@ import com.cloud.vm.VirtualMachineProfile;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
+import java.lang.Class;
 import java.util.Map;
 import java.util.Set;
-
-/**
- * User: tomoe
- * Date: 8/8/12
- * Time: 1:38 PM
- */
 
 @Local(value = NetworkElement.class)
 public class MidokuraMidonetElement extends AdapterBase implements ConnectivityProvider, PluggableService {
@@ -126,7 +121,7 @@ public class MidokuraMidonetElement extends AdapterBase implements ConnectivityP
     }
 
     @Override
-    public String getPropertiesFile() {
+    public List<Class<?>> getCommands() {
         // TODO: implement this.
         return null;
     }

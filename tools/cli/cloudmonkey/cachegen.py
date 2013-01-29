@@ -16,11 +16,13 @@
 # under the License.
 
 try:
-    from common import grammar
+    import re
     from marvin.cloudstackAPI import *
     from marvin import cloudstackAPI
 except ImportError, e:
-    pass
+    import sys
+    print "ImportError", e
+    sys.exit(1)
 
 completions = cloudstackAPI.__all__
 
@@ -43,9 +45,12 @@ def main():
     completing commands and help docs. This reduces the overall search and
     cache_miss (computation) complexity from O(n) to O(1) for any valid cmd.
     """
+    pattern = re.compile("[A-Z]")
+    verbs = list(set([x[:pattern.search(x).start()] for x in completions
+                 if pattern.search(x) is not None]).difference(['cloudstack']))
     # datastructure {'verb': {cmd': ['api', [params], doc, required=[]]}}
     cache_verbs = {}
-    for verb in grammar:
+    for verb in verbs:
         completions_found = filter(lambda x: x.startswith(verb), completions)
         cache_verbs[verb] = {}
         for api_name in completions_found:

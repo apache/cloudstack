@@ -23,7 +23,7 @@ import com.cloud.agent.api.to.PortForwardingRuleTO;
 public class SetPortForwardingRulesVpcCommand extends SetPortForwardingRulesCommand{
     protected SetPortForwardingRulesVpcCommand() {
     }
-    
+
     public SetPortForwardingRulesVpcCommand(List<? extends PortForwardingRuleTO> pfRules) {
         super(pfRules);
     }

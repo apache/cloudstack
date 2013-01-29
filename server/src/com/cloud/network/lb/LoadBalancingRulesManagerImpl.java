@@ -30,15 +30,13 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.loadbalancer.*;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.CreateLBStickinessPolicyCmd;
-import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
-import com.cloud.api.commands.ListLBStickinessPoliciesCmd;
-import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
-import com.cloud.api.commands.ListLoadBalancerRulesCmd;
-import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
-import com.cloud.api.response.ServiceResponse;
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleInstancesCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
+import org.apache.cloudstack.api.response.ServiceResponse;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -68,6 +66,8 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkRuleApplier;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScalePolicyConditionMapVO;
@@ -92,6 +92,8 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.element.LoadBalancingServiceProvider;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScalePolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmGroup;
 import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmProfile;
@@ -116,7 +118,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainService;
@@ -125,9 +126,9 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
@@ -147,13 +148,15 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 @Local(value = { LoadBalancingRulesManager.class, LoadBalancingRulesService.class })
-public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesManager, LoadBalancingRulesService, Manager {
+public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesManager, LoadBalancingRulesService, NetworkRuleApplier, Manager {
     private static final Logger s_logger = Logger.getLogger(LoadBalancingRulesManagerImpl.class);
 
     String _name;
 
     @Inject
     NetworkManager _networkMgr;
+    @Inject
+    NetworkModel _networkModel;
     @Inject
     RulesManager _rulesMgr;
     @Inject
@@ -192,8 +195,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     DomainService _domainMgr;
     @Inject
     ConfigurationManager _configMgr;
-    @Inject
-    TemplateManager _templateMgr;
+   
     @Inject
     ExternalLoadBalancerUsageManager _externalLBUsageMgr;
     @Inject
@@ -226,12 +228,13 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     DataCenterDao _dcDao = null;
     @Inject
     UserDao _userDao;
-
+    @Inject(adapter = LoadBalancingServiceProvider.class)
+    Adapters<LoadBalancingServiceProvider> _lbProviders;
 
     // Will return a string. For LB Stickiness this will be a json, for autoscale this will be "," separated values
     @Override
     public String getLBCapability(long networkid, String capabilityName) {
-        Map<Service, Map<Capability, String>> serviceCapabilitiesMap = _networkMgr.getNetworkCapabilities(networkid);
+        Map<Service, Map<Capability, String>> serviceCapabilitiesMap = _networkModel.getNetworkCapabilities(networkid);
         if (serviceCapabilitiesMap != null) {
             for (Service service : serviceCapabilitiesMap.keySet()) {
                 ServiceResponse serviceResponse = new ServiceResponse();
@@ -324,7 +327,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
         List<LoadBalancingRule> rules = Arrays.asList(rule);
 
-        if (!_networkMgr.applyRules(rules, false)) {
+        if (!_networkMgr.applyRules(rules, FirewallRule.Purpose.LoadBalancing, this, false)) {
             s_logger.debug("LB rules' autoscale config are not completely applied");
             return false;
         }
@@ -483,7 +486,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         List<LbStickinessPolicy> policyList = new ArrayList<LbStickinessPolicy>();
         policyList.add(new LbStickinessPolicy(cmd.getStickinessMethodName(), lbpolicy.getParams()));
         LoadBalancingRule lbRule = new LoadBalancingRule(loadBalancer, getExistingDestinations(lbpolicy.getId()), policyList);
-        if (!_networkMgr.validateRule(lbRule)) {
+        if (!validateRule(lbRule)) {
             throw new InvalidParameterValueException("Failed to create Stickiness policy: Validation Failed " + cmd.getLbRuleId());
         }
 
@@ -494,6 +497,22 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         return policy;
     }
 
+    
+    private boolean validateRule(LoadBalancingRule lbRule) {
+        Network network = _networkDao.findById(lbRule.getNetworkId());
+        Purpose purpose = lbRule.getPurpose();
+        if (purpose != Purpose.LoadBalancing) {
+            s_logger.debug("Unable to validate network rules for purpose: " + purpose.toString());
+            return false;
+        }
+        for (LoadBalancingServiceProvider ne : _lbProviders) {
+            boolean validated = ne.validateLBRule(network,  lbRule);
+            if (!validated)
+                return false;
+        }
+        return true;
+    }
+    
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_LB_STICKINESSPOLICY_CREATE, eventDescription = "Apply Stickinesspolicy to load balancer ", async = true)
@@ -579,8 +598,14 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
     private boolean isRollBackAllowedForProvider(LoadBalancerVO loadBalancer) {
         Network network = _networkDao.findById(loadBalancer.getNetworkId());
-        Provider provider = Network.Provider.Netscaler;
-        return _ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), Service.Lb, provider);
+        List<Provider> provider = _networkMgr.getProvidersForServiceInNetwork(network, Service.Lb);
+        if (provider == null || provider.size() == 0) {
+            return false;
+        }
+        if (provider.get(0) == Provider.Netscaler || provider.get(0) == Provider.F5BigIp) {
+            return true;
+        }
+        return false;
     }
     @Override
     @DB
@@ -621,7 +646,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             }
 
             // Let's check to make sure the vm has a nic in the same network as the load balancing rule.
-            List<? extends Nic> nics = _networkMgr.getNics(vm.getId());
+            List<? extends Nic> nics = _networkModel.getNics(vm.getId());
             Nic nicInSameNetwork = null;
             for (Nic nic : nics) {
                 if (nic.getNetworkId() == loadBalancer.getNetworkId()) {
@@ -855,7 +880,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         // gather external network usage stats for this lb rule
         NetworkVO network = _networkDao.findById(lb.getNetworkId());
         if (network != null) {
-            if (_networkMgr.networkIsConfiguredForExternalNetworking(network.getDataCenterId(), network.getId())) {
+            if (_networkModel.networkIsConfiguredForExternalNetworking(network.getDataCenterId(), network.getId())) {
                 _externalLBUsageMgr.updateExternalLoadBalancerNetworkUsageStats(loadBalancerId);
             }
         }
@@ -936,7 +961,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             ipVO = _ipAddressDao.findById(ipAddrId);
         }
         
-        Network network = _networkMgr.getNetwork(lb.getNetworkId());
+        Network network = _networkModel.getNetwork(lb.getNetworkId());
 
         // FIXME: breaking the dependency on ELB manager. This breaks functionality of ELB using virtual router
         // Bug CS-15411 opened to document this
@@ -965,14 +990,14 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                     && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
                     if (assignToVpcNtwk) {
                         //set networkId just for verification purposes
-                        _networkMgr.checkIpForService(ipVO, Service.Lb, lb.getNetworkId());
+                        _networkModel.checkIpForService(ipVO, Service.Lb, lb.getNetworkId());
 
                         s_logger.debug("The ip is not associated with the VPC network id="+ lb.getNetworkId() + " so assigning");
                         ipVO = _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId(), false);
                         performedIpAssoc = true;
                     }
                 } else {
-                    _networkMgr.checkIpForService(ipVO, Service.Lb, null);
+                    _networkModel.checkIpForService(ipVO, Service.Lb, null);
                 }
                 
                 if (ipVO.getAssociatedWithNetworkId() == null) { 
@@ -1044,7 +1069,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         _accountMgr.checkAccess(caller.getCaller(), null, true, ipAddr);
 
         // verify that lb service is supported by the network
-        if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
+        if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
             InvalidParameterValueException ex = new InvalidParameterValueException("LB service is not supported in specified network id");
             ex.addProxyObject(network, networkId, "networkId");
             throw ex;
@@ -1056,6 +1081,12 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         LoadBalancerVO newRule = new LoadBalancerVO(lb.getXid(), lb.getName(), lb.getDescription(), lb.getSourceIpAddressId(), lb.getSourcePortEnd(), lb.getDefaultPortStart(),
                 lb.getAlgorithm(), network.getId(), ipAddr.getAllocatedToAccountId(), ipAddr.getAllocatedInDomainId());
 
+        // verify rule is supported by Lb provider of the network
+        LoadBalancingRule loadBalancing = new LoadBalancingRule(newRule, new ArrayList<LbDestination>(), new ArrayList<LbStickinessPolicy>());
+        if (!validateRule(loadBalancing)) {
+            throw new InvalidParameterValueException("LB service provider cannot support this rule");
+        }
+        
         newRule = _lbDao.persist(newRule);
 
         if (openFirewall) {
@@ -1119,6 +1150,19 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             return true;
         }
     }
+    
+    @Override
+    public boolean applyRules(Network network, Purpose purpose, List<? extends FirewallRule> rules) 
+            throws ResourceUnavailableException {
+        assert(purpose == Purpose.LoadBalancing): "LB Manager asked to handle non-LB rules";
+        boolean handled = false;
+        for (LoadBalancingServiceProvider lbElement: _lbProviders) {
+           handled = lbElement.applyLBRules(network, (List<LoadBalancingRule>) rules);
+           if (handled)
+               break;
+        }
+        return handled;
+    }
 
     @DB
     protected boolean applyLoadBalancerRules(List<LoadBalancerVO> lbs, boolean updateRulesInDB) throws ResourceUnavailableException {
@@ -1132,7 +1176,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             rules.add(loadBalancing);
         }
 
-        if (!_networkMgr.applyRules(rules, false)) {
+        if (!_networkMgr.applyRules(rules, FirewallRule.Purpose.LoadBalancing, this, false)) {
             s_logger.debug("LB rules are not completely applied");
             return false;
         }
@@ -1569,4 +1613,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         //remove the rule
         _lbDao.remove(rule.getId());
     }
+	
+ 
 }

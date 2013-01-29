@@ -18,8 +18,8 @@ package com.cloud.user;
 
 import java.util.List;
 
-import com.cloud.api.commands.ListDomainChildrenCmd;
-import com.cloud.api.commands.ListDomainsCmd;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.utils.Pair;
@@ -30,9 +30,11 @@ public interface DomainService {
 
     Domain getDomain(long id);
 
+    Domain getDomain(String uuid);
+
     /**
      * Return whether a domain is a child domain of a given domain.
-     * 
+     *
      * @param parentId
      * @param childId
      */

@@ -16,10 +16,12 @@
 // under the License.
 package com.cloud.storage;
 
-public interface GuestOsCategory {
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface GuestOsCategory extends Identity, InternalIdentity {
     // Used by OS preference, 'None' for no OS preference
     public static final String CATEGORY_NONE ="None";
-    long getId();
 
     String getName();
 

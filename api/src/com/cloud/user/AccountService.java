@@ -19,14 +19,15 @@ package com.cloud.user;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.acl.ControlledEntity;
-import com.cloud.acl.SecurityChecker.AccessType;
-import com.cloud.api.commands.DeleteUserCmd;
-import com.cloud.api.commands.ListAccountsCmd;
-import com.cloud.api.commands.ListUsersCmd;
-import com.cloud.api.commands.RegisterCmd;
-import com.cloud.api.commands.UpdateAccountCmd;
-import com.cloud.api.commands.UpdateUserCmd;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
@@ -37,7 +38,7 @@ public interface AccountService {
 
     /**
      * Creates a new user and account, stores the password as is so encrypted passwords are recommended.
-     * 
+     *
      * @param userName
      *            TODO
      * @param password
@@ -58,7 +59,7 @@ public interface AccountService {
      *            TODO
      * @param networkDomain
      *            TODO
-     * 
+     *
      * @return the user if created successfully, null otherwise
      */
     UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
@@ -66,17 +67,17 @@ public interface AccountService {
 
     /**
      * Deletes a user by userId
-     * 
+     *
      * @param accountId
      *            - id of the account do delete
-     * 
+     *
      * @return true if delete was successful, false otherwise
      */
     boolean deleteUserAccount(long accountId);
 
     /**
      * Disables a user by userId
-     * 
+     *
      * @param userId
      *            - the userId
      * @return UserAccount object
@@ -85,7 +86,7 @@ public interface AccountService {
 
     /**
      * Enables a user
-     * 
+     *
      * @param userId
      *            - the userId
      * @return UserAccount object
@@ -95,7 +96,7 @@ public interface AccountService {
     /**
      * Locks a user by userId. A locked user cannot access the API, but will still have running VMs/IP addresses
      * allocated/etc.
-     * 
+     *
      * @param userId
      * @return UserAccount object
      */
@@ -103,7 +104,7 @@ public interface AccountService {
 
     /**
      * Update a user by userId
-     * 
+     *
      * @param userId
      * @return UserAccount object
      */
@@ -111,7 +112,7 @@ public interface AccountService {
 
     /**
      * Disables an account by accountName and domainId
-     * 
+     *
      * @param accountName
      *            TODO
      * @param domainId
@@ -125,7 +126,7 @@ public interface AccountService {
 
     /**
      * Enables an account by accountId
-     * 
+     *
      * @param accountName
      *            - the enableAccount command defining the accountId to be deleted.
      * @param domainId
@@ -139,7 +140,7 @@ public interface AccountService {
      * Locks an account by accountId. A locked account cannot access the API, but will still have running VMs/IP
      * addresses
      * allocated/etc.
-     * 
+     *
      * @param accountName
      *            - the LockAccount command defining the accountId to be locked.
      * @param domainId
@@ -151,7 +152,7 @@ public interface AccountService {
 
     /**
      * Updates an account name
-     * 
+     *
      * @param cmd
      *            - the parameter containing accountId
      * @return updated account object
@@ -191,13 +192,10 @@ public interface AccountService {
 
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd);
 
-    Pair<List<? extends Account>, Integer> searchForAccounts(ListAccountsCmd cmd);
-
-    Pair<List<? extends UserAccount>, Integer> searchForUsers(ListUsersCmd cmd)
-            throws PermissionDeniedException;
-
     UserAccount getUserByApiKey(String apiKey);
-    
+
+    RoleType getRoleType(Account account);
+
     void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;

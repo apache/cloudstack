@@ -28,12 +28,12 @@ public class StartCommand extends Command {
     public VirtualMachineTO getVirtualMachine() {
         return vm;
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return true;
     }
-    
+
     protected StartCommand() {
     }
 

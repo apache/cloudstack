@@ -28,7 +28,7 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand{
     Integer priority;
     boolean add = true;
     NicTO nic;
-    
+
     public NicTO getNic() {
         return nic;
     }
@@ -53,12 +53,12 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand{
     public boolean executeInSequence() {
         return true;
     }
-    
+
     protected SetupGuestNetworkCommand() {
     }
-    
-    
-    public SetupGuestNetworkCommand(String dhcpRange, String networkDomain, boolean isRedundant, Integer priority, 
+
+
+    public SetupGuestNetworkCommand(String dhcpRange, String networkDomain, boolean isRedundant, Integer priority,
             String defaultDns1, String defaultDns2, boolean add, NicTO nic) {
         this.dhcpRange = dhcpRange;
         this.networkDomain = networkDomain;

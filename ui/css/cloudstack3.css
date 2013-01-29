@@ -441,20 +441,11 @@ body.login {
 div.list-view table tbody td span {
   display: block;
   float: left;
-  max-width: 160px;
+  max-width: 100%;
   word-wrap: break-word;
   text-indent: 0;
   margin-left: 12px;
   line-height: 15px;
-  overflow: hidden;
-  overflow-x: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-div.list-view table tbody td span:hover {
-  overflow: auto;
-  margin-top: 4px;
 }
 
 div.list-view div.toolbar div.section-switcher div.section-select label {
@@ -5787,6 +5778,10 @@ label.error {
   height: 223px;
 }
 
+.multi-wizard.instance-wizard .select-network.no-add-network .select table .select-container {
+  height: 282px;
+}
+
 .multi-wizard.instance-wizard .select-network .select.new-network table .select-container {
   height: 29px;
   overflow: visible;
@@ -5809,6 +5804,10 @@ label.error {
 
 .multi-wizard.instance-wizard .select-network .select.new-network {
   margin: -17px 0 0;
+}
+
+.multi-wizard.instance-wizard .select-network.no-add-network .select.new-network {
+  display: none !important;
 }
 
 .multi-wizard.instance-wizard .select-network .main-desc {
@@ -5858,6 +5857,10 @@ label.error {
   float: left;
   padding: 3px;
   margin: 7px 0px 7px 7px;
+}
+
+.multi-wizard.instance-wizard .select-network.no-add-network .select-vpc {
+  visibility: hidden !important;
 }
 
 .multi-wizard.instance-wizard .select-network .select-vpc select {

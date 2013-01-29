@@ -16,17 +16,16 @@
 // under the License.
 package com.cloud.network.vpc;
 
-public interface VpcOffering {
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface VpcOffering extends InternalIdentity, Identity {
     public enum State {
         Disabled,
         Enabled
     }
-    
+
     public static final String defaultVPCOfferingName = "Default VPC offering";
-
-    long getId();
-
-    String getUuid();
 
     String getName();
 
@@ -35,7 +34,7 @@ public interface VpcOffering {
     String getDisplayText();
 
     State getState();
-    
+
     boolean isDefault();
 
     /**

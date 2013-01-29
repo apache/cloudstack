@@ -3705,10 +3705,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
             if (morDatastore == null)
                 throw new Exception("Unable to find datastore in vSphere");
-            
+
             DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
 
-            if (cmd.getDiskCharacteristics().getType() == Volume.Type.ROOT) {
+            if (dskch.getType() == Volume.Type.ROOT) {
+                // attach volume id to make the name unique
+                String vmdkName = dskch.getName() + "-" + dskch.getVolumeId();
                 if (cmd.getTemplateUrl() == null) {
                     // create a root volume for blank VM
                     String dummyVmName = getWorkerName(context, cmd, 0);
@@ -3720,16 +3722,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             throw new Exception("Unable to create a dummy VM for volume creation");
                         }
 
-                        String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), cmd.getDiskCharacteristics().getName());
+                        String volumeDatastorePath = String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName);
                         synchronized (this) {
                             s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
-                            VmwareHelper.deleteVolumeVmdkFiles(dsMo, cmd.getDiskCharacteristics().getName(), dcMo);
-                            vmMo.createDisk(volumeDatastorePath, (int) (cmd.getDiskCharacteristics().getSize() / (1024L * 1024L)), morDatastore, -1);
+                            VmwareHelper.deleteVolumeVmdkFiles(dsMo, vmdkName, dcMo);
+                            vmMo.createDisk(volumeDatastorePath, (int) (dskch.getSize() / (1024L * 1024L)), morDatastore, -1);
                             vmMo.detachDisk(volumeDatastorePath, false);
                         }
 
-                        VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), cmd.getDiskCharacteristics().getName(), pool.getPath(), cmd
-                                .getDiskCharacteristics().getName(), cmd.getDiskCharacteristics().getSize(), null);
+                        VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), dskch.getName(), pool.getPath(), vmdkName, dskch.getSize(), null);
                         return new CreateAnswer(cmd, vol);
                     } finally {
                         vmMo.detachAllDisks();
@@ -3753,41 +3754,40 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         throw new Exception(msg);
                     }
 
-                    String name = cmd.getDiskCharacteristics().getName();
-                    if(dsMo.folderExists(String.format("[%s]", dsMo.getName()), name))
-                    	dsMo.deleteFile(String.format("[%s] %s/", dsMo.getName(), name), dcMo.getMor(), false);
+                    if(dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName))
+                        dsMo.deleteFile(String.format("[%s] %s/", dsMo.getName(), vmdkName), dcMo.getMor(), false);
 
                     s_logger.info("create linked clone from template");
-                    if (!vmTemplate.createLinkedClone(name, morBaseSnapshot, dcMo.getVmFolder(), morPool, morDatastore)) {
+                    if (!vmTemplate.createLinkedClone(vmdkName, morBaseSnapshot, dcMo.getVmFolder(), morPool, morDatastore)) {
                         String msg = "Unable to clone from the template";
                         s_logger.error(msg);
                         throw new Exception(msg);
                     }
 
-                    VirtualMachineMO vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(name);
+                    VirtualMachineMO vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
                     assert (vmMo != null);
 
                     // we can't rely on un-offical API (VirtualMachineMO.moveAllVmDiskFiles() any more, use hard-coded disk names that we know
                     // to move files
                     s_logger.info("Move volume out of volume-wrapper VM ");
-                    dsMo.moveDatastoreFile(String.format("[%s] %s/%s.vmdk", dsMo.getName(), name, name), 
-                    	dcMo.getMor(), dsMo.getMor(), 
-                    	String.format("[%s] %s.vmdk", dsMo.getName(), name), dcMo.getMor(), true);
+                    dsMo.moveDatastoreFile(String.format("[%s] %s/%s.vmdk", dsMo.getName(), vmdkName, vmdkName),
+                        dcMo.getMor(), dsMo.getMor(),
+                        String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
                     
-                    dsMo.moveDatastoreFile(String.format("[%s] %s/%s-delta.vmdk", dsMo.getName(), name, name), 
-                        	dcMo.getMor(), dsMo.getMor(), 
-                        	String.format("[%s] %s-delta.vmdk", dsMo.getName(), name), dcMo.getMor(), true);
+                    dsMo.moveDatastoreFile(String.format("[%s] %s/%s-delta.vmdk", dsMo.getName(), vmdkName, vmdkName),
+                            dcMo.getMor(), dsMo.getMor(),
+                            String.format("[%s] %s-delta.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
 
-                    s_logger.info("detach disks from volume-wrapper VM " + name);
+                    s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
                     vmMo.detachAllDisks();
 
-                    s_logger.info("destroy volume-wrapper VM " + name);
+                    s_logger.info("destroy volume-wrapper VM " + vmdkName);
                     vmMo.destroy();
 
-                    String srcFile = String.format("[%s] %s/", dsMo.getName(), name);
+                    String srcFile = String.format("[%s] %s/", dsMo.getName(), vmdkName);
                     dsMo.deleteFile(srcFile, dcMo.getMor(), true);
 
-                    VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), name, pool.getPath(), name, cmd.getDiskCharacteristics().getSize(), null);
+                    VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), dskch.getName(), pool.getPath(), vmdkName, dskch.getSize(), null);
                     return new CreateAnswer(cmd, vol);
                 }
             } else {
@@ -3806,12 +3806,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         // s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
                         VmwareHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid.toString(), dcMo);
 
-                        vmMo.createDisk(volumeDatastorePath, (int) (cmd.getDiskCharacteristics().getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey());
+                        vmMo.createDisk(volumeDatastorePath, (int) (dskch.getSize() / (1024L * 1024L)), morDatastore, vmMo.getScsiDeviceControllerKey());
                         vmMo.detachDisk(volumeDatastorePath, false);
                     }
 
-                    VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), cmd.getDiskCharacteristics().getName(), pool.getPath(), volumeUuid, cmd
-                            .getDiskCharacteristics().getSize(), null);
+                    VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), pool.getType(), pool.getUuid(), dskch.getName(), pool.getPath(), volumeUuid, dskch.getSize(), null);
                     return new CreateAnswer(cmd, vol);
                 } finally {
                     s_logger.info("Destroy dummy VM after volume creation");
@@ -3985,7 +3984,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         cmd.setHypervisorType(HypervisorType.VMware);
         cmd.setStateChanges(changes);
         cmd.setCluster(_cluster);
-        cmd.setVersion(hostApiVersion);
+        cmd.setHypervisorVersion(hostApiVersion);
 
         List<StartupStorageCommand> storageCmds = initializeLocalStorage();
         StartupCommand[] answerCmds = new StartupCommand[1 + storageCmds.size()];

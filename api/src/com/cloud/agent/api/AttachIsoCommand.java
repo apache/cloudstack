@@ -48,11 +48,11 @@ public class AttachIsoCommand extends Command {
 	public boolean isAttach() {
 	    return attach;
 	}
-	
+
 	public String getStoreUrl() {
 		return storeUrl;
 	}
-	
+
 	public void setStoreUrl(String url) {
 		storeUrl = url;
 	}

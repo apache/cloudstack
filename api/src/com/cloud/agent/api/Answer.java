@@ -21,40 +21,40 @@ import com.cloud.utils.exception.ExceptionUtil;
 public class Answer extends Command {
     protected boolean result;
     protected String details;
-    
+
     protected Answer() {
     }
-    
+
     public Answer(Command command) {
         this(command, true, null);
     }
-    
+
     public Answer(Command command, boolean success, String details) {
         result = success;
         this.details = details;
     }
-    
+
     public Answer(Command command, Exception e) {
         this(command, false, ExceptionUtil.toString(e));
     }
-    
+
     public boolean getResult() {
         return result;
     }
-    
+
     public String getDetails() {
         return details;
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return false;
     }
-    
+
     public static UnsupportedAnswer createUnsupportedCommandAnswer(Command cmd) {
         return new UnsupportedAnswer(cmd, "Unsupported command issued:" + cmd.toString() + ".  Are you sure you got the right type of server?");
     }
-    
+
     public static UnsupportedAnswer createUnsupportedVersionAnswer(Command cmd) {
         return new UnsupportedAnswer(cmd, "Unsuppored Version.");
     }

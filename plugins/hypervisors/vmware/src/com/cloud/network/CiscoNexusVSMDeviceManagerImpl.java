@@ -11,20 +11,16 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network;
 
-import java.util.HashMap;
-
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.api.ApiConstants;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
@@ -33,7 +29,6 @@ import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDetailsDao;
@@ -53,7 +48,7 @@ import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
 
 	@Inject
-    CiscoNexusVSMDeviceDao _ciscoNexusVSMDeviceDao;    
+    CiscoNexusVSMDeviceDao _ciscoNexusVSMDeviceDao;
     @Inject
     ClusterDao _clusterDao;
     @Inject
@@ -70,9 +65,9 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     PortProfileDao _ppDao;
     @Inject
     ConfigurationDao _configDao;
-    
+
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
-    
+
     @DB
     //public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, ServerResource resource, String vsmName) {
     public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, String vCenterIpaddr, String vCenterDcName) {
@@ -82,7 +77,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
 
     	// First check if the cluster is of type vmware. If not,
     	// throw an exception. VSMs are tightly integrated with vmware clusters.
-    	
+
     	ClusterVO cluster = _clusterDao.findById(clusterId);
     	if (cluster == null) {
     		throw new InvalidParameterValueException("Cluster with specified ID not found!");
@@ -95,21 +90,21 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     	// Next, check if the cluster already has a VSM associated with it.
     	// If so, throw an exception disallowing this operation. The user must first
     	// delete the current VSM and then only attempt to add the new one.
-    	
+
     	if (_clusterVSMDao.findByClusterId(clusterId) != null) {
     		// We can't have two VSMs for the same cluster. Throw exception.
     		throw new InvalidParameterValueException("Cluster with specified id already has a VSM tied to it. Please remove that first and retry the operation.");
     	}
 
     	// TODO: Confirm whether we should be checking for VSM reachability here.
-    	
+
     	// Next, check if this VSM is reachable. Use the XML-RPC VSM API Java bindings to talk to
     	// the VSM.
     	//NetconfHelper (String ip, String username, String password)
 
     	NetconfHelper netconfClient;
     	try	{
-    		netconfClient = new NetconfHelper(ipaddress, username, password);	
+    		netconfClient = new NetconfHelper(ipaddress, username, password);
     	} catch(CloudRuntimeException e) {
     		String msg = "Failed to connect to Nexus VSM " + ipaddress + " with credentials of user " + username;
     		s_logger.error(msg);
@@ -123,7 +118,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     	// First, check if VSM already exists in the table "virtual_supervisor_module".
     	// If it's not there already, create it.
     	// If it's there already, return success.
-    	
+
     	// TODO - Right now, we only check if the ipaddress matches for both requests.
     	// We must really check whether every field of the VSM matches. Anyway, the
     	// advantage of our approach for now is that existing infrastructure using
@@ -136,7 +131,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     		throw new CloudRuntimeException(e.getMessage());
     	}
 
-    	if (VSMObj == null) {    		
+    	if (VSMObj == null) {
     		// Create the VSM record. For now, we aren't using the vsmName field.
     		VSMObj = new CiscoNexusVSMDeviceVO(ipaddress, username, password);
     		Transaction txn = Transaction.currentTxn();
@@ -149,7 +144,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     			throw new CloudRuntimeException(e.getMessage());
     		}
     	}
-    	
+
     	// At this stage, we have a VSM record for sure. Connect the VSM to the cluster Id.
     	long vsmId = _ciscoNexusVSMDeviceDao.getVSMbyIpaddress(ipaddress).getId();
     	ClusterVSMMapVO connectorObj = new ClusterVSMMapVO(clusterId, vsmId);
@@ -162,22 +157,22 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     		txn.rollback();
     		throw new CloudRuntimeException(e.getMessage());
     	}
-    	
+
     	// Now, get a list of all the ESXi servers in this cluster.
     	// This is effectively a select * from host where cluster_id=clusterId;
     	// All ESXi servers are stored in the host table, and their resource
     	// type is vmwareresource.
-    	
+
         //List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(clusterId);
-        
+
         //TODO: Activate the code below if we make the Nexus VSM a separate resource.
         // Iterate through each of the hosts in this list. Each host has a host id.
         // Given this host id, we can reconfigure the in-memory resource representing
         // the host via the agent manager. Thus we inject VSM related information
         // into each host's resource. Also, we first configure each resource's
         // entries in the database to contain this VSM information before the injection.
-    	
-        //for (HostVO host : hosts) {        	
+
+        //for (HostVO host : hosts) {
         	// Create a host details VO object and write it out for this hostid.
         	//Long hostid = new Long(vsmId);
         	//DetailVO vsmDetail = new DetailVO(host.getId(), "vsmId", hostid.toString());
@@ -198,28 +193,28 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
         //hostDetails.put(ApiConstants.USERNAME, username);
         //hostDetails.put(ApiConstants.PASSWORD, password);
         //_agentMrg.send(host.getId(), )
-        
+
         return VSMObj;
-        
+
     }
-    
+
     @DB
-    public boolean deleteCiscoNexusVSM(long vsmId) throws ResourceInUseException {    	
+    public boolean deleteCiscoNexusVSM(long vsmId) throws ResourceInUseException {
         CiscoNexusVSMDeviceVO cisconexusvsm = _ciscoNexusVSMDeviceDao.findById(vsmId);
         if (cisconexusvsm == null) {
         	// This entry is already not present. Return success.
         	return true;
         }
-        
+
         // First, check whether this VSM is part of any non-empty cluster.
         // Search ClusterVSMMap's table for a list of clusters using this vsmId.
-        
+
         List<ClusterVSMMapVO> clusterList = _clusterVSMDao.listByVSMId(vsmId);
-        
-        if (clusterList != null) {        	
+
+        if (clusterList != null) {
         	for (ClusterVSMMapVO record : clusterList) {
         		// If this cluster id has any hosts in it, fail this operation.
-        		Long clusterId = record.getClusterId();        		
+        		Long clusterId = record.getClusterId();
         		List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(clusterId);
         		if (hosts != null && hosts.size() > 0) {
         			for (Host host: hosts) {
@@ -227,26 +222,26 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
         					s_logger.info("Non-empty cluster with id" + clusterId + "still has a host that uses this VSM. Please empty the cluster first");
                 			throw new ResourceInUseException("Non-empty cluster with id" + clusterId + "still has a host that uses this VSM. Please empty the cluster first");
         				}
-        			}        			
+        			}
         		}
         	}
         }
-        
+
         // Iterate through the cluster list again, this time, delete the VSM.
         Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
-            // Remove the VSM entry in CiscoNexusVSMDeviceVO's table.            
+            // Remove the VSM entry in CiscoNexusVSMDeviceVO's table.
             _ciscoNexusVSMDeviceDao.remove(vsmId);
-            // Remove the current record as well from ClusterVSMMapVO's table.            
+            // Remove the current record as well from ClusterVSMMapVO's table.
             _clusterVSMDao.removeByVsmId(vsmId);
             // There are no hosts at this stage in the cluster, so we don't need
-            // to notify any resources or remove host details.            
-            txn.commit();            
+            // to notify any resources or remove host details.
+            txn.commit();
         } catch (Exception e) {
-        	s_logger.info("Caught exception when trying to delete VSM record.." + e.getMessage());        	
+        	s_logger.info("Caught exception when trying to delete VSM record.." + e.getMessage());
         	throw new CloudRuntimeException("Failed to delete VSM");
-        }        
+        }
         return true;
     }
 
@@ -254,10 +249,10 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     public CiscoNexusVSMDeviceVO enableCiscoNexusVSM(long vsmId) {
         CiscoNexusVSMDeviceVO cisconexusvsm = _ciscoNexusVSMDeviceDao.findById(vsmId);
         if (cisconexusvsm == null) {
-        	throw new InvalidParameterValueException("Invalid vsm Id specified");        	
+        	throw new InvalidParameterValueException("Invalid vsm Id specified");
         }
         // Else, check if this db record shows that this VSM is enabled or not.
-        if (cisconexusvsm.getvsmDeviceState() == CiscoNexusVSMDeviceVO.VSMDeviceState.Disabled) {        
+        if (cisconexusvsm.getvsmDeviceState() == CiscoNexusVSMDeviceVO.VSMDeviceState.Disabled) {
         	// it's currently disabled. So change it to enabled and write it out to the db.
         	cisconexusvsm.setVsmDeviceState(CiscoNexusVSMDeviceVO.VSMDeviceState.Enabled);
         	Transaction txn = Transaction.currentTxn();
@@ -270,18 +265,18 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     			throw new CloudRuntimeException(e.getMessage());
     		}
     	}
-        
+
         return cisconexusvsm;
     }
-    
-    @DB    
+
+    @DB
     public CiscoNexusVSMDeviceVO disableCiscoNexusVSM(long vsmId) {
         CiscoNexusVSMDeviceVO cisconexusvsm = _ciscoNexusVSMDeviceDao.findById(vsmId);
         if (cisconexusvsm == null) {
-        	throw new InvalidParameterValueException("Invalid vsm Id specified");        	
+        	throw new InvalidParameterValueException("Invalid vsm Id specified");
         }
         // Else, check if this db record shows that this VSM is enabled or not.
-        if (cisconexusvsm.getvsmDeviceState() == CiscoNexusVSMDeviceVO.VSMDeviceState.Enabled) {        
+        if (cisconexusvsm.getvsmDeviceState() == CiscoNexusVSMDeviceVO.VSMDeviceState.Enabled) {
         	// it's currently disabled. So change it to enabled and write it out to the db.
         	cisconexusvsm.setVsmDeviceState(CiscoNexusVSMDeviceVO.VSMDeviceState.Disabled);
         	Transaction txn = Transaction.currentTxn();
@@ -294,15 +289,15 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     			throw new CloudRuntimeException(e.getMessage());
     		}
     	}
-        
+
         return cisconexusvsm;
     }
-    
+
     @DB
     public CiscoNexusVSMDeviceVO getCiscoVSMbyVSMId(long vsmId) {
     	return _ciscoNexusVSMDeviceDao.findById(vsmId);
     }
-    
+
     @DB
     public CiscoNexusVSMDeviceVO getCiscoVSMbyClusId(long clusterId) {
     	ClusterVSMMapVO mapVO = _clusterVSMDao.findByClusterId(clusterId);
@@ -314,12 +309,12 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     	CiscoNexusVSMDeviceVO result = _ciscoNexusVSMDeviceDao.findById(mapVO.getVsmId());
     	return result;
     }
-    
+
     public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
         // TODO Auto-generated method stub
         return null;
     }
-    
+
     @DB
     public boolean vliadateVsmCluster(String vsmIp, String vsmUser, String vsmPassword, long clusterId, String clusterName) throws ResourceInUseException {
         // Check if we're associating a Cisco Nexus VSM with a vmware cluster.
@@ -347,7 +342,9 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
                         s_logger.error("Failed to add cluster: specified Nexus VSM is already associated with another cluster");
                         _clusterDao.remove(clusterId);
                         ResourceInUseException ex = new ResourceInUseException("Failed to add cluster: specified Nexus VSM is already associated with another cluster with specified Id");
-                        ex.addProxyObject("cluster", clusterList.get(0).getClusterId(), "clusterId");
+                        // get clusterUuid to report error
+                        ClusterVO cluster = _clusterDao.findById(clusterList.get(0).getClusterId());
+                        ex.addProxyObject(cluster.getUuid());
                         throw ex;
                     }
                 }

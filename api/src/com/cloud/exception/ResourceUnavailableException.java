@@ -23,21 +23,21 @@ public class ResourceUnavailableException extends CloudException {
 
     Class<?> _scope;
     long _id;
-    
+
     public ResourceUnavailableException(String msg, Class<?> scope, long resourceId) {
         this(msg, scope, resourceId, null);
     }
-    
+
     public ResourceUnavailableException(String msg, Class<?> scope, long resourceId, Throwable cause) {
         super(new StringBuilder("Resource [").append(scope.getSimpleName()).append(":").append(resourceId).append("] is unreachable: ").append(msg).toString(), cause);
         _scope = scope;
         _id = resourceId;
     }
-    
+
     public Class<?> getScope() {
         return _scope;
     }
-    
+
     public long getResourceId() {
         return _id;
     }

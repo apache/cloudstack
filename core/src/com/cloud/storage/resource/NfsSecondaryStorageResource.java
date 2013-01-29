@@ -93,7 +93,6 @@ import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -399,7 +398,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements
                         @Override
                         public boolean accept(final File directory,
                                 final String fileName) {
-                            return !fileName.startsWith(".");
+                            File fileToUpload = new File(directory.getAbsolutePath() + "/" + fileName);
+                            return !fileName.startsWith(".") && !fileToUpload.isDirectory();
                         }
                     }, new ObjectNamingStrategy() {
                         @Override

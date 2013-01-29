@@ -26,11 +26,12 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.network.Network.GuestType;
+import org.apache.cloudstack.api.InternalIdentity;
 
 
 @Entity
 @Table(name="router_network_ref")
-public class RouterNetworkVO{
+public class RouterNetworkVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     long id;

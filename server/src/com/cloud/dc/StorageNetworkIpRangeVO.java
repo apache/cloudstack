@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.dc;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.UUID;
 
 import javax.persistence.Column;

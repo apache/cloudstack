@@ -18,11 +18,12 @@ package com.cloud.api.commands.netapp;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -33,7 +34,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.CreateVolumePoolCmdResponse;
 import com.cloud.utils.component.ComponentLocator;
 
-@Implementation(description="Create a pool", responseObject = CreateVolumePoolCmdResponse.class)
+@APICommand(name = "createPool", description="Create a pool", responseObject = CreateVolumePoolCmdResponse.class)
 public class CreateVolumePoolCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateVolumePoolCmd.class.getName());
     private static final String s_name = "createpoolresponse";
@@ -42,11 +43,11 @@ public class CreateVolumePoolCmd extends BaseCmd {
 	private String poolName;
     @Parameter(name=ApiConstants.ALGORITHM, type=CommandType.STRING, required = true, description="algorithm.")
 	private String algorithm;
-    
+
     public String getPoolName() {
     	return poolName;
     }
-    
+
     public String getAlgorithm() {
     	return algorithm;
     }
@@ -57,16 +58,16 @@ public class CreateVolumePoolCmd extends BaseCmd {
 			ConcurrentOperationException, ResourceAllocationException {
 		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
     	NetappManager netappMgr = locator.getManager(NetappManager.class);
-    	
+
     	try {
     		CreateVolumePoolCmdResponse response = new CreateVolumePoolCmdResponse();
     		netappMgr.createPool(getPoolName(), getAlgorithm());
     		response.setResponseName(getCommandName());
     		this.setResponseObject(response);
     	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
     	}
-		
+
 	}
 
 	@Override
@@ -80,5 +81,5 @@ public class CreateVolumePoolCmd extends BaseCmd {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-    
+
 }

@@ -19,11 +19,11 @@ package com.cloud.agent.api;
 
 public class CreateVolumeFromSnapshotAnswer extends Answer {
     private String vdiUUID;
-    
+
     protected CreateVolumeFromSnapshotAnswer() {
-        
+
     }
-    
+
     public CreateVolumeFromSnapshotAnswer(CreateVolumeFromSnapshotCommand cmd, boolean success, String result, String vdiUUID) {
         super(cmd, success, result);
         this.vdiUUID = vdiUUID;

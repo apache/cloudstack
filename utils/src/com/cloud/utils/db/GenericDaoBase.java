@@ -50,6 +50,7 @@ import javax.persistence.EmbeddedId;
 import javax.persistence.EntityExistsException;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 import net.sf.cglib.proxy.Callback;
@@ -913,6 +914,22 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override @DB(txn=false)
+    @SuppressWarnings("unchecked")
+    public T findByUuid(final String uuid) {
+        SearchCriteria<T> sc = createSearchCriteria();
+        sc.addAnd("uuid", SearchCriteria.Op.EQ, uuid);
+        return findOneBy(sc);
+    }
+
+    @Override @DB(txn=false)
+    @SuppressWarnings("unchecked")
+    public T findByUuidIncludingRemoved(final String uuid) {
+        SearchCriteria<T> sc = createSearchCriteria();
+        sc.addAnd("uuid", SearchCriteria.Op.EQ, uuid);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override @DB(txn=false)
     public T findByIdIncludingRemoved(ID id) {
         return findById(id, true, null);
     }
@@ -1653,6 +1670,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     @DB(txn=false)
     protected void setField(final Object entity, final ResultSet rs, ResultSetMetaData meta, final int index) throws SQLException {
         Attribute attr = _allColumns.get(new Pair<String, String>(meta.getTableName(index), meta.getColumnName(index)));
+        if ( attr == null ){
+            // work around for mysql bug to return original table name instead of view name in db view case
+            Table tbl = entity.getClass().getSuperclass().getAnnotation(Table.class);
+            if ( tbl != null ){
+                attr = _allColumns.get(new Pair<String, String>(tbl.name(), meta.getColumnLabel(index)));
+            }
+        }
         assert (attr != null) : "How come I can't find " + meta.getCatalogName(index) + "." + meta.getColumnName(index);
         setField(entity, attr.field, rs, index);
     }
@@ -1798,7 +1822,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             }
         }
 
-        List<Object> groupByValues = addGroupBy(str, sc);
+        // we have to disable group by in getting count, since count for groupBy clause will be different.
+        //List<Object> groupByValues = addGroupBy(str, sc);
         final Transaction txn = Transaction.currentTxn();
         final String sql = str.toString();
 
@@ -1816,11 +1841,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 i = addJoinAttributes(i, pstmt, joins);
             }
             
+            /*
             if (groupByValues != null) {
                 for (Object value : groupByValues) {
                     pstmt.setObject(i++, value);
                 }
             }
+            */
 
             final ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {

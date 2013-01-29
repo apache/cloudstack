@@ -21,14 +21,14 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
+import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.commands.DeleteIsoCmd;
-import com.cloud.api.commands.DeleteTemplateCmd;
-import com.cloud.api.commands.RegisterIsoCmd;
-import com.cloud.api.commands.RegisterTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;

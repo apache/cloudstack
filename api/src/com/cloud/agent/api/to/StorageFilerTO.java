@@ -27,7 +27,7 @@ public class StorageFilerTO {
     String userInfo;
     int port;
     StoragePoolType type;
-    
+
     public StorageFilerTO(StoragePool pool) {
         this.id = pool.getId();
         this.host = pool.getHostAddress();
@@ -61,14 +61,14 @@ public class StorageFilerTO {
     public int getPort() {
         return port;
     }
-    
+
     public StoragePoolType getType() {
         return type;
     }
-    
+
     protected StorageFilerTO() {
     }
-    
+
     @Override
     public String toString() {
         return new StringBuilder("Pool[").append(id).append("|").append(host).append(":").append(port).append("|").append(path).append("]").toString();

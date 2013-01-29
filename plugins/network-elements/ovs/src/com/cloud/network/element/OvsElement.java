@@ -40,7 +40,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = NetworkElement.class)
+@Local(value = {NetworkElement.class})
 public class OvsElement extends AdapterBase implements NetworkElement {
     @Inject
     OvsTunnelManager _ovsTunnelMgr;

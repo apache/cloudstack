@@ -24,10 +24,12 @@ import java.util.Set;
 
 import javax.ejb.Local;
 
+import com.cloud.utils.PropertiesUtil;
+import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.commands.ConfigureVirtualRouterElementCmd;
-import com.cloud.api.commands.ListVirtualRouterElementsCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
@@ -43,7 +45,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
@@ -80,7 +82,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
@@ -88,7 +89,10 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
 
-@Local(value = NetworkElement.class)
+@Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
+		        DhcpServiceProvider.class, UserDataServiceProvider.class, 
+		        StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
+		        PortForwardingServiceProvider.class, IpDeployer.class, RemoteAccessVPNServiceProvider.class} )
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, 
     UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
         LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer {
@@ -99,7 +103,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Inject
     NetworkDao _networksDao;
     @Inject
-    NetworkManager _networkMgr;
+    NetworkModel _networkMgr;
     @Inject
     LoadBalancingRulesManager _lbMgr;
     @Inject
@@ -110,8 +114,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     ConfigurationManager _configMgr;
     @Inject
     RulesManager _rulesMgr;
-    @Inject
-    UserVmManager _userVmMgr;
+   
     @Inject
     UserVmDao _userVmDao;
     @Inject
@@ -680,8 +683,12 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public String getPropertiesFile() {
-        return "virtualrouter_commands.properties";
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(CreateVirtualRouterElementCmd.class);
+        cmdList.add(ConfigureVirtualRouterElementCmd.class);
+        cmdList.add(ListVirtualRouterElementsCmd.class);
+        return cmdList;
     }
 
     @Override

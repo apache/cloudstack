@@ -20,7 +20,7 @@ public class CheckNetworkAnswer extends Answer {
     // indicate if agent reconnect is needed after setupNetworkNames command
     private boolean _reconnect;
     public CheckNetworkAnswer() {}
-    
+
 
     public CheckNetworkAnswer(CheckNetworkCommand cmd, boolean result, String details, boolean reconnect) {
         super(cmd, result, details);
@@ -34,5 +34,5 @@ public class CheckNetworkAnswer extends Answer {
     public boolean needReconnect() {
         return _reconnect;
     }
-    
+
 }

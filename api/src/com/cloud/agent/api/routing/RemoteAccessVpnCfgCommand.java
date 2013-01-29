@@ -18,17 +18,17 @@ package com.cloud.agent.api.routing;
 
 
 public class RemoteAccessVpnCfgCommand extends NetworkElementCommand {
-	
+
 	boolean create;
     String vpnServerIp;
     String ipRange;
     String presharedKey;
     String localIp;
-    
+
     protected RemoteAccessVpnCfgCommand() {
     	this.create = false;
     }
-    
+
     public boolean isCreate() {
 		return create;
 	}
@@ -37,12 +37,12 @@ public class RemoteAccessVpnCfgCommand extends NetworkElementCommand {
     public boolean executeInSequence() {
         return true;
     }
-    
-    
+
+
 	public RemoteAccessVpnCfgCommand(boolean create, String vpnServerAddress, String localIp, String ipRange, String ipsecPresharedKey) {
 		this.vpnServerIp = vpnServerAddress;
 		this.ipRange  = ipRange;
-		this.presharedKey = ipsecPresharedKey; 
+		this.presharedKey = ipsecPresharedKey;
 		this.localIp = localIp;
 		this.create = create;
 	}

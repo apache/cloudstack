@@ -16,7 +16,10 @@
 // under the License.
 package com.cloud.network;
 
-public interface VirtualRouterProvider {
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface VirtualRouterProvider extends InternalIdentity, Identity {
     public enum VirtualRouterProviderType {
         VirtualRouter,
         ElasticLoadBalancerVm,
@@ -24,8 +27,6 @@ public interface VirtualRouterProvider {
     }
 
     public VirtualRouterProviderType getType();
-
-    public long getId();
 
     public boolean isEnabled();
 

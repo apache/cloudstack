@@ -21,7 +21,7 @@ public class PingAnswer extends Answer {
 
     protected PingAnswer() {
     }
-    
+
     public PingAnswer(PingCommand cmd) {
         super(cmd);
         _command = cmd;

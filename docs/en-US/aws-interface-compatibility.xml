@@ -23,11 +23,12 @@
 -->
 
 <chapter id="aws-interface-compatibility">
-    <title>Amazon Web Service Interface Compatibility</title>
+    <title>Amazon Web Services Compatible Interface</title>
     <xi:include href="aws-ec2-introduction.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="aws-ec2-requirements.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="aws-ec2-configuration.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="aws-ec2-user-setup.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="aws-ec2-timeouts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="aws-ec2-supported-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="aws-api-examples.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>

@@ -25,17 +25,19 @@ import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.Mode;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Nic represents one nic on the VM.
  */
-public interface Nic {
+public interface Nic extends Identity, InternalIdentity {
     enum Event {
         ReservationRequested, ReleaseRequested, CancelRequested, OperationCompleted, OperationFailed,
     }
 
     public enum State implements FiniteState<State, Event> {
-        Allocated("Resource is allocated but not reserved"), Reserving("Resource is being reserved right now"), 
+        Allocated("Resource is allocated but not reserved"), Reserving("Resource is being reserved right now"),
         Reserved("Resource has been reserved."), Releasing("Resource is being released"), Deallocating(
                 "Resource is being deallocated");
 
@@ -85,11 +87,6 @@ public interface Nic {
     public enum ReservationStrategy {
         PlaceHolder, Create, Start, Managed;
     }
-
-    /**
-     * @return id in the CloudStack database
-     */
-    long getId();
 
     /**
      * @return reservation id returned by the allocation source. This can be the String version of the database id if

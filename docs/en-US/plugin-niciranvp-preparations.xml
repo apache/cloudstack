@@ -24,7 +24,9 @@
     <title>Prerequisites</title>
     <para>Before enabling the Nicira NVP plugin the NVP Controller needs to be configured. Please review the NVP User Guide on how to do that. </para>
     <para>CloudStack needs to have at least one physical network with the isolation method set to "STT". This network should be enabled for the Guest traffic type.</para>
-        <note><para>The Guest traffic type should be configured with the traffic label that matches the name of the Integration Bridge on XenServer. See the Nicira NVP User Guide for more details on how to set this up in XenServer.</para></note>
+        <note><para>The Guest traffic type should be configured with the traffic label that matches the name of
+            the Integration Bridge on the hypervisor. See the Nicira NVP User Guide for more details
+            on how to set this up in XenServer or KVM.</para></note>
     <para>Make sure you have the following information ready:</para>
     <itemizedlist>
         <listitem><para>The IP address of the NVP Controller</para></listitem>

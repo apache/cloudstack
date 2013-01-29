@@ -54,6 +54,12 @@ public interface GenericDao<T, ID extends Serializable> {
     T findByIdIncludingRemoved(ID id);
     
     T findById(ID id, boolean fresh);
+
+    // Finds one unique VO using uuid
+    T findByUuid(String uuid);
+
+    // Finds one unique VO using uuid including removed entities
+    T findByUuidIncludingRemoved(String uuid);
     
     /**
      * @return VO object ready to be used for update.  It won't have any fields filled in.

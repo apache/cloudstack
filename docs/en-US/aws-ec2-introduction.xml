@@ -23,16 +23,19 @@
 -->
 
 <section id="aws-ec2-introduction">
-  <title>Amazon Web Services EC2 Compatible Interface</title>
+  <title>Amazon Web Services Compatible Interface</title>
     <para>&PRODUCT; can translate Amazon Web Services (AWS) API calls to native &PRODUCT; API calls
     so that users can continue using existing AWS-compatible tools. This translation service runs as
     a separate web application in the same tomcat server as the management server of &PRODUCT;,
-    listening on the same port. This Amazon EC2-compatible API is accessible through a SOAP web
-    service.</para> 
+    listening on a different port. The Amazon Web Services (AWS) compatible interface provides the
+    EC2 SOAP and Query APIs as well as the S3 REST API.</para> 
     <note>
       <para>This service was previously enabled by separate software called CloudBridge. It is now
       fully integrated with the &PRODUCT; management server. </para>
     </note>
+    <warning>
+      <para>The compatible interface for the EC2 Query API and the S3 API are Work In Progress. The S3 compatible API offers a way to store data on the management server file system, it is not an implementation of the S3 backend.</para>
+    </warning>
     <para>Limitations</para>
     <itemizedlist>
       <listitem>
@@ -42,7 +45,9 @@
         <para>Available in fresh installations of &PRODUCT;. Not available through upgrade of previous versions.</para>
       </listitem>
       <listitem>
-        <para>If you need to support features such as elastic IP, set up a Citrix NetScaler to provide this service. The commands such as ec2-associate-address will not work without EIP setup. Users running VMs in this zone will be using the NetScaler-enabled network offering (DefaultSharedNetscalerEIP and ELBNetworkOffering).</para>
+        <para>Features such as Elastic IP (EIP) and Elastic Load Balacing (ELB) are only available in an infrastructure
+        with a Citrix NetScaler device. Users accessing a Zone with a NetScaler device will need to use a 
+        NetScaler-enabled network offering (DefaultSharedNetscalerEIP and ELBNetworkOffering).</para>
       </listitem>
     </itemizedlist>
 </section>

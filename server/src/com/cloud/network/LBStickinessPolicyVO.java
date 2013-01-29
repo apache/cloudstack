@@ -32,6 +32,7 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("load_balancer_stickiness_policies"))

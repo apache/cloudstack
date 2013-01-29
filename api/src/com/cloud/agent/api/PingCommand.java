@@ -21,23 +21,23 @@ import com.cloud.host.Host;
 public class PingCommand extends Command {
     Host.Type hostType;
     long hostId;
-    
+
     protected PingCommand() {
     }
-    
+
     public PingCommand(Host.Type type, long id) {
         hostType = type;
         hostId = id;
     }
-    
+
     public Host.Type getHostType() {
         return hostType;
     }
-    
+
     public long getHostId() {
         return hostId;
     }
-    
+
     @Override
     public boolean executeInSequence() {
         return false;

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -31,8 +31,9 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import com.cloud.api.Identity;
+import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.net.Ip;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * A bean representing a public IP Address
@@ -40,12 +41,12 @@ import com.cloud.utils.net.Ip;
  */
 @Entity
 @Table(name=("user_ip_address"))
-public class IPAddressVO implements IpAddress, Identity {
+public class IPAddressVO implements IpAddress {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     long id;
-    
+
 	@Column(name="account_id")
 	private Long allocatedToAccountId = null;
 
@@ -59,59 +60,59 @@ public class IPAddressVO implements IpAddress, Identity {
 
 	@Column(name="data_center_id", updatable=false)
 	private long dataCenterId;
-	
+
 	@Column(name="source_nat")
 	private boolean sourceNat;
 
 	@Column(name="allocated")
 	@Temporal(value=TemporalType.TIMESTAMP)
 	private Date allocatedTime;
-	
+
 	@Column(name="vlan_db_id")
 	private long vlanId;
 
 	@Column(name="one_to_one_nat")
 	private boolean oneToOneNat;
-	
+
 	@Column(name="vm_id")
     private Long associatedWithVmId;
-	
+
 	@Column(name="state")
 	private State state;
-	
+
 	@Column(name="mac_address")
 	private long macAddress;
-	
+
 	@Column(name="source_network_id")
     private Long sourceNetworkId;
-	
+
 	@Column(name="network_id")
 	private Long associatedWithNetworkId;
-	
+
 	@Column(name="uuid")
 	private String uuid;
-	
+
     @Column(name="physical_network_id")
     private Long physicalNetworkId;
-    
+
     @Column(name="is_system")
     private boolean system;
-    
+
 	@Column(name="account_id")
 	@Transient
 	private Long accountId = null;
-	
+
 	@Transient
     @Column(name="domain_id")
     private Long domainId = null;
-	
+
     @Column(name="vpc_id")
     private Long vpcId;
 
 	protected IPAddressVO() {
 		this.uuid = UUID.randomUUID().toString();
 	}
-	
+
 	@Override
     public boolean readyToUse() {
 	    return state == State.Allocated;
@@ -129,36 +130,36 @@ public class IPAddressVO implements IpAddress, Identity {
 		this.macAddress = macAddress;
 		this.uuid = UUID.randomUUID().toString();
 	}
-	
+
     public long getMacAddress() {
 	    return macAddress;
 	}
-	
+
 	@Override
     public long getDataCenterId() {
-	    return dataCenterId; 
+	    return dataCenterId;
 	}
 
 	@Override
     public Ip getAddress() {
 		return address;
 	}
-	
+
 	@Override
     public Long getAllocatedToAccountId() {
 		return allocatedToAccountId;
 	}
-	
+
     @Override
     public Long getAllocatedInDomainId() {
         return allocatedInDomainId;
     }
-	
+
 	@Override
 	public Long getAssociatedWithNetworkId() {
 	    return associatedWithNetworkId;
 	}
-	
+
 	public void setAssociatedWithNetworkId(Long networkId) {
 	    this.associatedWithNetworkId = networkId;
 	}
@@ -171,7 +172,7 @@ public class IPAddressVO implements IpAddress, Identity {
     public void setAssociatedWithVmId(Long associatedWithVmId) {
         this.associatedWithVmId = associatedWithVmId;
     }
-    
+
 	@Override
     public Date getAllocatedTime() {
 		return allocatedTime;
@@ -188,7 +189,7 @@ public class IPAddressVO implements IpAddress, Identity {
     public void setSourceNat(boolean sourceNat) {
 		this.sourceNat = sourceNat;
 	}
-	
+
 	@Override
     public boolean isSourceNat() {
 		return sourceNat;
@@ -197,12 +198,12 @@ public class IPAddressVO implements IpAddress, Identity {
     public void setAllocatedTime(Date allocated) {
 		this.allocatedTime = allocated;
 	}
-	
+
 	@Override
     public long getVlanId() {
 		return this.vlanId;
 	}
-	
+
     public void setVlanId(long vlanDbId) {
 		this.vlanId = vlanDbId;
 	}
@@ -215,31 +216,31 @@ public class IPAddressVO implements IpAddress, Identity {
     public void setOneToOneNat(boolean oneToOneNat) {
 		this.oneToOneNat = oneToOneNat;
 	}
-    
+
     @Override
     public long getDomainId() {
         return allocatedInDomainId == null ? -1 : allocatedInDomainId;
     }
-    
+
     @Override
     public long getAccountId() {
         return allocatedToAccountId == null ? -1 : allocatedToAccountId;
     }
-    
+
     @Override
     public State getState() {
         return state;
     }
-    
+
     public void setState(State state) {
         this.state = state;
     }
-	
+
 	@Override
     public String toString() {
 	    return new StringBuilder("Ip[").append(address).append("-").append(dataCenterId).append("]").toString();
 	}
-	
+
 	@Override
     public long getId() {
         return id;
@@ -252,12 +253,12 @@ public class IPAddressVO implements IpAddress, Identity {
     public void setSourceNetworkId(Long sourceNetworkId) {
         this.sourceNetworkId = sourceNetworkId;
     }
-    
+
     @Override
     public String getUuid() {
     	return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
@@ -269,7 +270,7 @@ public class IPAddressVO implements IpAddress, Identity {
     public void setPhysicalNetworkId(Long physicalNetworkId) {
         this.physicalNetworkId = physicalNetworkId;
     }
-    
+
     @Override
 	public boolean getSystem() {
 		return system;

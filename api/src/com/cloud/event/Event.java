@@ -18,26 +18,24 @@ package com.cloud.event;
 
 import java.util.Date;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Event extends ControlledEntity{
+public interface Event extends ControlledEntity, Identity, InternalIdentity {
     public enum State {
         Created,
         Scheduled,
         Started,
         Completed;
     }
-    
 
-    long getId();
     String getType();
     State getState();
 
     String getDescription();
     Date getCreateDate();
     long getUserId();
-    long getAccountId();
-    long getDomainId();
     int getTotalSize();
     String getLevel();
     long getStartId();

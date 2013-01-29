@@ -20,22 +20,22 @@ package com.cloud.agent.api;
 public class CleanupNetworkRulesCmd extends Command implements CronCommand {
 
     private int interval = 10*60;
-    
+
     @Override
     public boolean executeInSequence() {
         return false;
     }
-    
-    
+
+
 
 
     public CleanupNetworkRulesCmd(int intervalSecs) {
         super();
         interval = intervalSecs;
     }
-    
+
     public CleanupNetworkRulesCmd() {
-        
+
     }
 
 

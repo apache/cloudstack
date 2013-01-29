@@ -27,6 +27,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * NetworkExternalLoadBalancerVO contains mapping of a network and the external load balancer device id assigned to the network
@@ -34,7 +35,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="network_external_lb_device_map")
-public class NetworkExternalLoadBalancerVO {
+public class NetworkExternalLoadBalancerVO implements InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

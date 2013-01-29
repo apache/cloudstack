@@ -16,16 +16,14 @@
 // under the License.
 package com.cloud.api.commands;
 
+import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCreateCmd;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
-import com.cloud.api.Implementation;
-import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.response.NetworkResponse;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -33,7 +31,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.Network;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Creates a private network", responseObject=NetworkResponse.class)
+//@APICommand(description="Creates a private network", responseObject=NetworkResponse.class)
 public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePrivateNetworkCmd.class.getName());
 
@@ -42,42 +40,42 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the network")
     private String name;
-    
+
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the network")
     private String displayText;
-    
-    @IdentityMapper(entityTableName="physical_network")
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, required=true, description="the Physical Network ID the network belongs to")
+
+    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
+            required=true, description="the Physical Network ID the network belongs to")
     private Long physicalNetworkId;
 
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="the gateway of the network")
     private String gateway;
-    
+
     @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, required=true, description="the netmask of the network")
     private String netmask;
-    
+
     @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, required=true, description="the beginning IP address in the network IP range")
     private String startIp;
-    
+
     @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address in the network IP" +
             " range. If not specified, will be defaulted to startIP")
     private String endIp;
-    
+
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, required=true, description="the ID or VID of the network")
     private String vlan;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will own the network")
     private String accountName;
-    
-    @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="an optional project for the ssh key")
+
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
+            description="an optional project for the ssh key")
     private Long projectId;
 
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a network")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
+            description="domain ID of the account owning a network")
     private Long domainId;
 
 
@@ -100,7 +98,7 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
     public Long getDomainId() {
         return domainId;
     }
-    
+
     public String getNetmask() {
         return netmask;
     }
@@ -108,23 +106,23 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
     public String getStartIp() {
         return startIp;
     }
-    
+
     public String getNetworkName() {
         return name;
     }
-    
+
     public String getDisplayText() {
         return displayText;
     }
-    
+
     public Long getProjectId() {
         return projectId;
     }
-    
+
     public long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
-    
+
     public String getEndIp() {
         return endIp;
     }
@@ -136,8 +134,8 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
     public String getCommandName() {
         return s_name;
     }
-    
-    
+
+
     @Override
     public void create() throws ResourceAllocationException {
         Network result = null;
@@ -147,19 +145,20 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
         } catch (InsufficientCapacityException ex){
             s_logger.info(ex);
             s_logger.trace(ex);
-            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
-        
+
         if (result != null) {
             this.setEntityId(result.getId());
+            this.setEntityUuid(result.getUuid());
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a Private network");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a Private network");
         }
     }
-    
+
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
         Network result = _networkService.getNetwork(getEntityId());
@@ -168,10 +167,10 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create private network");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create private network");
         }
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
@@ -191,9 +190,5 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
         return  "creating private network";
 
     }
-    
-    @Override
-    public String getEntityTable() {
-        return "networks";
-    }
+
 }

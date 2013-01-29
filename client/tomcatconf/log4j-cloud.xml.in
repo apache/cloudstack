@@ -104,6 +104,10 @@ under the License.
       <priority value="INFO"/>
    </category>
 
+   <category name="org.apache.cloudstack.api.command">
+      <priority value="DEBUG"/>
+   </category>
+   
    <category name="org">
       <priority value="INFO"/>
    </category>

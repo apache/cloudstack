@@ -28,6 +28,8 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -94,6 +96,7 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
+import com.cloud.server.ManagementService;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolDao;
@@ -220,7 +223,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
     protected ExecutorService _executor;
     protected ThreadPoolExecutor _connectExecutor;
-    
+    protected ScheduledExecutorService _directAgentExecutor;
+
     protected StateMachine2<Status, Status.Event, Host> _statusStateMachine = Status.getStateMachine();
     
     @Inject ResourceManager _resourceMgr;
@@ -280,10 +284,15 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentConnectTaskPool"));
         //allow core threads to time out even when there are no items in the queue
         _connectExecutor.allowCoreThreadTimeOut(true);
- 
-        _connection = new NioServer("AgentManager", _port, workers + 10, this);
 
+        _connection = new NioServer("AgentManager", _port, workers + 10, this);
         s_logger.info("Listening on " + _port + " with " + workers + " workers");
+
+        value = configs.get(Config.DirectAgentPoolSize.key());
+        int size = NumbersUtil.parseInt(value, 500);
+        _directAgentExecutor = new ScheduledThreadPoolExecutor(size, new NamedThreadFactory("DirectAgent"));
+        s_logger.debug("Created DirectAgentAttache pool with size: " + size);
+
         return true;
     }
 
@@ -909,10 +918,16 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 s_logger.info("Investigating why host " + hostId + " has disconnected with event " + event);
 
                 final Status determinedState = investigate(attache);
+                // if state cannot be determined do nothing and bail out
+                if (determinedState == null) {
+                    s_logger.warn("Agent state cannot be determined, do nothing");
+                    return false;
+                }
+
                 final Status currentStatus = host.getStatus();
                 s_logger.info("The state determined is " + determinedState);
 
-                if (determinedState == null || determinedState == Status.Down) {
+                if (determinedState == Status.Down) {
                     s_logger.error("Host is down: " + host.getId() + "-" + host.getName() + ".  Starting HA on the VMs");
                     event = Status.Event.HostDown;
                 } else if (determinedState == Status.Up) {
@@ -1521,7 +1536,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
         	attache.setMaintenanceMode(false);
         }
     }
-    
-    
-    
+
+    public ScheduledExecutorService getDirectAgentPool() {
+        return _directAgentExecutor;
+    }
+
 }

@@ -26,6 +26,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDaoBase;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Join table for swift and templates
@@ -34,7 +35,7 @@ import com.cloud.utils.db.GenericDaoBase;
  */
 @Entity
 @Table(name = "template_swift_ref")
-public class VMTemplateSwiftVO {
+public class VMTemplateSwiftVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;

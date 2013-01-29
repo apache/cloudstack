@@ -36,5 +36,73 @@
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.5.1</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>target/dependencies</outputDirectory>
+              <includeScope>runtime</includeScope>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <id>generate-resource</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <copy overwrite="true"
+                  todir="${basedir}/target/transformed">
+                  <fileset dir="${basedir}/../client/tomcatconf">
+                    <include name="**/db.properties.in" />
+                  </fileset>
+                  <globmapper from="*.in" to="*" />
+                  <filterchain>
+                    <filterreader
+                      classname="org.apache.tools.ant.filters.ReplaceTokens">
+                      <param type="propertiesfile"
+                        value="${basedir}/../build/replace.properties" />
+                    </filterreader>
+                  </filterchain>
+                </copy>
+              </target>
+              <target>
+                <copy overwrite="true"
+                  todir="${basedir}/target/transformed">
+                  <fileset dir="${basedir}/conf">
+                    <include name="*.in" />
+                  </fileset>
+                  <globmapper from="*.in" to="*" />
+                  <filterchain>
+                    <filterreader
+                      classname="org.apache.tools.ant.filters.ReplaceTokens">
+                      <param type="propertiesfile"
+                        value="${basedir}/../build/replace.properties" />
+                    </filterreader>
+                  </filterchain>
+                </copy>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
   </build>
 </project>

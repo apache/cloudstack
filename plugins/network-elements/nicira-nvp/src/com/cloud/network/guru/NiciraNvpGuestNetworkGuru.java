@@ -41,7 +41,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Network.GuestType;
@@ -70,10 +70,9 @@ import com.cloud.vm.VirtualMachineProfile;
 public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpGuestNetworkGuru.class);
     
-    @Inject 
-    NetworkManager _externalNetworkManager;
+   
     @Inject
-    NetworkManager _networkMgr;
+    NetworkModel _networkModel;
     @Inject
     NetworkDao _networkDao;
     @Inject
@@ -153,7 +152,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         long dcId = dest.getDataCenter().getId();
 
         //get physical network id
-        long physicalNetworkId = _networkMgr.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
+        long physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
 
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
                 network.getDataCenterId(), physicalNetworkId);

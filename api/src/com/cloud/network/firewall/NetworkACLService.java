@@ -19,7 +19,7 @@ package com.cloud.network.firewall;
 
 import java.util.List;
 
-import com.cloud.api.commands.ListNetworkACLsCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
@@ -29,7 +29,7 @@ import com.cloud.utils.Pair;
 public interface NetworkACLService {
     FirewallRule getNetworkACL(long ruleId);
     boolean applyNetworkACLs(long networkId, Account caller) throws ResourceUnavailableException;
-    
+
     /**
      * @param createNetworkACLCmd
      * @return
@@ -46,5 +46,5 @@ public interface NetworkACLService {
      * @return
      */
     Pair<List<? extends FirewallRule>, Integer> listNetworkACLs(ListNetworkACLsCmd cmd);
-    
+
 }

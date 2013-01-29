@@ -19,15 +19,15 @@ package com.cloud.template;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import com.cloud.api.commands.CopyTemplateCmd;
-import com.cloud.api.commands.DeleteIsoCmd;
-import com.cloud.api.commands.DeleteTemplateCmd;
-import com.cloud.api.commands.ExtractIsoCmd;
-import com.cloud.api.commands.ExtractTemplateCmd;
-import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
-import com.cloud.api.commands.RegisterIsoCmd;
-import com.cloud.api.commands.RegisterTemplateCmd;
-import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
+import org.apache.cloudstack.api.command.user.template.*;
+import org.apache.cloudstack.api.command.user.template.CopyTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
@@ -48,7 +48,7 @@ public interface TemplateService {
 
     /**
      * Deletes a template
-     * 
+     *
      * @param cmd
      *            - the command specifying templateId
      */
@@ -56,7 +56,7 @@ public interface TemplateService {
 
     /**
      * Deletes a template
-     * 
+     *
      * @param cmd
      *            - the command specifying isoId
      * @return true if deletion is successful, false otherwise
@@ -65,7 +65,7 @@ public interface TemplateService {
 
     /**
      * Extracts an ISO
-     * 
+     *
      * @param cmd
      *            - the command specifying the mode and id of the ISO
      * @return extractId.
@@ -74,7 +74,7 @@ public interface TemplateService {
 
     /**
      * Extracts a Template
-     * 
+     *
      * @param cmd
      *            - the command specifying the mode and id of the template
      * @return extractId
@@ -83,7 +83,7 @@ public interface TemplateService {
 
     VirtualMachineTemplate getTemplate(long templateId);
 
-    List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd);
+    List<String> listTemplatePermissions(BaseListTemplateOrIsoPermissionsCmd cmd);
 
-    boolean updateTemplateOrIsoPermissions(UpdateTemplateOrIsoPermissionsCmd cmd);
+    boolean updateTemplateOrIsoPermissions(BaseUpdateTemplateOrIsoPermissionsCmd cmd);
 }

@@ -31,13 +31,13 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     public String lbStatsPort = "8081"; /*load balancer listen on this port for stats */
     public String lbStatsSrcCidrs = "0/0" ; /* TODO : currently there is no filtering based on the source ip */
     public String lbStatsAuth = "admin1:AdMiN123";
-    public String lbStatsUri = "/admin?stats";  
+    public String lbStatsUri = "/admin?stats";
     NicTO nic;
     Long vpcId;
-    
+
     protected LoadBalancerConfigCommand() {
     }
-    
+
     public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers, Long vpcId) {
     	this.loadBalancers = loadBalancers;
     	this.vpcId = vpcId;
@@ -51,11 +51,11 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     	this.nic = nic;
     	this.vpcId = vpcId;
     }
-    
+
     public NicTO getNic() {
         return nic;
     }
-   
+
 	public LoadBalancerTO[] getLoadBalancers() {
         return loadBalancers;
     }

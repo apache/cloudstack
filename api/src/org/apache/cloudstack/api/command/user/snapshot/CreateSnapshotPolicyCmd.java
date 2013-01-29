@@ -1,0 +1,132 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package org.apache.cloudstack.api.command.user.snapshot;
+
+import org.apache.cloudstack.api.*;
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.projects.Project;
+import com.cloud.storage.Volume;
+import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.cloud.user.Account;
+
+@APICommand(name = "createSnapshotPolicy", description="Creates a snapshot policy for the account.", responseObject=SnapshotPolicyResponse.class)
+public class CreateSnapshotPolicyCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(CreateSnapshotPolicyCmd.class.getName());
+
+    private static final String s_name = "createsnapshotpolicyresponse";
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name=ApiConstants.INTERVAL_TYPE, type=CommandType.STRING, required=true, description="valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
+    private String intervalType;
+
+    @Parameter(name=ApiConstants.MAX_SNAPS, type=CommandType.INTEGER, required=true, description="maximum number of snapshots to retain")
+    private Integer maxSnaps;
+
+    @Parameter(name=ApiConstants.SCHEDULE, type=CommandType.STRING, required=true, description="time the snapshot is scheduled to be taken. " +
+                                                                                    "Format is:" +
+                                                                                    "* if HOURLY, MM" +
+                                                                                    "* if DAILY, MM:HH" +
+                                                                                    "* if WEEKLY, MM:HH:DD (1-7)" +
+                                                                                    "* if MONTHLY, MM:HH:DD (1-28)")
+    private String schedule;
+
+    @Parameter(name=ApiConstants.TIMEZONE, type=CommandType.STRING, required=true, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
+    private String timezone;
+
+    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.UUID, entityType = VolumeResponse.class,
+            required=true, description="the ID of the disk volume")
+    private Long volumeId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getIntervalType() {
+        return intervalType;
+    }
+
+    public Integer getMaxSnaps() {
+        return maxSnaps;
+    }
+
+    public String getSchedule() {
+        return schedule;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
+    public String getCommandName() {
+        return s_name;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
+        if (volume == null) {
+            throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId);
+        }
+
+        Account account = _accountService.getAccount(volume.getAccountId());
+        //Can create templates for enabled projects/accounts only
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            Project project = _projectService.findByProjectAccountId(volume.getAccountId());
+            if (project.getState() != Project.State.Active) {
+                PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() + " as it's no longer active");
+                ex.addProxyObject(project, project.getId(), "projectId");
+                throw ex;
+            }
+        } else if (account.getState() == Account.State.disabled) {
+            throw new PermissionDeniedException("The owner of template is disabled: " + account);
+        }
+
+        return volume.getAccountId();
+    }
+
+    @Override
+    public void execute(){
+        SnapshotPolicy result = _snapshotService.createPolicy(this, _accountService.getAccount(getEntityOwnerId()));
+        if (result != null) {
+            SnapshotPolicyResponse response = _responseGenerator.createSnapshotPolicyResponse(result);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot policy");
+        }
+    }
+}

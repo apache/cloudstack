@@ -21,24 +21,24 @@ import com.cloud.agent.api.Answer;
 public class PrimaryStorageDownloadAnswer extends Answer  {
 	private String installPath;
     private long templateSize = 0L;
-	
+
 	protected PrimaryStorageDownloadAnswer() {
 	}
-	
+
     public PrimaryStorageDownloadAnswer(String detail) {
         super(null, false, detail);
     }
-	
+
 	public PrimaryStorageDownloadAnswer(String installPath, long templateSize ) {
         super(null);
 		this.installPath = installPath;
-		this.templateSize = templateSize;		
+		this.templateSize = templateSize;
 	}
-	
+
 	public String getInstallPath() {
 		return installPath;
 	}
-	
+
 	public void setInstallPath(String installPath) {
 		this.installPath = installPath;
     }
@@ -50,5 +50,5 @@ public class PrimaryStorageDownloadAnswer extends Answer  {
     public Long getTemplateSize() {
         return templateSize;
     }
-	
+
 }

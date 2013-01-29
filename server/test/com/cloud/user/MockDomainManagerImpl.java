@@ -23,16 +23,16 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.api.commands.ListDomainChildrenCmd;
-import com.cloud.api.commands.ListDomainsCmd;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.Pair;
 
-@Local(value = { DomainManager.class })
-public class MockDomainManagerImpl implements  Manager, DomainManager {
+@Local(value = { DomainManager.class, DomainService.class })
+public class MockDomainManagerImpl implements  Manager, DomainManager, DomainService {
 
     @Override
     public Domain createDomain(String name, Long parentId, String networkDomain) {
@@ -42,6 +42,12 @@ public class MockDomainManagerImpl implements  Manager, DomainManager {
 
     @Override
     public Domain getDomain(long id) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Domain getDomain(String uuid) {
         // TODO Auto-generated method stub
         return null;
     }

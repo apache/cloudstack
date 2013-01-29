@@ -660,7 +660,7 @@ public class NetappManagerImpl implements NetappManager
     		lun = _lunDao.persist(lun);
     		
     		//Lun id created: 6 digits right justified eg. 000045
-    		String lunIdStr = lun.getId().toString();
+    		String lunIdStr = String.valueOf(lun.getId());
     		String zeroStr = "000000";
     		int length = lunIdStr.length();
     		int offset = 6-length;

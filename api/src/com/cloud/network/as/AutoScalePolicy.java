@@ -17,11 +17,14 @@
 
 package com.cloud.network.as;
 
-import com.cloud.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface AutoScalePolicy extends ControlledEntity {
+public interface AutoScalePolicy extends ControlledEntity, InternalIdentity {
 
     long getId();
+
+    String getUuid();
 
     public int getDuration();
 

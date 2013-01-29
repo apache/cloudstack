@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.server.api.response.netapp;
 
-import com.cloud.api.response.BaseResponse;
+import org.apache.cloudstack.api.BaseResponse;
 
 public class CreateVolumeOnFilerCmdResponse  extends BaseResponse {
 }

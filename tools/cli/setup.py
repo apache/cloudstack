@@ -26,7 +26,7 @@ from cloudmonkey import __version__
 
 name = 'cloudmonkey'
 version = __version__
-requires = ['clint>=0.3.0',
+requires = ['Pygments>=1.5',
             'prettytable>=0.6',
            ]
 
@@ -53,7 +53,7 @@ setup(
     include_package_data = True,
     zip_safe = False,
     classifiers = [
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "Intended Audience :: Developers",
         "Intended Audience :: End Users/Desktop",

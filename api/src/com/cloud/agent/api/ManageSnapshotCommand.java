@@ -25,9 +25,9 @@ public class ManageSnapshotCommand extends Command {
     // XXX: Anyway there is something called inheritance in Java
     public static String CREATE_SNAPSHOT = "-c";
     public static String DESTROY_SNAPSHOT = "-d";
-    
+
     private String _commandSwitch;
-    
+
     // Information about the volume that the snapshot is based on
     private String _volumePath = null;
 	StorageFilerTO _pool;
@@ -43,7 +43,7 @@ public class ManageSnapshotCommand extends Command {
     public ManageSnapshotCommand(long snapshotId, String volumePath, StoragePool pool, String preSnapshotPath ,String snapshotName, String vmName) {
         _commandSwitch = ManageSnapshotCommand.CREATE_SNAPSHOT;
         _volumePath = volumePath;
-        _pool = new StorageFilerTO(pool);        
+        _pool = new StorageFilerTO(pool);
         _snapshotPath = preSnapshotPath;
         _snapshotName = snapshotName;
         _snapshotId = snapshotId;
@@ -54,8 +54,8 @@ public class ManageSnapshotCommand extends Command {
         _commandSwitch = ManageSnapshotCommand.DESTROY_SNAPSHOT;
         _snapshotPath = snapshotPath;
     }
-    
-    
+
+
     @Override
     public boolean executeInSequence() {
         return false;
@@ -64,15 +64,15 @@ public class ManageSnapshotCommand extends Command {
     public String getCommandSwitch() {
         return _commandSwitch;
     }
-    
+
     public String getVolumePath() {
         return _volumePath;
     }
-    
+
     public StorageFilerTO getPool() {
         return _pool;
     }
-    
+
     public String getSnapshotPath() {
     	return _snapshotPath;
     }
@@ -84,9 +84,9 @@ public class ManageSnapshotCommand extends Command {
     public long getSnapshotId() {
         return _snapshotId;
     }
-    
+
     public String getVmName() {
     	return _vmName;
     }
-    
+
 }

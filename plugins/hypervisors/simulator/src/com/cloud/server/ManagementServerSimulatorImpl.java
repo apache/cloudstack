@@ -17,16 +17,17 @@
 package com.cloud.server;
 
 
+import com.cloud.api.commands.ConfigureSimulator;
+import com.cloud.utils.PropertiesUtil;
+
+import java.util.List;
+import java.util.Map;
+
 public class ManagementServerSimulatorImpl extends ManagementServerExtImpl {
     @Override
-    public String[] getApiConfig() {
-        String[] apis = super.getApiConfig();
-        String[] newapis = new String[apis.length + 1];
-        for (int i = 0; i < apis.length; i++) {
-            newapis[i] = apis[i];
-        }
-
-        newapis[apis.length] = "commands-simulator.properties";
-        return newapis;
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = super.getCommands();
+        cmdList.add(ConfigureSimulator.class);
+        return cmdList;
     }
 }

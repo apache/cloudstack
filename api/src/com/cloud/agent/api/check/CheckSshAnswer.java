@@ -20,17 +20,17 @@ import com.cloud.agent.api.Answer;
 
 public class CheckSshAnswer extends Answer {
     protected CheckSshAnswer() {
-        
+
     }
-    
+
     public CheckSshAnswer(CheckSshCommand cmd) {
         super(cmd, true, null);
     }
-    
+
     public CheckSshAnswer(CheckSshCommand cmd, String details) {
         super(cmd, false, details);
     }
-    
+
     public CheckSshAnswer(CheckSshCommand cmd, Throwable th) {
         super(cmd, false, th.getMessage());
     }

@@ -18,28 +18,28 @@ package com.cloud.agent.api;
 
 public class StopAnswer extends RebootAnswer {
     Integer vncPort;
-    
+
     protected StopAnswer() {
     }
-    
+
     public StopAnswer(StopCommand cmd, String details, Integer vncPort, boolean success) {
         super(cmd,  details, success);
         this.vncPort = vncPort;
     }
-    
+
     public StopAnswer(StopCommand cmd, String details, boolean success) {
         super(cmd, details, success);
         vncPort = null;
 
     }
-    
+
     public StopAnswer(StopCommand cmd, Exception e) {
         super(cmd, e);
     }
-    
+
     @Override
     public Integer getVncPort() {
         return vncPort;
     }
-    
+
 }

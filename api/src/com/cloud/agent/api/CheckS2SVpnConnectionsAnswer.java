@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -23,12 +23,12 @@ public class CheckS2SVpnConnectionsAnswer extends Answer {
     Map<String, Boolean> ipToConnected;
     Map<String, String> ipToDetail;
     String details;
-    
+
     protected CheckS2SVpnConnectionsAnswer() {
         ipToConnected = new HashMap<String, Boolean>();
         ipToDetail = new HashMap<String, String>();
     }
-    
+
     public CheckS2SVpnConnectionsAnswer(CheckS2SVpnConnectionsCommand cmd, boolean result, String details) {
         super(cmd, result, details);
         ipToConnected = new HashMap<String, Boolean>();
@@ -38,7 +38,7 @@ public class CheckS2SVpnConnectionsAnswer extends Answer {
             parseDetails(details);
         }
     }
-    
+
     protected void parseDetails(String details) {
         String[] lines = details.split("&");
         for (String line : lines) {
@@ -54,14 +54,14 @@ public class CheckS2SVpnConnectionsAnswer extends Answer {
             ipToDetail.put(ip, detail);
         }
     }
-    
+
     public boolean isConnected(String ip) {
         if (this.getResult()) {
             return ipToConnected.get(ip);
         }
         return false;
     }
-    
+
     public String getDetail(String ip) {
         if (this.getResult()) {
             return ipToDetail.get(ip);

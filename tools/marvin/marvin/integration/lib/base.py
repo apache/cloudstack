@@ -509,6 +509,12 @@ class Volume:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVolumes(cmd))
 
+    def resize(cls, apiclient, **kwargs):
+        """Resize a volume"""
+        cmd = resizeVolume.resizeVolumeCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.resizeVolume(cmd))
 
 class Snapshot:
     """Manage Snapshot Lifecycle
@@ -1108,6 +1114,9 @@ class DiskOffering:
 
         if domainid:
             cmd.domainid = domainid
+
+        if services["storagetype"]:
+            cmd.storagetype = services["storagetype"]
 
         return DiskOffering(apiclient.createDiskOffering(cmd).__dict__)
 

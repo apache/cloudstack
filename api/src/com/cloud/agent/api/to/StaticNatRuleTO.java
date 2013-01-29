@@ -22,34 +22,39 @@ import com.cloud.network.rules.StaticNatRule;
 
 /**
  * StaticNatRuleTO specifies one static nat rule.
- * 
+ *
  *
  */
 
 public class StaticNatRuleTO extends FirewallRuleTO{
     String dstIp;
-    
+
     protected StaticNatRuleTO() {
     }
-   
+
     public StaticNatRuleTO(StaticNatRule rule, String srcVlanTag, String srcIp, String dstIp) {
         super(rule.getId(),srcVlanTag, srcIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(),rule.getState()==State.Revoke, rule.getState()==State.Active, rule.getPurpose(), null,0,0);
         this.dstIp = dstIp;
     }
- 
+
     public StaticNatRuleTO(StaticNatRule rule, String scrIp, String dstIp) {
         super(rule.getId(), scrIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(),rule.getState()==State.Revoke, rule.getState()==State.Active, rule.getPurpose(), null,0,0);
         this.dstIp = dstIp;
     }
-    
-    
+
+
     public StaticNatRuleTO(long id, String srcIp, Integer srcPortStart, Integer srcPortEnd, String dstIp, Integer dstPortStart, Integer dstPortEnd, String protocol, boolean revoked, boolean alreadyAdded) {
         super(id, srcIp, protocol, srcPortStart, srcPortEnd, revoked, alreadyAdded, FirewallRule.Purpose.StaticNat, null,0,0);
+        this.dstIp = dstIp;
+    }
+    
+    public StaticNatRuleTO(long id,String srcVlanTag, String srcIp, Integer srcPortStart, Integer srcPortEnd, String dstIp, Integer dstPortStart, Integer dstPortEnd, String protocol, boolean revoked, boolean alreadyAdded) {
+        super(id, srcVlanTag, srcIp, protocol, srcPortStart, srcPortEnd, revoked, alreadyAdded, FirewallRule.Purpose.StaticNat, null,0,0);
         this.dstIp = dstIp;
     }
 
     public String getDstIp() {
         return dstIp;
     }
-    
+
 }

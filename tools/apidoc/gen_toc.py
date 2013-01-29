@@ -128,7 +128,8 @@ known_categories = {
     'NiciraNvpDevice': 'Nicira NVP',
     'AutoScale': 'AutoScale',
     'Counter': 'AutoScale',
-    'Condition': 'AutoScale'
+    'Condition': 'AutoScale',
+    'Api': 'API Discovery',
     }
 
 

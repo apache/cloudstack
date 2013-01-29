@@ -37,7 +37,25 @@ public interface EntityManager {
      * @return T if found; null if not.
      */
     public <T, K extends Serializable> T findById(Class<T> entityType, K id);
-    
+
+    /**
+     * Finds a unique entity by uuid string
+     * @param <T> entity class
+     * @param entityType type of entity you're looking for.
+     * @param uuid the unique id
+     * @return T if found, null if not.
+     */
+    public <T> T findByUuid(Class<T> entityType, String uuid);
+
+    /**
+     * Finds a unique entity by uuid string
+     * @param <T> entity class
+     * @param entityType type of entity you're looking for.
+     * @param uuid the unique id
+     * @return T if found, null if not.
+     */
+    public <T> T findByUuidIncludingRemoved(Class<T> entityType, String uuid);
+
     /**
      * Finds an entity by external id which is always String
      * @param <T> entity class
@@ -45,8 +63,8 @@ public interface EntityManager {
      * @param xid external id
      * @return T if found, null if not.
      */
-    public <T> T findByXid(Class<T> entityType, String xid);
-    
+    public <T> T findByXId(Class<T> entityType, String xid);
+
     /**
      * Lists all entities.  Use this method at your own risk.
      * @param <T> entity class
@@ -54,7 +72,7 @@ public interface EntityManager {
      * @return List<T>
      */
     public <T> List<? extends T> list(Class<T> entityType);
-    
+
     /**
      * Persists the entity.
      * @param <T> entity class
@@ -62,13 +80,13 @@ public interface EntityManager {
      * @return persisted entity.  Only use this after persisting.
      */
     public <T> T persist(T t);
-    
+
     public <T> SearchBuilder<T> createSearchBuilder(Class<T> entityType);
-    
+
     public <T, K> GenericSearchBuilder<T, K> createGenericSearchBuilder(Class<T> entityType, Class<K> resultType);
-    
+
     public <T, K> List<K> search(Class<T> entityType, SearchCriteria<K> sc);
-    
+
     public <T, K extends Serializable> void remove(Class<T> entityType, K id);
 }
 

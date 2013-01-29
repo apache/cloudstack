@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.usage;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -29,7 +31,7 @@ import javax.persistence.TemporalType;
 
 @Entity
 @Table(name="usage_job")
-public class UsageJobVO {
+public class UsageJobVO implements InternalIdentity {
 
     public static final int JOB_TYPE_RECURRING = 0;
     public static final int JOB_TYPE_SINGLE = 1;
@@ -80,7 +82,7 @@ public class UsageJobVO {
 
     public UsageJobVO() {}
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

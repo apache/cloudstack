@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.simulator;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +30,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="mockconfiguration")
-public class MockConfigurationVO {
+public class MockConfigurationVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
