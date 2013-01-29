@@ -32,7 +32,7 @@
   <section id="sect-Runbook-Environment-operatingsys">
     <title>Operating System</title>
     <para>
-      Using the CentOS 6.2 x86_64 minimal install ISO, you'll need to install CentOS
+      Using the CentOS 6.3 x86_64 minimal install ISO, you'll need to install CentOS
       on your hardware. The defaults will generally be acceptable for this installation.
     </para>
     <para>
@@ -163,6 +163,30 @@ SELINUXTYPE=targeted
       <screen><prompt># </prompt><userinput><command>chkconfig</command> ntpd on</userinput></screen>
       <screen><prompt># </prompt><userinput><command>service</command> ntpd start</userinput></screen>
     </section>
+    <section id="sect-Runbook-Environment-operatingsys-repoconfig">
+      <title>Configuring the CloudStack Package Repository</title>
+      <para>
+        We need to configure the machine to use a CloudStack package repository.
+        <important>
+          <title>The below repository is not an official Apache CloudStack project repository</title>
+          <para>
+            The Apache CloudStack official releases are source code. As such there are no
+            'official' binaries available. The full installation guide describes how to take
+            the source release and generate RPMs and and yum repository. This guide attempts
+            to keep things as simple as possible, and thus we are using one of the
+            community-provided yum repositories.
+          </para>
+        </important>
+      </para>
+      <para>To add the CloudStack repository, create <filename>/etc/yum.repos.d/cloudstack.repo</filename> and insert the following information.</para>
+      <programlisting>
+[cloudstack]
+name=cloudstack
+baseurl=http://cloudstack.apt-get.eu/rhel/4.0/
+enabled=1
+gpgcheck=0
+      </programlisting>
+    </section>
   </section>
   <section id="sect-Runbook-Environment-nfs">
     <title>NFS</title>
@@ -224,12 +248,10 @@ STATD_OUTGOING_PORT=2020
     <para>We now need to configure nfs service to start on boot and actually start it on the host by
     executing the following commands:</para>
     <screen>
-      <prompt># </prompt><userinput><command>service</command> rpcbind start</userinput>
-      <prompt># </prompt><userinput><command>service</command> nfs start</userinput>
-      <prompt># </prompt><userinput><command>chkconfig</command> rpcbind on</userinput>
-      <prompt># </prompt><userinput><command>chkconfig</command> nfs on</userinput>
+<prompt># </prompt><userinput><command>service</command> rpcbind start</userinput>
+<prompt># </prompt><userinput><command>service</command> nfs start</userinput>
+<prompt># </prompt><userinput><command>chkconfig</command> rpcbind on</userinput>
+<prompt># </prompt><userinput><command>chkconfig</command> nfs on</userinput>
     </screen>
   </section>
-
-
 </chapter>

@@ -54,45 +54,26 @@ binlog-format = 'ROW'
         Now that <application>MySQL</application> is properly configured we can
         start it and configure it to start on boot as follows:
         <screen>
-          <prompt># </prompt><userinput><command>service</command> mysqld start</userinput>
-          <prompt># </prompt><userinput><command>chkconfig</command> mysqld on</userinput>
+<prompt># </prompt><userinput><command>service</command> mysqld start</userinput>
+<prompt># </prompt><userinput><command>chkconfig</command> mysqld on</userinput>
         </screen>
       </para>
 
   </section>
     
-  <section id="sect-Runbook-Management-extraction">
-    <title>Extraction</title>
-    <para>
-    The next step is to extract the contents of the CloudStack tarball 
-    (mentioned in <xref linkend="sect-Runbook-Overview-prereqs" />) you
-    downloaded previously. To extract the contents of this tarball use 
-    the following command:
-    </para>
-    <screen>
-      <prompt># </prompt><userinput><command>tar</command> -xzvf CloudStack-oss-3.0.2-1-rhel6.2.tar.gz</userinput>
-    </screen>
-    <para> For the next few sections you'll need to <command>cd</command> into the first level that was just created.
-    </para>
-  </section>
   <section id="sect-Runbook-Management-installation">
     <title>Installation</title>
-    <para>Now that you are in the directory created by extracting the tarball, it's now time to install. We'll run 
-      <filename>./install.sh</filename> and choose option <option>M</option>. This will install the management server
-      and necessary dependencies. 
+    <para>We are now going to install the management server. We do that by executing the following command:
+      <screen><prompt># </prompt><userinput><command>yum</command> -y install cloud-client</userinput></screen>
     </para>
     <para>With the application itself installed we can now setup the database, we'll do that with the following command
       and options: 
     </para>
-    <screen>
-      <prompt># </prompt><userinput><command>cloud-setup-databases</command> cloud:<replaceable>password</replaceable>@localhost --deploy-as=root</userinput>
-    </screen>
+    <screen><prompt># </prompt><userinput><command>cloud-setup-databases</command> cloud:<replaceable>password</replaceable>@localhost --deploy-as=root</userinput></screen>
     <para>When this process is finished, you should see a message like "CloudStack has successfully initialized the database."
     </para>
     <para>Now that the database has been created, we can take the final step in setting up the management server by issuing the following command:</para>
-    <screen>
-      <prompt># </prompt><userinput><command>cloud-setup-mangament</command></userinput>
-    </screen>
+    <screen><prompt># </prompt><userinput><command>cloud-setup-mangament</command></userinput></screen>
   </section>
   <section id="sect-Runbook-Management-templatesetup">
     <title>System Template Setup</title>
@@ -107,16 +88,14 @@ binlog-format = 'ROW'
       storage share that we setup earlier, so we'll need to mount that share
       with the <command>mount</command> command run on the management server:
     </para>
-    <screen>
-      <prompt># </prompt><userinput><command>mount</command> -t nfs <replaceable>172.16.10.</replaceable>2:/secondary /mnt/secondary</userinput>
+    <screen><prompt># </prompt><userinput><command>mount</command> -t nfs <replaceable>172.16.10.</replaceable>2:/secondary /mnt/secondary</userinput>
     </screen>
     <para>
       Now we need to download the system VM template and deploy that to the
       share we just mounted. The management server includes a script to properly
       manipulate the system VMs images. 
     </para>
-    <screen>
-      <prompt># </prompt><userinput><command>/usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt</command> -m  /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -F</userinput>
+    <screen><prompt># </prompt><userinput><command>/usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary</command> -m  /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -F</userinput>
     </screen>
     <para>
       That concludes our setup of the management server. We still need to 

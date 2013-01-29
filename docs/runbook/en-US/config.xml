@@ -142,7 +142,7 @@
       </para>
       <section id="Runbook-config-cluster-pristorage">
         <title>Primary Storage</title> 
-      <para>With you cluster now setup - you should be prompted for primary storage information. Choose NFS as the storage type and then enter the following values in the fields:
+      <para>With your cluster now setup - you should be prompted for primary storage information. Choose NFS as the storage type and then enter the following values in the fields:
         <orderedlist>
           <listitem>
              <para>Name - We'll use 'Primary1'</para>

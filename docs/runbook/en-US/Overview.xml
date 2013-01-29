@@ -36,7 +36,7 @@
       <title>What exactly are we building?</title>
       <para>
       This runbook will focus on building a CloudStack cloud using KVM with 
-      CentOS 6.2 with NFS storage on a flat layer-2 network utilizing 
+      CentOS 6.3 with NFS storage on a flat layer-2 network utilizing 
           layer-3 network isolation (aka Security Groups), and doing it all
           on a single piece of hardware.   
       </para>
@@ -74,23 +74,16 @@
             <listitem>
               <para>
                 The 
-                <ulink url="http://mirrors.kernel.org/centos/6.2/isos/x86_64/CentOS-6.2-x86_64-minimal.iso">
-                CentOS 6.2 x86_64 minimal install CD
+                <ulink url="http://mirrors.kernel.org/centos/6.3/isos/x86_64/CentOS-6.3-x86_64-minimal.iso">
+                CentOS 6.3 x86_64 minimal install CD
                 </ulink>
               </para>
             </listitem>
             <listitem>
               <para>
           A /24 network with the gateway being at xxx.xxx.xxx.1, no DHCP should be on this network and 
-          none of the computers running CloudStack may have a dynamic address.
-              </para>
-            </listitem>
-            <listitem>
-              <para>
-                Copy of 
-                <ulink url="http://sourceforge.net/projects/cloudstack/files/CloudStack%20Acton/3.0.2/CloudStack-oss-3.0.2-1-rhel6.2.tar.gz/download">
-                  CloudStack 3.0.2 for RHEL and CentOS 6.2
-                </ulink>
+          none of the computers running CloudStack will have a dynamic address. Again this is done for 
+          the sake of simplicity. 
               </para>
             </listitem>
           </orderedlist>

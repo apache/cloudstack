@@ -28,6 +28,15 @@
     <simpara>
         <revhistory>
             <revision>
+              <revnumber>1</revnumber>
+              <date>Fri Feb 1 2013</date>
+              <revdescription>
+                <simplelist>
+                  <member>Updating for Apache CloudStack 4.0.1</member>
+                </simplelist>
+              </revdescription>
+            </revision>
+            <revision>
                 <revnumber>0-0</revnumber>
                 <date>Mon Jun 25 2012</date>
                 <revdescription>

@@ -59,6 +59,11 @@
             <xref linkend="sect-Runbook-Environment-operatingsys-ntp" />
           </para>
         </listitem>
+        <listitem>
+          <para>
+            <xref linkend="sect-Runbook-Environment-operatingsys-repoconfig" />
+          </para>
+        </listitem>
       </orderedlist>
     </para>
     <para>
@@ -66,37 +71,77 @@
       any additional hosts will need for you to complete the above steps. 
     </para>
   </section>
-    
+   
   <section id="sect-Runbook-KVM-Installation">
     <title>Installation</title>
-    <para>
-      You'll need to ensure that you are in the directory that was created when 
-      we extracted the the tarball. 
-      <xref linkend="sect-Runbook-Management-extraction" />
-    </para>
-    <para>
-      You'll be running <filename>./install.sh</filename> again and this time
-      choosing <option>A</option> which will install the software necessary for
-      managing a KVM node. 
-    </para>
-  </section>
-  <section id="sect-Runbook-KVM-Configuration">
-    <title>KVM Configuration</title>
-    <para>
-      KVM configuration is relatively simple at only a single item. We need to 
-      edit the QEMU VNC configuration. This is done by editing 
-      <filename>/etc/libvirt/qemu.conf</filename> and ensuring the following 
-      line is present and uncommented.
-      <screen>vnc_listen=0.0.0.0</screen>
-    </para>
-    <para>
-      You can now just restart the libvirt daemon by issuing the following command:
-      <screen><prompt># </prompt><userinput><command>service</command> libvirt restart</userinput></screen>
-    </para>
-    <para>
-      That concludes our installation and configuration of KVM, and we'll now move to using the CloudStack UI
-      for the actual configuration of our cloud. 
-    </para>
+    <para>Installation of the KVM agent is trivial with just a single command, but afterwards we'll need to configure a few things.</para>
+    <screen><prompt># </prompt><userinput><command>yum</command> -y install cloud-agent</userinput></screen>
+    <section id="sect-Runbook-KVM-Configuration">
+      <title>KVM Configuration</title>
+      <para>We have two different parts of KVM to configure, libvirt, and QEMU.</para>
+      <section id="sect-Runbook-KVM-Configuration-qemu">
+        <title>QEMU Configuration</title>
+        <para>
+          KVM configuration is relatively simple at only a single item. We need to 
+          edit the QEMU VNC configuration. This is done by editing 
+          <filename>/etc/libvirt/qemu.conf</filename> and ensuring the following 
+          line is present and uncommented.
+          <screen>vnc_listen=0.0.0.0</screen>
+        </para>
+        <para>
+          You can now just restart the libvirt daemon by issuing the following command:
+          <screen><prompt># </prompt><userinput><command>service</command> libvirt restart</userinput></screen>
+        </para>
+      </section>
+      <section id="sect-Runbook-KVM-Configuration-libvirt">
+        <title>Libvirt Configuration</title>
+        <para>
+          CloudStack uses libvirt for managing virtual machines. Therefore it
+          is vital that libvirt is configured correctly. Libvirt is a dependency
+          of cloud-agent and should already be installed.
+        </para>
+        <orderedlist>
+          <listitem>
+            <para>In order to have live migration working libvirt has to listen
+            for unsecured TCP connections. We also need to turn off libvirts 
+            attempt to use Multicast DNS advertising. Both of these settings 
+            are in <filename>/etc/libvirt/libvirtd.conf</filename>
+            </para>
+            <para>Set the following paramaters:</para>
+            <programlisting>listen_tls = 0</programlisting>
+            <programlisting>listen_tcp = 1</programlisting>
+            <programlisting>tcp_port = 16059</programlisting>
+            <programlisting>auth_tcp = "none"</programlisting>
+            <programlisting>mdns_adv = 0</programlisting>
+          </listitem>
+          <listitem>
+            <para>Turning on "listen_tcp" in libvirtd.conf is not enough, we have to change the parameters as well:</para>
+            <para>On RHEL or CentOS modify <filename>/etc/sysconfig/libvirtd</filename>:</para>
+            <para>Uncomment the following line:</para>
+            <programlisting>#LIBVIRTD_ARGS="--listen"</programlisting>
+            <para>On Ubuntu: modify <filename>/etc/init/libvirt-bin.conf</filename></para>
+            <para>Change the following line (at the end of the file):</para>
+            <programlisting>exec /usr/sbin/libvirtd -d</programlisting>
+            <para>to (just add -l)</para>
+            <programlisting>exec /usr/sbin/libvirtd -d -l</programlisting>
+          </listitem>
+          <listitem>
+            <para>Restart libvirt</para>
+            <para>In RHEL or CentOS:</para>
+            <programlisting><command>$ service libvirtd restart</command></programlisting>
+            <para>In Ubuntu:</para>
+            <programlisting><command>$ service libvirt-bin restart</command></programlisting>
+          </listitem>
+        </orderedlist>
+      </section>
+      <section id="sect-Runbook-KVM-Configuration-finish">
+        <title>KVM configuration complete</title>
+        <para>
+        That concludes our installation and configuration of KVM, and we'll now move to using the CloudStack UI
+        for the actual configuration of our cloud. 
+        </para>
+      </section>
+    </section>
   </section>
 
 </chapter>
