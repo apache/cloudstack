@@ -1593,14 +1593,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     // used for vm transitioning to error state
-    private void updateVmStateForFailedVmCreation(Long vmId) {
+    private void updateVmStateForFailedVmCreation(Long vmId, Long hostId) {
 
         UserVmVO vm = _vmDao.findById(vmId);
 
 
         if (vm != null) {
             if (vm.getState().equals(State.Stopped)) {
-                s_logger.debug("Destroying vm " + vm + " as it failed to create");
+                s_logger.debug("Destroying vm " + vm + " as it failed to create on Host with Id:" + hostId);
                 try {
                     _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailedToError, null);
                 } catch (NoTransitionException e1) {
@@ -1618,7 +1618,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         s_logger.warn("Unable to delete volume:" + volume.getId() + " for vm:" + vmId + " whilst transitioning to error state");
                     }
                 }
-                String msg = "Failed to deploy Vm with Id: " + vmId;
+                String msg = "Failed to deploy Vm with Id: " + vmId + ", on Host with Id: " + hostId;
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), msg, msg);
 
                 _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
@@ -2550,9 +2550,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = null;
         try {
             vmParamPair = startVirtualMachine(vmId, hostId, additonalParams);
-            vm = vmParamPair.first();;
+            vm = vmParamPair.first();
         } finally {
-            updateVmStateForFailedVmCreation(vm.getId());
+            updateVmStateForFailedVmCreation(vm.getId(), hostId);
         }
 
         // Check that the password was passed in and is valid
