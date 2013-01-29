@@ -181,7 +181,7 @@ public class ApiRateLimitTest {
         assertTrue("The first request should be allowed", isUnderLimit(key));
 
         // Allow the token to expire
-        Thread.sleep(1001);
+        Thread.sleep(1020);
 
         assertTrue("Another request after interval should be allowed as well", isUnderLimit(key));
     }
