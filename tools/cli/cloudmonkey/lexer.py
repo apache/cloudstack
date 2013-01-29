@@ -51,7 +51,7 @@ def get_colorscheme():
 
 
 class MonkeyLexer(RegexLexer):
-    keywords = ['[a-z]*id', '[a-zA-Z]*:']
+    keywords = ['[a-z]*id', '^[a-z A-Z]*:']
     attributes = ['[Tt]rue', '[Ff]alse']
     params = ['[a-z]*[Nn]ame', 'type', '[Ss]tate']
 
