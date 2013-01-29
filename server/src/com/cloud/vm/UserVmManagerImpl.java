@@ -944,6 +944,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // Perform permission check on VM
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
+        // Verify that zone is not Basic
+        DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterIdToDeployIn());
+        if (dc.getNetworkType() == DataCenter.NetworkType.Basic) {
+            throw new CloudRuntimeException("Zone " + vmInstance.getDataCenterIdToDeployIn() + ", has a NetworkType of Basic. Can't add a new NIC to a VM on a Basic Network");
+        }
+
         // Perform account permission check on network
         if (network.getGuestType() != Network.GuestType.Shared) {
             // Check account permissions
@@ -975,7 +981,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         NicProfile guestNic = null;
 
         try {
-            guestNic = _itMgr.addUserVmToNetwork(vmInstance,_vmDao.findById(vmInstance.getId()), network, profile);
+            guestNic = _itMgr.addVmToNetwork(vmInstance, network, profile);
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException("Unable to add NIC to " + vmInstance + ": " + e);
         } catch (InsufficientCapacityException e) {
@@ -1012,6 +1018,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // Perform permission check on VM
         _accountMgr.checkAccess(caller, null, true, vmInstance);
+
+        // Verify that zone is not Basic
+        DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterIdToDeployIn());
+        if (dc.getNetworkType() == DataCenter.NetworkType.Basic) {
+            throw new CloudRuntimeException("Zone " + vmInstance.getDataCenterIdToDeployIn() + ", has a NetworkType of Basic. Can't remove a NIC from a VM on a Basic Network");
+        }
 
         //check to see if nic is attached to VM
         if (nic.getInstanceId() != vmId) {
@@ -1069,6 +1081,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         // Perform permission check on VM
         _accountMgr.checkAccess(caller, null, true, vmInstance);
+
+        // Verify that zone is not Basic
+        DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterIdToDeployIn());
+        if (dc.getNetworkType() == DataCenter.NetworkType.Basic) {
+            throw new CloudRuntimeException("Zone " + vmInstance.getDataCenterIdToDeployIn() + ", has a NetworkType of Basic. Can't change default NIC on a Basic Network");
+        }
 
         // no need to check permissions for network, we'll enumerate the ones they already have access to
         Network existingdefaultnet = _networkModel.getDefaultNetworkForVm(vmId);

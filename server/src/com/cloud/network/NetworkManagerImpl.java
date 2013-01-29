@@ -3355,7 +3355,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     }
     
     @Override
-    public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean prepare, boolean alwayscreate)
+    public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean prepare)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
                 
@@ -3366,8 +3366,8 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
                 
                 NicProfile nic = getNicProfileForVm(network, requested, vm);
                 
-                //1) allocate nic (if needed)
-                if (nic == null || alwayscreate) {
+                //1) allocate nic (if needed) Always allocate if it is a user vm
+                if (nic == null || (vmProfile.getType() == VirtualMachine.Type.User)) {
                     int deviceId = _nicDao.countNics(vm.getId());
                     
                     nic = allocateNic(requested, network, false, 

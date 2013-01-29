@@ -2462,7 +2462,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                                                     ResourceUnavailableException, InsufficientCapacityException {
         
         s_logger.debug("Adding vm " + vm + " to network " + network + "; requested nic profile " + requested);
-        VMInstanceVO vmVO = _vmDao.findById(vm.getId());
+        VMInstanceVO vmVO;
+        if (vm.getType() == VirtualMachine.Type.User) {
+            vmVO = _userVmDao.findById(vm.getId());
+        } else {
+            vmVO = _vmDao.findById(vm.getId());
+        }
         ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
                 _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
         
@@ -2476,7 +2481,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         //check vm state
         if (vm.getState() == State.Running) {
             //1) allocate and prepare nic
-            NicProfile nic = _networkMgr.createNicForVm(network, requested, context, vmProfile, true, false);
+            NicProfile nic = _networkMgr.createNicForVm(network, requested, context, vmProfile, true);
             
             //2) Convert vmProfile to vmTO
             HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
@@ -2498,55 +2503,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
         } else if (vm.getState() == State.Stopped) {
             //1) allocate nic
-            return _networkMgr.createNicForVm(network, requested, context, vmProfile, false, false);
-        } else {
-            s_logger.warn("Unable to add vm " + vm + " to network  " + network);
-            throw new ResourceUnavailableException("Unable to add vm " + vm + " to network, is not in the right state",
-                    DataCenter.class, vm.getDataCenterIdToDeployIn());
-        }
-    }
-
-    @Override
-    public NicProfile addUserVmToNetwork(VirtualMachine vm, UserVmVO vmVO, Network network, NicProfile requested) throws ConcurrentOperationException,
-                                                    ResourceUnavailableException, InsufficientCapacityException {
-
-        s_logger.debug("Adding vm " + vm + " to network " + network + "; requested nic profile " + requested);
-        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM),
-                _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
-
-        VirtualMachineProfileImpl<UserVmVO> vmProfile = new VirtualMachineProfileImpl<UserVmVO>(vmVO, null,
-                null, null, null);
-
-        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
-        Host host = _hostDao.findById(vm.getHostId()); 
-        DeployDestination dest = new DeployDestination(dc, null, null, host);
-        
-        //check vm state
-        if (vm.getState() == State.Running) {
-            //1) allocate and prepare nic
-            NicProfile nic = _networkMgr.createNicForVm(network, requested, context, vmProfile, true, true);
-            
-            //2) Convert vmProfile to vmTO
-            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
-            VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
-            
-            //3) Convert nicProfile to NicTO
-            NicTO nicTO = toNicTO(nic, vmProfile.getVirtualMachine().getHypervisorType());
-            
-            //4) plug the nic to the vm
-            VirtualMachineGuru<UserVmVO> vmGuru = getVmGuru(vmVO);
-            
-            s_logger.debug("Plugging nic for vm " + vm + " in network " + network);
-            if (vmGuru.plugNic(network, nicTO, vmTO, context, dest)) {
-                s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
-                return nic;
-            } else {
-                s_logger.warn("Failed to plug nic to the vm " + vm + " in network " + network);
-                return null;
-            }
-        } else if (vm.getState() == State.Stopped) {
-            //1) allocate nic
-            return _networkMgr.createNicForVm(network, requested, context, vmProfile, false, true);
+            return _networkMgr.createNicForVm(network, requested, context, vmProfile, false);
         } else {
             s_logger.warn("Unable to add vm " + vm + " to network  " + network);
             throw new ResourceUnavailableException("Unable to add vm " + vm + " to network, is not in the right state",
