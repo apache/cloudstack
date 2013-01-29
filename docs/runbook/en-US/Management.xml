@@ -83,19 +83,12 @@ binlog-format = 'ROW'
       acquire those system images ready for deployment when we bootstrap
       your cloud.
     </para>
-    <para> 
-      The place we are going to download these images to is the secondary 
-      storage share that we setup earlier, so we'll need to mount that share
-      with the <command>mount</command> command run on the management server:
-    </para>
-    <screen><prompt># </prompt><userinput><command>mount</command> -t nfs <replaceable>172.16.10.</replaceable>2:/secondary /mnt/secondary</userinput>
-    </screen>
     <para>
       Now we need to download the system VM template and deploy that to the
       share we just mounted. The management server includes a script to properly
       manipulate the system VMs images. 
     </para>
-    <screen><prompt># </prompt><userinput><command>/usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt</command> -m  /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -F</userinput>
+    <screen><prompt># </prompt><userinput><command>/usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt</command> -m  /secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -F</userinput>
     </screen>
     <para>
       That concludes our setup of the management server. We still need to 
