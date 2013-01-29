@@ -25,5 +25,6 @@
         are discussed in the section on setting up networking for users.</para>
     <xi:include href="compute-disk-service-offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="system-service-offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="network-rate.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="sys-offering-sysvm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>

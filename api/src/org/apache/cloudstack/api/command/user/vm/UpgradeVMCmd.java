@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;
@@ -44,7 +44,7 @@ public class UpgradeVMCmd extends BaseCmd {
             required=true, description="The ID of the virtual machine")
     private Long id;
 
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=DiskOfferingResponse.class,
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
             required=true, description="the service offering ID to apply to the virtual machine")
     private Long serviceOfferingId;
 
