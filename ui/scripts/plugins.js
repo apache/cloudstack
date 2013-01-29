@@ -21,7 +21,7 @@
   };
   
   cloudStack.sections.plugins = {
-    title: 'Plugins',
+    title: 'label.plugins',
     show: cloudStack.uiCustom.plugins
   };
 
