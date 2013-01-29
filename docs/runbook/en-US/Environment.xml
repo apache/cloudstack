@@ -157,7 +157,7 @@ SELINUXTYPE=targeted
       servers in sync. However, NTP is not installed by default. So we'll install and 
       and configure NTP at this stage. Installation is accomplished as follows:
       </para>
-      <screen><prompt># </prompt><userinput><command>yum</command> install ntp</userinput></screen>
+      <screen><prompt># </prompt><userinput><command>yum</command> -y install ntp</userinput></screen>
       <para>The actual default configuration is fine for our purposes, so we merely need to
       enable it and set it to start on boot as follows:</para>
       <screen><prompt># </prompt><userinput><command>chkconfig</command> ntpd on</userinput></screen>

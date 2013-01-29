@@ -73,7 +73,7 @@ binlog-format = 'ROW'
     <para>When this process is finished, you should see a message like "CloudStack has successfully initialized the database."
     </para>
     <para>Now that the database has been created, we can take the final step in setting up the management server by issuing the following command:</para>
-    <screen><prompt># </prompt><userinput><command>cloud-setup-mangament</command></userinput></screen>
+    <screen><prompt># </prompt><userinput><command>cloud-setup-management</command></userinput></screen>
   </section>
   <section id="sect-Runbook-Management-templatesetup">
     <title>System Template Setup</title>
@@ -95,7 +95,7 @@ binlog-format = 'ROW'
       share we just mounted. The management server includes a script to properly
       manipulate the system VMs images. 
     </para>
-    <screen><prompt># </prompt><userinput><command>/usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary</command> -m  /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -F</userinput>
+    <screen><prompt># </prompt><userinput><command>/usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt</command> -m  /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -F</userinput>
     </screen>
     <para>
       That concludes our setup of the management server. We still need to 
