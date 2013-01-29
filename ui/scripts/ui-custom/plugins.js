@@ -32,7 +32,37 @@
         $plugin.click(function() {
           $browser.cloudBrowser('addPanel', {
             title: plugin.title,
-            $parent: $('.panel:first')
+            $parent: $('.panel:first'),
+            complete: function($panel) {
+              $panel.detailView({
+                name: 'Plugin details',
+                tabs: {
+                  details: {
+                    title: 'label.plugin.details',
+                    fields: [
+                      {
+                        name: { label: 'label.name' }
+                      },
+                      {
+                        desc: { label: 'label.description' },
+                        externalLink: {
+                          isExternalLink: true,
+                          label: 'label.external.link'
+                        }
+                      },
+                      {
+                        authorName: { label: 'label.author.name' },
+                        authorEmail: { label: 'label.author.email' },
+                        id: { label: 'label.id' }
+                      }
+                    ],
+                    dataProvider: function(args) {
+                      args.response.success({ data: plugin });
+                    }
+                  }
+                }
+              });
+            }
           });
         });
 
@@ -52,11 +82,7 @@
       plugins: $(plugins).map(function(index, pluginID) {
         var plugin = cloudStack.plugins[pluginID].config;
 
-        return {
-          id: pluginID,
-          title: plugin.title,
-          desc: plugin.desc
-        };
+        return $.extend(plugin, { id: pluginID });
       })
     });
   };
