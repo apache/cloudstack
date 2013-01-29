@@ -88,10 +88,6 @@
           line is present and uncommented.
           <screen>vnc_listen=0.0.0.0</screen>
         </para>
-        <para>
-          You can now just restart the libvirt daemon by issuing the following command:
-          <screen><prompt># </prompt><userinput><command>service</command> libvirt restart</userinput></screen>
-        </para>
       </section>
       <section id="sect-Runbook-KVM-Configuration-libvirt">
         <title>Libvirt Configuration</title>
@@ -110,7 +106,7 @@
             <para>Set the following paramaters:</para>
             <programlisting>listen_tls = 0</programlisting>
             <programlisting>listen_tcp = 1</programlisting>
-            <programlisting>tcp_port = 16059</programlisting>
+            <programlisting>tcp_port = "16059"</programlisting>
             <programlisting>auth_tcp = "none"</programlisting>
             <programlisting>mdns_adv = 0</programlisting>
           </listitem>
