@@ -9736,7 +9736,7 @@
                     args.response.success({data:{}});
                   },
                   error: function(json) {
-                    args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                    args.response.error(parseXMLHttpResponse(json));
                   }
                 });
               },
