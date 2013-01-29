@@ -25,10 +25,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,6 +39,7 @@ import org.apache.cloudstack.api.IdentityService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
@@ -71,29 +73,15 @@ public class ConsoleProxyServlet extends HttpServlet {
     @Inject ManagementServer _ms;
     @Inject IdentityService _identityService; 
 
-    static AccountManager s_accountMgr;
-    static VirtualMachineManager s_vmMgr;
     static ManagementServer s_ms;
-    static IdentityService s_identityService;
-    
+
     public ConsoleProxyServlet() {
     }
-    
-    @PostConstruct
-    void initComponent() {	
-    	// Servlet injection does not always work for servlet container
-    	// We use a hacking here to initialize static variables at Spring wiring time
-    	if(_accountMgr != null) {
-    	    s_accountMgr = _accountMgr;
-    	    s_vmMgr = _vmMgr;
-    	    s_ms = _ms;
-    	    s_identityService = _identityService;
-    	} else {
-    	    _accountMgr = s_accountMgr;
-    	    _vmMgr = s_vmMgr;
-    	    _ms = s_ms;
-    	    _identityService = s_identityService;
-    	}
+  
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+    	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
+    	s_ms = _ms;
     }
     
     @Override

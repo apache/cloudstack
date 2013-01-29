@@ -19,16 +19,16 @@ package com.cloud.servlet;
 import java.net.URLEncoder;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
 import com.cloud.configuration.Configuration;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -40,7 +40,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.SerialVersionUID;
 
 @Component("registerCompleteServlet")
-public class RegisterCompleteServlet extends HttpServlet implements ServletContextListener {
+public class RegisterCompleteServlet extends HttpServlet {
     public static final Logger s_logger = Logger.getLogger(RegisterCompleteServlet.class.getName());
 
     static final long serialVersionUID = SerialVersionUID.CloudStartupServlet;
@@ -49,35 +49,14 @@ public class RegisterCompleteServlet extends HttpServlet implements ServletConte
     @Inject ConfigurationDao _configDao;
     @Inject UserDao _userDao;
 
-    static AccountService s_accountSvc;
-    static ConfigurationDao s_configDao;
-    static UserDao s_userDao;
-    
     public RegisterCompleteServlet() {
     }
     
-    @PostConstruct
-    void initComponent() {
-    	// Hakcing way to make servlet injection work for now
-    	if(_accountSvc != null) {
-    	    s_accountSvc = _accountSvc;
-    	    s_configDao = _configDao;
-    	    s_userDao = _userDao;
-    	} else {
-    	    _accountSvc = s_accountSvc;
-    	    _configDao = s_configDao;
-    	    _userDao = s_userDao;
-    	}
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+    	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
     }
     
-    @Override
-    public void contextInitialized(ServletContextEvent sce) {
-    }
-
-    @Override
-    public void contextDestroyed(ServletContextEvent sce) {
-    }
-
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         doGet(req, resp);

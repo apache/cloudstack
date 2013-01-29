@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
 import com.cloud.bridge.persist.dao.CloudStackConfigurationDao;
 import com.cloud.bridge.util.ConfigurationHelper;
@@ -49,22 +50,9 @@ public class EC2MainServlet extends HttpServlet{
     private static boolean isEC2APIEnabled = false;
     public static final Logger logger = Logger.getLogger(EC2MainServlet.class);
     @Inject CloudStackConfigurationDao csDao;
-    static CloudStackConfigurationDao s_csDao;
     
     public EC2MainServlet() {
     }
-    
-    @PostConstruct
-    void initComponent() {  
-        // Servlet injection does not always work for servlet container
-        // We use a hacking here to initialize static variables at Spring wiring time
-        if(csDao != null) {
-            s_csDao = csDao;
-        } else {
-            csDao = s_csDao;
-        }
-    }
-    
     
     /**
      * We build the path to where the keystore holding the WS-Security X509 certificates
@@ -74,7 +62,7 @@ public class EC2MainServlet extends HttpServlet{
     @DB
     public void init( ServletConfig config ) throws ServletException {
         try{
-        	initComponent();
+        	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
             ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
             // check if API is enabled
             String value = csDao.getConfigValue(ENABLE_EC2_API);
