@@ -159,4 +159,7 @@ public class ComputeBlade {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+    public boolean isAssociated() {
+        return this.assignedToDn.equals("");
+    }
 }
