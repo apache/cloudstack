@@ -115,6 +115,10 @@ class TestDeployVM(cloudstackTestCase):
             zone = get_zone(self.apiclient, self.services)
             self.services['mode'] = zone.networktype
 
+            if self.services['mode'] != 'Advanced':
+                self.debug("Cannot run this test with a basic zone, please use advanced!")
+                return
+
             #if local storage is enabled, alter the offerings to use localstorage
             #this step is needed for devcloud
             if zone.localstorageenabled == True:
@@ -171,6 +175,9 @@ class TestDeployVM(cloudstackTestCase):
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"])
     def test_01_nic(self):
+        if self.services['mode'] != 'Advanced':
+            self.debug("Cannot run this test with a basic zone, please use advanced!")
+            return
         try:
             self.virtual_machine = VirtualMachine.create(
                                         self.apiclient,
@@ -306,6 +313,10 @@ class TestDeployVM(cloudstackTestCase):
             self.assertEqual(True, False, "Exception during NIC test!: " + str(ex))
 
     def tearDown(self):
+        if self.services['mode'] != 'Advanced':
+            self.debug("Cannot run this test with a basic zone, please use advanced!")
+            return
+
         if self.cleaning_up == 1:
             return
 
