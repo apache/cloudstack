@@ -4,10 +4,13 @@
       var id = args.id;
       var title = args.title;
       var desc = args.desc;
+      var iconURL = args.iconURL;
       var $pluginItem = $('<li>').addClass('plugin-item').addClass(id);
       var $title = $('<span>').addClass('title').html(title);
       var $desc = $('<span>').addClass('desc').html(desc);
-      var $icon = $('<span>').addClass('icon');
+      var $icon = $('<span>').addClass('icon').append(
+        $('<img>').attr({ src: iconURL })
+      );
 
       $pluginItem.append(
         $icon, $title, $desc
@@ -25,7 +28,8 @@
         var $plugin = elems.pluginItem({
           id: plugin.id,
           title: plugin.title,
-          desc: plugin.desc
+          desc: plugin.desc,
+          iconURL: 'plugins/' + plugin.id + '/icon.png'
         });
         var $browser = $('#browser .container');
 

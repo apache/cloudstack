@@ -13,7 +13,9 @@
 
   var pluginAPI = {
     addSection: function(section) {
-      cloudStack.sections[section.id] = section;
+      cloudStack.sections[section.id] = $.extend(section, {
+        customIcon: 'plugins/' + section.id + '/icon.png'
+      });
     },
     extend: function(obj) {
       $.extend(true, cloudStack, obj);

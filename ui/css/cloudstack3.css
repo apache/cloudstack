@@ -2336,6 +2336,28 @@ div.detail-group.actions td {
   top: 18px;
 }
 
+#navigation ul li.custom-icon span.icon {
+  display: block;
+  width: 50px;
+  height: 50px;
+  position: relative;
+  float: left;
+  margin-right: -47px;
+  background: none;
+}
+
+#navigation ul li.custom-icon span.icon img {
+  width: 50px;
+  height: 50px;
+  float: left;
+  /*+placement:shift -6px -17px;*/
+  position: relative;
+  left: -6px;
+  top: -17px;
+  position: absolute;
+  margin-right: -14px;
+}
+
 #navigation ul li.last.active,
 #navigation ul li.last:hover {
   height: 52px;
@@ -10988,12 +11010,16 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .plugins-listing ul li .icon {
-  background: #BDBDBD;
   display: block;
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   float: left;
-  margin: 13px 13px 13px 11px;
+  margin: 8px 13px 13px 11px;
+}
+
+.plugins-listing ul li .icon img {
+  width: 100%;
+  height: 100%;
 }
 
 /*Action icons*/
