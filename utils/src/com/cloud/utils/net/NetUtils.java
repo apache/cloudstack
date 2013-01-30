@@ -1193,7 +1193,7 @@ public class NetUtils {
 
 	//RFC3315, section 9.4
 	public static String getDuidLL(String macAddress) {
-		String duid = "00:03:00:06:" + macAddress;
+		String duid = "00:03:00:01:" + macAddress;
 		return duid;
 	}
 	
