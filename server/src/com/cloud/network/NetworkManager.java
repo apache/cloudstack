@@ -314,9 +314,4 @@ public interface NetworkManager  {
 
 	Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering,
 			Long physicalNetworkId);
-
-
-	PublicIpv6Address assignPublicIp6Address(long dcId, Long podId, Account owner,
-			VlanType type, Long networkId, String requestedIp6, boolean isSystem)
-			throws InsufficientAddressCapacityException;
 }
