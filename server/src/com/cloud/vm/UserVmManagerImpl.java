@@ -954,7 +954,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (network.getGuestType() != Network.GuestType.Shared) {
             // Check account permissions
             List<NetworkVO> networkMap = _networkDao.listBy(caller.getId(), network.getId());
-            if (networkMap == null || networkMap.isEmpty()) {
+            if ((networkMap == null || networkMap.isEmpty() ) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                 throw new PermissionDeniedException("Unable to modify a vm using network with id " + network.getId() + ", permission denied");
             }
         }
@@ -1031,7 +1031,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (network.getGuestType() != Network.GuestType.Shared) {
             // Check account permissions
             List<NetworkVO> networkMap = _networkDao.listBy(caller.getId(), network.getId());
-            if (networkMap == null || networkMap.isEmpty()) {
+            if ((networkMap == null || networkMap.isEmpty() ) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                 throw new PermissionDeniedException("Unable to modify a vm using network with id " + network.getId() + ", permission denied");
             }
         }
