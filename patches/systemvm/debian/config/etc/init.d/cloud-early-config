@@ -738,7 +738,8 @@ setup_dhcpsrvr() {
   fi
 
   sed -i  /gateway/d /etc/hosts
-  echo "$ETH0_IP $NAME" >> /etc/hosts
+  [ $ETH0_IP ] && echo "$ETH0_IP $NAME" >> /etc/hosts
+  [ $ETH0_IP6 ] && echo "$ETH0_IP6 $NAME" >> /etc/hosts
 
   enable_svc dnsmasq 1
   enable_svc haproxy 0
