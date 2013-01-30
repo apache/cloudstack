@@ -248,7 +248,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     public List<Long> getNetworkIds() {
        if (ipToNetworkList != null) {
-           if (networkIds != null || ipAddress != null || ip6Address != null) {
+           if (networkIds != null || ipAddress != null || getIp6Address() != null) {
                throw new InvalidParameterValueException("ipToNetworkMap can't be specified along with networkIds or ipAddress");
            } else {
                List<Long> networks = new ArrayList<Long>();
@@ -276,7 +276,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     }
 
     private Map<Long, IpAddresses> getIpToNetworkMap() {
-        if ((networkIds != null || ipAddress != null || ip6Address != null) && ipToNetworkList != null) {
+        if ((networkIds != null || ipAddress != null || getIp6Address() != null) && ipToNetworkList != null) {
             throw new InvalidParameterValueException("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter");
         }
         LinkedHashMap<Long, IpAddresses> ipToNetworkMap = null;
@@ -299,6 +299,9 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                 }
                 String requestedIp = (String) ips.get("ip");
                 String requestedIpv6 = (String) ips.get("ipv6");
+                if (requestedIpv6 != null) {
+                	requestedIpv6 = requestedIpv6.toLowerCase();
+                }
                 IpAddresses addrs = new IpAddresses(requestedIp, requestedIpv6);
                 ipToNetworkMap.put(networkId, addrs);
             }
@@ -306,6 +309,13 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
         return ipToNetworkMap;
     }
+    
+	public String getIp6Address() {
+		if (ip6Address == null) {
+			return null;
+		}
+		return ip6Address.toLowerCase();
+	}
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -434,7 +444,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             if (getHypervisor() == HypervisorType.BareMetal) {
                 vm = _bareMetalVmService.createVirtualMachine(this);
             } else {
-            	IpAddresses addrs = new IpAddresses(ipAddress, ip6Address);
+            	IpAddresses addrs = new IpAddresses(ipAddress, getIp6Address());
                 if (zone.getNetworkType() == NetworkType.Basic) {
                     if (getNetworkIds() != null) {
                         throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
@@ -474,4 +484,5 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }
+
 }
