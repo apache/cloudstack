@@ -15,7 +15,7 @@ public interface PublicIpv6AddressDao extends GenericDao<PublicIpv6AddressVO, Lo
 	
 	List<PublicIpv6AddressVO> listByNetwork(long networkId);
 	
-	public PublicIpv6AddressVO findByDcIdAndIp(long dcId, String ipAddress);
+	public PublicIpv6AddressVO findByNetworkIdAndIp(long networkId, String ipAddress);
 
 	List<PublicIpv6AddressVO> listByPhysicalNetworkId(long physicalNetworkId);
 

@@ -91,6 +91,7 @@ import com.cloud.keystore.KeystoreManagerImpl;
 import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.ExternalLoadBalancerUsageManagerImpl;
+import com.cloud.network.Ipv6AddressManagerImpl;
 import com.cloud.network.NetworkManagerImpl;
 import com.cloud.network.NetworkModelImpl;
 import com.cloud.network.NetworkServiceImpl;
@@ -464,6 +465,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("TaggedResourcesManager", TaggedResourceManagerImpl.class);
         addManager("Site2SiteVpnManager", Site2SiteVpnManagerImpl.class);
         addManager("QueryManager", QueryManagerImpl.class);
+        addManager("Ipv6AddressManager", Ipv6AddressManagerImpl.class);
     }
 
     @Override

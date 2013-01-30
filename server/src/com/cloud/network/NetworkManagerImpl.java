@@ -276,6 +276,8 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     NetworkModel _networkModel;
     @Inject
     PublicIpv6AddressDao _ipv6Dao;
+    @Inject
+    Ipv6AddressManager _ipv6Mgr;
 
     ScheduledExecutorService _executor;
 
@@ -297,57 +299,6 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
         return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true, requestedIp, isSystem, null);
     }
 
-    @Override
-    public PublicIpv6Address assignPublicIp6Address(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp6, boolean isSystem) throws InsufficientAddressCapacityException {
-    	Vlan vlan = _networkModel.getVlanForNetwork(networkId);
-    	if (vlan == null) {
-    		s_logger.debug("Cannot find related vlan or too many vlan attached to network " + networkId);
-    		return null;
-    	}
-    	//TODO should check before this point
-    	if (!NetUtils.isIp6InRange(requestedIp6, vlan.getIp6Range())) {
-    		throw new CloudRuntimeException("Requested IPv6 is not in the predefined range!");
-    	}
-    	String ip = null;
-    	if (requestedIp6 == null) {
-    		int count = 0;
-    		while (ip == null || count >= 10) {
-    			ip = NetUtils.getIp6FromRange(vlan.getIp6Range());
-    			//Check for duplicate IP
-    			if (_ipv6Dao.findByDcIdAndIp(dcId, ip) == null) {
-    				break;
-    			} else {
-    				ip = null;
-    			}
-    			count ++;
-    		}
-    		if (ip == null) {
-    			throw new CloudRuntimeException("Fail to get unique ipv6 address after 10 times trying!");
-    		}
-    	} else {
-    		ip = requestedIp6;
-    		//TODO should check before this point
-    		if (_ipv6Dao.findByDcIdAndIp(dcId, ip) != null) {
-    			throw new CloudRuntimeException("The requested IP is already taken!");
-    		}
-    	}
-    	DataCenterVO dc = _dcDao.findById(dcId);
-        Long mac = dc.getMacAddress();
-        Long nextMac = mac + 1;
-        dc.setMacAddress(nextMac);
-        _dcDao.update(dc.getId(), dc);
-        
-    	String macAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(mac));
-    	PublicIpv6AddressVO ipVO = new PublicIpv6AddressVO(ip, dcId, macAddress, vlan.getId());
-    	ipVO.setPhysicalNetworkId(vlan.getPhysicalNetworkId());
-    	ipVO.setSourceNetworkId(vlan.getNetworkId());
-    	ipVO.setState(PublicIpv6Address.State.Allocated);
-    	ipVO.setDomainId(owner.getDomainId());
-    	ipVO.setAccountId(owner.getAccountId());
-    	_ipv6Dao.persist(ipVO);
-    	return ipVO;
-    }
-    
     @DB
     public PublicIp fetchNewPublicIp(long dcId, Long podId, Long vlanDbId, Account owner, VlanType vlanUse,
             Long guestNetworkId, boolean sourceNat, boolean assign, String requestedIp, boolean isSystem, Long vpcId)
@@ -3411,7 +3362,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     	if (network.getIp6Gateway() != null) {
     		if (nic.getIp6Address() == null) {
     			ipv6 = true;
-    			PublicIpv6Address ip = assignPublicIp6Address(dc.getId(), null, vm.getOwner(), VlanType.DirectAttached, network.getId(), requestedIpv6, false);
+    			PublicIpv6Address ip = _ipv6Mgr.assignDirectIp6Address(dc.getId(), vm.getOwner(), network.getId(), requestedIpv6);
     			Vlan vlan = _networkModel.getVlanForNetwork(network.getId());
     			if (vlan == null) {
     				s_logger.debug("Cannot find related vlan or too many vlan attached to network " + network.getId());

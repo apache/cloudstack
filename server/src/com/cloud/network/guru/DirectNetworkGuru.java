@@ -31,6 +31,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.Ipv6AddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Service;
@@ -76,6 +77,8 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     NetworkOfferingDao _networkOfferingDao;
     @Inject
     PublicIpv6AddressDao _ipv6Dao;
+    @Inject
+    Ipv6AddressManager _ipv6Mgr;
     
     private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
     
@@ -230,10 +233,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     	}
     	
     	if (nic.getIp6Address() != null) {
-    		PublicIpv6AddressVO ip = _ipv6Dao.findByDcIdAndIp(network.getDataCenterId(), nic.getIp6Address());
-    		if (ip != null) {
-    			_ipv6Dao.remove(ip.getId());
-    		}
+    		_ipv6Mgr.revokeDirectIpv6Address(nic.getNetworkId(), nic.getIp6Address());
     	}
         nic.deallocate();
     }

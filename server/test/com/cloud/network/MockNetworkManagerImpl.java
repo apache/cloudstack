@@ -818,12 +818,4 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         // TODO Auto-generated method stub
         return null;
     }
-
-	@Override
-	public PublicIpv6Address assignPublicIp6Address(long dcId, Long podId,
-			Account owner, VlanType type, Long networkId, String requestedIpv6,
-			boolean isSystem) throws InsufficientAddressCapacityException {
-		// TODO Auto-generated method stub
-		return null;
-	}
 }

@@ -327,8 +327,4 @@ public interface NetworkManager  {
     int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
 
     LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network);
-
-	PublicIpv6Address assignPublicIp6Address(long dcId, Long podId, Account owner,
-			VlanType type, Long networkId, String requestedIp6, boolean isSystem)
-			throws InsufficientAddressCapacityException;
 }

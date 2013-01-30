@@ -73,9 +73,9 @@ public class PublicIpv6AddressDaoImpl extends GenericDaoBase<PublicIpv6AddressVO
 	}
 
 	@Override
-	public PublicIpv6AddressVO findByDcIdAndIp(long dcId, String ipAddress) {
+	public PublicIpv6AddressVO findByNetworkIdAndIp(long networkId, String ipAddress) {
         SearchCriteria<PublicIpv6AddressVO> sc = AllFieldsSearch.create();
-        sc.setParameters("dataCenterId", dcId);
+        sc.setParameters("networkId", networkId);
         sc.setParameters("ipAddress", ipAddress);
         return findOneBy(sc);
 	}
