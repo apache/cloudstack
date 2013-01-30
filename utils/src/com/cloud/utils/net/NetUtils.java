@@ -1146,7 +1146,7 @@ public class NetUtils {
         return true;
     }
 
-	public static boolean isValidIPv6(String ip) {
+	public static boolean isValidIpv6(String ip) {
 		try {
 			IPv6Address address = IPv6Address.fromString(ip);
 		} catch (IllegalArgumentException ex) {
