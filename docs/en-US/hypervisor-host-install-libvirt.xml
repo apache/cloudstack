@@ -31,7 +31,7 @@
             <para>Set the following paramaters:</para>
             <programlisting>listen_tls = 0</programlisting>
             <programlisting>listen_tcp = 1</programlisting>
-            <programlisting>tcp_port = 16059</programlisting>
+            <programlisting>tcp_port = "16059"</programlisting>
             <programlisting>auth_tcp = "none"</programlisting>
             <programlisting>mdns_adv = 0</programlisting>
         </listitem>

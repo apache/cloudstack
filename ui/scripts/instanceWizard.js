@@ -18,7 +18,7 @@
 (function($, cloudStack) {
   var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, community, networkObjs;
   var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj; 
-  var step5ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group'
+  var step5ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group', 'select-advanced-sg'(advanced sg-enabled zone)
 
   cloudStack.instanceWizard = {
     maxDiskOfferingSize: function() {
@@ -64,7 +64,7 @@
         return $.grep(network.service, function(service) {
           return service.name == 'SecurityGroup';
         }).length;
-      }).length;
+      }).length; //return total number of selected sg networks
     },
 
     // Data providers for each wizard step
@@ -520,7 +520,7 @@
       }
 
       //step 5: select network
-      if (step5ContainerType == 'select-network') {
+      if (step5ContainerType == 'select-network' || step5ContainerType == 'select-advanced-sg') {
         var array2 = [];
         var defaultNetworkId = args.data.defaultNetwork; //args.data.defaultNetwork might be equal to string "new-network" or a network ID
 

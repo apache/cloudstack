@@ -368,7 +368,9 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
             }
             _accountMgr.checkAccess(caller, domain);
         } else {
-            domainId = caller.getDomainId();
+            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                domainId = caller.getDomainId();
+            }
             if (listAll) {
                 isRecursive = true;
             }

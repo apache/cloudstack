@@ -189,6 +189,7 @@
       var $dialog = $snapshots.dialog({
         title: _l('label.action.recurring.snapshot'),
         dialogClass: 'recurring-snapshots',
+        closeOnEscape:false,
         width: 600,
         buttons: [
           {
