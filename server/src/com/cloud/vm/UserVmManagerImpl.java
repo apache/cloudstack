@@ -967,14 +967,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if(_networkModel.getNicInNetwork(vmInstance.getId(),network.getId()) != null){
             s_logger.debug(vmInstance + " already in " + network + " going to add another NIC");
         } else {
-            List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
-            for (NicVO netnic : nics) {
-                VMInstanceVO vm = _vmDao.findById(netnic.getInstanceId());
-                if (vm != null) {
-                    if (vm.getHostName().equals(vmInstance.getHostName())) {
-                        throw new CloudRuntimeException(network + " already has a vm with host name: '" + vmInstance.getHostName() + "' vmId:" + vm.getId() + " " + vm);
-                    }
-                }
+            //* get all vms hostNames in the network
+            List<String> hostNames = _vmInstanceDao.listDistinctHostNames(network.getId());
+            //* verify that there are no duplicates
+            if (hostNames.contains(vmInstance.getHostName())) {
+                throw new CloudRuntimeException(network + " already has a vm with host name: '" + vmInstance.getHostName());
             }
         }
         
