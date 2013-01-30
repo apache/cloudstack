@@ -427,6 +427,7 @@ public class ApiConstants {
     public static final String CONDITION_IDS = "conditionids";
     public static final String COUNTERPARAM_LIST = "counterparam";
     public static final String AUTOSCALE_USER_ID = "autoscaleuserid";
+    public static final String BAREMETAL_DISCOVER_NAME = "baremetaldiscovername";
 
     public enum HostDetails {
         all, capacity, events, stats, min;
