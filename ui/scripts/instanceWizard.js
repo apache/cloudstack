@@ -64,7 +64,7 @@
         return $.grep(network.service, function(service) {
           return service.name == 'SecurityGroup';
         }).length;
-      }).length;
+      }).length; //return total number of selected sg networks
     },
 
     // Data providers for each wizard step
