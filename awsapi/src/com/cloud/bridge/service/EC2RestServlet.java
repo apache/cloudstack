@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -57,6 +58,7 @@ import org.apache.axis2.databinding.ADBException;
 import org.apache.axis2.databinding.utils.writer.MTOMAwareXMLSerializer;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.amazon.ec2.AllocateAddressResponse;
 import com.amazon.ec2.AssociateAddressResponse;
@@ -96,6 +98,7 @@ import com.amazon.ec2.StartInstancesResponse;
 import com.amazon.ec2.StopInstancesResponse;
 import com.amazon.ec2.TerminateInstancesResponse;
 import com.cloud.bridge.model.UserCredentialsVO;
+import com.cloud.bridge.persist.dao.CloudStackConfigurationDao;
 import com.cloud.bridge.persist.dao.OfferingDaoImpl;
 import com.cloud.bridge.persist.dao.UserCredentialsDaoImpl;
 import com.cloud.bridge.service.controller.s3.ServiceProvider;
@@ -142,13 +145,16 @@ import com.cloud.bridge.util.EC2RestAuth;
 import com.cloud.stack.models.CloudStackAccount;
 import com.cloud.utils.db.Transaction;
 
-
+@Component("EC2RestServlet")
 public class EC2RestServlet extends HttpServlet {
 
     private static final long serialVersionUID = -6168996266762804888L;
     @Inject UserCredentialsDaoImpl ucDao;
     @Inject OfferingDaoImpl ofDao;
 
+    static UserCredentialsDaoImpl s_ucDao;
+    static OfferingDaoImpl s_ofDao;
+    
     public static final Logger logger = Logger.getLogger(EC2RestServlet.class);
 
     private final OMFactory factory = OMAbstractFactory.getOMFactory();
@@ -161,13 +167,35 @@ public class EC2RestServlet extends HttpServlet {
 
     boolean debug=true;
 
+    public EC2RestServlet() {
+    }
 
+    @PostConstruct
+    void initComponent() {  
+        // Servlet injection does not always work for servlet container
+        // We use a hacking here to initialize static variables at Spring wiring time
+        if(ucDao != null) {
+            s_ucDao = ucDao;
+        } else {
+            ucDao = s_ucDao;
+        }
+        
+        if(ofDao != null) {
+            s_ofDao = ofDao;
+        } else {
+            ofDao = s_ofDao;
+        }
+        
+    }
+    
+    
     /**
      * We build the path to where the keystore holding the WS-Security X509 certificates
      * are stored.
      */
     @Override
     public void init( ServletConfig config ) throws ServletException {
+        initComponent();
         File propertiesFile = ConfigurationHelper.findConfigurationFile("ec2-service.properties");
         Properties EC2Prop = null;
 
