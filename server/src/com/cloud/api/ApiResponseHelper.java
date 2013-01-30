@@ -2151,6 +2151,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (network.getCidr() != null) {
             response.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
         }
+        
+        response.setIp6Gateway(network.getIp6Gateway());
+        response.setIp6Cidr(network.getIp6Cidr());
 
         //return vlan information only to Root admin
         if (network.getBroadcastUri() != null && UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
