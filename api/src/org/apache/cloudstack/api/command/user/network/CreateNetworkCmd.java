@@ -126,9 +126,6 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.IP6_CIDR, type=CommandType.STRING, description="the CIDR of IPv6 network, must be at least /64")
     private String ip6Cidr;
 
-    @Parameter(name=ApiConstants.DUAL_STACK, type=CommandType.BOOLEAN, description="The network is dual-stack(IPv6 and IPv4) or not")
-    private Boolean dualStack;
-    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -249,13 +246,6 @@ public class CreateNetworkCmd extends BaseCmd {
     	}
         return ip6Cidr.toLowerCase();
     }
-
-    public Boolean isDualStack() {
-    	if (dualStack == null) {
-    		return false;
-    	}
-		return dualStack;
-	}
 
 	/////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

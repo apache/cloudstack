@@ -619,7 +619,6 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         String endIPv6 = cmd.getEndIpv6();
         String ip6Gateway = cmd.getIp6Gateway();
         String ip6Cidr = cmd.getIp6Cidr();
-        Boolean dualStack = cmd.isDualStack();
 
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
@@ -736,9 +735,8 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
 
         UserContext.current().setAccountId(owner.getAccountId());
 
-        // VALIDATE IP INFO
-        if (startIPv6 != null && startIP != null && (dualStack == null || dualStack == false)) {
-        	throw new InvalidParameterValueException("Cannot specify both IPv4 and IPv6 address without set dualStack = true!");
+        if (startIPv6 != null && startIP != null) {
+        	throw new InvalidParameterValueException("Cannot support dualstack at this moment!");
         }
         
         boolean ipv4 = false, ipv6 = false;
