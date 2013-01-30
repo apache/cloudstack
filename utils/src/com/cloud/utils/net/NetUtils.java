@@ -42,6 +42,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
 import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6AddressRange;
 import com.googlecode.ipv6.IPv6Network;
 
 import com.cloud.utils.IteratorUtil;
@@ -1232,5 +1233,27 @@ public class NetUtils {
     		return true;
     	}
 		return false;
+	}
+	
+	public static boolean isIp6RangeOverlap(String ipRange1, String ipRange2) {
+		String[] ips = ipRange1.split("-");
+    	String startIp1 = ips[0];
+    	String endIp1 = null;
+    	if (ips.length > 1) {
+    		endIp1 = ips[1];
+    	}
+    	IPv6Address start1 = IPv6Address.fromString(startIp1);
+    	IPv6Address end1 = IPv6Address.fromString(endIp1);
+    	IPv6AddressRange range1 = IPv6AddressRange.fromFirstAndLast(start1, end1);
+		ips = ipRange2.split("-");
+    	String startIp2 = ips[0];
+    	String endIp2 = null;
+    	if (ips.length > 1) {
+    		endIp2 = ips[1];
+    	}
+    	IPv6Address start2 = IPv6Address.fromString(startIp2);
+    	IPv6Address end2 = IPv6Address.fromString(endIp2);
+    	IPv6AddressRange range2 = IPv6AddressRange.fromFirstAndLast(start2, end2);
+    	return range1.overlaps(range2);
 	}
 }

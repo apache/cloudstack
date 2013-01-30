@@ -2278,7 +2278,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @DB
     public Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, 
             String startIP, String endIP, String vlanGateway, String vlanNetmask,
-            String vlanId, Account vlanOwner, String startIPv6, String endIPv6, String vlanGatewayv6, String vlanCidrv6) {
+            String vlanId, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr) {
         Network network = _networkModel.getNetwork(networkId);
         
         boolean ipv4 = false, ipv6 = false;
@@ -2372,15 +2372,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         
         if (ipv6) {
-        	if (!NetUtils.isValidIpv6(vlanGatewayv6)) {
+        	if (!NetUtils.isValidIpv6(vlanIp6Gateway)) {
         		throw new InvalidParameterValueException("Please specify a valid IPv6 gateway");
         	}
-        	if (!NetUtils.isValidIp6Cidr(vlanCidrv6)) {
+        	if (!NetUtils.isValidIp6Cidr(vlanIp6Cidr)) {
         		throw new InvalidParameterValueException("Please specify a valid IPv6 CIDR");
         	}
         }
 
-        // TODO skip all vlan check for ipv6 now
         if (ipv4) {
         	String newVlanSubnet = NetUtils.getSubNet(vlanGateway, vlanNetmask);
 
@@ -2426,7 +2425,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         	List<VlanVO> vlans = _vlanDao.listByZone(zone.getId());
         	for (VlanVO vlan : vlans) {
         		String otherVlanGateway = vlan.getVlanGateway();
-        		// Continue if it's IPv6
+        		// Continue if it's not IPv4 
         		if (otherVlanGateway == null) {
         			continue;
         		}
@@ -2462,6 +2461,32 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         		}
         	}
         }
+        
+        String ipv6Range = null;
+        if (ipv6) {
+        	ipv6Range = startIPv6;
+        	if (endIPv6 != null) {
+        		ipv6Range += "-" + endIPv6;
+        	}
+        	
+        	List<VlanVO> vlans = _vlanDao.listByZone(zone.getId());
+        	for (VlanVO vlan : vlans) {
+        		if (vlan.getIp6Gateway() == null) {
+        			continue;
+        		}
+        		if (vlanId.equals(vlan.getVlanTag())) {
+        			if (NetUtils.isIp6RangeOverlap(ipv6Range, vlan.getIp6Range())) {
+        				throw new InvalidParameterValueException("The IPv6 range with tag: " + vlan.getVlanTag()
+        						+ " already has IPs that overlap with the new range. Please specify a different start IP/end IP.");
+        			}
+
+        			if (!vlanIp6Gateway.equals(vlan.getIp6Gateway())) {
+        				throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " has already been added with gateway " + vlan.getIp6Gateway()
+        						+ ". Please specify a different tag.");
+        			}
+        		}
+        	}
+        }
 
         // Check if a guest VLAN is using the same tag
         if (_zoneDao.findVnet(zoneId, physicalNetworkId, vlanId).size() > 0) {
@@ -2491,19 +2516,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         	}
         }
         
-        String ipv6Range = null;
-        if (ipv6) {
-        	ipv6Range = startIPv6;
-        	if (endIPv6 != null) {
-        		ipv6Range += "-" + endIPv6;
-        	}
-        }
-
         // Everything was fine, so persist the VLAN
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId, physicalNetworkId, vlanGatewayv6, vlanCidrv6, ipv6Range);
+        VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId, physicalNetworkId, vlanIp6Gateway, vlanIp6Cidr, ipv6Range);
         s_logger.debug("Saving vlan range " + vlan);
         vlan = _vlanDao.persist(vlan);
 
