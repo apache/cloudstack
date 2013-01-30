@@ -75,10 +75,10 @@ public class NetUtilsTest extends TestCase {
     }
     
     public void testIpv6() {
-    	assertTrue(NetUtils.isValidIPv6("fc00::1"));
-    	assertFalse(NetUtils.isValidIPv6(""));
-    	assertFalse(NetUtils.isValidIPv6(null));
-    	assertFalse(NetUtils.isValidIPv6("1234:5678::1/64"));
+    	assertTrue(NetUtils.isValidIpv6("fc00::1"));
+    	assertFalse(NetUtils.isValidIpv6(""));
+    	assertFalse(NetUtils.isValidIpv6(null));
+    	assertFalse(NetUtils.isValidIpv6("1234:5678::1/64"));
     	assertTrue(NetUtils.isValidIp6Cidr("1234:5678::1/64"));
     	assertFalse(NetUtils.isValidIp6Cidr("1234:5678::1"));
     	assertEquals(NetUtils.getIp6CidrSize("1234:5678::1/32"), 32);

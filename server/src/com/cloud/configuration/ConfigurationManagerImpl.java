@@ -2372,7 +2372,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         
         if (ipv6) {
-        	if (!NetUtils.isValidIPv6(vlanGatewayv6)) {
+        	if (!NetUtils.isValidIpv6(vlanGatewayv6)) {
         		throw new InvalidParameterValueException("Please specify a valid IPv6 gateway");
         	}
         	if (!NetUtils.isValidIp6Cidr(vlanCidrv6)) {

@@ -783,12 +783,12 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         }
         
         if (ipv6) {
-        	if (!NetUtils.isValidIPv6(startIPv6)) {
+        	if (!NetUtils.isValidIpv6(startIPv6)) {
         		throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
         	}
         	if (endIPv6 == null) {
         		endIPv6 = startIPv6;
-        	} else if (!NetUtils.isValidIPv6(endIPv6)) {
+        	} else if (!NetUtils.isValidIpv6(endIPv6)) {
         		throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
         	}
         	
@@ -796,7 +796,7 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         		throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in");
         	}
         	
-        	if (!NetUtils.isValidIPv6(ip6Gateway)) {
+        	if (!NetUtils.isValidIpv6(ip6Gateway)) {
         		throw new InvalidParameterValueException("Invalid ip6Gateway");
         	}
         	if (!NetUtils.isValidIp6Cidr(ip6Cidr)) {
