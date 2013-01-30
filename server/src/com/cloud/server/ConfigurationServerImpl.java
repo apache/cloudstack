@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
@@ -96,6 +97,8 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.ComponentLifecycle;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -104,8 +107,8 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.uuididentity.dao.IdentityDao;
 
-//@Component
-public class ConfigurationServerImpl implements ConfigurationServer {
+@Component
+public class ConfigurationServerImpl extends ManagerBase implements ConfigurationServer {
     public static final Logger s_logger = Logger.getLogger(ConfigurationServerImpl.class.getName());
 
     @Inject private ConfigurationDao _configDao;
@@ -125,7 +128,20 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     @Inject private IdentityDao _identityDao;
 
     public ConfigurationServerImpl() {
+    	setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
     }
+    
+	@Override
+	public boolean configure(String name, Map<String, Object> params)
+			throws ConfigurationException {
+		
+		try {
+			persistDefaultValues();
+		} catch (InternalErrorException e) {
+			throw new RuntimeException("Unhandled configuration exception", e);
+		}
+		return true;
+	}
 
     @Override
     @DB

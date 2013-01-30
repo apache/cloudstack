@@ -140,6 +140,7 @@ import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -159,10 +160,9 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = VirtualMachineManager.class)
-public class VirtualMachineManagerImpl implements VirtualMachineManager, Listener {
+public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, Listener {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineManagerImpl.class);
 
-    String _name;
     @Inject
     protected StorageManager _storageMgr;
     @Inject
@@ -427,8 +427,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public boolean configure(String name, Map<String, Object> xmlParams) throws ConfigurationException {
-        _name = name;
-
         Map<String, String> params = _configDao.getConfiguration(xmlParams);
 
         _retry = NumbersUtil.parseInt(params.get(Config.StartRetry.key()), 10);
@@ -450,11 +448,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         _agentMgr.registerForHostEvents(this, true, true, true);
 
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     protected VirtualMachineManagerImpl() {

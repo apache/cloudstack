@@ -39,8 +39,6 @@ public interface ManagementServer extends ManagementService, PluggableService  {
      */
     long getId();
     
-    void startup();
-    
     /**
      * Fetches the version of cloud stack
     */

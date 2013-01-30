@@ -70,6 +70,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
@@ -81,7 +82,7 @@ import com.cloud.vm.DomainRouterVO;
 
 @Component
 @Local(value = { Site2SiteVpnManager.class, Site2SiteVpnService.class } )
-public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
+public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpnManager {
     private static final Logger s_logger = Logger.getLogger(Site2SiteVpnManagerImpl.class);
 
     @Inject List<Site2SiteVpnServiceProvider> _s2sProviders;
@@ -101,28 +102,11 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
         Map<String, String> configs = _configDao.getConfiguration(params);
         _connLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnConnectionPerVpnGatewayLimit.key()), 4);
         _subnetsLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnSubnetsPerCustomerGatewayLimit.key()), 10);
         assert (_s2sProviders.iterator().hasNext()): "Did not get injected with a list of S2S providers!";
         return true;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

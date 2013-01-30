@@ -30,16 +30,16 @@ import com.cloud.cluster.ClusterNodeJoinEventArgs;
 import com.cloud.cluster.ClusterNodeLeftEventArgs;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.events.EventArgs;
 import com.cloud.utils.events.SubscriptionMgr;
 
 @Component
 @Local(value = AlertAdapter.class)
-public class ClusterAlertAdapter implements AlertAdapter {
+public class ClusterAlertAdapter extends AdapterBase implements AlertAdapter {
 
     private static final Logger s_logger = Logger.getLogger(ClusterAlertAdapter.class);
 
-    private String _name;
     @Inject private AlertManager _alertMgr;
     @Inject private ManagementServerHostDao _mshostDao;
 
@@ -115,21 +115,6 @@ public class ClusterAlertAdapter implements AlertAdapter {
             throw new ConfigurationException("Unable to register cluster event subscription");
         }
 
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
         return true;
     }
 }

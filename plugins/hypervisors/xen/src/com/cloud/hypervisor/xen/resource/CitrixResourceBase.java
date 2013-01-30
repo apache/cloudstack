@@ -7719,4 +7719,25 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+	@Override
+	public void setName(String name) {
+	}
+
+	@Override
+	public void setConfigParams(Map<String, Object> params) {
+	}
+
+	@Override
+	public Map<String, Object> getConfigParams() {
+		return null;
+	}
+
+	@Override
+	public int getRunLevel() {
+		return 0;
+	}
+
+	@Override
+	public void setRunLevel(int level) {
+	}
 }

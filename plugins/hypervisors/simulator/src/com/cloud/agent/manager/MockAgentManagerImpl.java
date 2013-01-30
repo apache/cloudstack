@@ -56,6 +56,7 @@ import com.cloud.simulator.MockVMVO;
 import com.cloud.simulator.dao.MockHostDao;
 import com.cloud.simulator.dao.MockVMDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -63,7 +64,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Local(value = { MockAgentManager.class })
-public class MockAgentManagerImpl implements MockAgentManager {
+public class MockAgentManagerImpl extends ManagerBase implements MockAgentManager {
     private static final Logger s_logger = Logger.getLogger(MockAgentManagerImpl.class);
     @Inject
     HostPodDao _podDao = null;

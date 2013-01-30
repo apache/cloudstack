@@ -56,6 +56,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
@@ -69,8 +70,7 @@ import com.cloud.utils.net.NetUtils;
 
 @Component
 @Local(value = { NetworkACLService.class, NetworkACLManager.class})
-public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
-    String _name;
+public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLManager{
     private static final Logger s_logger = Logger.getLogger(NetworkACLManagerImpl.class);
 
     @Inject
@@ -85,29 +85,6 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
     VpcManager _vpcMgr;
     @Inject
     ResourceTagDao _resourceTagDao;
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        return true;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-
-    @Override
-    public String getName() {
-        return _name;
-    }
 
     @Override
     public boolean applyNetworkACLs(long networkId, Account caller) throws ResourceUnavailableException {

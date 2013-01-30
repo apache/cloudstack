@@ -45,8 +45,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.xen.resource.XcpOssResource;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.component.ManagerBase;
 
-public class DirectAgentManagerSimpleImpl implements AgentManager {
+public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentManager {
     private static final Logger logger = Logger.getLogger(DirectAgentManagerSimpleImpl.class);
     private Map<Long, ServerResource> hostResourcesMap = new HashMap<Long, ServerResource>();
     @Inject

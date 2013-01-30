@@ -65,6 +65,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -78,7 +79,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
  */
 @Component
 @Local(value={UploadMonitor.class})
-public class UploadMonitorImpl implements UploadMonitor {
+public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
 	static final Logger s_logger = Logger.getLogger(UploadMonitorImpl.class);
 	
@@ -343,7 +344,6 @@ public class UploadMonitorImpl implements UploadMonitor {
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
-		_name = name;
         final Map<String, String> configs = _configDao.getConfiguration("ManagementServer", params);
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
         
@@ -363,11 +363,6 @@ public class UploadMonitorImpl implements UploadMonitor {
         int wrks = NumbersUtil.parseInt(workers, 1);
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UploadMonitor-Scavenger"));
 		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
 	}
 
 	@Override

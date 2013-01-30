@@ -89,6 +89,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -112,7 +113,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import edu.emory.mathcs.backport.java.util.Collections;
 
 @Local(value = { SecurityGroupManager.class, SecurityGroupService.class })
-public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityGroupService, Manager, StateListener<State, VirtualMachine.Event, VirtualMachine> {
+public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGroupManager, SecurityGroupService, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     public static final Logger s_logger = Logger.getLogger(SecurityGroupManagerImpl.class);
 
     @Inject

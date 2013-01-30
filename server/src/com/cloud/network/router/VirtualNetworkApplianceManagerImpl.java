@@ -209,6 +209,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
 
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -246,11 +247,10 @@ import com.cloud.vm.dao.VMInstanceDao;
  */
 @Component
 @Local(value = { VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class })
-public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, 
+public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, 
                             VirtualMachineGuru<DomainRouterVO>, Listener {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
-    String _name;
     @Inject
     DataCenterDao _dcDao = null;
     @Inject
@@ -595,7 +595,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
 
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterMonitor"));
         _checkExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterStatusMonitor"));
@@ -681,11 +680,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         s_logger.info("DomainRouterManager is configured.");
 
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

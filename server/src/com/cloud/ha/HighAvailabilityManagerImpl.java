@@ -64,6 +64,7 @@ import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
@@ -96,9 +97,8 @@ import com.cloud.vm.dao.VMInstanceDao;
  *         before retrying the stop | seconds | 120 || * }
  **/
 @Local(value = { HighAvailabilityManager.class })
-public class HighAvailabilityManagerImpl implements HighAvailabilityManager, ClusterManagerListener {
+public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvailabilityManager, ClusterManagerListener {
     protected static final Logger s_logger = Logger.getLogger(HighAvailabilityManagerImpl.class);
-    String _name;
     WorkerThread[] _workers;
     boolean _stopped;
     long _timeToSleep;
@@ -688,8 +688,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
 
     @Override
     public boolean configure(final String name, final Map<String, Object> xmlParams) throws ConfigurationException {
-        _name = name;
-
         _serverId = _msServer.getId();
 
         Map<String, String> params = new HashMap<String, String>();
@@ -743,11 +741,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
         _executor = Executors.newScheduledThreadPool(count, new NamedThreadFactory("HA"));
 
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

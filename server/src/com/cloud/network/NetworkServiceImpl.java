@@ -125,6 +125,7 @@ import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
@@ -150,10 +151,9 @@ import com.cloud.vm.dao.VMInstanceDao;
  */
 @Component
 @Local(value = { NetworkService.class })
-public class NetworkServiceImpl implements  NetworkService, Manager {
+public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     private static final Logger s_logger = Logger.getLogger(NetworkServiceImpl.class);
 
-    String _name;
     @Inject 
     DataCenterDao  _dcDao = null;
     @Inject
@@ -441,7 +441,6 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
     @Override
     @DB
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
         _configs = _configDao.getConfiguration("Network", params);
 
         _cidrLimit = NumbersUtil.parseInt(_configs.get(Config.NetworkGuestCidrLimit.key()), 22);
@@ -451,11 +450,6 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         s_logger.info("Network Service is configured.");
 
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

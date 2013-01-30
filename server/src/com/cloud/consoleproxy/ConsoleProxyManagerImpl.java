@@ -130,6 +130,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -171,7 +172,7 @@ import com.google.gson.GsonBuilder;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { ConsoleProxyManager.class, ConsoleProxyService.class })
-public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProxyService, Manager, AgentHook, VirtualMachineGuru<ConsoleProxyVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager, ConsoleProxyService, AgentHook, VirtualMachineGuru<ConsoleProxyVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30 seconds
@@ -184,7 +185,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private String _mgmt_host;
     private int _mgmt_port = 8250;
 
-    private String _name;
     @Inject
     private List<ConsoleProxyAllocator> _consoleProxyAllocators;
 
@@ -1231,11 +1231,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
 
     @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
     public boolean start() {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Start console proxy manager");
@@ -1445,8 +1440,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Start configuring console proxy manager : " + name);
         }
-
-        _name = name;
 
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 

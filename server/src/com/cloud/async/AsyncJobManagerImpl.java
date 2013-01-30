@@ -64,6 +64,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -77,15 +78,13 @@ import com.google.gson.reflect.TypeToken;
 
 @Component
 @Local(value={AsyncJobManager.class})
-public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListener {
+public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener {
     public static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class.getName());
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; 	// 3 seconds
 
     private static final int MAX_ONETIME_SCHEDULE_SIZE = 50;
     private static final int HEARTBEAT_INTERVAL = 2000;
     private static final int GC_INTERVAL = 10000;				// 10 seconds
-
-    private String _name;
 
     @Inject private AsyncJobExecutorContext _context;
     @Inject private SyncQueueManager _queueMgr;
@@ -693,8 +692,6 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
         int expireMinutes = NumbersUtil.parseInt(
                 _configDao.getValue(Config.JobExpireMinutes.key()), 24*60);
         _jobExpireSeconds = (long)expireMinutes*60;
@@ -782,10 +779,5 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
         _heartbeatScheduler.shutdown();
         _executor.shutdown();
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 }

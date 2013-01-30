@@ -93,6 +93,7 @@ import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -110,7 +111,7 @@ import edu.emory.mathcs.backport.java.util.Collections;
 
 @Component
 @Local(value={DownloadMonitor.class})
-public class DownloadMonitorImpl implements  DownloadMonitor {
+public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor {
     static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);
 	
     @Inject 
@@ -165,7 +166,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     @Inject
     protected ResourceLimitService _resourceLimitMgr;
 
-	private String _name;
 	private Boolean _sslCopy = new Boolean(false);
 	private String _copyAuthPasswd;
 	private String _proxy = null;
@@ -183,7 +183,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 
 	@Override
 	public boolean configure(String name, Map<String, Object> params) {
-		_name = name;
         final Map<String, String> configs = _configDao.getConfiguration("ManagementServer", params);
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
         _proxy = configs.get(Config.SecStorageProxy.key());
@@ -211,11 +210,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         ReadyTemplateStatesSearch.done();
                
 		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
 	}
 
 	@Override

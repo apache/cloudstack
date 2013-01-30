@@ -79,6 +79,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
@@ -93,9 +94,8 @@ import com.cloud.vm.dao.UserVmDao;
 
 @Component
 @Local(value = { FirewallService.class, FirewallManager.class})
-public class FirewallManagerImpl implements FirewallService, FirewallManager, NetworkRuleApplier, Manager {
+public class FirewallManagerImpl extends ManagerBase implements FirewallService, FirewallManager, NetworkRuleApplier {
     private static final Logger s_logger = Logger.getLogger(FirewallManagerImpl.class);
-    String _name;
 
     @Inject
     FirewallRulesDao _firewallDao;
@@ -136,21 +136,6 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
     @Inject List<NetworkACLServiceProvider> _networkAclElements;
 
     private boolean _elbEnabled = false;
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

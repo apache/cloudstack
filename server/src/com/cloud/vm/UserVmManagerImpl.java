@@ -218,6 +218,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.RSAHelper;
 import com.cloud.utils.db.DB;
@@ -240,7 +241,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
-public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager {
+public class UserVmManagerImpl extends ManagerBase implements UserVmManager, UserVmService {
     private static final Logger s_logger = Logger
             .getLogger(UserVmManagerImpl.class);
 

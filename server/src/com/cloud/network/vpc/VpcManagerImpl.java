@@ -103,6 +103,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -122,7 +123,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 
 @Component
 @Local(value = { VpcManager.class, VpcService.class })
-public class VpcManagerImpl implements VpcManager, Manager{
+public class VpcManagerImpl extends ManagerBase implements VpcManager{
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
     @Inject
     VpcOfferingDao _vpcOffDao;
@@ -178,7 +179,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
     private VpcProvider vpcElement = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
  
-    String _name;
     int _cleanupInterval;
     int _maxNetworks;
     SearchBuilder<IPAddressVO> IpAddressSearch;
@@ -186,8 +186,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Override
     @DB
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        
         //configure default vpc offering
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -243,11 +241,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Override
     public boolean stop() {
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

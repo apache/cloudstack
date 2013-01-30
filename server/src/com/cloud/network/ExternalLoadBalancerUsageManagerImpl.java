@@ -71,6 +71,7 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
@@ -83,9 +84,8 @@ import com.cloud.vm.dao.NicDao;
 
 @Component
 @Local(value = { ExternalLoadBalancerUsageManager.class })
-public class ExternalLoadBalancerUsageManagerImpl implements ExternalLoadBalancerUsageManager {
+public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements ExternalLoadBalancerUsageManager {
 
-    String _name;
     @Inject
     NetworkExternalLoadBalancerDao _networkExternalLBDao;
     @Inject
@@ -168,11 +168,6 @@ public class ExternalLoadBalancerUsageManagerImpl implements ExternalLoadBalance
     @Override
     public boolean stop() {
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     private ExternalLoadBalancerDeviceVO getExternalLoadBalancerForNetwork(Network network) {

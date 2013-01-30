@@ -76,6 +76,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
@@ -1152,7 +1153,11 @@ public class VirtualRoutingResource implements Manager {
     public String getName() {
         return _name;
     }
-
+    
+    @Override
+    public void setName(String name) {
+    	_name = name;
+    }
 
 
     @Override
@@ -1160,14 +1165,36 @@ public class VirtualRoutingResource implements Manager {
         return true;
     }
 
-
-
     @Override
     public boolean stop() {
         return true;
     }
 
+    @Override
+    public int getRunLevel() {
+    	return ComponentLifecycle.RUN_LEVEL_COMPONENT;
+    }
+    
+    public void setRunLevel() {
+    }
 
+	@Override
+	public void setConfigParams(Map<String, Object> params) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Map<String, Object> getConfigParams() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setRunLevel(int level) {
+		// TODO Auto-generated method stub
+		
+	}
 }
 
 

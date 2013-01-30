@@ -32,11 +32,12 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.Pair;
 
 
 @Local(value = { ProjectManager.class })
-public class MockProjectManagerImpl implements ProjectManager, Manager {
+public class MockProjectManagerImpl extends ManagerBase implements ProjectManager {
 
     @Override
     public Project createProject(String name, String displayText,

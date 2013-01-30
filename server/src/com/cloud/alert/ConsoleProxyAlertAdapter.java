@@ -29,19 +29,18 @@ import com.cloud.consoleproxy.ConsoleProxyAlertEventArgs;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
 
 @Component
 @Local(value=AlertAdapter.class)
-public class ConsoleProxyAlertAdapter implements AlertAdapter {
+public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapter {
 
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyAlertAdapter.class);
 
     @Inject private AlertManager _alertMgr;
-    private String _name;
-
     @Inject private DataCenterDao _dcDao;
     @Inject private ConsoleProxyDao _consoleProxyDao;
 
@@ -193,21 +192,6 @@ public class ConsoleProxyAlertAdapter implements AlertAdapter {
             throw new ConfigurationException("Unable to register console proxy event subscription, exception: " + e);
         }
 
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
         return true;
     }
 }

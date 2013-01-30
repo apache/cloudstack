@@ -106,7 +106,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
 @Local(value={BareMetalVmManager.class, BareMetalVmService.class})
-public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMetalVmManager, BareMetalVmService, Manager,
+public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMetalVmManager, BareMetalVmService,
 		StateListener<State, VirtualMachine.Event, VirtualMachine> {
 	private static final Logger s_logger = Logger.getLogger(BareMetalVmManagerImpl.class); 
 	@Inject ConfigurationDao _configDao;

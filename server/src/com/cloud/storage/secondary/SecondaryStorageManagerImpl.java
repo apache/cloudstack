@@ -114,6 +114,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
@@ -158,7 +159,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { SecondaryStorageVmManager.class })
-public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, VirtualMachineGuru<SecondaryStorageVmVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+public class SecondaryStorageManagerImpl extends ManagerBase implements SecondaryStorageVmManager, VirtualMachineGuru<SecondaryStorageVmVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30
@@ -171,7 +172,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     private String _mgmt_host;
     private int _mgmt_port = 8250;
 
-    private String _name;
     @Inject
     private List<SecondaryStorageVmAllocator> _ssVmAllocators;
 
@@ -768,10 +768,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         return aggregator.getZoneHostInfoMap();
     }
 
-    @Override
-    public String getName() {
-        return _name;
-    }
 
     @Override
     public boolean start() {
@@ -795,8 +791,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Start configuring secondary storage vm manager : " + name);
         }
-
-        _name = name;
 
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         

@@ -72,6 +72,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
@@ -83,9 +84,8 @@ import com.cloud.utils.net.NetUtils;
 
 @Component
 @Local(value = RemoteAccessVpnService.class)
-public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manager {
+public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAccessVpnService {
     private final static Logger s_logger = Logger.getLogger(RemoteAccessVpnManagerImpl.class);
-    String _name;
 
     @Inject AccountDao _accountDao;
     @Inject VpnUserDao _vpnUsersDao;
@@ -582,8 +582,6 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
         Map<String, String> configs = _configDao.getConfiguration(params);
 
         _userLimit = NumbersUtil.parseInt(configs.get(Config.RemoteAccessVpnUserLimit.key()), 8);
@@ -602,21 +600,6 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         VpnSearch.done();
 
         return true;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

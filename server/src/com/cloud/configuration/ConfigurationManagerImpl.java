@@ -157,6 +157,7 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -171,10 +172,9 @@ import edu.emory.mathcs.backport.java.util.Arrays;
 
 @Component
 @Local(value = { ConfigurationManager.class, ConfigurationService.class })
-public class ConfigurationManagerImpl implements ConfigurationManager, ConfigurationService {
+public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class.getName());
 
-    String _name;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -257,8 +257,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
         String maxVolumeSizeInGbString = _configDao.getValue("storage.max.volume.size");
         _maxVolumeSizeInGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
 
@@ -289,11 +287,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         configValuesForValidation.add("wait");
         configValuesForValidation.add("xen.heartbeat.interval");
         configValuesForValidation.add("incorrect.login.attempts.allowed");
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

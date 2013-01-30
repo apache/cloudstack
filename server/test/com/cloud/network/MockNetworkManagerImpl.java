@@ -61,6 +61,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -71,7 +72,7 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 
 @Component
 @Local(value = { NetworkManager.class, NetworkService.class })
-public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkService {
+public class MockNetworkManagerImpl extends ManagerBase implements NetworkManager, NetworkService {
 
     @Override
     public List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner) {

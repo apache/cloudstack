@@ -28,6 +28,7 @@ import org.springframework.stereotype.Component;
 import net.sf.ehcache.Cache;
 
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -37,7 +38,7 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 @Local(value=EntityManager.class)
 @SuppressWarnings("unchecked")
-public class EntityManagerImpl implements EntityManager, Manager {
+public class EntityManagerImpl extends ManagerBase implements EntityManager {
     String _name;
     Cache _cache;
 

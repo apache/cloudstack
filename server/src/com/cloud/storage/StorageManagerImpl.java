@@ -177,6 +177,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -211,7 +212,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 @Local(value = { StorageManager.class, StorageService.class })
-public class StorageManagerImpl implements StorageManager, Manager, ClusterManagerListener {
+public class StorageManagerImpl extends ManagerBase implements StorageManager, ClusterManagerListener {
     private static final Logger s_logger = Logger.getLogger(StorageManagerImpl.class);
 
     protected String _name;
@@ -941,7 +942,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
 
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
@@ -1198,11 +1198,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @Override
     public String getStoragePoolTags(long poolId) {
         return _configMgr.listToCsvTags(_storagePoolDao.searchForStoragePoolDetails(poolId, "true"));
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

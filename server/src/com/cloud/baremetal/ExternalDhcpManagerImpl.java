@@ -50,6 +50,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -63,9 +64,8 @@ import com.cloud.vm.dao.UserVmDao;
 
 @Component
 @Local(value = {ExternalDhcpManager.class})
-public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceStateAdapter {
+public class ExternalDhcpManagerImpl extends ManagerBase implements ExternalDhcpManager, ResourceStateAdapter {
 	private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalDhcpManagerImpl.class);
-	protected String _name;
 	@Inject DataCenterDao _dcDao;
 	@Inject HostDao _hostDao;
 	@Inject AgentManager _agentMgr;
@@ -89,11 +89,6 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 	public boolean stop() {
 		_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
 		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
 	}
 
 	protected String getDhcpServerGuid(String zoneId, String name, String ip) {

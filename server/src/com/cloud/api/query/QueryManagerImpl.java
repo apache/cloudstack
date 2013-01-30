@@ -136,6 +136,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -149,11 +150,9 @@ import com.cloud.vm.dao.UserVmDao;
 
 @Component
 @Local(value = {QueryService.class })
-public class QueryManagerImpl implements QueryService, Manager {
+public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     public static final Logger s_logger = Logger.getLogger(QueryManagerImpl.class);
-
-    private String _name;
 
     // public static ViewResponseHelper _responseGenerator;
 
@@ -246,27 +245,6 @@ public class QueryManagerImpl implements QueryService, Manager {
 
     @Inject
     private HighAvailabilityManager _haMgr;
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        return true;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.api.query.QueryService#searchForUsers(org.apache.cloudstack.api.command.admin.user.ListUsersCmd)

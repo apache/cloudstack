@@ -82,12 +82,13 @@ import com.cloud.simulator.dao.MockSecurityRulesDao;
 import com.cloud.simulator.dao.MockVMDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value = { MockVmManager.class })
-public class MockVmManagerImpl implements MockVmManager {
+public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     private static final Logger s_logger = Logger.getLogger(MockVmManagerImpl.class);
 
     @Inject MockVMDao _mockVmDao = null;

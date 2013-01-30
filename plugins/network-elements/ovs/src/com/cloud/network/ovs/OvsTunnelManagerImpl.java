@@ -51,6 +51,7 @@ import com.cloud.network.ovs.dao.OvsTunnelInterfaceDao;
 import com.cloud.network.ovs.dao.OvsTunnelInterfaceVO;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkDao;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkVO;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -66,11 +67,10 @@ import com.cloud.vm.dao.UserVmDao;
 
 @Component
 @Local(value={OvsTunnelManager.class})
-public class OvsTunnelManagerImpl implements OvsTunnelManager {
+public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManager {
 	public static final Logger s_logger = 
 			Logger.getLogger(OvsTunnelManagerImpl.class.getName());
 	
-	String _name;
 	boolean _isEnabled;
 	ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
@@ -88,7 +88,6 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
-		_name = name;
 		_isEnabled = Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key()));
 		
 		if (_isEnabled) {
@@ -377,21 +376,6 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		}	
 	}
 	
-	@Override
-	public boolean start() {
-		return true;
-	}
-
-	@Override
-	public boolean stop() {
-		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
-	}
-
 	@Override
 	public boolean isOvsTunnelEnabled() {
 		return _isEnabled;

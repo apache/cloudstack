@@ -80,6 +80,7 @@ import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
@@ -92,13 +93,12 @@ import com.cloud.utils.net.MacAddress;
 
 @Component
 @Local(value = {NetworkUsageManager.class})
-public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceStateAdapter {
+public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsageManager, ResourceStateAdapter {
     public enum NetworkUsageResourceName {
         TrafficSentinel;
     }
 
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(NetworkUsageManagerImpl.class);
-    protected String _name;
     @Inject HostDao _hostDao;
     @Inject AgentManager _agentMgr;
     @Inject IPAddressDao _ipAddressDao;
@@ -224,8 +224,6 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
         AllocatedIpSearch = _ipAddressDao.createSearchBuilder();
         AllocatedIpSearch.and("allocated", AllocatedIpSearch.entity().getAllocatedTime(), Op.NNULL);
         AllocatedIpSearch.and("dc", AllocatedIpSearch.entity().getDataCenterId(), Op.EQ);
@@ -251,11 +249,6 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
     public boolean stop() {
     	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

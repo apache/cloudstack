@@ -88,6 +88,7 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -107,10 +108,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 @Local(value = { NetworkModel.class})
-public class NetworkModelImpl  implements NetworkModel, Manager{
+public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     static final Logger s_logger = Logger.getLogger(NetworkModelImpl.class);
 
-    String _name;
     @Inject
     DataCenterDao _dcDao = null;
     @Inject
@@ -1725,7 +1725,6 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
         _configs = _configDao.getConfiguration("Network", params);
         _networkDomain = _configs.get(Config.GuestDomainSuffix.key());
         _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
@@ -1809,12 +1808,6 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
     @Override
     public boolean stop() {
         return true;
-    }
-
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

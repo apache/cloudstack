@@ -131,6 +131,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ManagerBase;
 
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -150,9 +151,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 @Local(value={TemplateManager.class, TemplateService.class})
-public class TemplateManagerImpl implements TemplateManager, Manager, TemplateService {
+public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateService {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
-    String _name;
     @Inject VMTemplateDao _tmpltDao;
     @Inject VMTemplateHostDao _tmpltHostDao;
     @Inject VMTemplatePoolDao _tmpltPoolDao;
@@ -1010,11 +1010,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }
     }
 
-    @Override
-    public String getName() {
-        return _name;
-    }
-
     private Runnable getSwiftTemplateSyncTask() {
         return new Runnable() {
             @Override
@@ -1064,7 +1059,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
         
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
         _routerTemplateId = NumbersUtil.parseInt(configs.get("router.template.id"), 1);

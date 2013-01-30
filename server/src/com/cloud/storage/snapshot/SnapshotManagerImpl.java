@@ -117,6 +117,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
@@ -132,7 +133,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 @Component
 @Local(value = { SnapshotManager.class, SnapshotService.class })
-public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Manager {
+public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager, SnapshotService {
     private static final Logger s_logger = Logger.getLogger(SnapshotManagerImpl.class);
     @Inject
     protected VMTemplateDao _templateDao;
@@ -193,7 +194,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Inject
     private ConfigurationDao _configDao;
     
-    String _name;
     private int _totalRetries;
     private int _pauseInterval;
     private int _deltaSnapshotMax;
@@ -1434,8 +1434,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
+ 
         String value = _configDao.getValue(Config.BackupSnapshotWait.toString());
         _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
 
@@ -1450,11 +1449,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         s_logger.info("Snapshot Manager is configured.");
 
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

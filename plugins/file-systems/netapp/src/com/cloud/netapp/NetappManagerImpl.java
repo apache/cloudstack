@@ -46,18 +46,17 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.netapp.dao.LunDao;
 import com.cloud.netapp.dao.PoolDao;
 import com.cloud.netapp.dao.VolumeDao;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value = { NetappManager.class })
-public class NetappManagerImpl implements NetappManager
+public class NetappManagerImpl extends ManagerBase implements NetappManager
 {   
 	public enum Algorithm { roundrobin,leastfull }
 
-    protected String _name;
-    
     public static final Logger s_logger = Logger.getLogger(NetappManagerImpl.class.getName());
     @Inject public VolumeDao _volumeDao;
     @Inject public PoolDao _poolDao;
@@ -1017,26 +1016,9 @@ public class NetappManagerImpl implements NetappManager
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
 
-       _name = name;
        
        _netappAllocator = new NetappDefaultAllocatorImpl( this );
 
 		return true;
 	}
-
-	@Override
-	public String getName() {
-		return _name;
-	}
-
-	@Override
-	public boolean start() {
-		return true;
-	}
-
-	@Override
-	public boolean stop() {
-		return true;
-	}
-	
 }

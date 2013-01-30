@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.inject.Inject;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -34,14 +36,13 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component("apiServlet")
 @SuppressWarnings("serial")
@@ -53,14 +54,13 @@ public class ApiServlet extends HttpServlet {
     @Inject AccountService _accountMgr;
 
     public ApiServlet() {
-        super();
-        _apiServer = ApiServer.getInstance();
-        _accountMgr = ComponentContext.getComponent(AccountService.class);
-        if (_apiServer == null) {
-            throw new CloudRuntimeException("ApiServer not initialized");
-        }
     }
 
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+    	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
+    }
+    
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         processRequest(req, resp);

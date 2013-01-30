@@ -27,9 +27,10 @@ import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
+import com.cloud.utils.component.ManagerBase;
 
 @Local (value = RemoteAccessVPNServiceProvider.class)
-public class MockRemoteAccessVPNServiceProvider implements
+public class MockRemoteAccessVPNServiceProvider extends ManagerBase implements
 		RemoteAccessVPNServiceProvider {
 
 	@Override

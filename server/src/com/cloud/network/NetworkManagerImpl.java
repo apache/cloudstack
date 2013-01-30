@@ -162,6 +162,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -193,10 +194,9 @@ import com.cloud.vm.dao.VMInstanceDao;
  */
 @Component
 @Local(value = { NetworkManager.class})
-public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
+public class NetworkManagerImpl extends ManagerBase implements NetworkManager, Listener {
     static final Logger s_logger = Logger.getLogger(NetworkManagerImpl.class);
 
-    String _name;
     @Inject
     DataCenterDao _dcDao = null;
     @Inject
@@ -861,8 +861,6 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     @Override
     @DB
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
         _configs = _configDao.getConfiguration("AgentManager", params);
         _networkGcWait = NumbersUtil.parseInt(_configs.get(Config.NetworkGcWait.key()), 600);
         _networkGcInterval = NumbersUtil.parseInt(_configs.get(Config.NetworkGcInterval.key()), 600);
@@ -1058,11 +1056,6 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
         s_logger.info("Network Manager is configured.");
 
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

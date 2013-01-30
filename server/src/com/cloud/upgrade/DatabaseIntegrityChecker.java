@@ -29,8 +29,9 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.maint.Version;
 import com.cloud.upgrade.dao.VersionDao;
-import com.cloud.upgrade.dao.VersionDaoImpl;
 
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
@@ -38,12 +39,13 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value = {SystemIntegrityChecker.class})
-public class DatabaseIntegrityChecker implements SystemIntegrityChecker {
+public class DatabaseIntegrityChecker extends AdapterBase implements SystemIntegrityChecker {
 	private final Logger s_logger = Logger.getLogger(DatabaseIntegrityChecker.class);
 	
     @Inject VersionDao _dao;
     
     public DatabaseIntegrityChecker() {
+    	setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
     }
 	
 	/*
@@ -247,5 +249,16 @@ public class DatabaseIntegrityChecker implements SystemIntegrityChecker {
         } finally {
             lock.releaseRef();
         }
+	}
+	
+	@Override
+	public boolean start() {
+		try {
+			check();
+		} catch(Exception e) {
+			s_logger.error("System integrity check exception", e);
+			System.exit(1);
+		}
+		return true;
 	}
 }

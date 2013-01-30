@@ -68,13 +68,14 @@ import com.cloud.server.api.response.PxePingResponse;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
 @Component
 @Local(value = {ExternalNetworkDeviceManager.class})
-public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceManager {
+public class ExternalNetworkDeviceManagerImpl extends ManagerBase implements ExternalNetworkDeviceManager {
 
     @Inject ExternalDhcpManager _dhcpMgr;
     @Inject PxeServerManager _pxeMgr;
@@ -110,28 +111,6 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     // private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class); 
 
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalNetworkDeviceManagerImpl.class);
-    protected String _name;
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        return true;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
 
     @Override
     public Host addNetworkDevice(AddNetworkDeviceCmd cmd) {

@@ -51,6 +51,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -61,10 +62,9 @@ import com.cloud.utils.net.NetUtils;
 
 @Component
 @Local(value = { DomainManager.class, DomainService.class })
-public class DomainManagerImpl implements DomainManager, DomainService, Manager {
+public class DomainManagerImpl extends ManagerBase implements DomainManager, DomainService {
     public static final Logger s_logger = Logger.getLogger(DomainManagerImpl.class);
 
-    private String _name;
     @Inject
     private DomainDao _domainDao;
     @Inject
@@ -90,28 +90,6 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
     @Override
     public Domain getDomain(String domainUuid) {
         return _domainDao.findByUuid(domainUuid);
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
-        return true;
     }
 
     @Override

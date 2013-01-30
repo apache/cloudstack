@@ -53,6 +53,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -62,10 +63,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value = { SwiftManager.class })
-public class SwiftManagerImpl implements SwiftManager {
+public class SwiftManagerImpl extends ManagerBase implements SwiftManager {
     private static final Logger s_logger = Logger.getLogger(SwiftManagerImpl.class);
 
-    private String _name;
     @Inject
     private SwiftDao _swiftDao;
     @Inject
@@ -118,11 +118,6 @@ public class SwiftManagerImpl implements SwiftManager {
         SwiftVO swift = new SwiftVO(cmd.getUrl(), cmd.getAccount(), cmd.getUsername(), cmd.getKey());
         swift = _swiftDao.persist(swift);
         return swift;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override
@@ -287,8 +282,6 @@ public class SwiftManagerImpl implements SwiftManager {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Start configuring Swift Manager : " + name);
         }
-
-        _name = name;
 
         return true;
     }

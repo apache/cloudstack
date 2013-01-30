@@ -89,6 +89,7 @@ import com.cloud.simulator.MockVMVO;
 import com.cloud.simulator.dao.MockConfigurationDao;
 import com.cloud.simulator.dao.MockHostDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -96,7 +97,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value = { SimulatorManager.class })
-public class SimulatorManagerImpl implements SimulatorManager {
+public class SimulatorManagerImpl extends ManagerBase implements SimulatorManager {
     private static final Logger s_logger = Logger.getLogger(SimulatorManagerImpl.class);
     @Inject
     MockVmManager _mockVmMgr = null;

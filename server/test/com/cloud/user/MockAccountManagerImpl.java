@@ -40,13 +40,14 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 
 @Component
 @Local(value = { AccountManager.class, AccountService.class })
-public class MockAccountManagerImpl implements Manager, AccountManager, AccountService {
+public class MockAccountManagerImpl extends ManagerBase implements AccountManager, AccountService {
 
 
     @Override

@@ -30,8 +30,10 @@ import org.apache.cloudstack.storage.datastore.db.DataStoreProviderDao;
 import org.apache.cloudstack.storage.datastore.db.DataStoreProviderVO;
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.component.ManagerBase;
+
 @Component
-public class DataStoreProviderManagerImpl implements DataStoreProviderManager {
+public class DataStoreProviderManagerImpl extends ManagerBase implements DataStoreProviderManager {
     @Inject
     List<DataStoreProvider> providers;
     @Inject
@@ -88,21 +90,6 @@ public class DataStoreProviderManagerImpl implements DataStoreProviderManager {
         }
  */    
         return true;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return "Data store provider manager";
     }
 
     @Override

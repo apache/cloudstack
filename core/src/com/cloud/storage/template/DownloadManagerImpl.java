@@ -59,12 +59,13 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
 import com.cloud.storage.template.TemplateDownloader.Status;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 @Local(value = DownloadManager.class)
-public class DownloadManagerImpl implements DownloadManager {
+public class DownloadManagerImpl extends ManagerBase implements DownloadManager {
     private String _name;
     StorageLayer _storage;
     Map<String, Processor> _processors;

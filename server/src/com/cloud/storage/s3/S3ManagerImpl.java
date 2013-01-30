@@ -78,17 +78,16 @@ import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.S3Utils.ClientOptions;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value = { S3Manager.class })
-public class S3ManagerImpl implements S3Manager {
+public class S3ManagerImpl extends ManagerBase implements S3Manager {
 
     private static final Logger LOGGER = Logger.getLogger(S3ManagerImpl.class);
-
-    private String name;
 
     @Inject 
     private AgentManager agentManager;
@@ -474,10 +473,7 @@ public class S3ManagerImpl implements S3Manager {
             LOGGER.info(format("Configuring S3 Manager %1$s", name));
         }
 
-        this.name = name;
-
         return true;
-
     }
 
     @Override
@@ -490,11 +486,6 @@ public class S3ManagerImpl implements S3Manager {
     public boolean stop() {
         LOGGER.info("Stopping S3 Manager");
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return this.name;
     }
 
     @Override

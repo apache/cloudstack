@@ -92,13 +92,14 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.template.TemplateInfo;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value = { MockStorageManager.class })
-public class MockStorageManagerImpl implements MockStorageManager {
+public class MockStorageManagerImpl extends ManagerBase implements MockStorageManager {
     private static final Logger s_logger = Logger.getLogger(MockStorageManagerImpl.class);
     @Inject
     MockStoragePoolDao _mockStoragePoolDao = null;

@@ -58,12 +58,12 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.EnumUtils;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 
-public abstract class TemplateAdapterBase implements TemplateAdapter {
+public abstract class TemplateAdapterBase extends AdapterBase implements TemplateAdapter {
 	private final static Logger s_logger = Logger.getLogger(TemplateAdapterBase.class);
-	protected String _name;
 	protected @Inject DomainDao _domainDao;
 	protected @Inject AccountDao _accountDao;
 	protected @Inject ConfigurationDao _configDao;
@@ -77,26 +77,6 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 	protected @Inject HostDao _hostDao;
 	protected @Inject ResourceLimitService _resourceLimitMgr;
 	
-	@Override
-	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		_name = name;
-		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
-	}
-	
-	public void setName(String name) {
-		_name = name;
-	}
-
-	@Override
-	public boolean start() {
-		return true;
-	}
-
 	@Override
 	public boolean stop() {
 		return true;

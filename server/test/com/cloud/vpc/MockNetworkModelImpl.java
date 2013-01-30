@@ -51,12 +51,13 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 
 @Local(value = {NetworkModel.class})
-public class MockNetworkModelImpl implements NetworkModel, Manager {
+public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;

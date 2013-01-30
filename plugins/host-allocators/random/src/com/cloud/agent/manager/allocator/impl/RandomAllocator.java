@@ -36,14 +36,14 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 @Local(value=HostAllocator.class)
-public class RandomAllocator implements HostAllocator {
+public class RandomAllocator extends AdapterBase implements HostAllocator {
     private static final Logger s_logger = Logger.getLogger(RandomAllocator.class);
-    private String _name;
     @Inject private HostDao _hostDao;
     @Inject private ResourceManager _resourceMgr;
 
@@ -114,28 +114,6 @@ public class RandomAllocator implements HostAllocator {
     public boolean isVirtualMachineUpgradable(VirtualMachine vm, ServiceOffering offering) {
         // currently we do no special checks to rule out a VM being upgradable to an offering, so
         // return true
-        return true;
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) {
-        _name=name;
-
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
         return true;
     }
 }

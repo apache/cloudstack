@@ -116,6 +116,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -140,10 +141,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 @Local(value = { AccountManager.class, AccountService.class })
-public class AccountManagerImpl implements AccountManager, AccountService, Manager {
+public class AccountManagerImpl extends ManagerBase implements AccountManager, AccountService {
     public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
 
-    private String _name;
     @Inject
     private AccountDao _accountDao;
     @Inject
@@ -237,8 +237,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
         _systemAccount = _accountDao.findById(AccountVO.ACCOUNT_ID_SYSTEM);
         if (_systemAccount == null) {
             throw new ConfigurationException("Unable to find the system account using " + Account.ACCOUNT_ID_SYSTEM);
@@ -266,11 +264,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             _systemUser = _userDao.findById(User.UID_SYSTEM);
         }
         return _systemUser;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

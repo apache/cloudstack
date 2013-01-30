@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import com.cloud.api.commands.GenerateUsageRecordsCmd;
 import com.cloud.api.commands.GetUsageRecordsCmd;
@@ -32,7 +32,6 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.projects.Project;
-import com.cloud.utils.PropertiesUtil;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
 
 import com.cloud.usage.UsageJobVO;
@@ -58,16 +57,16 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
     public ManagementServerExtImpl() {
     }
     
-    @PostConstruct
-    void init() {
-    	super.init();
-    	
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    	super.configure(name,  params);
         Map<String, String> configs = getConfigs();
-       String timeZoneStr = configs.get("usage.aggregation.timezone");
-       if (timeZoneStr == null) {
+        String timeZoneStr = configs.get("usage.aggregation.timezone");
+        if (timeZoneStr == null) {
            timeZoneStr = "GMT";
-       }
-       _usageTimezone = TimeZone.getTimeZone(timeZoneStr);
+        }
+        _usageTimezone = TimeZone.getTimeZone(timeZoneStr);
+        return true;
     }
 
     @Override

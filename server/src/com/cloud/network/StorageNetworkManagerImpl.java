@@ -44,6 +44,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
@@ -57,10 +58,9 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 @Component
 @Local(value = { StorageNetworkManager.class, StorageNetworkService.class })
-public class StorageNetworkManagerImpl implements StorageNetworkManager, StorageNetworkService {
+public class StorageNetworkManagerImpl extends ManagerBase implements StorageNetworkManager, StorageNetworkService {
     private static final Logger s_logger = Logger.getLogger(StorageNetworkManagerImpl.class);
 
-    String _name;
     @Inject
     StorageNetworkIpAddressDao _sNwIpDao;
     @Inject
@@ -71,30 +71,6 @@ public class StorageNetworkManagerImpl implements StorageNetworkManager, Storage
     HostPodDao _podDao;
     @Inject
     SecondaryStorageVmDao _ssvmDao;
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        return true;
-    }
-
-    @Override
-    public boolean start() {
-        // TODO Auto-generated method stub
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        // TODO Auto-generated method stub
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     private void checkOverlapPrivateIpRange(long podId, String startIp, String endIp) {
         HostPodVO pod = _podDao.findById(podId);

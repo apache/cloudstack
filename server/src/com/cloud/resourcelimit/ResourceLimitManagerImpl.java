@@ -70,6 +70,7 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -84,10 +85,9 @@ import edu.emory.mathcs.backport.java.util.Arrays;
 
 @Component
 @Local(value = { ResourceLimitService.class })
-public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
+public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService {
     public static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImpl.class);
 
-    private String _name;
     @Inject
     private DomainDao _domainDao;
     @Inject
@@ -132,11 +132,6 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
     Map<ResourceType, Long> projectResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
 
     @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
     public boolean start() {
         if (_resourceCountCheckInterval > 0) {
             _rcExecutor.scheduleAtFixedRate(new ResourceCountCheckTask(), _resourceCountCheckInterval, _resourceCountCheckInterval, TimeUnit.SECONDS);
@@ -151,7 +146,6 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
 
         ResourceCountSearch = _resourceCountDao.createSearchBuilder();
         ResourceCountSearch.and("id", ResourceCountSearch.entity().getId(), SearchCriteria.Op.IN);

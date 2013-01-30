@@ -36,10 +36,11 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 
 @Local(value = {FirewallManager.class, FirewallService.class})
-public class MockFirewallManagerImpl implements FirewallManager,
-		FirewallService, Manager {
+public class MockFirewallManagerImpl extends ManagerBase implements FirewallManager,
+		FirewallService {
 
 	@Override
 	public boolean configure(String name, Map<String, Object> params)

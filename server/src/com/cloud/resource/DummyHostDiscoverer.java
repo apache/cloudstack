@@ -30,14 +30,13 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.utils.component.AdapterBase;
 
 @Component
 @Local(value=Discoverer.class)
-public class DummyHostDiscoverer implements Discoverer {
+public class DummyHostDiscoverer extends AdapterBase implements Discoverer {
     private static final Logger s_logger = Logger.getLogger(DummyHostDiscoverer.class);
     
-    private String _name;
-
     @Override
     public Map<ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags) {
         if (!url.getScheme().equals("dummy")) {
@@ -68,26 +67,6 @@ public class DummyHostDiscoverer implements Discoverer {
         resource.start();
         resources.put(resource, details);
         return resources;
-    }
-    
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-    	return true;
-    }
-    
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
     }
     
     @Override

@@ -38,10 +38,11 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.VirtualMachine;
 
 @Local(value = {RulesManager.class, RulesService.class})
-public class MockRulesManagerImpl implements RulesManager,  Manager, RulesService {
+public class MockRulesManagerImpl extends ManagerBase implements RulesManager, RulesService {
 
 	@Override
 	public Pair<List<? extends FirewallRule>, Integer> searchStaticNatRules(

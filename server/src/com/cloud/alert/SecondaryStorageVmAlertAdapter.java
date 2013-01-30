@@ -32,16 +32,16 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.storage.secondary.SecStorageVmAlertEventArgs;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 @Component
 @Local(value=AlertAdapter.class)
-public class SecondaryStorageVmAlertAdapter implements AlertAdapter {
+public class SecondaryStorageVmAlertAdapter extends AdapterBase implements AlertAdapter {
 	
 	private static final Logger s_logger = Logger.getLogger(SecondaryStorageVmAlertAdapter.class);
-    private String _name;
     
 	@Inject private AlertManager _alertMgr;
 	@Inject private DataCenterDao _dcDao;
@@ -195,21 +195,6 @@ public class SecondaryStorageVmAlertAdapter implements AlertAdapter {
 			throw new ConfigurationException("Unable to register secondary storage vm event subscription, exception: " + e);
 		}
 		
-		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
-	}
-
-	@Override
-	public boolean start() {
-		return true;
-	}
-
-	@Override
-	public boolean stop() {
 		return true;
 	}
 }

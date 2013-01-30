@@ -35,11 +35,13 @@ import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;
 
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = {SystemIntegrityChecker.class})
-public class EncryptionSecretKeyChecker implements SystemIntegrityChecker {
+public class EncryptionSecretKeyChecker extends AdapterBase implements SystemIntegrityChecker {
 
     private static final Logger s_logger = Logger.getLogger(EncryptionSecretKeyChecker.class);
 
@@ -47,6 +49,10 @@ public class EncryptionSecretKeyChecker implements SystemIntegrityChecker {
     private static final String s_envKey = "CLOUD_SECRET_KEY";
     private static StandardPBEStringEncryptor s_encryptor = new StandardPBEStringEncryptor();
     private static boolean s_useEncryption = false;
+    
+    public EncryptionSecretKeyChecker() {
+    	setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
+    }
 
     @Override
     public void check() {
@@ -143,5 +149,16 @@ public class EncryptionSecretKeyChecker implements SystemIntegrityChecker {
         stringConfig.setPassword(secretKey);
         s_encryptor.setConfig(stringConfig);
         s_useEncryption = true;
+    }
+    
+    @Override
+    public boolean start() {
+    	try {
+    		check();
+    	} catch (Exception e) {
+			s_logger.error("System integrity check exception", e);
+			System.exit(1);
+    	}
+    	return true;
     }
 }

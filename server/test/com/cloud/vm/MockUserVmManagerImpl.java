@@ -68,11 +68,12 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.ExecutionException;
 
 @Component
 @Local(value = { UserVmManager.class, UserVmService.class })
-public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Manager {
+public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager, UserVmService {
 
     @Override
     public UserVmVO findByName(String name) {

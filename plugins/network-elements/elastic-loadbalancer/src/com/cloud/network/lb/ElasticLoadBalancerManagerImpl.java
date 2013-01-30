@@ -118,6 +118,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchBuilder;
@@ -140,8 +141,8 @@ import com.cloud.vm.dao.NicDao;
 
 @Component
 @Local(value = { ElasticLoadBalancerManager.class })
-public class ElasticLoadBalancerManagerImpl implements
-ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
+public class ElasticLoadBalancerManagerImpl extends ManagerBase implements
+ElasticLoadBalancerManager, VirtualMachineGuru<DomainRouterVO> {
     private static final Logger s_logger = Logger
             .getLogger(ElasticLoadBalancerManagerImpl.class);
     
@@ -200,7 +201,6 @@ ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
     @Inject
     NicDao _nicDao;
 
-    String _name;
     String _instance;
     static final private String _elbVmNamePrefix = "l";
     static final private String _systemVmType = "elbvm";
@@ -390,7 +390,6 @@ ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
-        _name = name;
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
         _systemAcct = _accountService.getSystemAccount();
         _instance = configs.get("instance.name");
@@ -433,21 +432,6 @@ ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
         }
         
         return true;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     private DomainRouterVO findELBVmWithCapacity(Network guestNetwork, IPAddressVO ipAddr) {

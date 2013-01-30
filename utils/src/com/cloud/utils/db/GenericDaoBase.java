@@ -68,6 +68,8 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentLifecycle;
+import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.SearchCriteria.SelectType;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -111,7 +113,7 @@ import edu.emory.mathcs.backport.java.util.Collections;
  * 
  **/
 @DB
-public abstract class GenericDaoBase<T, ID extends Serializable> implements GenericDao<T, ID> {
+public abstract class GenericDaoBase<T, ID extends Serializable> extends ComponentLifecycleBase implements GenericDao<T, ID> {
     private final static Logger s_logger = Logger.getLogger(GenericDaoBase.class);
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
@@ -157,9 +159,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
     protected static final SequenceFetcher s_seqFetcher = SequenceFetcher.getInstance();
 
-    protected String _name;
-    protected Map<String, Object> _configParams = new HashMap<String, Object>();
-
     public static <J> GenericDaoBase<? extends J, ? extends Serializable> getDao(Class<J> entityType) {
         @SuppressWarnings("unchecked")
         GenericDaoBase<? extends J, ? extends Serializable> dao = (GenericDaoBase<? extends J, ? extends Serializable>)s_daoMaps.get(entityType);
@@ -181,14 +180,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         return _allAttributes;
     }
     
-    public void setConfigParams(Map<String, Object> params) {
-    	_configParams = params;
-    }
-    
-    public Map<String, Object> getConfigParams() {
-    	return _configParams;
-    }
-
     @SuppressWarnings("unchecked")
     protected GenericDaoBase() {
         Type t = getClass().getGenericSuperclass();
@@ -278,6 +269,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 s_logger.trace(info.selectSql);
             }
         }
+        
+        setRunLevel(ComponentLifecycle.RUN_LEVEL_SYSTEM);
     }
 
     @Override @DB(txn=false)
@@ -1767,11 +1760,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @DB(txn=false)
-    public String getName() {
-        return _name;
-    }
-
-    @DB(txn=false)
     public static <T> UpdateBuilder getUpdateBuilder(final T entityObject) {
         final Factory factory = (Factory)entityObject;
         assert(factory != null);
@@ -1880,5 +1868,4 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
         return sql;
     }
-
 }

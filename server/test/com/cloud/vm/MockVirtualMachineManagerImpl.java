@@ -48,6 +48,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.Type;
@@ -55,7 +56,7 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 
 @Component
 @Local(value = VirtualMachineManager.class)
-public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
+public class MockVirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

@@ -110,6 +110,7 @@ import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -141,7 +142,7 @@ import edu.emory.mathcs.backport.java.util.Collections;
  *         report router statistics | seconds | 300s || * }
  **/
 @Local(value = { AgentManager.class })
-public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
+public class AgentManagerImpl extends ManagerBase implements AgentManager, HandlerFactory {
     private static final Logger s_logger = Logger.getLogger(AgentManagerImpl.class);
     private static final Logger status_logger = Logger.getLogger(Status.class);
 
@@ -206,7 +207,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
     protected int _retry = 2;
 
-    protected String _name;
     protected String _instance;
 
     protected int _wait;
@@ -230,8 +230,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
+ 
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
         _port = NumbersUtil.parseInt(configs.get("port"), 8250);
         final int workers = NumbersUtil.parseInt(configs.get("workers"), 5);
@@ -838,11 +837,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
 
         _connectExecutor.shutdownNow();
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     protected boolean handleDisconnectWithoutInvestigation(AgentAttache attache, Status.Event event, boolean transitState) {

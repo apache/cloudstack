@@ -86,6 +86,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
@@ -100,10 +101,9 @@ import com.google.gson.reflect.TypeToken;
 
 @Component
 @Local(value = { AutoScaleService.class, AutoScaleManager.class })
-public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleService, Manager {
+public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScaleManager, AutoScaleService {
     private static final Logger s_logger = Logger.getLogger(AutoScaleManagerImpl.class);
 
-    String _name;
     @Inject
     AccountDao _accountDao;
     @Inject
@@ -142,27 +142,6 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
     ConfigurationDao _configDao;
     @Inject
     IPAddressDao _ipAddressDao;
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        return true;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
 
     public List<AutoScaleCounter> getSupportedAutoScaleCounters(long networkid)
     {

@@ -45,11 +45,12 @@ import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.network.vpn.Site2SiteVpnService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 
 @Component
 @Local(value = { Site2SiteVpnManager.class, Site2SiteVpnService.class } )
-public class MockSite2SiteVpnManagerImpl implements Site2SiteVpnManager, Site2SiteVpnService, Manager{
+public class MockSite2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpnManager, Site2SiteVpnService {
 
     /* (non-Javadoc)
      * @see com.cloud.network.vpn.Site2SiteVpnService#createVpnGateway(org.apache.cloudstack.api.commands.CreateVpnGatewayCmd)

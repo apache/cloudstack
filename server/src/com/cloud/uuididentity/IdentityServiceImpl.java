@@ -26,13 +26,12 @@ import org.apache.cloudstack.api.IdentityService;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.uuididentity.dao.IdentityDao;
 
 @Component
 @Local(value = { IdentityService.class })
-public class IdentityServiceImpl implements Manager, IdentityService {
-    private String _name;
-
+public class IdentityServiceImpl extends ManagerBase implements IdentityService {
     @Inject	private IdentityDao _identityDao;
 
     @Override
@@ -43,28 +42,5 @@ public class IdentityServiceImpl implements Manager, IdentityService {
     @Override
     public String getIdentityUuid(String tableName, String identityString) {
         return _identityDao.getIdentityUuid(tableName, identityString);
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
-        _name = name;
-
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
     }
 }

@@ -54,12 +54,13 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vpc.dao.MockVpcDaoImpl;
 
 @Component
 @Local(value = { VpcManager.class, VpcService.class })
-public class MockVpcManagerImpl implements VpcManager, Manager{
+public class MockVpcManagerImpl extends ManagerBase implements VpcManager {
     @Inject MockVpcDaoImpl _vpcDao;
 
     /* (non-Javadoc)

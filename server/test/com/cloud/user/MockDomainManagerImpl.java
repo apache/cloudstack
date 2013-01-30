@@ -32,10 +32,11 @@ import com.cloud.domain.DomainVO;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 
 @Component
 @Local(value = { DomainManager.class, DomainService.class })
-public class MockDomainManagerImpl implements  Manager, DomainManager, DomainService {
+public class MockDomainManagerImpl extends ManagerBase implements DomainManager, DomainService {
 
     @Override
     public Domain createDomain(String name, Long parentId, String networkDomain) {

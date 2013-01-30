@@ -47,6 +47,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
@@ -54,8 +55,8 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 
 @Component
 @Local(value = {VpcVirtualNetworkApplianceManager.class, VpcVirtualNetworkApplianceService.class})
-public class MockVpcVirtualNetworkApplianceManager implements VpcVirtualNetworkApplianceManager,
-VpcVirtualNetworkApplianceService, Manager {
+public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implements VpcVirtualNetworkApplianceManager,
+VpcVirtualNetworkApplianceService {
 
     /* (non-Javadoc)
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#sendSshKeysToHost(java.lang.Long, java.lang.String, java.lang.String)

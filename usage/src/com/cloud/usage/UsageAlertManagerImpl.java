@@ -40,6 +40,7 @@ import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ManagerBase;
 
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
@@ -47,18 +48,15 @@ import com.sun.mail.smtp.SMTPTransport;
 
 @Component
 @Local(value={AlertManager.class})
-public class UsageAlertManagerImpl implements AlertManager {
+public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
     private static final Logger s_logger = Logger.getLogger(UsageAlertManagerImpl.class.getName());
 
-    private String _name = null;
     private EmailAlert _emailAlert;
     @Inject private AlertDao _alertDao;
     @Inject private ConfigurationDao _configDao;
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
          Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
         // set up the email system for alerts
@@ -83,21 +81,6 @@ public class UsageAlertManagerImpl implements AlertManager {
 
         _emailAlert = new EmailAlert(emailAddresses, smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
          return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
     }
 
     @Override

@@ -69,6 +69,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
 
 
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -78,7 +79,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={UsageManager.class})
-public class UsageManagerImpl implements UsageManager, Runnable {
+public class UsageManagerImpl extends ManagerBase implements UsageManager, Runnable {
     public static final Logger s_logger = Logger.getLogger(UsageManagerImpl.class.getName());
 
     protected static final String DAILY = "DAILY";
@@ -109,7 +110,6 @@ public class UsageManagerImpl implements UsageManager, Runnable {
     @Inject ConfigurationDao _configDao;
 
     private String m_version = null;
-    private String m_name = null;
     private final Calendar m_jobExecTime = Calendar.getInstance();
     private int m_aggregationDuration = 0;
     private int m_sanityCheckInterval = 0;
@@ -151,8 +151,6 @@ public class UsageManagerImpl implements UsageManager, Runnable {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Implementation Version is " + m_version);
         }
-
-        m_name = name;
 
         Map<String, String> configs = _configDao.getConfiguration(params);
 
@@ -220,10 +218,6 @@ public class UsageManagerImpl implements UsageManager, Runnable {
         }
         m_pid = Integer.parseInt(System.getProperty("pid"));
         return true;
-    }
-
-    public String getName() {
-        return m_name;
     }
 
     public boolean start() {

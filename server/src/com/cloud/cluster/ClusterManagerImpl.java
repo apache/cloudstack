@@ -44,8 +44,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -74,6 +72,8 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Profiler;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.ComponentLifecycle;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
@@ -89,7 +89,7 @@ import com.cloud.utils.net.NetUtils;
 import com.google.gson.Gson;
 
 @Local(value = { ClusterManager.class })
-public class ClusterManagerImpl implements ClusterManager {
+public class ClusterManagerImpl extends ManagerBase implements ClusterManager {
     private static final Logger s_logger = Logger.getLogger(ClusterManagerImpl.class);
 
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT = 1000; // 1 second
@@ -139,7 +139,6 @@ public class ClusterManagerImpl implements ClusterManager {
 
     private boolean _peerScanInited = false;
 
-    private String _name;
     private String _clusterNodeIP = "127.0.0.1";
     private boolean _agentLBEnabled = false;
     private double _connectedAgentsThreshold = 0.7;
@@ -158,6 +157,7 @@ public class ClusterManagerImpl implements ClusterManager {
         // recursive remote calls between nodes
         //
         _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Cluster-Worker"));
+        setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK);
     }
 
     private void registerRequestPdu(ClusterServiceRequestPdu pdu) {
@@ -1155,11 +1155,6 @@ public class ClusterManagerImpl implements ClusterManager {
         return null;
     }
 
-    @Override
-    public String getName() {
-        return _name;
-    }
-
     @Override @DB
     public boolean start() {
         if(s_logger.isInfoEnabled()) {
@@ -1255,7 +1250,6 @@ public class ClusterManagerImpl implements ClusterManager {
         if(s_logger.isInfoEnabled()) {
             s_logger.info("Start configuring cluster manager : " + name);
         }
-        _name = name;
 
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 

@@ -137,6 +137,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -156,12 +157,10 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 @Local({ ResourceManager.class, ResourceService.class })
-public class ResourceManagerImpl implements ResourceManager, ResourceService,
+public class ResourceManagerImpl extends ManagerBase implements ResourceManager, ResourceService,
 		Manager {
 	private static final Logger s_logger = Logger
 			.getLogger(ResourceManagerImpl.class);
-
-	private String _name;
 
 	@Inject
 	AccountManager _accountMgr;
@@ -1482,27 +1481,11 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService,
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
-		_name = name;
 		_defaultSystemVMHypervisor = HypervisorType.getType(_configDao
 				.getValue(Config.SystemVMDefaultHypervisor.toString()));
 		return true;
 	}
-
-	@Override
-	public boolean start() {
-		return true;
-	}
-
-	@Override
-	public boolean stop() {
-		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
-	}
-
+	
 	@Override
 	public List<HypervisorType> getSupportedHypervisorTypes(long zoneId,
 			boolean forVirtualRouter, Long podId) {

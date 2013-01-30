@@ -56,6 +56,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
 
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -64,10 +65,9 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 @Local(value={SnapshotScheduler.class})
-public class SnapshotSchedulerImpl implements SnapshotScheduler {
+public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotScheduler {
     private static final Logger s_logger = Logger.getLogger(SnapshotSchedulerImpl.class);
 
-    private String _name = null;
     @Inject protected AsyncJobDao             _asyncJobDao;
     @Inject protected SnapshotDao             _snapshotDao;
     @Inject protected SnapshotScheduleDao     _snapshotScheduleDao;
@@ -335,7 +335,6 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     @Override
     public boolean configure(String name, Map<String, Object> params)
     throws ConfigurationException {
-        _name = name;
 
      _snapshotPollInterval = NumbersUtil.parseInt(_configDao.getValue("snapshot.poll.interval"), 300);
         boolean snapshotsRecurringTest = Boolean.parseBoolean(_configDao.getValue("snapshot.recurring.test"));
@@ -355,11 +354,6 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         s_logger.info("Snapshot Scheduler is configured.");
 
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override @DB

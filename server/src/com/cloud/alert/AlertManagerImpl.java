@@ -72,6 +72,7 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.sun.mail.smtp.SMTPMessage;
@@ -80,7 +81,7 @@ import com.sun.mail.smtp.SMTPTransport;
 
 @Component
 @Local(value={AlertManager.class})
-public class AlertManagerImpl implements AlertManager {
+public class AlertManagerImpl extends ManagerBase implements AlertManager {
     private static final Logger s_logger = Logger.getLogger(AlertManagerImpl.class.getName());
 
     private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
@@ -88,7 +89,6 @@ public class AlertManagerImpl implements AlertManager {
     private static final DecimalFormat _dfPct = new DecimalFormat("###.##");
     private static final DecimalFormat _dfWhole = new DecimalFormat("########");
 
-    private String _name = null;
     private EmailAlert _emailAlert;
     @Inject private AlertDao _alertDao;
     @Inject private HostDao _hostDao;
@@ -122,8 +122,6 @@ public class AlertManagerImpl implements AlertManager {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
         // set up the email system for alerts
@@ -221,11 +219,6 @@ public class AlertManagerImpl implements AlertManager {
         _timer = new Timer("CapacityChecker");
 
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

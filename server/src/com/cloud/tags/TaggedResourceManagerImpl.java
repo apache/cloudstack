@@ -62,6 +62,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.DbUtil;
 import com.cloud.utils.db.Filter;
@@ -76,9 +77,8 @@ import com.cloud.vm.dao.UserVmDao;
 
 @Component
 @Local(value = { TaggedResourceService.class})
-public class TaggedResourceManagerImpl implements TaggedResourceService, Manager{
+public class TaggedResourceManagerImpl extends ManagerBase implements TaggedResourceService {
     public static final Logger s_logger = Logger.getLogger(TaggedResourceManagerImpl.class);
-    private String _name;
     
     private static Map<TaggedResourceType, GenericDao<?, Long>> _daoMap= 
             new HashMap<TaggedResourceType, GenericDao<?, Long>>();
@@ -124,7 +124,6 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name; 
         _daoMap.put(TaggedResourceType.UserVm, _userVmDao);
         _daoMap.put(TaggedResourceType.Volume, _volumeDao);
         _daoMap.put(TaggedResourceType.Template, _templateDao);
@@ -154,12 +153,6 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         return true;
     }
 
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    
     private Long getResourceId(String resourceId, TaggedResourceType resourceType) {   
         GenericDao<?, Long> dao = _daoMap.get(resourceType);
         if (dao == null) {

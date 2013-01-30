@@ -67,6 +67,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
@@ -85,9 +86,8 @@ import com.cloud.vm.dao.UserVmDao;
 
 @Component
 @Local(value = { RulesManager.class, RulesService.class })
-public class RulesManagerImpl implements RulesManager, RulesService, Manager {
+public class RulesManagerImpl extends ManagerBase implements RulesManager, RulesService {
     private static final Logger s_logger = Logger.getLogger(RulesManagerImpl.class);
-    String _name;
 
     @Inject
     PortForwardingRulesDao _portForwardingDao;
@@ -1065,27 +1065,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         return success && rules.size() == 0;
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        return true;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

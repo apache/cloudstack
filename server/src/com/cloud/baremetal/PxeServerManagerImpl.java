@@ -42,6 +42,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
@@ -50,9 +51,8 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 
 @Component
 @Local(value = {PxeServerManager.class})
-public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdapter {
+public class PxeServerManagerImpl extends ManagerBase implements PxeServerManager, ResourceStateAdapter {
 	private static final org.apache.log4j.Logger s_logger = Logger.getLogger(PxeServerManagerImpl.class);
-	protected String _name;
 	@Inject DataCenterDao _dcDao;
 	@Inject HostDao _hostDao;
 	@Inject AgentManager _agentMgr;
@@ -64,7 +64,6 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
 	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		_name = name;
 		_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
 		return true;
 	}
@@ -78,11 +77,6 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
 	public boolean stop() {
     	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
 		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
 	}
 
 	protected PxeServerService getServiceByType(String type) {

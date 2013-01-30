@@ -32,17 +32,17 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 @Local(value={HostAllocator.class})
-public class TestingAllocator implements HostAllocator {
+public class TestingAllocator extends AdapterBase implements HostAllocator {
     @Inject HostDao _hostDao;
     Long _computingHost;
     Long _storageHost;
     Long _routingHost;
-    String _name;
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
@@ -81,24 +81,6 @@ public class TestingAllocator implements HostAllocator {
         value = (String)params.get(Host.Type.Storage.toString());
         _storageHost = (value != null) ? Long.parseLong(value) : null;
 
-        _name = name;
-
         return true;
     }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
 }

@@ -46,6 +46,7 @@ import javax.management.InstanceAlreadyExistsException;
 import javax.management.MBeanRegistrationException;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
+import javax.naming.ConfigurationException;
 
 import com.cloud.storage.dao.*;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -142,6 +143,7 @@ import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
@@ -218,7 +220,9 @@ import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -258,7 +262,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
 
-public class ManagementServerImpl implements ManagementServer {
+public class ManagementServerImpl extends ManagerBase implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
     @Inject
@@ -372,12 +376,13 @@ public class ManagementServerImpl implements ManagementServer {
     @Inject
     S3Manager _s3Mgr;
 
+/*   
     @Inject
     ComponentContext _forceContextRef;			// create a dependency to ComponentContext so that it can be loaded beforehead
 
     @Inject
     EventUtils	_forceEventUtilsRef;
-
+*/
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private KeystoreManager _ksMgr;
 
@@ -391,11 +396,14 @@ public class ManagementServerImpl implements ManagementServer {
     private String _hashKey = null;
 
     public ManagementServerImpl() {
+    	setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
     }
 
-    @PostConstruct
-    void init() {
-        _configs = _configDao.getConfiguration();
+	@Override
+	public boolean configure(String name, Map<String, Object> params)
+			throws ConfigurationException {
+
+		_configs = _configDao.getConfiguration();
 
         String value = _configs.get("event.purge.interval");
         int cleanup = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
@@ -410,142 +418,16 @@ public class ManagementServerImpl implements ManagementServer {
         for (String id : availableIds) {
             _availableIdsMap.put(id, true);
         }
-    }
-
+		
+		return true;
+	}
+   
     @Override
-    public void startup() {
+    public boolean start() {
         s_logger.info("Startup CloudStack management server...");
-        initCloudStackComponents();
-    }
-
-    private void initCloudStackComponents() {
-        runCheckers();
-        startDaos(); // daos should not be using managers and adapters.
-
-        Map<String, Object> avoidMap = new HashMap<String, Object>();
-        startManagers(avoidMap);
-        startAdapters(avoidMap);
-    }
-
-    private void runCheckers() {
-        Map<String, SystemIntegrityChecker> checkers = ComponentContext.getApplicationContext().getBeansOfType(
-                SystemIntegrityChecker.class);
-
-        for (SystemIntegrityChecker checker : checkers.values()) {
-            try {
-                checker.check();
-            } catch (Exception e) {
-                s_logger.error("Problems with running checker:" + ComponentContext.getTargetClass(checker).getName(), e);
-                System.exit(1);
-            }
-        }
-    }
-
-    private void startDaos() {
-        @SuppressWarnings("rawtypes")
-        Map<String, GenericDaoBase> daos = ComponentContext.getApplicationContext().getBeansOfType(
-                GenericDaoBase.class);
-
-        for (GenericDaoBase dao : daos.values()) {
-            try {
-                s_logger.info("Starting dao " + ComponentContext.getTargetClass(dao).getName());
-                dao.configure(dao.getClass().getSimpleName(), dao.getConfigParams());
-            } catch (Exception e) {
-                s_logger.error("Problems with running checker:" + ComponentContext.getTargetClass(dao).getName(), e);
-                System.exit(1);
-            }
-        }
-    }
-
-    private void startManagers(Map<String, Object> avoidMap) {
-        Map<String, Object> params = new HashMap<String, Object>();
-
-        // make sure startup sequence is maintained
-        try {
-            _clusterMgr.configure("ClusterMgr", params);
-            _clusterMgr.start();
-
-            avoidMap.put(ComponentContext.getTargetClass(_clusterMgr).getName(), _clusterMgr);
-        } catch(Exception e) {
-            s_logger.error("Problems to start manager:" + ComponentContext.getTargetClass(_clusterMgr).getName(), e);
-            System.exit(1);
-        }
-
-        for(Manager manager : ComponentContext.getComponentsOfType(Manager.class).values()) {
-            s_logger.info("Start manager: " + ComponentContext.getTargetClass(manager).getName() + "...");
-            try {
-                if(avoidMap.get(ComponentContext.getTargetClass(manager).getName()) != null) {
-                    s_logger.info("Skip manager: " + ComponentContext.getTargetClass(manager).getName() + " as it is already started");
-                    continue;
-                }
-
-                if(!manager.configure(manager.getClass().getSimpleName(), params)) {
-                    throw new CloudRuntimeException("Failed to start manager: " + ComponentContext.getTargetClass(manager).getName());
-                }
-
-                if (!manager.start()) {
-                    throw new CloudRuntimeException("Failed to start manager: " + ComponentContext.getTargetClass(manager).getName());
-                }
-                avoidMap.put(ComponentContext.getTargetClass(manager).getName(), manager);
-
-                if (manager instanceof ManagementBean) {
-                    registerMBean((ManagementBean) manager);
-                }
-            } catch (Exception e) {
-                s_logger.error("Problems to start manager:" + ComponentContext.getTargetClass(manager).getName(), e);
-                System.exit(1);
-            }
-        }
-    }
-
-    private void startAdapters(Map<String, Object> avoidMap) {
-        @SuppressWarnings("rawtypes")
-        Map<String, Adapter> adapters = ComponentContext.getApplicationContext().getBeansOfType(
-                Adapter.class);
-
-        Map<String, Object> params = new HashMap<String, Object>();
-
-        for(Adapter adapter : adapters.values()) {
-            try {
-                s_logger.info("Start adapter: " + ComponentContext.getTargetClass(adapter).getName() + "...");
-
-                if(avoidMap.get(ComponentContext.getTargetClass(adapter).getName()) != null) {
-                    s_logger.info("Skip adapter: " + ComponentContext.getTargetClass(adapter).getName() + " as it is already started");
-                    continue;
-                }
-
-                if(!adapter.configure(adapter.getName(), params)) {
-                    throw new CloudRuntimeException("Failed to configure adapter: " + ComponentContext.getTargetClass(adapter).getName());
-                }
-                if (!adapter.start()) {
-                    throw new CloudRuntimeException("Failed to start adapter: " + ComponentContext.getTargetClass(adapter).getName());
-                }
-
-                avoidMap.put(ComponentContext.getTargetClass(adapter).getName(), adapter);
-
-                if (adapter instanceof ManagementBean) {
-                    registerMBean((ManagementBean) adapter);
-                }
-            } catch (Exception e) {
-                s_logger.error("Problems to start adapter:" + ComponentContext.getTargetClass(adapter).getName(), e);
-                System.exit(1);
-            }
-        }
-    }
-
-    protected void registerMBean(ManagementBean mbean) {
-        try {
-            JmxUtil.registerMBean(mbean);
-        } catch (MalformedObjectNameException e) {
-            s_logger.warn("Unable to register MBean: " + mbean.getName(), e);
-        } catch (InstanceAlreadyExistsException e) {
-            s_logger.warn("Unable to register MBean: " + mbean.getName(), e);
-        } catch (MBeanRegistrationException e) {
-            s_logger.warn("Unable to register MBean: " + mbean.getName(), e);
-        } catch (NotCompliantMBeanException e) {
-            s_logger.warn("Unable to register MBean: " + mbean.getName(), e);
-        }
-        s_logger.info("Registered MBean: " + mbean.getName());
+    	
+        enableAdminUser("password");
+        return true;
     }
 
     protected Map<String, String> getConfigs() {

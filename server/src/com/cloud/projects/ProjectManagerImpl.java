@@ -74,6 +74,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -84,9 +85,8 @@ import com.sun.mail.smtp.SMTPTransport;
 
 @Component
 @Local(value = { ProjectService.class, ProjectManager.class })
-public class ProjectManagerImpl implements ProjectManager, Manager{
+public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     public static final Logger s_logger = Logger.getLogger(ProjectManagerImpl.class);
-    private String _name;
     private EmailInvite _emailInvite;
 
     @Inject
@@ -127,8 +127,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
+ 
         Map<String, String> configs = _configDao.getConfiguration(params);
         _invitationRequired = Boolean.valueOf(configs.get(Config.ProjectInviteRequired.key()));
         
@@ -167,11 +166,6 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     @Override
     public boolean stop() {
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

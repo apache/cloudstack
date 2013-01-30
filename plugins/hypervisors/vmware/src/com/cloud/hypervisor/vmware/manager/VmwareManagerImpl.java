@@ -81,6 +81,7 @@ import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -94,7 +95,7 @@ import com.vmware.vim25.HostConnectSpec;
 import com.vmware.vim25.ManagedObjectReference;
 
 @Local(value = {VmwareManager.class})
-public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Listener, Manager {
+public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
 
     private static final int STARTUP_DELAY = 60000; 				// 60 seconds
@@ -103,7 +104,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     private long _hostScanInterval = DEFAULT_HOST_SCAN_INTERVAL;
     int _timeout;
 
-    private String _name;
     private String _instance;
 
     @Inject AgentManager _agentMgr;
@@ -163,8 +163,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         s_logger.info("Configure VmwareManagerImpl, manager name: " + name);
-
-        _name = name;
 
         if(!_configDao.isPremium()) {
             s_logger.error("Vmware component can only run under premium distribution");
@@ -319,11 +317,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
 
         shutdownCleanup();
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

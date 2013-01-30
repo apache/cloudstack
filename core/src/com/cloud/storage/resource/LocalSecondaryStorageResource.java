@@ -208,4 +208,39 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
     protected String getDefaultScriptsDir() {
         return "scripts/storage/secondary";
     }
+
+
+	@Override
+	public void setName(String name) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void setConfigParams(Map<String, Object> params) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public Map<String, Object> getConfigParams() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	@Override
+	public int getRunLevel() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+
+	@Override
+	public void setRunLevel(int level) {
+		// TODO Auto-generated method stub
+		
+	}
 }

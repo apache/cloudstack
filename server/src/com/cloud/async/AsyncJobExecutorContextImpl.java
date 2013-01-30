@@ -16,11 +16,8 @@
 // under the License.
 package com.cloud.async;
 
-import java.util.Map;
-
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
 
@@ -36,6 +33,7 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -43,8 +41,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 @Component
 @Local(value={AsyncJobExecutorContext.class})
-public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
-    private String _name;
+public class AsyncJobExecutorContextImpl extends ManagerBase implements AsyncJobExecutorContext {
 
     @Inject private AgentManager _agentMgr;
     @Inject private NetworkModel _networkMgr;
@@ -145,26 +142,5 @@ public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
     @Override
     public VirtualMachineManager getItMgr() {
         return _itMgr;
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        return true;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 }

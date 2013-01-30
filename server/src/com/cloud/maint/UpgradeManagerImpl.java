@@ -44,6 +44,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.maint.dao.AgentUpgradeDao;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.ManagerBase;
 
 /**
  *
@@ -55,11 +56,10 @@ import com.cloud.utils.PropertiesUtil;
  */
 @Component
 @Local(UpgradeManager.class)
-public class UpgradeManagerImpl implements UpgradeManager {
+public class UpgradeManagerImpl extends ManagerBase implements UpgradeManager {
     private final static Logger s_logger = Logger.getLogger(UpgradeManagerImpl.class);
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
-    String _name;
     String _minimalVersion;
     String _recommendedVersion;
 //    String _upgradeUrl;
@@ -150,7 +150,6 @@ public class UpgradeManagerImpl implements UpgradeManager {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
 
         final Map<String, String> configs = _configDao.getConfiguration("UpgradeManager", params);
 
@@ -186,20 +185,5 @@ public class UpgradeManagerImpl implements UpgradeManager {
             }
         }
         return false;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
     }
 }

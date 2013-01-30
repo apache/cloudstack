@@ -31,16 +31,15 @@ import org.springframework.stereotype.Component;
 import com.cloud.async.dao.SyncQueueDao;
 import com.cloud.async.dao.SyncQueueItemDao;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @Local(value={SyncQueueManager.class})
-public class SyncQueueManagerImpl implements SyncQueueManager {
+public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManager {
     public static final Logger s_logger = Logger.getLogger(SyncQueueManagerImpl.class.getName());
-
-    private String _name;
 
     @Inject private SyncQueueDao _syncQueueDao;
     @Inject private SyncQueueItemDao _syncQueueItemDao;
@@ -238,27 +237,6 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     @Override
     public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive) {
         return _syncQueueItemDao.getBlockedQueueItems(thresholdMs, exclusive);
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        return true;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     private boolean queueReadyToProcess(SyncQueueVO queueVO) {

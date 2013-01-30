@@ -49,6 +49,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.Network;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
@@ -63,10 +64,9 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = { ConsoleProxyManager.class })
-public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, VirtualMachineGuru<ConsoleProxyVO>, AgentHook {
+public class AgentBasedConsoleProxyManager extends ManagerBase implements ConsoleProxyManager, VirtualMachineGuru<ConsoleProxyVO>, AgentHook {
     private static final Logger s_logger = Logger.getLogger(AgentBasedConsoleProxyManager.class);
 
-    private String _name;
     @Inject
     protected HostDao _hostDao;
     @Inject
@@ -103,8 +103,6 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
             s_logger.info("Start configuring AgentBasedConsoleProxyManager");
         }
 
-        _name = name;
-
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         String value = configs.get("consoleproxy.url.port");
         if (value != null) {
@@ -133,16 +131,6 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         if (s_logger.isInfoEnabled()) {
             s_logger.info("AgentBasedConsoleProxyManager has been configured. SSL enabled: " + _sslEnabled);
         }
-        return true;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
         return true;
     }
 

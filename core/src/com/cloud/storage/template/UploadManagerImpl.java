@@ -47,10 +47,11 @@ import com.cloud.storage.resource.SecondaryStorageResource;
 import com.cloud.storage.template.TemplateUploader.Status;
 import com.cloud.storage.template.TemplateUploader.UploadCompleteCallback;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class UploadManagerImpl implements UploadManager {
+public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
 
     public class Completion implements UploadCompleteCallback {
@@ -176,7 +177,6 @@ public class UploadManagerImpl implements UploadManager {
     private StorageLayer _storage;
     private int installTimeoutPerGig;
     private boolean _sslCopy;
-    private String _name;
     private boolean hvm;
 
 
@@ -442,7 +442,6 @@ public class UploadManagerImpl implements UploadManager {
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
-        _name = name;
 
         String value = null;
 
@@ -523,21 +522,6 @@ public class UploadManagerImpl implements UploadManager {
             return;
         }
 
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
     }
 
     /**

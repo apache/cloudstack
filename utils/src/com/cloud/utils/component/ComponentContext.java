@@ -17,13 +17,13 @@
 
 package com.cloud.utils.component;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -38,8 +38,9 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.TransactionContextBuilder;
+import com.cloud.utils.mgmt.JmxUtil;
+import com.cloud.utils.mgmt.ManagementBean;
 
 /**
  * 
@@ -60,93 +61,87 @@ public class ComponentContext implements ApplicationContextAware {
 
     public static ApplicationContext getApplicationContext() {  
         return s_appContext;  
-    }  
+    } 
 
     public static void initComponentsLifeCycle() {
-        @SuppressWarnings("rawtype")
-        Collection<GenericDao> daos = ComponentContext.getApplicationContext().getBeansOfType(GenericDao.class).values();
-        Collection<Manager> mgrs = ComponentContext.getApplicationContext().getBeansOfType(Manager.class).values();
-        Collection<Adapter> adapters = ComponentContext.getApplicationContext().getBeansOfType(Adapter.class).values();
-
-        Map<String, Object> params = new HashMap<String, Object>();
-        for (GenericDao dao : daos) {
-            try {
-                s_logger.info("Configuring DAO: " + ComponentContext.getTargetClass(dao).getName());
-                dao.configure(dao.getClass().getSimpleName(), params);
-            } catch (ConfigurationException e) {
-                s_logger.error("Unable to configure DAO: " + dao.getClass().getSimpleName(), e);
-                System.exit(1);
-            }
-        }
-
-        List<String> avoidMap = new ArrayList<String>();
-        for (Manager manager : mgrs) {
-            if (avoidMap.contains(manager.getName())) {
-                s_logger.info("Skip manager: " + ComponentContext.getTargetClass(manager).getName() + " as it is already started");
-                continue;
-            }
-
-            try {
-                s_logger.info("Configuring manager: " + ComponentContext.getTargetClass(manager).getName() + "...");
-                manager.configure(manager.getClass().getSimpleName(), params);
-                avoidMap.add(manager.getName());
-            } catch (Exception e) {
-                s_logger.error("Problems to start manager:" + ComponentContext.getTargetClass(manager).getName(), e);
-                System.exit(1);
-            }
-        }
-
-        for (Adapter adapter : adapters) {
-            if (avoidMap.contains(adapter.getName())) {
-                s_logger.info("Skip adapter: " + ComponentContext.getTargetClass(adapter).getName() + " as it is already started");
-                continue;
-            }
-
-            try {
-                s_logger.info("Configuring adapter: " + ComponentContext.getTargetClass(adapter).getName() + "...");
-                adapter.configure(adapter.getName(), params);
-                avoidMap.add(adapter.getName());
-            } catch (Exception e) {
-                s_logger.error("Problems to start adapter:" + ComponentContext.getTargetClass(adapter).getName(), e);
-                System.exit(1);
-            }
-        }
-
-        avoidMap.clear();
-
-        for (Manager manager : mgrs) {
-            if (avoidMap.contains(manager.getName())) {
-                s_logger.info("Skip start on manager: " + ComponentContext.getTargetClass(manager).getName() + " as it is already started");
-                continue;
-            }
-
-            try {
-                s_logger.info("Starting manager: " + ComponentContext.getTargetClass(manager).getName() + "...");
-                manager.start();
-                avoidMap.add(manager.getName());
-            } catch (Exception e) {
-                s_logger.error("Problems to start manager:" + ComponentContext.getTargetClass(manager).getName(), e);
-                System.exit(1);
-            }
-        }
-
-        for (Adapter adapter : adapters) {
-            if (avoidMap.contains(adapter.getName())) {
-                s_logger.info("Skip start on adapter: " + ComponentContext.getTargetClass(adapter).getName() + " as it is already started");
-                continue;
-            }
-
-            try {
-                s_logger.info("Startinging adapter: " + ComponentContext.getTargetClass(adapter).getName() + "...");
-                adapter.start();
-                avoidMap.add(adapter.getName());
-            } catch (Exception e) {
-                s_logger.error("Problems to start adapter:" + ComponentContext.getTargetClass(adapter).getName(), e);
-                System.exit(1);
-            }
-        }
+    	Map<String, ComponentLifecycle> lifecyleComponents = getApplicationContext().getBeansOfType(ComponentLifecycle.class);
+ 
+    	Map[] classifiedComponents = new Map[ComponentLifecycle.MAX_RUN_LEVELS];
+    	for(int i = 0; i < ComponentLifecycle.MAX_RUN_LEVELS; i++) {
+    		classifiedComponents[i] = new HashMap<String, ComponentLifecycle>();
+    	}
+    	
+    	for(Map.Entry<String, ComponentLifecycle> entry : lifecyleComponents.entrySet()) {
+    		classifiedComponents[entry.getValue().getRunLevel()].put(entry.getKey(), entry.getValue());
+    	}
+    	
+    	// configuration phase
+        Map<String, String> avoidMap = new HashMap<String, String>();
+    	for(int i = 0; i < ComponentLifecycle.MAX_RUN_LEVELS; i++) {
+    		for(Map.Entry<String, ComponentLifecycle> entry : ((Map<String, ComponentLifecycle>)classifiedComponents[i]).entrySet()) {
+    			ComponentLifecycle component = entry.getValue();
+    			String implClassName = ComponentContext.getTargetClass(component).getName();
+                s_logger.info("Configuring " + implClassName);
+                
+                if(avoidMap.containsKey(implClassName)) {
+                    s_logger.info("Skip configuration of " + implClassName + " as it is already configured");
+                	continue;
+                }
+                
+                try {
+					component.configure(component.getName(), component.getConfigParams());
+				} catch (ConfigurationException e) {
+					s_logger.error("Unhandled exception", e);
+					throw new RuntimeException("Unable to configure " + implClassName, e);
+				}
+                
+                avoidMap.put(implClassName, implClassName);
+    		}
+    	}
+ 
+    	// starting phase
+    	avoidMap.clear();
+    	for(int i = 0; i < ComponentLifecycle.MAX_RUN_LEVELS; i++) {
+    		for(Map.Entry<String, ComponentLifecycle> entry : ((Map<String, ComponentLifecycle>)classifiedComponents[i]).entrySet()) {
+    			ComponentLifecycle component = entry.getValue();
+    			String implClassName = ComponentContext.getTargetClass(component).getName();
+                s_logger.info("Starting " + implClassName);
+                
+                if(avoidMap.containsKey(implClassName)) {
+                    s_logger.info("Skip configuration of " + implClassName + " as it is already configured");
+                	continue;
+                }
+                
+                try {
+					component.start();
+					
+					if(getTargetObject(component) instanceof ManagementBean)
+						registerMBean((ManagementBean)getTargetObject(component));
+				} catch (Exception e) {
+					s_logger.error("Unhandled exception", e);
+					throw new RuntimeException("Unable to start " + implClassName, e);
+				}
+                
+                avoidMap.put(implClassName, implClassName);
+    		}
+    	}
     }
-
+    
+    static void registerMBean(ManagementBean mbean) {
+        try {
+            JmxUtil.registerMBean(mbean);
+        } catch (MalformedObjectNameException e) {
+            s_logger.warn("Unable to register MBean: " + mbean.getName(), e);
+        } catch (InstanceAlreadyExistsException e) {
+            s_logger.warn("Unable to register MBean: " + mbean.getName(), e);
+        } catch (MBeanRegistrationException e) {
+            s_logger.warn("Unable to register MBean: " + mbean.getName(), e);
+        } catch (NotCompliantMBeanException e) {
+            s_logger.warn("Unable to register MBean: " + mbean.getName(), e);
+        }
+        s_logger.info("Registered MBean: " + mbean.getName());
+    }
+    
     public static <T> T getComponent(String name) {
         assert(s_appContext != null);
         return (T)s_appContext.getBean(name);
@@ -180,37 +175,6 @@ public class ComponentContext implements ApplicationContextAware {
 
     public static <T> Map<String, T> getComponentsOfType(Class<T> beanType) {
         return s_appContext.getBeansOfType(beanType);
-    }
-
-    public static <T> boolean isPrimary(Object instance, Class<T> beanType) {
-        // we assume single line of interface inheritance of beanType
-        Class<?> componentType = beanType;
-        Class<?> targetClass = getTargetClass(instance);
-
-        Class<?> interfaces[] = targetClass.getInterfaces();
-        for(Class<?> intf : interfaces)  {
-            if(beanType.isAssignableFrom(intf) && intf != beanType) {
-                componentType = intf;
-                break;
-            }
-        }
-
-        Map<String, T> matchedTypes = (Map<String, T>)ComponentContext.getComponentsOfType(componentType);
-        if(matchedTypes.size() > 1) {
-            Primary primary = targetClass.getAnnotation(Primary.class);
-            if(primary != null) {
-                s_logger.info(targetClass.getName() + " is the primary component of " + componentType.getName());
-                return true;
-            }
-
-            s_logger.warn(targetClass.getName() + " is not the primary component of " + componentType.getName() + ", there are other candidates");
-            for(T candidate : matchedTypes.values()) {
-                s_logger.warn("Candidate " + getTargetClass(candidate).getName());
-            }
-            return false;
-        }
-
-        return true;
     }
 
     public static Class<?> getTargetClass(Object instance) {

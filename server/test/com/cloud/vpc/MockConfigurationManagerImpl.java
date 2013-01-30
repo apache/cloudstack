@@ -79,11 +79,12 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.VirtualMachine.Type;
 
 @Component
 @Local(value = { ConfigurationManager.class, ConfigurationService.class })
-public class MockConfigurationManagerImpl implements ConfigurationManager, ConfigurationService, Manager{
+public class MockConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {
     @Inject
     NetworkOfferingDaoImpl _ntwkOffDao;
 
