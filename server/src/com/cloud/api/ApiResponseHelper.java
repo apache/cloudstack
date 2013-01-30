@@ -133,7 +133,6 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-
 import org.apache.cloudstack.api.response.S3Response;
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
@@ -242,8 +241,15 @@ import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VmStats;
+import com.cloud.vm.dao.UserVmData;
+import com.cloud.vm.dao.UserVmData.NicData;
+import com.cloud.vm.dao.UserVmData.SecurityGroupData;
+import com.cloud.vm.snapshot.VMSnapshot;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.response.VMSnapshotResponse;
 
-public class ApiResponseHelper implements ResponseGenerator {
+public class ApiResponseHelper implements ResponseGenerator{
 
     public final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
@@ -393,6 +399,25 @@ public class ApiResponseHelper implements ResponseGenerator {
         return snapshotResponse;
     }
 
+    @Override
+    public VMSnapshotResponse createVMSnapshotResponse(VMSnapshot vmSnapshot) {
+        VMSnapshotResponse vmSnapshotResponse = new VMSnapshotResponse();
+        vmSnapshotResponse.setId(vmSnapshot.getUuid());
+        vmSnapshotResponse.setName(vmSnapshot.getName());
+        vmSnapshotResponse.setState(vmSnapshot.getState());
+        vmSnapshotResponse.setCreated(vmSnapshot.getCreated());
+        vmSnapshotResponse.setDescription(vmSnapshot.getDescription());
+        vmSnapshotResponse.setDisplayName(vmSnapshot.getDisplayName());
+        UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());        
+        if(vm!=null)
+            vmSnapshotResponse.setVirtualMachineid(vm.getUuid());
+        if(vmSnapshot.getParent() != null)
+            vmSnapshotResponse.setParentName(ApiDBUtils.getVMSnapshotById(vmSnapshot.getParent()).getDisplayName());
+        vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
+        vmSnapshotResponse.setType(vmSnapshot.getType().toString());
+        return vmSnapshotResponse;
+    }
+    
     @Override
     public SnapshotPolicyResponse createSnapshotPolicyResponse(SnapshotPolicy policy) {
         SnapshotPolicyResponse policyResponse = new SnapshotPolicyResponse();
@@ -3098,7 +3123,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
 
-
     @Override
     public GuestOSResponse createGuestOSResponse(GuestOS guestOS) {
         GuestOSResponse response = new GuestOSResponse();
@@ -3136,6 +3160,4 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("snapshot");
         return response;
     }
-
-
 }

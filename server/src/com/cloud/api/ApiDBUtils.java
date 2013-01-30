@@ -21,6 +21,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Hashtable;
 
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -259,6 +260,8 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class ApiDBUtils {
     private static ManagementServer _ms;
@@ -357,7 +360,7 @@ public class ApiDBUtils {
     private static VpcOfferingDao _vpcOfferingDao;
     private static SnapshotPolicyDao _snapshotPolicyDao;
     private static AsyncJobDao _asyncJobDao;
-
+    private static VMSnapshotDao _vmSnapshotDao;
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
@@ -454,7 +457,7 @@ public class ApiDBUtils {
         _diskOfferingJoinDao = locator.getDao(DiskOfferingJoinDao.class);
         _srvOfferingJoinDao = locator.getDao(ServiceOfferingJoinDao.class);
         _dcJoinDao = locator.getDao(DataCenterJoinDao.class);
-
+        _vmSnapshotDao = locator.getDao(VMSnapshotDao.class);
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
     }
@@ -1001,6 +1004,11 @@ public class ApiDBUtils {
 
     public static boolean canUseForDeploy(Network network) {
         return _networkModel.canUseForDeploy(network);
+    }
+
+    public static VMSnapshot getVMSnapshotById(Long vmSnapshotId) {
+        VMSnapshot vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
+        return vmSnapshot;
     }
 
     public static String getUuid(String resourceId, TaggedResourceType resourceType) {

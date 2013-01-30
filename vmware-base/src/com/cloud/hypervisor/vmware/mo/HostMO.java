@@ -58,6 +58,8 @@ import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineSnapshotInfo;
+import com.vmware.vim25.VirtualMachineSnapshotTree;
 import com.vmware.vim25.VirtualNicManagerNetConfig;
 import com.vmware.vim25.NasDatastoreInfo;
 
@@ -949,4 +951,20 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
     	HostRuntimeInfo runtimeInfo = (HostRuntimeInfo)_context.getServiceUtil().getDynamicProperty(_mor, "runtime");
     	return runtimeInfo.getConnectionState() == HostSystemConnectionState.connected;
 	}
+	
+    public boolean revertToSnapshot(ManagedObjectReference morSnapshot)
+            throws Exception {
+        ManagedObjectReference morTask = _context.getService()
+                .revertToSnapshot_Task(morSnapshot, _mor, false);
+        String result = _context.getServiceUtil().waitForTask(morTask);
+        if (result.equals("sucess")) {
+            _context.waitForTaskProgressDone(morTask);
+            return true;
+        } else {
+            s_logger.error("VMware revert to snapshot failed due to "
+                    + TaskMO.getTaskFailureInfo(_context, morTask));
+        }
+
+        return false;
+    }
 }

@@ -514,3 +514,9 @@ listApis=15
 
 getApiLimit=15
 resetApiLimit=1
+
+### VM Snapshot commands
+listVMSnapshot=15
+createVMSnapshot=15
+deleteVMSnapshot=15
+revertToSnapshot=15

@@ -128,6 +128,9 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Local(value = { SnapshotManager.class, SnapshotService.class })
 public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Manager {
@@ -188,7 +191,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     private VolumeDao _volumeDao;
     @Inject
     private ResourceTagDao _resourceTagDao;
-
+    @Inject
+    protected VMSnapshotDao _vmSnapshotDao;
     String _name;
     private int _totalRetries;
     private int _pauseInterval;
@@ -401,6 +405,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             }
 
             // if volume is attached to a vm in destroyed or expunging state; disallow
+            // if volume is attached to a vm in taking vm snapshot; disallow
             if (volume.getInstanceId() != null) {
                 UserVmVO userVm = _vmDao.findById(volume.getInstanceId());
                 if (userVm != null) {
@@ -414,6 +419,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                         if(activeSnapshots.size() > 1)
                             throw new CloudRuntimeException("There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
                     }
+                    List<VMSnapshotVO> activeVMSnapshots = _vmSnapshotDao.listByInstanceId(userVm.getId(),
+                            VMSnapshot.State.Creating, VMSnapshot.State.Reverting, VMSnapshot.State.Expunging);
+                    if (activeVMSnapshots.size() > 0) {
+                        throw new CloudRuntimeException(
+                                "There is other active vm snapshot tasks on the instance to which the volume is attached, please try again later");
+                    }			
                 }
             }
 

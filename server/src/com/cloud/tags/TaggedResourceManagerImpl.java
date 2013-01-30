@@ -71,6 +71,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 
 @Local(value = { TaggedResourceService.class})
@@ -119,6 +120,8 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
     VpcDao _vpcDao;
     @Inject
     StaticRouteDao _staticRouteDao;
+    @Inject
+    VMSnapshotDao _vmSnapshotDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -138,6 +141,7 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         _daoMap.put(TaggedResourceType.Vpc, _vpcDao);
         _daoMap.put(TaggedResourceType.NetworkACL, _firewallDao);
         _daoMap.put(TaggedResourceType.StaticRoute, _staticRouteDao);
+        _daoMap.put(TaggedResourceType.VMSnapshot, _vmSnapshotDao);
 
         return true;
     }

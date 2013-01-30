@@ -1292,7 +1292,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
         for (ClusterVO cluster : clustersForZone) {
             HypervisorType hType = cluster.getHypervisorType();
-            if (!forVirtualRouter || (forVirtualRouter && hType != HypervisorType.BareMetal && hType != HypervisorType.Ovm)) {
+            if ( (cluster.getAllocationState() == AllocationState.Enabled) && (!forVirtualRouter || (forVirtualRouter && hType != HypervisorType.BareMetal && hType != HypervisorType.Ovm))) {
                 hypervisorTypes.add(hType);
             }
         }

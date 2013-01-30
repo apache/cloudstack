@@ -154,12 +154,17 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.ItWorkVO.Step;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotManager;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Local(value = VirtualMachineManager.class)
 public class VirtualMachineManagerImpl implements VirtualMachineManager, Listener {
@@ -230,6 +235,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     protected HypervisorGuruManager _hvGuruMgr;
     @Inject
     protected NetworkDao _networkDao;
+    @Inject
+    protected VMSnapshotDao _vmSnapshotDao;
 
     @Inject(adapter = DeploymentPlanner.class)
     protected Adapters<DeploymentPlanner> _planners;
@@ -239,6 +246,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Inject
     protected ResourceManager _resourceMgr;
+    
+    @Inject 
+    protected VMSnapshotManager _vmSnapshotMgr = null;
 
     Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
@@ -599,7 +609,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     ConcurrentOperationException, ResourceUnavailableException {
         return advanceStart(vm, params, caller, account, null);
     }
-
+    
     @Override
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
@@ -1186,7 +1196,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             s_logger.debug("Unable to stop " + vm);
             return false;
         }
-
+        
+        if (!_vmSnapshotMgr.deleteAllVMSnapshots(vm.getId(),null)){
+            s_logger.debug("Unable to delete all snapshots for " + vm);
+            return false;
+        }
+        
         try {
             if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
                 s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
@@ -1633,6 +1648,23 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         s_logger.debug("Found " + vms.size() + " VMs for host " + hostId);
         for (VMInstanceVO vm : vms) {
             AgentVmInfo info = infos.remove(vm.getId());
+            
+            // sync VM Snapshots related transient states
+            List<VMSnapshotVO> expungingVMSnapshot = _vmSnapshotDao.listByInstanceId(vm.getId(), VMSnapshot.State.Expunging);
+            if( vm.getState() == State.RevertingToRunning || vm.getState() == State.RevertingToStopped 
+                    || vm.getState() == State.RunningSnapshotting || vm.getState() == State.StoppedSnapshotting 
+                    || expungingVMSnapshot.size() == 1){
+                s_logger.info("Found vm " + vm.getInstanceName() + " in state. " + vm.getState() + ", needs to sync VM snapshot state");
+                if(!_vmSnapshotMgr.syncVMSnapshot(vm, null, hostId)){
+                    s_logger.warn("Failed to sync VM in a transient snapshot related state: " + vm.getInstanceName());
+                    continue;
+                }else{
+                    s_logger.info("Successfully sync VM in a transient snapshot related state: " + vm.getInstanceName() + " to " + vm.getState());
+                }
+                if(expungingVMSnapshot.size() == 1)
+                    _vmSnapshotMgr.syncVMSnapshot(vm, expungingVMSnapshot.get(0), hostId);
+            }
+            
             VMInstanceVO castedVm = null;
             if (info == null) {
                 info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
@@ -1750,8 +1782,31 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         for (VMInstanceVO vm : set_vms) {
             AgentVmInfo info =  infos.remove(vm.getId());
             VMInstanceVO castedVm = null;
-            if ((info == null && (vm.getState() == State.Running || vm.getState() == State.Starting))  
-            		||  (info != null && (info.state == State.Running && vm.getState() == State.Starting))) 
+            
+            // sync VM Snapshots related transient states
+            List<VMSnapshotVO> expungingVMSnapshot = _vmSnapshotDao.listByInstanceId(vm.getId(), VMSnapshot.State.Expunging);
+            if( vm.getState() == State.RevertingToRunning || vm.getState() == State.RevertingToStopped 
+                    || vm.getState() == State.RunningSnapshotting || vm.getState() == State.StoppedSnapshotting 
+                    || expungingVMSnapshot.size() == 1){
+                s_logger.info("Found vm " + vm.getInstanceName() + " in state. " + vm.getState() + ", needs to sync VM snapshot state");
+                Long hostId = null;
+                if(info != null && info.getHostUuid() != null){
+                    Host host = _hostDao.findByGuid(info.getHostUuid());
+                    hostId = host == null ? (vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId()) : host.getId();
+                }
+                if(!_vmSnapshotMgr.syncVMSnapshot(vm, null, hostId)){
+                    s_logger.warn("Failed to sync VM in a transient snapshot related state: " + vm.getInstanceName());
+                    continue;
+                }else{
+                    s_logger.info("Successfully sync VM in a transient snapshot related state: " + vm.getInstanceName() + " to " + vm.getState());
+                }
+                if(expungingVMSnapshot.size() == 1)
+                    _vmSnapshotMgr.syncVMSnapshot(vm, expungingVMSnapshot.get(0), hostId);
+            }
+            
+            if ((info == null && (vm.getState() == State.Running || vm.getState() == State.Starting ))  
+            		||  (info != null && (info.state == State.Running && vm.getState() == State.Starting))
+					||  (info != null && (info.state == State.Running && vm.getState() == State.RevertingToRunning))) 
             {
             	s_logger.info("Found vm " + vm.getInstanceName() + " in inconsistent state. " + vm.getState() + " on CS while " +  (info == null ? "Stopped" : "Running") + " on agent");
                 info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
@@ -1792,7 +1847,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
             }
             else if (info != null && (vm.getState() == State.Stopped || vm.getState() == State.Stopping
-                    || vm.isRemoved() || vm.getState() == State.Destroyed || vm.getState() == State.Expunging)) {
+                    || vm.isRemoved() || vm.getState() == State.Destroyed || vm.getState() == State.Expunging )) {
                 Host host = _hostDao.findByGuid(info.getHostUuid());
                 if (host != null){
                     s_logger.warn("Stopping a VM which is stopped/stopping/destroyed/expunging " + info.name);
@@ -2267,6 +2322,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
         Long clusterId = agent.getClusterId();
         long agentId = agent.getId();
+
         if (agent.getHypervisorType() == HypervisorType.XenServer) { // only for Xen
         	StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
         	HashMap<String, Pair<String, State>> allStates = startup.getClusterVMStateChanges();
@@ -2383,7 +2439,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (newServiceOffering == null) {
             throw new InvalidParameterValueException("Unable to find a service offering with id " + newServiceOfferingId);
         }
-
+		
         // Check that the VM is stopped
         if (!vmInstance.getState().equals(State.Stopped)) {
             s_logger.warn("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
