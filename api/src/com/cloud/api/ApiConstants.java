@@ -38,7 +38,7 @@ public class ApiConstants {
     public static final String DOMAIN_SUFFIX = "domainsuffix";
     public static final String DNS_SEARCH_ORDER = "dnssearchorder";
     public static final String CIDR = "cidr";
-    public static final String IP6CIDR = "ip6cidr";
+    public static final String IP6_CIDR = "ip6cidr";
     public static final String CIDR_LIST = "cidrlist";
     public static final String CLEANUP = "cleanup";
     public static final String CLUSTER_ID = "clusterid";
@@ -75,7 +75,7 @@ public class ApiConstants {
     public static final String FORMAT = "format";
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
     public static final String GATEWAY = "gateway";
-    public static final String IP6GATEWAY = "ip6gateway";
+    public static final String IP6_GATEWAY = "ip6gateway";
     public static final String GROUP = "group";
     public static final String GROUP_ID = "groupid";
     public static final String GUEST_CIDR_ADDRESS = "guestcidraddress";
