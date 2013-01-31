@@ -124,7 +124,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         try {
             _eventBus.publish(eventMsg);
         } catch (EventBusException e) {
-            s_logger.warn("Failed to publish action event on the the event bus.");
+            s_logger.warn("Failed to publish state change event on the the event bus.");
         }
 
     }
