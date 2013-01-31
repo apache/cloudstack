@@ -60,6 +60,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
+import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.Criteria;
@@ -378,8 +379,8 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
 
     @Override
     public UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner,
-            String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps,
-            String defaultIp, String keyboard) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException,
+            String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps,
+            IpAddresses defaultIp, String keyboard) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException,
             ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
@@ -388,7 +389,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     @Override
     public UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList,
             List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData,
-            String sshKeyPair, Map<Long, String> requestedIps, String defaultIp, String keyboard) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
+            String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, String keyboard) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
             StorageUnavailableException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
@@ -396,7 +397,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
 
     @Override
     public UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps, String defaultIp,
+            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps,
             String keyboard) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;

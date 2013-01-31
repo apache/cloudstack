@@ -28,7 +28,9 @@ public class DhcpEntryCommand extends NetworkElementCommand {
     String defaultRouter;
     String staticRoutes;
     String defaultDns;
-
+    String vmIp6Address;
+    String ip6Gateway;
+    String duid;
 
     protected DhcpEntryCommand() {
 
@@ -39,14 +41,15 @@ public class DhcpEntryCommand extends NetworkElementCommand {
         return true;
     }
 
-    public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName) {
+    public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName, String vmIp6Address) {
         this.vmMac = vmMac;
         this.vmIpAddress = vmIpAddress;
         this.vmName = vmName;
+        this.vmIp6Address = vmIp6Address;
     }
 
-    public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName, String dns, String gateway) {
-        this(vmMac, vmIpAddress, vmName);
+    public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName, String vmIp6Address, String dns, String gateway, String ip6Gateway) {
+        this(vmMac, vmIpAddress, vmName, vmIp6Address);
         this.dns = dns;
         this.gateway = gateway;
     }
@@ -101,5 +104,29 @@ public class DhcpEntryCommand extends NetworkElementCommand {
 
 	public void setDefaultDns(String defaultDns) {
 		this.defaultDns = defaultDns;
+	}
+
+	public String getIp6Gateway() {
+		return ip6Gateway;
+	}
+
+	public void setIp6Gateway(String ip6Gateway) {
+		this.ip6Gateway = ip6Gateway;
+	}
+
+	public String getDuid() {
+		return duid;
+	}
+
+	public void setDuid(String duid) {
+		this.duid = duid;
+	}
+
+	public String getVmIp6Address() {
+		return vmIp6Address;
+	}
+
+	public void setVmIp6Address(String ip6Address) {
+		this.vmIp6Address = ip6Address;
 	}
 }

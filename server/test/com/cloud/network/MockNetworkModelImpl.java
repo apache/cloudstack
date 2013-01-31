@@ -806,4 +806,10 @@ public class MockNetworkModelImpl implements NetworkModel, Manager {
         return false;
     }
 
+	@Override
+	public Vlan getVlanForNetwork(long networkId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

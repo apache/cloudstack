@@ -22,23 +22,11 @@
 # @VERSION@
 
 usage() {
-  printf "Usage: %s: -r <domr-ip> -m <vm mac> -v <vm ip> -n <vm name>\n" $(basename $0) >&2
+  printf "Usage: %s: -r <domr-ip> -m <vm mac> -v <vm ip> -n <vm name> -s <static route> -d <default router> -N <dns> -6 <vm IPv6> -u <duid>\n" $(basename $0) >&2
   exit 2
 }
 
 cert="/root/.ssh/id_rsa.cloud"
-
-add_dhcp_entry() {
-  local domr=$1
-  local mac=$2
-  local ip=$3
-  local vm=$4
-  local dfltrt=$5
-  local ns=$6
-  local staticrt=$7
-  ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$domr "/root/edithosts.sh $mac $ip $vm $dfltrt $ns $staticrt" >/dev/null
-  return $?
-}
 
 domrIp=
 vmMac=
@@ -47,30 +35,46 @@ vmName=
 staticrt=
 dfltrt=
 dns=
+ipv6=
+duid=
 
-while getopts 'r:m:v:n:d:s:N:' OPTION
+opts=
+
+while getopts 'r:m:v:n:d:s:N:6:u:' OPTION
 do
   case $OPTION in
-  r)	domrIp="$OPTARG"
-		;;
-  v)	vmIp="$OPTARG"
-		;;
-  m)	vmMac="$OPTARG"
-		;;
-  n)	vmName="$OPTARG"
-		;;
-  s)	staticrt="$OPTARG"
-		;;
-  d)	dfltrt="$OPTARG"
-		;;
-  N)	dns="$OPTARG"
-		;;
-  ?)    usage
-		exit 1
-		;;
+  r)  domrIp="$OPTARG"
+      ;;
+  v)  vmIp="$OPTARG"
+      opts="$opts -4 $vmIp"
+      ;;
+  m)  vmMac="$OPTARG"
+      opts="$opts -m $vmMac"
+      ;;
+  n)  vmName="$OPTARG"
+      opts="$opts -h $vmName"
+      ;;
+  s)  staticrt="$OPTARG"
+      opts="$opts -s $staticrt"
+      ;;
+  d)  dfltrt="$OPTARG"
+      opts="$opts -d $dfltrt"
+      ;;
+  N)  dns="$OPTARG"
+      opts="$opts -n $dns"
+      ;;
+  6)  ipv6="$OPTARG"
+      opts="$opts -6 $ipv6"
+      ;;
+  u)  duid="$OPTARG"
+      opts="$opts -u $duid"
+      ;;
+  ?)  usage
+      exit 1
+      ;;
   esac
 done
 
-add_dhcp_entry $domrIp $vmMac $vmIp $vmName $dfltrt $dns $staticrt
+ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$domrIp "/root/edithosts.sh $opts " >/dev/null
 
 exit $?

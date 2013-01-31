@@ -91,6 +91,7 @@ import com.cloud.keystore.KeystoreManagerImpl;
 import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.ExternalLoadBalancerUsageManagerImpl;
+import com.cloud.network.Ipv6AddressManagerImpl;
 import com.cloud.network.NetworkManagerImpl;
 import com.cloud.network.NetworkModelImpl;
 import com.cloud.network.NetworkServiceImpl;
@@ -122,6 +123,7 @@ import com.cloud.network.dao.PhysicalNetworkDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDaoImpl;
 import com.cloud.network.dao.PortProfileDaoImpl;
+import com.cloud.network.dao.UserIpv6AddressDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDaoImpl;
 import com.cloud.network.dao.Site2SiteVpnConnectionDaoImpl;
@@ -380,6 +382,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("Site2SiteVpnGatewayDao", Site2SiteVpnGatewayDaoImpl.class);
         addDao("Site2SiteCustomerGatewayDao", Site2SiteCustomerGatewayDaoImpl.class);
         addDao("Site2SiteVpnConnnectionDao", Site2SiteVpnConnectionDaoImpl.class);
+        addDao("UserIpv6AddressDao", UserIpv6AddressDaoImpl.class);
 
         addDao("UserVmJoinDao", UserVmJoinDaoImpl.class);
         addDao("DomainRouterJoinDao", DomainRouterJoinDaoImpl.class);
@@ -462,6 +465,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("TaggedResourcesManager", TaggedResourceManagerImpl.class);
         addManager("Site2SiteVpnManager", Site2SiteVpnManagerImpl.class);
         addManager("QueryManager", QueryManagerImpl.class);
+        addManager("Ipv6AddressManager", Ipv6AddressManagerImpl.class);
     }
 
     @Override

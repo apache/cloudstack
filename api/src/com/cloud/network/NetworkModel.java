@@ -249,4 +249,5 @@ public interface NetworkModel {
     
     boolean isNetworkInlineMode(Network network);
 
+	Vlan getVlanForNetwork(long networkId);
 }
