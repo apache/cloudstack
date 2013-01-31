@@ -386,8 +386,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
 
             pool.refresh();
-            pool.setCapacity(storage.getInfo().capacity);
-            pool.setUsed(storage.getInfo().allocation);
+            getStats(pool);
 
             return pool;
         } catch (LibvirtException e) {
@@ -423,6 +422,26 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
     }
+    
+    private void getStats(LibvirtStoragePool pool) {
+        Script statsScript = new Script("/bin/bash", s_logger);
+        statsScript.add("-c");
+        statsScript.add("stats=$(df --total " + pool.getLocalPath()
+                        + " |grep total|awk '{print $2,$3}');echo $stats");
+        final OutputInterpreter.OneLineParser statsParser = new OutputInterpreter.OneLineParser();
+        String result = statsScript.execute(statsParser);
+        if (result == null) {
+                String stats = statsParser.getLine();
+                if (stats != null && !stats.isEmpty()) {
+                        String sizes[] = stats.trim().split(" ");
+                        if (sizes.length == 2) {
+                                pool.setCapacity(Long.parseLong(sizes[0]) * 1024);
+                                pool.setUsed(Long.parseLong(sizes[1]) * 1024);
+                        }
+                }
+        }
+}
+
 
     @Override
     public KVMStoragePool createStoragePool(String name, String host, int port,
@@ -474,9 +493,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 pool.setLocalPath("");
             }
 
-            pool.setCapacity(sp.getInfo().capacity);
-            pool.setUsed(sp.getInfo().allocation);
-  
+            getStats(pool);
             return pool;
         } catch (LibvirtException e) {
             throw new CloudRuntimeException(e.toString());
