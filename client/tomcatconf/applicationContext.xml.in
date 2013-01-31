@@ -89,6 +89,82 @@
 
   <bean id="eventBus" class = "org.apache.cloudstack.framework.eventbus.EventBusBase" />
 
-  <bean id="apiServlet" class = "com.cloud.api.ApiServlet" />
+  <!--
+    DAO with customized configuration
+  -->
+  <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
+  </bean>
+  
+  <bean id="serviceOfferingDaoImpl" class="com.cloud.service.dao.ServiceOfferingDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="50" />
+        <entry key="cache.time.to.live" value="600" />
+      </map>
+    </property>  
+  </bean>
 
+  <bean id="diskOfferingDaoImpl" class="com.cloud.storage.dao.DiskOfferingDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="50" />
+        <entry key="cache.time.to.live" value="600" />
+      </map>
+    </property>  
+  </bean>
+
+  <bean id="dataCenterDaoImpl" class="com.cloud.dc.dao.DataCenterDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="50" />
+        <entry key="cache.time.to.live" value="600" />
+      </map>
+    </property>  
+  </bean>
+
+  <bean id="hostPodDaoImpl" class="com.cloud.dc.dao.HostPodDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="50" />
+        <entry key="cache.time.to.live" value="600" />
+      </map>
+    </property>  
+  </bean>
+
+  <bean id="vlanDaoImpl" class="com.cloud.dc.dao.VlanDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="30" />
+        <entry key="cache.time.to.live" value="3600" />
+      </map>
+    </property>  
+  </bean>
+
+  <bean id="userDaoImpl" class="com.cloud.user.dao.UserDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="5000" />
+        <entry key="cache.time.to.live" value="300" />
+      </map>
+    </property>  
+  </bean>
+
+  <bean id="VMTemplateDaoImpl" class="com.cloud.storage.dao.VMTemplateDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="100" />
+        <entry key="cache.time.to.live" value="600" />
+      </map>
+    </property>  
+  </bean>
+
+  <bean id="hypervisorCapabilitiesDaoImpl" class="com.cloud.hypervisor.dao.HypervisorCapabilitiesDaoImpl">
+    <property name="configParams">
+      <map>
+        <entry key="cache.size" value="100" />
+        <entry key="cache.time.to.live" value="600" />
+      </map>
+    </property>  
+  </bean>
+ 
 </beans>

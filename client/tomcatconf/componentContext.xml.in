@@ -254,10 +254,4 @@
     <property name="name" value="OvmGuru"/>
   </bean>
   
-  <!--
-    DAO with customized configuration
-  -->
-  <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
-  </bean>
-  
 </beans>
