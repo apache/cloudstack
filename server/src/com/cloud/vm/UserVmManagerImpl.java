@@ -473,7 +473,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         VMInstanceVO vmInstance = _vmDao.findById(vmId);
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
-        Nic defaultNic = _networkMgr.getDefaultNic(vmId);
+        Nic defaultNic = _networkModel.getDefaultNic(vmId);
         if (defaultNic == null) {
             s_logger.error("Unable to reset SSH Key for vm " + vmInstance + " as the instance doesn't have default nic");
             return false;
@@ -481,8 +481,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
         NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null,
-                _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork),
-                _networkMgr.getNetworkTag(template.getHypervisorType(), defaultNetwork));
+                _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork),
+                _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
 
         VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmInstance);
 

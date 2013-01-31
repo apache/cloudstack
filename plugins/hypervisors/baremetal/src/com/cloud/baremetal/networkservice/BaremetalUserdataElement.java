@@ -92,6 +92,12 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
     }
 
     @Override
+    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String SSHPublicKey) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
         return capabilities;
     }

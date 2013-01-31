@@ -2635,7 +2635,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
             return null;
         }
 
-        return (UserDataServiceProvider)getElementImplementingProvider(SSHKeyProvider);
+        return (UserDataServiceProvider)_networkModel.getElementImplementingProvider(SSHKeyProvider);
     }
 
     protected boolean isSharedNetworkOfferingWithServices(long networkOfferingId) {

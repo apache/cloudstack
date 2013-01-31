@@ -74,6 +74,11 @@ public class MockVpcVirtualNetworkApplianceManager implements VpcVirtualNetworkA
         return false;
     }
 
+    @Override
+    public boolean saveSSHPublicKeyToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, List<? extends VirtualRouter> routers, String SSHPublicKey) throws ResourceUnavailableException {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#saveUserDataToRouter(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.VirtualMachineProfile, java.util.List)
      */
