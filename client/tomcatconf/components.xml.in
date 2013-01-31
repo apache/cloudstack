@@ -233,15 +233,6 @@ under the License.
         <adapters key="com.cloud.agent.StartupCommandProcessor">
             <adapter name="BasicAgentAuthorizer" class="com.cloud.agent.manager.authn.impl.BasicAgentAuthManager"/>
         </adapters>
-        <adapters key="org.apache.cloudstack.framework.events.EventBus">
-            <adapter name="RabbitMQMessageBroker" class="org.apache.cloudstack.mom.rabbitmq.RabbitMQEventBus">
-            <param name="server">127.0.0.1</param>
-            <param name="port">5672</param>
-            <param name="username">guest</param>
-            <param name="password">guest</param>
-            <param name="exchangename">cloudstack-evetns</param>
-            </adapter>
-        </adapters>
         <manager name="OvsTunnelManager" key="com.cloud.network.ovs.OvsTunnelManager" class="com.cloud.network.ovs.OvsTunnelManagerImpl"/>
         <manager name="ElasticLoadBalancerManager" key="com.cloud.network.lb.ElasticLoadBalancerManager" class="com.cloud.network.lb.ElasticLoadBalancerManagerImpl"/>
         <pluggableservice name="ApiDiscoveryService" key="org.apache.cloudstack.discovery.ApiDiscoveryService" class="org.apache.cloudstack.discovery.ApiDiscoveryServiceImpl"/>
