@@ -796,6 +796,15 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         	if (!NetUtils.isValidIp6Cidr(ip6Cidr)) {
         		throw new InvalidParameterValueException("Invalid ip6cidr");
         	}
+        	if (!NetUtils.isIp6InRange(startIPv6, ip6Cidr)) {
+        		throw new InvalidParameterValueException("startIPv6 is not in ip6cidr indicated network range!");
+        	}
+        	if (!NetUtils.isIp6InRange(endIPv6, ip6Cidr)) {
+        		throw new InvalidParameterValueException("endIPv6 is not in ip6cidr indicated network range!");
+        	}
+        	if (!NetUtils.isIp6InRange(ip6Gateway, ip6Cidr)) {
+        		throw new InvalidParameterValueException("ip6Gateway is not in ip6cidr indicated network range!");
+        	}
         	
         	int cidrSize = NetUtils.getIp6CidrSize(ip6Cidr);
         	// Ipv6 cidr limit should be at least /64
