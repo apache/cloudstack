@@ -351,6 +351,11 @@ createFirewallRule=15
 deleteFirewallRule=15
 listFirewallRules=15
 
+#### 
+createEgressFirewallRule=15
+deleteEgressFirewallRule=15
+listEgressFirewallRules=15
+
 #### hypervisor capabilities commands
 updateHypervisorCapabilities=1
 listHypervisorCapabilities=1

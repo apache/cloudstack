@@ -565,6 +565,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+        firewallCapabilities.put(Capability.SupportedEgressProtocols, "tcp,udp,icmp, all");
+        firewallCapabilities.put(Capability.SupportedTrafficDirection, "ingress, egress");
         firewallCapabilities.put(Capability.MultipleIps, "true");
         capabilities.put(Service.Firewall, firewallCapabilities);
 

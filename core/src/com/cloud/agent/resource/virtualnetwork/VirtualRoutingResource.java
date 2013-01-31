@@ -69,12 +69,14 @@ import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
+import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.net.NetUtils;
@@ -214,11 +216,18 @@ public class VirtualRoutingResource implements Manager {
             return new SetFirewallRulesAnswer(cmd, false, results);
         }
 
+        FirewallRuleTO[] allrules = cmd.getRules();
+        FirewallRule.TrafficType trafficType = allrules[0].getTrafficType();
+
         String[][] rules = cmd.generateFwRules();
         final Script command = new Script(_firewallPath, _timeout, s_logger);
         command.add(routerIp);
         command.add("-F");
-        
+
+        if (trafficType == FirewallRule.TrafficType.Egress){
+            command.add("-E");
+        }
+
         StringBuilder sb = new StringBuilder();
         String[] fwRules = rules[0];
         if (fwRules.length > 0) {

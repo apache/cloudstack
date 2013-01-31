@@ -2313,10 +2313,15 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(fwRule.getId());
         response.setCidrList(StringUtils.join(cidrs, ","));
-
-        IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
-        response.setPublicIpAddressId(ip.getId());
-        response.setPublicIpAddress(ip.getAddress().addr());
+        
+        if (fwRule.getTrafficType() == FirewallRule.TrafficType.Ingress) {
+            IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
+            response.setPublicIpAddressId(ip.getId());
+            response.setPublicIpAddress(ip.getAddress().addr());
+        } else if (fwRule.getTrafficType() == FirewallRule.TrafficType.Egress) {
+            response.setPublicIpAddress(null);
+            response.setNetworkId(fwRule.getNetworkId());
+        }
 
         FirewallRule.State state = fwRule.getState();
         String stateToSet = state.toString();
