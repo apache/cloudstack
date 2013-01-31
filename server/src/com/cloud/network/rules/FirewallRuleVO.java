@@ -45,7 +45,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name="firewall_rules")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="purpose", discriminatorType=DiscriminatorType.STRING, length=32)
-public class FirewallRuleVO implements FirewallRule {
+public class FirewallRuleVO implements Identity, FirewallRule {
     protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
 
     @Id
@@ -87,8 +87,8 @@ public class FirewallRuleVO implements FirewallRule {
     Date created;
 
     @Column(name="network_id")
-    long networkId;
-
+    Long networkId;
+    
     @Column(name="icmp_code")
     Integer icmpCode;
 
@@ -209,11 +209,6 @@ public class FirewallRuleVO implements FirewallRule {
         }
         this.accountId = accountId;
         this.domainId = domainId;
-
-        if (ipAddressId == null) {
-            assert (purpose == Purpose.NetworkACL) : "ipAddressId can be null for " + Purpose.NetworkACL + " only";
-        }
-
         this.sourceIpAddressId = ipAddressId;
         this.sourcePortStart = portStart;
         this.sourcePortEnd = portEnd;

@@ -24,6 +24,7 @@ COMMIT
 :INPUT DROP [0:0]
 :FORWARD DROP [0:0]
 :OUTPUT ACCEPT [0:0]
+:FW_OUTBOUND - [0:0]
 -A INPUT -d 224.0.0.18/32 -j ACCEPT
 -A INPUT -d 225.0.0.50/32 -j ACCEPT
 -A INPUT -i eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
@@ -37,10 +38,11 @@ COMMIT
 -A INPUT -i eth1 -p tcp -m state --state NEW --dport 3922 -j ACCEPT
 -A INPUT -i eth0 -p tcp -m state --state NEW --dport 80 -j ACCEPT
 -A FORWARD -i eth0 -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT
--A FORWARD -i eth0 -o eth2 -j ACCEPT
 -A FORWARD -i eth2 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
 -A FORWARD -i eth0 -o eth0 -m state --state NEW -j ACCEPT
 -A FORWARD -i eth0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -i eth0 -o eth2 -j FW_OUTBOUND
+-I FW_OUTBOUND -m state --state RELATED,ESTABLISHED -j ACCEPT
 COMMIT
 *mangle
 :PREROUTING ACCEPT [0:0]

@@ -153,6 +153,7 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
@@ -190,6 +191,7 @@ import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.resource.ServerResource;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Storage;
@@ -618,10 +620,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected SetFirewallRulesAnswer execute(SetFirewallRulesCommand cmd) {
 		String controlIp = getRouterSshControlIp(cmd);
 		String[] results = new String[cmd.getRules().length];
+        FirewallRuleTO[] allrules = cmd.getRules();
+        FirewallRule.TrafficType trafficType = allrules[0].getTrafficType();
 
 		String[][] rules = cmd.generateFwRules();
 		String args = "";
 		args += " -F ";
+        if (trafficType == FirewallRule.TrafficType.Egress){
+            args+= " -E ";
+        }
+
 		StringBuilder sb = new StringBuilder();
 		String[] fwRules = rules[0];
 		if (fwRules.length > 0) {
@@ -634,13 +642,28 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 		try {
 			VmwareManager mgr = getServiceContext().getStockObject(
 					VmwareManager.CONTEXT_STOCK_NAME);
-			Pair<Boolean, String> result = SshHelper.sshExecute(controlIp,
+
+            Pair<Boolean, String> result = null;
+
+            if (trafficType == FirewallRule.TrafficType.Egress){
+                result = SshHelper.sshExecute(controlIp,
+                        DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(),
+                        null, "/root/firewallRule_egress.sh " + args);
+            } else {
+                result = SshHelper.sshExecute(controlIp,
 					DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(),
 					null, "/root/firewall_rule.sh " + args);
+            }
 
-			if (s_logger.isDebugEnabled())
+            if (s_logger.isDebugEnabled()) {
+                if (trafficType == FirewallRule.TrafficType.Egress){
+                    s_logger.debug("Executing script on domain router " + controlIp
+                            + ": /root/firewallRule_egress.sh " + args);
+                } else {
 				s_logger.debug("Executing script on domain router " + controlIp
 						+ ": /root/firewall_rule.sh " + args);
+                 }
+             }
 
 			if (!result.first()) {
 				s_logger.error("SetFirewallRulesCommand failure on setting one rule. args: "

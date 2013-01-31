@@ -40,8 +40,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
-
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
+import com.cloud.agent.api.to.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -469,6 +469,28 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 Commands cmds = new Commands(OnError.Stop);
                 NicVO nicVo = _nicDao.findById(nic.getId());
                 createPasswordCommand(router, updatedProfile, nicVo, cmds);
+                return sendCommandsToRouter(router, cmds);
+            }
+        });
+    }
+
+    @Override
+    public boolean saveSSHPublicKeyToRouter(Network network, final NicProfile nic, VirtualMachineProfile<UserVm> profile, List<? extends VirtualRouter> routers, final String SSHPublicKey) throws ResourceUnavailableException {
+        _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
+
+        final VirtualMachineProfile<UserVm> updatedProfile = profile;
+
+        return applyRules(network, routers, "save SSHkey entry", false, null, false, new RuleApplier() {
+            @Override
+            public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
+                // for basic zone, send vm data/password information only to the router in the same pod
+                Commands cmds = new Commands(OnError.Stop);
+                NicVO nicVo = _nicDao.findById(nic.getId());
+                VMTemplateVO template = _templateDao.findByIdIncludingRemoved(updatedProfile.getTemplateId());
+                if(template != null && template.getEnablePassword()) {
+			createPasswordCommand(router, updatedProfile, nicVo, cmds);
+                }
+                createVmDataCommand(router, updatedProfile.getVirtualMachine(), nicVo, SSHPublicKey, cmds);
                 return sendCommandsToRouter(router, cmds);
             }
         });
@@ -2202,13 +2224,25 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         s_logger.debug("Resending ipAssoc, port forwarding, load balancing rules as a part of Virtual router start");
       
         ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
+        List<FirewallRule> firewallRulesEgress = new ArrayList<FirewallRule>();
+
+        //  Fetch firewall Egress rules.
+        if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
+            firewallRulesEgress.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Firewall,FirewallRule.TrafficType.Egress));
+        }
+
+        // Re-apply firewall Egress rules
+        s_logger.debug("Found " + firewallRulesEgress.size() + " firewall Egress rule(s) to apply as a part of domR " + router + " start.");
+        if (!firewallRulesEgress.isEmpty()) {
+            createFirewallRulesCommands(firewallRulesEgress, router, cmds, guestNetworkId);
+        }
 
         if (publicIps != null && !publicIps.isEmpty()) {
             List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>();
             List<PortForwardingRule> pfRules = new ArrayList<PortForwardingRule>();
             List<FirewallRule> staticNatFirewallRules = new ArrayList<FirewallRule>();
             List<StaticNat> staticNats = new ArrayList<StaticNat>();
-            List<FirewallRule> firewallRules = new ArrayList<FirewallRule>();
+            List<FirewallRule> firewallRulesIngress = new ArrayList<FirewallRule>();
       
             //Get information about all the rules (StaticNats and StaticNatRules; PFVPN to reapply on domR start)
             for (PublicIpAddress ip : publicIps) {
@@ -2219,7 +2253,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     staticNatFirewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.StaticNat));
                 }
                 if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
-                    firewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.Firewall));
+                    firewallRulesIngress.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.Firewall));
                 }
       
                 if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Vpn, provider)) {
@@ -2237,17 +2271,17 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     }
                 }
             }
-   
-            //Re-apply static nats
+
+            // Re-apply static nats
             s_logger.debug("Found " + staticNats.size() + " static nat(s) to apply as a part of domR " + router + " start.");
             if (!staticNats.isEmpty()) {
                 createApplyStaticNatCommands(staticNats, router, cmds, guestNetworkId);
             }
-       
-            //Re-apply firewall rules
-            s_logger.debug("Found " + staticNats.size() + " firewall rule(s) to apply as a part of domR " + router + " start.");
-            if (!firewallRules.isEmpty()) {
-                createFirewallRulesCommands(firewallRules, router, cmds, guestNetworkId);
+
+            // Re-apply firewall Ingress rules
+            s_logger.debug("Found " + firewallRulesIngress.size() + " firewall Ingress rule(s) to apply as a part of domR " + router + " start.");
+            if (!firewallRulesIngress.isEmpty()) {
+                createFirewallRulesCommands(firewallRulesIngress, router, cmds, guestNetworkId);
             }
        
             // Re-apply port forwarding rules
@@ -2904,7 +2938,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
             List<LbStickinessPolicy> stickinessPolicies = rule.getStickinessPolicies();
-            LoadBalancerTO lb = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, false, destinations, stickinessPolicies);
+            LoadBalancerTO lb = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, inline, destinations, stickinessPolicies);
             lbs[i++] = lb;
         }
         String routerPublicIp = null;
@@ -3232,9 +3266,17 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (rules != null) {
             rulesTO = new ArrayList<FirewallRuleTO>();
             for (FirewallRule rule : rules) {
-                IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
-                FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr());
-                rulesTO.add(ruleTO);
+                FirewallRule.TrafficType traffictype = rule.getTrafficType();
+                if(traffictype == FirewallRule.TrafficType.Ingress){
+                        IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
+                        FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr(),Purpose.Firewall,traffictype);
+                        rulesTO.add(ruleTO);
+                }
+                else if (rule.getTrafficType() == FirewallRule.TrafficType.Egress){
+                        assert (rule.getSourceIpAddressId()==null) : "ipAddressId should be null for egress firewall rule. ";
+                        FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null,"",Purpose.Firewall,traffictype);
+                        rulesTO.add(ruleTO);
+                }
             }
         }
 

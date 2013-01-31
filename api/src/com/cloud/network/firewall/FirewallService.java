@@ -27,7 +27,8 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 public interface FirewallService {
-    FirewallRule createFirewallRule(FirewallRule rule) throws NetworkRuleConflictException;
+    FirewallRule createIngressFirewallRule(FirewallRule rule) throws NetworkRuleConflictException;
+    FirewallRule createEgressFirewallRule(FirewallRule rule) throws NetworkRuleConflictException;
 
     Pair<List<? extends FirewallRule>, Integer> listFirewallRules(ListFirewallRulesCmd cmd);
 
@@ -40,7 +41,8 @@ public interface FirewallService {
      */
     boolean revokeFirewallRule(long ruleId, boolean apply);
 
-    boolean applyFirewallRules(long ipId, Account caller) throws ResourceUnavailableException;
+    boolean applyEgressFirewallRules (FirewallRule rule, Account caller) throws ResourceUnavailableException;
+    boolean applyIngressFirewallRules(long Ipid , Account caller) throws ResourceUnavailableException;
 
     FirewallRule getFirewallRule(long ruleId);
 

@@ -58,7 +58,7 @@ export JAVA_HOME
 SCP=""
 DCP=""
 ACP=`ls /usr/share/cloud/java/* | tr '\n' ':'`
-JCP="/usr/share/java/commons-daemon.jar"
+JCP="/usr/share/java/jna.jar:/usr/share/java/commons-daemon.jar"
 
 # We need to append the JSVC daemon JAR to the classpath
 # AgentShell implements the JSVC daemon methods

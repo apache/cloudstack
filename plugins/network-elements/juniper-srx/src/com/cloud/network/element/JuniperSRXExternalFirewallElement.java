@@ -277,6 +277,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
         firewallCapabilities.put(Capability.MultipleIps, "true");
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
+        firewallCapabilities.put(Capability.SupportedTrafficDirection, "ingress");
         capabilities.put(Service.Firewall, firewallCapabilities);
 
         // Disabling VPN for Juniper in Acton as it 1) Was never tested 2) probably just doesn't work

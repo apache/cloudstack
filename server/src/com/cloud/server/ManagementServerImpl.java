@@ -1513,10 +1513,11 @@ public class ManagementServerImpl implements ManagementServer {
         Account caller = UserContext.current().getCaller();
         _accountMgr.checkAccess(caller, domain);
 
-        // domain name is unique in the cloud
+        // domain name is unique under the parent domain
         if (domainName != null) {
             SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
             sc.addAnd("name", SearchCriteria.Op.EQ, domainName);
+            sc.addAnd("parent", SearchCriteria.Op.EQ, domain.getParent());
             List<DomainVO> domains = _domainDao.search(sc, null);
 
             boolean sameDomain = (domains.size() == 1 && domains.get(0).getId() == domainId);

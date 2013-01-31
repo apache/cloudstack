@@ -54,6 +54,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
@@ -68,6 +70,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
 public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Manager {
@@ -245,6 +248,12 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     }
 
     @Override
+    public UserVm resetVMSSHKey(ResetVMSSHKeyCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public Volume attachVolumeToVM(AttachVolumeCmd cmd) {
         // TODO Auto-generated method stub
         return null;
@@ -271,6 +280,24 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
 
     @Override
     public UserVm updateVirtualMachine(UpdateVMCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public UserVm addNicToVirtualMachine(AddNicToVMCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, CloudRuntimeException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+    
+    @Override
+    public UserVm removeNicFromVirtualMachine(RemoveNicFromVMCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, CloudRuntimeException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+    
+    @Override
+    public UserVm updateDefaultNicForVirtualMachine(UpdateDefaultNicForVMCmd cmd) throws InvalidParameterValueException, CloudRuntimeException {
         // TODO Auto-generated method stub
         return null;
     }

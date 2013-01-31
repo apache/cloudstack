@@ -144,6 +144,8 @@ public interface NetworkManager  {
 
     UserDataServiceProvider getPasswordResetProvider(Network network);
 
+    UserDataServiceProvider getSSHKeyResetProvider(Network network);
+
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
     
     boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, List<? extends PublicIpAddress> publicIps) throws ResourceUnavailableException;
@@ -262,7 +264,7 @@ public interface NetworkManager  {
      * @throws InsufficientCapacityException
      * @throws ResourceUnavailableException
      */
-    NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfileImpl<VMInstanceVO> vmProfile, boolean prepare) throws InsufficientVirtualNetworkCapcityException,
+    NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean prepare) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
 
 

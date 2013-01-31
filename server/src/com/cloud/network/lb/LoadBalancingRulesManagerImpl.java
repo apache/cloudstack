@@ -1054,9 +1054,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             throw ex;
         }
 
-        _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, lb.getProtocol(), 
-                Purpose.LoadBalancing, FirewallRuleType.User);
-
         Long networkId = ipAddr.getAssociatedWithNetworkId();
         if (networkId == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule ; specified sourceip id is not associated with any network");
@@ -1064,6 +1061,10 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             throw ex;
 
         }
+
+        _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, lb.getProtocol(),
+                Purpose.LoadBalancing, FirewallRuleType.User, networkId, null);
+
         NetworkVO network = _networkDao.findById(networkId);
 
         _accountMgr.checkAccess(caller.getCaller(), null, true, ipAddr);
