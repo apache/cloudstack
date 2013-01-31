@@ -60,6 +60,7 @@ rebootVirtualMachine=15
 startVirtualMachine=15
 stopVirtualMachine=15
 resetPasswordForVirtualMachine=15
+resetSSHKeyForVirtualMachine=15
 updateVirtualMachine=15
 listVirtualMachines=15
 getVMPassword=15
@@ -320,6 +321,11 @@ listNetworks=15
 restartNetwork=15
 updateNetwork=15
 
+#### nic commands ####
+addNicToVirtualMachine=15
+removeNicFromVirtualMachine=15
+updateDefaultNicForVirtualMachine=15
+
 #### SSH key pair commands
 registerSSHKeyPair=15
 createSSHKeyPair=15
@@ -344,6 +350,11 @@ deleteProjectInvitation=15
 createFirewallRule=15
 deleteFirewallRule=15
 listFirewallRules=15
+
+#### 
+createEgressFirewallRule=15
+deleteEgressFirewallRule=15
+listEgressFirewallRules=15
 
 #### hypervisor capabilities commands
 updateHypervisorCapabilities=1

@@ -398,7 +398,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements
                         @Override
                         public boolean accept(final File directory,
                                 final String fileName) {
-                            return !fileName.startsWith(".");
+                            File fileToUpload = new File(directory.getAbsolutePath() + "/" + fileName);
+                            return !fileName.startsWith(".") && !fileToUpload.isDirectory();
                         }
                     }, new ObjectNamingStrategy() {
                         @Override

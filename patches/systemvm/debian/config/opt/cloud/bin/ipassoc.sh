@@ -212,9 +212,9 @@ add_first_ip() {
   ip_addr_add $ethDev $pubIp
 
   sudo iptables -D FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-  sudo iptables -D FORWARD -i eth0 -o $ethDev  -j ACCEPT
+  sudo iptables -D FORWARD -i eth0 -o $ethDev  -j FW_OUTBOUND
   sudo iptables -A FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-  sudo iptables -A FORWARD -i eth0 -o $ethDev  -j ACCEPT
+  sudo iptables -A FORWARD -i eth0 -o $ethDev  -j FW_OUTBOUND
 
   add_snat $1
   if [ $? -gt 0  -a $? -ne 2 ]
@@ -246,7 +246,7 @@ remove_first_ip() {
   [ "$mask" == "" ] && mask="32"
 
   sudo iptables -D FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-  sudo iptables -D FORWARD -i eth0 -o $ethDev  -j ACCEPT
+  sudo iptables -D FORWARD -i eth0 -o $ethDev  -j FW_OUTBOUND
   remove_snat $1
   
   sudo ip addr del dev $ethDev "$ipNoMask/$mask"

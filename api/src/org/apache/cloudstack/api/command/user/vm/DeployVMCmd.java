@@ -146,8 +146,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                     "Mutually exclusive with securitygroupids parameter")
     private List<String> securityGroupNameList;
 
-    @ACL(checkKeyAccess=true)
-    @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, entityType={Network.class, IpAddress.class},
+    @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP,
             description = "ip to network mapping. Can't be specified with networkIds parameter." +
                     " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].networkid=uuid - requests to use ip 10.10.10.11 in network id=uuid")
     private Map ipToNetworkList;

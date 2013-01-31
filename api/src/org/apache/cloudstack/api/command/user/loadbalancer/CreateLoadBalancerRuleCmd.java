@@ -245,7 +245,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
 
             if (getOpenFirewall()) {
-                success = success && _firewallService.applyFirewallRules(getSourceIpAddressId(), callerContext.getCaller());
+                success = success && _firewallService.applyIngressFirewallRules(getSourceIpAddressId(), callerContext.getCaller());
             }
 
             // State might be different after the rule is applied, so get new object here

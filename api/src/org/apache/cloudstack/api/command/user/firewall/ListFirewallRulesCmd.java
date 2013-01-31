@@ -56,6 +56,10 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
         return ipAddressId;
     }
 
+    public FirewallRule.TrafficType getTrafficType () {
+    	return FirewallRule.TrafficType.Ingress;
+    }
+   
     public Long getId() {
         return id;
     }

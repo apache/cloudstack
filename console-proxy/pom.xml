@@ -25,6 +25,9 @@
     <artifactId>cloudstack</artifactId>
     <version>4.1.0-SNAPSHOT</version>
   </parent>
+  <properties>
+    <mkisofs>mkisofs</mkisofs>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>log4j</groupId>
@@ -167,6 +170,19 @@
     </plugins>
   </build>
   <profiles>
+    <!-- Debian will never distribute mkisofs due to licensing issues.
+         Fortunately genisoimage is a work-alike -->
+    <profile>
+      <id>genisoimage</id>
+      <activation>
+        <file>
+          <exists>/usr/bin/genisoimage</exists>
+        </file>
+      </activation>
+      <properties>
+        <mkisofs>genisoimage</mkisofs>
+      </properties>
+    </profile>
     <profile>
       <id>vmware</id>
       <activation>
@@ -209,7 +225,7 @@
           </execution>
         </executions>
         <configuration>
-          <executable>mkisofs</executable>
+          <executable>${mkisofs}</executable>
           <workingDirectory>dist</workingDirectory>
           <arguments>
             <argument>-quiet</argument>

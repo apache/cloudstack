@@ -2424,9 +2424,9 @@ Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
             name='Adiscon GmbH'
             url='http://www.adiscon.com/' />
         <organisation
-        	id='vmware.com'
-        	name='VMware, Inc'
-        	url='http://www.vmware.com/' />
+            id='vmware.com'
+            name='VMware, Inc'
+            url='http://www.vmware.com/' />
     </organisations>
     <primary-license id='ApacheLicenseVersion2'>
         <copyright-notice>Copyright (c) 2013 The Apache Software Foundation</copyright-notice>

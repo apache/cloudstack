@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 
@@ -89,6 +90,15 @@ public interface UserVmService {
     UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password) throws ResourceUnavailableException, InsufficientCapacityException;
 
     /**
+     * Resets the SSH Key of a virtual machine.
+     *
+     * @param cmd
+     *            - the command specifying vmId, Keypair name
+     * @return the VM if reset worked successfully, null otherwise
+     */
+    UserVm resetVMSSHKey(ResetVMSSHKeyCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
+
+    /**
      * Attaches the specified volume to the specified VM
      *
      * @param cmd
@@ -112,6 +122,27 @@ public interface UserVmService {
     UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
 
     UserVm updateVirtualMachine(UpdateVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
+
+    /**
+     * Adds a NIC on the given network to the virtual machine
+     * @param cmd the command object that defines the vm and the given network
+     * @return the vm object if successful, null otherwise
+     */
+    UserVm addNicToVirtualMachine(AddNicToVMCmd cmd);
+    
+    /**
+     * Removes a NIC on the given network from the virtual machine
+     * @param cmd the command object that defines the vm and the given network
+     * @return the vm object if successful, null otherwise
+     */
+    UserVm removeNicFromVirtualMachine(RemoveNicFromVMCmd cmd);
+    
+    /**
+     * Updates default Nic to the given network for given virtual machine
+     * @param cmd the command object that defines the vm and the given network
+     * @return the vm object if successful, null otherwise
+     */
+    UserVm updateDefaultNicForVirtualMachine(UpdateDefaultNicForVMCmd cmd);
 
     UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException;
 

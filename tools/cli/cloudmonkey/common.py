@@ -17,34 +17,43 @@
 # under the License.
 
 # Use following rules for versioning:
-# <cloudstack major version>.<cloudstack minor version>.<cli increment>
-__version__ = "4.0.0"
+# <cloudstack version>-<cli increment, starts from 0>
+__version__ = "4.1.0-0"
 
 try:
+    from os.path import expanduser
     import os
     from precache import precached_verbs
 except ImportError, e:
     precached_verbs = {}
 
-# Add config key:value
-config_file = os.path.expanduser('~/.cloudmonkey_config')
-config_fields = {'host': 'localhost', 'port': '8080',
-                 'protocol': 'http', 'path': '/client/api',
-                 'apikey': '', 'secretkey': '',
-                 'timeout': '3600', 'asyncblock': 'true',
-                 'prompt': '🐵 cloudmonkey>', 'color': 'true',
-                 'tabularize': 'false',
-                 'log_file':
-                 os.path.expanduser('~/.cloudmonkey_log'),
-                 'history_file':
-                 os.path.expanduser('~/.cloudmonkey_history')}
+param_type = ['boolean', 'date', 'float', 'integer', 'short', 'list',
+              'long', 'object', 'map', 'string', 'tzdate', 'uuid']
 
-# Add verbs in grammar
-grammar = ['create', 'list', 'delete', 'update', 'lock',
-           'enable', 'activate', 'disable', 'add', 'remove',
-           'attach', 'detach', 'associate', 'disassociate', 'generate', 'ldap',
-           'assign', 'authorize', 'change', 'register', 'configure',
-           'start', 'restart', 'reboot', 'stop', 'reconnect',
-           'cancel', 'destroy', 'revoke', 'mark', 'reset',
-           'copy', 'extract', 'migrate', 'restore', 'suspend',
-           'get', 'query', 'prepare', 'deploy', 'upload']
+config_dir = expanduser('~/.cloudmonkey')
+config_file = expanduser(config_dir + '/config')
+
+# cloudmonkey config fields
+config_fields = {'core': {}, 'ui': {}, 'server': {}, 'user': {}}
+
+# core
+config_fields['core']['cache_file'] = expanduser(config_dir + '/cache')
+config_fields['core']['history_file'] = expanduser(config_dir + '/history')
+config_fields['core']['log_file'] = expanduser(config_dir + '/log')
+
+# ui
+config_fields['ui']['color'] = 'true'
+config_fields['ui']['prompt'] = '> '
+config_fields['ui']['tabularize'] = 'false'
+
+# server
+config_fields['server']['asyncblock'] = 'true'
+config_fields['server']['host'] = 'localhost'
+config_fields['server']['path'] = '/client/api'
+config_fields['server']['port'] = '8080'
+config_fields['server']['protocol'] = 'http'
+config_fields['server']['timeout'] = '3600'
+
+# user
+config_fields['user']['apikey'] = ''
+config_fields['user']['secretkey'] = ''

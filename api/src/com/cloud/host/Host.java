@@ -39,6 +39,8 @@ public interface Host extends StateObject<Status>, Identity, InternalIdentity {
         ExternalLoadBalancer(false),
         ExternalVirtualSwitchSupervisor(false),
         PxeServer(false),
+        BaremetalPxe(false),
+        BaremetalDhcp(false),
         TrafficMonitor(false),
 
         ExternalDhcp(false),

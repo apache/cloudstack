@@ -748,7 +748,7 @@ Within the deps/awsapi-lib directory
             
             The Covered Software is a "commercial item," as that term is
             defined in 48 C.F.R. 2.101 (Oct. 1995), consisting of "commercial
-            computer software" (as that term is defined at 48 C.F.R. ¤
+            computer software" (as that term is defined at 48 C.F.R. ï¿½
             252.227-7014(a)(1)) and "commercial computer software
             documentation" as such terms are used in 48 C.F.R. 12.212 (Sept.
             1995). Consistent with 48 C.F.R. 12.212 and 48 C.F.R. 227.7202-1
@@ -1138,7 +1138,7 @@ Within the deps/awsapi-lib directory
             
             The Covered Software is a "commercial item," as that term is
             defined in 48 C.F.R. 2.101 (Oct. 1995), consisting of "commercial
-            computer software" (as that term is defined at 48 C.F.R. ¤
+            computer software" (as that term is defined at 48 C.F.R. ï¿½
             252.227-7014(a)(1)) and "commercial computer software
             documentation" as such terms are used in 48 C.F.R. 12.212 (Sept.
             1995). Consistent with 48 C.F.R. 12.212 and 48 C.F.R. 227.7202-1
@@ -1526,7 +1526,7 @@ Within the deps/awsapi-lib directory
             
             The Covered Software is a "commercial item," as that term is
             defined in 48 C.F.R. 2.101 (Oct. 1995), consisting of "commercial
-            computer software" (as that term is defined at 48 C.F.R. ¤
+            computer software" (as that term is defined at 48 C.F.R. ï¿½
             252.227-7014(a)(1)) and "commercial computer software
             documentation" as such terms are used in 48 C.F.R. 12.212 (Sept.
             1995). Consistent with 48 C.F.R. 12.212 and 48 C.F.R. 227.7202-1
@@ -1867,7 +1867,9 @@ Within the deps/awsapi-lib directory
             slf4j-api-1.5.11.jar  from https://github.com/qos-ch/slf4j
             slf4j-jdk14-1.5.11.jar  from https://github.com/qos-ch/slf4j
 
+
     licensed under the Mozilla Public License, Version 1.1 http://www.mozilla.org/MPL/1.1/  (as follows)
+
  
             
                                       MOZILLA PUBLIC LICENSE
@@ -2343,6 +2345,7 @@ Within the deps/awsapi-lib directory
                         
         from Shigeru Chiba  http://www.csg.ci.i.u-tokyo.ac.jp/~chiba/javassist/ 
             javassist-3.9.0.GA.jar  from http://sourceforge.net/projects/jboss/files/Javassist/
+
 
     licensed under the Mozilla Public License, Version 1.1 http://www.mozilla.org/MPL/1.1/  (as follows)
 
@@ -2821,6 +2824,7 @@ Within the deps/awsapi-lib directory
                         
         from VMware, Inc  http://www.vmware.com/ 
             rabbitmq-client.jar  from http://www.rabbitmq.com/java-client.html
+
 
 Within the patches/systemvm/debian/config/etc directory
     placed in the public domain
@@ -3458,7 +3462,7 @@ Within the target/jar directory
             
             The Covered Software is a "commercial item," as that term is
             defined in 48 C.F.R. 2.101 (Oct. 1995), consisting of "commercial
-            computer software" (as that term is defined at 48 C.F.R. ¤
+            computer software" (as that term is defined at 48 C.F.R. ï¿½
             252.227-7014(a)(1)) and "commercial computer software
             documentation" as such terms are used in 48 C.F.R. 12.212 (Sept.
             1995). Consistent with 48 C.F.R. 12.212 and 48 C.F.R. 227.7202-1
@@ -3847,7 +3851,7 @@ Within the target/jar directory
             
             The Covered Software is a "commercial item," as that term is
             defined in 48 C.F.R. 2.101 (Oct. 1995), consisting of "commercial
-            computer software" (as that term is defined at 48 C.F.R. ¤
+            computer software" (as that term is defined at 48 C.F.R. ï¿½
             252.227-7014(a)(1)) and "commercial computer software
             documentation" as such terms are used in 48 C.F.R. 12.212 (Sept.
             1995). Consistent with 48 C.F.R. 12.212 and 48 C.F.R. 227.7202-1
@@ -4373,7 +4377,7 @@ Within the target/jar directory
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright (C) 2008      Tóth István <stoty@tvnet.hu>
+            Copyright (C) 2008      Tï¿½th Istvï¿½n <stoty@tvnet.hu>
                           2008-2012 Daniel Veillard <veillard@redhat.com>
                           2009-2011 Bryan Kearney <bkearney@redhat.com> 
             
@@ -4504,7 +4508,7 @@ Within the ui/lib directory
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright (c) 2006 - 2011 Jörn Zaefferer 
+            Copyright (c) 2006 - 2011 Jï¿½rn Zaefferer 
             
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the
@@ -4699,7 +4703,7 @@ Within the ui/lib/jquery-ui directory
 Within the ui/lib/qunit directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
-            Copyright (c) 2012 John Resig, Jörn Zaefferer 
+            Copyright (c) 2012 John Resig, Jï¿½rn Zaefferer 
             
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the

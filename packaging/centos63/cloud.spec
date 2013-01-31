@@ -112,9 +112,20 @@ Requires: bridge-utils
 Requires: ebtables
 Requires: jsvc
 Requires: jna
+Requires: jakarta-commons-daemon
+Requires: jakarta-commons-daemon-jsvc
 Group: System Environment/Libraries
 %description agent
 The CloudStack agent for KVM hypervisors
+
+%package usage
+Summary: CloudStack Usage calculation server
+Requires: java >= 1.6.0
+Requires: jsvc
+Requires: jakarta-commons-daemon
+Requires: jakarta-commons-daemon-jsvc
+%description usage
+The CloudStack usage calculation service
 
 %prep
 echo Doing CloudStack build
@@ -196,6 +207,7 @@ chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 chmod -R ugo+x ${RPM_BUILD_ROOT}/usr/share/%{name}/management/webapps/client/WEB-INF/classes/scripts
 
+# KVM Agent
 mkdir -p ${RPM_BUILD_ROOT}/etc/cloud/agent
 mkdir -p ${RPM_BUILD_ROOT}/var/log/cloud/agent
 install -D packaging/centos63/cloud-agent.rc ${RPM_BUILD_ROOT}/etc/init.d/%{name}-agent
@@ -204,11 +216,16 @@ install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}/etc
 install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}/etc/cloud/agent/log4j-cloud.xml
 install -D agent/target/transformed/cloud-setup-agent ${RPM_BUILD_ROOT}/usr/bin/cloud-setup-agent
 install -D agent/target/transformed/cloud-ssh ${RPM_BUILD_ROOT}/usr/bin/cloud-ssh
-
 install -D plugins/hypervisors/kvm/target/%{name}-plugin-hypervisor-kvm-%{_maventag}.jar ${RPM_BUILD_ROOT}/usr/share/cloud/java/%{name}-plugin-hypervisor-kvm-%{_maventag}.jar
 cp plugins/hypervisors/kvm/target/dependencies/*  ${RPM_BUILD_ROOT}/usr/share/cloud/java
 mkdir -p ${RPM_BUILD_ROOT}/usr/share/cloud/scripts
 cp -r scripts/* ${RPM_BUILD_ROOT}/usr/share/cloud/scripts
+
+# Usage server
+install -D usage/target/%{name}-usage-%{_maventag}.jar ${RPM_BUILD_ROOT}/usr/share/cloud/usage/java/%{name}-usage-%{_maventag}.jar
+cp usage/target/dependencies/* ${RPM_BUILD_ROOT}/usr/share/cloud/usage/java
+install -D packaging/centos63/cloud-usage.rc ${RPM_BUILD_ROOT}/etc/init.d/%{name}-usage
+mkdir -p ${RPM_BUILD_ROOT}/var/log/cloud/usage/
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -305,6 +322,11 @@ fi
 %dir /var/log/cloud/agent
 %attr(0644,root,root) /usr/share/cloud/java/*.jar
 %attr(0755,root,root) /usr/share/cloud/scripts
+
+%files usage
+%attr(0755,root,root) %{_sysconfdir}/init.d/cloud-usage
+%attr(0644,root,root) /usr/share/cloud/usage/java/*.jar
+%dir /var/log/cloud/usage
 
 %changelog
 * Fri Oct 03 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
