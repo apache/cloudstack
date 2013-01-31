@@ -268,6 +268,10 @@ public class CreateNetworkCmd extends BaseCmd {
     @Override
     // an exception thrown by createNetwork() will be caught by the dispatcher.
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
+        if (getStartIpv6() != null && getStartIp() != null) {
+        	throw new InvalidParameterValueException("Cannot support dualstack at this moment!");
+        }
+        
         Network result = _networkService.createGuestNetwork(this);
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);

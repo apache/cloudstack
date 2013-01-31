@@ -735,10 +735,6 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
 
         UserContext.current().setAccountId(owner.getAccountId());
 
-        if (startIPv6 != null && startIP != null) {
-        	throw new InvalidParameterValueException("Cannot support dualstack at this moment!");
-        }
-        
         boolean ipv4 = false, ipv6 = false;
         if (startIP != null) {
         	ipv4 = true;
