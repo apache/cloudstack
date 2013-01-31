@@ -463,7 +463,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("TaggedResourcesManager", TaggedResourceManagerImpl.class);
         addManager("Site2SiteVpnManager", Site2SiteVpnManagerImpl.class);
         addManager("QueryManager", QueryManagerImpl.class);
-        addManager("EventNotificationsSubscriber", EventNotificationSubscriberImpl.class);
     }
 
     @Override
