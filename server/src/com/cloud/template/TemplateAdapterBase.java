@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
@@ -46,10 +45,10 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.storage.GuestOS;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.TemplateProfile;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
@@ -80,6 +79,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	protected @Inject HostDao _hostDao;
 	protected @Inject ResourceLimitService _resourceLimitMgr;
 	protected @Inject DataStoreManager storeMgr;
+	@Inject TemplateManager templateMgr;
 	
 	@Override
 	public boolean stop() {
@@ -211,10 +211,16 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             }
         }
         
+        DataStore imageStore = this.templateMgr.getImageStore(imageStoreUuid, zoneId);
+        if (imageStore == null) {
+            throw new IllegalArgumentException("Cann't find an image store");
+        }
+        Long imageStoreId = imageStore.getId();
+        
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
         UserContext.current().setEventDetails("Id: " +id+ " name: " + name);
 		return new TemplateProfile(id, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic,
-				featured, isExtractable, imgfmt, guestOSId, zoneId, hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details, sshkeyEnabled, imageStoreUuid);
+				featured, isExtractable, imgfmt, guestOSId, zoneId, hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details, sshkeyEnabled, imageStoreId);
 	}
 	
 	@Override
@@ -224,7 +230,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
         _accountMgr.checkAccess(caller, null, true, owner);
 	    
-    
+
         
 		return prepare(false, UserContext.current().getCallerUserId(), cmd.getTemplateName(), cmd.getDisplayText(),
 				cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(), cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(),
@@ -251,7 +257,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 				profile.getPasswordEnabled(), profile.getGuestOsId(), profile.getBootable(), profile.getHypervisorType(), profile.getTemplateTag(), 
 				profile.getDetails(), profile.getSshKeyEnabled());
 
-        
+		template.setImageDataStoreId(profile.getImageStoreId());
 		if (zoneId == null || zoneId.longValue() == -1) {
             List<DataCenterVO> dcs = _dcDao.listAll();
             

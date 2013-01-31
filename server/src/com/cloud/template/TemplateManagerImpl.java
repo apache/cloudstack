@@ -320,7 +320,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
     
     @Override
-    public DataStore getImageStore(String storeUuid, long zoneId) {
+    public DataStore getImageStore(String storeUuid, Long zoneId) {
         DataStore imageStore = null;
         if (storeUuid != null) {
             imageStore = this.dataStoreMgr.getDataStore(storeUuid, DataStoreRole.Image);

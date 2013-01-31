@@ -20,5 +20,5 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 public interface Scope {
     public ScopeType getScopeType();
-    public long getScopeId();
+    public Long getScopeId();
 }
