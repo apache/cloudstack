@@ -29,7 +29,7 @@ import com.cloud.dc.Vlan;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.network.dao.PublicIpv6AddressDao;
+import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -48,7 +48,7 @@ public class Ipv6AddressManagerImpl implements Ipv6AddressManager {
     @Inject
     NetworkModel _networkModel;
     @Inject
-    PublicIpv6AddressDao _ipv6Dao;
+    UserIpv6AddressDao _ipv6Dao;
     
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
@@ -73,7 +73,7 @@ public class Ipv6AddressManagerImpl implements Ipv6AddressManager {
 	}
 
 	@Override
-	public PublicIpv6Address assignDirectIp6Address(long dcId, Account owner, Long networkId, String requestedIp6)
+	public UserIpv6Address assignDirectIp6Address(long dcId, Account owner, Long networkId, String requestedIp6)
 			throws InsufficientAddressCapacityException {
     	Vlan vlan = _networkModel.getVlanForNetwork(networkId);
     	if (vlan == null) {
@@ -112,10 +112,10 @@ public class Ipv6AddressManagerImpl implements Ipv6AddressManager {
         _dcDao.update(dc.getId(), dc);
         
     	String macAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(mac));
-    	PublicIpv6AddressVO ipVO = new PublicIpv6AddressVO(ip, dcId, macAddress, vlan.getId());
+    	UserIpv6AddressVO ipVO = new UserIpv6AddressVO(ip, dcId, macAddress, vlan.getId());
     	ipVO.setPhysicalNetworkId(vlan.getPhysicalNetworkId());
     	ipVO.setSourceNetworkId(vlan.getNetworkId());
-    	ipVO.setState(PublicIpv6Address.State.Allocated);
+    	ipVO.setState(UserIpv6Address.State.Allocated);
     	ipVO.setDomainId(owner.getDomainId());
     	ipVO.setAccountId(owner.getAccountId());
     	_ipv6Dao.persist(ipVO);
@@ -124,7 +124,7 @@ public class Ipv6AddressManagerImpl implements Ipv6AddressManager {
 
 	@Override
 	public void revokeDirectIpv6Address(long networkId, String ip6Address) {
-		PublicIpv6AddressVO ip = _ipv6Dao.findByNetworkIdAndIp(networkId, ip6Address);
+		UserIpv6AddressVO ip = _ipv6Dao.findByNetworkIdAndIp(networkId, ip6Address);
 		if (ip != null) {
 			_ipv6Dao.remove(ip.getId());
 		}

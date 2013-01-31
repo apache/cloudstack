@@ -22,7 +22,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
 
 public interface Ipv6AddressManager extends Manager {
-    public PublicIpv6Address assignDirectIp6Address(long dcId, Account owner, Long networkId, String requestedIp6) throws InsufficientAddressCapacityException;
+    public UserIpv6Address assignDirectIp6Address(long dcId, Account owner, Long networkId, String requestedIp6) throws InsufficientAddressCapacityException;
 
 	public void revokeDirectIpv6Address(long networkId, String ip6Address);
 }

@@ -66,7 +66,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
-import com.cloud.network.dao.PublicIpv6AddressDao;
+import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -160,7 +160,7 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
     @Inject
     PrivateIpDao _privateIpDao;
     @Inject
-    PublicIpv6AddressDao _ipv6Dao;
+    UserIpv6AddressDao _ipv6Dao;
 
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
