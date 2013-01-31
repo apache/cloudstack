@@ -34,16 +34,32 @@ import java.util.Map;
 public class AlertGenerator {
 
     private static final Logger s_logger = Logger.getLogger(AlertGenerator.class);
-    protected static EventBus _eventBus = null;
-    protected static boolean _eventBusProviderLoaded = false;
-
     private static DataCenterDao _dcDao =  ComponentLocator.getLocator(ManagementServer.Name).getDao(DataCenterDao.class);
     private static HostPodDao _podDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(HostPodDao.class);
 
-    public static void publishAlertOnEventBus(String alertType, long dataCenterId, Long podId, String subject, String body) {
-        if (getEventBusProvider() == null) {
-
+    // get the event bus provider if configured
+    protected static EventBus _eventBus = null;
+    static {
+        Adapters<EventBus> eventBusImpls = ComponentLocator.getLocator(ManagementServer.Name).getAdapters(EventBus.class);
+        if (eventBusImpls != null) {
+            Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
+            if (eventBusenum != null && eventBusenum.hasMoreElements()) {
+                _eventBus = eventBusenum.nextElement(); // configure event bus if configured
+            }
         }
+    }
+
+    public static void publishAlertOnEventBus(String alertType, long dataCenterId, Long podId, String subject, String body) {
+        if (_eventBus == null) {
+            return; // no provider is configured to provider events bus, so just return
+        }
+
+        org.apache.cloudstack.framework.events.Event event =
+                new org.apache.cloudstack.framework.events.Event(ManagementServer.Name,
+                        EventCategory.ALERT_EVENT.getName(),
+                        alertType,
+                        null,
+                        null);
 
         Map<String, String> eventDescription = new HashMap<String, String>();
         DataCenterVO dc = _dcDao.findById(dataCenterId);
@@ -55,38 +71,17 @@ public class AlertGenerator {
         } else {
             eventDescription.put("dataCenterId", null);
         }
-
         if (pod != null) {
             eventDescription.put("podId", pod.getUuid());
         } else {
             eventDescription.put("podId", null);
         }
-        org.apache.cloudstack.framework.events.Event event =
-                new org.apache.cloudstack.framework.events.Event(ManagementServer.Name,
-                        EventCategory.ALERT_EVENT.getName(),
-                        alertType,
-                        null,
-                        null);
         event.setDescription(eventDescription);
+
         try {
             _eventBus.publish(event);
         } catch (EventBusException e) {
             s_logger.warn("Failed to publish alert on the the event bus.");
         }
-    }
-
-    private static EventBus getEventBusProvider() {
-        if (!_eventBusProviderLoaded) {
-            ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-            Adapters<EventBus> eventBusImpls = locator.getAdapters(EventBus.class);
-            if (eventBusImpls != null) {
-                Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
-                if (eventBusenum != null && eventBusenum.hasMoreElements()) {
-                    _eventBus = eventBusenum.nextElement();
-                }
-            }
-            _eventBusProviderLoaded = true;
-        }
-        return _eventBus;
     }
 }

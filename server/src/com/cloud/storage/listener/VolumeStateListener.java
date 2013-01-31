@@ -18,12 +18,22 @@ import java.util.Map;
 
 public class VolumeStateListener implements StateListener<State, Event, Volume> {
 
+    // get the event bus provider if configured
     protected static EventBus _eventBus = null;
+    static {
+        Adapters<EventBus> eventBusImpls = ComponentLocator.getLocator(ManagementServer.Name).getAdapters(EventBus.class);
+        if (eventBusImpls != null) {
+            Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
+            if (eventBusenum != null && eventBusenum.hasMoreElements()) {
+                _eventBus = eventBusenum.nextElement(); // configure event bus if configured
+            }
+        }
+    }
 
     private static final Logger s_logger = Logger.getLogger(VolumeStateListener.class);
 
     public VolumeStateListener() {
-        initEventBusProvider();
+
     }
 
     @Override
@@ -39,25 +49,28 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
     }
 
     private void pubishOnEventBus(String event, String status, Volume vo, State oldState, State newState) {
-        if (_eventBus != null) {
-            String resourceName = getEntityFromClassName(Volume.class.getName());
-            org.apache.cloudstack.framework.events.Event eventMsg =  new org.apache.cloudstack.framework.events.Event(
-                    ManagementServer.Name,
-                    EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(),
-                    event,
-                    resourceName,
-                    vo.getUuid());
-            Map<String, String> eventDescription = new HashMap<String, String>();
-            eventDescription.put("resource", resourceName);
-            eventDescription.put("id", vo.getUuid());
-            eventDescription.put("old-state", oldState.name());
-            eventDescription.put("new-state", newState.name());
-            eventMsg.setDescription(eventDescription);
-            try {
-                _eventBus.publish(eventMsg);
-            } catch (EventBusException e) {
-                s_logger.warn("Failed to publish action event on the the event bus.");
-            }
+
+        if (_eventBus == null) {
+            return;  // no provider is configured to provide events bus, so just return
+        }
+
+        String resourceName = getEntityFromClassName(Volume.class.getName());
+        org.apache.cloudstack.framework.events.Event eventMsg =  new org.apache.cloudstack.framework.events.Event(
+                ManagementServer.Name,
+                EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(),
+                event,
+                resourceName,
+                vo.getUuid());
+        Map<String, String> eventDescription = new HashMap<String, String>();
+        eventDescription.put("resource", resourceName);
+        eventDescription.put("id", vo.getUuid());
+        eventDescription.put("old-state", oldState.name());
+        eventDescription.put("new-state", newState.name());
+        eventMsg.setDescription(eventDescription);
+        try {
+            _eventBus.publish(eventMsg);
+        } catch (EventBusException e) {
+            s_logger.warn("Failed to publish action event on the the event bus.");
         }
     }
 
@@ -69,16 +82,4 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
         }
         return entityName;
     }
-
-    private void initEventBusProvider() {
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        Adapters<EventBus> eventBusImpls = locator.getAdapters(EventBus.class);
-        if (eventBusImpls != null) {
-            Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
-            if (eventBusenum != null && eventBusenum.hasMoreElements()) {
-                _eventBus = eventBusenum.nextElement();
-            }
-        }
-    }
-
 }

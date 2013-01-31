@@ -22,10 +22,19 @@ public class UsageEventUtils {
     private static UsageEventDao _usageEventDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(UsageEventDao.class);
     private static AccountDao _accountDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(AccountDao.class);
     private static DataCenterDao _dcDao =  ComponentLocator.getLocator(ManagementServer.Name).getDao(DataCenterDao.class);
-
     private static final Logger s_logger = Logger.getLogger(UsageEventUtils.class);
+
+    // get the event bus provider if configured
     protected static EventBus _eventBus = null;
-    protected static boolean _eventBusLoaded = false;
+    static {
+        Adapters<EventBus> eventBusImpls = ComponentLocator.getLocator(ManagementServer.Name).getAdapters(EventBus.class);
+        if (eventBusImpls != null) {
+            Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
+            if (eventBusenum != null && eventBusenum.hasMoreElements()) {
+                _eventBus = eventBusenum.nextElement(); // configure event bus if configured
+            }
+        }
+    }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId,
                                          long resourceId, String resourceName,
@@ -83,43 +92,28 @@ public class UsageEventUtils {
 
     private static void publishUsageEvent(String usageEventType, Long accountId, Long zoneId, String resourceType, String resourceUUID) {
 
-        if (getEventBusProvider() == null) {
+        if (_eventBus == null) {
             return; // no provider is configured to provider events bus, so just return
         }
 
         Account account = _accountDao.findById(accountId);
         DataCenterVO dc = _dcDao.findById(zoneId);
 
-        Map<String, String> eventDescription = new HashMap<String, String>();
+        Event event = new Event(ManagementServer.Name, EventCategory.USAGE_EVENT.getName(), usageEventType,
+                resourceType, resourceUUID);
 
+        Map<String, String> eventDescription = new HashMap<String, String>();
         eventDescription.put("account", account.getUuid());
         eventDescription.put("zone", dc.getUuid());
         eventDescription.put("event", usageEventType);
         eventDescription.put("resource", resourceType);
         eventDescription.put("id", resourceUUID);
-
-        Event event = new Event(ManagementServer.Name, EventCategory.USAGE_EVENT.getName(), usageEventType,
-                resourceType, resourceUUID);
         event.setDescription(eventDescription);
+
         try {
             _eventBus.publish(event);
         } catch (EventBusException e) {
             s_logger.warn("Failed to publish usage event on the the event bus.");
         }
-    }
-
-    private static EventBus getEventBusProvider() {
-        if (!_eventBusLoaded) {
-            _eventBusLoaded = true;
-            ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-            Adapters<EventBus> eventBusImpls = locator.getAdapters(EventBus.class);
-            if (eventBusImpls != null) {
-                Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
-                if (eventBusenum != null && eventBusenum.hasMoreElements()) {
-                    _eventBus = eventBusenum.nextElement();
-                }
-            }
-        }
-        return _eventBus;
     }
 }

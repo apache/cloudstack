@@ -44,14 +44,24 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
     protected UsageEventDao _usageEventDao;
     protected NetworkDao _networkDao;
     protected NicDao _nicDao;
-    protected static EventBus _eventBus = null;
     private static final Logger s_logger = Logger.getLogger(UserVmStateListener.class);
+
+    // get the event bus provider if configured
+    protected static EventBus _eventBus = null;
+    static {
+        Adapters<EventBus> eventBusImpls = ComponentLocator.getLocator(ManagementServer.Name).getAdapters(EventBus.class);
+        if (eventBusImpls != null) {
+            Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
+            if (eventBusenum != null && eventBusenum.hasMoreElements()) {
+                _eventBus = eventBusenum.nextElement(); // configure event bus if configured
+            }
+        }
+    }
 
     public UserVmStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, NicDao nicDao) {
         this._usageEventDao = usageEventDao;
         this._networkDao = networkDao;
         this._nicDao = nicDao;
-        initEventBusProvider();
     }
     
     @Override
@@ -69,7 +79,9 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         if(vo.getType() != VirtualMachine.Type.User){
             return true;
         }
-        
+
+        pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
+
         if (VirtualMachine.State.isVmCreated(oldState, event, newState)) {
             UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_CREATE, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(),
                     vo.getTemplateId(), vo.getHypervisorType().toString());
@@ -91,26 +103,30 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
     }
 
     private void pubishOnEventBus(String event, String status, VirtualMachine vo, VirtualMachine.State oldState, VirtualMachine.State newState) {
-        if (_eventBus != null) {
-            String resourceName = getEntityFromClassName(Network.class.getName());
-            org.apache.cloudstack.framework.events.Event eventMsg =  new org.apache.cloudstack.framework.events.Event(
-                    ManagementServer.Name,
-                    EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(),
-                    event,
-                    resourceName,
-                    vo.getUuid());
-            Map<String, String> eventDescription = new HashMap<String, String>();
-            eventDescription.put("resource", resourceName);
-            eventDescription.put("id", vo.getUuid());
-            eventDescription.put("old-state", oldState.name());
-            eventDescription.put("new-state", newState.name());
-            eventMsg.setDescription(eventDescription);
-            try {
-                _eventBus.publish(eventMsg);
-            } catch (EventBusException e) {
-                s_logger.warn("Failed to publish action event on the the event bus.");
-            }
+
+        if (_eventBus == null) {
+            return; // no provider is configured to provide events bus, so just return
         }
+
+        String resourceName = getEntityFromClassName(Network.class.getName());
+        org.apache.cloudstack.framework.events.Event eventMsg =  new org.apache.cloudstack.framework.events.Event(
+                ManagementServer.Name,
+                EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(),
+                event,
+                resourceName,
+                vo.getUuid());
+        Map<String, String> eventDescription = new HashMap<String, String>();
+        eventDescription.put("resource", resourceName);
+        eventDescription.put("id", vo.getUuid());
+        eventDescription.put("old-state", oldState.name());
+        eventDescription.put("new-state", newState.name());
+        eventMsg.setDescription(eventDescription);
+        try {
+            _eventBus.publish(eventMsg);
+        } catch (EventBusException e) {
+            s_logger.warn("Failed to publish action event on the the event bus.");
+        }
+
     }
 
     private String getEntityFromClassName(String entityClassName) {
@@ -120,16 +136,5 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
             entityName = entityClassName.substring(index+1);
         }
         return entityName;
-    }
-
-    private void initEventBusProvider() {
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        Adapters<EventBus> eventBusImpls = locator.getAdapters(EventBus.class);
-        if (eventBusImpls != null) {
-            Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
-            if (eventBusenum != null && eventBusenum.hasMoreElements()) {
-                _eventBus = eventBusenum.nextElement();
-            }
-        }
     }
 }
