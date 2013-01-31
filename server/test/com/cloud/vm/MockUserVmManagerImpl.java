@@ -249,6 +249,12 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     }
 
     @Override
+    public UserVm resetVMSSHKey(ResetVMSSHKeyCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public Volume attachVolumeToVM(AttachVolumeCmd cmd) {
         // TODO Auto-generated method stub
         return null;

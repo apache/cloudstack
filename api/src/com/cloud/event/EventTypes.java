@@ -26,6 +26,7 @@ public class EventTypes {
     public static final String EVENT_VM_UPDATE = "VM.UPDATE";
     public static final String EVENT_VM_UPGRADE = "VM.UPGRADE";
     public static final String EVENT_VM_RESETPASSWORD = "VM.RESETPASSWORD";
+    public static final String EVENT_VM_RESETSSHKEY = "VM.RESETSSHKEY";
     public static final String EVENT_VM_MIGRATE = "VM.MIGRATE";
     public static final String EVENT_VM_MOVE = "VM.MOVE";
     public static final String EVENT_VM_RESTORE = "VM.RESTORE";

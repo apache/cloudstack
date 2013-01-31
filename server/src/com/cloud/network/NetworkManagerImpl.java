@@ -2626,6 +2626,18 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
         return (UserDataServiceProvider)_networkModel.getElementImplementingProvider(passwordProvider);
     }
 
+    @Override
+    public UserDataServiceProvider getSSHKeyResetProvider(Network network) {
+        String SSHKeyProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.UserData);
+
+        if (SSHKeyProvider == null) {
+            s_logger.debug("Network " + network + " doesn't support service " + Service.UserData.getName());
+            return null;
+        }
+
+        return (UserDataServiceProvider)getElementImplementingProvider(SSHKeyProvider);
+    }
+
     protected boolean isSharedNetworkOfferingWithServices(long networkOfferingId) {
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         if ( (networkOffering.getGuestType()  == Network.GuestType.Shared) && (

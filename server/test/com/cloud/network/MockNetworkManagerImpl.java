@@ -417,17 +417,18 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-   
-
-   
-
     @Override
     public UserDataServiceProvider getPasswordResetProvider(Network network) {
         // TODO Auto-generated method stub
         return null;
     }
 
-   
+    @Override
+    public UserDataServiceProvider getSSHKeyResetProvider(Network network) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     @Override
     public PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, List<String> enabledServices) {
         // TODO Auto-generated method stub

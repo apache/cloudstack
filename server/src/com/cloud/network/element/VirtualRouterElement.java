@@ -665,6 +665,24 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
+    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String SSHPublicKey)
+            throws ResourceUnavailableException {
+        if (!canHandle(network, null)) {
+            return false;
+        }
+        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+        if (routers == null || routers.isEmpty()) {
+            s_logger.debug("Can't find virtual router element in network " + network.getId());
+            return true;
+        }
+
+        @SuppressWarnings("unchecked")
+        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
+
+        return _routerMgr.saveSSHPublicKeyToRouter(network, nic, uservm, routers, SSHPublicKey);
+    }
+
+    @Override
     public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
             throws ResourceUnavailableException {
         if (!canHandle(network, null)) {

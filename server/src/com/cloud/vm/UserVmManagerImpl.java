@@ -407,6 +407,116 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_RESETSSHKEY, eventDescription = "resetting Vm SSHKey", async = true)
+    public UserVm resetVMSSHKey(ResetVMSSHKeyCmd cmd)
+            throws ResourceUnavailableException, InsufficientCapacityException {
+
+        Account caller = UserContext.current().getCaller();
+        Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+        Long vmId = cmd.getId();
+
+        UserVmVO userVm = _vmDao.findById(cmd.getId());
+        _vmDao.loadDetails(userVm);
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
+
+        // Do parameters input validation
+
+        if (userVm == null) {
+            throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
+        }
+
+        if (userVm.getState() == State.Error || userVm.getState() == State.Expunging) {
+            s_logger.error("vm is not in the right state: " + vmId);
+            throw new InvalidParameterValueException("Vm with specified id is not in the right state");
+        }
+        if (userVm.getState() != State.Stopped) {
+            s_logger.error("vm is not in the right state: " + vmId);
+            throw new InvalidParameterValueException("Vm " + userVm + " should be stopped to do SSH Key reset");
+        }
+
+        SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
+        if (s == null) {
+            throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist for account " + owner.getAccountName() + " in specified domain id");
+        }
+
+        _accountMgr.checkAccess(caller, null, true, userVm);
+        String password = null;
+        String sshPublicKey = s.getPublicKey();
+        if (template != null && template.getEnablePassword()) {
+            password = generateRandomPassword();
+        }
+
+        boolean result = resetVMSSHKeyInternal(vmId, sshPublicKey, password);
+
+        if (result) {
+            userVm.setDetail("SSH.PublicKey", sshPublicKey);
+            if (template != null && template.getEnablePassword()) {
+                userVm.setPassword(password);
+                //update the encrypted password in vm_details table too
+                if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password")) {
+                    String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
+                    if (encryptedPasswd == null) {
+                        throw new CloudRuntimeException("Error encrypting password");
+                    }
+                    userVm.setDetail("Encrypted.Password", encryptedPasswd);
+                }
+            }
+            _vmDao.saveDetails(userVm);
+        } else {
+            throw new CloudRuntimeException("Failed to reset SSH Key for the virtual machine ");
+        }
+        return userVm;
+    }
+
+    private boolean resetVMSSHKeyInternal(Long vmId, String SSHPublicKey, String password) throws ResourceUnavailableException, InsufficientCapacityException {
+        Long userId = UserContext.current().getCallerUserId();
+        VMInstanceVO vmInstance = _vmDao.findById(vmId);
+
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
+        Nic defaultNic = _networkMgr.getDefaultNic(vmId);
+        if (defaultNic == null) {
+            s_logger.error("Unable to reset SSH Key for vm " + vmInstance + " as the instance doesn't have default nic");
+            return false;
+        }
+
+        Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
+        NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null,
+                _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork),
+                _networkMgr.getNetworkTag(template.getHypervisorType(), defaultNetwork));
+
+        VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmInstance);
+
+        if (template != null && template.getEnablePassword()) {
+            vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
+        }
+
+        UserDataServiceProvider element = _networkMgr.getSSHKeyResetProvider(defaultNetwork);
+        if (element == null) {
+            throw new CloudRuntimeException("Can't find network element for " + Service.UserData.getName() + " provider needed for SSH Key reset");
+        }
+        boolean result = element.saveSSHKey(defaultNetwork, defaultNicProfile, vmProfile, SSHPublicKey);
+
+        // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
+        if (!result) {
+            s_logger.debug("Failed to reset SSH Key for the virutal machine; no need to reboot the vm");
+            return false;
+        } else {
+            if (vmInstance.getState() == State.Stopped) {
+                s_logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of SSH Key reset");
+                return true;
+            }
+            if (rebootVirtualMachine(userId, vmId) == null) {
+                s_logger.warn("Failed to reboot the vm " + vmInstance);
+                return false;
+            } else {
+                s_logger.debug("Vm " + vmInstance + " is rebooted successfully as a part of SSH Key reset");
+                return true;
+            }
+        }
+    }
+
+
+    @Override
     public boolean stopVirtualMachine(long userId, long vmId) {
         boolean status = false;
         if (s_logger.isDebugEnabled()) {

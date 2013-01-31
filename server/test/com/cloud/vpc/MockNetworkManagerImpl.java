@@ -867,10 +867,6 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
         return false;
     }
 
-
-
-
-
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#getPasswordResetProvider(com.cloud.network.Network)
      */
@@ -880,8 +876,11 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
         return null;
     }
 
-
-
+    @Override
+    public UserDataServiceProvider getSSHKeyResetProvider(Network network) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 
     /* (non-Javadoc)
