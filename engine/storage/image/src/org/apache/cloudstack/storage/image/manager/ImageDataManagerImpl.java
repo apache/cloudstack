@@ -18,17 +18,17 @@
  */
 package org.apache.cloudstack.storage.image.manager;
 
-import org.apache.cloudstack.storage.image.TemplateEvent;
-import org.apache.cloudstack.storage.image.TemplateState;
-import org.apache.cloudstack.storage.image.db.ImageDataVO;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.fsm.StateMachine2;
 
 @Component
 public class ImageDataManagerImpl implements ImageDataManager {
-    private final StateMachine2<TemplateState, TemplateEvent, ImageDataVO> 
-        stateMachine = new StateMachine2<TemplateState, TemplateEvent, ImageDataVO>();
+    private final StateMachine2<TemplateState, TemplateEvent, VMTemplateVO> 
+        stateMachine = new StateMachine2<TemplateState, TemplateEvent, VMTemplateVO>();
     
     public ImageDataManagerImpl() {
         stateMachine.addTransition(TemplateState.Allocated, TemplateEvent.CreateRequested, TemplateState.Creating);
@@ -44,7 +44,7 @@ public class ImageDataManagerImpl implements ImageDataManager {
     }
     
     @Override
-    public StateMachine2<TemplateState, TemplateEvent, ImageDataVO> getStateMachine() {
+    public StateMachine2<TemplateState, TemplateEvent, VMTemplateVO> getStateMachine() {
         return stateMachine;
     }
 }

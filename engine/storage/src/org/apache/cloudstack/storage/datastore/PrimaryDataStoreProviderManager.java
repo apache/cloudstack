@@ -18,11 +18,14 @@
  */
 package org.apache.cloudstack.storage.datastore;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
 
 
 public interface PrimaryDataStoreProviderManager {
     public PrimaryDataStore getPrimaryDataStore(long dataStoreId);
+    public PrimaryDataStore getPrimaryDataStore(String uuid);
 
     boolean registerDriver(String uuid, PrimaryDataStoreDriver driver);
+    boolean registerHostListener(String uuid, HypervisorHostListener listener);
 }

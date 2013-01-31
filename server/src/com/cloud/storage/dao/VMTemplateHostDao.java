@@ -18,11 +18,15 @@ package com.cloud.storage.dao;
 
 import java.util.List;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateDao;
 
-public interface VMTemplateHostDao extends GenericDao<VMTemplateHostVO, Long> {
+public interface VMTemplateHostDao extends GenericDao<VMTemplateHostVO, Long>, StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
     List<VMTemplateHostVO> listByHostId(long id);
 
     List<VMTemplateHostVO> listByTemplateId(long templateId);
@@ -30,6 +34,8 @@ public interface VMTemplateHostDao extends GenericDao<VMTemplateHostVO, Long> {
     List<VMTemplateHostVO> listByOnlyTemplateId(long templateId);
 
     VMTemplateHostVO findByHostTemplate(long hostId, long templateId);
+    
+    VMTemplateHostVO findByTemplateId(long templateId);
 
     VMTemplateHostVO findByHostTemplate(long hostId, long templateId, boolean lock);
 

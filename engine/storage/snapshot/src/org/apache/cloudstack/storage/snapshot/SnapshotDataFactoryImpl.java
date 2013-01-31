@@ -20,11 +20,14 @@ package org.apache.cloudstack.storage.snapshot;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.storage.datastore.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
-import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
 import org.apache.cloudstack.storage.snapshot.db.SnapshotDao2;
 import org.apache.cloudstack.storage.snapshot.db.SnapshotVO;
 import org.springframework.stereotype.Component;
@@ -40,8 +43,21 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     @Override
     public SnapshotInfo getSnapshot(long snapshotId, DataStore store) {
         SnapshotVO snapshot = snapshotDao.findById(snapshotId);
-        ObjectInDataStoreVO obj = objMap.findObject(snapshotId, DataObjectType.SNAPSHOT, store.getId(), store.getRole());
+        DataObjectInStore obj = objMap.findObject(snapshot.getUuid(), DataObjectType.SNAPSHOT, store.getUuid(), store.getRole());
+        if (obj == null) {
+            return null;
+        }
         SnapshotObject so = new SnapshotObject(snapshot, store);
         return so;
+    }
+    @Override
+    public SnapshotInfo getSnapshot(long snapshotId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+    @Override
+    public SnapshotInfo getSnapshot(DataObject obj, DataStore store) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

@@ -22,20 +22,17 @@ import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import org.apache.cloudstack.engine.cloud.entity.api.SnapshotEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreEntityImpl;
-import org.apache.cloudstack.storage.volume.VolumeService.VolumeApiResult;
-
-import com.cloud.utils.exception.CloudRuntimeException;
 
 public class VolumeEntityImpl implements VolumeEntity {
     private VolumeInfo volumeInfo;
@@ -167,7 +164,7 @@ public class VolumeEntityImpl implements VolumeEntity {
 
     @Override
     public void destroy() {
-        AsyncCallFuture<VolumeApiResult> future = vs.deleteVolumeAsync(volumeInfo);
+        /*AsyncCallFuture<VolumeApiResult> future = vs.deleteVolumeAsync(volumeInfo);
         try {
             result = future.get();
             if (!result.isSuccess()) {
@@ -177,7 +174,7 @@ public class VolumeEntityImpl implements VolumeEntity {
            throw new CloudRuntimeException("wait to delete volume info failed", e);
         } catch (ExecutionException e) {
             throw new CloudRuntimeException("wait to delete volume failed", e);
-        }
+        }*/
     }
 
 	@Override

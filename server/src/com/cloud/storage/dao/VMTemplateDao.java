@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
+
 import com.cloud.domain.DomainVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -28,11 +31,12 @@ import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateDao;
 
 /*
  * Data Access Object for vm_templates table
  */
-public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
+public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<TemplateState, TemplateEvent, VMTemplateVO> {
 	
 	
 	public List<VMTemplateVO> listByPublic();

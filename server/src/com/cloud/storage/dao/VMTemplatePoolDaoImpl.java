@@ -20,10 +20,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -33,7 +37,9 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 @Local(value={VMTemplatePoolDao.class})
@@ -46,6 +52,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 	protected final SearchBuilder<VMTemplateStoragePoolVO> TemplateStatusSearch;
     protected final SearchBuilder<VMTemplateStoragePoolVO> TemplatePoolStatusSearch;
 	protected final SearchBuilder<VMTemplateStoragePoolVO> TemplateStatesSearch;
+	protected final SearchBuilder<VMTemplateStoragePoolVO> updateStateSearch;
 	
 	protected static final String UPDATE_TEMPLATE_HOST_REF =
 		"UPDATE template_spool_ref SET download_state = ?, download_pct= ?, last_updated = ? "
@@ -94,6 +101,12 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 		TemplateStatesSearch.and("template_id", TemplateStatesSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
 		TemplateStatesSearch.and("states", TemplateStatesSearch.entity().getDownloadState(), SearchCriteria.Op.IN);
 		TemplateStatesSearch.done();
+
+		updateStateSearch = this.createSearchBuilder();
+		updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
+		updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
+		updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
+		updateStateSearch.done();
 	}
 
 	@Override
@@ -251,5 +264,41 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 		List<VMTemplateStoragePoolVO> result = listByHostTemplate(hostId, templateId);
 		return (result.size() == 0)?null:result.get(1);
 	}
+
+    @Override
+    public boolean updateState(State currentState, Event event,
+            State nextState, DataObjectInStore vo, Object data) {
+        VMTemplateStoragePoolVO templatePool = (VMTemplateStoragePoolVO)vo;
+        Long oldUpdated = templatePool.getUpdatedCount();
+        Date oldUpdatedTime = templatePool.getUpdated();
+    
+        SearchCriteria<VMTemplateStoragePoolVO> sc = updateStateSearch.create();
+        sc.setParameters("id", templatePool.getId());
+        sc.setParameters("state", currentState);
+        sc.setParameters("updatedCount", templatePool.getUpdatedCount());
+
+        templatePool.incrUpdatedCount();
+
+        UpdateBuilder builder = getUpdateBuilder(vo);
+        builder.set(vo, "state", nextState);
+        builder.set(vo, "updated", new Date());
+
+        int rows = update((VMTemplateStoragePoolVO) vo, sc);
+        if (rows == 0 && s_logger.isDebugEnabled()) {
+            VMTemplateStoragePoolVO dbVol = findByIdIncludingRemoved(templatePool.getId());
+            if (dbVol != null) {
+                StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
+                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState()).append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
+                        .append(dbVol.getUpdated());
+                str.append(": New Data={id=").append(templatePool.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatecount=").append(templatePool.getUpdatedCount())
+                        .append("; updatedTime=").append(templatePool.getUpdated());
+                str.append(": stale Data={id=").append(templatePool.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatecount=").append(oldUpdated)
+                        .append("; updatedTime=").append(oldUpdatedTime);
+            } else {
+                s_logger.debug("Unable to update objectIndatastore: id=" + templatePool.getId() + ", as there is no such object exists in the database anymore");
+            }
+        }
+        return rows > 0;
+    }
 
 }

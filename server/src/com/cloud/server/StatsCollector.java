@@ -29,8 +29,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import com.cloud.resource.ResourceManager;
-
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -49,14 +49,13 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -84,7 +83,7 @@ public class StatsCollector {
 	@Inject private HostDao _hostDao;
 	@Inject private UserVmDao _userVmDao;
 	@Inject private VolumeDao _volsDao;
-	@Inject private StoragePoolDao _storagePoolDao;
+	@Inject private PrimaryDataStoreDao _storagePoolDao;
 	@Inject private StorageManager _storageManager;
 	@Inject private StoragePoolHostDao _storagePoolHostDao;
 	@Inject private SecondaryStorageVmManager _ssvmMgr;
@@ -301,7 +300,7 @@ public class StatsCollector {
 					GetStorageStatsCommand command = new GetStorageStatsCommand(pool.getUuid(), pool.getPoolType(), pool.getPath());
 					long poolId = pool.getId();
 					try {
-    					Answer answer = _storageManager.sendToPool(pool, command);
+    					Answer answer = _storageManager.sendToPool(pool.getId(), command);
     					if (answer != null && answer.getResult()) {
     						storagePoolStats.put(pool.getId(), (StorageStats)answer);
     

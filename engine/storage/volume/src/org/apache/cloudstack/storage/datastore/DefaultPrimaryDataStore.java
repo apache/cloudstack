@@ -18,45 +18,50 @@ package org.apache.cloudstack.storage.datastore;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
-import org.apache.cloudstack.storage.datastore.provider.DataStoreProvider;
-import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
-import org.apache.cloudstack.storage.image.ImageDataFactory;
-import org.apache.cloudstack.storage.image.TemplateInfo;
-import org.apache.cloudstack.storage.snapshot.SnapshotDataFactory;
-import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.volume.VolumeObject;
-import org.apache.cloudstack.storage.volume.db.VolumeDao2;
-import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.EncodingType;
 
 public class DefaultPrimaryDataStore implements PrimaryDataStore {
     private static final Logger s_logger = Logger
             .getLogger(DefaultPrimaryDataStore.class);
     protected PrimaryDataStoreDriver driver;
-    protected PrimaryDataStoreVO pdsv;
+    protected StoragePoolVO pdsv;
     @Inject
     protected PrimaryDataStoreDao dataStoreDao;
     protected PrimaryDataStoreLifeCycle lifeCycle;
@@ -67,15 +72,16 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     @Inject
     SnapshotDataFactory snapshotFactory;
     protected DataStoreProvider provider;
-
     @Inject
-    private VolumeDao2 volumeDao;
+    VMTemplatePoolDao templatePoolDao;
+
+    private VolumeDao volumeDao;
 
     protected DefaultPrimaryDataStore() {
        
     }
     
-    public void configure(PrimaryDataStoreVO pdsv,
+    public void configure(StoragePoolVO pdsv,
             PrimaryDataStoreDriver driver, DataStoreProvider provider) {
         this.pdsv = pdsv;
         this.driver = driver;
@@ -83,7 +89,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     }
 
     public static DefaultPrimaryDataStore createDataStore(
-            PrimaryDataStoreVO pdsv, PrimaryDataStoreDriver driver,
+            StoragePoolVO pdsv, PrimaryDataStoreDriver driver,
             DataStoreProvider provider) {
         DefaultPrimaryDataStore dataStore = (DefaultPrimaryDataStore)ComponentContext.inject(DefaultPrimaryDataStore.class);
         dataStore.configure(pdsv, driver, provider);
@@ -109,19 +115,16 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
 
     @Override
     public DataStoreDriver getDriver() {
-        // TODO Auto-generated method stub
         return this.driver;
     }
 
     @Override
     public DataStoreRole getRole() {
-        // TODO Auto-generated method stub
         return DataStoreRole.Primary;
     }
 
     @Override
     public long getId() {
-        // TODO Auto-generated method stub
         return this.pdsv.getId();
     }
 
@@ -143,7 +146,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
 
     @Override
     public Scope getScope() {
-        PrimaryDataStoreVO vo = dataStoreDao.findById(this.pdsv.getId());
+        StoragePoolVO vo = dataStoreDao.findById(this.pdsv.getId());
         if (vo.getScope() == ScopeType.CLUSTER) {
             return new ClusterScope(vo.getClusterId(), vo.getPodId(),
                     vo.getDataCenterId());
@@ -156,7 +159,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     @Override
     public boolean isHypervisorSupported(HypervisorType hypervisor) {
         // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
@@ -171,38 +174,14 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
         return false;
     }
 
-    @Override
-    public long getCapacity() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public long getAvailableCapacity() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
 
     @Override
     public String getUuid() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public State getManagedState() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.pdsv.getUuid();
     }
 
     @Override
     public String getName() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getType() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -214,14 +193,13 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
 
     @Override
     public boolean exists(DataObject data) {
-        return (objectInStoreMgr.findObject(data.getId(), data.getType(),
-                this.getId(), this.getRole()) != null) ? true : false;
+        return (objectInStoreMgr.findObject(data, data.getDataStore()) != null) ? true : false;
     }
 
     @Override
     public TemplateInfo getTemplate(long templateId) {
-        ObjectInDataStoreVO obj = objectInStoreMgr.findObject(templateId, DataObjectType.TEMPLATE, this.getId(), this.getRole());
-        if (obj == null) {
+        VMTemplateStoragePoolVO template = templatePoolDao.findByPoolTemplate(this.getId(), templateId);
+        if (template == null || template.getState() != ObjectInDataStoreStateMachine.State.Ready) {
             return null;
         }
         return imageDataFactory.getTemplate(templateId, this);
@@ -237,5 +215,118 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
     public DiskFormat getDefaultDiskType() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public DataObject create(DataObject obj) {
+        //create template on primary storage
+        if (obj.getType() == DataObjectType.TEMPLATE) {
+            VMTemplateStoragePoolVO templateStoragePoolRef = templatePoolDao.findByPoolTemplate(this.getId(), obj.getId());
+            if (templateStoragePoolRef == null) {
+                try {
+                templateStoragePoolRef = new VMTemplateStoragePoolVO(this.getId(), obj.getId());
+                templateStoragePoolRef = templatePoolDao.persist(templateStoragePoolRef);
+                } catch (Throwable t) {
+                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(this.getId(), obj.getId());
+                    if (templateStoragePoolRef == null) {
+                        throw new CloudRuntimeException("Failed to create template storage pool entry");
+                    }
+                }
+            }
+            
+        }
+        
+        return objectInStoreMgr.get(obj, this);
+    }
+
+    @Override
+    public boolean delete(DataObject obj) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public long getDataCenterId() {
+        return this.pdsv.getDataCenterId();
+    }
+
+    @Override
+    public String getPath() {
+        return this.pdsv.getPath();
+    }
+
+    @Override
+    public StoragePoolType getPoolType() {
+       return this.pdsv.getPoolType();
+    }
+
+    @Override
+    public Date getCreated() {
+       return this.pdsv.getCreated();
+    }
+
+    @Override
+    public Date getUpdateTime() {
+       return this.pdsv.getUpdateTime();
+    }
+
+    @Override
+    public long getCapacityBytes() {
+       return this.pdsv.getCapacityBytes();
+    }
+
+    @Override
+    public long getAvailableBytes() {
+        return this.pdsv.getAvailableBytes();
+    }
+
+    @Override
+    public Long getClusterId() {
+        return this.pdsv.getClusterId();
+    }
+
+    @Override
+    public String getHostAddress() {
+        return this.pdsv.getHostAddress();
+    }
+
+    @Override
+    public String getUserInfo() {
+        return this.pdsv.getUserInfo();
+    }
+
+    @Override
+    public boolean isShared() {
+       return this.pdsv.getScope() == ScopeType.HOST ? false : true;
+    }
+
+    @Override
+    public boolean isLocal() {
+        return !this.isShared();
+    }
+
+    @Override
+    public StoragePoolStatus getStatus() {
+        return this.pdsv.getStatus();
+    }
+
+    @Override
+    public int getPort() {
+        return this.pdsv.getPort();
+    }
+
+    @Override
+    public Long getPodId() {
+        return this.pdsv.getPodId();
+    }
+
+    @Override
+    public Long getStorageProviderId() {
+        return this.pdsv.getStorageProviderId();
+    }
+
+    @Override
+    public boolean isInMaintenance() {
+        return this.getStatus() == StoragePoolStatus.Maintenance ? true : false;
     }
 }

@@ -28,12 +28,25 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
+import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.*;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.BackupSnapshotAnswer;
+import com.cloud.agent.api.BackupSnapshotCommand;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.DeleteSnapshotBackupCommand;
+import com.cloud.agent.api.DeleteSnapshotsDirCommand;
+import com.cloud.agent.api.DownloadSnapshotFromS3Command;
+import com.cloud.agent.api.ManageSnapshotAnswer;
+import com.cloud.agent.api.ManageSnapshotCommand;
+import com.cloud.agent.api.downloadSnapshotFromSwiftCommand;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.alert.AlertManager;
@@ -46,7 +59,11 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.*;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -60,25 +77,46 @@ import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ResourceTag.TaggedResourceType;
-import com.cloud.storage.*;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Type;
+import com.cloud.storage.SnapshotPolicyVO;
+import com.cloud.storage.SnapshotScheduleVO;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.dao.*;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeManager;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotPolicyDao;
+import com.cloud.storage.dao.SnapshotScheduleDao;
+import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.listener.SnapshotStateListener;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.user.*;
+import com.cloud.template.TemplateManager;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.DomainManager;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -86,7 +124,6 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.*;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
@@ -95,6 +132,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
+
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
@@ -105,8 +143,8 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import java.util.*;
 import com.cloud.vm.snapshot.VMSnapshot;
-import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+
 
 @Component
 @Local(value = { SnapshotManager.class, SnapshotService.class })
@@ -170,9 +208,16 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     private ResourceTagDao _resourceTagDao;
     @Inject
     private ConfigurationDao _configDao;
+
     @Inject 
     private VMSnapshotDao _vmSnapshotDao;
     String _name;
+
+    @Inject TemplateManager templateMgr;
+    @Inject VolumeManager volumeMgr;
+    @Inject DataStoreManager dataStoreMgr;
+    
+
     private int _totalRetries;
     private int _pauseInterval;
     private int _deltaSnapshotMax;
@@ -186,8 +231,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     
     
     protected Answer sendToPool(Volume vol, Command cmd) {
-        StoragePool pool = _storagePoolDao.findById(vol.getPoolId());
-
+        StoragePool pool = (StoragePool)dataStoreMgr.getPrimaryDataStore(vol.getPoolId());
         long[] hostIdsToTryFirst = null;
         
         Long vmHostId = getHostIdForSnapshotOperation(vol);
@@ -252,7 +296,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         }
 
         // Send a ManageSnapshotCommand to the agent
-        String vmName = _storageMgr.getVmNameOnVolume(volume);
+        String vmName = this.volumeMgr.getVmNameOnVolume(volume);
         long volumeId = volume.getId();
         long preId = _snapshotDao.getLastSnapshot(volumeId, snapshotId);
 
@@ -264,8 +308,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 preSnapshotPath = preSnapshotVO.getPath();
             }
         }
-        StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
-
+        StoragePool srcPool = (StoragePool)dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
         // RBD volumes do not support snapshotting in the way CloudStack does it.
         // For now we leave the snapshot feature disabled for RBD volumes
         if (srcPool.getPoolType() == StoragePoolType.RBD) {
@@ -414,12 +457,12 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                         if(activeSnapshots.size() > 1)
                             throw new CloudRuntimeException("There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
                     }
-                    List<VMSnapshotVO> activeVMSnapshots = _vmSnapshotDao.listByInstanceId(userVm.getId(),
+                    /*List<VMSnapshotVO> activeVMSnapshots = _vmSnapshotDao.listByInstanceId(userVm.getId(),
                             VMSnapshot.State.Creating, VMSnapshot.State.Reverting, VMSnapshot.State.Expunging);
                     if (activeVMSnapshots.size() > 0) {
                         throw new CloudRuntimeException(
                                 "There is other active vm snapshot tasks on the instance to which the volume is attached, please try again later");
-                    }			
+                    }			*/
                 }
             }
 
@@ -530,7 +573,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         VolumeVO volume = _volsDao.findById(volumeId);
         Long dcId = volume.getDataCenterId();
         Long accountId = volume.getAccountId();
-        HostVO secHost = _storageMgr.getSecondaryStorageHost(dcId);
+        HostVO secHost = this.templateMgr.getSecondaryStorageHost(dcId);
         String secondaryStoragePoolUrl = secHost.getStorageUrl();
 
         Long swiftId = ss.getSwiftId();
@@ -581,7 +624,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         final VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
         final Long zoneId = volume.getDataCenterId();
-        final HostVO secHost = _storageMgr.getSecondaryStorageHost(zoneId);
+        final HostVO secHost = this.templateMgr.getSecondaryStorageHost(zoneId);
 
         final S3TO s3 = _s3Mgr.getS3TO(snapshot.getS3Id());
         final List<String> backupUuids = determineBackupUuids(snapshot);
@@ -662,9 +705,9 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                     prevSnapshotUuid = prevSnapshot.getPath();
                 }
             }
-            boolean isVolumeInactive = _storageMgr.volumeInactive(volume);
-            String vmName = _storageMgr.getVmNameOnVolume(volume);
-            StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
+            boolean isVolumeInactive = this.volumeMgr.volumeInactive(volume);
+            String vmName = this.volumeMgr.getVmNameOnVolume(volume);
+            StoragePool srcPool = (StoragePool)dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
             BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(secondaryStoragePoolUrl, dcId, accountId, volumeId, snapshot.getId(), volume.getPath(), srcPool, snapshotUuid,
                     snapshot.getName(), prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName, _backupsnapshotwait);
 
@@ -735,7 +778,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         if ( id != null) { 
             return _hostDao.findById(id);
         }
-        return _storageMgr.getSecondaryStorageHost(dcId);
+        return this.templateMgr.getSecondaryStorageHost(dcId);
     }
 
     private Long getSnapshotUserId() {
@@ -884,7 +927,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             secHost = _hostDao.findById(snapshot.getSecHostId());
         } else {
             Long dcId = snapshot.getDataCenterId();
-            secHost = _storageMgr.getSecondaryStorageHost(dcId);
+            secHost = this.templateMgr.getSecondaryStorageHost(dcId);
         }
         return secHost;
     }

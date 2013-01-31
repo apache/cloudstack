@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.provider;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+
 
 public interface PrimaryDataStoreProvider extends DataStoreProvider {
 }

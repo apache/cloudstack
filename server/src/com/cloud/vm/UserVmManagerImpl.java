@@ -34,10 +34,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
-import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
@@ -52,32 +50,19 @@ import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
-import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
-
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachIsoCommand;
-import com.cloud.agent.api.AttachVolumeAnswer;
-import com.cloud.agent.api.AttachVolumeCommand;
-import com.cloud.agent.api.ComputeChecksumCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
-import com.cloud.agent.api.SnapshotCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.agent.AgentManager.OnError;
-import com.cloud.agent.api.*;
-import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
@@ -87,13 +72,9 @@ import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobVO;
-import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -133,15 +114,11 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
-import com.cloud.network.Network;
 import com.cloud.network.*;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -182,7 +159,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -191,14 +167,10 @@ import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.Type;
-import com.cloud.storage.VolumeHostVO;
+import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -213,6 +185,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
@@ -278,7 +251,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
-import com.cloud.vm.snapshot.VMSnapshotVO;
+//import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
@@ -414,6 +387,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Inject
     VpcManager _vpcMgr;
     @Inject
+    TemplateManager templateMgr;
+    @Inject 
     protected GuestOSCategoryDao _guestOSCategoryDao;
     @Inject
     UsageEventDao _usageEventDao;
@@ -436,6 +411,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
     @Inject
     protected OrchestrationService _orchSrvc;
+    
+    @Inject VolumeManager volumeMgr;
 
     @Override
     public UserVmVO getVirtualMachine(long vmId) {
@@ -737,592 +714,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
     }
 
-    private int getMaxDataVolumesSupported(UserVmVO vm) {
-        Long hostId = vm.getHostId();
-        if (hostId == null) {
-            hostId = vm.getLastHostId();
-        }
-        HostVO host = _hostDao.findById(hostId);
-        Integer maxDataVolumesSupported = null;
-        if (host != null) {
-            _hostDao.loadDetails(host);
-            maxDataVolumesSupported = _hypervisorCapabilitiesDao
-                    .getMaxDataVolumesLimit(host.getHypervisorType(),
-                            host.getDetail("product_version"));
-        }
-        if (maxDataVolumesSupported == null) {
-            maxDataVolumesSupported = 6; // 6 data disks by default if nothing
-            // is specified in
-            // 'hypervisor_capabilities' table
-        }
 
-        return maxDataVolumesSupported.intValue();
-    }
-
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async = true)
-    public Volume attachVolumeToVM(AttachVolumeCmd command) {
-        Long vmId = command.getVirtualMachineId();
-        Long volumeId = command.getId();
-        Long deviceId = command.getDeviceId();
-        Account caller = UserContext.current().getCaller();
-
-        // Check that the volume ID is valid
-        VolumeVO volume = _volsDao.findById(volumeId);
-        // Check that the volume is a data volume
-        if (volume == null || volume.getVolumeType() != Volume.Type.DATADISK) {
-            throw new InvalidParameterValueException(
-                    "Please specify a valid data volume.");
-        }
-
-        // Check that the volume is not currently attached to any VM
-        if (volume.getInstanceId() != null) {
-            throw new InvalidParameterValueException(
-                    "Please specify a volume that is not attached to any VM.");
-        }
-
-        // Check that the volume is not destroyed
-        if (volume.getState() == Volume.State.Destroy) {
-            throw new InvalidParameterValueException(
-                    "Please specify a volume that is not destroyed.");
-        }
-
-        // Check that the virtual machine ID is valid and it's a user vm
-        UserVmVO vm = _vmDao.findById(vmId);
-        if (vm == null || vm.getType() != VirtualMachine.Type.User) {
-            throw new InvalidParameterValueException(
-                    "Please specify a valid User VM.");
-        }
-
-        // Check that the VM is in the correct state
-        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
-            throw new InvalidParameterValueException(
-                    "Please specify a VM that is either running or stopped.");
-        }
-
-        // Check that the device ID is valid
-        if (deviceId != null) {
-            if (deviceId.longValue() == 0) {
-                throw new InvalidParameterValueException(
-                        "deviceId can't be 0, which is used by Root device");
-            }
-        }
-
-        // Check that the number of data volumes attached to VM is less than
-        // that supported by hypervisor
-        List<VolumeVO> existingDataVolumes = _volsDao.findByInstanceAndType(
-                vmId, Volume.Type.DATADISK);
-        int maxDataVolumesSupported = getMaxDataVolumesSupported(vm);
-        if (existingDataVolumes.size() >= maxDataVolumesSupported) {
-            throw new InvalidParameterValueException(
-                    "The specified VM already has the maximum number of data disks ("
-                            + maxDataVolumesSupported
-                            + "). Please specify another VM.");
-        }
-
-        // Check that the VM and the volume are in the same zone
-        if (vm.getDataCenterId() != volume.getDataCenterId()) {
-            throw new InvalidParameterValueException(
-                    "Please specify a VM that is in the same zone as the volume.");
-        }
-
-        // If local storage is disabled then attaching a volume with local disk
-        // offering not allowed
-        DataCenterVO dataCenter = _dcDao.findById(volume.getDataCenterId());
-        if (!dataCenter.isLocalStorageEnabled()) {
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume
-                    .getDiskOfferingId());
-            if (diskOffering.getUseLocalStorage()) {
-                throw new InvalidParameterValueException(
-                        "Zone is not configured to use local storage but volume's disk offering "
-                                + diskOffering.getName() + " uses it");
-            }
-        }
-
-        // permission check
-        _accountMgr.checkAccess(caller, null, true, volume, vm);
-
-        //check if vm has snapshot, if true: can't attache volume
-        boolean attach = true;
-        checkVMSnapshots(vm, volumeId, attach);
-
-        // Check if volume is stored on secondary Storage.  
-        //Check if volume is stored on secondary Storage.
-        boolean isVolumeOnSec = false;
-        VolumeHostVO  volHostVO = _volumeHostDao.findByVolumeId(volume.getId());
-        if (volHostVO != null) {
-            isVolumeOnSec = true;
-            if (!(volHostVO.getDownloadState() == Status.DOWNLOADED)) {
-                throw new InvalidParameterValueException(
-                        "Volume is not uploaded yet. Please try this operation once the volume is uploaded");
-            }
-        }
-
-        if (!(Volume.State.Allocated.equals(volume.getState())
-                || Volume.State.Ready.equals(volume.getState()) || Volume.State.UploadOp
-                .equals(volume.getState()))) {
-            throw new InvalidParameterValueException(
-                    "Volume state must be in Allocated, Ready or in Uploaded state");
-        }
-
-        VolumeVO rootVolumeOfVm = null;
-        List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId,
-                Volume.Type.ROOT);
-        if (rootVolumesOfVm.size() != 1) {
-            throw new CloudRuntimeException(
-                    "The VM "
-                            + vm.getHostName()
-                            + " has more than one ROOT volume and is in an invalid state.");
-        } else {
-            rootVolumeOfVm = rootVolumesOfVm.get(0);
-        }
-
-        HypervisorType rootDiskHyperType = vm.getHypervisorType();
-
-        HypervisorType dataDiskHyperType = _volsDao.getHypervisorType(volume
-                .getId());
-        if (dataDiskHyperType != HypervisorType.None
-                && rootDiskHyperType != dataDiskHyperType) {
-            throw new InvalidParameterValueException(
-                    "Can't attach a volume created by: " + dataDiskHyperType
-                    + " to a " + rootDiskHyperType + " vm");
-        }
-
-        // allocate deviceId
-        List<VolumeVO> vols = _volsDao.findByInstance(vmId);
-        if (deviceId != null) {
-            if (deviceId.longValue() > 15 || deviceId.longValue() == 0
-                    || deviceId.longValue() == 3) {
-                throw new RuntimeException("deviceId should be 1,2,4-15");
-            }
-            for (VolumeVO vol : vols) {
-                if (vol.getDeviceId().equals(deviceId)) {
-                    throw new RuntimeException("deviceId " + deviceId
-                            + " is used by VM " + vm.getHostName());
-                }
-            }
-        } else {
-            // allocate deviceId here
-            List<String> devIds = new ArrayList<String>();
-            for (int i = 1; i < 15; i++) {
-                devIds.add(String.valueOf(i));
-            }
-            devIds.remove("3");
-            for (VolumeVO vol : vols) {
-                devIds.remove(vol.getDeviceId().toString().trim());
-            }
-            deviceId = Long.parseLong(devIds.iterator().next());
-        }
-
-        boolean createVolumeOnBackend = true;
-        if (rootVolumeOfVm.getState() == Volume.State.Allocated) {
-            createVolumeOnBackend = false;
-            if (isVolumeOnSec) {
-                throw new CloudRuntimeException(
-                        "Cant attach uploaded volume to the vm which is not created. Please start it and then retry");
-            }
-        }
-
-        // create volume on the backend only when vm's root volume is allocated
-        if (createVolumeOnBackend) {
-            if (volume.getState().equals(Volume.State.Allocated)
-                    || isVolumeOnSec) {
-                /* Need to create the volume */
-                VMTemplateVO rootDiskTmplt = _templateDao.findById(vm
-                        .getTemplateId());
-                DataCenterVO dcVO = _dcDao.findById(vm
-                        .getDataCenterId());
-                HostPodVO pod = _podDao.findById(vm.getPodIdToDeployIn());
-                StoragePoolVO rootDiskPool = _storagePoolDao
-                        .findById(rootVolumeOfVm.getPoolId());
-                ServiceOfferingVO svo = _serviceOfferingDao.findById(vm
-                        .getServiceOfferingId());
-                DiskOfferingVO diskVO = _diskOfferingDao.findById(volume
-                        .getDiskOfferingId());
-                Long clusterId = (rootDiskPool == null ? null : rootDiskPool
-                        .getClusterId());
-
-                if (!isVolumeOnSec) {
-                    volume = _storageMgr.createVolume(volume, vm,
-                            rootDiskTmplt, dcVO, pod, clusterId, svo, diskVO,
-                            new ArrayList<StoragePoolVO>(), volume.getSize(),
-                            rootDiskHyperType);
-                } else {
-                    try {
-                        // Format of data disk should be the same as root disk
-                        if (!volHostVO
-                                .getFormat()
-                                .getFileExtension()
-                                .equals(_storageMgr
-                                        .getSupportedImageFormatForCluster(rootDiskPool
-                                                .getClusterId()))) {
-                            throw new InvalidParameterValueException(
-                                    "Failed to attach volume to VM since volumes format "
-                                            + volHostVO.getFormat()
-                                            .getFileExtension()
-                                            + " is not compatible with the vm hypervisor type");
-                        }
-
-                        // Check that there is some shared storage.
-                        StoragePoolVO vmRootVolumePool = _storagePoolDao
-                                .findById(rootVolumeOfVm.getPoolId());
-                        List<StoragePoolVO> sharedVMPools = _storagePoolDao
-                                .findPoolsByTags(
-                                        vmRootVolumePool.getDataCenterId(),
-                                        vmRootVolumePool.getPodId(),
-                                        vmRootVolumePool.getClusterId(), null,
-                                        true);
-                        if (sharedVMPools.size() == 0) {
-                            throw new CloudRuntimeException(
-                                    "Cannot attach volume since there are no shared storage pools in the VM's cluster to copy the uploaded volume to.");
-                        }
-
-                        volume = _storageMgr.copyVolumeFromSecToPrimary(volume,
-                                vm, rootDiskTmplt, dcVO, pod,
-                                rootDiskPool.getClusterId(), svo, diskVO,
-                                new ArrayList<StoragePoolVO>(),
-                                volume.getSize(), rootDiskHyperType);
-                    } catch (NoTransitionException e) {
-                        throw new CloudRuntimeException(
-                                "Unable to transition the volume ", e);
-                    }
-                }
-
-                if (volume == null) {
-                    throw new CloudRuntimeException(
-                            "Failed to create volume when attaching it to VM: "
-                                    + vm.getHostName());
-                }
-            }
-
-            StoragePoolVO vmRootVolumePool = _storagePoolDao
-                    .findById(rootVolumeOfVm.getPoolId());
-            DiskOfferingVO volumeDiskOffering = _diskOfferingDao
-                    .findById(volume.getDiskOfferingId());
-            String[] volumeTags = volumeDiskOffering.getTagsArray();
-
-            boolean isVolumeOnSharedPool = !volumeDiskOffering
-                    .getUseLocalStorage();
-            StoragePoolVO sourcePool = _storagePoolDao.findById(volume
-                    .getPoolId());
-            List<StoragePoolVO> matchingVMPools = _storagePoolDao
-                    .findPoolsByTags(vmRootVolumePool.getDataCenterId(),
-                            vmRootVolumePool.getPodId(),
-                            vmRootVolumePool.getClusterId(), volumeTags,
-                            isVolumeOnSharedPool);
-            boolean moveVolumeNeeded = true;
-            if (matchingVMPools.size() == 0) {
-                String poolType;
-                if (vmRootVolumePool.getClusterId() != null) {
-                    poolType = "cluster";
-                } else if (vmRootVolumePool.getPodId() != null) {
-                    poolType = "pod";
-                } else {
-                    poolType = "zone";
-                }
-                throw new CloudRuntimeException(
-                        "There are no storage pools in the VM's " + poolType
-                        + " with all of the volume's tags ("
-                        + volumeDiskOffering.getTags() + ").");
-            } else {
-                long sourcePoolId = sourcePool.getId();
-                Long sourcePoolDcId = sourcePool.getDataCenterId();
-                Long sourcePoolPodId = sourcePool.getPodId();
-                Long sourcePoolClusterId = sourcePool.getClusterId();
-                for (StoragePoolVO vmPool : matchingVMPools) {
-                    long vmPoolId = vmPool.getId();
-                    Long vmPoolDcId = vmPool.getDataCenterId();
-                    Long vmPoolPodId = vmPool.getPodId();
-                    Long vmPoolClusterId = vmPool.getClusterId();
-
-                    // Moving a volume is not required if storage pools belongs
-                    // to same cluster in case of shared volume or
-                    // identical storage pool in case of local
-                    if (sourcePoolDcId == vmPoolDcId
-                            && sourcePoolPodId == vmPoolPodId
-                            && sourcePoolClusterId == vmPoolClusterId
-                            && (isVolumeOnSharedPool || sourcePoolId == vmPoolId)) {
-                        moveVolumeNeeded = false;
-                        break;
-                    }
-                }
-            }
-
-            if (moveVolumeNeeded) {
-                if (isVolumeOnSharedPool) {
-                    // Move the volume to a storage pool in the VM's zone, pod,
-                    // or cluster
-                    try {
-                        volume = _storageMgr.moveVolume(volume,
-                                vmRootVolumePool.getDataCenterId(),
-                                vmRootVolumePool.getPodId(),
-                                vmRootVolumePool.getClusterId(),
-                                dataDiskHyperType);
-                    } catch (ConcurrentOperationException e) {
-                        throw new CloudRuntimeException(e.toString());
-                    }
-                } else {
-                    throw new CloudRuntimeException(
-                            "Failed to attach local data volume "
-                                    + volume.getName()
-                                    + " to VM "
-                                    + vm.getDisplayName()
-                                    + " as migration of local data volume is not allowed");
-                }
-            }
-        }
-
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor
-                .getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Trying to attaching volume " + volumeId
-                        + " to vm instance:" + vm.getId()
-                        + ", update async job-" + job.getId()
-                        + " progress status");
-            }
-
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
-            _asyncMgr.updateAsyncJobStatus(job.getId(),
-                    BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId);
-        }
-
-        String errorMsg = "Failed to attach volume: " + volume.getName()
-                + " to VM: " + vm.getHostName();
-        boolean sendCommand = (vm.getState() == State.Running);
-        AttachVolumeAnswer answer = null;
-        Long hostId = vm.getHostId();
-        if (hostId == null) {
-            hostId = vm.getLastHostId();
-            HostVO host = _hostDao.findById(hostId);
-            if (host != null
-                    && host.getHypervisorType() == HypervisorType.VMware) {
-                sendCommand = true;
-            }
-        }
-
-        if (sendCommand) {
-            StoragePoolVO volumePool = _storagePoolDao.findById(volume
-                    .getPoolId());
-            AttachVolumeCommand cmd = new AttachVolumeCommand(true,
-                    vm.getInstanceName(), volume.getPoolType(),
-                    volume.getFolder(), volume.getPath(), volume.getName(),
-                    deviceId, volume.getChainInfo());
-            cmd.setPoolUuid(volumePool.getUuid());
-
-            try {
-                answer = (AttachVolumeAnswer) _agentMgr.send(hostId, cmd);
-            } catch (Exception e) {
-                throw new CloudRuntimeException(errorMsg + " due to: "
-                        + e.getMessage());
-            }
-        }
-
-        if (!sendCommand || (answer != null && answer.getResult())) {
-            // Mark the volume as attached
-            if (sendCommand) {
-                _volsDao.attachVolume(volume.getId(), vmId,
-                        answer.getDeviceId());
-            } else {
-                _volsDao.attachVolume(volume.getId(), vmId, deviceId);
-            }
-            return _volsDao.findById(volumeId);
-        } else {
-            if (answer != null) {
-                String details = answer.getDetails();
-                if (details != null && !details.isEmpty()) {
-                    errorMsg += "; " + details;
-                }
-            }
-            throw new CloudRuntimeException(errorMsg);
-        }
-    }
+    
 
     private void checkVMSnapshots(UserVmVO vm, Long volumeId, boolean attach) {
         // Check that if vm has any VM snapshot
-        Long vmId = vm.getId();
+        /*Long vmId = vm.getId();
         List<VMSnapshotVO> listSnapshot = _vmSnapshotDao.listByInstanceId(vmId,
                 VMSnapshot.State.Ready, VMSnapshot.State.Creating, VMSnapshot.State.Reverting, VMSnapshot.State.Expunging);
         if (listSnapshot != null && listSnapshot.size() != 0) {
             throw new InvalidParameterValueException(
                         "The VM has VM snapshots, do not allowed to attach volume. Please delete the VM snapshots first.");
-        }
+        }*/
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "event_detaching_volume1", async = true)
-    public Volume detachVolumeFromVM(DetachVolumeCmd cmmd) {
-        Account caller = UserContext.current().getCaller();
-        if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd
-                .getVirtualMachineId() == null)
-                || (cmmd.getId() != null && (cmmd.getDeviceId() != null || cmmd
-                .getVirtualMachineId() != null))
-                || (cmmd.getId() == null && (cmmd.getDeviceId() == null || cmmd
-                .getVirtualMachineId() == null))) {
-            throw new InvalidParameterValueException(
-                    "Please provide either a volume id, or a tuple(device id, instance id)");
-        }
-
-        Long volumeId = cmmd.getId();
-        VolumeVO volume = null;
-
-        if (volumeId != null) {
-            volume = _volsDao.findById(volumeId);
-        } else {
-            volume = _volsDao.findByInstanceAndDeviceId(
-                    cmmd.getVirtualMachineId(), cmmd.getDeviceId()).get(0);
-        }
-
-        Long vmId = null;
-
-        if (cmmd.getVirtualMachineId() == null) {
-            vmId = volume.getInstanceId();
-        } else {
-            vmId = cmmd.getVirtualMachineId();
-        }
-
-        // Check that the volume ID is valid
-        if (volume == null) {
-            throw new InvalidParameterValueException(
-                    "Unable to find volume with ID: " + volumeId);
-        }
-
-        // Permissions check
-        _accountMgr.checkAccess(caller, null, true, volume);
-
-        // Check that the volume is a data volume
-        if (volume.getVolumeType() != Volume.Type.DATADISK) {
-            throw new InvalidParameterValueException(
-                    "Please specify a data volume.");
-        }
-
-        // Check that the volume is currently attached to a VM
-        if (vmId == null) {
-            throw new InvalidParameterValueException(
-                    "The specified volume is not attached to a VM.");
-        }
-
-        // Check that the VM is in the correct state
-        UserVmVO vm = _vmDao.findById(vmId);
-        if (vm.getState() != State.Running && vm.getState() != State.Stopped
-                && vm.getState() != State.Destroyed) {
-            throw new InvalidParameterValueException(
-                    "Please specify a VM that is either running or stopped.");
-        }
-
-        // Check that if the volume has snapshot
-        boolean attach = false;
-        checkVMSnapshots(vm, volumeId, attach);
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Trying to attaching volume " + volumeId
-                        + "to vm instance:" + vm.getId()
-                        + ", update async job-" + job.getId()
-                        + " progress status");
-            }
-
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
-            _asyncMgr.updateAsyncJobStatus(job.getId(),
-                    BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId);
-        }
-
-        String errorMsg = "Failed to detach volume: " + volume.getName()
-                + " from VM: " + vm.getHostName();
-        boolean sendCommand = (vm.getState() == State.Running);
-        Answer answer = null;
-
-        if (sendCommand) {
-            AttachVolumeCommand cmd = new AttachVolumeCommand(false,
-                    vm.getInstanceName(), volume.getPoolType(),
-                    volume.getFolder(), volume.getPath(), volume.getName(),
-                    cmmd.getDeviceId() != null ? cmmd.getDeviceId() : volume
-                            .getDeviceId(), volume.getChainInfo());
-
-            StoragePoolVO volumePool = _storagePoolDao.findById(volume
-                    .getPoolId());
-            cmd.setPoolUuid(volumePool.getUuid());
-
-            try {
-                answer = _agentMgr.send(vm.getHostId(), cmd);
-            } catch (Exception e) {
-                throw new CloudRuntimeException(errorMsg + " due to: "
-                        + e.getMessage());
-            }
-        }
-
-        if (!sendCommand || (answer != null && answer.getResult())) {
-            // Mark the volume as detached
-            _volsDao.detachVolume(volume.getId());
-            if (answer != null && answer instanceof AttachVolumeAnswer) {
-                volume.setChainInfo(((AttachVolumeAnswer) answer)
-                        .getChainInfo());
-                _volsDao.update(volume.getId(), volume);
-            }
-
-            return _volsDao.findById(volumeId);
-        } else {
-
-            if (answer != null) {
-                String details = answer.getDetails();
-                if (details != null && !details.isEmpty()) {
-                    errorMsg += "; " + details;
-                }
-            }
-
-            throw new CloudRuntimeException(errorMsg);
-        }
-    }
-
-    @Override
-    public boolean attachISOToVM(long vmId, long isoId, boolean attach) {
-        UserVmVO vm = _vmDao.findById(vmId);
-
-        if (vm == null) {
-            return false;
-        } else if (vm.getState() != State.Running) {
-            return true;
-        }
-        String isoPath;
-        VMTemplateVO tmplt = _templateDao.findById(isoId);
-        if (tmplt == null) {
-            s_logger.warn("ISO: " + isoId + " does not exist");
-            return false;
-        }
-        // Get the path of the ISO
-        Pair<String, String> isoPathPair = null;
-        if (tmplt.getTemplateType() == TemplateType.PERHOST) {
-            isoPath = tmplt.getName();
-        } else {
-            isoPathPair = _storageMgr.getAbsoluteIsoPath(isoId,
-                    vm.getDataCenterId());
-            if (isoPathPair == null) {
-                s_logger.warn("Couldn't get absolute iso path");
-                return false;
-            } else {
-                isoPath = isoPathPair.first();
-            }
-        }
-
-        String vmName = vm.getInstanceName();
-
-        HostVO host = _hostDao.findById(vm.getHostId());
-        if (host == null) {
-            s_logger.warn("Host: " + vm.getHostId() + " does not exist");
-            return false;
-        }
-        AttachIsoCommand cmd = new AttachIsoCommand(vmName, isoPath, attach);
-        if (isoPathPair != null) {
-            cmd.setStoreUrl(isoPathPair.second());
-        }
-        Answer a = _agentMgr.easySend(vm.getHostId(), cmd);
-
-        return (a != null && a.getResult());
-    }
+   
 
     private UserVm rebootVirtualMachine(long userId, long vmId)
             throws InsufficientCapacityException, ResourceUnavailableException {
@@ -1368,7 +774,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         _itMgr.checkIfCanUpgrade(vmInstance, svcOffId);
 
         // remove diskAndMemory VM snapshots
-        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+       /* List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
         for (VMSnapshotVO vmSnapshotVO : vmSnapshots) {
             if(vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory){
                 if(!_vmSnapshotMgr.deleteAllVMSnapshots(vmId, VMSnapshot.Type.DiskAndMemory)){
@@ -1378,7 +784,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 }
                     
             }
-        }
+        }*/
         
         _itMgr.upgradeVmDb(vmId, svcOffId);
 
@@ -1962,474 +1368,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template", create = true)
-    public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd,
-            Account templateOwner) throws ResourceAllocationException {
-        Long userId = UserContext.current().getCallerUserId();
-
-        Account caller = UserContext.current().getCaller();
-        boolean isAdmin = (isAdmin(caller.getType()));
-
-        _accountMgr.checkAccess(caller, null, true, templateOwner);
-
-        String name = cmd.getTemplateName();
-        if ((name == null) || (name.length() > 32)) {
-            throw new InvalidParameterValueException(
-                    "Template name cannot be null and should be less than 32 characters");
-        }
-
-        if (cmd.getTemplateTag() != null) {
-            if (!_accountService.isRootAdmin(caller.getType())) {
-                throw new PermissionDeniedException(
-                        "Parameter templatetag can only be specified by a Root Admin, permission denied");
-            }
-        }
-
-        // do some parameter defaulting
-        Integer bits = cmd.getBits();
-        Boolean requiresHvm = cmd.getRequiresHvm();
-        Boolean passwordEnabled = cmd.isPasswordEnabled();
-        Boolean isPublic = cmd.isPublic();
-        Boolean featured = cmd.isFeatured();
-        int bitsValue = ((bits == null) ? 64 : bits.intValue());
-        boolean requiresHvmValue = ((requiresHvm == null) ? true : requiresHvm
-                .booleanValue());
-        boolean passwordEnabledValue = ((passwordEnabled == null) ? false
-                : passwordEnabled.booleanValue());
-        if (isPublic == null) {
-            isPublic = Boolean.FALSE;
-        }
-        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao
-                .getValue("allow.public.user.templates"));
-        if (!isAdmin && !allowPublicUserTemplates && isPublic) {
-            throw new PermissionDeniedException("Failed to create template "
-                    + name + ", only private templates can be created.");
-        }
-
-        Long volumeId = cmd.getVolumeId();
-        Long snapshotId = cmd.getSnapshotId();
-        if ((volumeId == null) && (snapshotId == null)) {
-            throw new InvalidParameterValueException(
-                    "Failed to create private template record, neither volume ID nor snapshot ID were specified.");
-        }
-        if ((volumeId != null) && (snapshotId != null)) {
-            throw new InvalidParameterValueException(
-                    "Failed to create private template record, please specify only one of volume ID ("
-                            + volumeId
-                            + ") and snapshot ID ("
-                            + snapshotId
-                            + ")");
-        }
-
-        HypervisorType hyperType;
-        VolumeVO volume = null;
-        VMTemplateVO privateTemplate = null;
-        if (volumeId != null) { // create template from volume
-            volume = _volsDao.findById(volumeId);
-            if (volume == null) {
-                throw new InvalidParameterValueException(
-                        "Failed to create private template record, unable to find volume "
-                                + volumeId);
-            }
-            // check permissions
-            _accountMgr.checkAccess(caller, null, true, volume);
-
-            // If private template is created from Volume, check that the volume
-            // will not be active when the private template is
-            // created
-            if (!_storageMgr.volumeInactive(volume)) {
-                String msg = "Unable to create private template for volume: "
-                        + volume.getName()
-                        + "; volume is attached to a non-stopped VM, please stop the VM first";
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info(msg);
-                }
-                throw new CloudRuntimeException(msg);
-            }
-            hyperType = _volsDao.getHypervisorType(volumeId);
-        } else { // create template from snapshot
-            SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-            if (snapshot == null) {
-                throw new InvalidParameterValueException(
-                        "Failed to create private template record, unable to find snapshot "
-                                + snapshotId);
-            }
-
-            volume = _volsDao.findById(snapshot.getVolumeId());
-
-            // check permissions
-            _accountMgr.checkAccess(caller, null, true, snapshot);
-
-            if (snapshot.getState() != Snapshot.State.BackedUp) {
-                throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.State.BackedUp + " state yet and can't be used for template creation");
-            }
-
-            /*
-             * // bug #11428. Operation not supported if vmware and snapshots
-             * parent volume = ROOT if(snapshot.getHypervisorType() ==
-             * HypervisorType.VMware && snapshotVolume.getVolumeType() ==
-             * Type.DATADISK){ throw new UnsupportedServiceException(
-             * "operation not supported, snapshot with id " + snapshotId +
-             * " is created from Data Disk"); }
-             */
-
-            hyperType = snapshot.getHypervisorType();
-        }
-
-        _resourceLimitMgr.checkResourceLimit(templateOwner,
-                ResourceType.template);
-
-        if (!isAdmin || featured == null) {
-            featured = Boolean.FALSE;
-        }
-        Long guestOSId = cmd.getOsTypeId();
-        GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
-        if (guestOS == null) {
-            throw new InvalidParameterValueException("GuestOS with ID: "
-                    + guestOSId + " does not exist.");
-        }
-
-        String uniqueName = Long.valueOf((userId == null) ? 1 : userId)
-                .toString()
-                + UUID.nameUUIDFromBytes(name.getBytes()).toString();
-        Long nextTemplateId = _templateDao.getNextInSequence(Long.class, "id");
-        String description = cmd.getDisplayText();
-        boolean isExtractable = false;
-        Long sourceTemplateId = null;
-        if (volume != null) {
-            VMTemplateVO template = ApiDBUtils.findTemplateById(volume
-                    .getTemplateId());
-            isExtractable = template != null
-                    && template.isExtractable()
-                    && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-            if (template != null) {
-                sourceTemplateId = template.getId();
-            } else if (volume.getVolumeType() == Type.ROOT) { // vm created out
-                // of blank
-                // template
-                UserVm userVm = ApiDBUtils.findUserVmById(volume
-                        .getInstanceId());
-                sourceTemplateId = userVm.getIsoId();
-            }
-        }
-        String templateTag = cmd.getTemplateTag();
-        if (templateTag != null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Adding template tag: " + templateTag);
-            }
-        }
-        privateTemplate = new VMTemplateVO(nextTemplateId, uniqueName, name,
-                ImageFormat.RAW, isPublic, featured, isExtractable,
-                TemplateType.USER, null, null, requiresHvmValue, bitsValue,
-                templateOwner.getId(), null, description, passwordEnabledValue,
-                guestOS.getId(), true, hyperType, templateTag, cmd.getDetails());
-        if (sourceTemplateId != null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("This template is getting created from other template, setting source template Id to: "
-                        + sourceTemplateId);
-            }
-        }
-        privateTemplate.setSourceTemplateId(sourceTemplateId);
-
-        VMTemplateVO template = _templateDao.persist(privateTemplate);
-        // Increment the number of templates
-        if (template != null) {
-            if (cmd.getDetails() != null) {
-                _templateDetailsDao.persist(template.getId(), cmd.getDetails());
-            }
-
-            _resourceLimitMgr.incrementResourceCount(templateOwner.getId(),
-                    ResourceType.template);
-        }
-
-        if (template != null) {
-            return template;
-        } else {
-            throw new CloudRuntimeException("Failed to create a template");
-        }
-
-    }
-
-    @Override
-    @DB
-    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template", async = true)
-    public VMTemplateVO createPrivateTemplate(CreateTemplateCmd command)
-            throws CloudRuntimeException {
-        Long userId = UserContext.current().getCallerUserId();
-        if (userId == null) {
-            userId = User.UID_SYSTEM;
-        }
-        long templateId = command.getEntityId();
-        Long volumeId = command.getVolumeId();
-        Long snapshotId = command.getSnapshotId();
-        SnapshotCommand cmd = null;
-        VMTemplateVO privateTemplate = null;
-
-        String uniqueName = getRandomPrivateTemplateName();
-
-        StoragePoolVO pool = null;
-        HostVO secondaryStorageHost = null;
-        Long zoneId = null;
-        Long accountId = null;
-        SnapshotVO snapshot = null;
-        String secondaryStorageURL = null;
-        try {
-            if (snapshotId != null) { // create template from snapshot
-                snapshot = _snapshotDao.findById(snapshotId);
-                if (snapshot == null) {
-                    throw new CloudRuntimeException(
-                            "Unable to find Snapshot for Id " + snapshotId);
-                }
-                zoneId = snapshot.getDataCenterId();
-                secondaryStorageHost = _snapshotMgr
-                        .getSecondaryStorageHost(snapshot);
-                secondaryStorageURL = _snapshotMgr
-                        .getSecondaryStorageURL(snapshot);
-                String name = command.getTemplateName();
-                String backupSnapshotUUID = snapshot.getBackupSnapshotId();
-                if (backupSnapshotUUID == null) {
-                    throw new CloudRuntimeException(
-                            "Unable to create private template from snapshot "
-                                    + snapshotId
-                                    + " due to there is no backupSnapshotUUID for this snapshot");
-                }
-
-                Long dcId = snapshot.getDataCenterId();
-                accountId = snapshot.getAccountId();
-                volumeId = snapshot.getVolumeId();
-
-                String origTemplateInstallPath = null;
-                List<StoragePoolVO> pools = _storageMgr
-                        .ListByDataCenterHypervisor(zoneId,
-                                snapshot.getHypervisorType());
-                if (pools == null || pools.size() == 0) {
-                    throw new CloudRuntimeException(
-                            "Unable to find storage pools in zone " + zoneId);
-                }
-                pool = pools.get(0);
-                if (snapshot.getVersion() != null
-                        && snapshot.getVersion().equalsIgnoreCase("2.1")) {
-                    VolumeVO volume = _volsDao
-                            .findByIdIncludingRemoved(volumeId);
-                    if (volume == null) {
-                        throw new CloudRuntimeException(
-                                "failed to upgrade snapshot "
-                                        + snapshotId
-                                        + " due to unable to find orignal volume:"
-                                        + volumeId + ", try it later ");
-                    }
-                    if (volume.getTemplateId() == null) {
-                        _snapshotDao.updateSnapshotVersion(volumeId, "2.1",
-                                "2.2");
-                    } else {
-                        VMTemplateVO template = _templateDao
-                                .findByIdIncludingRemoved(volume
-                                        .getTemplateId());
-                        if (template == null) {
-                            throw new CloudRuntimeException(
-                                    "failed to upgrade snapshot "
-                                            + snapshotId
-                                            + " due to unalbe to find orignal template :"
-                                            + volume.getTemplateId()
-                                            + ", try it later ");
-                        }
-                        Long origTemplateId = template.getId();
-                        Long origTmpltAccountId = template.getAccountId();
-                        if (!_volsDao.lockInLockTable(volumeId.toString(), 10)) {
-                            throw new CloudRuntimeException(
-                                    "failed to upgrade snapshot " + snapshotId
-                                    + " due to volume:" + volumeId
-                                    + " is being used, try it later ");
-                        }
-                        cmd = new UpgradeSnapshotCommand(null,
-                                secondaryStorageURL, dcId, accountId, volumeId,
-                                origTemplateId, origTmpltAccountId, null,
-                                snapshot.getBackupSnapshotId(),
-                                snapshot.getName(), "2.1");
-                        if (!_volsDao.lockInLockTable(volumeId.toString(), 10)) {
-                            throw new CloudRuntimeException(
-                                    "Creating template failed due to volume:"
-                                            + volumeId
-                                            + " is being used, try it later ");
-                        }
-                        Answer answer = null;
-                        try {
-                            answer = _storageMgr.sendToPool(pool, cmd);
-                            cmd = null;
-                        } catch (StorageUnavailableException e) {
-                        } finally {
-                            _volsDao.unlockFromLockTable(volumeId.toString());
-                        }
-                        if ((answer != null) && answer.getResult()) {
-                            _snapshotDao.updateSnapshotVersion(volumeId, "2.1",
-                                    "2.2");
-                        } else {
-                            throw new CloudRuntimeException(
-                                    "Unable to upgrade snapshot");
-                        }
-                    }
-                }
-                if (snapshot.getSwiftId() != null && snapshot.getSwiftId() != 0) {
-                    _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
-                }
-                cmd = new CreatePrivateTemplateFromSnapshotCommand(pool, secondaryStorageURL, dcId, accountId, snapshot.getVolumeId(), backupSnapshotUUID, snapshot.getName(),
-                        origTemplateInstallPath, templateId, name, _createprivatetemplatefromsnapshotwait);
-            } else if (volumeId != null) {
-                VolumeVO volume = _volsDao.findById(volumeId);
-                if (volume == null) {
-                    throw new CloudRuntimeException(
-                            "Unable to find volume for Id " + volumeId);
-                }
-                accountId = volume.getAccountId();
-
-                if (volume.getPoolId() == null) {
-                    _templateDao.remove(templateId);
-                    throw new CloudRuntimeException("Volume " + volumeId
-                            + " is empty, can't create template on it");
-                }
-                String vmName = _storageMgr.getVmNameOnVolume(volume);
-                zoneId = volume.getDataCenterId();
-                secondaryStorageHost = _storageMgr
-                        .getSecondaryStorageHost(zoneId);
-                if (secondaryStorageHost == null) {
-                    throw new CloudRuntimeException(
-                            "Can not find the secondary storage for zoneId "
-                                    + zoneId);
-                }
-                secondaryStorageURL = secondaryStorageHost.getStorageUrl();
-
-                pool = _storagePoolDao.findById(volume.getPoolId());
-                cmd = new CreatePrivateTemplateFromVolumeCommand(pool, secondaryStorageURL, templateId, accountId, command.getTemplateName(), uniqueName, volume.getPath(), vmName, _createprivatetemplatefromvolumewait);
-
-            } else {
-                throw new CloudRuntimeException(
-                        "Creating private Template need to specify snapshotId or volumeId");
-            }
-            // FIXME: before sending the command, check if there's enough
-            // capacity
-            // on the storage server to create the template
-
-            // This can be sent to a KVM host too.
-            CreatePrivateTemplateAnswer answer = null;
-            if (snapshotId != null) {
-                if (!_snapshotDao.lockInLockTable(snapshotId.toString(), 10)) {
-                    throw new CloudRuntimeException(
-                            "Creating template from snapshot failed due to snapshot:"
-                                    + snapshotId
-                                    + " is being used, try it later ");
-                }
-            } else {
-                if (!_volsDao.lockInLockTable(volumeId.toString(), 10)) {
-                    throw new CloudRuntimeException(
-                            "Creating template from volume failed due to volume:"
-                                    + volumeId
-                                    + " is being used, try it later ");
-                }
-            }
-            try {
-                answer = (CreatePrivateTemplateAnswer) _storageMgr.sendToPool(
-                        pool, cmd);
-            } catch (StorageUnavailableException e) {
-            } finally {
-                if (snapshotId != null) {
-                    _snapshotDao.unlockFromLockTable(snapshotId.toString());
-                } else {
-                    _volsDao.unlockFromLockTable(volumeId.toString());
-                }
-            }
-            if ((answer != null) && answer.getResult()) {
-                privateTemplate = _templateDao.findById(templateId);
-                String answerUniqueName = answer.getUniqueName();
-                if (answerUniqueName != null) {
-                    privateTemplate.setUniqueName(answerUniqueName);
-                } else {
-                    privateTemplate.setUniqueName(uniqueName);
-                }
-                ImageFormat format = answer.getImageFormat();
-                if (format != null) {
-                    privateTemplate.setFormat(format);
-                } else {
-                    // This never occurs.
-                    // Specify RAW format makes it unusable for snapshots.
-                    privateTemplate.setFormat(ImageFormat.RAW);
-                }
-
-                String checkSum = getChecksum(secondaryStorageHost.getId(),
-                        answer.getPath());
-
-                Transaction txn = Transaction.currentTxn();
-
-                txn.start();
-
-                privateTemplate.setChecksum(checkSum);
-                _templateDao.update(templateId, privateTemplate);
-
-                // add template zone ref for this template
-                _templateDao.addTemplateToZone(privateTemplate, zoneId);
-                VMTemplateHostVO templateHostVO = new VMTemplateHostVO(
-                        secondaryStorageHost.getId(), templateId);
-                templateHostVO.setDownloadPercent(100);
-                templateHostVO.setDownloadState(Status.DOWNLOADED);
-                templateHostVO.setInstallPath(answer.getPath());
-                templateHostVO.setLastUpdated(new Date());
-                templateHostVO.setSize(answer.getVirtualSize());
-                templateHostVO.setPhysicalSize(answer.getphysicalSize());
-                _templateHostDao.persist(templateHostVO);
-
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_TEMPLATE_CREATE, privateTemplate.getAccountId(),
-                        secondaryStorageHost.getDataCenterId(), privateTemplate.getId(),
-                        privateTemplate.getName(), null, privateTemplate.getSourceTemplateId(),
-                        templateHostVO.getSize(), VirtualMachineTemplate.class.getName(), privateTemplate.getUuid());
-                txn.commit();
-            }
-        } finally {
-            if (snapshot != null && snapshot.getSwiftId() != null
-                    && secondaryStorageURL != null && zoneId != null
-                    && accountId != null && volumeId != null) {
-                _snapshotMgr.deleteSnapshotsForVolume(secondaryStorageURL,
-                        zoneId, accountId, volumeId);
-            }
-            if (privateTemplate == null) {
-                Transaction txn = Transaction.currentTxn();
-                txn.start();
-                // Remove the template record
-                _templateDao.expunge(templateId);
-
-                // decrement resource count
-                if (accountId != null) {
-                    _resourceLimitMgr.decrementResourceCount(accountId,
-                            ResourceType.template);
-                }
-                txn.commit();
-            }
-        }
-
-        if (privateTemplate != null) {
-            return privateTemplate;
-        } else {
-            throw new CloudRuntimeException("Failed to create a template");
-        }
-    }
-
-    @Override
-    public String getChecksum(Long hostId, String templatePath) {
-        HostVO ssHost = _hostDao.findById(hostId);
-        Host.Type type = ssHost.getType();
-        if (type != Host.Type.SecondaryStorage
-                && type != Host.Type.LocalSecondaryStorage) {
-            return null;
-        }
-        String secUrl = ssHost.getStorageUrl();
-        Answer answer;
-        answer = _agentMgr.sendToSecStorage(ssHost, new ComputeChecksumCommand(
-                secUrl, templatePath));
-        if (answer != null && answer.getResult()) {
-            return answer.getDetails();
-        }
-        return null;
-    }
-
     // used for vm transitioning to error state
     private void updateVmStateForFailedVmCreation(Long vmId, Long hostId) {
 
@@ -2449,14 +1387,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 List<VolumeVO> volumesForThisVm = _volsDao
                         .findUsableVolumesForInstance(vm.getId());
                 for (VolumeVO volume : volumesForThisVm) {
-                    try {
-                        if (volume.getState() != Volume.State.Destroy) {
-                            _storageMgr.destroyVolume(volume);
-                        }
-                    } catch (ConcurrentOperationException e) {
-                        s_logger.warn("Unable to delete volume:"
-                                + volume.getId() + " for vm:" + vmId
-                                + " whilst transitioning to error state");
+                    if (volume.getState() != Volume.State.Destroy) {
+                        this.volumeMgr.destroyVolume(volume);
                     }
                 }
                 String msg = "Failed to deploy Vm with Id: " + vmId + ", on Host with Id: " + hostId;
@@ -3577,7 +2509,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                                 + vm.getIsoId());
             }
 
-            Pair<String, String> isoPathPair = _storageMgr.getAbsoluteIsoPath(
+            Pair<String, String> isoPathPair = this.templateMgr.getAbsoluteIsoPath(
                     template.getId(), vm.getDataCenterId());
 
             if (template.getTemplateType() == TemplateType.PERHOST) {
@@ -4893,22 +3825,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         /* If new template is provided allocate a new volume from new template otherwise allocate new volume from original template */
         VolumeVO newVol = null;
         if (newTemplateId != null){
-            newVol = _storageMgr.allocateDuplicateVolume(root, newTemplateId);
+            newVol = volumeMgr.allocateDuplicateVolume(root, newTemplateId);
             vm.setGuestOSId(template.getGuestOSId());
             vm.setTemplateId(newTemplateId);
             _vmDao.update(vmId, vm);
-        } else newVol = _storageMgr.allocateDuplicateVolume(root, null);
+        } else {
+            newVol = volumeMgr.allocateDuplicateVolume(root, null);
+        }
 
         _volsDao.attachVolume(newVol.getId(), vmId, newVol.getDeviceId());
 
         /* Detach and destory the old root volume */
-        try {
-            _volsDao.detachVolume(root.getId());
-            _storageMgr.destroyVolume(root);
-        } catch (ConcurrentOperationException e) {
-            s_logger.debug("Unable to delete old root volume " + root.getId()
-                    + ", user may manually delete it", e);
-        }
+
+        _volsDao.detachVolume(root.getId());
+        this.volumeMgr.destroyVolume(root);
 
         if (needRestart) {
             try {

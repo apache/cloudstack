@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
@@ -59,7 +60,6 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.allocator.StoragePoolAllocator;
@@ -99,6 +99,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     @Inject protected CapacityDao _capacityDao;
     @Inject protected AccountManager _accountMgr;
     @Inject protected StorageManager _storageMgr;
+    @Inject DataStoreManager dataStoreMgr;
 
     //@com.cloud.utils.component.Inject(adapter=StoragePoolAllocator.class)
     @Inject protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -736,11 +737,11 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             if(plan.getPoolId() != null){
                 s_logger.debug("Volume has pool already allocated, checking if pool can be reused, poolId: "+toBeCreated.getPoolId());
                 List<StoragePool> suitablePools = new ArrayList<StoragePool>();
-                StoragePoolVO pool;
+                StoragePool pool = null;
                 if(toBeCreated.getPoolId() != null){
-                    pool = _storagePoolDao.findById(toBeCreated.getPoolId());
+                    pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(toBeCreated.getPoolId());
                 }else{
-                    pool = _storagePoolDao.findById(plan.getPoolId());
+                    pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(plan.getPoolId());
                 }
                 
                 if(!pool.isInMaintenance()){

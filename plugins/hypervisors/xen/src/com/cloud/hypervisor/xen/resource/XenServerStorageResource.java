@@ -144,6 +144,7 @@ public class XenServerStorageResource {
         
         try {
             obj = Decoder.decode(uriString);
+
             DecodedDataStore store = obj.getStore(); 
             if (obj.getObjType().equalsIgnoreCase("template") && store.getRole().equalsIgnoreCase("image")) {
                 return getTemplateSize(cmd, obj.getPath());
@@ -224,6 +225,7 @@ public class XenServerStorageResource {
     }
     
     protected SR getNfsSR(Connection conn, DecodedDataStore store) {
+
         Map<String, String> deviceConfig = new HashMap<String, String>();
 
         String uuid = store.getUuid();
@@ -410,6 +412,7 @@ public class XenServerStorageResource {
         try {
             DecodedDataObject obj = Decoder.decode(storeUrl);
             DecodedDataStore store = obj.getStore();
+
             if (store.getScheme().equalsIgnoreCase("nfs")) {
                 SR sr = getNfsSR(conn, store);
             } else if (store.getScheme().equalsIgnoreCase("iscsi")) {
@@ -570,7 +573,9 @@ public class XenServerStorageResource {
         Connection conn = hypervisorResource.getConnection();
         try {
             DecodedDataObject obj = Decoder.decode(dataStoreUri);
+
             DecodedDataStore store = obj.getStore();
+
             SR sr = hypervisorResource.getStorageRepository(conn, store.getUuid());
             hypervisorResource.setupHeartbeatSr(conn, sr, false);
             long capacity = sr.getPhysicalSize(conn);

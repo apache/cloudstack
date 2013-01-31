@@ -20,8 +20,8 @@ package org.apache.cloudstack.storage.volume;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
 
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback);

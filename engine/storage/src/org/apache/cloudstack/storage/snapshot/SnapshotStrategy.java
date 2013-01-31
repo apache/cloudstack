@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.snapshot;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+
 public interface SnapshotStrategy {
 	public boolean takeSnapshot(SnapshotInfo snapshot);
 	public boolean revertSnapshot(SnapshotInfo snapshot);

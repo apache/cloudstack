@@ -31,7 +31,11 @@
       <artifactId>cloud-api</artifactId>
       <version>${project.version}</version>
     </dependency>
-
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>commons-httpclient</groupId>
       <artifactId>commons-httpclient</artifactId>

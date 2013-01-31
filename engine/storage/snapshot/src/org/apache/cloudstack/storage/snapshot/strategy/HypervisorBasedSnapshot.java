@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.snapshot.strategy;
 
-import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.storage.snapshot.SnapshotStrategy;
 import org.springframework.stereotype.Component;
 

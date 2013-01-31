@@ -444,6 +444,7 @@ public class ApiConstants {
     public static final String VM_SNAPSHOT_ID = "vmsnapshotid";
     public static final String VM_SNAPSHOT_DISK_IDS = "vmsnapshotdiskids";
     public static final String VM_SNAPSHOT_MEMORY = "snapshotmemory";
+    public static final String IMAGE_STORE_UUID = "imagestoreuuid";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

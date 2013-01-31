@@ -16,14 +16,25 @@
 // under the License.
 package org.apache.cloudstack.storage.test;
 
+import java.io.IOException;
+
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.storage.HostEndpointRpcServer;
 import org.apache.cloudstack.storage.endpoint.EndPointSelector;
+import org.apache.cloudstack.storage.test.ChildTestConfiguration.Library;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.TypeFilter;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusteredAgentRebalanceService;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
@@ -50,11 +61,35 @@ import com.cloud.host.dao.HostTagsDaoImpl;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolHostDaoImpl;
+import com.cloud.storage.dao.VMTemplateDaoImpl;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateDetailsDaoImpl;
+import com.cloud.storage.dao.VMTemplateHostDaoImpl;
+import com.cloud.storage.dao.VMTemplatePoolDaoImpl;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
-
+import com.cloud.storage.dao.VolumeDaoImpl;
+import com.cloud.storage.dao.VolumeHostDaoImpl;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
+import com.cloud.utils.component.SpringComponentScanUtils;
+import com.cloud.vm.dao.NicDaoImpl;
+import com.cloud.vm.dao.VMInstanceDaoImpl;
+@Configuration
+@ComponentScan(basePackageClasses={
+        NicDaoImpl.class,
+        VMInstanceDaoImpl.class,
+        VMTemplateHostDaoImpl.class,
+        VolumeHostDaoImpl.class,
+        VolumeDaoImpl.class,
+        VMTemplatePoolDaoImpl.class,
+        ResourceTagsDaoImpl.class,
+        VMTemplateDaoImpl.class,
+        MockStorageMotionStrategy.class
+},
+includeFilters={@Filter(value=Library.class, type=FilterType.CUSTOM)},
+useDefaultFilters=false
+)
 public class ChildTestConfiguration extends TestConfiguration {
 	
 	@Override
@@ -147,6 +182,27 @@ public class ChildTestConfiguration extends TestConfiguration {
     @Bean
     public APIChecker apiChecker() {
         return Mockito.mock(APIChecker.class);
+    }
+    
+    @Bean
+    public SnapshotManager snapshotMgr() {
+        return Mockito.mock(SnapshotManager.class);
+    }
+    
+    @Bean
+    public AlertManager alertMgr() {
+        return Mockito.mock(AlertManager.class);
+    }
+
+    public static class Library implements TypeFilter {
+
+        @Override
+        public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
+            mdr.getClassMetadata().getClassName();
+            ComponentScan cs = ChildTestConfiguration.class.getAnnotation(ComponentScan.class);
+            return SpringComponentScanUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
+        }
+
     }
 /*	@Override
 	@Bean

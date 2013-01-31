@@ -99,10 +99,7 @@ public interface StoragePool extends Identity, InternalIdentity {
 	/**
 	 * @return
 	 */
-	String getStorageProvider();
-
-	/**
-	 * @return
-	 */
-	String getStorageType();
+	Long getStorageProviderId();
+	
+	boolean isInMaintenance();
 }

@@ -33,17 +33,17 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ImageDataStoreHelper {
     @Inject
     ImageDataStoreDao imageStoreDao;
-    public ImageDataStoreVO createImageDataStore(Map<String, String> params) {
-        ImageDataStoreVO store = imageStoreDao.findByUuid(params.get("uuid"));
+    public ImageDataStoreVO createImageDataStore(Map<String, Object> params) {
+        ImageDataStoreVO store = imageStoreDao.findByUuid((String)params.get("uuid"));
         if (store != null) {
-            throw new CloudRuntimeException("duplicate uuid");
+            return store;
         }
         store = new ImageDataStoreVO();
-        store.setName(params.get("name"));
-        store.setProtocol(params.get("protocol"));
-        store.setProvider(Long.parseLong(params.get("provider")));
-        store.setScope(Enum.valueOf(ScopeType.class, params.get("scope")));
-        store.setUuid(params.get("uuid"));
+        store.setName((String)params.get("name"));
+        store.setProtocol((String)params.get("protocol"));
+        store.setProvider((Long)params.get("provider"));
+        store.setScope((ScopeType)params.get("scope"));
+        store.setUuid((String)params.get("uuid"));
         store = imageStoreDao.persist(store);
         return store;
     }

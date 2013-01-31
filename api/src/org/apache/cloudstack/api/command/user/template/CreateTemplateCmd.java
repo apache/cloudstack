@@ -240,7 +240,7 @@ import com.cloud.user.UserContext;
     @Override
     public void create() throws ResourceAllocationException {
         VirtualMachineTemplate template = null;
-        template = _userVmService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
+        template = this._templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
         if (template != null) {
             this.setEntityId(template.getId());
             this.setEntityUuid(template.getUuid());
@@ -255,7 +255,7 @@ import com.cloud.user.UserContext;
     public void execute() {
         UserContext.current().setEventDetails("Template Id: "+getEntityId()+((getSnapshotId() == null) ? " from volume Id: " + getVolumeId() : " from snapshot Id: " + getSnapshotId()));
         VirtualMachineTemplate template = null;
-        template = _userVmService.createPrivateTemplate(this);
+        template = this._templateService.createPrivateTemplate(this);
 
         if (template != null){
             List<TemplateResponse> templateResponses;

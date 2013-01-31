@@ -22,14 +22,17 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
+import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
-import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -43,10 +46,10 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.storage.GuestOS;
-import com.cloud.storage.TemplateProfile;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
@@ -76,6 +79,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	protected @Inject UsageEventDao _usageEventDao;
 	protected @Inject HostDao _hostDao;
 	protected @Inject ResourceLimitService _resourceLimitMgr;
+	protected @Inject DataStoreManager storeMgr;
 	
 	@Override
 	public boolean stop() {
@@ -94,16 +98,26 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
             String accountName, Long domainId, String chksum, Boolean bootable, Map details) throws ResourceAllocationException {
 	    return prepare(isIso, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneId, hypervisorType,
-	            chksum, bootable, null, null, details, false);
+	            chksum, bootable, null, null, details, false, null);
 	}
 	
 	public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, Integer bits,
 			Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
 			Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
-			String chksum, Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshkeyEnabled) throws ResourceAllocationException {
+			String chksum, Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshkeyEnabled,
+			String imageStoreUuid) throws ResourceAllocationException {
 		//Long accountId = null;
 		// parameters verification
 		
+	    String storeUuid = imageStoreUuid;
+        if (storeUuid != null) {
+            DataStore store = this.storeMgr.getDataStore(storeUuid, DataStoreRole.Image);
+            if (store == null) {
+                throw new InvalidParameterValueException("invalide image store uuid" + storeUuid);
+            }
+            
+        }
+        
 		if (isPublic == null) {
 			isPublic = Boolean.FALSE;
 		}
@@ -200,7 +214,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
         UserContext.current().setEventDetails("Id: " +id+ " name: " + name);
 		return new TemplateProfile(id, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic,
-				featured, isExtractable, imgfmt, guestOSId, zoneId, hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details, sshkeyEnabled);
+				featured, isExtractable, imgfmt, guestOSId, zoneId, hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details, sshkeyEnabled, imageStoreUuid);
 	}
 	
 	@Override
@@ -210,10 +224,12 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
         _accountMgr.checkAccess(caller, null, true, owner);
 	    
+    
+        
 		return prepare(false, UserContext.current().getCallerUserId(), cmd.getTemplateName(), cmd.getDisplayText(),
 				cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(), cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(),
 				cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()),
-				cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled());
+				cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), cmd.getImageStoreUuid());
 	}
 
 	public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
@@ -224,7 +240,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	   
 		return prepare(true, UserContext.current().getCallerUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false,
 					true, cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(),
-					cmd.getZoneId(), HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null, owner, null, false);
+					cmd.getZoneId(), HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null, owner, null, false, cmd.getImageStoreUuid());
 	}
 	
 	protected VMTemplateVO persistTemplate(TemplateProfile profile) {
@@ -234,6 +250,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 				profile.getBits(), profile.getAccountId(), profile.getCheckSum(), profile.getDisplayText(),
 				profile.getPasswordEnabled(), profile.getGuestOsId(), profile.getBootable(), profile.getHypervisorType(), profile.getTemplateTag(), 
 				profile.getDetails(), profile.getSshKeyEnabled());
+
         
 		if (zoneId == null || zoneId.longValue() == -1) {
             List<DataCenterVO> dcs = _dcDao.listAll();

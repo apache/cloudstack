@@ -26,6 +26,8 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.capacity.CapacityManager;
@@ -41,7 +43,6 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -76,6 +77,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Inject ClusterDao _clusterDao;
     @Inject SwiftManager _swiftMgr;
     @Inject CapacityManager _capacityMgr;
+    @Inject DataStoreManager dataStoreMgr;
     protected BigDecimal _storageOverprovisioningFactor = new BigDecimal(1);    
     long _extraBytesPerVolume = 0;
     Random _rand;
@@ -121,7 +123,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		boolean localStorageAllocationNeeded = localStorageAllocationNeeded(dskCh);
 		if (s_logger.isDebugEnabled()) {
             s_logger.debug("Is localStorageAllocationNeeded? "+ localStorageAllocationNeeded);
-            s_logger.debug("Is storage pool shared? "+ pool.getPoolType().isShared());
+            s_logger.debug("Is storage pool shared? "+ pool.isShared());
         }
 		
 		return ((!localStorageAllocationNeeded && pool.getPoolType().isShared()) || (localStorageAllocationNeeded && !pool.getPoolType().isShared()));
@@ -133,8 +135,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking if storage pool is suitable, name: " + pool.getName()+ " ,poolId: "+ pool.getId());
         }
-		
-		if (avoid.shouldAvoid(pool)) {
+		StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+		if (avoid.shouldAvoid(pol)) {
 			if (s_logger.isDebugEnabled()) {
                 s_logger.debug("StoragePool is in avoid set, skipping this pool");
             }			
@@ -157,7 +159,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         }
         
 		// Check that the pool type is correct
-		if (!poolIsCorrectType(dskCh, pool)) {
+		if (!poolIsCorrectType(dskCh, pol)) {
     		if (s_logger.isDebugEnabled()) {
                 s_logger.debug("StoragePool is not of correct type, skipping this pool");
             }
@@ -181,7 +183,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         Volume volume =  _volumeDao.findById(dskCh.getVolumeId());
         List<Volume> requestVolumes = new ArrayList<Volume>();
         requestVolumes.add(volume);
-        return _storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool);
+        return _storageMgr.storagePoolHasEnoughSpace(requestVolumes, pol);
 	}
 
 

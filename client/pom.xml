@@ -282,7 +282,8 @@
                 </copy>
                 <copy
                   todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts">
-                  <fileset dir="${basedir}/../scripts" />
+                  <fileset dir="${basedir}/../scripts">
+                  </fileset>
                 </copy>
                 <copy
                   todir="${basedir}/target/generated-webapp/WEB-INF/classes/vms">

@@ -23,7 +23,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -32,12 +31,11 @@ import org.apache.cloudstack.storage.command.CopyCmd;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.endpoint.EndPointSelector;
 import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 
 //At least one of datastore is coming from image store or image cache store
-@Component
+
 public class DefaultImageMotionStrategy implements ImageMotionStrategy {
     @Inject
     EndPointSelector selector;
@@ -86,14 +84,15 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
 
     @Override
     public boolean canHandle(DataObject srcData, DataObject destData) {
+        /*
         DataStore destStore = destData.getDataStore();
         DataStore srcStore = srcData.getDataStore();
         if (destStore.getRole() == DataStoreRole.Image || destStore.getRole() == DataStoreRole.ImageCache 
                 || srcStore.getRole() == DataStoreRole.Image 
                 || srcStore.getRole() == DataStoreRole.ImageCache) {
             return true;
-        }
-        return true;
+        }*/
+        return false;
     }
 
     @Override

@@ -20,6 +20,8 @@ package org.apache.cloudstack.storage.snapshot;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.snapshot.db.SnapshotVO;
@@ -95,6 +97,12 @@ public class SnapshotObject implements SnapshotInfo {
     public String getUuid() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public void processEvent(Event event) {
+        // TODO Auto-generated method stub
+        
     }
 
 }

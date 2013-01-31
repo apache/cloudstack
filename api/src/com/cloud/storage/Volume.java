@@ -39,9 +39,12 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         Snapshotting("There is a snapshot created on this volume, not backed up to secondary storage yet"),
         Resizing("The volume is being resized"),
         Expunging("The volume is being expunging"),
+        Expunged("The volume is being expunging"),
         Destroy("The volume is destroyed, and can't be recovered."), 
         Destroying("The volume is destroying, and can't be recovered."),  
-        UploadOp ("The volume upload operation is in progress or in short the volume is on secondary storage");            
+        UploadOp ("The volume upload operation is in progress or in short the volume is on secondary storage"),
+        Uploading("volume is uploading"),
+        Uploaded("volume is uploaded");
 
         String _description;
 
@@ -70,12 +73,15 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(Resizing, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Resizing, Event.OperationFailed, Ready);          
             s_fsm.addTransition(Allocated, Event.UploadRequested, UploadOp);
-            s_fsm.addTransition(UploadOp, Event.CopyRequested, Creating);// CopyRequested for volume from sec to primary storage            
+            s_fsm.addTransition(Uploaded, Event.CopyRequested, Creating);// CopyRequested for volume from sec to primary storage            
             s_fsm.addTransition(Creating, Event.CopySucceeded, Ready);
-            s_fsm.addTransition(Creating, Event.CopyFailed, UploadOp);// Copying volume from sec to primary failed.  
+            s_fsm.addTransition(Creating, Event.CopyFailed, Uploaded);// Copying volume from sec to primary failed.  
             s_fsm.addTransition(UploadOp, Event.DestroyRequested, Destroy);
             s_fsm.addTransition(Ready, Event.DestroyRequested, Destroy);
             s_fsm.addTransition(Destroy, Event.ExpungingRequested, Expunging);
+            s_fsm.addTransition(Expunging, Event.ExpungingRequested, Expunging);
+            s_fsm.addTransition(Expunging, Event.OperationSucceeded, Expunged);
+            s_fsm.addTransition(Expunging, Event.OperationFailed, Expunging);
             s_fsm.addTransition(Ready, Event.SnapshotRequested, Snapshotting);
             s_fsm.addTransition(Snapshotting, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Snapshotting, Event.OperationFailed, Ready);
@@ -83,6 +89,9 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(Migrating, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Migrating, Event.OperationFailed, Ready);
             s_fsm.addTransition(Destroy, Event.OperationSucceeded, Destroy);
+            s_fsm.addTransition(UploadOp, Event.OperationSucceeded, Uploaded);
+            s_fsm.addTransition(UploadOp, Event.OperationFailed, Allocated);
+            s_fsm.addTransition(Uploaded, Event.DestroyRequested, Destroy);
         }
     }
 
@@ -110,7 +119,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
     /**
      * @return total size of the partition
      */
-    long getSize();
+    Long getSize();
 
     /**
      * @return the vm instance id

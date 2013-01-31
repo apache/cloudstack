@@ -28,33 +28,30 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.ImageService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.HypervisorHostEndPoint;
-import org.apache.cloudstack.storage.datastore.VolumeDataFactory;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
-import org.apache.cloudstack.storage.datastore.provider.DataStoreProvider;
-import org.apache.cloudstack.storage.datastore.provider.DataStoreProviderManager;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.endpoint.EndPointSelector;
-import org.apache.cloudstack.storage.image.ImageDataFactory;
-import org.apache.cloudstack.storage.image.ImageService;
-import org.apache.cloudstack.storage.image.TemplateInfo;
-import org.apache.cloudstack.storage.image.db.ImageDataDao;
-import org.apache.cloudstack.storage.image.db.ImageDataVO;
-import org.apache.cloudstack.storage.volume.VolumeService;
-import org.apache.cloudstack.storage.volume.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.storage.volume.db.VolumeDao2;
 import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.mockito.Mockito;
@@ -78,7 +75,11 @@ import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.utils.component.ComponentContext;
 
 @ContextConfiguration(locations={"classpath:/storageContext.xml"})
 public class volumeServiceTest extends CloudStackTestNGBase {
@@ -89,7 +90,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	@Inject
 	VolumeService volumeService;
 	@Inject
-	ImageDataDao imageDataDao;
+	VMTemplateDao imageDataDao;
 	@Inject
 	VolumeDao2 volumeDao;
 	@Inject 
@@ -121,12 +122,13 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	
     @Test(priority = -1)
 	public void setUp() {
-        try {
+        ComponentContext.initComponentsLifeCycle();
+       /* try {
             dataStoreProviderMgr.configure(null, new HashMap<String, Object>());
         } catch (ConfigurationException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
+        }*/
         host = hostDao.findByGuid(this.getHostGuid());
         if (host != null) {
             dcId = host.getDataCenterId();
@@ -205,18 +207,17 @@ public class volumeServiceTest extends CloudStackTestNGBase {
         Mockito.when(selector.select(Mockito.any(DataObject.class), Mockito.any(DataObject.class))).thenReturn(eps.get(0));
     }
 
-	private ImageDataVO createImageData() {
-		ImageDataVO image = new ImageDataVO();
+	private VMTemplateVO createImageData() {
+		VMTemplateVO image = new VMTemplateVO();
 		image.setTemplateType(TemplateType.USER);
 		image.setUrl(this.getTemplateUrl());
 		image.setUniqueName(UUID.randomUUID().toString());
 		image.setName(UUID.randomUUID().toString());
 		image.setPublicTemplate(true);
 		image.setFeatured(true);
-		image.setRequireHvm(true);
+		image.setRequiresHvm(true);
 		image.setBits(64);
-		image.setFormat(Storage.ImageFormat.VHD.toString());
-		image.setAccountId(1);
+		image.setFormat(Storage.ImageFormat.VHD);
 		image.setEnablePassword(true);
 		image.setEnableSshKey(true);
 		image.setGuestOSId(1);
@@ -234,13 +235,13 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	private TemplateInfo createTemplate() {
 		try {
 		    DataStore store = createImageStore();
-		    ImageDataVO image = createImageData();
+		    VMTemplateVO image = createImageData();
 		    TemplateInfo template = imageDataFactory.getTemplate(image.getId(), store);
 		    AsyncCallFuture<CommandResult> future = imageService.createTemplateAsync(template, store);
 		    future.get();
 		    template = imageDataFactory.getTemplate(image.getId(), store);
 			/*imageProviderMgr.configure("image Provider", new HashMap<String, Object>());
-			ImageDataVO image = createImageData();
+			VMTemplateVO image = createImageData();
 			ImageDataStoreProvider defaultProvider = imageProviderMgr.getProvider("DefaultProvider");
 			ImageDataStoreLifeCycle lifeCycle = defaultProvider.getLifeCycle();
 			ImageDataStore store = lifeCycle.registerDataStore("defaultHttpStore", new HashMap<String, String>());
@@ -262,7 +263,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	@Test
 	public void testCreatePrimaryStorage() {
 	    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
-        Map<String, String> params = new HashMap<String, String>();
+        Map<String, Object> params = new HashMap<String, Object>();
         URI uri = null;
         try {
             uri = new URI(this.getPrimaryStorageUrl());
@@ -273,7 +274,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
         params.put("url", this.getPrimaryStorageUrl());
         params.put("server", uri.getHost());
         params.put("path", uri.getPath());
-        params.put("protocol", uri.getScheme());
+        params.put("protocol", StoragePoolType.NetworkFilesystem);
         params.put("dcId", dcId.toString());
         params.put("clusterId", clusterId.toString());
         params.put("name", this.primaryName);
@@ -290,7 +291,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	
 	private DataStore createImageStore() {
 	    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("default image data store");
-        Map<String, String> params = new HashMap<String, String>();
+        Map<String, Object> params = new HashMap<String, Object>();
         String name = UUID.randomUUID().toString();
         params.put("name", name);
         params.put("uuid", name);
@@ -310,12 +311,12 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	public DataStore createPrimaryDataStore() {
 		try {
 		    DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider("default primary data store provider");
-		    Map<String, String> params = new HashMap<String, String>();
+		    Map<String, Object> params = new HashMap<String, Object>();
 		    URI uri = new URI(this.getPrimaryStorageUrl());
 		    params.put("url", this.getPrimaryStorageUrl());
             params.put("server", uri.getHost());
             params.put("path", uri.getPath());
-            params.put("protocol", uri.getScheme());
+            params.put("protocol", Storage.StoragePoolType.NetworkFilesystem);
             params.put("dcId", dcId.toString());
             params.put("clusterId", clusterId.toString());
             params.put("name", this.primaryName);
@@ -390,7 +391,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	    DataStore primaryStore = this.primaryStore;
 	    VolumeVO volume = createVolume(null, primaryStore.getId());
 	    VolumeInfo vol = volumeFactory.getVolume(volume.getId(), primaryStore);
-	    AsyncCallFuture<VolumeApiResult> future = volumeService.createVolumeAsync(vol, primaryStore.getId());
+	    AsyncCallFuture<VolumeApiResult> future = volumeService.createVolumeAsync(vol, primaryStore);
 	    try {
             future.get();
         } catch (InterruptedException e) {
@@ -407,7 +408,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	    DataStore primaryStore = this.primaryStore;
 	    VolumeVO volume = createVolume(null, primaryStore.getId());
 	    VolumeInfo vol = volumeFactory.getVolume(volume.getId(), primaryStore);
-	    AsyncCallFuture<VolumeApiResult> future = volumeService.createVolumeAsync(vol, primaryStore.getId());
+	    AsyncCallFuture<VolumeApiResult> future = volumeService.createVolumeAsync(vol, primaryStore);
 	    try {
 	        future.get();
 	    } catch (InterruptedException e) {
@@ -420,7 +421,7 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 	    
 	    //delete the volume
 	    vol = volumeFactory.getVolume(volume.getId(), primaryStore);
-	    future = volumeService.deleteVolumeAsync(vol);
+	    future = volumeService.expungeVolumeAsync(vol);
 	    try {
             future.get();
         } catch (InterruptedException e) {
@@ -434,9 +435,9 @@ public class volumeServiceTest extends CloudStackTestNGBase {
 
 	//@Test(priority=3)
 	public void tearDown() {
-	    List<PrimaryDataStoreVO> ds = primaryStoreDao.findPoolByName(this.primaryName);
+	    List<StoragePoolVO> ds = primaryStoreDao.findPoolByName(this.primaryName);
 	    for (int i = 0; i < ds.size(); i++) {
-	        PrimaryDataStoreVO store = ds.get(i);
+	        StoragePoolVO store = ds.get(i);
 	        store.setUuid(null);
 	        primaryStoreDao.remove(ds.get(i).getId());
 	        primaryStoreDao.expunge(ds.get(i).getId());
