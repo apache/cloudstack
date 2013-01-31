@@ -163,6 +163,7 @@
     <module>patches</module>
     <module>client</module>
     <module>test</module>
+    <module>framework</module>
   </modules>
 
   <dependencyManagement>

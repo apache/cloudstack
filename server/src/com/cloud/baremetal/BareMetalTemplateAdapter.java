@@ -16,20 +16,10 @@
 // under the License.
 package com.cloud.baremetal;
 
-import java.util.Date;
-import java.util.List;
-
-import javax.ejb.Local;
-
-import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
-import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
-import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
-import org.apache.log4j.Logger;
-
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -46,6 +36,14 @@ import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
+import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import java.util.Date;
+import java.util.List;
 
 @Local(value=TemplateAdapter.class)
 public class BareMetalTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
@@ -82,9 +80,9 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 	
 	private void templateCreateUsage(VMTemplateVO template, HostVO host) {
 		if (template.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-			UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, template.getAccountId(), host.getDataCenterId(),
-					template.getId(), template.getName(), null, template.getSourceTemplateId(), 0L);
-			_usageEventDao.persist(usageEvent);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_TEMPLATE_CREATE, template.getAccountId(), host.getDataCenterId(),
+                    template.getId(), template.getName(), null, template.getSourceTemplateId(), 0L,
+                    template.getClass().getName(), template.getUuid());
 		}
 	}
 	
@@ -172,8 +170,8 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 					_tmpltZoneDao.remove(templateZone.getId());
 				}
 
-				UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), pxeServer.getDataCenterId(), templateId, null);
-				_usageEventDao.persist(usageEvent);
+                UsageEventUtils.publishUsageEvent(eventType, account.getId(), pxeServer.getDataCenterId(),
+                        templateId, null, template.getClass().getName(), template.getUuid());
 			} finally {
 				if (lock != null) {
 					_tmpltHostDao.releaseFromLockTable(lock.getId());

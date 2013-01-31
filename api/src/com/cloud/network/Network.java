@@ -16,26 +16,25 @@
 // under the License.
 package com.cloud.network;
 
-import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.utils.fsm.FiniteState;
-import com.cloud.utils.fsm.StateMachine;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.utils.fsm.StateObject;
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * owned by an account.
  */
-public interface Network extends ControlledEntity, InternalIdentity, Identity {
+public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity {
 
-    public enum GuestType {
+  public enum GuestType {
         Shared,
         Isolated
     }
@@ -204,7 +203,8 @@ public interface Network extends ControlledEntity, InternalIdentity, Identity {
         OperationFailed;
     }
 
-    enum State implements FiniteState<State, Event> {
+    public enum State {
+
         Allocated("Indicates the network configuration is in allocated but not setup"),
         Setup("Indicates the network configuration is setup"),
         Implementing("Indicates the network configuration is being implemented"),
@@ -212,39 +212,8 @@ public interface Network extends ControlledEntity, InternalIdentity, Identity {
         Shutdown("Indicates the network configuration is being destroyed"),
         Destroy("Indicates that the network is destroyed");
 
+        protected static final StateMachine2<State, Network.Event, Network> s_fsm = new StateMachine2<State, Network.Event, Network>();
 
-        @Override
-        public StateMachine<State, Event> getStateMachine() {
-            return s_fsm;
-        }
-
-        @Override
-        public State getNextState(Event event) {
-            return s_fsm.getNextState(this, event);
-        }
-
-        @Override
-        public List<State> getFromStates(Event event) {
-            return s_fsm.getFromStates(this, event);
-        }
-
-        @Override
-        public Set<Event> getPossibleEvents() {
-            return s_fsm.getPossibleEvents(this);
-        }
-
-        String _description;
-
-        @Override
-        public String getDescription() {
-            return _description;
-        }
-
-        private State(String description) {
-            _description = description;
-        }
-
-        private static StateMachine<State, Event> s_fsm = new StateMachine<State, Event>();
         static {
             s_fsm.addTransition(State.Allocated, Event.ImplementNetwork, State.Implementing);
             s_fsm.addTransition(State.Implementing, Event.OperationSucceeded, State.Implemented);
@@ -252,6 +221,15 @@ public interface Network extends ControlledEntity, InternalIdentity, Identity {
             s_fsm.addTransition(State.Implemented, Event.DestroyNetwork, State.Shutdown);
             s_fsm.addTransition(State.Shutdown, Event.OperationSucceeded, State.Allocated);
             s_fsm.addTransition(State.Shutdown, Event.OperationFailed, State.Implemented);
+        }
+
+        public static StateMachine2<State, Network.Event, Network> getStateMachine() {
+            return s_fsm;
+        }
+
+        String _description;
+        private State(String description) {
+            _description = description;
         }
     }
 

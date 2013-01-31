@@ -16,28 +16,11 @@
 // under the License.
 package com.cloud.baremetal;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Executors;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
-import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
 import com.cloud.agent.api.baremetal.IpmiBootorResetCommand;
 import com.cloud.agent.manager.Commands;
-import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import com.cloud.baremetal.PxeServerManager.PxeServerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -47,14 +30,8 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.*;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -71,11 +48,7 @@ import com.cloud.storage.Volume;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.template.TemplateProfile;
-import com.cloud.user.Account;
-import com.cloud.user.AccountVO;
-import com.cloud.user.SSHKeyPair;
-import com.cloud.user.User;
-import com.cloud.user.UserContext;
+import com.cloud.user.*;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -88,19 +61,26 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.BareMetalVmService;
-import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.ReservationContext;
-import com.cloud.vm.UserVmManagerImpl;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.*;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachine.Type;
-import com.cloud.vm.VirtualMachineName;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
+import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
+import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
 
 @Local(value={BareMetalVmManager.class, BareMetalVmService.class})
 public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMetalVmManager, BareMetalVmService, Manager,
@@ -367,8 +347,9 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 			s_logger.debug("Successfully allocated DB entry for " + vm);
 		}
 		UserContext.current().setEventDetails("Vm Id: " + vm.getId());
-		 UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, accountId, cmd.getZoneId(), vm.getId(), vm.getHostName(), offering.getId(), template.getId(), HypervisorType.BareMetal.toString());
-		_usageEventDao.persist(usageEvent);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, accountId, cmd.getZoneId(), vm.getId(),
+                vm.getHostName(), offering.getId(), template.getId(), HypervisorType.BareMetal.toString(),
+                VirtualMachine.class.getName(), vm.getUuid());
 
 		_resourceLimitMgr.incrementResourceCount(accountId, ResourceType.user_vm);
 

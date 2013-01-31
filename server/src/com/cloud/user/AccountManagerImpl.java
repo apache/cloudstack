@@ -36,6 +36,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -64,7 +65,6 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -1744,7 +1744,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public void logoutUser(Long userId) {
         UserAccount userAcct = _userAccountDao.findById(userId);
         if (userAcct != null) {
-            EventUtils.saveEvent(userId, userAcct.getAccountId(), userAcct.getDomainId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out");
+            ActionEventUtils.onActionEvent(userId, userAcct.getAccountId(), userAcct.getDomainId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out");
         } // else log some kind of error event? This likely means the user doesn't exist, or has been deleted...
     }
 
@@ -1875,10 +1875,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
             if (NetUtils.isValidIp(loginIpAddress)) {
-                EventUtils.saveEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
+                ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
                         "user has logged in from IP Address " + loginIpAddress);
             } else {
-                EventUtils.saveEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
+                ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
                         "user has logged in. The IP Address cannot be determined");
             }
             return user;

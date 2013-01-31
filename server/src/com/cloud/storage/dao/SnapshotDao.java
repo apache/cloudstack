@@ -16,15 +16,16 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import java.util.List;
-
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateDao;
 
-public interface SnapshotDao extends GenericDao<SnapshotVO, Long> {
+import java.util.List;
+
+public interface SnapshotDao extends GenericDao<SnapshotVO, Long>, StateDao<Snapshot.State, Snapshot.Event, Snapshot> {
 	List<SnapshotVO> listByVolumeId(long volumeId);
 	List<SnapshotVO> listByVolumeId(Filter filter, long volumeId);
 	SnapshotVO findNextSnapshot(long parentSnapId);
@@ -39,7 +40,7 @@ public interface SnapshotDao extends GenericDao<SnapshotVO, Long> {
     List<SnapshotVO> listByHostId(Filter filter, long hostId);
     List<SnapshotVO> listByHostId(long hostId);
     public Long countSnapshotsForAccount(long accountId);
-	List<SnapshotVO> listByInstanceId(long instanceId, Snapshot.Status... status);
-	List<SnapshotVO> listByStatus(long volumeId, Snapshot.Status... status);
-    List<SnapshotVO> listAllByStatus(Snapshot.Status... status);
+	List<SnapshotVO> listByInstanceId(long instanceId, Snapshot.State... status);
+	List<SnapshotVO> listByStatus(long volumeId, Snapshot.State... status);
+    List<SnapshotVO> listAllByStatus(Snapshot.State... status);
 }
