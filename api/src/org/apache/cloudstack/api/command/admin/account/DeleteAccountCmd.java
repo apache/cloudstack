@@ -94,13 +94,8 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Account Id: "+getId());
-        boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false; 
-        boolean result = false;
-        if(isPopagate){
-        	result = _accountService.deleteUserAccount(getId());
-        } else {
-        	result = _regionService.deleteUserAccount(getId());
-        }
+ 
+        boolean	result = _regionService.deleteUserAccount(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

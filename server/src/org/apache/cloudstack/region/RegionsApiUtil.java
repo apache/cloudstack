@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.region;
+package org.apache.cloudstack.region;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,9 +44,20 @@ import com.cloud.user.UserAccountVO;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 
+/**
+ * Utility class for making API calls between peer Regions
+ *
+ */
 public class RegionsApiUtil {
 	public static final Logger s_logger = Logger.getLogger(RegionsApiUtil.class);
 
+	/**
+	 * Makes an api call using region service end_point, api command and params
+	 * @param region
+	 * @param command
+	 * @param params
+	 * @return True, if api is successful
+	 */
 	protected static boolean makeAPICall(Region region, String command, List<NameValuePair> params){
 		try {
 			String apiParams = buildParams(command, params);
@@ -67,6 +78,14 @@ public class RegionsApiUtil {
 		} 		
 	}
 
+	/**
+	 * Makes an api call using region service end_point, api command and params
+	 * Returns Account object on success
+	 * @param region
+	 * @param command
+	 * @param params
+	 * @return
+	 */
 	protected static RegionAccount makeAccountAPICall(Region region, String command, List<NameValuePair> params){
 		try {
 			String url = buildUrl(buildParams(command, params), region);
@@ -74,6 +93,7 @@ public class RegionsApiUtil {
 			HttpMethod method = new GetMethod(url);
 			if( client.executeMethod(method) == 200){
 				InputStream is = method.getResponseBodyAsStream();
+				//Translate response to Account object
 				XStream xstream = new XStream(new DomDriver());
 				xstream.alias("account", RegionAccount.class);
 				xstream.alias("user", RegionUser.class);
@@ -101,6 +121,14 @@ public class RegionsApiUtil {
 		} 	
 	}
 
+	/**
+	 * Makes an api call using region service end_point, api command and params
+	 * Returns Domain object on success
+	 * @param region
+	 * @param command
+	 * @param params
+	 * @return
+	 */
 	protected static RegionDomain makeDomainAPICall(Region region, String command, List<NameValuePair> params){
 		try {
 			String url = buildUrl(buildParams(command, params), region);
@@ -109,6 +137,7 @@ public class RegionsApiUtil {
 			if( client.executeMethod(method) == 200){
 				InputStream is = method.getResponseBodyAsStream();
 				XStream xstream = new XStream(new DomDriver());
+				//Translate response to Domain object
 				xstream.alias("domain", RegionDomain.class);
 				xstream.aliasField("id", RegionDomain.class, "uuid");
 				xstream.aliasField("parentdomainid", RegionDomain.class, "parentUuid");
@@ -130,6 +159,14 @@ public class RegionsApiUtil {
 		} 	
 	}
 
+	/**
+	 * Makes an api call using region service end_point, api command and params
+	 * Returns UserAccount object on success
+	 * @param region
+	 * @param command
+	 * @param params
+	 * @return
+	 */
 	protected static UserAccount makeUserAccountAPICall(Region region, String command, List<NameValuePair> params){
 		try {
 			String url = buildUrl(buildParams(command, params), region);
@@ -157,6 +194,12 @@ public class RegionsApiUtil {
 		} 	
 	}
 
+	/**
+	 * Builds parameters string with command and encoded param values 
+	 * @param command
+	 * @param params
+	 * @return
+	 */
 	protected static String buildParams(String command, List<NameValuePair> params) {
 		StringBuffer paramString = new StringBuffer("command="+command);
 		Iterator<NameValuePair> iter = params.iterator();
@@ -175,6 +218,13 @@ public class RegionsApiUtil {
 		return paramString.toString();
 	}
 	
+	/**
+	 * Build URL for api call using region end_point
+	 * Parameters are sorted and signed using secret_key
+	 * @param apiParams
+	 * @param region
+	 * @return
+	 */
 	private static String buildUrl(String apiParams, Region region) {
 
 		String apiKey = region.getApiKey();

@@ -93,13 +93,7 @@ public class DisableUserCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
-        boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false;
-        UserAccount user = null;
-    	if(isPopagate){
-    		user = _accountService.disableUser(getId());
-        } else {
-        	user = _regionService.disableUser(getId());
-        }
+        UserAccount user = _regionService.disableUser(this);
         
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);

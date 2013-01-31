@@ -23,9 +23,9 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.RegionResponse;
+import org.apache.cloudstack.region.Region;
 import org.apache.log4j.Logger;
 
-import com.cloud.region.Region;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateRegion", description="Updates a region", responseObject=RegionResponse.class)
@@ -37,7 +37,7 @@ public class UpdateRegionCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.INTEGER, required=true, description="ID of region to update")
+    @Parameter(name=ApiConstants.ID, type=CommandType.INTEGER, required=true, description="Id of region to update")
     private Integer id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="updates region with this name")
@@ -46,10 +46,10 @@ public class UpdateRegionCmd extends BaseCmd {
     @Parameter(name=ApiConstants.END_POINT, type=CommandType.STRING, description="updates region with this end point")
     private String endPoint;
 
-    @Parameter(name=ApiConstants.API_KEY, type=CommandType.STRING, description="API key")
+    @Parameter(name=ApiConstants.API_KEY, type=CommandType.STRING, description="new API key for the Region")
     private String apiKey;
     
-    @Parameter(name=ApiConstants.SECRET_KEY, type=CommandType.STRING, description="Secret Key")
+    @Parameter(name=ApiConstants.SECRET_KEY, type=CommandType.STRING, description="new Secret Key for the Region")
     private String secretKey;
     
     /////////////////////////////////////////////////////

@@ -29,7 +29,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
-import com.cloud.region.RegionManager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

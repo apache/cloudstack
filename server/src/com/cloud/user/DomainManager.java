@@ -19,6 +19,8 @@ package com.cloud.user;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 
@@ -34,5 +36,15 @@ public interface DomainManager extends DomainService {
     List<? extends Domain> findInactiveDomains();
 
     boolean deleteDomain(DomainVO domain, Boolean cleanup);
-
+    
+    boolean deleteDomain(long domainId, Boolean cleanup);
+    
+    /**
+     * update an existing domain
+     * 
+     * @param cmd
+     *            - the command containing domainId and new domainName
+     * @return Domain object if the command succeeded
+     */
+    Domain updateDomain(UpdateDomainCmd cmd);    
 }

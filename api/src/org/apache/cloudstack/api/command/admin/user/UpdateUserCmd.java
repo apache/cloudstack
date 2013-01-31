@@ -133,13 +133,7 @@ public class UpdateUserCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
-        boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false;
-        UserAccount user = null;
-    	if(isPopagate){
-    		user = _accountService.updateUser(this);
-        } else {
-        	user = _regionService.updateUser(this);
-        }
+        UserAccount user = _regionService.updateUser(this);
         
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);

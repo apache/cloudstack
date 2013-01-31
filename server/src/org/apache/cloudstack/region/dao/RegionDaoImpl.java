@@ -1,0 +1,62 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package org.apache.cloudstack.region.dao;
+
+import java.util.List;
+
+import javax.ejb.Local;
+
+import org.apache.cloudstack.region.RegionVO;
+import org.apache.log4j.Logger;
+
+import com.cloud.user.UserVO;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+
+@Local(value={RegionDao.class})
+public class RegionDaoImpl extends GenericDaoBase<RegionVO, Integer> implements RegionDao {
+    private static final Logger s_logger = Logger.getLogger(RegionDaoImpl.class);
+    protected SearchBuilder<RegionVO> NameSearch;
+    protected SearchBuilder<RegionVO> AllFieldsSearch;
+    
+    public RegionDaoImpl(){
+    	NameSearch = createSearchBuilder();
+    	NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+    	NameSearch.done();
+    	
+    	AllFieldsSearch = createSearchBuilder();
+    	AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
+    	AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
+    	AllFieldsSearch.done();
+    }
+    
+	@Override
+	public RegionVO findByName(String name) {
+        SearchCriteria<RegionVO> sc = NameSearch.create();
+        sc.setParameters("name", NameSearch);
+        return findOneBy(sc);
+	}
+	
+	@Override
+	public List<RegionVO> listByNameAndId(Integer id, String name) {
+	    SearchCriteria<RegionVO> sc = AllFieldsSearch.create();
+	    sc.setParameters("id", id);
+        sc.setParameters("name", name);
+        return listBy(sc);
+	}
+}

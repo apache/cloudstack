@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.region;
+package org.apache.cloudstack.region;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +28,8 @@ import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
-import org.apache.cloudstack.api.command.user.region.ListRegionsCmd;
+import org.apache.cloudstack.region.dao.RegionDao;
+import org.apache.cloudstack.region.dao.RegionSyncDao;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.log4j.Logger;
 
@@ -38,8 +39,6 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.region.dao.RegionDao;
-import com.cloud.region.dao.RegionSyncDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -54,8 +53,8 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uuididentity.dao.IdentityDao;
 
-@Local(value = { RegionManager.class, RegionService.class })
-public class RegionManagerImpl implements RegionManager, RegionService, Manager{
+@Local(value = { RegionManager.class })
+public class RegionManagerImpl implements RegionManager, Manager{
     public static final Logger s_logger = Logger.getLogger(RegionManagerImpl.class);
     
     @Inject
@@ -102,22 +101,177 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
         return _name;
     }
 
+	public int getId() {
+		return _id;
+	}
+
+	/* 
+	 * Propagates Account creation to peer Regions
+	 * Adds an entry in region_sync table on failure
+	 */
 	@Override
-	public Region addRegion(int id, String name, String endPoint, String apiKey, String secretKey) {
-		if( _regionDao.findById(id) == null ){
-			RegionVO region = new RegionVO(id, name, endPoint, apiKey, secretKey);
-			return _regionDao.persist(region);
-		} else {
-			throw new InvalidParameterValueException("Region with id: "+id+" already exists");
+	public boolean propagateAddAccount(String userName, String password, String firstName, String lastName, String email, String timezone, 
+			String accountName, short accountType, Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID) {
+		String command = "createAccount";
+		List<NameValuePair> params = new ArrayList<NameValuePair>();
+		params.add(new NameValuePair(ApiConstants.USERNAME, userName));
+		params.add(new NameValuePair(ApiConstants.PASSWORD, password));
+		params.add(new NameValuePair(ApiConstants.FIRSTNAME, firstName));
+		params.add(new NameValuePair(ApiConstants.LASTNAME, lastName));
+		params.add(new NameValuePair(ApiConstants.EMAIL, email));
+		params.add(new NameValuePair(ApiConstants.TIMEZONE, timezone));
+		params.add(new NameValuePair(ApiConstants.ACCOUNT, accountName));
+		params.add(new NameValuePair(ApiConstants.ACCOUNT_TYPE, ""+accountType));
+		//ToDo: use domain UUID
+		params.add(new NameValuePair(ApiConstants.DOMAIN_ID, ((domainId != null) ? domainId.toString() : "")));
+		params.add(new NameValuePair(ApiConstants.NETWORK_DOMAIN, networkDomain));
+		params.add(new NameValuePair(ApiConstants.ACCOUNT_DETAILS, (details != null) ? details.toString() : ""));
+		params.add(new NameValuePair(ApiConstants.ACCOUNT_ID, accountUUID));
+		params.add(new NameValuePair(ApiConstants.USER_ID, userUUID));
+		params.add(new NameValuePair(ApiConstants.REGION_ID, ""+getId()));
+
+		List<RegionVO> regions =  _regionDao.listAll();
+		for (Region region : regions){
+			if(region.getId() == getId()){
+				continue;
+			}
+			s_logger.debug("Adding account :"+accountName+" to Region: "+region.getId());
+			if (RegionsApiUtil.makeAPICall(region, command, params)) {
+				s_logger.debug("Successfully added account :"+accountName+" to Region: "+region.getId());
+			} else {
+				// api call failed. Add entry in region_sync table
+				addRegionSyncItem(region.getId(), command, params);
+				s_logger.error("Error while Adding account :"+accountName+" to Region: "+region.getId());
+			}
+		}
+		return true;
+	}
+
+	/* 
+	 * Propagates User creation to peer Regions
+	 * Adds an entry in region_sync table on failure
+	 */
+	@Override
+	public void propagateAddUser(String userName, String password,
+			String firstName, String lastName, String email, String timezone,
+			String accountName, String domainUUId, String userUUID) {
+		
+        String command = "createUser";
+		List<NameValuePair> params = new ArrayList<NameValuePair>();
+		params.add(new NameValuePair(ApiConstants.USERNAME, userName));
+		params.add(new NameValuePair(ApiConstants.PASSWORD, password));
+		params.add(new NameValuePair(ApiConstants.FIRSTNAME, firstName));
+		params.add(new NameValuePair(ApiConstants.LASTNAME, lastName));
+		params.add(new NameValuePair(ApiConstants.EMAIL, email));
+		params.add(new NameValuePair(ApiConstants.TIMEZONE, timezone));
+		params.add(new NameValuePair(ApiConstants.ACCOUNT, accountName));		
+		params.add(new NameValuePair(ApiConstants.DOMAIN_ID, domainUUId));
+		params.add(new NameValuePair(ApiConstants.USER_ID, userUUID));
+		params.add(new NameValuePair(ApiConstants.REGION_ID, ""+getId()));
+		
+		List<RegionVO> regions =  _regionDao.listAll();
+		for (Region region : regions){
+			if(region.getId() == getId()){
+				continue;
+			}
+			s_logger.debug("Adding account :"+accountName+" to Region: "+region.getId());
+			if (RegionsApiUtil.makeAPICall(region, command, params)) {
+				s_logger.debug("Successfully added user :"+userName+" to Region: "+region.getId());
+			} else {
+				// api call failed. Add entry in region_sync table				
+				addRegionSyncItem(region.getId(), command, params);
+				s_logger.error("Error while Adding user :"+userName+" to Region: "+region.getId());
+			}
+		}
+		return;		
+	}
+	
+	/* 
+	 * Propagates Domain creation details to peer Regions
+	 * Adds an entry in region_sync table on failure
+	 */
+	@Override
+	public void propagateAddDomain(String name, Long parentId, String networkDomain, String uuid) {
+		
+        String command = "createDomain";
+		List<NameValuePair> params = new ArrayList<NameValuePair>();
+		params.add(new NameValuePair(ApiConstants.NAME, name));
+		if(parentId != null){
+			DomainVO domain = _domainDao.findById(parentId);
+			if(domain != null){
+				params.add(new NameValuePair(ApiConstants.PARENT_DOMAIN_ID, domain.getUuid()));
+			}
+		}
+		params.add(new NameValuePair(ApiConstants.NETWORK_DOMAIN, networkDomain));
+		params.add(new NameValuePair(ApiConstants.DOMAIN_ID, uuid));
+		params.add(new NameValuePair(ApiConstants.REGION_ID, ""+getId()));
+		
+		List<RegionVO> regions =  _regionDao.listAll();
+		for (Region region : regions){
+			if(region.getId() == getId()){
+				continue;
+			}
+			s_logger.debug("Adding domain :"+name+" to Region: "+region.getId());
+			if (RegionsApiUtil.makeAPICall(region, command, params)) {
+				s_logger.debug("Successfully added domain :"+name+" to Region: "+region.getId());
+			} else {
+				// api call failed. Add entry in region_sync table				
+				addRegionSyncItem(region.getId(), command, params);
+				s_logger.error("Error while Adding domain :"+name+" to Region: "+region.getId());
+			}
+		}
+		return;		
+	}
+	
+	/**
+	 * Adds an entry to region_sync table
+	 * Entry contains region Id along with failed api
+	 * @param regionId
+	 * @param command
+	 * @param params
+	 */
+	private void addRegionSyncItem(int regionId, String command, List<NameValuePair> params){
+		String api = RegionsApiUtil.buildParams(command, params);
+		RegionSyncVO sync = new RegionSyncVO(regionId, api);
+		if(_regionSyncDao.persist(sync) == null){
+			s_logger.error("Failed to add Region Sync Item. RegionId: "+regionId + "API command: "+api);
 		}
 	}
 
+    /**
+     * {@inheritDoc}
+     */ 
+	@Override
+	public Region addRegion(int id, String name, String endPoint, String apiKey, String secretKey) {
+		//Region Id should be unique
+		if( _regionDao.findById(id) != null ){
+			throw new InvalidParameterValueException("Region with id: "+id+" already exists");
+		}
+		//Region Name should be unique
+		if( _regionDao.findByName(name) != null ){
+			throw new InvalidParameterValueException("Region with name: "+name+" already exists");
+		}
+		RegionVO region = new RegionVO(id, name, endPoint, apiKey, secretKey);
+		return _regionDao.persist(region);
+	}
+
+    /**
+     * {@inheritDoc}
+     */ 
 	@Override
 	public Region updateRegion(int id, String name, String endPoint, String apiKey, String secretKey) {
 		RegionVO region = _regionDao.findById(id);
 		
 		if(region == null){
 			throw new InvalidParameterValueException("Region with id: "+id+" does not exist");
+		}
+		
+		//Ensure region name is unique
+		if(name != null){
+			RegionVO region1 = _regionDao.findByName(name);
+			if(region1 != null && id != region1.getId()){
+				throw new InvalidParameterValueException("Region with name: "+name+" already exists");	
+			}
 		}
 		
 		if(name != null){
@@ -140,76 +294,34 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 		return _regionDao.findById(id);
 	}
 
+    /**
+     * {@inheritDoc}
+     */ 
 	@Override
 	public boolean removeRegion(int id) {
 		RegionVO region = _regionDao.findById(id);
-		if(region != null){
-			return _regionDao.remove(id);
-		} else {
+		if(region == null){
 			throw new InvalidParameterValueException("Failed to delete Region: " + id + ", Region not found");
-		}
+		}		
+		return _regionDao.remove(id);
 	}
 
+    /**
+     * {@inheritDoc}
+     */ 
 	@Override
-	public List<RegionVO> listRegions(ListRegionsCmd cmd) {
-		if(cmd.getId() != null){
-			List<RegionVO> regions = new ArrayList<RegionVO>();
-			regions.add(_regionDao.findById(cmd.getId()));
-			return regions;
-		}
-		return _regionDao.listAll();
-	}
-    
-	public int getId() {
-		return _id;
+	public List<RegionVO> listRegions(Integer id, String name) {
+		return _regionDao.listByNameAndId(id, name);
 	}
 
-	public void setId(int _id) {
-		this._id = _id;
-	}
-	
-	@Override
-	public boolean propogateAddAccount(String userName, String password, String firstName, String lastName, String email, String timezone, 
-			String accountName, short accountType, Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID) {
-		String command = "createAccount";
-		List<NameValuePair> params = new ArrayList<NameValuePair>();
-		params.add(new NameValuePair(ApiConstants.USERNAME, userName));
-		params.add(new NameValuePair(ApiConstants.PASSWORD, password));
-		params.add(new NameValuePair(ApiConstants.FIRSTNAME, firstName));
-		params.add(new NameValuePair(ApiConstants.LASTNAME, lastName));
-		params.add(new NameValuePair(ApiConstants.EMAIL, email));
-		params.add(new NameValuePair(ApiConstants.TIMEZONE, timezone));
-		params.add(new NameValuePair(ApiConstants.ACCOUNT, accountName));
-		params.add(new NameValuePair(ApiConstants.ACCOUNT_TYPE, ""+accountType));
-		//use domain UUID
-		params.add(new NameValuePair(ApiConstants.DOMAIN_ID, ((domainId != null) ? domainId.toString() : "")));
-		params.add(new NameValuePair(ApiConstants.NETWORK_DOMAIN, networkDomain));
-		params.add(new NameValuePair(ApiConstants.ACCOUNT_DETAILS, (details != null) ? details.toString() : ""));
-		params.add(new NameValuePair(ApiConstants.ACCOUNT_ID, accountUUID));
-		params.add(new NameValuePair(ApiConstants.USER_ID, userUUID));
-		params.add(new NameValuePair(ApiConstants.REGION_ID, ""+getId()));
-
-		List<RegionVO> regions =  _regionDao.listAll();
-		for (Region region : regions){
-			if(region.getId() == getId()){
-				continue;
-			}
-			s_logger.debug("Adding account :"+accountName+" to Region: "+region.getId());
-			if (RegionsApiUtil.makeAPICall(region, command, params)) {
-				s_logger.debug("Successfully added account :"+accountName+" to Region: "+region.getId());
-			} else {
-				addRegionSyncItem(region.getId(), command, params);
-				s_logger.error("Error while Adding account :"+accountName+" to Region: "+region.getId());
-			}
-		}
-		return true;
-	}
-
+    /**
+     * {@inheritDoc}
+     */ 
 	@Override
 	public boolean deleteUserAccount(long accountId) {
 		AccountVO account = _accountDao.findById(accountId);
 		if(account == null){
-			return false;
+			throw new InvalidParameterValueException("The specified account does not exist in the system");
 		}
 		String accountUUID = account.getUuid();
 		int regionId = account.getRegionId();
@@ -248,7 +360,10 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 			}
 		}
 	}
-	
+
+    /**
+     * {@inheritDoc}
+     */ 
 	@Override
 	public Account updateAccount(UpdateAccountCmd cmd) {
         Long accountId = cmd.getId();
@@ -258,7 +373,7 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
         String newAccountName = cmd.getNewName();
         String networkDomain = cmd.getNetworkDomain();
         //ToDo send details
-        Map<String, String> details = cmd.getDetails();
+        Map<String, String> details = cmd.getDetails();		
         
         Account account = null;
         if (accountId != null) {
@@ -266,13 +381,13 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
         } else {
             account = _accountDao.findEnabledAccount(accountName, domainId);
         }
-
+        
         // Check if account exists
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             s_logger.error("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
             throw new InvalidParameterValueException("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
-        }
-        
+        }	
+
         String command = "updateAccount";
 		List<NameValuePair> params = new ArrayList<NameValuePair>();
 		params.add(new NameValuePair(ApiConstants.NEW_NAME, newAccountName));
@@ -319,6 +434,9 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 		}
 	}
 
+    /**
+     * {@inheritDoc}
+     */ 
 	@Override
 	public Account disableAccount(String accountName, Long domainId, Long accountId, Boolean lockRequested) throws ConcurrentOperationException, ResourceUnavailableException {
 		Account account = null;
@@ -330,7 +448,8 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("Unable to find active account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
-        }
+        }	
+        
 		String accountUUID = account.getUuid();
 		
 		String command = "disableAccount";
@@ -378,6 +497,9 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 		}
 	}
 
+    /**
+     * {@inheritDoc}
+     */ 
 	@Override
 	public Account enableAccount(String accountName, Long domainId, Long accountId) {
         // Check if account exists
@@ -390,7 +512,8 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             throw new InvalidParameterValueException("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
-        }
+        }	
+        
         String accountUUID = account.getUuid();
         
         String command = "enableAccount";
@@ -434,6 +557,9 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 		}
 	}
 
+    /**
+     * {@inheritDoc}
+     */ 	
 	@Override
 	public boolean deleteUser(DeleteUserCmd cmd) {
         long id = cmd.getId();
@@ -442,8 +568,8 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 
         if (user == null) {
             throw new InvalidParameterValueException("The specified user doesn't exist in the system");
-        }
-		
+        }	
+        
 		String userUUID = user.getUuid();
 		int regionId = user.getRegionId();
 		
@@ -482,13 +608,68 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 		}
 	}
 
+    /**
+     * {@inheritDoc}
+     */ 	
 	@Override
-	public boolean deleteDomain(Long id, Boolean cleanup) {
-
+	public Domain updateDomain(UpdateDomainCmd cmd) {
+		long id = cmd.getId();
 		DomainVO domain = _domainDao.findById(id);
 		if(domain == null){
 			throw new InvalidParameterValueException("The specified domain doesn't exist in the system");
+		}	
+		
+		String domainUUID = domain.getUuid();
+		
+		String command = "updateDomain";
+		List<NameValuePair> params = new ArrayList<NameValuePair>();
+		params.add(new NameValuePair(ApiConstants.ID, domainUUID));
+		params.add(new NameValuePair(ApiConstants.NAME, cmd.getDomainName()));
+		params.add(new NameValuePair(ApiConstants.NETWORK_DOMAIN, cmd.getNetworkDomain()));
+		
+		int regionId = domain.getRegionId();
+		if(getId() == regionId){
+			Domain updatedDomain = _domainMgr.updateDomain(cmd);
+			if(updatedDomain != null){
+				List<RegionVO> regions =  _regionDao.listAll();
+				for (Region region : regions){
+					if(region.getId() == getId()){
+						continue;
+					}
+					params.add(new NameValuePair(ApiConstants.IS_PROPAGATE, "true"));
+					if (RegionsApiUtil.makeAPICall(region, command, params)) {
+						s_logger.debug("Successfully updated updatedDomain :"+domainUUID+" in Region: "+region.getId());
+					} else {
+						s_logger.error("Error while updating updatedDomain :"+domainUUID+" in Region: "+region.getId());
+					}
+				}
+			}
+			return updatedDomain;
+		} else {
+			//First update in the Region where domain was created
+			Region region = _regionDao.findById(regionId);
+			RegionDomain updatedDomain = RegionsApiUtil.makeDomainAPICall(region, command, params);
+			if (updatedDomain != null) {
+				Long parentId = _identityDao.getIdentityId("domain", updatedDomain.getParentUuid());
+				updatedDomain.setParent(parentId);
+				s_logger.debug("Successfully updated user :"+domainUUID+" in source Region: "+region.getId());
+				return (DomainVO)updatedDomain;
+			} else {
+				throw new CloudRuntimeException("Error while updating user :"+domainUUID+" in source Region: "+region.getId());
+			}
 		}
+	}
+	
+    /**
+     * {@inheritDoc}
+     */ 
+	@Override
+	public boolean deleteDomain(Long id, Boolean cleanup) {
+		DomainVO domain = _domainDao.findById(id);
+		if(domain == null){
+			throw new InvalidParameterValueException("The specified domain doesn't exist in the system");
+		}	
+		
 		String domainUUID = domain.getUuid();
 		
 		String command = "deleteDomain";
@@ -528,15 +709,18 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 		}
 	}
 
+    /**
+     * {@inheritDoc}
+     */ 	
 	@Override
-	public UserAccount updateUser(UpdateUserCmd cmd){
+	public UserAccount updateUser(UpdateUserCmd cmd) {
         long id = cmd.getId();
 
         UserVO user = _userDao.findById(id);
-
         if (user == null) {
             throw new InvalidParameterValueException("The specified user doesn't exist in the system");
-        }
+        }	
+        
 		String userUUID = user.getUuid();
 		
 		String command = "updateUser";
@@ -582,60 +766,16 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 		}
 	}
 
-	@Override
-	public Domain updateDomain(UpdateDomainCmd cmd) {
-		long id = cmd.getId();
-		DomainVO domain = _domainDao.findById(id);
-		if(domain == null){
-			throw new InvalidParameterValueException("The specified domain doesn't exist in the system");
-		}
-		String domainUUID = domain.getUuid();
-		
-		String command = "updateDomain";
-		List<NameValuePair> params = new ArrayList<NameValuePair>();
-		params.add(new NameValuePair(ApiConstants.ID, domainUUID));
-		params.add(new NameValuePair(ApiConstants.NAME, cmd.getDomainName()));
-		params.add(new NameValuePair(ApiConstants.NETWORK_DOMAIN, cmd.getNetworkDomain()));
-		
-		int regionId = domain.getRegionId();
-		if(getId() == regionId){
-			Domain updatedDomain = _domainMgr.updateDomain(cmd);
-			if(updatedDomain != null){
-				List<RegionVO> regions =  _regionDao.listAll();
-				for (Region region : regions){
-					if(region.getId() == getId()){
-						continue;
-					}
-					params.add(new NameValuePair(ApiConstants.IS_PROPAGATE, "true"));
-					if (RegionsApiUtil.makeAPICall(region, command, params)) {
-						s_logger.debug("Successfully updated updatedDomain :"+domainUUID+" in Region: "+region.getId());
-					} else {
-						s_logger.error("Error while updating updatedDomain :"+domainUUID+" in Region: "+region.getId());
-					}
-				}
-			}
-			return updatedDomain;
-		} else {
-			//First update in the Region where domain was created
-			Region region = _regionDao.findById(regionId);
-			RegionDomain updatedDomain = RegionsApiUtil.makeDomainAPICall(region, command, params);
-			if (updatedDomain != null) {
-				Long parentId = _identityDao.getIdentityId("domain", updatedDomain.getParentUuid());
-				updatedDomain.setParent(parentId);
-				s_logger.debug("Successfully updated user :"+domainUUID+" in source Region: "+region.getId());
-				return (DomainVO)updatedDomain;
-			} else {
-				throw new CloudRuntimeException("Error while updating user :"+domainUUID+" in source Region: "+region.getId());
-			}
-		}
-	}
-
+    /**
+     * {@inheritDoc}
+     */ 	
 	@Override
 	public UserAccount disableUser(Long userId) {
         UserVO user = _userDao.findById(userId);
         if (user == null || user.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find active user by id " + userId);
-        }
+        }        
+        
         int regionId = user.getRegionId();
         
         String command = "disableUser";
@@ -672,12 +812,16 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 		}
 	}
 
+    /**
+     * {@inheritDoc}
+     */ 	
 	@Override
-	public UserAccount enableUser(Long userId) {
+	public UserAccount enableUser(long userId) {
         UserVO user = _userDao.findById(userId);
         if (user == null || user.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find active user by id " + userId);
-        }
+        }		        
+        
         int regionId = user.getRegionId();
         
         String command = "enableUser";
@@ -711,80 +855,6 @@ public class RegionManagerImpl implements RegionManager, RegionService, Manager{
 			} else {
 				throw new CloudRuntimeException("Error while enabling user :"+user.getUuid()+" in source Region: "+region.getId());
 			}
-		}
-	}
-
-	@Override
-	public void propogateAddUser(String userName, String password,
-			String firstName, String lastName, String email, String timezone,
-			String accountName, String domainUUId, String userUUID) {
-		
-        String command = "createUser";
-		List<NameValuePair> params = new ArrayList<NameValuePair>();
-		params.add(new NameValuePair(ApiConstants.USERNAME, userName));
-		params.add(new NameValuePair(ApiConstants.PASSWORD, password));
-		params.add(new NameValuePair(ApiConstants.FIRSTNAME, firstName));
-		params.add(new NameValuePair(ApiConstants.LASTNAME, lastName));
-		params.add(new NameValuePair(ApiConstants.EMAIL, email));
-		params.add(new NameValuePair(ApiConstants.TIMEZONE, timezone));
-		params.add(new NameValuePair(ApiConstants.ACCOUNT, accountName));		
-		params.add(new NameValuePair(ApiConstants.DOMAIN_ID, domainUUId));
-		params.add(new NameValuePair(ApiConstants.USER_ID, userUUID));
-		params.add(new NameValuePair(ApiConstants.REGION_ID, ""+getId()));
-		
-		List<RegionVO> regions =  _regionDao.listAll();
-		for (Region region : regions){
-			if(region.getId() == getId()){
-				continue;
-			}
-			s_logger.debug("Adding account :"+accountName+" to Region: "+region.getId());
-			if (RegionsApiUtil.makeAPICall(region, command, params)) {
-				s_logger.debug("Successfully added user :"+userName+" to Region: "+region.getId());
-			} else {
-				addRegionSyncItem(region.getId(), command, params);
-				s_logger.error("Error while Adding user :"+userName+" to Region: "+region.getId());
-			}
-		}
-		return;		
-	}
-	
-	@Override
-	public void propogateAddDomain(String name, Long parentId, String networkDomain, String uuid) {
-		
-        String command = "createDomain";
-		List<NameValuePair> params = new ArrayList<NameValuePair>();
-		params.add(new NameValuePair(ApiConstants.NAME, name));
-		if(parentId != null){
-			DomainVO domain = _domainDao.findById(parentId);
-			if(domain != null){
-				params.add(new NameValuePair(ApiConstants.PARENT_DOMAIN_ID, domain.getUuid()));
-			}
-		}
-		params.add(new NameValuePair(ApiConstants.NETWORK_DOMAIN, networkDomain));
-		params.add(new NameValuePair(ApiConstants.DOMAIN_ID, uuid));
-		params.add(new NameValuePair(ApiConstants.REGION_ID, ""+getId()));
-		
-		List<RegionVO> regions =  _regionDao.listAll();
-		for (Region region : regions){
-			if(region.getId() == getId()){
-				continue;
-			}
-			s_logger.debug("Adding domain :"+name+" to Region: "+region.getId());
-			if (RegionsApiUtil.makeAPICall(region, command, params)) {
-				s_logger.debug("Successfully added domain :"+name+" to Region: "+region.getId());
-			} else {
-				addRegionSyncItem(region.getId(), command, params);
-				s_logger.error("Error while Adding domain :"+name+" to Region: "+region.getId());
-			}
-		}
-		return;		
-	}
-	
-	private void addRegionSyncItem(int regionId, String command, List<NameValuePair> params){
-		String api = RegionsApiUtil.buildParams(command, params);
-		RegionSyncVO sync = new RegionSyncVO(regionId, api);
-		if(_regionSyncDao.persist(sync) == null){
-			s_logger.error("Failed to add Region Sync Item. RegionId: "+regionId + "API command: "+api);
 		}
 	}
 

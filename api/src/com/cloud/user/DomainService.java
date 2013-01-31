@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
-import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
@@ -42,21 +41,11 @@ public interface DomainService {
      */
     boolean isChildDomain(Long parentId, Long childId);
 
-    boolean deleteDomain(long domainId, Boolean cleanup);
-
     Pair<List<? extends Domain>, Integer> searchForDomains(ListDomainsCmd cmd)
             throws PermissionDeniedException;
 
     Pair<List<? extends Domain>, Integer> searchForDomainChildren(ListDomainChildrenCmd cmd)
             throws PermissionDeniedException;
-    /**
-     * update an existing domain
-     * 
-     * @param cmd
-     *            - the command containing domainId and new domainName
-     * @return Domain object if the command succeeded
-     */
-    Domain updateDomain(UpdateDomainCmd cmd);
 
     /**
      * find the domain by its path

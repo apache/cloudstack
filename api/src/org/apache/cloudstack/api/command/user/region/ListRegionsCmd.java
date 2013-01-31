@@ -25,9 +25,8 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
+import org.apache.cloudstack.region.Region;
 import org.apache.log4j.Logger;
-
-import com.cloud.region.Region;
 
 @APICommand(name = "listRegions", description="Lists Regions", responseObject=RegionResponse.class)
 public class ListRegionsCmd extends BaseListCmd {
@@ -43,7 +42,7 @@ public class ListRegionsCmd extends BaseListCmd {
     private Integer id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="List Region by region name.")
-    private String domainName;
+    private String name;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -53,8 +52,8 @@ public class ListRegionsCmd extends BaseListCmd {
         return id;
     }
 
-    public String getRegionName() {
-        return domainName;
+    public String getName() {
+        return name;
     }
     
     /////////////////////////////////////////////////////

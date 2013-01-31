@@ -74,12 +74,16 @@ public class DisableAccountCmd extends BaseAsyncCmd {
 	public Boolean getIsPropagate() {
 		return isPropagate;
 	}
-    
+
+    public Boolean getLockRequested() {
+		return lockRequested;
+	}
+	
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Override
+	@Override
     public String getCommandName() {
         return s_name;
     }
@@ -112,16 +116,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException{
         UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
-    	Account result = null;
-    	boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false;
-    	if(isPopagate){
-    		if(lockRequested)
-    			result = _accountService.lockAccount(getAccountName(), getDomainId(), getId());
-    		else
-    			result = _accountService.disableAccount(getAccountName(), getDomainId(), getId());
-    	} else {
-    		result = _regionService.disableAccount(getAccountName(), getDomainId(), getId(), lockRequested);
-    	}
+    	Account result = _regionService.disableAccount(this);
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getCommandName());

@@ -97,13 +97,7 @@ public class EnableAccountCmd extends BaseCmd {
 
     @Override
     public void execute(){
-    	boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false;
-    	Account result = null;
-    	if(isPopagate){
-    		result = _accountService.enableAccount(getAccountName(), getDomainId(), getId());
-    	} else {
-    		result = _regionService.enableAccount(getAccountName(), getDomainId(), getId());
-    	}
+    	Account result = _regionService.enableAccount(this);
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getCommandName());

@@ -18,10 +18,13 @@ package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.region.Region;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+@EntityReference(value = Region.class)
 public class RegionResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the region")
     private Integer id;

@@ -95,12 +95,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     public void execute(){
         UserContext.current().setEventDetails("Domain Id: "+getId());
         boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false; 
-        boolean result = false;
-        if(isPopagate){
-        	result = _domainService.deleteDomain(id, cleanup);
-        } else {
-        	result = _regionService.deleteDomain(id, cleanup);
-        }
+        boolean result = _regionService.deleteDomain(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

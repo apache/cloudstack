@@ -105,6 +105,7 @@ import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import com.cloud.api.response.ApiResponseSerializer;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.region.RegionManager;
 
 import com.cloud.async.AsyncCommandQueued;
 import com.cloud.async.AsyncJob;
@@ -122,7 +123,6 @@ import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.region.RegionManager;
 import com.cloud.exception.RequestLimitException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;

@@ -76,13 +76,7 @@ public class EnableUserCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
-        boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false;
-        UserAccount user = null;
-    	if(isPopagate){
-    		user = _accountService.enableUser(getId());
-        } else {
-        	user = _regionService.enableUser(getId());
-        }
+        UserAccount user = _regionService.enableUser(this);
         
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);

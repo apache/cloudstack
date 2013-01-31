@@ -14,22 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.region;
+package org.apache.cloudstack.region.dao;
 
-/**
- *
- */
-public interface Region  {
-    
-    public int getId();
+import org.apache.cloudstack.region.RegionSyncVO;
 
-	public String getName();
+import com.cloud.utils.db.GenericDao;
 
-	public void setName(String name);
-
-	public String getEndPoint();
-	
-	public String getApiKey();
-	
-	public String getSecretKey();
+public interface RegionSyncDao extends GenericDao<RegionSyncVO, Integer> {
 }

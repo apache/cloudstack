@@ -21,6 +21,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.region.RegionManagerImpl;
+import org.apache.cloudstack.region.dao.RegionDaoImpl;
+import org.apache.cloudstack.region.dao.RegionSyncDaoImpl;
+
 import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.alert.AlertManagerImpl;
 import com.cloud.alert.dao.AlertDaoImpl;
@@ -158,9 +162,6 @@ import com.cloud.projects.ProjectManagerImpl;
 import com.cloud.projects.dao.ProjectAccountDaoImpl;
 import com.cloud.projects.dao.ProjectDaoImpl;
 import com.cloud.projects.dao.ProjectInvitationDaoImpl;
-import com.cloud.region.RegionManagerImpl;
-import com.cloud.region.dao.RegionDaoImpl;
-import com.cloud.region.dao.RegionSyncDaoImpl;
 import com.cloud.resource.ResourceManagerImpl;
 import com.cloud.resourcelimit.ResourceLimitManagerImpl;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;

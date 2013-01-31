@@ -14,13 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.region.dao;
+package org.apache.cloudstack.region.dao;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.region.RegionSyncVO;
 import org.apache.log4j.Logger;
 
-import com.cloud.region.RegionSyncVO;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value={RegionSyncDao.class})

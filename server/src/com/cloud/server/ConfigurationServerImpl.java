@@ -52,8 +52,6 @@ import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
-import com.cloud.region.RegionVO;
-import com.cloud.region.dao.RegionDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -74,6 +72,8 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.uuididentity.dao.IdentityDao;
 
+import org.apache.cloudstack.region.RegionVO;
+import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -1252,7 +1252,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private void createDefaultRegion(){
     	//Get Region name and URL from db.properties    	
     	_regionDao.persist(new RegionVO(_regionDao.getRegionId(), "Local", "http://localhost:8080/client/api", "", ""));
-    	//Default account, user and domain should share same uuid
     }
 
 }

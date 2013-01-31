@@ -23,15 +23,10 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
-import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
-import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
-import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 
 import com.cloud.domain.Domain;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.Pair;
 
 public interface AccountService {
@@ -66,34 +61,6 @@ public interface AccountService {
             Map<String, String> details, String accountUUID, String userUUID, Integer regionId);
 
     /**
-     * Deletes a user by userId
-     *
-     * @param accountId
-     *            - id of the account do delete
-     *
-     * @return true if delete was successful, false otherwise
-     */
-    boolean deleteUserAccount(long accountId);
-
-    /**
-     * Disables a user by userId
-     *
-     * @param userId
-     *            - the userId
-     * @return UserAccount object
-     */
-    UserAccount disableUser(long userId);
-
-    /**
-     * Enables a user
-     *
-     * @param userId
-     *            - the userId
-     * @return UserAccount object
-     */
-    UserAccount enableUser(long userId);
-
-    /**
      * Locks a user by userId. A locked user cannot access the API, but will still have running VMs/IP addresses
      * allocated/etc.
      *
@@ -102,71 +69,11 @@ public interface AccountService {
      */
     UserAccount lockUser(long userId);
 
-    /**
-     * Update a user by userId
-     *
-     * @param userId
-     * @return UserAccount object
-     */
-    UserAccount updateUser(UpdateUserCmd cmd);
-
-    /**
-     * Disables an account by accountName and domainId
-     *
-     * @param accountName
-     *            TODO
-     * @param domainId
-     *            TODO
-     * @param accountId
-     * @param disabled
-     *            account if success
-     * @return true if disable was successful, false otherwise
-     */
-    Account disableAccount(String accountName, Long domainId, Long accountId) throws ConcurrentOperationException, ResourceUnavailableException;
-
-    /**
-     * Enables an account by accountId
-     *
-     * @param accountName
-     *            - the enableAccount command defining the accountId to be deleted.
-     * @param domainId
-     *            TODO
-     * @param accountId
-     * @return account object
-     */
-    Account enableAccount(String accountName, Long domainId, Long accountId);
-
-    /**
-     * Locks an account by accountId. A locked account cannot access the API, but will still have running VMs/IP
-     * addresses
-     * allocated/etc.
-     *
-     * @param accountName
-     *            - the LockAccount command defining the accountId to be locked.
-     * @param domainId
-     *            TODO
-     * @param accountId
-     * @return account object
-     */
-    Account lockAccount(String accountName, Long domainId, Long accountId);
-
-    /**
-     * Updates an account name
-     *
-     * @param cmd
-     *            - the parameter containing accountId
-     * @return updated account object
-     */
-
-    Account updateAccount(UpdateAccountCmd cmd);
-
     Account getSystemAccount();
 
     User getSystemUser();
 
     User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID, Integer regionId);
-
-    boolean deleteUser(DeleteUserCmd deleteUserCmd);
 
     boolean isAdmin(short accountType);
 

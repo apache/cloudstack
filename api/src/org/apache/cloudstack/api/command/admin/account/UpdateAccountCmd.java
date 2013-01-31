@@ -127,13 +127,7 @@ public class UpdateAccountCmd extends BaseCmd{
 
     @Override
     public void execute(){
-    	boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false;
-    	Account result = null;
-    	if(isPopagate){
-    		result = _accountService.updateAccount(this);
-        } else {
-        	result = _regionService.updateAccount(this);
-        }
+    	Account result = _regionService.updateAccount(this);
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getCommandName());

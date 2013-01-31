@@ -14,17 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.region;
+package org.apache.cloudstack.region;
 
-import java.util.Map;
+import java.util.Date;
 
-public interface RegionManager {
-	public boolean propogateAddAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
-            Map<String, String> details, String accountUUID, String userUUID);
-	public int getId();
-	public void setId(int id);
-	public void propogateAddUser(String userName, String password,
-			String firstName, String lastName, String email, String timeZone,
-			String accountName, String domainUUId, String userUUID);
-	public void propogateAddDomain(String name, Long parentId, String networkDomain, String uuid);
+/**
+ *
+ */
+public interface RegionSync  {
+    
+    public long getId();
+    
+    public int getRegionId();
+    
+	public String getApi();
+
+	Date getCreateDate();
 }

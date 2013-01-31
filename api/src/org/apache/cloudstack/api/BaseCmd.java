@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.region.RegionService;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
@@ -53,7 +54,6 @@ import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.network.vpn.Site2SiteVpnService;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
-import com.cloud.region.RegionService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
 import com.cloud.server.TaggedResourceService;

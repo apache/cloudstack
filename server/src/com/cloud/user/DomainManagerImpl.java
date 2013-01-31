@@ -27,6 +27,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.region.RegionManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ResourceLimit;
@@ -43,7 +44,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectDao;
-import com.cloud.region.RegionManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -187,8 +187,9 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
 
         	DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, _regionMgr.getId()));
         	_resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
-        	_regionMgr.propogateAddDomain(name, parentId, networkDomain, domain.getUuid());
         	txn.commit();
+        	//Propagate domain creation to peer Regions
+        	_regionMgr.propagateAddDomain(name, parentId, networkDomain, domain.getUuid());        	
         	return domain;
         } else {
         	Transaction txn = Transaction.currentTxn();

@@ -2259,7 +2259,7 @@ CREATE TABLE  `cloud`.`netscaler_pod_ref` (
 
 CREATE TABLE  `cloud`.`region` (
   `id` int unsigned NOT NULL UNIQUE,
-  `name` varchar(255) NOT NULL,
+  `name` varchar(255) NOT NULL UNIQUE,
   `end_point` varchar(255) NOT NULL,
   `api_key` varchar(255),
   `secret_key` varchar(255),

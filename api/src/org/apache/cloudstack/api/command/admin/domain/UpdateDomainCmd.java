@@ -85,13 +85,7 @@ public class UpdateDomainCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Domain Id: "+getId());
-        boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false;
-        Domain domain = null;
-    	if(isPopagate){
-    		domain = _domainService.updateDomain(this);
-        } else {
-        	domain = _regionService.updateDomain(this);
-        }
+        Domain domain =  _regionService.updateDomain(this);
         
         if (domain != null) {
             DomainResponse response = _responseGenerator.createDomainResponse(domain);

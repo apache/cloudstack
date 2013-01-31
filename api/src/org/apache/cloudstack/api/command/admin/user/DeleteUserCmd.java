@@ -79,13 +79,7 @@ public class DeleteUserCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
-        boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false;
-        boolean result = false;
-        if(isPopagate){
-        	result = _accountService.deleteUser(this);
-        } else {
-        	result = _regionService.deleteUser(this);
-        }
+        boolean result = _regionService.deleteUser(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

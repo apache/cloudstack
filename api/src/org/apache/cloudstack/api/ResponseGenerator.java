@@ -93,6 +93,7 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.region.Region;
 
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
@@ -143,7 +144,6 @@ import com.cloud.org.Cluster;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
-import com.cloud.region.Region;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.S3;

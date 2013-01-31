@@ -52,11 +52,12 @@ import com.cloud.api.query.vo.ControlledViewEntity;
 
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.region.RegionManager;
+
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -97,7 +98,6 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
-import com.cloud.region.RegionManager;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
@@ -830,13 +830,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         		user.setRegistrationToken(registrationToken);
         	}
         	txn.commit();
-        	//Propogate Add account to other Regions
-        	_regionMgr.propogateAddAccount(userName, password, firstName, lastName, email, timezone, accountName, accountType, domainId, 
+        	//Propagate Add account to other Regions
+        	_regionMgr.propagateAddAccount(userName, password, firstName, lastName, email, timezone, accountName, accountType, domainId, 
         			networkDomain, details, account.getUuid(), user.getUuid());
         	//check success
             return _userAccountDao.findById(user.getId());
         } else {
-        	// Account is propogated from another Region
+        	// Account is propagated from another Region
 
         	Transaction txn = Transaction.currentTxn();
             txn.start();
@@ -891,8 +891,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         UserVO user = null;
         if(regionId == null){
         	user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone);
-        	//Propogate Add user to other Regions
-        	_regionMgr.propogateAddUser(userName, password, firstName, lastName, email, timeZone, accountName, domain.getUuid(), user.getUuid());
+        	//Propagate Add user to peer Regions
+        	_regionMgr.propagateAddUser(userName, password, firstName, lastName, email, timeZone, accountName, domain.getUuid(), user.getUuid());
         } else {
         	user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone, userUUID, regionId);
         }
@@ -1744,7 +1744,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         // Create default security group
         _networkGroupMgr.createDefaultSecurityGroup(accountId);
-        //_regionMgr.propogateAddResource();
         txn.commit();
 
         return account;
