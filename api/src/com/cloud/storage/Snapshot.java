@@ -67,11 +67,11 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
         }
 
         static {
-            s_fsm.addTransition(Creating, Event.CreateRequested, Creating);
+            s_fsm.addTransition(null, Event.CreateRequested, Creating);
             s_fsm.addTransition(Creating, Event.OperationSucceeded, CreatedOnPrimary);
+            s_fsm.addTransition(Creating, Event.OperationNotPerformed, BackedUp);
             s_fsm.addTransition(Creating, Event.OperationFailed, Error);
             s_fsm.addTransition(CreatedOnPrimary, Event.BackupToSecondary, BackingUp);
-            s_fsm.addTransition(CreatedOnPrimary, Event.OperationFailed, Error);
             s_fsm.addTransition(BackingUp, Event.OperationSucceeded, BackedUp);
             s_fsm.addTransition(BackingUp, Event.OperationFailed, Error);
         }
@@ -87,7 +87,7 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
 
     enum Event {
         CreateRequested,
-        CreatedOnPrimary,
+        OperationNotPerformed,
         BackupToSecondary,
         BackedupToSecondary,
         OperationSucceeded,

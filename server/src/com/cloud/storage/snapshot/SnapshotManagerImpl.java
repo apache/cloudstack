@@ -258,7 +258,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                     snapshot.setSwiftId(preSnapshotVO.getSwiftId());
                     snapshot.setPrevSnapshotId(preId);
                     snapshot.setSecHostId(preSnapshotVO.getSecHostId());
-                    stateTransitTo(snapshot, Snapshot.Event.OperationSucceeded);
+                    stateTransitTo(snapshot, Snapshot.Event.OperationNotPerformed);
                 }  catch (NoTransitionException nte) {
                     s_logger.debug("CreateSnapshot: failed to update state of snapshot due to " + nte.getMessage());
                 }

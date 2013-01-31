@@ -20,7 +20,6 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.utils.component.AnnotationInterceptor;
 import com.cloud.utils.component.InterceptorLibrary;
 import com.cloud.utils.db.DatabaseCallback;
-import org.apache.cloudstack.framework.events.EventPublishCallback;
 
 import java.util.List;
 
@@ -30,6 +29,5 @@ public class DefaultInterceptorLibrary implements InterceptorLibrary {
     public void addInterceptors(List<AnnotationInterceptor<?>> interceptors) {
         interceptors.add(new DatabaseCallback());
         interceptors.add(new ActionEventUtils.ActionEventCallback());
-        interceptors.add(new EventPublishCallback());
     }
 }
