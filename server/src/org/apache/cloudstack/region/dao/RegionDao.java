@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.region.dao;
 
-import java.util.List;
-
 import org.apache.cloudstack.region.RegionVO;
 
 import com.cloud.utils.db.GenericDao;
@@ -26,5 +24,4 @@ public interface RegionDao extends GenericDao<RegionVO, Integer> {
 
 	RegionVO findByName(String name);
 
-	List<RegionVO> listByNameAndId(Integer id, String name);
 }

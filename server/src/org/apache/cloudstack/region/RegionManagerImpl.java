@@ -311,7 +311,22 @@ public class RegionManagerImpl implements RegionManager, Manager{
      */ 
 	@Override
 	public List<RegionVO> listRegions(Integer id, String name) {
-		return _regionDao.listByNameAndId(id, name);
+		List<RegionVO> regions = new ArrayList<RegionVO>();
+		if(id != null){
+			RegionVO region = _regionDao.findById(id);
+			if(region != null){
+				regions.add(region);
+			} 
+			return regions;
+		}
+		if(name != null){
+			RegionVO region = _regionDao.findByName(name);
+			if(region != null){
+				regions.add(region);
+			} 
+			return regions;
+		}
+		return _regionDao.listAll();
 	}
 
     /**

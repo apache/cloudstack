@@ -38,7 +38,7 @@ public class ListRegionsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="List Region by region ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.INTEGER, description="List Region by region ID.")
     private Integer id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="List Region by region name.")

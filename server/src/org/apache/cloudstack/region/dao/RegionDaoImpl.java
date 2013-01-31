@@ -16,14 +16,11 @@
 // under the License.
 package org.apache.cloudstack.region.dao;
 
-import java.util.List;
-
 import javax.ejb.Local;
 
 import org.apache.cloudstack.region.RegionVO;
 import org.apache.log4j.Logger;
 
-import com.cloud.user.UserVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -38,25 +35,12 @@ public class RegionDaoImpl extends GenericDaoBase<RegionVO, Integer> implements 
     	NameSearch = createSearchBuilder();
     	NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
     	NameSearch.done();
-    	
-    	AllFieldsSearch = createSearchBuilder();
-    	AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
-    	AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
-    	AllFieldsSearch.done();
     }
     
 	@Override
 	public RegionVO findByName(String name) {
         SearchCriteria<RegionVO> sc = NameSearch.create();
-        sc.setParameters("name", NameSearch);
-        return findOneBy(sc);
-	}
-	
-	@Override
-	public List<RegionVO> listByNameAndId(Integer id, String name) {
-	    SearchCriteria<RegionVO> sc = AllFieldsSearch.create();
-	    sc.setParameters("id", id);
         sc.setParameters("name", name);
-        return listBy(sc);
+        return findOneBy(sc);
 	}
 }
