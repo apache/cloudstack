@@ -56,6 +56,7 @@ import org.apache.axis2.databinding.ADBException;
 import org.apache.axis2.databinding.utils.writer.MTOMAwareXMLSerializer;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 
 import com.amazon.ec2.AllocateAddressResponse;
 import com.amazon.ec2.AssociateAddressResponse;
@@ -94,7 +95,9 @@ import com.amazon.ec2.RunInstancesResponse;
 import com.amazon.ec2.StartInstancesResponse;
 import com.amazon.ec2.StopInstancesResponse;
 import com.amazon.ec2.TerminateInstancesResponse;
+import com.cloud.bridge.model.CloudStackUserVO;
 import com.cloud.bridge.model.UserCredentialsVO;
+import com.cloud.bridge.persist.dao.CloudStackUserDaoImpl;
 import com.cloud.bridge.persist.dao.OfferingDaoImpl;
 import com.cloud.bridge.persist.dao.UserCredentialsDaoImpl;
 import com.cloud.bridge.service.controller.s3.ServiceProvider;
@@ -138,6 +141,7 @@ import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
 import com.cloud.bridge.util.AuthenticationUtils;
 import com.cloud.bridge.util.ConfigurationHelper;
 import com.cloud.bridge.util.EC2RestAuth;
+import com.cloud.bridge.util.EncryptionSecretKeyCheckerUtil;
 import com.cloud.stack.models.CloudStackAccount;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Transaction;
@@ -147,6 +151,7 @@ public class EC2RestServlet extends HttpServlet {
 
 	private static final long serialVersionUID = -6168996266762804888L;
 	protected final UserCredentialsDaoImpl ucDao = ComponentLocator.inject(UserCredentialsDaoImpl.class);
+    protected final CloudStackUserDaoImpl userDao = ComponentLocator.inject(CloudStackUserDaoImpl.class);
 	protected final OfferingDaoImpl ofDao = ComponentLocator.inject(OfferingDaoImpl.class);
 	
 	public static final Logger logger = Logger.getLogger(EC2RestServlet.class);
@@ -1734,18 +1739,14 @@ public class EC2RestServlet extends HttpServlet {
              }
 		} 
 		
-		// [B] Use the cloudAccessKey to get the users secret key in the db
-	    UserCredentialsVO cloudKeys = ucDao.getByAccessKey( cloudAccessKey );
+        // [B] Use the access key to get the users secret key from the cloud DB
+        cloudSecretKey = userDao.getSecretKeyByAccessKey( cloudAccessKey );
+        if ( cloudSecretKey == null ) {
+            logger.debug("No Secret key found for Access key '" + cloudAccessKey + "' in the the EC2 service");
+            throw new EC2ServiceException( ClientError.AuthFailure, "No Secret key found for Access key '" + cloudAccessKey +
+                    "' in the the EC2 service" );
+        }
 
-	    if ( null == cloudKeys ) 
-	    {
-	    	 logger.debug( cloudAccessKey + " is not defined in the EC2 service - call SetUserKeys" );
-	         response.sendError(404, cloudAccessKey + " is not defined in the EC2 service - call SetUserKeys" ); 
-	         return false; 
-	    }
-		else cloudSecretKey = cloudKeys.getSecretKey(); 
-
-		
 		// [C] Verify the signature
 		//  -> getting the query-string in this way maintains its URL encoding
 	    EC2RestAuth restAuth = new EC2RestAuth();
