@@ -1136,7 +1136,7 @@ class DiskOffering:
         if domainid:
             cmd.domainid = domainid
 
-        if services["storagetype"]:
+        if "storagetype" in services:
             cmd.storagetype = services["storagetype"]
 
         return DiskOffering(apiclient.createDiskOffering(cmd).__dict__)
