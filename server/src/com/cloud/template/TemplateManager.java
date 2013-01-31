@@ -113,7 +113,7 @@ public interface TemplateManager extends TemplateService{
 
     Long getTemplateSize(long templateId, long zoneId);
 
-    DataStore getImageStore(String storeUuid, long zoneId);
+    DataStore getImageStore(String storeUuid, Long zoneId);
 
     String getChecksum(Long hostId, String templatePath);
 
