@@ -812,24 +812,13 @@ public class EC2Engine {
 	 */
 	public EC2DescribeAddressesResponse describeAddresses( EC2DescribeAddresses request ) {
 		try {
-			List<CloudStackIpAddress> addrList = getApi().listPublicIpAddresses(null, null, null, null, null, null, null, null, null);
+            EC2DescribeAddressesResponse response = listAddresses(request.getPublicIpsSet());
+            EC2AddressFilterSet afs = request.getFilterSet();
 
-			EC2AddressFilterSet filterSet = request.getFilterSet();
-			List<EC2Address> addressList = new ArrayList<EC2Address>();
-			if (addrList != null && addrList.size() > 0) {
-				for (CloudStackIpAddress addr: addrList) {
-					// remember, if no filters are set, request.inPublicIpSet always returns true
-					if (request.inPublicIpSet(addr.getIpAddress())) {
-						EC2Address ec2Address = new EC2Address();
-						ec2Address.setIpAddress(addr.getIpAddress());
-						if (addr.getVirtualMachineId() != null) 
-							ec2Address.setAssociatedInstanceId(addr.getVirtualMachineId().toString());
-						addressList.add(ec2Address);
-					}
-				}
-			}
-
-			return filterSet.evaluate(addressList);
+            if (afs ==null)
+                return response;
+            else
+                return afs.evaluate(response);
 		} catch(Exception e) {
 			logger.error("EC2 DescribeAddresses - ", e);
 			throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
@@ -2075,6 +2064,39 @@ public class EC2Engine {
             return keyPairSet;
         } catch(Exception e) {
             logger.error( "List Keypairs - ", e);
+            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+        }
+    }
+
+    private EC2DescribeAddressesResponse listAddresses(String[] addressNames) throws Exception {
+        try {
+            EC2DescribeAddressesResponse addressSet = new EC2DescribeAddressesResponse();
+
+            List<CloudStackIpAddress> addresses = getApi().listPublicIpAddresses(null, null, null, null, null, null, null, null, null);
+            if (addresses != null && addresses.size() > 0) {
+                for (CloudStackIpAddress address : addresses) {
+                    boolean matched = false;
+                    if ( addressNames.length > 0) {
+                        for (String addressName : addressNames) {
+                            if (address.getIpAddress().equalsIgnoreCase(addressName)) {
+                                matched = true;
+                                break;
+                            }
+                        }
+                    } else matched = true;
+
+                    if (!matched) continue ;
+
+                    EC2Address ec2Address = new EC2Address();
+                    ec2Address.setIpAddress(address.getIpAddress());
+                    if (address.getVirtualMachineId() != null)
+                        ec2Address.setAssociatedInstanceId(address.getVirtualMachineId().toString());
+                    addressSet.addAddress(ec2Address);
+                }
+            }
+            return addressSet;
+        } catch(Exception e) {
+            logger.error( "List Addresses - ", e);
             throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
         }
     }
