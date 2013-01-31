@@ -1317,10 +1317,8 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
 
         vo.setDefaultNic(profile.isDefaultNic());
 
-        if (profile.getIp4Address() != null) {
-            vo.setIp4Address(profile.getIp4Address());
-            vo.setAddressFormat(AddressFormat.Ip4);
-        }
+        vo.setIp4Address(profile.getIp4Address());
+        vo.setAddressFormat(profile.getFormat());
 
         if (profile.getMacAddress() != null) {
             vo.setMacAddress(profile.getMacAddress());
@@ -3372,7 +3370,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     			nic.setIp6Gateway(vlan.getIp6Gateway());
     			nic.setIp6Cidr(vlan.getIp6Cidr());
     			if (ipv4) {
-    				nic.setFormat(AddressFormat.Mixed);
+    				nic.setFormat(AddressFormat.DualStack);
     			} else {
     				nic.setIsolationUri(IsolationType.Vlan.toUri(vlan.getVlanTag()));
     				nic.setBroadcastType(BroadcastDomainType.Vlan);
