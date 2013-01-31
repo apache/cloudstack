@@ -44,7 +44,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     private Boolean cleanup;
 
     @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
-    private Boolean isPropagate;
+    private Boolean propagate;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -58,8 +58,8 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
         return cleanup;
     }
 
-	public Boolean getIsPropagate() {
-		return isPropagate;
+	public Boolean isPropagate() {
+		return propagate;
 	}
     
     /////////////////////////////////////////////////////
@@ -94,7 +94,6 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Domain Id: "+getId());
-        boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false; 
         boolean result = _regionService.deleteDomain(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

@@ -39,7 +39,6 @@ import org.apache.log4j.Logger;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
@@ -224,7 +223,7 @@ public class RegionServiceImpl implements RegionService, Manager {
 	@Override
 	public boolean deleteDomain(DeleteDomainCmd cmd) {
 		boolean result = false;
-		if(checkIsPropagate(cmd.getIsPropagate())){
+		if(checkIsPropagate(cmd.isPropagate())){
 			result = _domainMgr.deleteDomain(cmd.getId(), cmd.getCleanup());
 		} else {
 			result = _regionMgr.deleteDomain(cmd.getId(), cmd.getCleanup());

@@ -58,9 +58,9 @@ public class RegionManagerImpl implements RegionManager, Manager{
     public static final Logger s_logger = Logger.getLogger(RegionManagerImpl.class);
     
     @Inject
-    private RegionDao _regionDao;
+    RegionDao _regionDao;
     @Inject
-    private AccountDao _accountDao;
+    AccountDao _accountDao;
     @Inject
     private AccountManager _accountMgr;
     @Inject
