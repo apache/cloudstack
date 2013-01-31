@@ -481,9 +481,21 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // get start ip and end ip of corresponding vlan
         String ipRange = vlan.getIpRange();
-        String[] range = ipRange.split("-");
-        vlanResponse.setStartIp(range[0]);
-        vlanResponse.setEndIp(range[1]);
+        if (ipRange != null) {
+        	String[] range = ipRange.split("-");
+        	vlanResponse.setStartIp(range[0]);
+        	vlanResponse.setEndIp(range[1]);
+        }
+
+        vlanResponse.setIp6Gateway(vlan.getIp6Gateway());
+        vlanResponse.setIp6Cidr(vlan.getIp6Cidr());
+        
+        String ip6Range = vlan.getIp6Range();
+        if (ip6Range != null) {
+        	String[] range = ip6Range.split("-");
+        	vlanResponse.setStartIpv6(range[0]);
+        	vlanResponse.setEndIpv6(range[1]);
+        }
 
         if (vlan.getNetworkId() != null) {
             Network nw = ApiDBUtils.findNetworkById(vlan.getNetworkId());
