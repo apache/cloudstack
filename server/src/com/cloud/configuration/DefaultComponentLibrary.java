@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.region.RegionManagerImpl;
+import org.apache.cloudstack.region.RegionServiceImpl;
 import org.apache.cloudstack.region.dao.RegionDaoImpl;
 import org.apache.cloudstack.region.dao.RegionSyncDaoImpl;
 
@@ -462,6 +463,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("StorageNetworkManager", StorageNetworkManagerImpl.class);
         addManager("ExternalLoadBalancerUsageManager", ExternalLoadBalancerUsageManagerImpl.class);
         addManager("HA Manager", HighAvailabilityManagerImpl.class);
+        addManager("Region Service", RegionServiceImpl.class);        
         addManager("Region Manager", RegionManagerImpl.class);
         addManager("VPC Manager", VpcManagerImpl.class);
         addManager("VpcVirtualRouterManager", VpcVirtualNetworkApplianceManagerImpl.class);
