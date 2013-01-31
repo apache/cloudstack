@@ -42,7 +42,7 @@ public class CloudStackConfigurationDaoImpl extends GenericDaoBase<CloudStackCon
     @DB
     public String getConfigValue(String name) {
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
-        Transaction txn = Transaction.currentTxn();
+        Transaction txn = Transaction.open("cloud", Transaction.CLOUD_DB, true);
         try {
             txn.start();
             SearchCriteria<CloudStackConfigurationVO> sc = NameSearch.create();

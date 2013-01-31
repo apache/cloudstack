@@ -206,8 +206,6 @@ public class ServiceProvider extends ManagerBase {
         if(logger.isInfoEnabled())
             logger.info("Initializing ServiceProvider...");
 
-        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
-        //txn.close();
 
         File file = ConfigurationHelper.findConfigurationFile("log4j-cloud.xml");
         if(file != null) {

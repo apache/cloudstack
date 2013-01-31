@@ -302,6 +302,9 @@
       <resource>
           <directory>../utils/conf/</directory>
       </resource>
+      <resource>
+        <directory>${basedir}/resource/AmazonEC2</directory>
+      </resource>
     </resources>
     <plugins>
 	  <plugin>
