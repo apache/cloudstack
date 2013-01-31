@@ -3355,20 +3355,19 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     }
     
     @Override
-    public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfileImpl<VMInstanceVO> vmProfile, boolean prepare)
+    public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean prepare)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
                 
                 VirtualMachine vm = vmProfile.getVirtualMachine();
-                NetworkVO networkVO = _networksDao.findById(network.getId());
                 DataCenter dc = _configMgr.getZone(network.getDataCenterId());
                 Host host = _hostDao.findById(vm.getHostId()); 
                 DeployDestination dest = new DeployDestination(dc, null, null, host);
                 
                 NicProfile nic = getNicProfileForVm(network, requested, vm);
                 
-                //1) allocate nic (if needed)
-                if (nic == null) {
+                //1) allocate nic (if needed) Always allocate if it is a user vm
+                if (nic == null || (vmProfile.getType() == VirtualMachine.Type.User)) {
                     int deviceId = _nicDao.countNics(vm.getId());
                     
                     nic = allocateNic(requested, network, false, 
@@ -3383,6 +3382,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
                 
                 //2) prepare nic
                 if (prepare) {
+                    NetworkVO networkVO = _networksDao.findById(network.getId());
                     nic = prepareNic(vmProfile, dest, context, nic.getId(), networkVO);
                     s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
                 }

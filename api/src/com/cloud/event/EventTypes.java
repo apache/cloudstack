@@ -63,6 +63,11 @@ public class EventTypes {
     public static final String EVENT_FIREWALL_OPEN = "FIREWALL.OPEN";
     public static final String EVENT_FIREWALL_CLOSE = "FIREWALL.CLOSE";
 
+    //NIC Events
+    public static final String EVENT_NIC_CREATE = "NIC.CREATE";
+    public static final String EVENT_NIC_DELETE = "NIC.DELETE";
+    public static final String EVENT_NIC_UPDATE = "NIC.UPDATE";
+
     // Load Balancers
     public static final String EVENT_ASSIGN_TO_LOAD_BALANCER_RULE = "LB.ASSIGN.TO.RULE";
     public static final String EVENT_REMOVE_FROM_LOAD_BALANCER_RULE = "LB.REMOVE.FROM.RULE";

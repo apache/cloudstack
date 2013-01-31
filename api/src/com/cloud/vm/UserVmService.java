@@ -113,6 +113,27 @@ public interface UserVmService {
 
     UserVm updateVirtualMachine(UpdateVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
 
+    /**
+     * Adds a NIC on the given network to the virtual machine
+     * @param cmd the command object that defines the vm and the given network
+     * @return the vm object if successful, null otherwise
+     */
+    UserVm addNicToVirtualMachine(AddNicToVMCmd cmd);
+    
+    /**
+     * Removes a NIC on the given network from the virtual machine
+     * @param cmd the command object that defines the vm and the given network
+     * @return the vm object if successful, null otherwise
+     */
+    UserVm removeNicFromVirtualMachine(RemoveNicFromVMCmd cmd);
+    
+    /**
+     * Updates default Nic to the given network for given virtual machine
+     * @param cmd the command object that defines the vm and the given network
+     * @return the vm object if successful, null otherwise
+     */
+    UserVm updateDefaultNicForVirtualMachine(UpdateDefaultNicForVMCmd cmd);
+
     UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException;
 
     /**

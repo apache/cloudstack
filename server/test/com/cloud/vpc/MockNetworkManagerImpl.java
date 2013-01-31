@@ -1123,11 +1123,11 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
 
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#createNicForVm(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.ReservationContext, com.cloud.vm.VirtualMachineProfileImpl, boolean)
+     * @see com.cloud.network.NetworkManager#createNicForVm(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.ReservationContext, com.cloud.vm.VirtualMachineProfileImpl, boolean, boolean)
      */
     @Override
     public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context,
-            VirtualMachineProfileImpl<VMInstanceVO> vmProfile, boolean prepare)
+            VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean prepare)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         // TODO Auto-generated method stub

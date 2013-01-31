@@ -17,11 +17,14 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
+import com.cloud.vm.Nic;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
 
 @SuppressWarnings("unused")
+@EntityReference(value=Nic.class)
 public class NicResponse extends BaseResponse {
 
     @SerializedName("id") @Param(description="the ID of the nic")

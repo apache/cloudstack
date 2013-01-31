@@ -860,8 +860,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
         // for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when
         // network.dns.basiczone.updates is set to "all"
-        Long podId = dest.getPod().getId();
         if (isPodBased && _routerMgr.getDnsBasicZoneUpdate().equalsIgnoreCase("all")) {
+            Long podId = dest.getPod().getId();
             List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(network.getId(),
                     podId, State.Running, Role.VIRTUAL_ROUTER);
             routers.addAll(allRunningRoutersOutsideThePod);

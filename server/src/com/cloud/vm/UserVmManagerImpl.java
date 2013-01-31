@@ -17,11 +17,16 @@
 package com.cloud.vm;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.*;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.api.PlugNicAnswer;
+import com.cloud.agent.api.PlugNicCommand;
+import com.cloud.agent.api.UnPlugNicAnswer;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -916,6 +921,237 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return _vmDao.findById(vmInstance.getId());
     }
 
+    @Override
+    public UserVm addNicToVirtualMachine(AddNicToVMCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, CloudRuntimeException {
+        Long vmId = cmd.getVmId();
+        Long networkId = cmd.getNetworkId();
+        String ipAddress = cmd.getIpAddress();
+        Account caller = UserContext.current().getCaller();
+
+        UserVmVO vmInstance = _vmDao.findById(vmId);
+        if(vmInstance == null) {
+            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+        }
+        NetworkVO network = _networkDao.findById(networkId);
+        if(network == null) {
+            throw new InvalidParameterValueException("unable to find a network with id " + networkId);
+        }
+        NicProfile profile = new NicProfile(null);
+        if(ipAddress != null) {
+          profile = new NicProfile(ipAddress);
+        }
+
+        // Perform permission check on VM
+        _accountMgr.checkAccess(caller, null, true, vmInstance);
+
+        // Verify that zone is not Basic
+        DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterIdToDeployIn());
+        if (dc.getNetworkType() == DataCenter.NetworkType.Basic) {
+            throw new CloudRuntimeException("Zone " + vmInstance.getDataCenterIdToDeployIn() + ", has a NetworkType of Basic. Can't add a new NIC to a VM on a Basic Network");
+        }
+
+        // Perform account permission check on network
+        if (network.getGuestType() != Network.GuestType.Shared) {
+            // Check account permissions
+            List<NetworkVO> networkMap = _networkDao.listBy(caller.getId(), network.getId());
+            if ((networkMap == null || networkMap.isEmpty() ) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                throw new PermissionDeniedException("Unable to modify a vm using network with id " + network.getId() + ", permission denied");
+            }
+        }
+        
+        //ensure network belongs in zone
+        if (network.getDataCenterId() != vmInstance.getDataCenterIdToDeployIn()) {
+            throw new CloudRuntimeException(vmInstance + " is in zone:" + vmInstance.getDataCenterIdToDeployIn() + " but " + network + " is in zone:" + network.getDataCenterId());
+        }
+
+        if(_networkModel.getNicInNetwork(vmInstance.getId(),network.getId()) != null){
+            s_logger.debug(vmInstance + " already in " + network + " going to add another NIC");
+        } else {
+            //* get all vms hostNames in the network
+            List<String> hostNames = _vmInstanceDao.listDistinctHostNames(network.getId());
+            //* verify that there are no duplicates
+            if (hostNames.contains(vmInstance.getHostName())) {
+                throw new CloudRuntimeException(network + " already has a vm with host name: '" + vmInstance.getHostName());
+            }
+        }
+        
+        NicProfile guestNic = null;
+
+        try {
+            guestNic = _itMgr.addVmToNetwork(vmInstance, network, profile);
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException("Unable to add NIC to " + vmInstance + ": " + e);
+        } catch (InsufficientCapacityException e) {
+            throw new CloudRuntimeException("Insufficient capacity when adding NIC to " + vmInstance + ": " + e);
+        } catch (ConcurrentOperationException e) {
+            throw new CloudRuntimeException("Concurrent operations on adding NIC to " + vmInstance + ": " +e);
+        }
+        if (guestNic == null) {
+            throw new CloudRuntimeException("Unable to add NIC to " + vmInstance);
+        }
+
+        s_logger.debug("Successful addition of " + network + " from " + vmInstance);
+        return _vmDao.findById(vmInstance.getId());
+    }
+
+    @Override
+    public UserVm removeNicFromVirtualMachine(RemoveNicFromVMCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, CloudRuntimeException {
+        Long vmId = cmd.getVmId();
+        Long nicId = cmd.getNicId();
+        Account caller = UserContext.current().getCaller();
+
+        UserVmVO vmInstance = _vmDao.findById(vmId);
+        if(vmInstance == null) {
+            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+        }
+        NicVO nic = _nicDao.findById(nicId);
+        if (nic == null){
+            throw new InvalidParameterValueException("unable to find a nic with id " + nicId);
+        }
+        NetworkVO network = _networkDao.findById(nic.getNetworkId());
+        if(network == null) {
+            throw new InvalidParameterValueException("unable to find a network with id " + nic.getNetworkId());
+        }
+
+        // Perform permission check on VM
+        _accountMgr.checkAccess(caller, null, true, vmInstance);
+
+        // Verify that zone is not Basic
+        DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterIdToDeployIn());
+        if (dc.getNetworkType() == DataCenter.NetworkType.Basic) {
+            throw new CloudRuntimeException("Zone " + vmInstance.getDataCenterIdToDeployIn() + ", has a NetworkType of Basic. Can't remove a NIC from a VM on a Basic Network");
+        }
+
+        //check to see if nic is attached to VM
+        if (nic.getInstanceId() != vmId) {
+            throw new InvalidParameterValueException(nic + " is not a nic on  " + vmInstance);
+        }
+
+        // Perform account permission check on network
+        if (network.getGuestType() != Network.GuestType.Shared) {
+            // Check account permissions
+            List<NetworkVO> networkMap = _networkDao.listBy(caller.getId(), network.getId());
+            if ((networkMap == null || networkMap.isEmpty() ) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                throw new PermissionDeniedException("Unable to modify a vm using network with id " + network.getId() + ", permission denied");
+            }
+        }
+        
+        boolean nicremoved = false;
+
+        try {
+            nicremoved = _itMgr.removeNicFromVm(vmInstance, nic);
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException("Unable to remove " + network + " from " + vmInstance +": " + e);
+            
+        } catch (ConcurrentOperationException e) {
+            throw new CloudRuntimeException("Concurrent operations on removing " + network + " from " + vmInstance + ": " + e);
+        }
+
+        if (!nicremoved) {
+            throw new CloudRuntimeException("Unable to remove " + network +  " from " + vmInstance );
+        }
+            
+        s_logger.debug("Successful removal of " + network + " from " + vmInstance);
+        return _vmDao.findById(vmInstance.getId());
+
+        
+    }
+    
+    @Override
+    public UserVm updateDefaultNicForVirtualMachine(UpdateDefaultNicForVMCmd cmd) throws InvalidParameterValueException, CloudRuntimeException {
+        Long vmId = cmd.getVmId();
+        Long nicId = cmd.getNicId();
+        Account caller = UserContext.current().getCaller();
+        
+        UserVmVO vmInstance = _vmDao.findById(vmId);
+        if (vmInstance == null){
+            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+        }
+        NicVO nic = _nicDao.findById(nicId);
+        if (nic == null){
+            throw new InvalidParameterValueException("unable to find a nic with id " + nicId);
+        }
+        NetworkVO network = _networkDao.findById(nic.getNetworkId());
+        if (network == null){
+            throw new InvalidParameterValueException("unable to find a network with id " + nic.getNetworkId());
+        }
+        
+        // Perform permission check on VM
+        _accountMgr.checkAccess(caller, null, true, vmInstance);
+
+        // Verify that zone is not Basic
+        DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterIdToDeployIn());
+        if (dc.getNetworkType() == DataCenter.NetworkType.Basic) {
+            throw new CloudRuntimeException("Zone " + vmInstance.getDataCenterIdToDeployIn() + ", has a NetworkType of Basic. Can't change default NIC on a Basic Network");
+        }
+
+        // no need to check permissions for network, we'll enumerate the ones they already have access to
+        Network existingdefaultnet = _networkModel.getDefaultNetworkForVm(vmId);
+        
+        //check to see if nic is attached to VM
+        if (nic.getInstanceId() != vmId) {
+            throw new InvalidParameterValueException(nic + " is not a nic on  " + vmInstance);
+        }
+        // if current default equals chosen new default, Throw an exception
+        if (nic.isDefaultNic()){
+            throw new CloudRuntimeException("refusing to set default nic because chosen nic is already the default");
+        }
+
+        //make sure the VM is Running or Stopped
+        if ((vmInstance.getState() != State.Running) && (vmInstance.getState() != State.Stopped)) {
+            throw new CloudRuntimeException("refusing to set default " + vmInstance + " is not Running or Stopped");
+        }
+        
+        NicProfile existing = null;
+        List<NicProfile> nicProfiles = _networkMgr.getNicProfiles(vmInstance);
+        for (NicProfile nicProfile : nicProfiles) {
+            if(nicProfile.isDefaultNic() && nicProfile.getNetworkId() == existingdefaultnet.getId()){
+                existing = nicProfile;
+                continue;
+            }
+        }
+
+        if (existing == null){
+            s_logger.warn("Failed to update default nic, no nic profile found for existing default network");
+            throw new CloudRuntimeException("Failed to find a nic profile for the existing default network. This is bad and probably means some sort of configuration corruption");
+        }
+
+        NicVO existingVO = _nicDao.findById(existing.id);
+        Integer chosenID = nic.getDeviceId();
+        Integer existingID = existing.getDeviceId();
+
+        nic.setDefaultNic(true);
+        nic.setDeviceId(existingID);
+        existingVO.setDefaultNic(false);
+        existingVO.setDeviceId(chosenID);
+
+        nic = _nicDao.persist(nic);
+        existingVO = _nicDao.persist(existingVO);
+
+        Network newdefault = null;
+        newdefault = _networkModel.getDefaultNetworkForVm(vmId);
+        
+        if (newdefault == null){
+             nic.setDefaultNic(false);
+             nic.setDeviceId(chosenID);
+             existingVO.setDefaultNic(true);
+             existingVO.setDeviceId(existingID);
+
+             nic = _nicDao.persist(nic);
+             existingVO = _nicDao.persist(existingVO);
+             
+             newdefault = _networkModel.getDefaultNetworkForVm(vmId);
+             if (newdefault.getId() == existingdefaultnet.getId()) {
+                    throw new CloudRuntimeException("Setting a default nic failed, and we had no default nic, but we were able to set it back to the original");
+             }
+             throw new CloudRuntimeException("Failed to change default nic to " + nic + " and now we have no default");
+        } else if (newdefault.getId() == nic.getNetworkId()) {
+            s_logger.debug("successfully set default network to " + network + " for " + vmInstance);
+            return _vmDao.findById(vmInstance.getId());
+        }
+ 
+        throw new CloudRuntimeException("something strange happened, new default network(" + newdefault.getId() + ") is not null, and is not equal to the network(" + nic.getNetworkId() + ") of the chosen nic");
+    }
 
     @Override
     public HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds) throws CloudRuntimeException {
@@ -3671,16 +3907,58 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
             ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException {
-        //not supported
-        throw new UnsupportedOperationException("Plug nic is not supported for vm of type " + vm.getType());
+        UserVmVO vmVO = _vmDao.findById(vm.getId());
+        if (vmVO.getState() == State.Running) {
+            try {
+                PlugNicCommand plugNicCmd = new PlugNicCommand(nic,vm.getName());
+                Commands cmds = new Commands(OnError.Stop);
+                cmds.addCommand("plugnic",plugNicCmd);
+                _agentMgr.send(dest.getHost().getId(),cmds);
+                PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
+                if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
+                    s_logger.warn("Unable to plug nic for " + vmVO);
+                    return false;
+                }
+            } catch (OperationTimedoutException e) {
+                throw new AgentUnavailableException("Unable to plug nic for " + vmVO + " in network " + network, dest.getHost().getId(), e);
+            }
+        } else if (vmVO.getState() == State.Stopped || vmVO.getState() == State.Stopping) {
+            s_logger.warn(vmVO + " is Stopped, not sending PlugNicCommand.  Currently " + vmVO.getState());
+        } else {
+            s_logger.warn("Unable to plug nic, " + vmVO + " is not in the right state " + vmVO.getState());
+            throw new ResourceUnavailableException("Unable to plug nic on the backend," +
+                    vmVO + " is not in the right state", DataCenter.class, vmVO.getDataCenterIdToDeployIn());
+        }
+        return true;
     }
 
 
     @Override
     public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
             ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
-        //not supported
-        throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
+        UserVmVO vmVO = _vmDao.findById(vm.getId());
+        if (vmVO.getState() == State.Running) {
+            try {
+                UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic,vm.getName());
+                Commands cmds = new Commands(OnError.Stop);
+                cmds.addCommand("unplugnic",unplugNicCmd);
+                _agentMgr.send(dest.getHost().getId(),cmds);
+                UnPlugNicAnswer unplugNicAnswer = cmds.getAnswer(UnPlugNicAnswer.class);
+                if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
+                    s_logger.warn("Unable to unplug nic for " + vmVO);
+                    return false;
+                }
+            } catch (OperationTimedoutException e) {
+                throw new AgentUnavailableException("Unable to unplug nic for " + vmVO + " in network " + network, dest.getHost().getId(), e);
+            }
+        } else if (vmVO.getState() == State.Stopped || vmVO.getState() == State.Stopping) {
+            s_logger.warn(vmVO + " is Stopped, not sending UnPlugNicCommand.  Currently " + vmVO.getState());
+        } else {
+            s_logger.warn("Unable to unplug nic, " + vmVO + " is not in the right state " + vmVO.getState());
+            throw new ResourceUnavailableException("Unable to unplug nic on the backend," +
+                    vmVO + " is not in the right state", DataCenter.class, vmVO.getDataCenterIdToDeployIn());
+        }
+        return true;
     }
 
     @Override
