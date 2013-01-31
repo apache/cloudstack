@@ -26,6 +26,7 @@ public class EventTypes {
     public static final String EVENT_VM_UPDATE = "VM.UPDATE";
     public static final String EVENT_VM_UPGRADE = "VM.UPGRADE";
     public static final String EVENT_VM_RESETPASSWORD = "VM.RESETPASSWORD";
+    public static final String EVENT_VM_RESETSSHKEY = "VM.RESETSSHKEY";
     public static final String EVENT_VM_MIGRATE = "VM.MIGRATE";
     public static final String EVENT_VM_MOVE = "VM.MOVE";
     public static final String EVENT_VM_RESTORE = "VM.RESTORE";
@@ -62,6 +63,11 @@ public class EventTypes {
     public static final String EVENT_NETWORK_UPDATE = "NETWORK.UPDATE";
     public static final String EVENT_FIREWALL_OPEN = "FIREWALL.OPEN";
     public static final String EVENT_FIREWALL_CLOSE = "FIREWALL.CLOSE";
+
+    //NIC Events
+    public static final String EVENT_NIC_CREATE = "NIC.CREATE";
+    public static final String EVENT_NIC_DELETE = "NIC.DELETE";
+    public static final String EVENT_NIC_UPDATE = "NIC.UPDATE";
 
     // Load Balancers
     public static final String EVENT_ASSIGN_TO_LOAD_BALANCER_RULE = "LB.ASSIGN.TO.RULE";

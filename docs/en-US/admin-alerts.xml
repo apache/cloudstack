@@ -31,6 +31,5 @@
         <listitem><para>The Management Server cluster runs low on CPU, memory, or storage resources</para></listitem>
         <listitem><para>The Management Server loses heartbeat from a Host for more than 3 minutes</para></listitem>
         <listitem><para>The Host cluster runs low on CPU, memory, or storage resources</para></listitem>
-        </itemizedlist>
-    
+    </itemizedlist>      
 </section>

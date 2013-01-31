@@ -269,7 +269,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                     
                     //now apply vpn rules on the backend
                     s_logger.debug("Reapplying firewall rules for ip id=" + ipId + " as a part of disable remote access vpn");
-                    success = _firewallMgr.applyFirewallRules(ipId, caller);
+                    success = _firewallMgr.applyIngressFirewallRules(ipId, caller);
                 }
                 
                 if (success) {
@@ -383,7 +383,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         try {
             boolean firewallOpened = true;
             if (openFirewall) {
-                firewallOpened = _firewallMgr.applyFirewallRules(vpn.getServerAddressId(), caller);
+                firewallOpened = _firewallMgr.applyIngressFirewallRules(vpn.getServerAddressId(), caller);
             }
             
             if (firewallOpened) {

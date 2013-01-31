@@ -13,14 +13,14 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License.
+// under the License.package org.apache.cloudstack.api.command.user.firewall;
+
 package org.apache.cloudstack.api.command.user.firewall;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.cloudstack.api.response.FirewallRuleResponse;
-import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,34 +32,32 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listFirewallRules", description="Lists all firewall rules for an IP address.", responseObject=FirewallResponse.class)
-public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListFirewallRulesCmd.class.getName());
-    private static final String s_name = "listfirewallrulesresponse";
+@APICommand(name = "listEgressFirewallRules", description="Lists all egress firewall rules for network id.", responseObject=FirewallResponse.class)
+public class ListEgressFirewallRulesCmd extends ListFirewallRulesCmd {
+    public static final Logger s_logger = Logger.getLogger(ListEgressFirewallRulesCmd.class.getName());
+    private static final String s_name = "listegressfirewallrulesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
-            description="Lists rule with the specified ID.")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Lists rule with the specified ID.")
     private Long id;
-
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
-            description="the id of IP address of the firwall services")
-    private Long ipAddressId;
+    
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="the id network network for the egress firwall services")
+    private Long networkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public Long getIpAddressId() {
-        return ipAddressId;
+    
+    public Long getNetworkId() {
+        return networkId;
     }
 
     public FirewallRule.TrafficType getTrafficType () {
-    	return FirewallRule.TrafficType.Ingress;
+        return FirewallRule.TrafficType.Egress;
     }
-   
+    
     public Long getId() {
         return id;
     }
@@ -72,13 +70,13 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     public String getCommandName() {
         return s_name;
     }
-
+    
     @Override
     public void execute(){
         Pair<List<? extends FirewallRule>, Integer> result = _firewallService.listFirewallRules(this);
         ListResponse<FirewallResponse> response = new ListResponse<FirewallResponse>();
         List<FirewallResponse> fwResponses = new ArrayList<FirewallResponse>();
-
+        
         for (FirewallRule fwRule : result.first()) {
             FirewallResponse ruleData = _responseGenerator.createFirewallResponse(fwRule);
             ruleData.setObjectName("firewallrule");
@@ -86,6 +84,6 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
         }
         response.setResponses(fwResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        this.setResponseObject(response); 
     }
 }

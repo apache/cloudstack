@@ -402,13 +402,10 @@ public class ApiServlet extends HttpServlet {
                     }
                 }
             }
-            sb.append(" }");
-            sb.append(", \"cloudstack-version\": \"");
-            sb.append(ApiDBUtils.getVersion());
-            sb.append("\" }");
+            sb.append(" } }");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<loginresponse cloudstack-version=\"" + ApiDBUtils.getVersion() + "\">");
+            sb.append("<loginresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
             sb.append("<timeout>" + inactiveInterval + "</timeout>");
             Enumeration attrNames = session.getAttributeNames();
             if (attrNames != null) {
@@ -435,13 +432,10 @@ public class ApiServlet extends HttpServlet {
     private String getLogoutSuccessResponse(String responseType) {
         StringBuffer sb = new StringBuffer();
         if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            sb.append("{ \"logoutresponse\" : { \"description\" : \"success\" }");
-            sb.append(", \"cloudstack-version\": \"");
-            sb.append(ApiDBUtils.getVersion());
-            sb.append("\" }");
+            sb.append("{ \"logoutresponse\" : { \"description\" : \"success\" } }");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<logoutresponse cloudstack-version=\"" + ApiDBUtils.getVersion() + "\">");
+            sb.append("<logoutresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
             sb.append("<description>success</description>");
             sb.append("</logoutresponse>");
         }
