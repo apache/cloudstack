@@ -18,9 +18,9 @@ package com.cloud.storage;
 
 import java.util.Map;
 
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.VMTemplateVO;
 
 public class TemplateProfile {	
 	Long userId;
@@ -46,6 +46,7 @@ public class TemplateProfile {
 	Long templateId;
 	VMTemplateVO template;
 	String templateTag;
+	String imageStoreUuid;
 	Map details;
 	
 	public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm,
@@ -83,10 +84,12 @@ public class TemplateProfile {
 	
     public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm,
             String url, Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
-            HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details, Boolean sshKeyEnabled) {
+            HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details, Boolean sshKeyEnabled,
+            String imageStoreUuid) {
         this(templateId, userId, name, displayText, bits, passwordEnabled, requiresHvm, url, isPublic, featured, isExtractable, format, guestOsId, zoneId,
                 hypervisorType, accountName, domainId, accountId, chksum, bootable, details, sshKeyEnabled);
         this.templateTag = templateTag;
+        this.imageStoreUuid = imageStoreUuid;
     }	
 	
 	public Long getTemplateId() {
@@ -251,5 +254,9 @@ public class TemplateProfile {
     
     public Boolean getSshKeyEnabled() {
     	return this.sshKeyEnbaled;
+    }
+    
+    public String getImageStoreUuid() {
+        return this.imageStoreUuid;
     }
 }

@@ -92,7 +92,7 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
     public void execute(){
         Volume result;
         try {
-            result = _storageService.migrateVolume(getVolumeId(), getStoragePoolId());
+            result = _volumeService.migrateVolume(getVolumeId(), getStoragePoolId());
              if (result != null) {
                  VolumeResponse response = _responseGenerator.createVolumeResponse(result);
                  response.setResponseName(getCommandName());

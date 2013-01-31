@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.driver.DefaultPrimaryDataStoreDriverImpl;
 import org.apache.cloudstack.storage.datastore.lifecycle.DefaultPrimaryDataStoreLifeCycleImpl;
@@ -35,6 +36,7 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
     protected PrimaryDataStoreDriver driver;
     @Inject
     PrimaryDataStoreProviderManager storeMgr;
+
     protected DataStoreLifeCycle lifecyle;
     protected String uuid;
     protected long id;
@@ -52,9 +54,11 @@ public class DefaultPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
     public boolean configure(Map<String, Object> params) {
         lifecyle = ComponentContext.inject(DefaultPrimaryDataStoreLifeCycleImpl.class);
         driver = ComponentContext.inject(DefaultPrimaryDataStoreDriverImpl.class);
+        HypervisorHostListener listener = ComponentContext.inject(DefaultHostListener.class);
         uuid = (String)params.get("uuid");
         id = (Long)params.get("id");
         storeMgr.registerDriver(uuid, this.driver);
+        storeMgr.registerHostListener(uuid, listener);
         return true;
     }
 

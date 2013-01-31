@@ -17,11 +17,6 @@
 package com.cloud.storage;
 
 public enum StoragePoolStatus {
-	Creating,
-    Up,
-    PrepareForMaintenance,
-    ErrorInMaintenance,
-    CancelMaintenance,
-    Maintenance,
-    Removed;
+    Initial, Initialized, Creating, Attaching, Up, PrepareForMaintenance, 
+    ErrorInMaintenance, CancelMaintenance, Maintenance, Removed;
 }

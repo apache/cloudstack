@@ -18,13 +18,13 @@
  */
 package org.apache.cloudstack.storage.image.manager;
 
-import org.apache.cloudstack.storage.image.TemplateEvent;
-import org.apache.cloudstack.storage.image.TemplateState;
-import org.apache.cloudstack.storage.image.db.ImageDataVO;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.fsm.StateMachine2;
 
 public interface ImageDataManager {
-    StateMachine2<TemplateState, TemplateEvent, ImageDataVO> getStateMachine();
+    StateMachine2<TemplateState, TemplateEvent, VMTemplateVO> getStateMachine();
 
 }

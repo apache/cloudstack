@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -116,7 +117,6 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.Swift;
 import com.cloud.storage.SwiftVO;
@@ -2223,20 +2223,22 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
 		User caller = _accountMgr.getActiveUser(UserContext.current()
 				.getCallerUserId());
-        if (forceDestroyStorage) {
-            // put local storage into mainenance mode, will set all the VMs on
-            // this local storage into stopped state
-			StoragePool storagePool = _storageMgr.findLocalStorageOnHost(host
+
+		if (forceDestroyStorage) {
+			// put local storage into mainenance mode, will set all the VMs on
+			// this local storage into stopped state
+		    StoragePoolVO storagePool = _storageMgr.findLocalStorageOnHost(host
 					.getId());
             if (storagePool != null) {
 				if (storagePool.getStatus() == StoragePoolStatus.Up
 						|| storagePool.getStatus() == StoragePoolStatus.ErrorInMaintenance) {
-                    try {
-						storagePool = _storageSvr
+					try {
+						StoragePool pool = _storageSvr
 								.preparePrimaryStorageForMaintenance(storagePool
 										.getId());
-                        if (storagePool == null) {
-                            s_logger.debug("Failed to set primary storage into maintenance mode");
+						if (pool == null) {
+							s_logger.debug("Failed to set primary storage into maintenance mode");
+
 							throw new UnableDeleteHostException(
 									"Failed to set primary storage into maintenance mode");
                         }

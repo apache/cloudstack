@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -57,10 +58,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
@@ -499,28 +497,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         }
         
         // Add the size for the templateForVmCreation if its not already present
-        if ((templateForVmCreation != null) && !tmpinstalled) {
-            // If the template that was passed into this allocator is not installed in the storage pool,
-            // add 3 * (template size on secondary storage) to the running total
-            VMTemplateHostVO templateHostVO = _storageMgr.findVmTemplateHost(templateForVmCreation.getId(), pool);
-
-            if (templateHostVO == null) {
-                VMTemplateSwiftVO templateSwiftVO = _swiftMgr.findByTmpltId(templateForVmCreation.getId());
-                if (templateSwiftVO != null) {                                    
-                    long templateSize = templateSwiftVO.getPhysicalSize();
-                    if (templateSize == 0) {
-                        templateSize = templateSwiftVO.getSize();
-                    }
-                    totalAllocatedSize += (templateSize + _extraBytesPerVolume);
-                }
-            } else {
-                long templateSize = templateHostVO.getPhysicalSize();
-                if ( templateSize == 0 ){
-                    templateSize = templateHostVO.getSize();
-                }
-                totalAllocatedSize +=  (templateSize + _extraBytesPerVolume);
-            }
-        }
+        /*if ((templateForVmCreation != null) && !tmpinstalled) {
+            
+        }*/
         
         return totalAllocatedSize;
     }

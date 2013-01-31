@@ -16,10 +16,12 @@
 // under the License.
 package org.apache.cloudstack.storage.db;
 
-import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
-public interface ObjectInDataStoreDao extends GenericDao<ObjectInDataStoreVO, Long>, StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, ObjectInDataStoreVO>  {
+public interface ObjectInDataStoreDao extends GenericDao<ObjectInDataStoreVO, Long>, StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore>  {
 
 }

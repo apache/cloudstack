@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.inject.Inject;
 
@@ -28,6 +27,7 @@ import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMEntityDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
@@ -45,22 +45,18 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.org.Cluster;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.Account;
-import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -104,6 +100,8 @@ public class VMEntityManagerImpl implements VMEntityManager {
     
     @Inject
     protected StoragePoolDao _storagePoolDao;
+    @Inject
+    DataStoreManager dataStoreMgr;
     
 	@Override
 	public VMEntityVO loadVirtualMachine(String vmId) {
@@ -134,7 +132,8 @@ public class VMEntityManagerImpl implements VMEntityManager {
         List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vm.getId());
         if(!vols.isEmpty()){
             VolumeVO vol = vols.get(0);
-            StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
+            StoragePool pool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(vol.getPoolId());
+            
             if (!pool.isInMaintenance()) {
                 long rootVolDcId = pool.getDataCenterId();
                 Long rootVolPodId = pool.getPodId();

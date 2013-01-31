@@ -29,30 +29,32 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
-import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.fsm.StateObject;
 
 @Entity
 @Table(name = "object_datastore_ref")
-public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMachine.State> {
+public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMachine.State>, DataObjectInStore {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id;
 
-    @Column(name = "datastore_id")
-    private long dataStoreId;
+    @Column(name = "datastore_uuid")
+    private String dataStoreUuid;
     
     @Column(name = "datastore_role")
     @Enumerated(EnumType.STRING)
     private DataStoreRole dataStoreRole;
 
-    @Column(name = "object_id")
-    long objectId;
+    @Column(name = "object_uuid")
+    String objectUuid;
     
     @Column(name = "object_type")
     @Enumerated(EnumType.STRING)
@@ -74,6 +76,15 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     @Column(name = "local_path")
     String localDownloadPath;
+    
+    @Column (name="url")
+    private String downloadUrl;
+    
+    @Column(name="format")
+    private Storage.ImageFormat format;
+    
+    @Column(name="checksum")
+    private String checksum;
 
     @Column(name = "error_str")
     String errorString;
@@ -106,12 +117,12 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return this.id;
     }
     
-    public long getDataStoreId() {
-        return this.dataStoreId;
+    public String getDataStoreUuid() {
+        return this.dataStoreUuid;
     }
     
-    public void setDataStoreId(long id) {
-        this.dataStoreId = id;
+    public void setDataStoreUuid(String uuid) {
+        this.dataStoreUuid = uuid;
     }
     
     public DataStoreRole getDataStoreRole() {
@@ -122,12 +133,12 @@ public class ObjectInDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         this.dataStoreRole = role;
     }
     
-    public long getObjectId() {
-        return this.objectId;
+    public String getObjectUuid() {
+        return this.objectUuid;
     }
     
-    public void setObjectId(long id) {
-        this.objectId = id;
+    public void setObjectUuid(String uuid) {
+        this.objectUuid = uuid;
     }
     
     public DataObjectType getObjectType() {

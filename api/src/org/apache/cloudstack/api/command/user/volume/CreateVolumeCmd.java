@@ -153,7 +153,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException{
 
-        Volume volume = _storageService.allocVolume(this);
+        Volume volume = this._volumeService.allocVolume(this);
         if (volume != null) {
             this.setEntityId(volume.getId());
             this.setEntityUuid(volume.getUuid());
@@ -165,7 +165,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Volume Id: "+getEntityId()+((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId()));
-        Volume volume = _storageService.createVolume(this);
+        Volume volume = _volumeService.createVolume(this);
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
             //FIXME - have to be moved to ApiResponseHelper

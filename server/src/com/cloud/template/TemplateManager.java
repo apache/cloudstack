@@ -18,16 +18,19 @@ package com.cloud.template;
 
 import java.util.List;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
 import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.utils.Pair;
 
 /**
  * TemplateManager manages the templates stored on secondary storage. It is responsible for creating private/public templates.
@@ -90,5 +93,28 @@ public interface TemplateManager extends TemplateService{
     boolean templateIsDeleteable(VMTemplateHostVO templateHostRef);
 
     VMTemplateHostVO prepareISOForCreate(VMTemplateVO template, StoragePool pool);
+
+
+    VMTemplateHostVO findVmTemplateHost(long templateId,
+            StoragePool pool);
+
+    Pair<String, String> getAbsoluteIsoPath(long templateId, long dataCenterId);
+
+    String getSecondaryStorageURL(long zoneId);
+
+    HostVO getSecondaryStorageHost(long zoneId, long tmpltId);
+
+    VMTemplateHostVO getTemplateHostRef(long zoneId, long tmpltId,
+            boolean readyOnly);
+
+    HostVO getSecondaryStorageHost(long zoneId);
+
+    List<HostVO> getSecondaryStorageHosts(long zoneId);
+
+    Long getTemplateSize(long templateId, long zoneId);
+
+    DataStore getImageStore(String storeUuid, long zoneId);
+
+    String getChecksum(Long hostId, String templatePath);
 
 }

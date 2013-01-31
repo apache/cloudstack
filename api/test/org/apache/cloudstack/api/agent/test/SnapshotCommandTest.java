@@ -115,16 +115,16 @@ public class SnapshotCommandTest {
         }
 
 		@Override
-		public String getStorageProvider() {
+		public Long getStorageProviderId() {
 			// TODO Auto-generated method stub
 			return null;
 		}
 
-		@Override
-		public String getStorageType() {
-			// TODO Auto-generated method stub
-			return null;
-		};
+        @Override
+        public boolean isInMaintenance() {
+            // TODO Auto-generated method stub
+            return false;
+        };
     };
 
     SnapshotCommand ssc = new SnapshotCommand(pool,

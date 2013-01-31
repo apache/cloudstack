@@ -67,6 +67,10 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.CHECKSUM, type=CommandType.STRING, description="the MD5 checksum value of this volume")
     private String checksum;
+    
+    @Parameter(name=ApiConstants.IMAGE_STORE_UUID, type=CommandType.UUID,
+            description="Image store uuid")
+    private String imageStoreUuid;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -99,6 +103,10 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
     public String getChecksum() {
         return checksum;
     }
+    
+    public String getImageStoreUuid() {
+        return this.imageStoreUuid;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -110,7 +118,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
             ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
 
-            Volume volume = _storageService.uploadVolume(this);
+            Volume volume = _volumeService.uploadVolume(this);
             if (volume != null){
                 VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
                 response.setResponseName(getCommandName());

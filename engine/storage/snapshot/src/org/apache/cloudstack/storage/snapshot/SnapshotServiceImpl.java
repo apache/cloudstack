@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.snapshot;
 
 import org.apache.cloudstack.engine.cloud.entity.api.SnapshotEntity;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.springframework.stereotype.Component;
 
 @Component

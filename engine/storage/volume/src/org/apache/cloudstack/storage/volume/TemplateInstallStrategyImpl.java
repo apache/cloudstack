@@ -20,23 +20,15 @@ package org.apache.cloudstack.storage.volume;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
-import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
-import org.apache.cloudstack.storage.image.ImageDataFactory;
-import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.motion.DataMotionService;
 import org.apache.cloudstack.storage.volume.VolumeServiceImpl.CreateBaseImageResult;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
 
 @Component
 public class TemplateInstallStrategyImpl implements TemplateInstallStrategy {
@@ -50,7 +42,7 @@ public class TemplateInstallStrategyImpl implements TemplateInstallStrategy {
     ImageDataFactory imageFactory;
     protected long waitingTime = 1800; // half an hour
     protected long waitingRetries = 10;
-
+/*
     protected TemplateInfo waitingForTemplateDownload(TemplateInfo template,
             PrimaryDataStore dataStore) {
         long retries = this.waitingRetries;
@@ -106,8 +98,8 @@ public class TemplateInstallStrategyImpl implements TemplateInstallStrategy {
         boolean freshNewTemplate = false;
         if (obj == null) {
             try {
-                /*templateOnPrimaryStoreObj = objectInDataStoreMgr.create(
-                        template, store);*/
+                templateOnPrimaryStoreObj = objectInDataStoreMgr.create(
+                        template, store);
                 freshNewTemplate = true;
             } catch (Throwable e) {
                 obj = objectInDataStoreMgr.findObject(template.getId(),
@@ -264,13 +256,10 @@ public class TemplateInstallStrategyImpl implements TemplateInstallStrategy {
             res.setResult(result.getResult());
             context.getParentCallback().complete(res);
         }
-        ObjectInDataStoreVO obj = objectInDataStoreMgr.findObject(
-                templateOnPrimaryStoreObj.getId(), templateOnPrimaryStoreObj
-                        .getType(), templateOnPrimaryStoreObj.getDataStore()
-                        .getId(), templateOnPrimaryStoreObj.getDataStore()
-                        .getRole());
+        DataObjectInStore obj = objectInDataStoreMgr.findObject(
+                templateOnPrimaryStoreObj, templateOnPrimaryStoreObj.getDataStore());
 
-        obj.setInstallPath(result.getPath());
+
         CreateBaseImageResult res = new CreateBaseImageResult(
                 templateOnPrimaryStoreObj);
         try {
@@ -288,6 +277,12 @@ public class TemplateInstallStrategyImpl implements TemplateInstallStrategy {
             context.getParentCallback().complete(res);
         }
         context.getParentCallback().complete(res);
+        return null;
+    }*/
+    @Override
+    public Void installAsync(TemplateInfo template, PrimaryDataStore store,
+            AsyncCompletionCallback<CreateBaseImageResult> callback) {
+        // TODO Auto-generated method stub
         return null;
     }
 

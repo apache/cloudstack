@@ -16,8 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
-import org.apache.cloudstack.storage.image.TemplateInfo;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStoreInfo;
 
 public class TemplateTO {

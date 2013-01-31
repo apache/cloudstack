@@ -16,19 +16,23 @@
 // under the License.
 package org.apache.cloudstack.storage.volume;
 
+import java.util.Date;
+
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
-import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
-import org.apache.cloudstack.storage.volume.db.VolumeDao2;
-import org.apache.cloudstack.storage.volume.db.VolumeVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -38,17 +42,16 @@ import com.cloud.utils.storage.encoding.EncodingType;
 public class VolumeObject implements VolumeInfo {
     private static final Logger s_logger = Logger.getLogger(VolumeObject.class);
     protected VolumeVO volumeVO;
-    private StateMachine2<Volume.State, Volume.Event, VolumeVO> _volStateMachine;
+    private StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected DataStore dataStore;
     @Inject
-    VolumeDao2 volumeDao;
-    @Inject
-    VolumeManager volumeMgr;
+    VolumeDao volumeDao;
     @Inject
     ObjectInDataStoreManager ojbectInStoreMgr;
+    private Object payload;
 
     protected VolumeObject() {
-      
+        _volStateMachine = Volume.State.getStateMachine();
     }
     
     protected void configure(DataStore dataStore, VolumeVO volumeVO) {
@@ -88,12 +91,11 @@ public class VolumeObject implements VolumeInfo {
     public long getVolumeId() {
         return volumeVO.getId();
     }
-
     public boolean stateTransit(Volume.Event event) {
         boolean result = false;
-        _volStateMachine = volumeMgr.getStateMachine();
         try {
             result = _volStateMachine.transitTo(volumeVO, event, null, volumeDao);
+            volumeVO = volumeDao.findById(volumeVO.getId());
         } catch (NoTransitionException e) {
             String errorMessage = "Failed to transit volume: " + this.getVolumeId() + ", due to: " + e.toString();
             s_logger.debug(errorMessage);
@@ -122,7 +124,7 @@ public class VolumeObject implements VolumeInfo {
         if (this.dataStore == null) {
             throw new CloudRuntimeException("datastore must be set before using this object");
         }
-        ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(this.volumeVO.getId(), DataObjectType.VOLUME, this.dataStore.getId(), this.dataStore.getRole());
+        DataObjectInStore obj = ojbectInStoreMgr.findObject(this.volumeVO.getUuid(), DataObjectType.VOLUME, this.dataStore.getUuid(), this.dataStore.getRole());
         if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
             return this.dataStore.getUri() + 
                     "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + 
@@ -144,5 +146,168 @@ public class VolumeObject implements VolumeInfo {
     public DiskFormat getFormat() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public void processEvent(
+            ObjectInDataStoreStateMachine.Event event) {
+        if (this.dataStore == null) {
+            return;
+        }
+        try {
+            Volume.Event volEvent = null;
+            if (this.dataStore.getRole() == DataStoreRole.Image) {
+                ojbectInStoreMgr.update(this, event);
+                if (event == ObjectInDataStoreStateMachine.Event.CreateRequested) {
+                    volEvent = Volume.Event.UploadRequested;
+                } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
+                    volEvent = Volume.Event.CopySucceeded;
+                } else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
+                    volEvent = Volume.Event.CopyFailed;
+                }
+            } else {
+                if (event == ObjectInDataStoreStateMachine.Event.CreateRequested ||
+                        event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {
+                    volEvent = Volume.Event.CreateRequested;
+                } else if (event == ObjectInDataStoreStateMachine.Event.CopyingRequested) {
+                    volEvent = Volume.Event.CopyRequested;
+                }
+            }
+            
+            if (event == ObjectInDataStoreStateMachine.Event.DestroyRequested) {
+                volEvent = Volume.Event.DestroyRequested;
+            } else if (event == ObjectInDataStoreStateMachine.Event.ExpungeRequested) {
+                volEvent = Volume.Event.ExpungingRequested;
+            } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
+                volEvent = Volume.Event.OperationSucceeded;
+            } else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
+                volEvent = Volume.Event.OperationFailed;
+            }
+            this.stateTransit(volEvent);
+        } catch (Exception e) {
+            s_logger.debug("Failed to update state", e);
+            throw new CloudRuntimeException("Failed to update state:" + e.toString());
+        }
+
+    }
+
+    @Override
+    public String getName() {
+        return this.volumeVO.getName();
+    }
+
+    @Override
+    public Long getInstanceId() {
+        return this.volumeVO.getInstanceId();
+    }
+
+    @Override
+    public String getFolder() {
+        return this.volumeVO.getFolder();
+    }
+
+    @Override
+    public String getPath() {
+        return this.volumeVO.getPath();
+    }
+
+    @Override
+    public Long getPodId() {
+        return this.volumeVO.getPodId();
+    }
+
+    @Override
+    public long getDataCenterId() {
+        return this.volumeVO.getDataCenterId();
+    }
+
+    @Override
+    public Type getVolumeType() {
+        return this.volumeVO.getVolumeType();
+    }
+
+    @Override
+    public Long getPoolId() {
+        return this.volumeVO.getPoolId();
+    }
+
+    @Override
+    public Date getAttached() {
+        return this.volumeVO.getAttached();
+    }
+
+    @Override
+    public Long getDeviceId() {
+        return this.volumeVO.getDeviceId();
+    }
+
+    @Override
+    public Date getCreated() {
+        return this.volumeVO.getCreated();
+    }
+
+    @Override
+    public long getDiskOfferingId() {
+        return this.volumeVO.getDiskOfferingId();
+    }
+
+    @Override
+    public String getChainInfo() {
+        return this.volumeVO.getChainInfo();
+    }
+
+    @Override
+    public boolean isRecreatable() {
+        return this.volumeVO.isRecreatable();
+    }
+
+    @Override
+    public long getUpdatedCount() {
+        return this.volumeVO.getUpdatedCount();
+    }
+
+    @Override
+    public void incrUpdatedCount() {
+        this.volumeVO.incrUpdatedCount();
+    }
+
+    @Override
+    public Date getUpdated() {
+        return this.volumeVO.getUpdated();
+    }
+
+    @Override
+    public String getReservationId() {
+        return this.volumeVO.getReservationId();
+    }
+
+    @Override
+    public void setReservationId(String reserv) {
+        this.volumeVO.setReservationId(reserv);
+    }
+
+    @Override
+    public long getAccountId() {
+        return this.volumeVO.getAccountId();
+    }
+
+    @Override
+    public long getDomainId() {
+        return this.volumeVO.getDomainId();
+    }
+
+    @Override
+    public Long getTemplateId() {
+        return this.volumeVO.getTemplateId();
+    }
+
+    @Override
+    public void addPayload(Object data) {
+        this.payload = data;
+    }
+
+    @Override
+    public Object getpayload() {
+       return this.payload;
     }
 }

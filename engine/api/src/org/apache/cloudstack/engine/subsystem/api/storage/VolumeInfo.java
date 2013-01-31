@@ -18,6 +18,10 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-public interface VolumeInfo extends DataObject {
+import com.cloud.storage.Volume;
+
+public interface VolumeInfo extends DataObject, Volume {
 	public boolean isAttachedVM();
+	public void addPayload(Object data);
+	public Object getpayload();
 }

@@ -36,6 +36,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 
+
 @SuppressWarnings("rawtypes")
 @APICommand(name = "createStoragePool", description="Creates a storage pool.", responseObject=StoragePoolResponse.class)
 public class CreateStoragePoolCmd extends BaseCmd {
@@ -70,6 +71,14 @@ public class CreateStoragePoolCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
             required=true, description="the Zone ID for the storage pool")
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.PROVIDER, type=CommandType.UUID,
+            required=false, description="the storage provider uuid")
+    private String storageProviderUuid;
+    
+    @Parameter(name=ApiConstants.SCOPE, type=CommandType.STRING,
+            required=false, description="the scope of the storage: cluster or zone")
+    private String scope;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -101,6 +110,14 @@ public class CreateStoragePoolCmd extends BaseCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+    
+    public String getStorageProviderUuid() {
+        return this.storageProviderUuid;
+    }
+    
+    public String getScope() {
+       return this.scope;
     }
 
     /////////////////////////////////////////////////////

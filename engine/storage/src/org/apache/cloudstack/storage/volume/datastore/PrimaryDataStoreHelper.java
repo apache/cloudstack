@@ -23,40 +23,38 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
-import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class PrimaryDataStoreHelper {
     @Inject
     private PrimaryDataStoreDao dataStoreDao;
-    public PrimaryDataStoreVO createPrimaryDataStore(Map<String, String> params) {
-        PrimaryDataStoreVO dataStoreVO = dataStoreDao.findPoolByUUID(params.get("uuid"));
+    public StoragePoolVO createPrimaryDataStore(Map<String, Object> params) {
+        StoragePoolVO dataStoreVO = dataStoreDao.findPoolByUUID((String)params.get("uuid"));
         if (dataStoreVO != null) {
             throw new CloudRuntimeException("duplicate uuid: " + params.get("uuid"));
         }
         
-        dataStoreVO = new PrimaryDataStoreVO();
-        dataStoreVO.setStorageProviderId(Long.parseLong(params.get("providerId")));
-        dataStoreVO.setHostAddress(params.get("server"));
-        dataStoreVO.setPath(params.get("path"));
-        dataStoreVO.setPoolType(params.get("protocol"));
-        dataStoreVO.setPort(Integer.parseInt(params.get("port")));
-        dataStoreVO.setName(params.get("name"));
-        dataStoreVO.setUuid(params.get("uuid"));
+        dataStoreVO = new StoragePoolVO();
+        dataStoreVO.setStorageProviderId(Long.parseLong((String)params.get("providerId")));
+        dataStoreVO.setHostAddress((String)params.get("server"));
+        dataStoreVO.setPath((String)params.get("path"));
+        dataStoreVO.setPoolType((StoragePoolType)params.get("protocol"));
+        dataStoreVO.setPort(Integer.parseInt((String)params.get("port")));
+        dataStoreVO.setName((String)params.get("name"));
+        dataStoreVO.setUuid((String)params.get("uuid"));
         dataStoreVO = dataStoreDao.persist(dataStoreVO);
         return dataStoreVO;
     }
     
     public boolean deletePrimaryDataStore(long id) {
-        PrimaryDataStoreVO dataStoreVO = dataStoreDao.findById(id);
+        StoragePoolVO dataStoreVO = dataStoreDao.findById(id);
         if (dataStoreVO == null) {
             throw new CloudRuntimeException("can't find store: " + id);
         }
