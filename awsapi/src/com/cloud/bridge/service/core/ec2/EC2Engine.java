@@ -310,7 +310,7 @@ public class EC2Engine {
 				throw new EC2ServiceException(ClientError.InvalidGroup_NotFound, "Cannot find matching ruleid.");
 
 			CloudStackInfoResponse resp = getApi().revokeSecurityGroupIngress(ruleId);
-			if (resp != null && resp.getId() != null) {
+            if (resp != null) {
 				return resp.getSuccess();
 			}
 			return false;
@@ -341,7 +341,7 @@ public class EC2Engine {
 					pair.setKeyValue(group.getAccount(), group.getName());
 					secGroupList.add(pair);
 				}
-				CloudStackSecurityGroupIngress resp = null;
+                CloudStackSecurityGroup resp = null;
 				if (ipPerm.getProtocol().equalsIgnoreCase("icmp")) {
 					resp = getApi().authorizeSecurityGroupIngress(null, constructList(ipPerm.getIpRangeSet()), null, null, 
 							ipPerm.getIcmpCode(), ipPerm.getIcmpType(), ipPerm.getProtocol(), null, 
@@ -351,10 +351,13 @@ public class EC2Engine {
 							ipPerm.getToPort().longValue(), null, null, ipPerm.getProtocol(), null, request.getName(), 
 							ipPerm.getFromPort().longValue(), secGroupList);
 				}
-				if (resp != null && resp.getRuleId() != null) {
-					return true;
-				}
-				return false;
+                if (resp != null ){
+                    List<CloudStackIngressRule> ingressRules = resp.getIngressRules();
+                    for (CloudStackIngressRule ingressRule : ingressRules)
+                        if (ingressRule.getRuleId() == null) return false;
+                } else {
+                    return false;
+                }
 			}
 		} catch(Exception e) {
 			logger.error( "EC2 AuthorizeSecurityGroupIngress - ", e);
