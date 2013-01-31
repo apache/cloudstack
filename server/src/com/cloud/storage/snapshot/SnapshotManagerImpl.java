@@ -48,6 +48,7 @@ import com.cloud.storage.*;
 import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.*;
+import com.cloud.storage.listener.SnapshotStateListener;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
@@ -1424,6 +1425,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         s_logger.info("Snapshot Manager is configured.");
 
         _snapshotFsm = Snapshot.State.getStateMachine();
+        _snapshotFsm.registerListener(new SnapshotStateListener());
 
         return true;
     }
