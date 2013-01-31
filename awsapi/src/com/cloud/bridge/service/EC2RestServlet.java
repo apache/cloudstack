@@ -762,11 +762,13 @@ public class EC2RestServlet extends HttpServlet {
 		    else break;
 
             String[] fromPort = request.getParameterValues( "IpPermissions." + nCount + ".FromPort" );
-		    if (null != fromPort && 0 < fromPort.length) perm.setProtocol( fromPort[0] );
+            if ( null != fromPort && 0 < fromPort.length)
+                perm.setFromPort( Integer.parseInt( fromPort[0]));
 
             String[] toPort = request.getParameterValues( "IpPermissions." + nCount + ".ToPort" );
-		    if (null != toPort && 0 < toPort.length) perm.setProtocol( toPort[0] );
-		    		    
+            if ( null != toPort && 0 < toPort.length)
+                perm.setToPort( Integer.parseInt( toPort[0]));
+
             // -> list: IpPermissions.n.IpRanges.m.CidrIp
 			int mCount = 1;
 	        do 
