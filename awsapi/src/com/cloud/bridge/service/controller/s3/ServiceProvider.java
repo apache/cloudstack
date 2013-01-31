@@ -31,11 +31,13 @@ import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.axis2.AxisFault;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
+import org.springframework.stereotype.Component;
 
 import com.amazon.ec2.AmazonEC2SkeletonInterface;
 import com.amazon.s3.AmazonS3SkeletonInterface;
@@ -56,10 +58,12 @@ import com.cloud.bridge.util.ConfigurationHelper;
 import com.cloud.bridge.util.DateHelper;
 import com.cloud.bridge.util.NetHelper;
 import com.cloud.bridge.util.OrderedPair;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 
-public class ServiceProvider {
+@Component
+public class ServiceProvider extends ManagerBase {
     protected final static Logger logger = Logger.getLogger(ServiceProvider.class);
     @Inject MHostDao mhostDao;
     @Inject SHostDao shostDao;
@@ -77,8 +81,8 @@ public class ServiceProvider {
     private String serviceEndpoint = null;
     private String multipartDir = null;          // illegal bucket name used as a folder for storing multiparts
     private String masterDomain = ".s3.amazonaws.com";
-    private final S3Engine engine;
-    private EC2Engine EC2_engine = null;
+    @Inject private S3Engine engine;
+    @Inject private EC2Engine EC2_engine;
 
     // -> cache Bucket Policies here so we don't have to load from db on every access
     private final Map<String,S3BucketPolicy> policyMap = new HashMap<String,S3BucketPolicy>();
@@ -87,26 +91,26 @@ public class ServiceProvider {
         // register service implementation object
         Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
         txn.close();
-        engine = new S3Engine();
-        EC2_engine = new EC2Engine();
         serviceMap.put(AmazonS3SkeletonInterface.class, new S3SerializableServiceImplementation(engine));
         serviceMap.put(AmazonEC2SkeletonInterface.class, new EC2SoapServiceImpl(EC2_engine));
     }
 
     public synchronized static ServiceProvider getInstance() {
-        if(instance == null) 
-        {
-            try {
-                instance = new ServiceProvider();
-                instance.initialize();
-            } catch(Throwable e) {
-                logger.error("Unexpected exception " + e.getMessage(), e);
-            } finally {
-            }
-        }
         return instance;
     }
 
+    @PostConstruct
+    void initComponent() {
+    	instance = this;
+    }
+    
+	public boolean configure(String name, Map<String, Object> params)
+			throws ConfigurationException {
+		
+		initialize();
+		return true;
+	}
+    
     public long getManagementHostId() {
         // we want to limit mhost within its own session, id of the value will be returned 
         long mhostId = 0;

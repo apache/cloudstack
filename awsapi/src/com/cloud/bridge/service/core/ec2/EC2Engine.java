@@ -26,13 +26,16 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
 import com.cloud.bridge.model.CloudStackServiceOfferingVO;
@@ -69,12 +72,14 @@ import com.cloud.stack.models.CloudStackUser;
 import com.cloud.stack.models.CloudStackUserVm;
 import com.cloud.stack.models.CloudStackVolume;
 import com.cloud.stack.models.CloudStackZone;
+import com.cloud.utils.component.ManagerBase;
 
 /**
  * EC2Engine processes the ec2 commands and calls their cloudstack analogs
  *
  */
-public class EC2Engine {
+@Component
+public class EC2Engine extends ManagerBase {
     protected final static Logger logger = Logger.getLogger(EC2Engine.class);
     String managementServer = null;
     String cloudAPIPort = null;
@@ -82,13 +87,27 @@ public class EC2Engine {
     @Inject CloudStackSvcOfferingDao scvoDao;
     @Inject OfferingDao ofDao;
     @Inject CloudStackAccountDao accDao;
+    
     private CloudStackApi _eng = null;
 
     private CloudStackAccount currentAccount = null;
 
     public EC2Engine() throws IOException {
-        loadConfigValues();
     }
+    
+	@Override
+	public boolean configure(String name, Map<String, Object> params)
+			throws ConfigurationException {
+		
+		try {
+			loadConfigValues();
+		} catch(IOException e) {
+			logger.error("EC2Engine Configuration failure", e);
+			throw new ConfigurationException("EC2Engine configuration failure");
+		}
+        return true;
+	}
+
 
     /**
      * Which management server to we talk to?  
@@ -2457,5 +2476,4 @@ public class EC2Engine {
         }
         return resourceTags;
     }
-
 }

@@ -59,6 +59,7 @@ import org.apache.axis2.databinding.utils.writer.MTOMAwareXMLSerializer;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
 import com.amazon.ec2.AllocateAddressResponse;
 import com.amazon.ec2.AssociateAddressResponse;
@@ -152,9 +153,6 @@ public class EC2RestServlet extends HttpServlet {
     @Inject UserCredentialsDaoImpl ucDao;
     @Inject OfferingDaoImpl ofDao;
 
-    static UserCredentialsDaoImpl s_ucDao;
-    static OfferingDaoImpl s_ofDao;
-    
     public static final Logger logger = Logger.getLogger(EC2RestServlet.class);
 
     private final OMFactory factory = OMAbstractFactory.getOMFactory();
@@ -170,33 +168,15 @@ public class EC2RestServlet extends HttpServlet {
     public EC2RestServlet() {
     }
 
-    @PostConstruct
-    void initComponent() {  
-        // Servlet injection does not always work for servlet container
-        // We use a hacking here to initialize static variables at Spring wiring time
-        if(ucDao != null) {
-            s_ucDao = ucDao;
-        } else {
-            ucDao = s_ucDao;
-        }
-        
-        if(ofDao != null) {
-            s_ofDao = ofDao;
-        } else {
-            ofDao = s_ofDao;
-        }
-        
-    }
-    
-    
     /**
      * We build the path to where the keystore holding the WS-Security X509 certificates
      * are stored.
      */
     @Override
     public void init( ServletConfig config ) throws ServletException {
-        initComponent();
-        File propertiesFile = ConfigurationHelper.findConfigurationFile("ec2-service.properties");
+    	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
+
+    	File propertiesFile = ConfigurationHelper.findConfigurationFile("ec2-service.properties");
         Properties EC2Prop = null;
 
         if (null != propertiesFile) {

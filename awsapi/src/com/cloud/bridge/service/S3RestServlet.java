@@ -37,6 +37,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.axis2.AxisFault;
 import org.apache.log4j.Logger;
+import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -113,6 +114,8 @@ public class S3RestServlet extends HttpServlet {
     @Override
     public void init( ServletConfig config ) throws ServletException {
         try{
+        	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
+       	
             ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
             // check if API is enabled
             String value = csDao.getConfigValue(ENABLE_S3_API);

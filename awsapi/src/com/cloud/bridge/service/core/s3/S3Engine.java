@@ -33,11 +33,13 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.json.simple.parser.ParseException;
+import org.springframework.stereotype.Component;
 
 import com.cloud.bridge.io.S3CAStorBucketAdapter;
 import com.cloud.bridge.io.S3FileSystemBucketAdapter;
@@ -88,19 +90,24 @@ import com.cloud.utils.db.Transaction;
 /**
  * The CRUD control actions to be invoked from S3BucketAction or S3ObjectAction.
  */
+@Component
 public class S3Engine {
     protected final static Logger logger = Logger.getLogger(S3Engine.class);
     @Inject SHostDao shostDao;
     @Inject MHostDao mhostDao;
-    @Inject static BucketPolicyDao bPolicy;
+    @Inject BucketPolicyDao bPolicy;
     @Inject BucketPolicyDao bPolicyDao;
     @Inject SBucketDao bucketDao;  
     @Inject SAclDao aclDao;
-    @Inject static SAclDao saclDao;
+    @Inject SAclDao saclDao;
     @Inject SObjectDao objectDao;
     @Inject SObjectItemDao itemDao;
     @Inject SMetaDao metaDao;
     @Inject MHostMountDao mountDao;
+
+    static SAclDao s_saclDao;
+    static BucketPolicyDao s_bPolicy;
+    
     private final int LOCK_ACQUIRING_TIMEOUT_SECONDS = 10;		// ten seconds
 
     private final Map<Integer, S3BucketAdapter> bucketAdapters = new HashMap<Integer, S3BucketAdapter>();
@@ -110,6 +117,11 @@ public class S3Engine {
         bucketAdapters.put(SHost.STORAGE_HOST_TYPE_CASTOR, new S3CAStorBucketAdapter());
     }
 
+    @PostConstruct
+    void init() {
+    	s_saclDao = saclDao;
+    	s_bPolicy = bPolicy;
+    }
 
     /**
      * Return a S3CopyObjectResponse which represents an object being copied from source
@@ -1741,13 +1753,13 @@ public class S3Engine {
         if ( 0 == userId.length())
         {
             // Is an anonymous principal ACL set for this <target, targetId>?
-            if (hasPermission( saclDao.listGrants( target, targetId, "A" ), requestedPermission )) return;
+            if (hasPermission( s_saclDao.listGrants( target, targetId, "A" ), requestedPermission )) return;
         }
         else
         {    	
-            if (hasPermission( saclDao.listGrants( target, targetId, userId ), requestedPermission )) return;
+            if (hasPermission( s_saclDao.listGrants( target, targetId, userId ), requestedPermission )) return;
             // Or alternatively is there is any principal authenticated ACL set for this <target, targetId>?
-            if (hasPermission( saclDao.listGrants( target, targetId, "*" ), requestedPermission )) return;
+            if (hasPermission( s_saclDao.listGrants( target, targetId, "*" ), requestedPermission )) return;
         }
         // No privileges implies that no access is allowed	in the case of an anonymous user
         throw new PermissionDeniedException( "Access Denied - ACLs do not give user the required permission" );
@@ -1771,7 +1783,7 @@ public class S3Engine {
             // -> do we have to load it from the database (any other value means there is no policy)?
             if (-1 == result.getSecond().intValue())
             {
-                BucketPolicyVO policyvo = bPolicy.getByName(context.getBucketName());
+                BucketPolicyVO policyvo = s_bPolicy.getByName(context.getBucketName());
                 String policyInJson = null;
                 if (null != policyvo)
                     policyInJson = policyvo.getPolicy();

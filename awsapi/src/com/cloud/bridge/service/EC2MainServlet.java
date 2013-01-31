@@ -35,6 +35,8 @@ import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
 import com.cloud.bridge.persist.dao.CloudStackConfigurationDao;
 import com.cloud.bridge.util.ConfigurationHelper;
+import com.cloud.utils.LogUtils;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
 
 @Component("EC2MainServlet")
@@ -61,8 +63,11 @@ public class EC2MainServlet extends HttpServlet{
     @DB
     public void init( ServletConfig config ) throws ServletException {
         try{
+        	LogUtils.initLog4j("log4j-cloud.xml");
         	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
-            ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
+        	ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
+        	ComponentContext.initComponentsLifeCycle();
+        	
             // check if API is enabled
             String value = csDao.getConfigValue(ENABLE_EC2_API);
             if(value != null){
