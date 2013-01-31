@@ -74,4 +74,8 @@ public class CloudRuntimeException extends RuntimeException {
     public int getCSErrorCode() {
         return this.csErrorCode;
     }
+
+    public CloudRuntimeException(Throwable t) {
+        super(t);
+    }
 }
