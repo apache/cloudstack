@@ -884,6 +884,7 @@ dictionary = {
 'label.network.offering.name': '<fmt:message key="label.network.offering.name" />',
 'label.network.offering': '<fmt:message key="label.network.offering" />',
 'label.network.rate': '<fmt:message key="label.network.rate" />',
+'label.network.rate.megabytes': '<fmt:message key="label.network.rate.megabytes"/>',
 'label.network.read': '<fmt:message key="label.network.read" />',
 'label.network.type': '<fmt:message key="label.network.type" />',
 'label.network.write': '<fmt:message key="label.network.write" />',
