@@ -197,7 +197,6 @@
 
     <!-- Listen on 6443 instead of 8443 because tomcat6 will change 8443 to a random one when CATALINA_HOME is not /usr/share/tomcat6 -->
   	<Connector executor="tomcatThreadPool-internal" port="5443" protocol="org.apache.coyote.http11.Http11NioProtocol" SSLEnabled="true"
->>>>>>> bcfd64a... CS-15373: Awsapi port change to 7080.
                maxThreads="150" scheme="https" secure="true"
                clientAuth="false" sslProtocol="TLS" 
                keystoreType="JKS"
