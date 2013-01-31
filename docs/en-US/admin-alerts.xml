@@ -31,38 +31,5 @@
         <listitem><para>The Management Server cluster runs low on CPU, memory, or storage resources</para></listitem>
         <listitem><para>The Management Server loses heartbeat from a Host for more than 3 minutes</para></listitem>
         <listitem><para>The Host cluster runs low on CPU, memory, or storage resources</para></listitem>
-        </itemizedlist>
-  <section id="xs-hotfix-notification">
-    <title>XenServer Hotfix Notification</title>
-    <para>The Alerts area of the Dashboard in the &PRODUCT; UI shows notifications about new
-      Citrix XenServer software updates as they become available. In this way, administrators
-      can more easily be aware and take action when a hotfix is required to keep the XenServer
-      hypervisor hosts up to date. &PRODUCT; gives notification only for hotfixes that are
-      applicable to the XenServer software version currently running on hosts within the
-      cloud. Before generating the alert, &PRODUCT; checks to be sure the hotfix has not
-      already been installed.</para>
-    <para>In addition to the alert in the Dashboard, all hotfixes available for XenServer hosts
-      in the cloud are displayed under Events, when you open the Select View dropdown and
-      choose Host Updates. You can also see the hotfixes available for a given host when
-      you're viewing the host details (Infrastructure > Hosts > click host name), where you
-      will see the Updates tab. </para>
-    <para>You can get the same information about new XenServer hotfixes by calling these API
-      commands:</para>
-    <itemizedlist>
-      <listitem>
-        <para><emphasis role="bold">listHostUpdates</emphasis>&mdash;Tells which patches have and
-          have not been applied to a given host</para>
-      </listitem>
-      <listitem>
-        <para><emphasis role="bold">listHostsWithPendingUpdates</emphasis>&mdash;Tells which hosts
-          have not received a given patch</para>
-      </listitem>
-    </itemizedlist>
-    <para>&PRODUCT; checks for new hotfixes once a week. It can be configured to check for
-      hotfixes more or less often through the global setting update.check.interval.</para>
-    <para>&PRODUCT; knows where to find the web-based Citrix feed for XenServer hotfix updates.
-      In the unlikely event that Citrix changes this URL, it can be configured through the
-      global setting xen.update.url. You can also turn off the hotfix notification feature
-      entirely using host.updates.enable.</para>
-  </section>    
+    </itemizedlist>      
 </section>
