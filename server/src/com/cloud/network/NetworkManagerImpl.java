@@ -112,7 +112,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
-import com.cloud.network.dao.PublicIpv6AddressDao;
+import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
@@ -275,7 +275,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     @Inject
     NetworkModel _networkModel;
     @Inject
-    PublicIpv6AddressDao _ipv6Dao;
+    UserIpv6AddressDao _ipv6Dao;
     @Inject
     Ipv6AddressManager _ipv6Mgr;
 
@@ -3362,7 +3362,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     	if (network.getIp6Gateway() != null) {
     		if (nic.getIp6Address() == null) {
     			ipv6 = true;
-    			PublicIpv6Address ip = _ipv6Mgr.assignDirectIp6Address(dc.getId(), vm.getOwner(), network.getId(), requestedIpv6);
+    			UserIpv6Address ip = _ipv6Mgr.assignDirectIp6Address(dc.getId(), vm.getOwner(), network.getId(), requestedIpv6);
     			Vlan vlan = _networkModel.getVlanForNetwork(network.getId());
     			if (vlan == null) {
     				s_logger.debug("Cannot find related vlan or too many vlan attached to network " + network.getId());

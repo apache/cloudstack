@@ -271,7 +271,7 @@ under the License.
         <dao name="Site2SiteCustomerGatewayDao" class="com.cloud.network.dao.Site2SiteCustomerGatewayDaoImpl" singleton="false"/>
         <dao name="Site2SiteVpnGatewayDao" class="com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl" singleton="false"/>
         <dao name="Site2SiteVpnConnectionDao" class="com.cloud.network.dao.Site2SiteVpnConnectionDaoImpl" singleton="false"/>
-        <dao name="PublicIpv6AddressDao" class="com.cloud.network.dao.PublicIpv6AddressDaoImpl" singleton="false"/>
+        <dao name="UserIpv6AddressDao" class="com.cloud.network.dao.UserIpv6AddressDaoImpl" singleton="false"/>
     </configuration-server>
     
     <awsapi-ec2server class="com.cloud.bridge.service.EC2MainServlet">

@@ -123,7 +123,7 @@ import com.cloud.network.dao.PhysicalNetworkDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDaoImpl;
 import com.cloud.network.dao.PortProfileDaoImpl;
-import com.cloud.network.dao.PublicIpv6AddressDaoImpl;
+import com.cloud.network.dao.UserIpv6AddressDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDaoImpl;
 import com.cloud.network.dao.Site2SiteVpnConnectionDaoImpl;
@@ -382,7 +382,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("Site2SiteVpnGatewayDao", Site2SiteVpnGatewayDaoImpl.class);
         addDao("Site2SiteCustomerGatewayDao", Site2SiteCustomerGatewayDaoImpl.class);
         addDao("Site2SiteVpnConnnectionDao", Site2SiteVpnConnectionDaoImpl.class);
-        addDao("PublicIpv6AddressDao", PublicIpv6AddressDaoImpl.class);
+        addDao("UserIpv6AddressDao", UserIpv6AddressDaoImpl.class);
 
         addDao("UserVmJoinDao", UserVmJoinDaoImpl.class);
         addDao("DomainRouterJoinDao", DomainRouterJoinDaoImpl.class);

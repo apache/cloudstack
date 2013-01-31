@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  * @author Sheng Yang
  *
  */
-public interface PublicIpv6Address extends ControlledEntity, Identity, InternalIdentity {
+public interface UserIpv6Address extends ControlledEntity, Identity, InternalIdentity {
     enum State {
         Allocating, // The IP Address is being propagated to other network elements and is not ready for use yet.
         Allocated, // The IP address is in used.
@@ -46,7 +46,7 @@ public interface PublicIpv6Address extends ControlledEntity, Identity, InternalI
 
     Long getPhysicalNetworkId();
 
-    void setState(PublicIpv6Address.State state);
+    void setState(UserIpv6Address.State state);
     
     String getMacAddress();
 }

@@ -32,8 +32,8 @@ import javax.persistence.Transient;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name=("public_ipv6_address"))
-public class PublicIpv6AddressVO implements PublicIpv6Address {
+@Table(name=("user_ipv6_address"))
+public class UserIpv6AddressVO implements UserIpv6Address {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -76,11 +76,11 @@ public class PublicIpv6AddressVO implements PublicIpv6Address {
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 	
-	protected PublicIpv6AddressVO() {
+	protected UserIpv6AddressVO() {
 		this.uuid = UUID.randomUUID().toString();
 	}
 
-	public PublicIpv6AddressVO(String address, long dataCenterId, String macAddress, long vlanDbId) {
+	public UserIpv6AddressVO(String address, long dataCenterId, String macAddress, long vlanDbId) {
 		this.address = address;
 		this.dataCenterId = dataCenterId;
 		this.vlanId = vlanDbId;

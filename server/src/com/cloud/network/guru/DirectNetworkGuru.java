@@ -43,9 +43,9 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PublicIpv6AddressVO;
+import com.cloud.network.UserIpv6AddressVO;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.PublicIpv6AddressDao;
+import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
@@ -76,7 +76,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     NetworkOfferingDao _networkOfferingDao;
     @Inject
-    PublicIpv6AddressDao _ipv6Dao;
+    UserIpv6AddressDao _ipv6Dao;
     @Inject
     Ipv6AddressManager _ipv6Mgr;
     

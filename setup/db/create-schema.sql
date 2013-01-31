@@ -2550,7 +2550,7 @@ INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (2,
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (3, UUID(), 'snmp','Linux CPU Idle - percentage', '1.3.6.1.4.1.2021.11.11.0', now());
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (100, UUID(), 'netscaler','Response Time - microseconds', 'RESPTIME', now());
 
-CREATE TABLE  `cloud`.`public_ipv6_address` (
+CREATE TABLE  `cloud`.`user_ipv6_address` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `uuid` varchar(40),
   `account_id` bigint unsigned NULL,
@@ -2566,13 +2566,13 @@ CREATE TABLE  `cloud`.`public_ipv6_address` (
   `created` datetime NULL COMMENT 'Date this ip was allocated to someone',
   PRIMARY KEY (`id`),
   UNIQUE (`ip_address`, `source_network_id`),
-  CONSTRAINT `fk_public_ipv6_address__source_network_id` FOREIGN KEY (`source_network_id`) REFERENCES `networks`(`id`),
-  CONSTRAINT `fk_public_ipv6_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
-  CONSTRAINT `fk_public_ipv6_address__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`),
-  CONSTRAINT `fk_public_ipv6_address__vlan_id` FOREIGN KEY (`vlan_id`) REFERENCES `vlan`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_public_ipv6_address__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `uc_public_ipv6_address__uuid` UNIQUE (`uuid`),
-  CONSTRAINT `fk_public_ipv6_address__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_user_ipv6_address__source_network_id` FOREIGN KEY (`source_network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_user_ipv6_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_user_ipv6_address__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`),
+  CONSTRAINT `fk_user_ipv6_address__vlan_id` FOREIGN KEY (`vlan_id`) REFERENCES `vlan`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_user_ipv6_address__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_user_ipv6_address__uuid` UNIQUE (`uuid`),
+  CONSTRAINT `fk_user_ipv6_address__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;

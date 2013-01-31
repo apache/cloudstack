@@ -56,7 +56,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.PublicIpAddress;
-import com.cloud.network.PublicIpv6Address;
+import com.cloud.network.UserIpv6Address;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.element.LoadBalancingServiceProvider;
