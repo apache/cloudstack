@@ -2286,10 +2286,12 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         boolean success = true;
         Network network = _networksDao.findById(rules.get(0).getNetworkId());
+        FirewallRuleVO.TrafficType trafficType = rules.get(0).getTrafficType();
+         List<PublicIp> publicIps = new ArrayList<PublicIp>();
 
+        if (! (rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress)) {
         // get the list of public ip's owned by the network
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
-        List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
                 PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
@@ -2300,6 +2302,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         // rules can not programmed unless IP is associated with network service provider, so run IP assoication for
         // the network so as to ensure IP is associated before applying rules (in add state)
         applyIpAssociations(network, false, continueOnError, publicIps);
+	}
 
         try {
             applier.applyRules(network, purpose, rules);
@@ -2311,8 +2314,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             success = false;
         }
 
+        if (! (rules.get(0).getPurpose() == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress) ) {
         // if all the rules configured on public IP are revoked then dis-associate IP with network service provider
         applyIpAssociations(network, true, continueOnError, publicIps);
+        }
 
         return success;
     }
@@ -2461,9 +2466,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         // apply firewall rules
-        List<FirewallRuleVO> firewallRulesToApply = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.Firewall);
-        if (!_firewallMgr.applyFirewallRules(firewallRulesToApply, false, caller)) {
-            s_logger.warn("Failed to reapply firewall rule(s) as a part of network id=" + networkId + " restart");
+        List<FirewallRuleVO> firewallIngressRulesToApply = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Ingress);
+        if (!_firewallMgr.applyFirewallRules(firewallIngressRulesToApply, false, caller)) {
+            s_logger.warn("Failed to reapply Ingress firewall rule(s) as a part of network id=" + networkId + " restart");
+            success = false;
+        }
+
+        List<FirewallRuleVO> firewallEgressRulesToApply = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Egress);
+        if (!_firewallMgr.applyFirewallRules(firewallEgressRulesToApply, false, caller)) {
+            s_logger.warn("Failed to reapply firewall Egress rule(s) as a part of network id=" + networkId + " restart");
             success = false;
         }
 
@@ -2625,6 +2636,18 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         return (UserDataServiceProvider)_networkModel.getElementImplementingProvider(passwordProvider);
+    }
+
+    @Override
+    public UserDataServiceProvider getSSHKeyResetProvider(Network network) {
+        String SSHKeyProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.UserData);
+
+        if (SSHKeyProvider == null) {
+            s_logger.debug("Network " + network + " doesn't support service " + Service.UserData.getName());
+            return null;
+        }
+
+        return (UserDataServiceProvider)_networkModel.getElementImplementingProvider(SSHKeyProvider);
     }
 
     protected boolean isSharedNetworkOfferingWithServices(long networkOfferingId) {
@@ -3016,23 +3039,43 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         // revoke all firewall rules for the network w/o applying them on the DB
-        List<FirewallRuleVO> firewallRules = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.Firewall);
+        List<FirewallRuleVO> firewallRules = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Ingress);
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Releasing " + firewallRules.size() + " firewall rules for network id=" + networkId + " as a part of shutdownNetworkRules");
+            s_logger.debug("Releasing " + firewallRules.size() + " firewall ingress rules for network id=" + networkId + " as a part of shutdownNetworkRules");
         }
 
         for (FirewallRuleVO firewallRule : firewallRules) {
-            s_logger.trace("Marking firewall rule " + firewallRule + " with Revoke state");
+            s_logger.trace("Marking firewall ingress rule " + firewallRule + " with Revoke state");
             firewallRule.setState(FirewallRule.State.Revoke);
         }
 
         try {
             if (!_firewallMgr.applyRules(firewallRules, true, false)) {
-                s_logger.warn("Failed to cleanup firewall rules as a part of shutdownNetworkRules");
+                s_logger.warn("Failed to cleanup firewall ingress rules as a part of shutdownNetworkRules");
                 success = false;
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Failed to cleanup firewall rules as a part of shutdownNetworkRules due to ", ex);
+            s_logger.warn("Failed to cleanup firewall ingress rules as a part of shutdownNetworkRules due to ", ex);
+            success = false;
+        }
+
+        List<FirewallRuleVO> firewallEgressRules = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Egress);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing " + firewallEgressRules.size() + " firewall egress rules for network id=" + networkId + " as a part of shutdownNetworkRules");
+        }
+
+        for (FirewallRuleVO firewallRule : firewallEgressRules) {
+            s_logger.trace("Marking firewall egress rule " + firewallRule + " with Revoke state");
+            firewallRule.setState(FirewallRule.State.Revoke);
+        }
+
+        try {
+            if (!_firewallMgr.applyRules(firewallEgressRules, true, false)) {
+                s_logger.warn("Failed to cleanup firewall egress rules as a part of shutdownNetworkRules");
+                success = false;
+            }
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Failed to cleanup firewall egress rules as a part of shutdownNetworkRules due to ", ex);
             success = false;
         }
 
@@ -3357,20 +3400,19 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     @Override
-    public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfileImpl<VMInstanceVO> vmProfile, boolean prepare)
+    public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean prepare)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, 
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        NetworkVO networkVO = _networksDao.findById(network.getId());
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId()); 
         DeployDestination dest = new DeployDestination(dc, null, null, host);
 
         NicProfile nic = getNicProfileForVm(network, requested, vm);
 
-        //1) allocate nic (if needed)
-        if (nic == null) {
+                //1) allocate nic (if needed) Always allocate if it is a user vm
+                if (nic == null || (vmProfile.getType() == VirtualMachine.Type.User)) {
             int deviceId = _nicDao.countNics(vm.getId());
 
             nic = allocateNic(requested, network, false, 
@@ -3385,6 +3427,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         //2) prepare nic
         if (prepare) {
+                    NetworkVO networkVO = _networksDao.findById(network.getId());
             nic = prepareNic(vmProfile, dest, context, nic.getId(), networkVO);
             s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
         }

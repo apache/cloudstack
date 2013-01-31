@@ -225,4 +225,8 @@ public class NetworkProfile implements Network {
         return vpcId;
     }
 
+    @Override
+    public void setTrafficType(TrafficType type) {
+        this.trafficType = type;
+    }
 }

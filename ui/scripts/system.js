@@ -379,9 +379,7 @@
           });
         };
        
-        //dataFns.zoneCount({});  
-				dataFns.podCount({});     //uncomment the line above and remove this line after "count" in listZones API is fixed.
-				
+        dataFns.zoneCount({});  	
       }
     },
 
@@ -9736,7 +9734,7 @@
                     args.response.success({data:{}});
                   },
                   error: function(json) {
-                    args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                    args.response.error(parseXMLHttpResponse(json));
                   }
                 });
               },

@@ -1698,6 +1698,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         } else {
            nic =  _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
         }
+        if (nic == null) {
+           return null;
+        }
         NetworkVO network = _networksDao.findById(networkId);
         Integer networkRate = getNetworkRate(network.getId(), vm.getId());
     

@@ -46,28 +46,25 @@ then
   exit 1
 fi
 fflag=
-while getopts ':F' OPTION
+eflag=
+while getopts ':FE' OPTION
 do
   case $OPTION in 
   F)    fflag=1
-                ;;
+      	  ;;
+  E) eflag=1
+	  ;;
   \?)  ;;
   esac
 done
 
-if [ -n "$fflag" ]
+if [ -n "$eflag" ]
+then
+	ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/root/firewallRule_egress.sh $*"
+elif [ -n "$fflag" ]
 then
 	ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/root/firewall_rule.sh $*"
 else
 	ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/root/firewall.sh $*"
 fi
 exit $?
-
-
-
-
-
-
-
-
-

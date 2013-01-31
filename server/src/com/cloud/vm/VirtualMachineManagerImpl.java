@@ -2454,7 +2454,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     ResourceUnavailableException, InsufficientCapacityException {
 
         s_logger.debug("Adding vm " + vm + " to network " + network + "; requested nic profile " + requested);
-        VMInstanceVO vmVO = _vmDao.findById(vm.getId());
+        VMInstanceVO vmVO;
+        if (vm.getType() == VirtualMachine.Type.User) {
+            vmVO = _userVmDao.findById(vm.getId());
+        } else {
+            vmVO = _vmDao.findById(vm.getId());
+        }
         ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
                 _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
 
@@ -2498,13 +2503,67 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-
     @Override
     public NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType) {
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(hypervisorType);
 
         NicTO nicTO = hvGuru.toNicTO(nic);
         return nicTO;
+    }
+
+    @Override
+    public boolean removeNicFromVm(VirtualMachine vm, NicVO nic) throws ConcurrentOperationException, ResourceUnavailableException {
+        VMInstanceVO vmVO = _vmDao.findById(vm.getId());
+        NetworkVO network = _networkDao.findById(nic.getNetworkId());
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
+                _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
+
+        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null, 
+                null, null, null);
+
+        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+        Host host = _hostDao.findById(vm.getHostId()); 
+        DeployDestination dest = new DeployDestination(dc, null, null, host);
+        VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
+        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
+        VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
+
+        // don't delete default NIC on a user VM
+        if (nic.isDefaultNic() && vm.getType() == VirtualMachine.Type.User ) {
+            s_logger.warn("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
+            throw new CloudRuntimeException("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
+        }
+
+        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
+                _networkModel.getNetworkRate(network.getId(), vm.getId()), 
+                _networkModel.isSecurityGroupSupportedInNetwork(network), 
+                _networkModel.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
+        
+        //1) Unplug the nic
+        if (vm.getState() == State.Running) {
+            NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
+            s_logger.debug("Un-plugging nic " + nic + " for vm " + vm + " from network " + network);
+            boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
+            if (result) {
+                s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
+            } else {
+                s_logger.warn("Failed to unplug nic for the vm " + vm + " from network " + network);
+                return false;
+            }
+        } else if (vm.getState() != State.Stopped) {
+            s_logger.warn("Unable to remove vm " + vm + " from network  " + network);
+            throw new ResourceUnavailableException("Unable to remove vm " + vm + " from network, is not in the right state",
+                    DataCenter.class, vm.getDataCenterId());
+        }
+        
+        //2) Release the nic
+        _networkMgr.releaseNic(vmProfile, nic);
+        s_logger.debug("Successfully released nic " + nic +  "for vm " + vm);
+        
+        //3) Remove the nic
+        _networkMgr.removeNic(vmProfile, nic);
+        _nicsDao.expunge(nic.getId());
+        return true;
     }
 
     @Override
@@ -2531,12 +2590,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             nic = _networkModel.getNicInNetwork(vm.getId(), network.getId());
         }
 
+        if (nic == null){
+            s_logger.warn("Could not get a nic with " + network);
+            return false;
+        }
+        
+        // don't delete default NIC on a user VM
+        if (nic.isDefaultNic() && vm.getType() == VirtualMachine.Type.User ) {
+            s_logger.warn("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
+            throw new CloudRuntimeException("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
+        }
+
         NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
                 _networkModel.getNetworkRate(network.getId(), vm.getId()), 
                 _networkModel.isSecurityGroupSupportedInNetwork(network), 
                 _networkModel.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
 
         //1) Unplug the nic
+        if (vm.getState() == State.Running) {
         NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
         s_logger.debug("Un-plugging nic for vm " + vm + " from network " + network);
         boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
@@ -2546,6 +2617,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.warn("Failed to unplug nic for the vm " + vm + " from network " + network);
             return false;
         }
+        } else if (vm.getState() != State.Stopped) {
+            s_logger.warn("Unable to remove vm " + vm + " from network  " + network);
+            throw new ResourceUnavailableException("Unable to remove vm " + vm + " from network, is not in the right state",
+                    DataCenter.class, vm.getDataCenterId());
+        }
 
         //2) Release the nic
         _networkMgr.releaseNic(vmProfile, nic);
@@ -2553,7 +2629,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         //3) Remove the nic
         _networkMgr.removeNic(vmProfile, nic);
-        return result;
+        return true;
     }
 
 }

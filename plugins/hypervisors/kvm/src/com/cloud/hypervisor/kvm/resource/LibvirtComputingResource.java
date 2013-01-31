@@ -892,7 +892,7 @@ ServerResource {
             String fname = interfaces[i].getName();
             s_logger.debug("matchPifFileInDirectory: file name '"+fname+"'");
             if (fname.startsWith("eth") || fname.startsWith("bond")
-                || fname.startsWith("vlan")) {
+                || fname.startsWith("vlan") || fname.startsWith("em")) {
                 return fname;
             }
         }

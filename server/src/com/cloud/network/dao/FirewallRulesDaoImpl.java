@@ -70,6 +70,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.and("related", AllFieldsSearch.entity().getRelated(), Op.EQ);
+        AllFieldsSearch.and("trafficType", AllFieldsSearch.entity().getTrafficType(), Op.EQ);
         AllFieldsSearch.done();
 
         NotRevokedSearch = createSearchBuilder();
@@ -163,6 +164,20 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
         return listBy(sc);
     }
+
+    @Override
+    public List<FirewallRuleVO> listByNetworkPurposeTrafficTypeAndNotRevoked(long networkId, FirewallRule.Purpose purpose, TrafficType trafficType) {
+        SearchCriteria<FirewallRuleVO> sc = NotRevokedSearch.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("state", State.Revoke);
+        if (purpose != null) {
+            sc.setParameters("purpose", purpose);
+        }
+        sc.setParameters("trafficType", trafficType);
+
+        return listBy(sc);
+    }
+
 
     @Override
     public boolean setStateToAdd(FirewallRuleVO rule) {
@@ -277,10 +292,9 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     }
 
     @Override
-    public List<FirewallRuleVO> listByNetworkPurposeTrafficTypeAndNotRevoked(long networkId, Purpose purpose, TrafficType trafficType) {
-        SearchCriteria<FirewallRuleVO> sc = NotRevokedSearch.create();
+    public List<FirewallRuleVO> listByNetworkPurposeTrafficType(long networkId, Purpose purpose, TrafficType trafficType) {
+        SearchCriteria<FirewallRuleVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);
-        sc.setParameters("state", State.Revoke);
 
         if (purpose != null) {
             sc.setParameters("purpose", purpose);
@@ -290,6 +304,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
         return listBy(sc);
     }
+
     @Override
     @DB
     public boolean remove(Long id) {

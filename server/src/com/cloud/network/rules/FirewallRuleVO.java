@@ -84,7 +84,7 @@ public class FirewallRuleVO implements FirewallRule {
     Date created;
 
     @Column(name="network_id")
-    long networkId;
+    Long networkId;
 
     @Column(name="icmp_code")
     Integer icmpCode;
@@ -203,11 +203,6 @@ public class FirewallRuleVO implements FirewallRule {
         }
         this.accountId = accountId;
         this.domainId = domainId;
-
-        if (ipAddressId == null) {
-            assert (purpose == Purpose.NetworkACL) : "ipAddressId can be null for " + Purpose.NetworkACL + " only";
-        }
-
         this.sourceIpAddressId = ipAddressId;
         this.sourcePortStart = portStart;
         this.sourcePortEnd = portEnd;

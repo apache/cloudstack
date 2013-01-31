@@ -154,6 +154,15 @@ public interface VirtualMachineManager extends Manager {
 
     /**
      * @param vm
+     * @param nic
+     * @return
+     * @throws ResourceUnavailableException 
+     * @throws ConcurrentOperationException 
+     */
+    boolean removeNicFromVm(VirtualMachine vm, NicVO nic) throws ConcurrentOperationException, ResourceUnavailableException;
+
+    /**
+     * @param vm
      * @param network
      * @param broadcastUri TODO
      * @return

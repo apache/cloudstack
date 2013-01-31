@@ -441,15 +441,11 @@ body.login {
 div.list-view table tbody td span {
   display: block;
   float: left;
-  max-width: 160px;
+  max-width: 100%;
   word-wrap: break-word;
   text-indent: 0;
   margin-left: 12px;
   line-height: 15px;
-  overflow: hidden;
-  overflow-x: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 div.list-view div.toolbar div.section-switcher div.section-select label {

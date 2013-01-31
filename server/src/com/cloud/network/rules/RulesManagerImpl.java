@@ -217,7 +217,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         try {
             _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), 
-                    rule.getProtocol(), Purpose.PortForwarding, FirewallRuleType.User);
+                    rule.getProtocol(), Purpose.PortForwarding, FirewallRuleType.User, networkId, rule.getTrafficType());
 
             Long accountId = ipAddress.getAllocatedToAccountId();
             Long domainId = ipAddress.getAllocatedInDomainId();
@@ -336,7 +336,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             throw new NetworkRuleConflictException("Can't do static nat on ip address: " + ipAddress.getAddress());
         }
 
-        _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), Purpose.StaticNat, FirewallRuleType.User);
+        _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), Purpose.StaticNat, FirewallRuleType.User,null, rule.getTrafficType() );
 
         Long networkId = ipAddress.getAssociatedWithNetworkId();
         Long accountId = ipAddress.getAllocatedToAccountId();

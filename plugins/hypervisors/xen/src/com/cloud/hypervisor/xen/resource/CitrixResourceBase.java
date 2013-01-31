@@ -54,6 +54,8 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import com.cloud.agent.api.to.*;
+import com.cloud.network.rules.FirewallRule;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 import org.w3c.dom.Document;
@@ -7195,14 +7197,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String callResult;
         Connection conn = getConnection();
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-
+        FirewallRuleTO[] allrules = cmd.getRules();
+        FirewallRule.TrafficType trafficType = allrules[0].getTrafficType();
         if (routerIp == null) {
             return new SetFirewallRulesAnswer(cmd, false, results);
         }
 
         String[][] rules = cmd.generateFwRules();
         String args = "";
-        args += routerIp + " -F ";
+        args += routerIp + " -F";
+        if (trafficType == FirewallRule.TrafficType.Egress){
+            args+= " -E";
+        }
         StringBuilder sb = new StringBuilder();
         String[] fwRules = rules[0];
         if (fwRules.length > 0) {
