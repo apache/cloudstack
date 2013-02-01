@@ -326,8 +326,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public Long getDefaultPageSize() {
-        // TODO Auto-generated method stub
-        return null;
+        return 500L;
     }
 
     /* (non-Javadoc)

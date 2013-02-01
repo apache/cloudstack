@@ -525,3 +525,9 @@ listApis=15
 
 getApiLimit=15
 resetApiLimit=1
+
+#### Region commands
+addRegion=1
+updateRegion=1
+removeRegion=1
+listRegions=15

@@ -127,4 +127,5 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
         sc.setParameters("username", username);
         return listBy(sc);
 	}
+	
 }

@@ -32,7 +32,6 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -272,4 +271,5 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
         
         return parentDomains;
     }
+    
 }

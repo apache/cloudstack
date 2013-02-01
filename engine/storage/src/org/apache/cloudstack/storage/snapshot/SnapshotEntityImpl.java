@@ -111,11 +111,6 @@ public class SnapshotEntityImpl implements SnapshotEntity {
 		return null;
 	}
 
-	@Override
-	public Status getStatus() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
 	public HypervisorType getHypervisorType() {
@@ -187,6 +182,12 @@ public class SnapshotEntityImpl implements SnapshotEntity {
 	public void updateDetail(String name, String value) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public State getState() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

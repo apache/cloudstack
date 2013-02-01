@@ -1800,6 +1800,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return sc;
     }
 
+    @Override
+    public int getRegionId(){
+    	return Transaction.s_region_id;
+    }
+
     public Integer getCount(SearchCriteria<T> sc) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {

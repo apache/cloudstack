@@ -73,4 +73,5 @@ public interface User extends OwnedBy, InternalIdentity {
 
     boolean isRegistered();
 
+    public int getRegionId();
 }

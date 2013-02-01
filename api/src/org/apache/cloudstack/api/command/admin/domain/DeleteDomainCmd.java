@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.domain;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -24,6 +26,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.region.RegionService;
 import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
@@ -47,7 +50,11 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.CLEANUP, type=CommandType.BOOLEAN, description="true if all domain resources (child domains, accounts) have to be cleaned up, false otherwise")
     private Boolean cleanup;
 
+    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
+    private Boolean propagate;
 
+    @Inject RegionService _regionService;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -60,6 +67,10 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
         return cleanup;
     }
 
+	public Boolean isPropagate() {
+		return propagate;
+	}
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -92,7 +103,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Domain Id: "+getId());
-        boolean result = _domainService.deleteDomain(id, cleanup);
+        boolean result = _regionService.deleteDomain(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

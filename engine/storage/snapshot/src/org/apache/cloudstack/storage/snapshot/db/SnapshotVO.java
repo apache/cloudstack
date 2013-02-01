@@ -29,7 +29,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Snapshot.Status;
+import com.cloud.storage.Snapshot.State;
 import com.cloud.storage.Snapshot.Type;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
@@ -68,7 +68,7 @@ public class SnapshotVO {
     @Expose
     @Column(name="status", updatable = true, nullable=false)
     @Enumerated(value=EnumType.STRING)
-    private Status status;
+    private State status;
 
     @Column(name="snapshot_type")
     short snapshotType;
@@ -126,7 +126,7 @@ public class SnapshotVO {
         this.snapshotType = snapshotType;
         this.typeDescription = typeDescription;
         this.size = size;
-        this.status = Status.Creating;
+        this.status = State.Creating;
         this.prevSnapshotId = 0;
         this.hypervisorType = hypervisorType;
         this.version = "2.2";
@@ -244,11 +244,11 @@ public class SnapshotVO {
         return removed;
     }
 
-    public Status getStatus() {
+    public State getStatus() {
         return status;
     }
 
-    public void setStatus(Status status) {
+    public void setStatus(State status) {
         this.status = status;
     }
 

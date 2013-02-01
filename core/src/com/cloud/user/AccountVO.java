@@ -28,9 +28,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="account")
@@ -68,6 +66,9 @@ public class AccountVO implements Account {
     @Column(name="default_zone_id")
     private Long defaultZoneId = null;
 
+    @Column(name="region_id")
+    private int regionId;
+    
     public AccountVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
@@ -76,14 +77,15 @@ public class AccountVO implements Account {
         this.id = id;
     	this.uuid = UUID.randomUUID().toString();
     }
-
-    public AccountVO(String accountName, long domainId, String networkDomain, short type) {
+    
+    public AccountVO(String accountName, long domainId, String networkDomain, short type, String uuid, int regionId) {
         this.accountName = accountName;
         this.domainId = domainId;
         this.networkDomain = networkDomain;
         this.type = type;
         this.state = State.enabled;
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = uuid;
+        this.regionId = regionId;
     }
 
     public void setNeedsCleanup(boolean value) {
@@ -99,7 +101,11 @@ public class AccountVO implements Account {
         return id;
     }
 
-    @Override
+    public void setId(long id) {
+		this.id = id;
+	}
+
+	@Override
     public String getAccountName() {
         return accountName;
     }
@@ -176,4 +182,12 @@ public class AccountVO implements Account {
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
+
+	public int getRegionId() {
+		return regionId;
+	}
+
+	public void setRegionId(int regionId) {
+		this.regionId = regionId;
+	}
 }

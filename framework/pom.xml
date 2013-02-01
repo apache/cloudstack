@@ -32,5 +32,6 @@
   <modules>
     <module>ipc</module>
     <module>rest</module>
+    <module>events</module>
   </modules>
 </project>

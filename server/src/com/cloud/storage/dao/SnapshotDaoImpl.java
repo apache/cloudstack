@@ -29,6 +29,8 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.Event;
+import com.cloud.storage.Snapshot.State;
 import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
@@ -39,11 +41,9 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.*;
 import com.cloud.utils.db.JoinBuilder.JoinType;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
@@ -117,7 +117,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     public List<SnapshotVO> listByHostId(Filter filter, long hostId ) {
         SearchCriteria<SnapshotVO> sc = HostIdSearch.create();
         sc.setParameters("hostId", hostId);
-        sc.setParameters("status", Snapshot.Status.BackedUp);
+        sc.setParameters("status", Snapshot.State.BackedUp);
         return listBy(sc, filter);
     }
         
@@ -153,7 +153,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         
         HostIdSearch = createSearchBuilder();
         HostIdSearch.and("hostId", HostIdSearch.entity().getSecHostId(), SearchCriteria.Op.EQ);
-        HostIdSearch.and("status", HostIdSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        HostIdSearch.and("status", HostIdSearch.entity().getState(), SearchCriteria.Op.EQ);
         HostIdSearch.done();
         
         VolumeIdTypeSearch = createSearchBuilder();
@@ -180,7 +180,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         
         StatusSearch = createSearchBuilder();
         StatusSearch.and("volumeId", StatusSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        StatusSearch.and("status", StatusSearch.entity().getStatus(), SearchCriteria.Op.IN);
+        StatusSearch.and("status", StatusSearch.entity().getState(), SearchCriteria.Op.IN);
         StatusSearch.done();
         
         CountSnapshotsByAccount = createSearchBuilder(Long.class);
@@ -190,7 +190,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         CountSnapshotsByAccount.done();
         
     	InstanceIdSearch = createSearchBuilder();
-    	InstanceIdSearch.and("status", InstanceIdSearch.entity().getStatus(), SearchCriteria.Op.IN);
+        InstanceIdSearch.and("status", InstanceIdSearch.entity().getState(), SearchCriteria.Op.IN);
     	
     	SearchBuilder<VMInstanceVO> instanceSearch = _instanceDao.createSearchBuilder();
     	instanceSearch.and("instanceId", instanceSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -282,7 +282,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     }
     
     @Override
-	public List<SnapshotVO> listByInstanceId(long instanceId, Snapshot.Status... status) {
+	public List<SnapshotVO> listByInstanceId(long instanceId, Snapshot.State... status) {
     	SearchCriteria<SnapshotVO> sc = this.InstanceIdSearch.create();
     	
     	if (status != null && status.length != 0) {
@@ -295,7 +295,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     }
     
     @Override
-    public List<SnapshotVO> listByStatus(long volumeId, Snapshot.Status... status) {
+    public List<SnapshotVO> listByStatus(long volumeId, Snapshot.State... status) {
     	SearchCriteria<SnapshotVO> sc = this.StatusSearch.create();
     	sc.setParameters("volumeId", volumeId);
     	sc.setParameters("status", (Object[])status);
@@ -317,9 +317,20 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     }
     
     @Override
-    public List<SnapshotVO> listAllByStatus(Snapshot.Status... status) {
+    public List<SnapshotVO> listAllByStatus(Snapshot.State... status) {
         SearchCriteria<SnapshotVO> sc = this.StatusSearch.create();
         sc.setParameters("status", (Object[])status);
         return listBy(sc, null);
+    }
+
+    @Override
+    public boolean updateState(State currentState, Event event, State nextState, Snapshot snapshot, Object data) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        SnapshotVO snapshotVO = (SnapshotVO)snapshot;
+        snapshotVO.setStatus(nextState);
+        super.update(snapshotVO.getId(), snapshotVO);
+        txn.commit();
+        return true;
     }
 }

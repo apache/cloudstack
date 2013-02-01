@@ -16,23 +16,13 @@
 // under the License.
 package com.cloud.storage;
 
-import java.util.Date;
-import java.util.UUID;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
-import org.apache.cloudstack.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
-import org.apache.cloudstack.api.InternalIdentity;
+
+import javax.persistence.*;
+import java.util.Date;
+import java.util.UUID;
 
 @Entity
 @Table(name="snapshots")
@@ -69,7 +59,7 @@ public class SnapshotVO implements Snapshot {
     @Expose
     @Column(name="status", updatable = true, nullable=false)
     @Enumerated(value=EnumType.STRING)
-    private Status status;
+    private State status;
 
     @Column(name="snapshot_type")
     short snapshotType;
@@ -127,7 +117,7 @@ public class SnapshotVO implements Snapshot {
         this.snapshotType = snapshotType;
         this.typeDescription = typeDescription;
         this.size = size;
-        this.status = Status.Creating;
+        this.status = State.Creating;
         this.prevSnapshotId = 0;
         this.hypervisorType = hypervisorType;
         this.version = "2.2";
@@ -254,11 +244,11 @@ public class SnapshotVO implements Snapshot {
     }
 
     @Override
-    public Status getStatus() {
+    public State getState() {
         return status;
     }
 
-    public void setStatus(Status status) {
+	public void setStatus(State status) {
         this.status = status;
     }
 

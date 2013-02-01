@@ -106,6 +106,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.uuididentity.dao.IdentityDao;
+import org.apache.cloudstack.region.RegionVO;
+import org.apache.cloudstack.region.dao.RegionDao;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 @Component
 public class ConfigurationServerImpl extends ManagerBase implements ConfigurationServer {
@@ -126,6 +130,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     @Inject private ResourceCountDao _resourceCountDao;
     @Inject private NetworkOfferingServiceMapDao _ntwkOfferingServiceMapDao;
     @Inject private IdentityDao _identityDao;
+    @Inject private RegionDao _regionDao;
 
     public ConfigurationServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
@@ -229,6 +234,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             // Create default networks
             createDefaultNetworks();
 
+            createDefaultRegion();
+            
             // Create userIpAddress ranges
 
             // Update existing vlans with networkId
@@ -276,7 +283,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
         // We should not update seed data UUID column here since this will be invoked in upgrade case as well.
         //updateUuids();
-
         // Set init to true
         _configDao.update("init", "Hidden", "true");
 
@@ -332,6 +338,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     @DB
     protected void saveUser() {
+    	//ToDo: Add regionId to default users and accounts
         // insert system account
         String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id) VALUES (1, UUID(), 'system', '1', '1')";
         Transaction txn = Transaction.currentTxn();
@@ -1263,6 +1270,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
 
         return svcProviders;
+    }
+
+    private void createDefaultRegion(){
+    	//Get Region name and URL from db.properties    	
+    	_regionDao.persist(new RegionVO(_regionDao.getRegionId(), "Local", "http://localhost:8080/client/api", "", ""));
     }
 
 }

@@ -228,25 +228,25 @@ public class TestAsyncJobManager extends TestCase {
     public void testDomain() {
         DomainDao domainDao = new DomainDaoImpl();
 
-        DomainVO domain1 = new DomainVO("d1", 2L, 1L, null);
+		DomainVO domain1 = new DomainVO("d1", 2L, 1L, null, 1);
         domainDao.create(domain1);
 
-        DomainVO domain2 = new DomainVO("d2", 2L, 1L, null);
+		DomainVO domain2 = new DomainVO("d2", 2L, 1L, null, 1);
         domainDao.create(domain2);
 
-        DomainVO domain3 = new DomainVO("d3", 2L, 1L, null);
+		DomainVO domain3 = new DomainVO("d3", 2L, 1L, null, 1);
         domainDao.create(domain3);
 
-        DomainVO domain11 = new DomainVO("d11", 2L, domain1.getId(), null);
+		DomainVO domain11 = new DomainVO("d11", 2L, domain1.getId(), null, 1);
         domainDao.create(domain11);
 
         domainDao.remove(domain11.getId());
 
-        DomainVO domain12 = new DomainVO("d12", 2L, domain1.getId(), null);
+		DomainVO domain12 = new DomainVO("d12", 2L, domain1.getId(), null, 1);
         domainDao.create(domain12);
 
         domainDao.remove(domain3.getId());
-        DomainVO domain4 = new DomainVO("d4", 2L, 1L, null);
+		DomainVO domain4 = new DomainVO("d4", 2L, 1L, null, 1);
         domainDao.create(domain4);
     }
 }

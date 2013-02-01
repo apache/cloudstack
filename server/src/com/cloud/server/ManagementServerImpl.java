@@ -28,7 +28,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +50,8 @@ import javax.naming.ConfigurationException;
 import com.cloud.storage.dao.*;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
+
+import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
@@ -139,7 +140,6 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.ConcurrentOperationException;
@@ -242,7 +242,6 @@ import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHKeysHelper;
 import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmVO;
@@ -2436,12 +2435,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId) {
-        return EventUtils.saveStartedEvent(userId, accountId, type, description, startEventId);
+        return ActionEventUtils.onStartedActionEvent(userId, accountId, type, description, startEventId);
     }
 
     @Override
     public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, long startEventId) {
-        return EventUtils.saveEvent(userId, accountId, level, type, description, startEventId);
+        return ActionEventUtils.onCompletedActionEvent(userId, accountId, level, type, description, startEventId);
     }
 
     @Override
@@ -2828,8 +2827,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             // This means its a new account, set the password using the
             // authenticator
 
-            for (Iterator<UserAuthenticator> en = _userAuthenticators.iterator(); en.hasNext();) {
-                UserAuthenticator authenticator = en.next();
+            for (UserAuthenticator  authenticator: _userAuthenticators) {
                 encodedPassword = authenticator.encode(password);
                 if (encodedPassword != null) {
                     break;

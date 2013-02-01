@@ -32,6 +32,8 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Network.State;
+import com.cloud.network.Network.Event;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -44,13 +46,10 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.*;
 import com.cloud.utils.db.JoinBuilder.JoinType;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SequenceFetcher;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
 
 @Component
@@ -567,6 +566,20 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
+    public boolean updateState(State currentState, Event event, State nextState, Network vo, Object data) {
+       // TODO: ensure this update is correct
+       Transaction txn = Transaction.currentTxn();
+       txn.start();
+
+       NetworkVO networkVo = (NetworkVO) vo;
+       networkVo.setState(nextState);
+       super.update(networkVo.getId(), networkVo);
+
+       txn.commit();
+       return true;
+    }
+
+    @Override
     public List<NetworkVO> listNetworksByAccount(long accountId, long zoneId, Network.GuestType type, boolean isSystem) {
         SearchCriteria<NetworkVO> sc = OfferingAccountNetworkSearch.create();
         sc.setJoinParameters("ntwkOfferingSearch", "isSystem", isSystem);
@@ -582,7 +595,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     public List<NetworkVO> listRedundantNetworks() {
         SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setJoinParameters("offerings", "isRedundant", true);
-
         return listBy(sc, null);
     }
 }

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.domain;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -23,10 +25,12 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.region.RegionService;
 import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
 import com.cloud.user.Account;
+import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 
 @APICommand(name = "updateDomain", description="Updates a domain with a new name", responseObject=DomainResponse.class)
@@ -48,6 +52,11 @@ public class UpdateDomainCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for the domain's networks; empty string will update domainName with NULL value")
     private String networkDomain;
 
+    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
+    private Boolean isPropagate;
+    
+    @Inject RegionService _regionService;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -64,6 +73,10 @@ public class UpdateDomainCmd extends BaseCmd {
         return networkDomain;
     }
 
+	public Boolean getIsPropagate() {
+		return isPropagate;
+	}
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -81,7 +94,8 @@ public class UpdateDomainCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Domain Id: "+getId());
-        Domain domain = _mgr.updateDomain(this);
+        Domain domain =  _regionService.updateDomain(this);
+        
         if (domain != null) {
             DomainResponse response = _responseGenerator.createDomainResponse(domain);
             response.setResponseName(getCommandName());

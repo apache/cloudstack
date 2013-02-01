@@ -35,7 +35,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -47,8 +47,8 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
+import com.cloud.network.*;
 import com.cloud.network.VpnUser.State;
-import com.cloud.network.VpnUserVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -71,15 +71,14 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.*;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
 
 @Component
@@ -280,8 +279,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                         for(VpnUserVO user : vpnUsers){
                             // VPN_USER_REMOVE event is already generated for users in Revoke state
                             if(user.getState() != VpnUser.State.Revoke){
-                                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername());
-                                _usageEventDao.persist(usageEvent);
+                                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(),
+                                        0, user.getId(), user.getUsername(), user.getClass().getName(), user.getUuid());
                             }
                         }
                         if (vpnFwRules != null) {
@@ -332,8 +331,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         }
 
         VpnUser user = _vpnUsersDao.persist(new VpnUserVO(vpnOwnerId, owner.getDomainId(), username, password));
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(), user.getUsername());
-        _usageEventDao.persist(usageEvent);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(),
+                user.getUsername(), user.getClass().getName(), user.getUuid());
         txn.commit();
         return user;
     }
@@ -349,8 +348,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         txn.start();
         user.setState(State.Revoke);
         _vpnUsersDao.update(user.getId(), user);
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername());
-        _usageEventDao.persist(usageEvent);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(),
+                user.getUsername(), user.getClass().getName(), user.getUuid());
         txn.commit();
         return true;
     }
@@ -406,8 +405,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                 List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
                 for(VpnUserVO user : vpnUsers){
                     if(user.getState() != VpnUser.State.Revoke){
-                        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(), user.getUsername());
-                        _usageEventDao.persist(usageEvent);
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0,
+                                user.getId(), user.getUsername(), user.getClass().getName(), user.getUuid());
                     }
                 }
                 txn.commit();
@@ -482,8 +481,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                     Transaction txn = Transaction.currentTxn();
                     txn.start();            		
                     _vpnUsersDao.remove(user.getId());
-                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername());
-                    _usageEventDao.persist(usageEvent);
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(),
+                            0, user.getId(), user.getUsername(), user.getClass().getName(), user.getUuid());
                     txn.commit();
                 }
                 s_logger.warn("Failed to apply vpn for user " + user.getUsername() + ", accountId=" + user.getAccountId());

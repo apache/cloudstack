@@ -141,6 +141,7 @@ DROP TABLE IF EXISTS `cloud`.`op_dc_storage_network_ip_address`;
 DROP TABLE IF EXISTS `cloud`.`cluster_vsm_map`;
 DROP TABLE IF EXISTS `cloud`.`virtual_supervisor_module`;
 DROP TABLE IF EXISTS `cloud`.`port_profile`;
+DROP TABLE IF EXISTS `cloud`.`region`;
 DROP TABLE IF EXISTS `cloud`.`s2s_customer_gateway`;
 DROP TABLE IF EXISTS `cloud`.`s2s_vpn_gateway`;
 DROP TABLE IF EXISTS `cloud`.`s2s_vpn_connection`;
@@ -708,7 +709,7 @@ CREATE TABLE `cloud`.`op_dc_vnet_alloc` (
     PRIMARY KEY (`id`),
     UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id__account_id`(`vnet`, `data_center_id`, `account_id`),
     INDEX `i_op_dc_vnet_alloc__dc_taken`(`data_center_id`, `taken`),
-    UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id`(`vnet`, `data_center_id`),
+    UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id`(`vnet`, `physical_network_id`, `data_center_id`),
 	CONSTRAINT `fk_op_dc_vnet_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
 	CONSTRAINT `fk_op_dc_vnet_alloc__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -947,6 +948,7 @@ CREATE TABLE  `cloud`.`user` (
   `timezone` varchar(30) default NULL,
   `registration_token` varchar(255) default NULL,
   `is_registered` tinyint NOT NULL DEFAULT 0 COMMENT '1: yes, 0: no',
+  `region_id` int unsigned,
   `incorrect_login_attempts` integer unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY  (`id`),
   INDEX `i_user__removed`(`removed`),
@@ -1298,6 +1300,7 @@ CREATE TABLE  `cloud`.`domain` (
   `state` char(32) NOT NULL default 'Active' COMMENT 'state of the domain',
   `network_domain` varchar(255),
   `type` varchar(255) NOT NULL DEFAULT 'Normal' COMMENT 'type of the domain - can be Normal or Project',
+  `region_id` int unsigned,  
   PRIMARY KEY  (`id`),
   UNIQUE (parent, name, removed),
   INDEX `i_domain__path`(`path`),
@@ -1316,6 +1319,7 @@ CREATE TABLE  `cloud`.`account` (
   `cleanup_needed` tinyint(1) NOT NULL default '0',
   `network_domain` varchar(255),
   `default_zone_id` bigint unsigned,
+  `region_id` int unsigned,  
   PRIMARY KEY  (`id`),
   INDEX i_account__removed(`removed`),
   CONSTRAINT `fk_account__default_zone_id` FOREIGN KEY `fk_account__default_zone_id`(`default_zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
@@ -2299,6 +2303,15 @@ CREATE TABLE  `cloud`.`netscaler_pod_ref` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+CREATE TABLE  `cloud`.`region` (
+  `id` int unsigned NOT NULL UNIQUE,
+  `name` varchar(255) NOT NULL UNIQUE,
+  `end_point` varchar(255) NOT NULL,
+  `api_key` varchar(255),
+  `secret_key` varchar(255),
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`vpc` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) NOT NULL,
@@ -2583,6 +2596,15 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
   CONSTRAINT `fk_autoscale_vmgroup_policy_map__vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__vmgroup_id` (`vmgroup_id`) REFERENCES `autoscale_vmgroups` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_autoscale_vmgroup_policy_map__policy_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`),
   INDEX `i_autoscale_vmgroup_policy_map__vmgroup_id`(`vmgroup_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`region_sync` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `region_id` int unsigned NOT NULL,
+  `api` varchar(1024) NOT NULL,
+  `created` datetime NOT NULL COMMENT 'date created',
+  `processed` tinyint NOT NULL default '0',
+  PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (1, UUID(), 'snmp','Linux User CPU - percentage', '1.3.6.1.4.1.2021.11.9.0', now());

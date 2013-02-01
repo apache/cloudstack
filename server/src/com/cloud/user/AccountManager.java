@@ -20,6 +20,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -47,7 +51,7 @@ public interface AccountManager extends AccountService {
 
 	Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId);
 	
-	Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details);
+	Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details, String uuid, int regionId);
 	
 	UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone);
 	
@@ -102,5 +106,94 @@ public interface AccountManager extends AccountService {
 
 	void buildACLSearchParameters(Account caller, Long id,
 			String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation);
-   
+	
+    /**
+     * Deletes a user by userId
+     *
+     * @param accountId
+     *            - id of the account do delete
+     *
+     * @return true if delete was successful, false otherwise
+     */
+    boolean deleteUserAccount(long accountId);
+    
+    /**
+     * Updates an account
+     *
+     * @param cmd
+     *            - the parameter containing accountId or account nameand domainId
+     * @return updated account object
+     */
+    Account updateAccount(UpdateAccountCmd cmd);
+    
+    /**
+     * Disables an account by accountName and domainId
+     *
+     * @param accountName
+     * @param domainId
+     * @param accountId
+     * @param disabled
+     *            account if success
+     * @return true if disable was successful, false otherwise
+     */
+    Account disableAccount(String accountName, Long domainId, Long accountId) throws ConcurrentOperationException, ResourceUnavailableException;
+    
+    /**
+     * Enables an account by accountId
+     *
+     * @param accountName
+     *            - the enableAccount command defining the accountId to be deleted.
+     * @param domainId
+     *            TODO
+     * @param accountId
+     * @return account object
+     */
+    Account enableAccount(String accountName, Long domainId, Long accountId); 
+    
+    /**
+     * Deletes user by Id
+     * @param deleteUserCmd
+     * @return
+     */
+    boolean deleteUser(DeleteUserCmd deleteUserCmd);
+    
+    /**
+     * Update a user by userId
+     *
+     * @param userId
+     * @return UserAccount object
+     */
+    UserAccount updateUser(UpdateUserCmd cmd);   
+    
+    /**
+     * Disables a user by userId
+     *
+     * @param userId
+     *            - the userId
+     * @return UserAccount object
+     */
+    UserAccount disableUser(long userId);
+    
+    /**
+     * Enables a user
+     *
+     * @param userId
+     *            - the userId
+     * @return UserAccount object
+     */
+    UserAccount enableUser(long userId);
+    
+    /**
+     * Locks an account by accountId. A locked account cannot access the API, but will still have running VMs/IP
+     * addresses
+     * allocated/etc.
+     *
+     * @param accountName
+     *            - the LockAccount command defining the accountId to be locked.
+     * @param domainId
+     *            TODO
+     * @param accountId
+     * @return account object
+     */
+    Account lockAccount(String accountName, Long domainId, Long accountId);    
 }

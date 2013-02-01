@@ -35,6 +35,7 @@ import com.cloud.utils.component.ComponentContext;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/SnapshotDaoTestContext.xml")
 public class SnapshotDaoTest extends TestCase {
@@ -47,9 +48,9 @@ public class SnapshotDaoTest extends TestCase {
 
     @Test
     public void testListBy() {
-        List<SnapshotVO> snapshots = dao.listByInstanceId(3, Snapshot.Status.BackedUp);
+        List<SnapshotVO> snapshots = dao.listByInstanceId(3, Snapshot.State.BackedUp);
         for(SnapshotVO snapshot : snapshots) {
-            Assert.assertTrue(snapshot.getStatus() == Snapshot.Status.BackedUp);
+            Assert.assertTrue(snapshot.getState() == Snapshot.State.BackedUp);
         }
     }
 }

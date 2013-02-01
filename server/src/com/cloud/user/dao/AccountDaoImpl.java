@@ -263,4 +263,5 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         	}
 		}
 	}
+	
 }

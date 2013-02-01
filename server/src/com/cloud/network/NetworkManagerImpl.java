@@ -43,14 +43,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
-import com.cloud.agent.api.AgentControlAnswer;
-import com.cloud.agent.api.AgentControlCommand;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CheckNetworkAnswer;
-import com.cloud.agent.api.CheckNetworkCommand;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.*;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -58,15 +51,9 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.AccountVlanMapVO;
-import com.cloud.dc.DataCenter;
+import com.cloud.dc.*;
 import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.Pod;
-import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.PodVlanMapDao;
@@ -77,29 +64,16 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
-import com.cloud.exception.AccountLimitException;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.ConnectionException;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.exception.*;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress.State;
-import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestType;
-import com.cloud.network.Network.Provider;
-import com.cloud.network.Network.Service;
+import com.cloud.network.Network.*;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
@@ -132,15 +106,8 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.rules.FirewallManager;
-import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.*;
 import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.PortForwardingRuleVO;
-import com.cloud.network.rules.RulesManager;
-import com.cloud.network.rules.StaticNat;
-import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.VpcManager;
@@ -153,39 +120,23 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.User;
-import com.cloud.user.UserContext;
+import com.cloud.user.*;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.*;
 import com.cloud.utils.db.JoinBuilder.JoinType;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.Nic;
-import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.ReservationContext;
-import com.cloud.vm.ReservationContextImpl;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.*;
 import com.cloud.vm.VirtualMachine.Type;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -230,8 +181,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     RulesManager _rulesMgr;
     @Inject
     LoadBalancingRulesManager _lbMgr;
-    @Inject
-    UsageEventDao _usageEventDao;
     @Inject
     RemoteAccessVpnService _vpnMgr;
     @Inject
@@ -282,11 +231,17 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @Inject
     NetworkACLManager _networkACLMgr;
     @Inject
+    UsageEventDao _usageEventDao;
+    @Inject
     NetworkModel _networkModel;
     @Inject
     UserIpv6AddressDao _ipv6Dao;
     @Inject
     Ipv6AddressManager _ipv6Mgr;
+
+    protected StateMachine2<Network.State, Network.Event, Network> _stateMachine;
+    private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
+    private static Long _privateOfferingId = null;
 
     ScheduledExecutorService _executor;
 
@@ -419,11 +374,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             VlanVO vlan = _vlanDao.findById(addr.getVlanId());
 
             String guestType = vlan.getVlanType().toString();
-
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), 
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(),
                     addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), addr.isSourceNat(), guestType, 
-                    addr.getSystem());
-            _usageEventDao.persist(usageEvent);
+                    addr.getSystem(), addr.getClass().getName(), addr.getUuid());
             // don't increment resource count for direct ip addresses
             if (addr.getAssociatedWithNetworkId() != null) {
                 _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
@@ -1058,6 +1011,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         _agentMgr.registerForHostEvents(this, true, false, true);
 
+        Network.State.getStateMachine().registerListener(new NetworkStateListener(_usageEventDao, _networksDao));
+
         s_logger.info("Network Manager is configured.");
 
         return true;
@@ -1075,6 +1030,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     }
 
     protected NetworkManagerImpl() {
+        setStateMachine();
     }
 
     @Override
@@ -1434,9 +1390,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
 
             network.setReservationId(context.getReservationId());
-            network.setState(Network.State.Implementing);
-
-            _networksDao.update(networkId, network);
+            stateTransitTo(network, Event.ImplementNetwork);
 
             Network result = guru.implement(network, offering, dest, context);
             network.setCidr(result.getCidr());
@@ -1449,16 +1403,23 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             // implement network elements and re-apply all the network rules
             implementNetworkElementsAndResources(dest, context, network, offering);
 
-            network.setState(Network.State.Implemented);
+            stateTransitTo(network,Event.OperationSucceeded);
+
             network.setRestartRequired(false);
             _networksDao.update(network.getId(), network);
             implemented.set(guru, network);
             return implemented;
+        } catch (NoTransitionException e) {
+            s_logger.error(e.getMessage());
+            return null;
         } finally {
             if (implemented.first() == null) {
                 s_logger.debug("Cleaning up because we're unable to implement the network " + network);
-                network.setState(Network.State.Shutdown);
-                _networksDao.update(networkId, network);
+                try {
+                    stateTransitTo(network,Event.OperationFailed);
+                } catch (NoTransitionException e) {
+                    s_logger.error(e.getMessage());
+                }
 
                 shutdownNetwork(networkId, context, false);
             }
@@ -2080,9 +2041,12 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             s_logger.debug("Network is not implemented: " + network);
             return false;
         } 
-
+        try {
+            stateTransitTo(network, Event.DestroyNetwork);
+        } catch (NoTransitionException e) {
         network.setState(Network.State.Shutdown);
         _networksDao.update(network.getId(), network);
+        }
 
         boolean success = shutdownNetworkElementsAndResources(context, cleanupElements, network);
 
@@ -2097,15 +2061,22 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             guru.shutdown(profile, _networkOfferingDao.findById(network.getNetworkOfferingId()));
 
             applyProfileToNetwork(network, profile);
-
+            try {
+                stateTransitTo(network, Event.OperationSucceeded);
+            } catch (NoTransitionException e) {
             network.setState(Network.State.Allocated);
             network.setRestartRequired(false);
+            }
             _networksDao.update(network.getId(), network);
             _networksDao.clearCheckForGc(networkId);
             result = true;
         } else {
+            try {
+                stateTransitTo(network, Event.OperationFailed);
+            } catch (NoTransitionException e) {
             network.setState(Network.State.Implemented);
             _networksDao.update(network.getId(), network);
+            }
             result = false;
         }
         txn.commit();
@@ -2265,8 +2236,11 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 s_logger.warn("Failed to delete network " + network + "; was unable to cleanup corresponding ip ranges");
             } else {
                 // commit transaction only when ips and vlans for the network are released successfully
-                network.setState(Network.State.Destroy);
-                _networksDao.update(network.getId(), network);
+                try {
+                    stateTransitTo(network, Event.DestroyNetwork);
+                 } catch (NoTransitionException e) {
+                     s_logger.debug(e.getMessage());
+                 }
                 _networksDao.remove(network.getId());
 
                 NetworkOffering ntwkOff = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
@@ -2772,10 +2746,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
                 String guestType = vlan.getVlanType().toString();
 
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE,
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE,
                         ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), 
-                        ip.isSourceNat(), guestType, ip.getSystem());
-                _usageEventDao.persist(usageEvent);
+                        ip.isSourceNat(), guestType, ip.getSystem(), ip.getClass().getName(), ip.getUuid());
             }
 
             ip = _ipAddressDao.markAsUnavailable(addrId);
@@ -3520,6 +3493,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @Override
     public int getNetworkLockTimeout() {
         return _networkLockTimeout;
+    }
+
+
+    protected boolean stateTransitTo(NetworkVO network, Network.Event e) throws NoTransitionException {
+        return _stateMachine.transitTo(network, e, null, _networksDao);
+    }
+
+    private void setStateMachine() {
+        _stateMachine = Network.State.getStateMachine();
     }
 
     private Map<Service, Set<Provider>> getServiceProvidersMap(long networkId) {
