@@ -1756,7 +1756,19 @@ public class AccountManagerImpl implements AccountManager, Manager {
             s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
         
-        UserVO user = _userDao.persist(new UserVO(accountId, userName, password, firstName, lastName, email, timezone, UUID.randomUUID().toString(), _regionMgr.getId()));
+        String encodedPassword = null;
+        for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
+            UserAuthenticator authenticator = en.nextElement();
+            encodedPassword = authenticator.encode(password);
+            if (encodedPassword != null) {
+                break;
+            }
+        }
+        if (encodedPassword == null) {
+        	throw new CloudRuntimeException("Failed to encode password");
+        }
+        
+        UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone, UUID.randomUUID().toString(), _regionMgr.getId()));
 
         return user;
     }
