@@ -14,39 +14,36 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.dc;
+package com.cloud.bridge.model;
 
-import org.apache.cloudstack.acl.InfrastructureEntity;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
-public interface Vlan extends InfrastructureEntity, InternalIdentity, Identity {
-    public enum VlanType {
-        DirectAttached,
-        VirtualNetwork
+@Entity
+@Table(name="user")
+public class CloudStackUserVO {
+
+    @Column(name="api_key")
+    private String apiKey;
+
+    @Column(name="secret_key")
+    private String secretKey;
+
+    public String getApiKey() {
+        return apiKey;
     }
 
-    public final static String UNTAGGED = "untagged";
+    public String getSecretKey() {
+        return secretKey;
+    }
 
-    public String getVlanTag();
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
+    }
 
-    public String getVlanGateway();
+   public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    }
 
-    public String getVlanNetmask();
-
-    public long getDataCenterId();
-
-    public String getIpRange();
-
-    public VlanType getVlanType();
-
-    public Long getNetworkId();
-
-    public Long getPhysicalNetworkId();
-
-	public String getIp6Gateway();
-
-	public String getIp6Cidr();
-
-	public String getIp6Range();
 }

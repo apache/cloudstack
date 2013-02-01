@@ -1379,7 +1379,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        param7.setDnsName( "" );
 	        param7.setReason( "" );
             param7.setKeyName( inst.getKeyPairName());
-	        param7.setAmiLaunchIndex( "" );
+            param7.setAmiLaunchIndex( null );
 	        param7.setInstanceType( inst.getServiceOffering());
 	        
 	        ProductCodesSetType param9 = new ProductCodesSetType();
@@ -1701,7 +1701,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        param7.setDnsName( "" );
 	        param7.setReason( "" );
             param7.setKeyName( inst.getKeyPairName());
-	        param7.setAmiLaunchIndex( "" );
+            param7.setAmiLaunchIndex( null );
 	        
 	        ProductCodesSetType param9 = new ProductCodesSetType();
 	        ProductCodesSetItemType param10 = new ProductCodesSetItemType();

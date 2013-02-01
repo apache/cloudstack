@@ -14,39 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.dc;
 
-import org.apache.cloudstack.acl.InfrastructureEntity;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+package com.cloud.network;
 
-public interface Vlan extends InfrastructureEntity, InternalIdentity, Identity {
-    public enum VlanType {
-        DirectAttached,
-        VirtualNetwork
-    }
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.user.Account;
+import com.cloud.utils.component.Manager;
 
-    public final static String UNTAGGED = "untagged";
+public interface Ipv6AddressManager extends Manager {
+    public UserIpv6Address assignDirectIp6Address(long dcId, Account owner, Long networkId, String requestedIp6) throws InsufficientAddressCapacityException;
 
-    public String getVlanTag();
-
-    public String getVlanGateway();
-
-    public String getVlanNetmask();
-
-    public long getDataCenterId();
-
-    public String getIpRange();
-
-    public VlanType getVlanType();
-
-    public Long getNetworkId();
-
-    public Long getPhysicalNetworkId();
-
-	public String getIp6Gateway();
-
-	public String getIp6Cidr();
-
-	public String getIp6Range();
+	public void revokeDirectIpv6Address(long networkId, String ip6Address);
 }

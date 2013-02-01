@@ -148,6 +148,12 @@ public class NetworkVO implements Network {
 
     @Column(name="specify_ip_ranges")
     boolean specifyIpRanges = false;
+    
+    @Column(name="ip6_gateway")
+    String ip6Gateway;
+
+    @Column(name="ip6_cidr")
+    String ip6Cidr;
 
     public NetworkVO() {
     	this.uuid = UUID.randomUUID().toString();
@@ -195,6 +201,8 @@ public class NetworkVO implements Network {
             state = State.Allocated;
         }
     	this.uuid = UUID.randomUUID().toString();
+    	this.ip6Gateway = that.getIp6Gateway();
+    	this.ip6Cidr = that.getIp6Cidr();
     }
 
     /**
@@ -492,4 +500,20 @@ public class NetworkVO implements Network {
     public Long getVpcId() {
         return vpcId;
     }
+
+	public String getIp6Cidr() {
+		return ip6Cidr;
+	}
+
+	public void setIp6Cidr(String ip6Cidr) {
+		this.ip6Cidr = ip6Cidr;
+	}
+
+	public String getIp6Gateway() {
+		return ip6Gateway;
+	}
+
+	public void setIp6Gateway(String ip6Gateway) {
+		this.ip6Gateway = ip6Gateway;
+	}
 }

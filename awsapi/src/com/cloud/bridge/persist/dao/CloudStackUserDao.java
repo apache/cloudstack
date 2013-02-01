@@ -14,39 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.dc;
+package com.cloud.bridge.persist.dao;
 
-import org.apache.cloudstack.acl.InfrastructureEntity;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import com.cloud.bridge.model.CloudStackUserVO;
+import com.cloud.utils.db.GenericDao;
 
-public interface Vlan extends InfrastructureEntity, InternalIdentity, Identity {
-    public enum VlanType {
-        DirectAttached,
-        VirtualNetwork
-    }
+public interface CloudStackUserDao extends GenericDao<CloudStackUserVO, String> {
 
-    public final static String UNTAGGED = "untagged";
+    public String getSecretKeyByAccessKey(String acessKey);
 
-    public String getVlanTag();
-
-    public String getVlanGateway();
-
-    public String getVlanNetmask();
-
-    public long getDataCenterId();
-
-    public String getIpRange();
-
-    public VlanType getVlanType();
-
-    public Long getNetworkId();
-
-    public Long getPhysicalNetworkId();
-
-	public String getIp6Gateway();
-
-	public String getIp6Cidr();
-
-	public String getIp6Range();
 }

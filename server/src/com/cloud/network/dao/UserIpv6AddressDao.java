@@ -14,39 +14,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.dc;
+package com.cloud.network.dao;
 
-import org.apache.cloudstack.acl.InfrastructureEntity;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import java.util.List;
 
-public interface Vlan extends InfrastructureEntity, InternalIdentity, Identity {
-    public enum VlanType {
-        DirectAttached,
-        VirtualNetwork
-    }
+import com.cloud.network.Network;
+import com.cloud.network.UserIpv6AddressVO;
+import com.cloud.utils.db.GenericDao;
 
-    public final static String UNTAGGED = "untagged";
+public interface UserIpv6AddressDao extends GenericDao<UserIpv6AddressVO, Long> {
+	List<UserIpv6AddressVO> listByAccount(long accountId);
+	
+	List<UserIpv6AddressVO> listByVlanId(long vlanId);
+	
+	List<UserIpv6AddressVO> listByDcId(long dcId); 
+	
+	List<UserIpv6AddressVO> listByNetwork(long networkId);
+	
+	public UserIpv6AddressVO findByNetworkIdAndIp(long networkId, String ipAddress);
 
-    public String getVlanTag();
+	List<UserIpv6AddressVO> listByPhysicalNetworkId(long physicalNetworkId);
 
-    public String getVlanGateway();
-
-    public String getVlanNetmask();
-
-    public long getDataCenterId();
-
-    public String getIpRange();
-
-    public VlanType getVlanType();
-
-    public Long getNetworkId();
-
-    public Long getPhysicalNetworkId();
-
-	public String getIp6Gateway();
-
-	public String getIp6Cidr();
-
-	public String getIp6Range();
+	long countExistedIpsInNetwork(long networkId);
 }

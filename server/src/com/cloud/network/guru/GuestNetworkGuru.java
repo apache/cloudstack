@@ -351,7 +351,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
             String guestIp = null;
             if (network.getSpecifyIpRanges()) {
-                _networkMgr.allocateDirectIp(nic, dc, vm, network, nic.getRequestedIp());
+                _networkMgr.allocateDirectIp(nic, dc, vm, network, nic.getRequestedIpv4(), null);
             } else {
                 //if Vm is router vm and source nat is enabled in the network, set ip4 to the network gateway
                 boolean isGateway = false;
@@ -370,7 +370,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                 if (isGateway) {
                     guestIp = network.getGateway();
                 } else {
-                    guestIp = _networkMgr.acquireGuestIpAddress(network, nic.getRequestedIp());
+                    guestIp = _networkMgr.acquireGuestIpAddress(network, nic.getRequestedIpv4());
                     if (guestIp == null) {
                         throw new InsufficientVirtualNetworkCapcityException("Unable to acquire Guest IP" +
                                 " address for network " + network, DataCenter.class, dc.getId());

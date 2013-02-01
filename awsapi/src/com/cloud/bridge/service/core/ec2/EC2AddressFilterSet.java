@@ -63,22 +63,21 @@ public class EC2AddressFilterSet {
 	}
 
 
-	public EC2DescribeAddressesResponse evaluate( List<EC2Address> addresses) throws ParseException	{
+    public EC2DescribeAddressesResponse evaluate( EC2DescribeAddressesResponse response) throws ParseException	{
 		EC2DescribeAddressesResponse resultList = new EC2DescribeAddressesResponse();
 		
 		boolean matched;
 		
+        EC2Address[] addresses = response.getAddressSet();
 		EC2Filter[] filterSet = getFilterSet();
 		for ( EC2Address address : addresses ) {
 			matched = true;
-			if (filterSet != null) {
-				for (EC2Filter filter : filterSet) {
-					if (!filterMatched(address, filter)) {
-						matched = false;
-						break;
-					}
-				}
-			}
+            for (EC2Filter filter : filterSet) {
+                if (!filterMatched(address, filter)) {
+                    matched = false;
+                    break;
+                }
+            }
 			if (matched == true)
 				resultList.addAddress(address);
 

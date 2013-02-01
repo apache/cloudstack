@@ -141,7 +141,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = { AccountManager.class, AccountService.class })
-public class AccountManagerImpl implements AccountManager, AccountService, Manager {
+public class AccountManagerImpl implements AccountManager, Manager {
     public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
 
     private String _name;

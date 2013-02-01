@@ -1752,7 +1752,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected synchronized Answer execute(final DhcpEntryCommand cmd) {
         Connection conn = getConnection();
         String args = "-r " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        args += " -v " + cmd.getVmIpAddress();
+        if (cmd.getVmIpAddress() != null) {
+        	args += " -v " + cmd.getVmIpAddress();
+        }
         args += " -m " + cmd.getVmMac();
         args += " -n " + cmd.getVmName();
         if (cmd.getDefaultRouter() != null) {
@@ -1764,6 +1766,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         
         if (cmd.getDefaultDns() != null) {
         	args += " -N " + cmd.getDefaultDns();
+        }
+        
+        if (cmd.getVmIp6Address() != null) {
+        	args += " -6 " + cmd.getVmIp6Address();
+        	args += " -u " + cmd.getDuid();
         }
         
         String result = callHostPlugin(conn, "vmops", "saveDhcpEntry", "args", args);

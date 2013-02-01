@@ -44,7 +44,6 @@ import org.apache.cloudstack.api.command.admin.ldap.LDAPRemoveCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.*;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
@@ -2253,7 +2252,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         txn.start();
 
         Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, 
-                endIP, vlanGateway, vlanNetmask, vlanId, vlanOwner);
+                endIP, vlanGateway, vlanNetmask, vlanId, vlanOwner, null, null, null, null);
 
         if (associateIpRangeToAccount) {
             _networkMgr.associateIpAddressListToAccount(userId, vlanOwner.getId(), zoneId, vlan.getId(), null);
@@ -2279,10 +2278,22 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @DB
     public Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, 
             String startIP, String endIP, String vlanGateway, String vlanNetmask,
-            String vlanId, Account vlanOwner) {
-        
-        
+            String vlanId, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr) {
         Network network = _networkModel.getNetwork(networkId);
+        
+        boolean ipv4 = false, ipv6 = false;
+        
+        if (startIP != null) {
+        	ipv4 = true;
+        }
+        
+        if (startIPv6 != null) {
+        	ipv6 = true;
+        }
+        
+        if (!ipv4 && !ipv6) {
+            throw new InvalidParameterValueException("Please specify IPv4 or IPv6 address.");
+        }
         
         //Validate the zone
         DataCenterVO zone = _zoneDao.findById(zoneId);
@@ -2348,90 +2359,133 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Vlan owner can be defined only in the zone of type " + NetworkType.Advanced);
         }
 
-        // Make sure the gateway is valid
-        if (!NetUtils.isValidIp(vlanGateway)) {
-            throw new InvalidParameterValueException("Please specify a valid gateway");
+        if (ipv4) {
+        	// Make sure the gateway is valid
+        	if (!NetUtils.isValidIp(vlanGateway)) {
+        		throw new InvalidParameterValueException("Please specify a valid gateway");
+        	}
+
+        	// Make sure the netmask is valid
+        	if (!NetUtils.isValidIp(vlanNetmask)) {
+        		throw new InvalidParameterValueException("Please specify a valid netmask");
+        	}
+        }
+        
+        if (ipv6) {
+        	if (!NetUtils.isValidIpv6(vlanIp6Gateway)) {
+        		throw new InvalidParameterValueException("Please specify a valid IPv6 gateway");
+        	}
+        	if (!NetUtils.isValidIp6Cidr(vlanIp6Cidr)) {
+        		throw new InvalidParameterValueException("Please specify a valid IPv6 CIDR");
+        	}
         }
 
-        // Make sure the netmask is valid
-        if (!NetUtils.isValidIp(vlanNetmask)) {
-            throw new InvalidParameterValueException("Please specify a valid netmask");
+        if (ipv4) {
+        	String newVlanSubnet = NetUtils.getSubNet(vlanGateway, vlanNetmask);
+
+        	// Check if the new VLAN's subnet conflicts with the guest network in
+        	// the specified zone (guestCidr is null for basic zone)
+        	String guestNetworkCidr = zone.getGuestNetworkCidr();
+        	if (guestNetworkCidr != null) {
+        		String[] cidrPair = guestNetworkCidr.split("\\/");
+        		String guestIpNetwork = NetUtils.getIpRangeStartIpFromCidr(cidrPair[0], Long.parseLong(cidrPair[1]));
+        		long guestCidrSize = Long.parseLong(cidrPair[1]);
+        		long vlanCidrSize = NetUtils.getCidrSize(vlanNetmask);
+
+        		long cidrSizeToUse = -1;
+        		if (vlanCidrSize < guestCidrSize) {
+        			cidrSizeToUse = vlanCidrSize;
+        		} else {
+        			cidrSizeToUse = guestCidrSize;
+        		}
+
+        		String guestSubnet = NetUtils.getCidrSubNet(guestIpNetwork, cidrSizeToUse);
+
+        		if (newVlanSubnet.equals(guestSubnet)) {
+        			throw new InvalidParameterValueException("The new IP range you have specified has the same subnet as the guest network in zone: " + zone.getName()
+        					+ ". Please specify a different gateway/netmask.");
+        		}
+        	}
+
+        	// Check if there are any errors with the IP range
+        	checkPublicIpRangeErrors(zoneId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
+
+        	// Throw an exception if any of the following is true:
+        	// 1. Another VLAN in the same zone has a different tag but the same
+        	// subnet as the new VLAN. Make an exception for the
+        	// case when both vlans are Direct.
+        	// 2. Another VLAN in the same zone that has the same tag and subnet as
+        	// the new VLAN has IPs that overlap with the IPs
+        	// being added
+        	// 3. Another VLAN in the same zone that has the same tag and subnet as
+        	// the new VLAN has a different gateway than the
+        	// new VLAN
+        	// 4. If VLAN is untagged and Virtual, and there is existing UNTAGGED
+        	// vlan with different subnet
+        	List<VlanVO> vlans = _vlanDao.listByZone(zone.getId());
+        	for (VlanVO vlan : vlans) {
+        		String otherVlanGateway = vlan.getVlanGateway();
+        		// Continue if it's not IPv4 
+        		if (otherVlanGateway == null) {
+        			continue;
+        		}
+        		String otherVlanSubnet = NetUtils.getSubNet(vlan.getVlanGateway(), vlan.getVlanNetmask());
+        		String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
+        		String otherVlanStartIP = otherVlanIpRange[0];
+        		String otherVlanEndIP = null;
+        		if (otherVlanIpRange.length > 1) {
+        			otherVlanEndIP = otherVlanIpRange[1];
+        		}
+
+        		if (forVirtualNetwork && !vlanId.equals(vlan.getVlanTag()) && newVlanSubnet.equals(otherVlanSubnet) && !allowIpRangeOverlap(vlan, forVirtualNetwork, networkId)) {
+        			throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " in zone " + zone.getName()
+        					+ " has the same subnet. Please specify a different gateway/netmask.");
+        		}
+
+        		boolean vlansUntaggedAndVirtual = (vlanId.equals(Vlan.UNTAGGED) && vlanId.equals(vlan.getVlanTag()) && forVirtualNetwork && vlan.getVlanType() == VlanType.VirtualNetwork);
+
+        		if (vlansUntaggedAndVirtual && !newVlanSubnet.equals(otherVlanSubnet)) {
+        			throw new InvalidParameterValueException("The Untagged ip range with different subnet already exists in zone " + zone.getId());
+        		}
+
+        		if (vlanId.equals(vlan.getVlanTag()) && newVlanSubnet.equals(otherVlanSubnet)) {
+        			if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
+        				throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
+        						+ " already has IPs that overlap with the new range. Please specify a different start IP/end IP.");
+        			}
+
+        			if (!vlanGateway.equals(otherVlanGateway)) {
+        				throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " has already been added with gateway " + otherVlanGateway
+        						+ ". Please specify a different tag.");
+        			}
+        		}
+        	}
         }
+        
+        String ipv6Range = null;
+        if (ipv6) {
+        	ipv6Range = startIPv6;
+        	if (endIPv6 != null) {
+        		ipv6Range += "-" + endIPv6;
+        	}
+        	
+        	List<VlanVO> vlans = _vlanDao.listByZone(zone.getId());
+        	for (VlanVO vlan : vlans) {
+        		if (vlan.getIp6Gateway() == null) {
+        			continue;
+        		}
+        		if (vlanId.equals(vlan.getVlanTag())) {
+        			if (NetUtils.isIp6RangeOverlap(ipv6Range, vlan.getIp6Range())) {
+        				throw new InvalidParameterValueException("The IPv6 range with tag: " + vlan.getVlanTag()
+        						+ " already has IPs that overlap with the new range. Please specify a different start IP/end IP.");
+        			}
 
-        String newVlanSubnet = NetUtils.getSubNet(vlanGateway, vlanNetmask);
-
-        // Check if the new VLAN's subnet conflicts with the guest network in
-        // the specified zone (guestCidr is null for basic zone)
-        String guestNetworkCidr = zone.getGuestNetworkCidr();
-        if (guestNetworkCidr != null) {
-            String[] cidrPair = guestNetworkCidr.split("\\/");
-            String guestIpNetwork = NetUtils.getIpRangeStartIpFromCidr(cidrPair[0], Long.parseLong(cidrPair[1]));
-            long guestCidrSize = Long.parseLong(cidrPair[1]);
-            long vlanCidrSize = NetUtils.getCidrSize(vlanNetmask);
-
-            long cidrSizeToUse = -1;
-            if (vlanCidrSize < guestCidrSize) {
-                cidrSizeToUse = vlanCidrSize;
-            } else {
-                cidrSizeToUse = guestCidrSize;
-            }
-
-            String guestSubnet = NetUtils.getCidrSubNet(guestIpNetwork, cidrSizeToUse);
-
-            if (newVlanSubnet.equals(guestSubnet)) {
-                throw new InvalidParameterValueException("The new IP range you have specified has the same subnet as the guest network in zone: " + zone.getName()
-                        + ". Please specify a different gateway/netmask.");
-            }
-        }
-
-        // Check if there are any errors with the IP range
-        checkPublicIpRangeErrors(zoneId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
-
-        // Throw an exception if any of the following is true:
-        // 1. Another VLAN in the same zone has a different tag but the same
-        // subnet as the new VLAN. Make an exception for the
-        // case when both vlans are Direct.
-        // 2. Another VLAN in the same zone that has the same tag and subnet as
-        // the new VLAN has IPs that overlap with the IPs
-        // being added
-        // 3. Another VLAN in the same zone that has the same tag and subnet as
-        // the new VLAN has a different gateway than the
-        // new VLAN
-        // 4. If VLAN is untagged and Virtual, and there is existing UNTAGGED
-        // vlan with different subnet
-        List<VlanVO> vlans = _vlanDao.listByZone(zone.getId());
-        for (VlanVO vlan : vlans) {
-            String otherVlanGateway = vlan.getVlanGateway();
-            String otherVlanSubnet = NetUtils.getSubNet(vlan.getVlanGateway(), vlan.getVlanNetmask());
-            String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
-            String otherVlanStartIP = otherVlanIpRange[0];
-            String otherVlanEndIP = null;
-            if (otherVlanIpRange.length > 1) {
-                otherVlanEndIP = otherVlanIpRange[1];
-            }
-
-            if (forVirtualNetwork && !vlanId.equals(vlan.getVlanTag()) && newVlanSubnet.equals(otherVlanSubnet) && !allowIpRangeOverlap(vlan, forVirtualNetwork, networkId)) {
-                throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " in zone " + zone.getName()
-                        + " has the same subnet. Please specify a different gateway/netmask.");
-            }
-
-            boolean vlansUntaggedAndVirtual = (vlanId.equals(Vlan.UNTAGGED) && vlanId.equals(vlan.getVlanTag()) && forVirtualNetwork && vlan.getVlanType() == VlanType.VirtualNetwork);
-
-            if (vlansUntaggedAndVirtual && !newVlanSubnet.equals(otherVlanSubnet)) {
-                throw new InvalidParameterValueException("The Untagged ip range with different subnet already exists in zone " + zone.getId());
-            }
-
-            if (vlanId.equals(vlan.getVlanTag()) && newVlanSubnet.equals(otherVlanSubnet)) {
-                if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
-                    throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
-                            + " already has IPs that overlap with the new range. Please specify a different start IP/end IP.");
-                }
-
-                if (!vlanGateway.equals(otherVlanGateway)) {
-                    throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " has already been added with gateway " + otherVlanGateway
-                            + ". Please specify a different tag.");
-                }
-            }
+        			if (!vlanIp6Gateway.equals(vlan.getIp6Gateway())) {
+        				throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " has already been added with gateway " + vlan.getIp6Gateway()
+        						+ ". Please specify a different tag.");
+        			}
+        		}
+        	}
         }
 
         // Check if a guest VLAN is using the same tag
@@ -2453,21 +2507,28 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
 
-        String ipRange = startIP;
-        if (endIP != null) {
-            ipRange += "-" + endIP;
+        String ipRange = null;
+        
+        if (ipv4) {
+        	ipRange = startIP;
+        	if (endIP != null) {
+        		ipRange += "-" + endIP;
+        	}
         }
-
+        
         // Everything was fine, so persist the VLAN
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId, physicalNetworkId);
+        VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId, physicalNetworkId, vlanIp6Gateway, vlanIp6Cidr, ipv6Range);
         s_logger.debug("Saving vlan range " + vlan);
         vlan = _vlanDao.persist(vlan);
 
-        if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId(), networkId, physicalNetworkId)) {
-            throw new CloudRuntimeException("Failed to save IP range. Please contact Cloud Support."); 
+        // IPv6 use a used ip map, is different from ipv4, no need to save public ip range
+        if (ipv4) {
+        	if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId(), networkId, physicalNetworkId)) {
+        		throw new CloudRuntimeException("Failed to save IPv4 range. Please contact Cloud Support."); 
+        	}
         }
 
         if (vlanOwner != null) {

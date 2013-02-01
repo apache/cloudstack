@@ -232,7 +232,33 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
             _description = description;
         }
     }
+    
+    public class IpAddresses {
+    	private String ip4Address;
+    	private String ip6Address;
+    	
+    	public IpAddresses(String ip4Address, String ip6Address) {
+    		this.setIp4Address(ip4Address);
+    		this.setIp6Address(ip6Address);
+    	}
 
+		public String getIp4Address() {
+			return ip4Address;
+		}
+
+		public void setIp4Address(String ip4Address) {
+			this.ip4Address = ip4Address;
+		}
+
+		public String getIp6Address() {
+			return ip6Address;
+		}
+
+		public void setIp6Address(String ip6Address) {
+			this.ip6Address = ip6Address;
+		}
+    }
+    
     String getName();
 
     Mode getMode();
@@ -244,7 +270,11 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     String getGateway();
 
     String getCidr();
-
+    
+    String getIp6Gateway();
+    
+    String getIp6Cidr();
+    
     long getDataCenterId();
 
     long getNetworkOfferingId();
