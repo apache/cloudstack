@@ -539,7 +539,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             try {
                 String rpassword = PasswordGenerator.generatePresharedKey(8);
                 String wSql = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) "
-                        + "VALUES ('Hidden','DEFAULT', 'management-server','system.vm.password', '" + rpassword
+                        + "VALUES ('Secure','DEFAULT', 'management-server','system.vm.password', '" + DBEncryptionUtil.encrypt(rpassword)
                         + "','randmon password generated each management server starts for system vm')";
                 PreparedStatement stmt = txn.prepareAutoCloseStatement(wSql);
                 stmt.executeUpdate(wSql);
