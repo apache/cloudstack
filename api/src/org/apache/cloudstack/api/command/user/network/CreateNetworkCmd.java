@@ -113,6 +113,18 @@ public class CreateNetworkCmd extends BaseCmd {
             description="the VPC network belongs to")
     private Long vpcId;
 
+    @Parameter(name=ApiConstants.START_IPV6, type=CommandType.STRING, description="the beginning IPv6 address in the IPv6 network range")
+    private String startIpv6;
+
+    @Parameter(name=ApiConstants.END_IPV6, type=CommandType.STRING, description="the ending IPv6 address in the IPv6 network range")
+    private String endIpv6;
+
+    @Parameter(name=ApiConstants.IP6_GATEWAY, type=CommandType.STRING, description="the gateway of the IPv6 network. Required " +
+            "for Shared networks and Isolated networks when it belongs to VPC")
+    private String ip6Gateway;
+    
+    @Parameter(name=ApiConstants.IP6_CIDR, type=CommandType.STRING, description="the CIDR of IPv6 network, must be at least /64")
+    private String ip6Cidr;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -207,6 +219,34 @@ public class CreateNetworkCmd extends BaseCmd {
         }
     }
 
+    public String getStartIpv6() {
+    	if (startIpv6 == null) {
+    		return null;
+    	}
+        return startIpv6.toLowerCase();
+    }
+
+    public String getEndIpv6() {
+    	if (endIpv6 == null) {
+    		return null;
+    	}
+        return endIpv6.toLowerCase();
+    }
+
+    public String getIp6Gateway() {
+    	if (ip6Gateway == null) {
+    		return null;
+    	}
+        return ip6Gateway.toLowerCase();
+    }
+
+    public String getIp6Cidr() {
+    	if (ip6Cidr == null) {
+    		return null;
+    	}
+        return ip6Cidr.toLowerCase();
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -228,6 +268,10 @@ public class CreateNetworkCmd extends BaseCmd {
     @Override
     // an exception thrown by createNetwork() will be caught by the dispatcher.
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
+        if (getStartIpv6() != null && getStartIp() != null) {
+        	throw new InvalidParameterValueException("Cannot support dualstack at this moment!");
+        }
+        
         Network result = _networkService.createGuestNetwork(this);
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);

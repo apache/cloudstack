@@ -38,6 +38,8 @@ public class NetworkProfile implements Network {
     private TrafficType trafficType;
     private String gateway;
     private String cidr;
+    private String ip6Gateway;
+    private String ip6Cidr;
     private long networkOfferingId;
     private long related;
     private String displayText;
@@ -63,6 +65,8 @@ public class NetworkProfile implements Network {
         this.trafficType = network.getTrafficType();
         this.gateway = network.getGateway();
         this.cidr = network.getCidr();
+        this.ip6Gateway = network.getIp6Gateway();
+        this.ip6Cidr = network.getIp6Cidr();
         this.networkOfferingId = network.getNetworkOfferingId();
         this.related = network.getRelated();
         this.displayText = network.getDisplayText();
@@ -229,4 +233,14 @@ public class NetworkProfile implements Network {
     public void setTrafficType(TrafficType type) {
         this.trafficType = type;
     }
+
+	@Override
+	public String getIp6Gateway() {
+		return ip6Gateway;
+	}
+
+	@Override
+	public String getIp6Cidr() {
+		return ip6Cidr;
+	}
 }

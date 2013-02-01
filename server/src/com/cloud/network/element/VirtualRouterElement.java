@@ -842,6 +842,11 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 return false;
             }
 
+            if (network.getIp6Gateway() != null) {
+            	s_logger.info("Skip password and userdata service setup for IPv6 VM");
+            	return true;
+            }
+
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
 

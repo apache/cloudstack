@@ -130,6 +130,11 @@
       <version>${cs.ejb.version}</version>
     </dependency>
     <dependency>
+        <groupId>com.googlecode.java-ipv6</groupId>
+        <artifactId>java-ipv6</artifactId>
+        <version>${cs.java-ipv6.version}</version>
+    </dependency>
+    <dependency>
       <groupId>commons-configuration</groupId>
       <artifactId>commons-configuration</artifactId>
       <version>${cs.configuration.version}</version>

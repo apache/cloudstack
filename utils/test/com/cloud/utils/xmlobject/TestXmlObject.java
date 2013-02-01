@@ -14,6 +14,9 @@ public class TestXmlObject {
     
     @Test
     public void test() {
+    	
+    	// deprecated, since we no longer use component.xml.in any more
+    	/*
         XmlObject xo = XmlObjectParser.parseFromFile("z:/components.xml.in");
         p(xo.getTag());
         p((String) xo.get("system-integrity-checker.checker").toString());
@@ -24,6 +27,7 @@ public class TestXmlObject {
                 p(y.toString());
             }
         }
+        */
     }
 
 }

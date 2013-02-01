@@ -47,7 +47,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 @Local(value = { AccountManager.class, AccountService.class })
-public class MockAccountManagerImpl extends ManagerBase implements AccountManager, AccountService {
+public class MockAccountManagerImpl extends ManagerBase implements Manager, AccountManager {
 
 
     @Override

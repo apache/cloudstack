@@ -142,7 +142,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());       
 
-        if (nic != null && nic.getRequestedIp() != null) {
+        if (nic != null && nic.getRequestedIpv4() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
         }
 

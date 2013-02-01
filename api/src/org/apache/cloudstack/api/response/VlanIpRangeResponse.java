@@ -81,6 +81,19 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
     private String physicalNetworkId;
 
+    @SerializedName(ApiConstants.START_IPV6) @Param(description="the start ipv6 of the VLAN IP range")
+    private String startIpv6;
+
+    @SerializedName(ApiConstants.END_IPV6) @Param(description="the end ipv6 of the VLAN IP range")
+    private String endIpv6;
+    
+    @SerializedName(ApiConstants.IP6_GATEWAY) @Param(description="the gateway of IPv6 network")
+    private String ip6Gateway;
+    
+    @SerializedName(ApiConstants.IP6_CIDR) @Param(description="the cidr of IPv6 network")
+    private String ip6Cidr;
+    
+
     public void setId(String id) {
         this.id = id;
     }
@@ -158,4 +171,24 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     public String getphysicalNetworkId() {
         return physicalNetworkId;
     }
+
+	public String getStartIpv6() {
+		return startIpv6;
+	}
+
+	public void setStartIpv6(String startIpv6) {
+		this.startIpv6 = startIpv6;
+	}
+
+	public void setEndIpv6(String endIpv6) {
+		this.endIpv6 = endIpv6;
+	}
+
+	public void setIp6Gateway(String ip6Gateway) {
+		this.ip6Gateway = ip6Gateway;
+	}
+
+	public void setIp6Cidr(String ip6Cidr) {
+		this.ip6Cidr = ip6Cidr;
+	}
 }

@@ -1694,7 +1694,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 }
             }
 
-            NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp);
+            NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, null);
             if (setupPublicNetwork) {
                 if (isRedundant) {
                     gatewayNic.setIp4Address(_networkMgr.acquireGuestIpAddress(guestNetwork, null));
@@ -1924,11 +1924,25 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         String defaultDns2 = null;
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
+            boolean ipv4 = false, ipv6 = false;
+            if (nic.getIp4Address() != null) {
+            	ipv4 = true;
             buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
             buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
+            }
+            if (nic.getIp6Address() != null) {
+            	ipv6 = true;
+            	buf.append(" eth").append(deviceId).append("ip6=").append(nic.getIp6Address());
+            	buf.append(" eth").append(deviceId).append("ip6prelen=").append(NetUtils.getIp6CidrSize(nic.getIp6Cidr()));
+            }
             
             if (nic.isDefaultNic()) {
+            	if (ipv4) {
                 buf.append(" gateway=").append(nic.getGateway());
+            	}
+            	if (ipv6) {
+            		buf.append(" ip6gateway=").append(nic.getIp6Gateway());
+            	}
                 defaultDns1 = nic.getDns1();
                 defaultDns2 = nic.getDns2();
             }
@@ -3068,11 +3082,11 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
     
     private void createDhcpEntryCommand(VirtualRouter router, UserVm vm, NicVO nic, Commands cmds) {
-        DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName());
+        DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getHostName(), nic.getIp6Address());
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         String gatewayIp = findGatewayIp(vm.getId());
         boolean needGateway = true;
-        if (!gatewayIp.equals(nic.getGateway())) {
+        if (gatewayIp != null && !gatewayIp.equals(nic.getGateway())) {
             needGateway = false;
             GuestOSVO guestOS = _guestOSDao.findById(vm.getGuestOSId());
             // Do set dhcp:router option for non-default nic on certain OS(including Windows), and leave other OS unset.
@@ -3088,7 +3102,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             gatewayIp = "0.0.0.0";
         }
         dhcpCommand.setDefaultRouter(gatewayIp);
+        dhcpCommand.setIp6Gateway(nic.getIp6Gateway());
         dhcpCommand.setDefaultDns(findDefaultDnsIp(vm.getId()));
+        dhcpCommand.setDuid(NetUtils.getDuidLL(nic.getMacAddress()));
 
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());

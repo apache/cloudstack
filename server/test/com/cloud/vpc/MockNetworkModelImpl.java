@@ -823,4 +823,10 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return false;
     }
 
+	@Override
+	public Vlan getVlanForNetwork(long networkId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

@@ -1864,23 +1864,23 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (name != null) {
-            sc.setParameters("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+            sc.setParameters("name", "%" + name + "%");
         }
 
         if (path != null) {
-            sc.setParameters("path", SearchCriteria.Op.EQ, path);
+            sc.setParameters("path", path);
         }
         if (zoneId != null) {
-            sc.setParameters("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+            sc.setParameters("dataCenterId", zoneId);
         }
         if (pod != null) {
-            sc.setParameters("podId", SearchCriteria.Op.EQ, pod);
+            sc.setParameters("podId", pod);
         }
         if (address != null) {
-            sc.setParameters("hostAddress", SearchCriteria.Op.EQ, address);
+            sc.setParameters("hostAddress", address);
         }
         if (cluster != null) {
-            sc.setParameters("clusterId", SearchCriteria.Op.EQ, cluster);
+            sc.setParameters("clusterId", cluster);
         }
 
         // search Pool details by ids

@@ -611,6 +611,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         boolean isDomainSpecific = false;
         Boolean subdomainAccess = cmd.getSubdomainAccess();
         Long vpcId = cmd.getVpcId();
+        String startIPv6 = cmd.getStartIpv6();
+        String endIPv6 = cmd.getEndIpv6();
+        String ip6Gateway = cmd.getIp6Gateway();
+        String ip6Cidr = cmd.getIp6Cidr();
 
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
@@ -727,7 +731,16 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         UserContext.current().setAccountId(owner.getAccountId());
 
-        // VALIDATE IP INFO
+        boolean ipv4 = false, ipv6 = false;
+        if (startIP != null) {
+        	ipv4 = true;
+        }
+        if (startIPv6 != null) {
+        	ipv6 = true;
+        }
+        
+        String cidr = null;
+        if (ipv4) {
         // if end ip is not specified, default it to startIp
         if (startIP != null) {
             if (!NetUtils.isValidIp(startIP)) {
@@ -746,7 +759,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
         }
 
-        String cidr = null;
         if (gateway != null && netmask != null) {
             if (!NetUtils.isValidIp(gateway)) {
                 throw new InvalidParameterValueException("Invalid gateway");
@@ -758,6 +770,51 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         }
 
+        }
+        
+        if (ipv6) {
+        	if (!NetUtils.isValidIpv6(startIPv6)) {
+        		throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
+        	}
+        	if (endIPv6 == null) {
+        		endIPv6 = startIPv6;
+        	} else if (!NetUtils.isValidIpv6(endIPv6)) {
+        		throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
+        	}
+        	
+        	if (!(ip6Gateway != null && ip6Cidr != null)) {
+        		throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in");
+        	}
+        	
+        	if (!NetUtils.isValidIpv6(ip6Gateway)) {
+        		throw new InvalidParameterValueException("Invalid ip6Gateway");
+        	}
+        	if (!NetUtils.isValidIp6Cidr(ip6Cidr)) {
+        		throw new InvalidParameterValueException("Invalid ip6cidr");
+        	}
+        	if (!NetUtils.isIp6InRange(startIPv6, ip6Cidr)) {
+        		throw new InvalidParameterValueException("startIPv6 is not in ip6cidr indicated network range!");
+        	}
+        	if (!NetUtils.isIp6InRange(endIPv6, ip6Cidr)) {
+        		throw new InvalidParameterValueException("endIPv6 is not in ip6cidr indicated network range!");
+        	}
+        	if (!NetUtils.isIp6InRange(ip6Gateway, ip6Cidr)) {
+        		throw new InvalidParameterValueException("ip6Gateway is not in ip6cidr indicated network range!");
+        	}
+        	
+        	int cidrSize = NetUtils.getIp6CidrSize(ip6Cidr);
+        	// Ipv6 cidr limit should be at least /64
+        	if (cidrSize < 64) {
+        		throw new InvalidParameterValueException("The cidr size of IPv6 network must be no less than 64 bits!");
+        	}
+        }
+
+        if (ipv6) {
+        	if (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() != Network.GuestType.Shared) {
+        		throw new InvalidParameterValueException("Can only support create IPv6 network with advance shared network!");
+        	}
+        }
+        
         // Regular user can create Guest Isolated Source Nat enabled network only
         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL
                 && (ntwkOff.getTrafficType() != TrafficType.Guest || ntwkOff.getGuestType() != Network.GuestType.Isolated
@@ -772,6 +829,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new InvalidParameterValueException("Regular user is not allowed to specify vlanId");
         }
 
+        if (ipv4) {
         // For non-root admins check cidr limit - if it's allowed by global config value
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && cidr != null) {
 
@@ -782,8 +840,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw new InvalidParameterValueException("Cidr size can't be less than " + _cidrLimit);
             }
         }
+        }
 
         Collection<String> ntwkProviders = _networkMgr.finalizeServicesAndProvidersForNetwork(ntwkOff, physicalNetworkId).values();
+        if (ipv6 && providersConfiguredForExternalNetworking(ntwkProviders)) {
+        	throw new InvalidParameterValueException("Cannot support IPv6 on network offering with external devices!");
+        }
+        
         if (cidr != null && providersConfiguredForExternalNetworking(ntwkProviders)) {
             if (ntwkOff.getGuestType() == GuestType.Shared && (zone.getNetworkType() == NetworkType.Advanced) &&
                     isSharedNetworkOfferingWithServices(networkOfferingId)) {
@@ -794,7 +857,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             }
         }
 
-
         // Vlan is created in 2 cases - works in Advance zone only:
         // 1) GuestType is Shared
         // 2) GuestType is Isolated, but SourceNat service is disabled
@@ -802,6 +864,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 && ((ntwkOff.getGuestType() == Network.GuestType.Shared)
                         || (ntwkOff.getGuestType() == GuestType.Isolated && 
                         !areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))));
+
+        if (!createVlan) {
+        	// Only support advance shared network in IPv6, which means createVlan is a must
+        	if (ipv6) {
+        		createVlan = true;
+        	}
+        }
 
         // Can add vlan range only to the network which allows it
         if (createVlan && !ntwkOff.getSpecifyIpRanges()) {
@@ -847,13 +916,13 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
             }
             network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, 
-                    networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId);
+            		networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr);
         }  
 
         if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && createVlan) {
             // Create vlan ip range
             _configMgr.createVlanAndPublicIpRange(pNtwk.getDataCenterId(), network.getId(), physicalNetworkId,
-                    false, null, startIP, endIP, gateway, netmask, vlanId, null);
+                    false, null, startIP, endIP, gateway, netmask, vlanId, null, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
         }
 
         txn.commit();
@@ -2809,7 +2878,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (privateNetwork == null) {
             //create Guest network
             privateNetwork = _networkMgr.createGuestNetwork(ntwkOff.getId(), networkName, displayText, gateway, cidr, vlan, 
-                    null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null, null);
+                    null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null, null, null, null);
             s_logger.debug("Created private network " + privateNetwork);
         } else {
             s_logger.debug("Private network already exists: " + privateNetwork);

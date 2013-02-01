@@ -100,7 +100,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         assert trafficType == TrafficType.Management || trafficType == TrafficType.Storage: "Well, I can't take care of this config now can I? " + config; 
         
         if (nic != null) {
-            if (nic.getRequestedIp() != null) {
+            if (nic.getRequestedIpv4() != null) {
                 throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
             }
             nic.setStrategy(nic.getIp4Address() != null ? ReservationStrategy.Create : ReservationStrategy.Start);

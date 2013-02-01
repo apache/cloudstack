@@ -38,6 +38,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.PodVlanMapVO;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -72,6 +73,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -163,7 +165,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
     PrivateIpDao _privateIpDao;
-    
+    @Inject
+    UserIpv6AddressDao _ipv6Dao;
 
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
@@ -516,7 +519,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         }
         boolean hasFreeIps = true;
         if (network.getGuestType() == GuestType.Shared) {
+        	if (network.getGateway() != null) {
             hasFreeIps = _ipAddressDao.countFreeIPsInNetwork(network.getId()) > 0;
+        	}
+        	if (!hasFreeIps) {
+        		return false;
+        	}
+        	if (network.getIp6Gateway() != null) {
+        		hasFreeIps = isIP6AddressAvailable(network);
+        	}
         } else {
             hasFreeIps = (getAvailableIps(network, null)).size() > 0;
         }
@@ -524,7 +535,25 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         return hasFreeIps;
     }
 
+    @Override
+    public Vlan getVlanForNetwork(long networkId) {
+    	List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+    	if (vlans == null || vlans.size() > 1) {
+    		s_logger.debug("Cannot find related vlan or too many vlan attached to network " + networkId);
+    		return null;
+    	}
+    	return vlans.get(0);
+    }
    
+    private boolean isIP6AddressAvailable(Network network) {
+    	if (network.getIp6Gateway() == null) {
+    		return false;
+    	}
+    	Vlan vlan = getVlanForNetwork(network.getId());
+    	long existedCount = _ipv6Dao.countExistedIpsInNetwork(network.getId());
+    	long rangeCount = NetUtils.countIp6InRange(vlan.getIp6Range());
+		return (existedCount < rangeCount);
+	}
 
     @Override
     public Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId) {

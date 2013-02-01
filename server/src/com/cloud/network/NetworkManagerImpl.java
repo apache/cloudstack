@@ -120,6 +120,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
@@ -282,6 +283,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     NetworkACLManager _networkACLMgr;
     @Inject
     NetworkModel _networkModel;
+    @Inject
+    UserIpv6AddressDao _ipv6Dao;
+    @Inject
+    Ipv6AddressManager _ipv6Mgr;
 
     ScheduledExecutorService _executor;
 
@@ -1313,10 +1318,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         vo.setDefaultNic(profile.isDefaultNic());
 
-        if (profile.getIp4Address() != null) {
             vo.setIp4Address(profile.getIp4Address());
-            vo.setAddressFormat(AddressFormat.Ip4);
-        }
+        vo.setAddressFormat(profile.getFormat());
 
         if (profile.getMacAddress() != null) {
             vo.setMacAddress(profile.getMacAddress());
@@ -1335,6 +1338,11 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         vo.setState(Nic.State.Allocated);
+        
+        vo.setIp6Address(profile.getIp6Address());
+        vo.setIp6Gateway(profile.getIp6Gateway());
+        vo.setIp6Cidr(profile.getIp6Cidr());
+        
         return deviceId;
     }
 
@@ -1793,7 +1801,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     @DB
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, 
             String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
-            PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId) 
+            PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr)
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
@@ -1826,9 +1834,18 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             throw ex;
         }
 
+        boolean ipv6 = false;
+        
+        if (ip6Gateway != null && ip6Cidr != null) {
+        	ipv6 = true;
+        }
         // Validate zone
         DataCenterVO zone = _dcDao.findById(zoneId);
         if (zone.getNetworkType() == NetworkType.Basic) {
+        	if (ipv6) {
+                throw new InvalidParameterValueException("IPv6 is not supported in Basic zone");
+        	}
+        	
             // In Basic zone the network should have aclType=Domain, domainId=1, subdomainAccess=true
             if (aclType == null || aclType != ACLType.Domain) {
                 throw new InvalidParameterValueException("Only AclType=Domain can be specified for network creation in Basic zone");
@@ -1871,6 +1888,9 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         } else if (zone.getNetworkType() == NetworkType.Advanced) {
             if (zone.isSecurityGroupEnabled()) {
+            	if (ipv6) {
+            		throw new InvalidParameterValueException("IPv6 is not supported with security group!");
+            	}
                 // Only Account specific Isolated network with sourceNat service disabled are allowed in security group
                 // enabled zone
                 boolean allowCreation = (ntwkOff.getGuestType() == GuestType.Isolated 
@@ -1956,7 +1976,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         boolean cidrRequired = zone.getNetworkType() == NetworkType.Advanced && ntwkOff.getTrafficType() == TrafficType.Guest
                 && (ntwkOff.getGuestType() == GuestType.Shared || (ntwkOff.getGuestType() == GuestType.Isolated 
                 && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)));
-        if (cidr == null && cidrRequired) {
+        if (cidr == null && ip6Cidr == null  && cidrRequired) {
             throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required when create network of" +
                     " type " + Network.GuestType.Shared + " and network of type " + GuestType.Isolated + " with service "
                     + Service.SourceNat.getName() + " disabled");
@@ -1967,7 +1987,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask can't be specified for zone of type " + NetworkType.Basic);
         }
 
-        // Check if cidr is RFC1918 compliant if the network is Guest Isolated
+        // Check if cidr is RFC1918 compliant if the network is Guest Isolated for IPv4
         if (cidr != null && ntwkOff.getGuestType() == Network.GuestType.Isolated && ntwkOff.getTrafficType() == TrafficType.Guest) {
             if (!NetUtils.validateGuestCidr(cidr)) {
                 throw new InvalidParameterValueException("Virtual Guest Cidr " + cidr + " is not RFC1918 compliant");
@@ -1999,6 +2019,20 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             }
         }
 
+        if (ip6Cidr != null && ip6Gateway != null) {
+            userNetwork.setIp6Cidr(ip6Cidr);
+            userNetwork.setIp6Gateway(ip6Gateway);
+            if (vlanId != null) {
+                userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+                userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
+                if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
+                    userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
+                } else {
+                    userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
+                }
+            }
+        }
+        
         List<NetworkVO> networks = setupNetwork(owner, ntwkOff, userNetwork, plan, name, displayText, true, domainId,
                 aclType, subdomainAccess, vpcId);
 
@@ -2571,7 +2605,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 guestNetwork = createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network"
                         , owner.getAccountName() + "-network", null, null, null, null, owner, null, physicalNetwork, 
                         zoneId, ACLType.Account,
-                        null, null);
+                        null, null, null, null);
                 if (guestNetwork == null) {
                     s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
                     throw new CloudRuntimeException("Failed to create a Guest Isolated Networks with SourceNAT " +
@@ -3347,11 +3381,14 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         return success;
     }
 
-    @Override
-    public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network, String requestedIp) throws InsufficientVirtualNetworkCapcityException,
+    public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network,
+    							 String requestedIpv4, String requestedIpv6) throws InsufficientVirtualNetworkCapcityException,
     InsufficientAddressCapacityException {
+    	boolean ipv4 = false, ipv6 = false;
+    	if (network.getGateway() != null) {
         if (nic.getIp4Address() == null) {
-            PublicIp ip = assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.DirectAttached, network.getId(), requestedIp, false);
+    			ipv4 = true;
+    			PublicIp ip = assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.DirectAttached, network.getId(), requestedIpv4, false);
             nic.setIp4Address(ip.getAddress().toString());
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());
@@ -3362,11 +3399,36 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             nic.setReservationId(String.valueOf(ip.getVlanTag()));
             nic.setMacAddress(ip.getMacAddress());
         }
+    	}
+    	
+    	if (network.getIp6Gateway() != null) {
+    		if (nic.getIp6Address() == null) {
+    			ipv6 = true;
+    			UserIpv6Address ip = _ipv6Mgr.assignDirectIp6Address(dc.getId(), vm.getOwner(), network.getId(), requestedIpv6);
+    			Vlan vlan = _networkModel.getVlanForNetwork(network.getId());
+    			if (vlan == null) {
+    				s_logger.debug("Cannot find related vlan or too many vlan attached to network " + network.getId());
+    				return;
+    			}
+    			nic.setIp6Address(ip.getAddress().toString());
+    			nic.setIp6Gateway(vlan.getIp6Gateway());
+    			nic.setIp6Cidr(vlan.getIp6Cidr());
+    			if (ipv4) {
+    				nic.setFormat(AddressFormat.DualStack);
+    			} else {
+    				nic.setIsolationUri(IsolationType.Vlan.toUri(vlan.getVlanTag()));
+    				nic.setBroadcastType(BroadcastDomainType.Vlan);
+    				nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan.getVlanTag()));
+    				nic.setFormat(AddressFormat.Ip6);
+    				nic.setReservationId(String.valueOf(vlan.getVlanTag()));
+    				nic.setMacAddress(ip.getMacAddress());
+    			}
+    		}
+    	}
 
         nic.setDns1(dc.getDns1());
         nic.setDns2(dc.getDns2());
     }
-
 
     @Override
     public boolean setupDns(Network network, Provider provider) {

@@ -145,4 +145,10 @@ public interface Nic extends Identity, InternalIdentity {
     VirtualMachine.Type getVmType();
 
     AddressFormat getAddressFormat();
+
+	String getIp6Gateway();
+
+	String getIp6Cidr();
+
+	String getIp6Address();
 }

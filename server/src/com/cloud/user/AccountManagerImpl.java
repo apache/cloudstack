@@ -141,7 +141,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 @Local(value = { AccountManager.class, AccountService.class })
-public class AccountManagerImpl extends ManagerBase implements AccountManager, AccountService {
+public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
     public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
 
     @Inject

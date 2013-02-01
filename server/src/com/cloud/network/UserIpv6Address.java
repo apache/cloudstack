@@ -14,39 +14,39 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.dc;
+package com.cloud.network;
 
-import org.apache.cloudstack.acl.InfrastructureEntity;
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Vlan extends InfrastructureEntity, InternalIdentity, Identity {
-    public enum VlanType {
-        DirectAttached,
-        VirtualNetwork
+/**
+ * @author Sheng Yang
+ *
+ */
+public interface UserIpv6Address extends ControlledEntity, Identity, InternalIdentity {
+    enum State {
+        Allocating, // The IP Address is being propagated to other network elements and is not ready for use yet.
+        Allocated, // The IP address is in used.
+        Releasing, // The IP address is being released for other network elements and is not ready for allocation.
+        Free // The IP address is ready to be allocated.
     }
 
-    public final static String UNTAGGED = "untagged";
+    long getDataCenterId();
 
-    public String getVlanTag();
+    String getAddress();
 
-    public String getVlanGateway();
+    long getVlanId();
 
-    public String getVlanNetmask();
+    State getState();
 
-    public long getDataCenterId();
+    Long getNetworkId();
+    
+    Long getSourceNetworkId();
 
-    public String getIpRange();
+    Long getPhysicalNetworkId();
 
-    public VlanType getVlanType();
-
-    public Long getNetworkId();
-
-    public Long getPhysicalNetworkId();
-
-	public String getIp6Gateway();
-
-	public String getIp6Cidr();
-
-	public String getIp6Range();
+    void setState(UserIpv6Address.State state);
+    
+    String getMacAddress();
 }

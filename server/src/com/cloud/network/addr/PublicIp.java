@@ -206,4 +206,19 @@ public class PublicIp implements PublicIpAddress {
     public void setVpcId(Long vpcId) {
         _addr.setVpcId(vpcId);
     }
+
+	@Override
+	public String getIp6Gateway() {
+		return _vlan.getIp6Gateway();
+	}
+
+	@Override
+	public String getIp6Cidr() {
+		return _vlan.getIp6Cidr();
+	}
+
+	@Override
+	public String getIp6Range() {
+		return _vlan.getIp6Range();
+	}
 }

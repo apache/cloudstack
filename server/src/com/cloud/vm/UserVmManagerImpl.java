@@ -134,6 +134,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.network.Network;
+import com.cloud.network.*;
+import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
@@ -1318,9 +1320,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if(network == null) {
             throw new InvalidParameterValueException("unable to find a network with id " + networkId);
         }
-        NicProfile profile = new NicProfile(null);
+        NicProfile profile = new NicProfile(null, null);
         if(ipAddress != null) {
-          profile = new NicProfile(ipAddress);
+          profile = new NicProfile(ipAddress, null);
         }
 
         // Perform permission check on VM
@@ -2810,16 +2812,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     }
 
     @Override
-    public UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone,
-            ServiceOffering serviceOffering, VirtualMachineTemplate template,
-            List<Long> securityGroupIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize,
-            String group, HypervisorType hypervisor, String userData,
-            String sshKeyPair, Map<Long, String> requestedIps,
-            String defaultIp, String keyboard)
-                    throws InsufficientCapacityException, ConcurrentOperationException,
-                    ResourceUnavailableException, StorageUnavailableException,
-                    ResourceAllocationException {
+    public UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner,
+            String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, String keyboard)
+                    throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
         Account caller = UserContext.current().getCaller();
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
@@ -2867,22 +2862,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
         }
 
-        return createVirtualMachine(zone, serviceOffering, template, hostName,
-                displayName, owner, diskOfferingId, diskSize, networkList,
-                securityGroupIdList, group, userData, sshKeyPair, hypervisor,
-                caller, requestedIps, defaultIp, keyboard);
+        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId,
+                diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIps, keyboard);
     }
 
     @Override
-    public UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone,
-            ServiceOffering serviceOffering, VirtualMachineTemplate template,
-            List<Long> networkIdList, List<Long> securityGroupIdList,
-            Account owner, String hostName, String displayName,
-            Long diskOfferingId, Long diskSize, String group,
-            HypervisorType hypervisor, String userData, String sshKeyPair,
-            Map<Long, String> requestedIps, String defaultIp, String keyboard)
-                    throws InsufficientCapacityException, ConcurrentOperationException,
-                    ResourceUnavailableException, StorageUnavailableException,
+    public UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList,
+            List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData,
+            String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, String keyboard) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException,
                     ResourceAllocationException {
 
         Account caller = UserContext.current().getCaller();
@@ -2999,23 +2986,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
         }
 
-        return createVirtualMachine(zone, serviceOffering, template, hostName,
-                displayName, owner, diskOfferingId, diskSize, networkList,
-                securityGroupIdList, group, userData, sshKeyPair, hypervisor,
-                caller, requestedIps, defaultIp, keyboard);
+        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId,
+                diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIps, keyboard);
     }
 
     @Override
-    public UserVm createAdvancedVirtualMachine(DataCenter zone,
-            ServiceOffering serviceOffering, VirtualMachineTemplate template,
-            List<Long> networkIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize,
-            String group, HypervisorType hypervisor, String userData,
-            String sshKeyPair, Map<Long, String> requestedIps,
-            String defaultIp, String keyboard)
-                    throws InsufficientCapacityException, ConcurrentOperationException,
-                    ResourceUnavailableException, StorageUnavailableException,
-                    ResourceAllocationException {
+    public UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
+            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, String keyboard)
+                    throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
         Account caller = UserContext.current().getCaller();
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
@@ -3054,21 +3032,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     PhysicalNetwork physicalNetwork = _physicalNetworkDao
                             .findById(physicalNetworkId);
                     if (physicalNetwork == null) {
-                        throw new InvalidParameterValueException(
-                                "Unable to find physical network with id: "
-                                        + physicalNetworkId + " and tag: "
-                                        + requiredOfferings.get(0).getTags());
+                        throw new InvalidParameterValueException("Unable to find physical network with id: "+physicalNetworkId   + " and tag: " +requiredOfferings.get(0).getTags());
                     }
-                    s_logger.debug("Creating network for account " + owner
-                            + " from the network offering id="
-                            + requiredOfferings.get(0).getId()
-                            + " as a part of deployVM process");
-                    Network newNetwork = _networkMgr.createGuestNetwork(
-                            requiredOfferings.get(0).getId(),
-                            owner.getAccountName() + "-network",
-                            owner.getAccountName() + "-network", null, null,
-                            null, null, owner, null, physicalNetwork,
-                            zone.getId(), ACLType.Account, null, null);
+                    s_logger.debug("Creating network for account " + owner + " from the network offering id=" +requiredOfferings.get(0).getId() + " as a part of deployVM process");
+                    Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(),
+                            owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
+                            null, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException(
@@ -3131,24 +3100,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
         }
 
-        return createVirtualMachine(zone, serviceOffering, template, hostName,
-                displayName, owner, diskOfferingId, diskSize, networkList,
-                null, group, userData, sshKeyPair, hypervisor, caller,
-                requestedIps, defaultIp, keyboard);
+        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, null, group, userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIps, keyboard);
     }
 
-    @DB
-    @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", create = true)
-    protected UserVm createVirtualMachine(DataCenter zone,
-            ServiceOffering serviceOffering, VirtualMachineTemplate template,
-            String hostName, String displayName, Account owner,
-            Long diskOfferingId, Long diskSize, List<NetworkVO> networkList,
-            List<Long> securityGroupIdList, String group, String userData,
-            String sshKeyPair, HypervisorType hypervisor, Account caller,
-            Map<Long, String> requestedIps, String defaultNetworkIp,
-            String keyboard) throws InsufficientCapacityException,
-            ResourceUnavailableException, ConcurrentOperationException,
-            StorageUnavailableException, ResourceAllocationException {
+    @DB @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", create = true)
+    protected UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, String hostName, String displayName, Account owner, Long diskOfferingId,
+            Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, String userData, String sshKeyPair, HypervisorType hypervisor, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, String keyboard)
+            		throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
 
         _accountMgr.checkAccess(caller, null, true, owner);
 
@@ -3159,7 +3117,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         long accountId = owner.getId();
 
-        assert !(requestedIps != null && defaultNetworkIp != null) : "requestedIp list and defaultNetworkIp should never be specified together";
+        assert !(requestedIps != null && (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null)) : "requestedIp list and defaultNetworkIp should never be specified together";
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState()
                 && !_accountMgr.isRootAdmin(caller.getType())) {
@@ -3270,18 +3228,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                         + zone.getId());
             }
 
-            String requestedIp = null;
+            IpAddresses requestedIpPair = null;
             if (requestedIps != null && !requestedIps.isEmpty()) {
-                requestedIp = requestedIps.get(network.getId());
+                requestedIpPair = requestedIps.get(network.getId());
             }
 
-            NicProfile profile = new NicProfile(requestedIp);
+            if (requestedIpPair == null) {
+            	requestedIpPair = new IpAddresses(null, null);
+            } else {
+            	checkRequestedIpAddresses(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address());
+            }
+            
+            NicProfile profile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address());
 
             if (defaultNetworkNumber == 0) {
                 defaultNetworkNumber++;
                 // if user requested specific ip for default network, add it
-                if (defaultNetworkIp != null) {
-                    profile = new NicProfile(defaultNetworkIp);
+                if (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null) {
+                	checkRequestedIpAddresses(defaultIps.getIp4Address(), defaultIps.getIp6Address());
+                    profile = new NicProfile(defaultIps.getIp4Address(), defaultIps.getIp6Address());
                 }
 
                 profile.setDefaultNic(true);
@@ -3459,6 +3424,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         return vm;
     }
+
+    private void checkRequestedIpAddresses(String ip4, String ip6) throws InvalidParameterValueException {
+    	if (ip4 != null) {
+    		if (!NetUtils.isValidIp(ip4)) {
+    			throw new InvalidParameterValueException("Invalid specified IPv4 address " + ip4);
+    		}
+    	}
+    	if (ip6 != null) {
+    		if (!NetUtils.isValidIpv6(ip6)) {
+    			throw new InvalidParameterValueException("Invalid specified IPv6 address " + ip6);
+    		}
+    	}
+	}
 
     private void validateUserData(String userData) {
         byte[] decodedUserData = null;
@@ -4693,7 +4671,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                                     requiredOfferings.get(0).getId() + " as a part of deployVM process");
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(),
                                     newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
-                                    null, null, newAccount, null, physicalNetwork, zone.getId(), ACLType.Account, null, null);
+                                    null, null, newAccount, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null);
                             defaultNetwork = _networkDao.findById(newNetwork.getId());
                         } else if (virtualNetworks.size() > 1) {
                             throw new InvalidParameterValueException(

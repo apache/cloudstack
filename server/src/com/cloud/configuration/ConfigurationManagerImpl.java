@@ -2250,7 +2250,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         txn.start();
 
         Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, 
-                endIP, vlanGateway, vlanNetmask, vlanId, vlanOwner);
+                endIP, vlanGateway, vlanNetmask, vlanId, vlanOwner, null, null, null, null);
 
         if (associateIpRangeToAccount) {
             _networkMgr.associateIpAddressListToAccount(userId, vlanOwner.getId(), zoneId, vlan.getId(), null);
@@ -2276,10 +2276,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @DB
     public Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, 
             String startIP, String endIP, String vlanGateway, String vlanNetmask,
-            String vlanId, Account vlanOwner) {
-
-
+            String vlanId, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr) {
         Network network = _networkModel.getNetwork(networkId);
+
+        boolean ipv4 = false, ipv6 = false;
+
+        if (startIP != null) {
+        	ipv4 = true;
+        }
+        
+        if (startIPv6 != null) {
+        	ipv6 = true;
+        }
+        
+        if (!ipv4 && !ipv6) {
+            throw new InvalidParameterValueException("Please specify IPv4 or IPv6 address.");
+        }
 
         //Validate the zone
         DataCenterVO zone = _zoneDao.findById(zoneId);
@@ -2345,6 +2357,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Vlan owner can be defined only in the zone of type " + NetworkType.Advanced);
         }
 
+        if (ipv4) {
         // Make sure the gateway is valid
         if (!NetUtils.isValidIp(vlanGateway)) {
             throw new InvalidParameterValueException("Please specify a valid gateway");
@@ -2354,7 +2367,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (!NetUtils.isValidIp(vlanNetmask)) {
             throw new InvalidParameterValueException("Please specify a valid netmask");
         }
+        }
 
+        if (ipv6) {
+        	if (!NetUtils.isValidIpv6(vlanIp6Gateway)) {
+        		throw new InvalidParameterValueException("Please specify a valid IPv6 gateway");
+        	}
+        	if (!NetUtils.isValidIp6Cidr(vlanIp6Cidr)) {
+        		throw new InvalidParameterValueException("Please specify a valid IPv6 CIDR");
+        	}
+        }
+
+        if (ipv4) {
         String newVlanSubnet = NetUtils.getSubNet(vlanGateway, vlanNetmask);
 
         // Check if the new VLAN's subnet conflicts with the guest network in
@@ -2399,6 +2423,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         List<VlanVO> vlans = _vlanDao.listByZone(zone.getId());
         for (VlanVO vlan : vlans) {
             String otherVlanGateway = vlan.getVlanGateway();
+        		// Continue if it's not IPv4 
+        		if (otherVlanGateway == null) {
+        			continue;
+        		}
             String otherVlanSubnet = NetUtils.getSubNet(vlan.getVlanGateway(), vlan.getVlanNetmask());
             String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
             String otherVlanStartIP = otherVlanIpRange[0];
@@ -2430,6 +2458,33 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
             }
         }
+        }
+        
+        String ipv6Range = null;
+        if (ipv6) {
+        	ipv6Range = startIPv6;
+        	if (endIPv6 != null) {
+        		ipv6Range += "-" + endIPv6;
+        	}
+        	
+        	List<VlanVO> vlans = _vlanDao.listByZone(zone.getId());
+        	for (VlanVO vlan : vlans) {
+        		if (vlan.getIp6Gateway() == null) {
+        			continue;
+        		}
+        		if (vlanId.equals(vlan.getVlanTag())) {
+        			if (NetUtils.isIp6RangeOverlap(ipv6Range, vlan.getIp6Range())) {
+        				throw new InvalidParameterValueException("The IPv6 range with tag: " + vlan.getVlanTag()
+        						+ " already has IPs that overlap with the new range. Please specify a different start IP/end IP.");
+        			}
+
+        			if (!vlanIp6Gateway.equals(vlan.getIp6Gateway())) {
+        				throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " has already been added with gateway " + vlan.getIp6Gateway()
+        						+ ". Please specify a different tag.");
+        			}
+        		}
+        	}
+        }
 
         // Check if a guest VLAN is using the same tag
         if (_zoneDao.findVnet(zoneId, physicalNetworkId, vlanId).size() > 0) {
@@ -2450,21 +2505,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        String ipRange = startIP;
+        String ipRange = null;
+        
+        if (ipv4) {
+        	ipRange = startIP;
         if (endIP != null) {
             ipRange += "-" + endIP;
+        }
         }
 
         // Everything was fine, so persist the VLAN
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId, physicalNetworkId);
+        VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId, physicalNetworkId, vlanIp6Gateway, vlanIp6Cidr, ipv6Range);
         s_logger.debug("Saving vlan range " + vlan);
         vlan = _vlanDao.persist(vlan);
 
+        // IPv6 use a used ip map, is different from ipv4, no need to save public ip range
+        if (ipv4) {
         if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId(), networkId, physicalNetworkId)) {
-            throw new CloudRuntimeException("Failed to save IP range. Please contact Cloud Support."); 
+        		throw new CloudRuntimeException("Failed to save IPv4 range. Please contact Cloud Support."); 
+        	}
         }
 
         if (vlanOwner != null) {

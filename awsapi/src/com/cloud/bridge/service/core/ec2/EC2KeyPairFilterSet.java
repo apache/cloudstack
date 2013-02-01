@@ -62,14 +62,14 @@ public class EC2KeyPairFilterSet {
 	}
 
 
-	public EC2DescribeKeyPairsResponse evaluate( List<EC2SSHKeyPair> sampleList) throws ParseException	{
+    public EC2DescribeKeyPairsResponse evaluate( EC2DescribeKeyPairsResponse response ) throws ParseException {
 		EC2DescribeKeyPairsResponse resultList = new EC2DescribeKeyPairsResponse();
 		
 		boolean matched;
 		
-		EC2SSHKeyPair[] keypairSet = sampleList.toArray(new EC2SSHKeyPair[0]);
+        EC2SSHKeyPair[] keyPairSet = response.getKeyPairSet();
 		EC2Filter[] filterSet = getFilterSet();
-		for (EC2SSHKeyPair keyPair : keypairSet) {
+        for (EC2SSHKeyPair keyPair : keyPairSet) {
 			matched = true;
 			for (EC2Filter filter : filterSet) {
 				if (!filterMatched(keyPair, filter)) {

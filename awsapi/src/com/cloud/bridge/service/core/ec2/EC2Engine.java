@@ -320,7 +320,7 @@ public class EC2Engine extends ManagerBase {
                 throw new EC2ServiceException(ClientError.InvalidGroup_NotFound, "Cannot find matching ruleid.");
 
             CloudStackInfoResponse resp = getApi().revokeSecurityGroupIngress(ruleId);
-            if (resp != null && resp.getId() != null) {
+            if (resp != null) {
                 return resp.getSuccess();
             }
             return false;
@@ -351,7 +351,7 @@ public class EC2Engine extends ManagerBase {
                     pair.setKeyValue(group.getAccount(), group.getName());
                     secGroupList.add(pair);
                 }
-                CloudStackSecurityGroupIngress resp = null;
+                CloudStackSecurityGroup resp = null;
                 if (ipPerm.getProtocol().equalsIgnoreCase("icmp")) {
                     resp = getApi().authorizeSecurityGroupIngress(null, constructList(ipPerm.getIpRangeSet()), null, null, 
                             ipPerm.getIcmpCode(), ipPerm.getIcmpType(), ipPerm.getProtocol(), null, 
@@ -361,11 +361,14 @@ public class EC2Engine extends ManagerBase {
                             ipPerm.getToPort().longValue(), null, null, ipPerm.getProtocol(), null, request.getName(), 
                             ipPerm.getFromPort().longValue(), secGroupList);
                 }
-                if (resp != null && resp.getRuleId() != null) {
-                    return true;
-                }
+                if (resp != null ){
+                    List<CloudStackIngressRule> ingressRules = resp.getIngressRules();
+                    for (CloudStackIngressRule ingressRule : ingressRules)
+                        if (ingressRule.getRuleId() == null) return false;
+                } else {
                 return false;
             }
+			}
         } catch(Exception e) {
             logger.error( "EC2 AuthorizeSecurityGroupIngress - ", e);
             throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
@@ -719,53 +722,22 @@ public class EC2Engine extends ManagerBase {
             throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
         }
     }
+
     /**
-     * Lists SSH KeyPairs on the systme
+     * Lists SSH KeyPairs on the system
      * 
      * @param request
      * @return
      */
     public EC2DescribeKeyPairsResponse describeKeyPairs( EC2DescribeKeyPairs request ) {
         try {
-            EC2KeyPairFilterSet filterSet = request.getKeyFilterSet();
-            String[] keyNames = request.getKeyNames();
-            List<CloudStackKeyPair> keyPairs = getApi().listSSHKeyPairs(null, null, null);
-            List<EC2SSHKeyPair> keyPairsList = new ArrayList<EC2SSHKeyPair>();
+            EC2DescribeKeyPairsResponse response = listKeyPairs(request.getKeyNames());
+            EC2KeyPairFilterSet kfs = request.getKeyFilterSet();
 
-            if (keyPairs != null) {
-                // Let's trim the list of keypairs to only the ones listed in keyNames
-                List<CloudStackKeyPair> matchedKeyPairs = new ArrayList<CloudStackKeyPair>();
-                if (keyNames != null && keyNames.length > 0) {
-                    for (CloudStackKeyPair keyPair : keyPairs) {
-                        boolean matched = false;
-                        for (String keyName : keyNames) {
-                            if (keyPair.getName().equalsIgnoreCase(keyName)) {
-                                matched = true;
-                                break;
-                            }
-                        }
-                        if (matched) {
-                            matchedKeyPairs.add(keyPair);
-                        }
-                    }
-                    if (matchedKeyPairs.isEmpty()) {
-                        throw new EC2ServiceException(ServerError.InternalError, "No matching keypairs found");
-                    }
-                }else{
-                    matchedKeyPairs = keyPairs;
-                }
-
-
-                // this should be reworked... converting from CloudStackKeyPairResponse to EC2SSHKeyPair is dumb
-                for (CloudStackKeyPair respKeyPair: matchedKeyPairs) {
-                    EC2SSHKeyPair ec2KeyPair = new EC2SSHKeyPair();
-                    ec2KeyPair.setFingerprint(respKeyPair.getFingerprint());
-                    ec2KeyPair.setKeyName(respKeyPair.getName());
-                    ec2KeyPair.setPrivateKey(respKeyPair.getPrivatekey());
-                    keyPairsList.add(ec2KeyPair);
-                }
-            }
-            return filterSet.evaluate(keyPairsList);
+            if (kfs == null)
+                return response;
+            else
+                return kfs.evaluate(response);
         } catch(Exception e) {
             logger.error("EC2 DescribeKeyPairs - ", e);
             throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
@@ -850,24 +822,13 @@ public class EC2Engine extends ManagerBase {
      */
     public EC2DescribeAddressesResponse describeAddresses( EC2DescribeAddresses request ) {
         try {
-            List<CloudStackIpAddress> addrList = getApi().listPublicIpAddresses(null, null, null, null, null, null, null, null, null);
+            EC2DescribeAddressesResponse response = listAddresses(request.getPublicIpsSet());
+            EC2AddressFilterSet afs = request.getFilterSet();
 
-            EC2AddressFilterSet filterSet = request.getFilterSet();
-            List<EC2Address> addressList = new ArrayList<EC2Address>();
-            if (addrList != null && addrList.size() > 0) {
-                for (CloudStackIpAddress addr: addrList) {
-                    // remember, if no filters are set, request.inPublicIpSet always returns true
-                    if (request.inPublicIpSet(addr.getIpAddress())) {
-                        EC2Address ec2Address = new EC2Address();
-                        ec2Address.setIpAddress(addr.getIpAddress());
-                        if (addr.getVirtualMachineId() != null) 
-                            ec2Address.setAssociatedInstanceId(addr.getVirtualMachineId().toString());
-                        addressList.add(ec2Address);
-                    }
-                }
-            }
-
-            return filterSet.evaluate(addressList);
+            if (afs ==null)
+                return response;
+            else
+                return afs.evaluate(response);
         } catch(Exception e) {
             logger.error("EC2 DescribeAddresses - ", e);
             throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
@@ -2081,6 +2042,71 @@ public class EC2Engine extends ManagerBase {
             return groupSet;
         } catch(Exception e) {
             logger.error( "List Security Groups - ", e);
+            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+        }
+    }
+
+    private EC2DescribeKeyPairsResponse listKeyPairs( String[] keyNames ) throws Exception {
+        try {
+            EC2DescribeKeyPairsResponse keyPairSet = new EC2DescribeKeyPairsResponse();
+
+            List<CloudStackKeyPair> keyPairs = getApi().listSSHKeyPairs(null, null, null);
+            if (keyPairs != null && keyPairs.size() > 0) {
+                for (CloudStackKeyPair keyPair : keyPairs) {
+                    boolean matched = false;
+                    if (keyNames.length > 0) {
+                        for (String keyName : keyNames) {
+                            if (keyName.equalsIgnoreCase(keyPair.getName())) {
+                                matched = true;
+                                break;
+                            }
+                        }
+                    } else matched = true;
+                    if (!matched) continue;
+                    EC2SSHKeyPair ec2KeyPair = new EC2SSHKeyPair();
+                    ec2KeyPair.setFingerprint(keyPair.getFingerprint());
+                    ec2KeyPair.setKeyName(keyPair.getName());
+                    ec2KeyPair.setPrivateKey(keyPair.getPrivatekey());
+
+                    keyPairSet.addKeyPair(ec2KeyPair);
+                }
+            }
+            return keyPairSet;
+        } catch(Exception e) {
+            logger.error( "List Keypairs - ", e);
+            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+        }
+    }
+
+    private EC2DescribeAddressesResponse listAddresses(String[] addressNames) throws Exception {
+        try {
+            EC2DescribeAddressesResponse addressSet = new EC2DescribeAddressesResponse();
+
+            List<CloudStackIpAddress> addresses = getApi().listPublicIpAddresses(null, null, null, null, null, null, null, null, null);
+            if (addresses != null && addresses.size() > 0) {
+                for (CloudStackIpAddress address : addresses) {
+                    boolean matched = false;
+                    if ( addressNames.length > 0) {
+                        for (String addressName : addressNames) {
+                            if (address.getIpAddress().equalsIgnoreCase(addressName)) {
+                                matched = true;
+                                break;
+                            }
+                        }
+                    } else matched = true;
+
+                    if (!matched) continue ;
+
+                    EC2Address ec2Address = new EC2Address();
+                    ec2Address.setIpAddress(address.getIpAddress());
+                    if (address.getVirtualMachineId() != null)
+                        ec2Address.setAssociatedInstanceId(address.getVirtualMachineId().toString());
+                    addressSet.addAddress(ec2Address);
+                }
+            }
+            return addressSet;
+        } catch(Exception e) {
+            logger.error( "List Addresses - ", e);
             throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
         }
     }

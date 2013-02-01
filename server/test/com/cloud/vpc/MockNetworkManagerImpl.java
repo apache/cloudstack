@@ -56,6 +56,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.UserIpv6Address;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -849,7 +850,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
     @Override
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway,
             String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
-            PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId)
+            PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String gatewayv6, String cidrv6)
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
@@ -1013,10 +1014,9 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
      */
     @Override
     public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm,
-            Network network, String requestedIp) throws InsufficientVirtualNetworkCapcityException,
+            Network network, String requestedIpv4, String requestedIpv6) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
-
     }
 
 
@@ -1314,10 +1314,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkManage
         // TODO Auto-generated method stub
         return null;
     }
-
-
-
-
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkService#getNetwork(java.lang.String)
