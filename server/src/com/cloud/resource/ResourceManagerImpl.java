@@ -54,6 +54,7 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.manager.AgentAttache;
+import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
 import org.apache.cloudstack.api.ApiConstants;
@@ -136,6 +137,8 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
@@ -226,6 +229,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
     protected HashMap<Integer, List<ResourceListener>> _lifeCycleListeners = new HashMap<Integer, List<ResourceListener>>();
     private HypervisorType _defaultSystemVMHypervisor;
+
+    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 30; // seconds
 
     private void insertListener(Integer event, ResourceListener listener) {
         List<ResourceListener> lst = _lifeCycleListeners.get(event);
@@ -544,14 +549,14 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             }
         }
 
-        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, cmd.getFullUrlParams());
+        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, cmd.getFullUrlParams(), true);
     }
 
     @Override
     public List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         Long dcId = cmd.getZoneId();
         String url = cmd.getUrl();
-        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null);
+        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, false);
     }
 
     @Override
@@ -576,7 +581,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     }
 
     private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisorType, List<String> hostTags,
-            Map<String, String> params) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+            Map<String, String> params, boolean deferAgentCreation) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         URI uri = null;
 
         // Check if the zone exists in the system
@@ -731,7 +736,12 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                         return null;
                     }
 
-                    HostVO host = (HostVO)createHostAndAgent(resource, entry.getValue(), true, hostTags, false);
+                    HostVO host = null;
+                    if (deferAgentCreation) {
+                        host = (HostVO)createHostAndAgentDeferred(resource, entry.getValue(), true, hostTags, false);
+                    } else {
+                        host = (HostVO)createHostAndAgent(resource, entry.getValue(), true, hostTags, false);
+                    }
                     if (host != null) {
                         hosts.add(host);
                     }
@@ -1602,6 +1612,25 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         return host;
     }
 
+    private boolean isFirstHostInCluster(HostVO host)
+    {
+        boolean isFirstHost = true;
+        if (host.getClusterId() != null) {
+            SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
+            sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NULL);
+            sb.and("cluster", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+            sb.done();
+            SearchCriteria<HostVO> sc = sb.create();
+            sc.setParameters("cluster", host.getClusterId());
+
+            List<HostVO> hosts = _hostDao.search(sc, null);
+            if (hosts != null && hosts.size() > 1) {
+                isFirstHost = false;
+            }
+        }
+        return isFirstHost;
+    }
+
     private Host createHostAndAgent(ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags,
             boolean forRebalance) {
         HostVO host = null;
@@ -1669,6 +1698,129 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     /* Change agent status to Alert */
                     _agentMgr.agentStatusTransitTo(tempHost, Status.Event.AgentDisconnected, _nodeId);
                     /* Don't change resource state here since HostVO is already in database, which means resource state has had an appropriate value*/
+                }
+            }
+        }
+
+        return host;
+    }
+
+    private Host createHostAndAgentDeferred(ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags,
+            boolean forRebalance) {
+        HostVO host = null;
+        AgentAttache attache = null;
+        StartupCommand[] cmds = null;
+        boolean hostExists = false;
+        boolean deferAgentCreation = true;
+
+        try {
+            cmds = resource.initialize();
+            if (cmds == null) {
+                s_logger.info("Unable to fully initialize the agent because no StartupCommands are returned");
+                return null;
+            }
+
+            /* Generate a random version in a dev setup situation */
+            if ( this.getClass().getPackage().getImplementationVersion() == null ) {
+                for ( StartupCommand cmd : cmds ) {
+                    if ( cmd.getVersion() == null ) {
+                        cmd.setVersion(Long.toString(System.currentTimeMillis()));
+                    }
+                }
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                new Request(-1l, -1l, cmds, true, false).logD("Startup request from directly connected host: ", true);
+            }
+
+            if (old) {
+                StartupCommand firstCmd = cmds[0];
+                host = findHostByGuid(firstCmd.getGuid());
+                if (host == null) {
+                    host = findHostByGuid(firstCmd.getGuidWithoutResource());
+                }
+                if (host != null && host.getRemoved() == null) { // host already added, no need to add again
+                    s_logger.debug("Found the host " + host.getId() + " by guid: " + firstCmd.getGuid() + ", old host reconnected as new");
+                    hostExists = true; // ensures that host status is left unchanged in case of adding same one again
+                    return null;
+                }
+            }
+
+            host = null;
+            GlobalLock addHostLock = GlobalLock.getInternLock("AddHostLock");
+            try {
+                if (addHostLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) { // to safely determine first host in cluster in multi-MS scenario
+                    try {
+                        host = createHostVO(cmds, resource, details, hostTags, ResourceStateAdapter.Event.CREATE_HOST_VO_FOR_DIRECT_CONNECT);
+                        if (host != null) {
+                            deferAgentCreation = !isFirstHostInCluster(host); // if first host in cluster no need to defer agent creation
+                        }
+                    } finally {
+                        addHostLock.unlock();
+                    }
+                }
+            } finally {
+                addHostLock.releaseRef();
+            }
+
+            if (host != null) {
+                if (!deferAgentCreation) { // if first host in cluster then create agent otherwise defer it to scan task
+                    attache = _agentMgr.handleDirectConnectAgent(host, cmds, resource, forRebalance);
+                    host = _hostDao.findById(host.getId()); // reload
+                } else {
+                    host = _hostDao.findById(host.getId()); // reload
+                    // force host status to 'Alert' so that it is loaded for connection during next scan task
+                    _agentMgr.agentStatusTransitTo(host, Status.Event.AgentDisconnected, _nodeId);
+
+                    host = _hostDao.findById(host.getId()); // reload
+                    host.setLastPinged(0); // so that scan task can pick it up
+                    _hostDao.update(host.getId(), host);
+
+                    // schedule a scan task immediately
+                    if (_agentMgr instanceof ClusteredAgentManagerImpl) {
+                        ClusteredAgentManagerImpl clusteredAgentMgr = (ClusteredAgentManagerImpl)_agentMgr;
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Scheduling a host scan task");
+                        }
+                        // schedule host scan task on current MS
+                        clusteredAgentMgr.scheduleHostScanTask();
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Notifying all peer MS to schedule host scan task");
+                        }
+                        // notify peers to schedule a host scan task as well
+                        clusteredAgentMgr.notifyNodesInClusterToScheduleHostScanTask();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            s_logger.warn("Unable to connect due to ", e);
+        } finally {
+            if (hostExists) {
+                if (cmds != null) {
+                    resource.disconnected();
+                }
+            } else {
+                if (!deferAgentCreation && attache == null) {
+                    if (cmds != null) {
+                        resource.disconnected();
+                    }
+
+                    // In case of some db errors, we may land with the situation that host is null. We need to reload host from db and call disconnect on it so that it will be loaded for reconnection next time
+                    HostVO tempHost = host;
+                    if (tempHost == null) {
+                        if (cmds != null) {
+                            StartupCommand firstCmd = cmds[0];
+                            tempHost = findHostByGuid(firstCmd.getGuid());
+                            if (tempHost == null) {
+                                tempHost = findHostByGuid(firstCmd.getGuidWithoutResource());
+                            }
+                        }
+                    }
+                    if (tempHost != null) {
+                        /* Change agent status to Alert */
+                        _agentMgr.agentStatusTransitTo(tempHost, Status.Event.AgentDisconnected, _nodeId);
+                        /* Don't change resource state here since HostVO is already in database, which means resource state has had an appropriate value*/
+                    }
                 }
             }
         }

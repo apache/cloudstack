@@ -106,6 +106,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<ClusterVO> ClusterManagedSearch;
     protected final SearchBuilder<HostVO> RoutingSearch;
 
+    protected final SearchBuilder<HostVO> HostsForReconnectSearch;
+    protected final GenericSearchBuilder<HostVO, Long> ClustersOwnedByMSSearch;
+    protected final GenericSearchBuilder<ClusterVO, Long> AllClustersSearch;
+    protected final SearchBuilder<HostVO> HostsInClusterSearch;
+
     protected final Attribute _statusAttr;
     protected final Attribute _resourceStateAttr;
     protected final Attribute _msIdAttr;
@@ -233,6 +238,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         UnmanagedDirectConnectSearch.and("server", UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
         UnmanagedDirectConnectSearch.and("lastPinged", UnmanagedDirectConnectSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
         UnmanagedDirectConnectSearch.and("resourceStates", UnmanagedDirectConnectSearch.entity().getResourceState(), SearchCriteria.Op.NIN);
+        UnmanagedDirectConnectSearch.and("cluster", UnmanagedDirectConnectSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         /*
          * UnmanagedDirectConnectSearch.op(SearchCriteria.Op.OR, "managementServerId",
          * UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
@@ -301,6 +307,33 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         RoutingSearch.and("type", RoutingSearch.entity().getType(), SearchCriteria.Op.EQ);
         RoutingSearch.done();
 
+        HostsForReconnectSearch = createSearchBuilder();
+        HostsForReconnectSearch.and("resource", HostsForReconnectSearch.entity().getResource(), SearchCriteria.Op.NNULL);
+        HostsForReconnectSearch.and("server", HostsForReconnectSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
+        HostsForReconnectSearch.and("lastPinged", HostsForReconnectSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
+        HostsForReconnectSearch.and("resourceStates", HostsForReconnectSearch.entity().getResourceState(), SearchCriteria.Op.NIN);
+        HostsForReconnectSearch.and("cluster", HostsForReconnectSearch.entity().getClusterId(), SearchCriteria.Op.NNULL);
+        HostsForReconnectSearch.and("status", HostsForReconnectSearch.entity().getStatus(), SearchCriteria.Op.IN);
+        HostsForReconnectSearch.done();
+
+        ClustersOwnedByMSSearch = createSearchBuilder(Long.class);
+        ClustersOwnedByMSSearch.select(null, Func.DISTINCT, ClustersOwnedByMSSearch.entity().getClusterId());
+        ClustersOwnedByMSSearch.and("resource", ClustersOwnedByMSSearch.entity().getResource(), SearchCriteria.Op.NNULL);
+        ClustersOwnedByMSSearch.and("cluster", ClustersOwnedByMSSearch.entity().getClusterId(), SearchCriteria.Op.NNULL);
+        ClustersOwnedByMSSearch.and("server", ClustersOwnedByMSSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
+        ClustersOwnedByMSSearch.done();
+
+        AllClustersSearch = _clusterDao.createSearchBuilder(Long.class);
+        AllClustersSearch.select(null, Func.NATIVE, AllClustersSearch.entity().getId());
+        AllClustersSearch.and("managed", AllClustersSearch.entity().getManagedState(), SearchCriteria.Op.EQ);
+        AllClustersSearch.done();
+
+        HostsInClusterSearch = createSearchBuilder();
+        HostsInClusterSearch.and("resource", HostsInClusterSearch.entity().getResource(), SearchCriteria.Op.NNULL);
+        HostsInClusterSearch.and("cluster", HostsInClusterSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        HostsInClusterSearch.and("server", HostsInClusterSearch.entity().getManagementServerId(), SearchCriteria.Op.NNULL);
+        HostsInClusterSearch.done();
+
         _statusAttr = _allAttributes.get("status");
         _msIdAttr = _allAttributes.get("managementServerId");
         _pingTimeAttr = _allAttributes.get("lastPinged");
@@ -326,25 +359,113 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SearchCriteria<HostVO> sc = GuidSearch.create("guid", guid);
         return findOneBy(sc);
     }
-    
+
+    /*
+     * Find hosts which is in Disconnected, Down, Alert and ping timeout and server is not null, set server to null
+     */
+    private void resetHosts(long managementServerId, long lastPingSecondsAfter) {
+        SearchCriteria<HostVO> sc = HostsForReconnectSearch.create();
+        sc.setParameters("server", managementServerId);
+        sc.setParameters("lastPinged", lastPingSecondsAfter);
+        sc.setParameters("status", Status.Disconnected, Status.Down, Status.Alert);
+
+        List<HostVO> hosts = lockRows(sc, null, true); // exclusive lock
+        for (HostVO host : hosts) {
+            host.setManagementServerId(null);
+            update(host.getId(), host);
+        }
+    }
+
+    /*
+     * Returns a list of cluster owned by @managementServerId
+     */
+    private List<Long> findClustersOwnedByManagementServer(long managementServerId) {
+        SearchCriteria<Long> sc = ClustersOwnedByMSSearch.create();
+        sc.setParameters("server", managementServerId);
+
+        List<Long> clusters = customSearch(sc, null);
+        return clusters;
+    }
+
+    /*
+     * Returns a list of all cluster Ids
+     */
+    private List<Long> listAllClusters() {
+        SearchCriteria<Long> sc = AllClustersSearch.create();
+        sc.setParameters("managed", Managed.ManagedState.Managed);
+
+        List<Long> clusters = _clusterDao.customSearch(sc, null);
+        return clusters;
+    }
+
+    /*
+     * This determines if hosts belonging to cluster(@clusterId) are up for grabs
+     *
+     * This is used for handling following cases:
+     * 1. First host added in cluster
+     * 2. During MS restart all hosts in a cluster are without any MS
+     */
+    private boolean canOwnCluster(long clusterId) {
+        SearchCriteria<HostVO> sc = HostsInClusterSearch.create();
+        sc.setParameters("cluster", clusterId);
+
+        List<HostVO> hosts = search(sc, null);
+        boolean ownCluster = (hosts == null || hosts.size() == 0);
+
+        return ownCluster;
+    }
+
     @Override @DB
     public List<HostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId) {
         Transaction txn = Transaction.currentTxn();
-        txn.start();       
-    	SearchCriteria<HostVO> sc = UnmanagedDirectConnectSearch.create();
-    	sc.setParameters("lastPinged", lastPingSecondsAfter);
-        //sc.setParameters("resourceStates", ResourceState.ErrorInMaintenance, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.Disabled);
-        sc.setJoinParameters("ClusterManagedSearch", "managed", Managed.ManagedState.Managed);
-        List<HostVO> hosts = lockRows(sc, new Filter(HostVO.class, "clusterId", true, 0L, limit), true);
-        
-        for (HostVO host : hosts) {
-            host.setManagementServerId(managementServerId);
-            update(host.getId(), host);
-        }
-        
+
+        // reset hosts that are suitable candidates for reconnect
+        txn.start();
+        resetHosts(managementServerId, lastPingSecondsAfter);
         txn.commit();
-        
-        return hosts;
+
+        List<Long> clusters = findClustersOwnedByManagementServer(managementServerId);
+        List<Long> allClusters = listAllClusters();
+
+        SearchCriteria<HostVO> sc = UnmanagedDirectConnectSearch.create();
+        sc.setParameters("lastPinged", lastPingSecondsAfter);
+        sc.setJoinParameters("ClusterManagedSearch", "managed", Managed.ManagedState.Managed);
+        List<HostVO> assignedHosts = new ArrayList<HostVO>();
+        List<Long> remainingClusters = new ArrayList<Long>();
+
+        // handle clusters already owned by @managementServerId
+        txn.start();
+        for (Long clusterId : allClusters) {
+            if (clusters.contains(clusterId)) { // host belongs to clusters owned by @managementServerId
+                sc.setParameters("cluster", clusterId);
+                List<HostVO> unmanagedHosts = lockRows(sc, null, true);
+                for (HostVO host : unmanagedHosts) {
+                    host.setManagementServerId(managementServerId);
+                    update(host.getId(), host);
+                    assignedHosts.add(host);
+                }
+            } else {
+                remainingClusters.add(clusterId);
+            }
+        }
+        txn.commit();
+
+        // for remaining clusters check if they can be owned
+        for (Long clusterId : remainingClusters) {
+            txn.start();
+            sc.setParameters("cluster", clusterId);
+            List<HostVO> unmanagedHosts = lockRows(sc, null, true);
+            if (canOwnCluster(clusterId)) { // cluster is not owned by any other MS, so @managementServerId can own it
+                for (HostVO host : unmanagedHosts) {
+                    host.setManagementServerId(managementServerId);
+                    update(host.getId(), host);
+                    assignedHosts.add(host);
+                }
+            }
+            txn.commit();
+        }
+
+        return assignedHosts;
     }
     
     @Override @DB

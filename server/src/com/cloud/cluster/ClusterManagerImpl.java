@@ -53,6 +53,8 @@ import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PropagateResourceEventCommand;
 import com.cloud.agent.api.TransferAgentCommand;
+import com.cloud.agent.api.ScheduleHostScanTaskCommand;
+import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.agent.manager.Commands;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -348,7 +350,33 @@ public class ClusterManagerImpl implements ClusterManager {
             }
         }
     }
-    
+
+    private String handleScheduleHostScanTaskCommand(ScheduleHostScanTaskCommand cmd) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Intercepting resource manager command: " + _gson.toJson(cmd));
+        }
+
+        try {
+            // schedule a scan task immediately
+            if (_agentMgr instanceof ClusteredAgentManagerImpl) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Received notification as part of addHost command to start a host scan task");
+                }
+                ClusteredAgentManagerImpl clusteredAgentMgr = (ClusteredAgentManagerImpl)_agentMgr;
+                clusteredAgentMgr.scheduleHostScanTask();
+            }
+        } catch (Exception e) {
+            // Scheduling host scan task in peer MS is a best effort operation during host add, regular host scan
+            // happens at fixed intervals anyways. So handling any exceptions that may be thrown
+            s_logger.warn("Exception happened while trying to schedule host scan task on mgmt server " + getSelfPeerName() + ", ignoring as regular host scan happens at fixed interval anyways", e);
+            return null;
+        }
+
+        Answer[] answers = new Answer[1];
+        answers[0] = new Answer(cmd, true, null);
+        return _gson.toJson(answers);
+    }
+
     private String dispatchClusterServicePdu(ClusterServicePdu pdu) {
 
         if(s_logger.isDebugEnabled()) {
@@ -424,6 +452,10 @@ public class ClusterManagerImpl implements ClusterManager {
         	Answer[] answers = new Answer[1];
         	answers[0] = new Answer(cmd, result, null);
         	return _gson.toJson(answers);
+        } else if (cmds.length == 1 && cmds[0] instanceof ScheduleHostScanTaskCommand) {
+            ScheduleHostScanTaskCommand cmd = (ScheduleHostScanTaskCommand) cmds[0];
+            String response = handleScheduleHostScanTaskCommand(cmd);
+            return response;
         }
 
         try {

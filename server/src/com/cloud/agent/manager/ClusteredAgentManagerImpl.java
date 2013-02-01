@@ -50,6 +50,7 @@ import com.cloud.agent.api.CancelCommand;
 import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.TransferAgentCommand;
+import com.cloud.agent.api.ScheduleHostScanTaskCommand;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Request.Version;
 import com.cloud.agent.transport.Response;
@@ -157,6 +158,13 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
 
         return true;
+    }
+
+    public void scheduleHostScanTask() {
+        _timer.schedule(new DirectAgentScanTimerTask(), 0);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Scheduled a direct agent scan task");
+        }
     }
 
     private void runDirectAgentScanTimerTask() {
@@ -355,6 +363,15 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         s_logger.debug("Notifying other nodes of to disconnect");
         Command[] cmds = new Command[] { new ChangeAgentCommand(attache.getId(), Event.AgentDisconnected) };
         _clusterMgr.broadcast(attache.getId(), cmds);
+    }
+
+    // notifies MS peers to schedule a host scan task immediately, triggered during addHost operation
+    public void notifyNodesInClusterToScheduleHostScanTask() {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Notifying other MS nodes to run host scan task");
+        }
+        Command[] cmds = new Command[] { new ScheduleHostScanTaskCommand() };
+        _clusterMgr.broadcast(0, cmds);
     }
 
     protected static void logT(byte[] bytes, final String msg) {
