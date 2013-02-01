@@ -1268,3 +1268,26 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` DROP INDEX i_op_dc_vnet_alloc__vnet__data_center_id;
 
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id`(`vnet`, `physical_network_id`, `data_center_id`);
+
+CREATE TABLE  `cloud`.`region` (
+  `id` int unsigned NOT NULL UNIQUE,
+  `name` varchar(255) NOT NULL UNIQUE,
+  `end_point` varchar(255) NOT NULL,
+  `api_key` varchar(255),
+  `secret_key` varchar(255),
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`region_sync` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `region_id` int unsigned NOT NULL,
+  `api` varchar(1024) NOT NULL,
+  `created` datetime NOT NULL COMMENT 'date created',
+  `processed` tinyint NOT NULL default '0',
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client/api','','');
+ALTER TABLE `cloud`.`account` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
+ALTER TABLE `cloud`.`user` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
+ALTER TABLE `cloud`.`domain` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';

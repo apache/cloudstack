@@ -317,7 +317,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     protected void saveUser() {
     	//ToDo: Add regionId to default users and accounts
         // insert system account
-        String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id) VALUES (1, UUID(), 'system', '1', '1')";
+        String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, region_id) VALUES (1, UUID(), 'system', '1', '1', '1')";
         Transaction txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -325,8 +325,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         } catch (SQLException ex) {
         }
         // insert system user
-        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created)" +
-                " VALUES (1, UUID(), 'system', RAND(), 1, 'system', 'cloud', now())";
+        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, region_id)" +
+                " VALUES (1, UUID(), 'system', RAND(), 1, 'system', 'cloud', now(), '1')";
         txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -342,7 +342,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         String lastname = "cloud";
 
         // create an account for the admin user first
-        insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id) VALUES (" + id + ", UUID(), '" + username + "', '1', '1')";
+        insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, region_id) VALUES (" + id + ", UUID(), '" + username + "', '1', '1', '1')";
         txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -351,8 +351,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
         // now insert the user
-        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created, state) " +
-                "VALUES (" + id + ",'" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled')";
+        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created, state, region_id) " +
+                "VALUES (" + id + ",'" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled', '1')";
 
         txn = Transaction.currentTxn();
         try {
