@@ -450,6 +450,9 @@ public class UserVmData {
         private String type;
         private Boolean isDefault;
         private String macAddress;
+        private String ip6Gateway;
+        private String ip6Address;
+        private String ip6Cidr;
 
         public String getObjectName() {
             return objectName;
@@ -571,6 +574,30 @@ public class UserVmData {
                 return false;
             return true;
         }
+
+		public String getIp6Gateway() {
+			return ip6Gateway;
+		}
+
+		public void setIp6Gateway(String ip6Gateway) {
+			this.ip6Gateway = ip6Gateway;
+		}
+
+		public String getIp6Address() {
+			return ip6Address;
+		}
+
+		public void setIp6Address(String ip6Address) {
+			this.ip6Address = ip6Address;
+		}
+
+		public String getIp6Cidr() {
+			return ip6Cidr;
+		}
+
+		public void setIp6Cidr(String ip6Cidr) {
+			this.ip6Cidr = ip6Cidr;
+		}
     }
 
     public class SecurityGroupData {

@@ -1627,6 +1627,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                     nicResponse.setIpaddress(singleNicProfile.getIp4Address());
                     nicResponse.setGateway(singleNicProfile.getGateway());
                     nicResponse.setNetmask(singleNicProfile.getNetmask());
+                    nicResponse.setIp6Address(singleNicProfile.getIp6Address());
+                    nicResponse.setIp6Gateway(singleNicProfile.getIp6Gateway());
+                    nicResponse.setIp6Cidr(singleNicProfile.getIp6Cidr());
                     nicResponse.setNetworkid(singleNicProfile.getNetworkId());
                     nicResponse.setNetworkName(ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId()).getName());
                     if (acct.getType() == Account.ACCOUNT_TYPE_ADMIN) {
@@ -1769,6 +1772,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                     nicResponse.setIpaddress(singleNicProfile.getIp4Address());
                     nicResponse.setGateway(singleNicProfile.getGateway());
                     nicResponse.setNetmask(singleNicProfile.getNetmask());
+                    nicResponse.setIp6Address(singleNicProfile.getIp6Address());
+                    nicResponse.setIp6Gateway(singleNicProfile.getIp6Gateway());
+                    nicResponse.setIp6Cidr(singleNicProfile.getIp6Cidr());
                     nicResponse.setNetworkid(singleNicProfile.getNetworkId());
                     nicResponse.setNetworkName(network.getName());
                     
@@ -3415,6 +3421,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             nr.setNetmask(nd.getNetmask());
             nr.setGateway(nd.getGateway());
             nr.setIpaddress(nd.getIpaddress());
+            nr.setIp6Address(nd.getIp6Address());
+            nr.setIp6Gateway(nd.getIp6Gateway());
+            nr.setIp6Cidr(nd.getIp6Cidr());
             nr.setIsolationUri(nd.getIsolationUri());
             nr.setBroadcastUri(nd.getBroadcastUri());
             nr.setTrafficType(nd.getTrafficType());

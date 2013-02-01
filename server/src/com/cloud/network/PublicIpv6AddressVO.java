@@ -39,7 +39,6 @@ public class PublicIpv6AddressVO implements PublicIpv6Address {
     @Column(name="id")
     long id;
 
-	@Id
 	@Column(name="ip_address")
 	@Enumerated(value=EnumType.STRING)
 	private String address = null;

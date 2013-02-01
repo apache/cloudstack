@@ -186,8 +186,4 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
 	public void setIp6Cidr(String ip6Cidr) {
 		this.ip6Cidr = ip6Cidr;
 	}
-
-    public String getphysicalNetworkId() {
-        return physicalNetworkId;
-    }
 }
