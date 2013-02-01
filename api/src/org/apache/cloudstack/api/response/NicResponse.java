@@ -63,6 +63,15 @@ public class NicResponse extends BaseResponse {
     @SerializedName("macaddress") @Param(description="true if nic is default, false otherwise")
     private String macAddress;
 
+    @SerializedName(ApiConstants.IP6_GATEWAY) @Param(description="the gateway of IPv6 network")
+    private String ip6Gateway;
+    
+    @SerializedName(ApiConstants.IP6_CIDR) @Param(description="the cidr of IPv6 network")
+    private String ip6Cidr;
+    
+    @SerializedName(ApiConstants.IP6_ADDRESS) @Param(description="the IPv6 address of network")
+    private String ip6Address;
+    
     public String getId() {
         return id;
     }
@@ -115,6 +124,18 @@ public class NicResponse extends BaseResponse {
     public void setMacAddress(String macAddress) {
         this.macAddress = macAddress;
     }
+    
+	public void setIp6Gateway(String ip6Gateway) {
+		this.ip6Gateway = ip6Gateway;
+	}
+
+	public void setIp6Cidr(String ip6Cidr) {
+		this.ip6Cidr = ip6Cidr;
+	}
+
+	public void setIp6Address(String ip6Address) {
+		this.ip6Address = ip6Address;
+	}
 
     @Override
     public int hashCode() {
@@ -142,5 +163,4 @@ public class NicResponse extends BaseResponse {
             return false;
         return true;
     }
-
 }

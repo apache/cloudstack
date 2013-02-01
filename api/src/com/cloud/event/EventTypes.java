@@ -16,7 +16,41 @@
 // under the License.
 package com.cloud.event;
 
+import com.cloud.configuration.Configuration;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
+import com.cloud.dc.StorageNetworkIpRange;
+import com.cloud.dc.Vlan;
+import com.cloud.domain.Domain;
+import com.cloud.host.Host;
+import com.cloud.network.*;
+import com.cloud.network.as.*;
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.StaticNat;
+import com.cloud.network.security.SecurityGroup;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.projects.Project;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import com.cloud.vm.VirtualMachine;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class EventTypes {
+
+    //map of Event and corresponding entity for which Event is applicable
+    private static Map<String, String> entityEventDetails = null;
+
     // VM Events
     public static final String EVENT_VM_CREATE = "VM.CREATE";
     public static final String EVENT_VM_DESTROY = "VM.DESTROY";
@@ -319,10 +353,323 @@ public class EventTypes {
     public static final String EVENT_AUTOSCALEVMGROUP_UPDATE = "AUTOSCALEVMGROUP.UPDATE";
     public static final String EVENT_AUTOSCALEVMGROUP_ENABLE = "AUTOSCALEVMGROUP.ENABLE";
     public static final String EVENT_AUTOSCALEVMGROUP_DISABLE = "AUTOSCALEVMGROUP.DISABLE";
-    
+
+
     public static final String EVENT_BAREMETAL_DHCP_SERVER_ADD = "PHYSICAL.DHCP.ADD";
     public static final String EVENT_BAREMETAL_DHCP_SERVER_DELETE = "PHYSICAL.DHCP.DELETE";
-    
     public static final String EVENT_BAREMETAL_PXE_SERVER_ADD = "PHYSICAL.PXE.ADD";
     public static final String EVENT_BAREMETAL_PXE_SERVER_DELETE = "PHYSICAL.PXE.DELETE";
+
+    static {
+
+        // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
+        // current ActionEvent annotation semantics
+
+        entityEventDetails = new HashMap<String, String>();
+
+        entityEventDetails.put(EVENT_VM_CREATE, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_DESTROY, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_START, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_STOP, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_REBOOT, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_UPDATE, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_UPGRADE, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_RESETPASSWORD, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_MIGRATE, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_MOVE, VirtualMachine.class.getName());
+        entityEventDetails.put(EVENT_VM_RESTORE, VirtualMachine.class.getName());
+
+        entityEventDetails.put(EVENT_ROUTER_CREATE, VirtualRouter.class.getName());
+        entityEventDetails.put(EVENT_ROUTER_DESTROY, VirtualRouter.class.getName());
+        entityEventDetails.put(EVENT_ROUTER_START, VirtualRouter.class.getName());
+        entityEventDetails.put(EVENT_ROUTER_STOP, VirtualRouter.class.getName());
+        entityEventDetails.put(EVENT_ROUTER_REBOOT, VirtualRouter.class.getName());
+        entityEventDetails.put(EVENT_ROUTER_HA, VirtualRouter.class.getName());
+        entityEventDetails.put(EVENT_ROUTER_UPGRADE, VirtualRouter.class.getName());
+
+        entityEventDetails.put(EVENT_PROXY_CREATE, "ConsoleProxy");
+        entityEventDetails.put(EVENT_PROXY_DESTROY, "ConsoleProxy");
+        entityEventDetails.put(EVENT_PROXY_START, "ConsoleProxy");
+        entityEventDetails.put(EVENT_PROXY_STOP, "ConsoleProxy");
+        entityEventDetails.put(EVENT_PROXY_REBOOT, "ConsoleProxy");
+        entityEventDetails.put(EVENT_ROUTER_HA, "ConsoleProxy");
+        entityEventDetails.put(EVENT_PROXY_HA, "ConsoleProxy");
+
+        entityEventDetails.put(EVENT_VNC_CONNECT, "VNC");
+        entityEventDetails.put(EVENT_VNC_DISCONNECT, "VNC");
+
+        // Network Events
+        entityEventDetails.put(EVENT_NETWORK_CREATE, Network.class.getName());
+        entityEventDetails.put(EVENT_NETWORK_DELETE, Network.class.getName());
+        entityEventDetails.put(EVENT_NETWORK_UPDATE, Network.class.getName());
+        entityEventDetails.put(EVENT_NETWORK_RESTART, Network.class.getName());
+        entityEventDetails.put(EVENT_NET_IP_ASSIGN, PublicIpAddress.class.getName());
+        entityEventDetails.put(EVENT_NET_IP_RELEASE, PublicIpAddress.class.getName());
+        entityEventDetails.put(EVENT_NET_RULE_ADD, Network.class.getName());
+        entityEventDetails.put(EVENT_NET_RULE_DELETE, Network.class.getName());
+        entityEventDetails.put(EVENT_NET_RULE_MODIFY, Network.class.getName());
+        entityEventDetails.put(EVENT_FIREWALL_OPEN, Network.class.getName());
+        entityEventDetails.put(EVENT_FIREWALL_CLOSE, Network.class.getName());
+
+        // Load Balancers
+        entityEventDetails.put(EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, LoadBalancer.class.getName());
+        entityEventDetails.put(EVENT_REMOVE_FROM_LOAD_BALANCER_RULE, LoadBalancer.class.getName());
+        entityEventDetails.put(EVENT_LOAD_BALANCER_CREATE, LoadBalancer.class.getName());
+        entityEventDetails.put(EVENT_LOAD_BALANCER_DELETE, LoadBalancer.class.getName());
+        entityEventDetails.put(EVENT_LB_STICKINESSPOLICY_CREATE, LoadBalancer.class.getName());
+        entityEventDetails.put(EVENT_LB_STICKINESSPOLICY_DELETE, LoadBalancer.class.getName());
+        entityEventDetails.put(EVENT_LOAD_BALANCER_UPDATE, LoadBalancer.class.getName());
+
+        // Account events
+        entityEventDetails.put(EVENT_ACCOUNT_DISABLE, Account.class.getName());
+        entityEventDetails.put(EVENT_ACCOUNT_CREATE, Account.class.getName());
+        entityEventDetails.put(EVENT_ACCOUNT_DELETE, Account.class.getName());
+        entityEventDetails.put(EVENT_ACCOUNT_MARK_DEFAULT_ZONE, Account.class.getName());
+
+        // UserVO Events
+        entityEventDetails.put(EVENT_USER_LOGIN, User.class.getName());
+        entityEventDetails.put(EVENT_USER_LOGOUT, User.class.getName());
+        entityEventDetails.put(EVENT_USER_CREATE, User.class.getName());
+        entityEventDetails.put(EVENT_USER_DELETE, User.class.getName());
+        entityEventDetails.put(EVENT_USER_DISABLE, User.class.getName());
+        entityEventDetails.put(EVENT_USER_UPDATE, User.class.getName());
+        entityEventDetails.put(EVENT_USER_ENABLE, User.class.getName());
+        entityEventDetails.put(EVENT_USER_LOCK, User.class.getName());
+
+        // Template Events
+        entityEventDetails.put(EVENT_TEMPLATE_CREATE, VirtualMachineTemplate.class.getName());
+        entityEventDetails.put(EVENT_TEMPLATE_DELETE, VirtualMachineTemplate.class.getName());
+        entityEventDetails.put(EVENT_TEMPLATE_UPDATE, VirtualMachineTemplate.class.getName());
+        entityEventDetails.put(EVENT_TEMPLATE_DOWNLOAD_START, VirtualMachineTemplate.class.getName());
+        entityEventDetails.put(EVENT_TEMPLATE_DOWNLOAD_SUCCESS, VirtualMachineTemplate.class.getName());
+        entityEventDetails.put(EVENT_TEMPLATE_DOWNLOAD_FAILED, VirtualMachineTemplate.class.getName());
+        entityEventDetails.put(EVENT_TEMPLATE_COPY, VirtualMachineTemplate.class.getName());
+        entityEventDetails.put(EVENT_TEMPLATE_EXTRACT, VirtualMachineTemplate.class.getName());
+        entityEventDetails.put(EVENT_TEMPLATE_UPLOAD, VirtualMachineTemplate.class.getName());
+        entityEventDetails.put(EVENT_TEMPLATE_CLEANUP, VirtualMachineTemplate.class.getName());
+
+        // Volume Events
+        entityEventDetails.put(EVENT_VOLUME_CREATE, Volume.class.getName());
+        entityEventDetails.put(EVENT_VOLUME_DELETE, Volume.class.getName());
+        entityEventDetails.put(EVENT_VOLUME_ATTACH, Volume.class.getName());
+        entityEventDetails.put(EVENT_VOLUME_DETACH, Volume.class.getName());
+        entityEventDetails.put(EVENT_VOLUME_EXTRACT, Volume.class.getName());
+        entityEventDetails.put(EVENT_VOLUME_UPLOAD, Volume.class.getName());
+        entityEventDetails.put(EVENT_VOLUME_MIGRATE, Volume.class.getName());
+        entityEventDetails.put(EVENT_VOLUME_RESIZE, Volume.class.getName());
+
+        // Domains
+        entityEventDetails.put(EVENT_DOMAIN_CREATE, Domain.class.getName());
+        entityEventDetails.put(EVENT_DOMAIN_DELETE, Domain.class.getName());
+        entityEventDetails.put(EVENT_DOMAIN_UPDATE, Domain.class.getName());
+
+        // Snapshots
+        entityEventDetails.put(EVENT_SNAPSHOT_CREATE, Snapshot.class.getName());
+        entityEventDetails.put(EVENT_SNAPSHOT_DELETE, Snapshot.class.getName());
+        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_CREATE, Snapshot.class.getName());
+        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_UPDATE, Snapshot.class.getName());
+        entityEventDetails.put(EVENT_SNAPSHOT_POLICY_DELETE, Snapshot.class.getName());
+
+        // ISO
+        entityEventDetails.put(EVENT_ISO_CREATE, "Iso");
+        entityEventDetails.put(EVENT_ISO_DELETE, "Iso");
+        entityEventDetails.put(EVENT_ISO_COPY, "Iso");
+        entityEventDetails.put(EVENT_ISO_ATTACH, "Iso");
+        entityEventDetails.put(EVENT_ISO_DETACH, "Iso");
+        entityEventDetails.put(EVENT_ISO_EXTRACT, "Iso");
+        entityEventDetails.put(EVENT_ISO_UPLOAD, "Iso");
+
+        // SSVM
+        entityEventDetails.put(EVENT_SSVM_CREATE, "SecondaryStorageVm");
+        entityEventDetails.put(EVENT_SSVM_DESTROY, "SecondaryStorageVm");
+        entityEventDetails.put(EVENT_SSVM_START, "SecondaryStorageVm");
+        entityEventDetails.put(EVENT_SSVM_STOP, "SecondaryStorageVm");
+        entityEventDetails.put(EVENT_SSVM_REBOOT, "SecondaryStorageVm");
+        entityEventDetails.put(EVENT_SSVM_HA, "SecondaryStorageVm");
+
+        // Service Offerings
+        entityEventDetails.put(EVENT_SERVICE_OFFERING_CREATE, ServiceOffering.class.getName());
+        entityEventDetails.put(EVENT_SERVICE_OFFERING_EDIT, ServiceOffering.class.getName());
+        entityEventDetails.put(EVENT_SERVICE_OFFERING_DELETE, ServiceOffering.class.getName());
+
+        // Disk Offerings
+        entityEventDetails.put(EVENT_DISK_OFFERING_CREATE, DiskOffering.class.getName());
+        entityEventDetails.put(EVENT_DISK_OFFERING_EDIT, DiskOffering.class.getName());
+        entityEventDetails.put(EVENT_DISK_OFFERING_DELETE, DiskOffering.class.getName());
+
+        // Network offerings
+        entityEventDetails.put(EVENT_NETWORK_OFFERING_CREATE, NetworkOffering.class.getName());
+        entityEventDetails.put(EVENT_NETWORK_OFFERING_ASSIGN, NetworkOffering.class.getName());
+        entityEventDetails.put(EVENT_NETWORK_OFFERING_EDIT, NetworkOffering.class.getName());
+        entityEventDetails.put(EVENT_NETWORK_OFFERING_REMOVE, NetworkOffering.class.getName());
+        entityEventDetails.put(EVENT_NETWORK_OFFERING_DELETE, NetworkOffering.class.getName());
+
+        // Pods
+        entityEventDetails.put(EVENT_POD_CREATE, Pod.class.getName());
+        entityEventDetails.put(EVENT_POD_EDIT, Pod.class.getName());
+        entityEventDetails.put(EVENT_POD_DELETE, Pod.class.getName());
+
+        // Zones
+        entityEventDetails.put(EVENT_ZONE_CREATE, DataCenter.class.getName());
+        entityEventDetails.put(EVENT_ZONE_EDIT, DataCenter.class.getName());
+        entityEventDetails.put(EVENT_ZONE_DELETE, DataCenter.class.getName());
+
+        // VLANs/IP ranges
+        entityEventDetails.put(EVENT_VLAN_IP_RANGE_CREATE, Vlan.class.getName());
+        entityEventDetails.put(EVENT_VLAN_IP_RANGE_DELETE,Vlan.class.getName());
+
+        entityEventDetails.put(EVENT_STORAGE_IP_RANGE_CREATE, StorageNetworkIpRange.class.getName());
+        entityEventDetails.put(EVENT_STORAGE_IP_RANGE_DELETE, StorageNetworkIpRange.class.getName());
+        entityEventDetails.put(EVENT_STORAGE_IP_RANGE_UPDATE, StorageNetworkIpRange.class.getName());
+
+        // Configuration Table
+        entityEventDetails.put(EVENT_CONFIGURATION_VALUE_EDIT, Configuration.class.getName());
+
+        // Security Groups
+        entityEventDetails.put(EVENT_SECURITY_GROUP_AUTHORIZE_INGRESS, SecurityGroup.class.getName());
+        entityEventDetails.put(EVENT_SECURITY_GROUP_REVOKE_INGRESS, SecurityGroup.class.getName());
+        entityEventDetails.put(EVENT_SECURITY_GROUP_AUTHORIZE_EGRESS, SecurityGroup.class.getName());
+        entityEventDetails.put(EVENT_SECURITY_GROUP_REVOKE_EGRESS, SecurityGroup.class.getName());
+        entityEventDetails.put(EVENT_SECURITY_GROUP_CREATE, SecurityGroup.class.getName());
+        entityEventDetails.put(EVENT_SECURITY_GROUP_DELETE, SecurityGroup.class.getName());
+        entityEventDetails.put(EVENT_SECURITY_GROUP_ASSIGN, SecurityGroup.class.getName());
+        entityEventDetails.put(EVENT_SECURITY_GROUP_REMOVE, SecurityGroup.class.getName());
+
+        // Host
+        entityEventDetails.put(EVENT_HOST_RECONNECT,  Host.class.getName());
+
+        // Maintenance
+        entityEventDetails.put(EVENT_MAINTENANCE_CANCEL,  Host.class.getName());
+        entityEventDetails.put(EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE,  Host.class.getName());
+        entityEventDetails.put(EVENT_MAINTENANCE_PREPARE,  Host.class.getName());
+        entityEventDetails.put(EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE,  Host.class.getName());
+
+        // VPN
+        entityEventDetails.put(EVENT_REMOTE_ACCESS_VPN_CREATE, RemoteAccessVpn.class.getName());
+        entityEventDetails.put(EVENT_REMOTE_ACCESS_VPN_DESTROY, RemoteAccessVpn.class.getName());
+        entityEventDetails.put(EVENT_VPN_USER_ADD, RemoteAccessVpn.class.getName());
+        entityEventDetails.put(EVENT_VPN_USER_REMOVE, RemoteAccessVpn.class.getName());
+        entityEventDetails.put(EVENT_S2S_VPN_GATEWAY_CREATE, RemoteAccessVpn.class.getName());
+        entityEventDetails.put(EVENT_S2S_VPN_GATEWAY_DELETE, RemoteAccessVpn.class.getName());
+        entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_CREATE, RemoteAccessVpn.class.getName());
+        entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_DELETE, RemoteAccessVpn.class.getName());
+        entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_UPDATE, RemoteAccessVpn.class.getName());
+        entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_CREATE, RemoteAccessVpn.class.getName());
+        entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_DELETE, RemoteAccessVpn.class.getName());
+        entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_RESET, RemoteAccessVpn.class.getName());
+
+        // Custom certificates
+        entityEventDetails.put(EVENT_UPLOAD_CUSTOM_CERTIFICATE, "Certificate");
+
+        // OneToOnenat
+        entityEventDetails.put(EVENT_ENABLE_STATIC_NAT, StaticNat.class.getName());
+        entityEventDetails.put(EVENT_DISABLE_STATIC_NAT, StaticNat.class.getName());
+
+        entityEventDetails.put(EVENT_ZONE_VLAN_ASSIGN,Vlan.class.getName());
+        entityEventDetails.put(EVENT_ZONE_VLAN_RELEASE,Vlan.class.getName());
+
+        // Projects
+        entityEventDetails.put(EVENT_PROJECT_CREATE, Project.class.getName());
+        entityEventDetails.put(EVENT_PROJECT_UPDATE, Project.class.getName());
+        entityEventDetails.put(EVENT_PROJECT_DELETE, Project.class.getName());
+        entityEventDetails.put(EVENT_PROJECT_ACTIVATE, Project.class.getName());
+        entityEventDetails.put(EVENT_PROJECT_SUSPEND, Project.class.getName());
+        entityEventDetails.put(EVENT_PROJECT_ACCOUNT_ADD, Project.class.getName());
+        entityEventDetails.put(EVENT_PROJECT_INVITATION_UPDATE, Project.class.getName());
+        entityEventDetails.put(EVENT_PROJECT_INVITATION_REMOVE, Project.class.getName());
+        entityEventDetails.put(EVENT_PROJECT_ACCOUNT_REMOVE, Project.class.getName());
+
+        // Network as a Service
+        entityEventDetails.put(EVENT_NETWORK_ELEMENT_CONFIGURE,Network.class.getName());
+
+        // Physical Network Events
+        entityEventDetails.put(EVENT_PHYSICAL_NETWORK_CREATE, PhysicalNetwork.class.getName());
+        entityEventDetails.put(EVENT_PHYSICAL_NETWORK_DELETE, PhysicalNetwork.class.getName());
+        entityEventDetails.put(EVENT_PHYSICAL_NETWORK_UPDATE, PhysicalNetwork.class.getName());
+
+        // Physical Network Service Provider Events
+        entityEventDetails.put(EVENT_SERVICE_PROVIDER_CREATE, PhysicalNetworkServiceProvider.class.getName());
+        entityEventDetails.put(EVENT_SERVICE_PROVIDER_DELETE, PhysicalNetworkServiceProvider.class.getName());
+        entityEventDetails.put(EVENT_SERVICE_PROVIDER_UPDATE, PhysicalNetworkServiceProvider.class.getName());
+
+        // Physical Network TrafficType Events
+        entityEventDetails.put(EVENT_TRAFFIC_TYPE_CREATE, PhysicalNetworkTrafficType.class.getName());
+        entityEventDetails.put(EVENT_TRAFFIC_TYPE_DELETE, PhysicalNetworkTrafficType.class.getName());
+        entityEventDetails.put(EVENT_TRAFFIC_TYPE_UPDATE, PhysicalNetworkTrafficType.class.getName());
+
+        // external network device events
+        entityEventDetails.put(EVENT_EXTERNAL_LB_DEVICE_ADD, PhysicalNetwork.class.getName());
+        entityEventDetails.put(EVENT_EXTERNAL_LB_DEVICE_DELETE, PhysicalNetwork.class.getName());
+        entityEventDetails.put(EVENT_EXTERNAL_LB_DEVICE_CONFIGURE, PhysicalNetwork.class.getName());
+
+        // external switch management device events (E.g.: Cisco Nexus 1000v Virtual Supervisor Module.
+        entityEventDetails.put(EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ADD, "Nexus1000v");
+        entityEventDetails.put(EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DELETE, "Nexus1000v");
+        entityEventDetails.put(EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_CONFIGURE, "Nexus1000v");
+        entityEventDetails.put(EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ENABLE, "Nexus1000v");
+        entityEventDetails.put(EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DISABLE, "Nexus1000v");
+
+
+        entityEventDetails.put(EVENT_EXTERNAL_FIREWALL_DEVICE_ADD, PhysicalNetwork.class.getName());
+        entityEventDetails.put(EVENT_EXTERNAL_FIREWALL_DEVICE_DELETE, PhysicalNetwork.class.getName());
+        entityEventDetails.put(EVENT_EXTERNAL_FIREWALL_DEVICE_CONFIGURE, PhysicalNetwork.class.getName());
+
+        // VPC
+        entityEventDetails.put(EVENT_VPC_CREATE, Vpc.class.getName());
+        entityEventDetails.put(EVENT_VPC_UPDATE, Vpc.class.getName());
+        entityEventDetails.put(EVENT_VPC_DELETE, Vpc.class.getName());
+        entityEventDetails.put(EVENT_VPC_RESTART, Vpc.class.getName());
+
+        // VPC offerings
+        entityEventDetails.put(EVENT_VPC_OFFERING_CREATE, Vpc.class.getName());
+        entityEventDetails.put(EVENT_VPC_OFFERING_UPDATE, Vpc.class.getName());
+        entityEventDetails.put(EVENT_VPC_OFFERING_DELETE, Vpc.class.getName());
+
+        // Private gateway
+        entityEventDetails.put(EVENT_PRIVATE_GATEWAY_CREATE, PrivateGateway.class.getName());
+        entityEventDetails.put(EVENT_PRIVATE_GATEWAY_DELETE, PrivateGateway.class.getName());
+
+        // Static routes
+        entityEventDetails.put(EVENT_STATIC_ROUTE_CREATE, StaticRoute.class.getName());
+        entityEventDetails.put(EVENT_STATIC_ROUTE_DELETE, StaticRoute.class.getName());
+
+        // tag related events
+        entityEventDetails.put(EVENT_TAGS_CREATE, "Tag");
+        entityEventDetails.put(EVENT_TAGS_DELETE, "tag");
+
+        // external network device events
+        entityEventDetails.put(EVENT_EXTERNAL_NVP_CONTROLLER_ADD,  "NvpController");
+        entityEventDetails.put(EVENT_EXTERNAL_NVP_CONTROLLER_DELETE,  "NvpController");
+        entityEventDetails.put(EVENT_EXTERNAL_NVP_CONTROLLER_CONFIGURE, "NvpController");
+
+        // AutoScale
+        entityEventDetails.put(EVENT_COUNTER_CREATE, AutoScaleCounter.class.getName());
+        entityEventDetails.put(EVENT_COUNTER_DELETE, AutoScaleCounter.class.getName());
+        entityEventDetails.put(EVENT_CONDITION_CREATE, Condition.class.getName());
+        entityEventDetails.put(EVENT_CONDITION_DELETE, Condition.class.getName());
+        entityEventDetails.put(EVENT_AUTOSCALEPOLICY_CREATE, AutoScalePolicy.class.getName());
+        entityEventDetails.put(EVENT_AUTOSCALEPOLICY_UPDATE, AutoScalePolicy.class.getName());
+        entityEventDetails.put(EVENT_AUTOSCALEPOLICY_DELETE, AutoScalePolicy.class.getName());
+        entityEventDetails.put(EVENT_AUTOSCALEVMPROFILE_CREATE, AutoScaleVmProfile.class.getName());
+        entityEventDetails.put(EVENT_AUTOSCALEVMPROFILE_DELETE, AutoScaleVmProfile.class.getName());
+        entityEventDetails.put(EVENT_AUTOSCALEVMPROFILE_UPDATE, AutoScaleVmProfile.class.getName());
+        entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_CREATE, AutoScaleVmGroup.class.getName());
+        entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_DELETE, AutoScaleVmGroup.class.getName());
+        entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_UPDATE, AutoScaleVmGroup.class.getName());
+        entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_ENABLE, AutoScaleVmGroup.class.getName());
+        entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_DISABLE, AutoScaleVmGroup.class.getName());
+    }
+
+    public static String getEntityForEvent (String eventName) {
+        String entityClassName = entityEventDetails.get(eventName);
+        if (entityClassName == null || entityClassName.isEmpty()) {
+            return null;
+        }
+        int index = entityClassName.lastIndexOf(".");
+        String entityName = entityClassName;
+        if (index != -1) {
+            entityName = entityClassName.substring(index+1);
+        }
+        return entityName;
+    }
 }

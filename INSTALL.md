@@ -52,8 +52,9 @@ server are available and not blocked by any local firewall. Following ports are
 used by Apache CloudStack and its entities:
 
     8787: Apache CloudStack (Tomcat) debug socket
-    9090, 8250: Apache CloudStack Management Server, User/Client API
+    9090, 8250, 8080: Apache CloudStack Management Server, User/Client API
     8096: User/Client to CloudStack Management Server (unauthenticated)
+    7080: AWS API Server
     3306: MySQL Server
     3922, 8250, 80/443, 111/2049, 53: Secondary Storage VM
     3922, 8250, 53: Console Proxy VM

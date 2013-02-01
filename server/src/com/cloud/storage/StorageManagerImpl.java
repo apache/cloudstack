@@ -16,68 +16,14 @@
 // under the License.
 package com.cloud.storage;
 
-import java.math.BigDecimal;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.api.command.admin.storage.*;
-import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.BackupSnapshotCommand;
-import com.cloud.agent.api.CleanupSnapshotBackupCommand;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.CreateStoragePoolCommand;
-import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
-import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
-import com.cloud.agent.api.DeleteStoragePoolCommand;
-import com.cloud.agent.api.ManageSnapshotCommand;
-import com.cloud.agent.api.ModifyStoragePoolAnswer;
-import com.cloud.agent.api.ModifyStoragePoolCommand;
-import com.cloud.agent.api.UpgradeSnapshotCommand;
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreateCommand;
-import com.cloud.agent.api.storage.DeleteTemplateCommand;
-import com.cloud.agent.api.storage.DeleteVolumeCommand;
-import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.storage.ResizeVolumeCommand;
-import com.cloud.agent.api.storage.ResizeVolumeAnswer;
+import com.cloud.agent.api.*;
+import com.cloud.agent.api.storage.*;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
-import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
@@ -104,21 +50,9 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.EventDao;
-import com.cloud.event.dao.UsageEventDao;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.DiscoveryException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientStorageCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceInUseException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
+import com.cloud.exception.*;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -140,32 +74,17 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.allocator.StoragePoolAllocator;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotPolicyDao;
-import com.cloud.storage.dao.StoragePoolDao;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.StoragePoolWorkDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.dao.VMTemplateS3Dao;
-import com.cloud.storage.dao.VMTemplateSwiftDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeHostDao;
+import com.cloud.storage.dao.*;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.listener.StoragePoolMonitor;
+import com.cloud.storage.listener.VolumeStateListener;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.User;
-import com.cloud.user.UserContext;
+import com.cloud.user.*;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
@@ -178,36 +97,35 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.*;
 import com.cloud.utils.db.JoinBuilder.JoinType;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.DiskProfile;
-import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.UserVmManager;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.*;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
-import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.SecondaryStorageVmDao;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.*;
+import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
+import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import java.math.BigDecimal;
+import java.net.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Local(value = { StorageManager.class, StorageService.class })
 public class StorageManagerImpl implements StorageManager, Manager, ClusterManagerListener {
@@ -300,8 +218,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     protected UserDao _userDao;
     @Inject
     protected ClusterDao _clusterDao;
-    @Inject
-    protected UsageEventDao _usageEventDao;
     @Inject
     protected VirtualMachineManager _vmMgr;
     @Inject
@@ -653,9 +569,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot);
         if (volumeDetails != null) {
             createdVolume = volumeDetails.first();
-        	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(), createdVolume.getName(),
-        			                                   createdVolume.getDiskOfferingId(), null, createdVolume.getSize());
-        	_usageEventDao.persist(usageEvent);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(),
+                    createdVolume.getDataCenterId(), createdVolume.getId(), createdVolume.getName(), createdVolume.getDiskOfferingId(),
+                    null, createdVolume.getSize(), Volume.class.getName(), createdVolume.getUuid());
         }
         return createdVolume;
     }
@@ -775,8 +691,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         volume.setPoolId(destPool.getId());
         volume.setPodId(destPool.getPodId());
         stateTransitTo(volume, Event.CopySucceeded);
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(), null, volume.getSize());
-        _usageEventDao.persist(usageEvent);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
+                volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(),
+                null, volume.getSize(), Volume.class.getName(), volume.getUuid());
         _volumeHostDao.remove(volumeHostVO.getId());
     	txn.commit();
 		return volume;
@@ -1050,6 +967,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         LocalStorageSearch.join("poolHost", storageHostSearch, storageHostSearch.entity().getPoolId(), LocalStorageSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         LocalStorageSearch.and("type", LocalStorageSearch.entity().getPoolType(), SearchCriteria.Op.IN);
         LocalStorageSearch.done();
+
+        Volume.State.getStateMachine().registerListener( new VolumeStateListener());
+
         return true;
     }
 
@@ -1967,8 +1887,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                 throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
             }
 
-            if (snapshotCheck.getStatus() != Snapshot.Status.BackedUp) {
-                throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.Status.BackedUp + " state yet and can't be used for volume creation");
+            if (snapshotCheck.getState() != Snapshot.State.BackedUp) {
+                throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.State.BackedUp + " state yet and can't be used for volume creation");
             }
 
             diskOfferingId = snapshotCheck.getDiskOfferingId();
@@ -2058,9 +1978,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         volume = _volsDao.persist(volume);
         if(cmd.getSnapshotId() == null){
-        	//for volume created from snapshot, create usage event after volume creation
-        	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size);
-        	_usageEventDao.persist(usageEvent);
+            //for volume created from snapshot, create usage event after volume creation
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
+                    volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size,
+                    Volume.class.getName(), volume.getUuid());
         }
 
         UserContext.current().setEventDetails("Volume Id: " + volume.getId());
@@ -2305,8 +2226,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             // Decrement the resource count for volumes belonging user VM's only
             _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
             // Log usage event for volumes belonging user VM's only
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName());
-            _usageEventDao.persist(usageEvent);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(),
+                    volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    Volume.class.getName(), volume.getUuid());
         }
 
         try {
@@ -2471,7 +2393,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                     }
 
                     // remove snapshots in Error state
-                    List<SnapshotVO> snapshots = _snapshotDao.listAllByStatus(Snapshot.Status.Error);
+                    List<SnapshotVO> snapshots = _snapshotDao.listAllByStatus(Snapshot.State.Error);
                     for (SnapshotVO snapshotVO : snapshots) {
                         try{
                             _snapshotDao.expunge(snapshotVO.getId());
@@ -3140,10 +3062,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         // Save usage event and update resource count for user vm volumes
         if (vm instanceof UserVm) {
-
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null, size);
-            _usageEventDao.persist(usageEvent);
-
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(),
+                    vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null, size,
+                    Volume.class.getName(), vol.getUuid());
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
         }
         return toDiskProfile(vol, offering);
@@ -3204,9 +3125,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                 offeringId = offering.getId();
             }
 
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, template.getId(),
-                    vol.getSize());
-            _usageEventDao.persist(usageEvent);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(),
+                    vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, template.getId(),
+                    vol.getSize(), Volume.class.getName(), vol.getUuid());
 
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
         }

@@ -875,6 +875,9 @@
             if (index) {
               if (index == $steps.size() - 1 && $networkStep.hasClass('next-use-security-groups')) {
                 showStep(5);
+              } else if ($activeStep.find('.select-security-group:visible').size() &&
+                         $activeStep.find('.select-network.no-add-network').size()) {
+                showStep(5);
               } else {
                 showStep(index);
               }

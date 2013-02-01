@@ -54,7 +54,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.*;
 import com.cloud.ha.HighAvailabilityManager;
@@ -64,6 +64,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.network.*;
+import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -245,8 +246,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject
     protected LoadBalancingRulesManager _lbMgr;
     @Inject
-    protected UsageEventDao _usageEventDao;
-    @Inject
     protected SSHKeyPairDao _sshKeyPairDao;
     @Inject
     protected UserVmDetailsDao _vmDetailsDao;
@@ -280,6 +279,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
     VpcManager _vpcMgr;
+    @Inject
+    UsageEventDao _usageEventDao;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -841,7 +842,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume",  async = true)
     public Volume detachVolumeFromVM(DetachVolumeCmd cmmd) {
         Account caller = UserContext.current().getCaller();
         if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd.getVirtualMachineId() == null) || (cmmd.getId() != null && (cmmd.getDeviceId() != null || cmmd.getVirtualMachineId() != null))
@@ -1046,9 +1047,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if(network == null) {
             throw new InvalidParameterValueException("unable to find a network with id " + networkId);
         }
-        NicProfile profile = new NicProfile(null);
+        NicProfile profile = new NicProfile(null, null);
         if(ipAddress != null) {
-          profile = new NicProfile(ipAddress);
+          profile = new NicProfile(ipAddress, null);
         }
 
         // Perform permission check on VM
@@ -1372,9 +1373,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         offeringId = offering.getId();
                     }
                 }
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId, templateId,
-                        volume.getSize());
-                _usageEventDao.persist(usageEvent);
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
+                        volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId, templateId,
+                        volume.getSize(), Volume.class.getName(), volume.getUuid());
             }
         }
 
@@ -1640,8 +1641,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             //check permissions
             _accountMgr.checkAccess(caller, null, true, snapshot);
 
-            if (snapshot.getStatus() != Snapshot.Status.BackedUp) {
-                throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.Status.BackedUp + " state yet and can't be used for template creation");
+            if (snapshot.getState() != Snapshot.State.BackedUp) {
+                throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.State.BackedUp + " state yet and can't be used for template creation");
             }
 
             /*
@@ -1888,9 +1889,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 templateHostVO.setPhysicalSize(answer.getphysicalSize());
                 _templateHostDao.persist(templateHostVO);
 
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, privateTemplate.getAccountId(), secondaryStorageHost.getDataCenterId(), privateTemplate.getId(),
-                        privateTemplate.getName(), null, privateTemplate.getSourceTemplateId(), templateHostVO.getSize());
-                _usageEventDao.persist(usageEvent);
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_TEMPLATE_CREATE, privateTemplate.getAccountId(),
+                        secondaryStorageHost.getDataCenterId(), privateTemplate.getId(),
+                        privateTemplate.getName(), null, privateTemplate.getSourceTemplateId(),
+                        templateHostVO.getSize(), VirtualMachineTemplate.class.getName(), privateTemplate.getUuid());
                 txn.commit();
             }
         } finally {
@@ -2336,7 +2338,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner,
-            String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps, String defaultIp, String keyboard)
+            String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, String keyboard)
                     throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
         Account caller = UserContext.current().getCaller();
@@ -2379,13 +2381,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId,
-                diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIp, keyboard);
+                diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIps, keyboard);
     }
 
     @Override
     public UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList,
             List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData,
-            String sshKeyPair, Map<Long, String> requestedIps, String defaultIp, String keyboard) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException,
+            String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, String keyboard) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException,
             ResourceAllocationException {
 
         Account caller = UserContext.current().getCaller();
@@ -2484,12 +2486,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId,
-                diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIp, keyboard);
+                diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIps, keyboard);
     }
 
     @Override
     public UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
-            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, String> requestedIps, String defaultIp, String keyboard)
+            String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, String keyboard)
                     throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
         Account caller = UserContext.current().getCaller();
@@ -2526,7 +2528,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     s_logger.debug("Creating network for account " + owner + " from the network offering id=" +requiredOfferings.get(0).getId() + " as a part of deployVM process");
                     Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(),
                             owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
-                            null, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null);
+                            null, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException("More than 1 default Isolated networks are found for account " + owner + "; please specify networkIds");
@@ -2570,12 +2572,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
-        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, null, group, userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIp, keyboard);
+        return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, null, group, userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIps, keyboard);
     }
 
     @DB @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", create = true)
     protected UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, String hostName, String displayName, Account owner, Long diskOfferingId,
-            Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, String userData, String sshKeyPair, HypervisorType hypervisor, Account caller, Map<Long, String> requestedIps, String defaultNetworkIp, String keyboard) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
+            Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, String userData, String sshKeyPair, HypervisorType hypervisor, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, String keyboard)
+            		throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
 
         _accountMgr.checkAccess(caller, null, true, owner);
 
@@ -2585,7 +2588,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         long accountId = owner.getId();
 
-        assert !(requestedIps != null && defaultNetworkIp != null) : "requestedIp list and defaultNetworkIp should never be specified together";
+        assert !(requestedIps != null && (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null)) : "requestedIp list and defaultNetworkIp should never be specified together";
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zone.getId());
@@ -2709,18 +2712,25 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 throw new InvalidParameterValueException("Network id=" + network.getId() + " doesn't belong to zone " + zone.getId());
             }
 
-            String requestedIp = null;
+            IpAddresses requestedIpPair = null;
             if (requestedIps != null && !requestedIps.isEmpty()) {
-                requestedIp = requestedIps.get(network.getId());
+                requestedIpPair = requestedIps.get(network.getId());
             }
-
-            NicProfile profile = new NicProfile(requestedIp);
+            
+            if (requestedIpPair == null) {
+            	requestedIpPair = new IpAddresses(null, null);
+            } else {
+            	checkRequestedIpAddresses(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address());
+            }
+            
+            NicProfile profile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address());
 
             if (defaultNetworkNumber == 0) {
                 defaultNetworkNumber++;
                 // if user requested specific ip for default network, add it
-                if (defaultNetworkIp != null) {
-                    profile = new NicProfile(defaultNetworkIp);
+                if (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null) {
+                	checkRequestedIpAddresses(defaultIps.getIp4Address(), defaultIps.getIp6Address());
+                    profile = new NicProfile(defaultIps.getIp4Address(), defaultIps.getIp6Address());
                 }
 
                 profile.setDefaultNic(true);
@@ -2835,8 +2845,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         UserContext.current().setEventDetails("Vm Id: " + vm.getId());
 
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, accountId, zone.getId(), vm.getId(), vm.getHostName(), offering.getId(), template.getId(), hypervisorType.toString());
-        _usageEventDao.persist(usageEvent);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, accountId, zone.getId(), vm.getId(),
+                vm.getHostName(), offering.getId(), template.getId(), hypervisorType.toString(),
+                VirtualMachine.class.getName(), vm.getUuid());
 
         _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.user_vm);
         txn.commit();
@@ -2857,7 +2868,20 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return vm;
     }
 
-    private void validateUserData(String userData) {
+    private void checkRequestedIpAddresses(String ip4, String ip6) throws InvalidParameterValueException {
+    	if (ip4 != null) {
+    		if (!NetUtils.isValidIp(ip4)) {
+    			throw new InvalidParameterValueException("Invalid specified IPv4 address " + ip4);
+    		}
+    	}
+    	if (ip6 != null) {
+    		if (!NetUtils.isValidIpv6(ip6)) {
+    			throw new InvalidParameterValueException("Invalid specified IPv6 address " + ip6);
+    		}
+    	}
+	}
+
+	private void validateUserData(String userData) {
         byte[] decodedUserData = null;
         if (userData != null) {
             if (!Base64.isBase64(userData)) {
@@ -3006,8 +3030,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName(), network.getNetworkOfferingId(), null, isDefault);
-            _usageEventDao.persist(usageEvent);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(),
+                    vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName(), network.getNetworkOfferingId(),
+                    null, isDefault, VirtualMachine.class.getName(), vm.getUuid());
             if (network.getTrafficType() == TrafficType.Guest) {
                 originalIp = nic.getIp4Address();
                 guestNic = nic;
@@ -3270,8 +3295,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
             for (VolumeVO volume : volumes) {
                 if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName());
-                    _usageEventDao.persist(usageEvent);
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(),
+                            volume.getDataCenterId(), volume.getId(), volume.getName(), Volume.class.getName(),
+                            volume.getUuid());
                 }
             }
 
@@ -3721,8 +3747,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Transaction txn = Transaction.currentTxn();
         txn.start();
         //generate destroy vm event for usage
-        _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(),
-                vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString()));
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(),
+                vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString(),
+                VirtualMachine.class.getName(), vm.getUuid());
         // update resource counts
         _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.user_vm);
 
@@ -3734,13 +3761,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // OS 2: update volume
         List<VolumeVO> volumes = _volsDao.findByInstance(cmd.getVmId());
         for (VolumeVO volume : volumes) {
-            _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName()));
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(),
+                    volume.getDataCenterId(), volume.getId(), volume.getName(), Volume.class.getName(), volume.getUuid());
             _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume);
             volume.setAccountId(newAccount.getAccountId());
             _volsDao.persist(volume);
             _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume);
-            _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize()));
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(),
+                    volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(),
+                    volume.getUuid());
             //snapshots: mark these removed in db
             List<SnapshotVO> snapshots = _snapshotDao.listByVolumeIdIncludingRemoved(volume.getId());
             for (SnapshotVO snapshot: snapshots){
@@ -3750,8 +3780,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.user_vm);
         //generate usage events to account for this change
-        _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(),
-                vm.getHostName(), vm.getServiceOfferingId(),  vm.getTemplateId(), vm.getHypervisorType().toString()));
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(),
+                vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString(),
+                VirtualMachine.class.getName(), vm.getUuid());
 
         txn.commit();
 
@@ -3885,7 +3916,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         requiredOfferings.get(0).getId() + " as a part of deployVM process");
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(),
                                     newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
-                                    null, null, newAccount, null, physicalNetwork, zone.getId(), ACLType.Account, null, null);
+                                    null, null, newAccount, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null);
                             defaultNetwork = _networkDao.findById(newNetwork.getId());
                         } else if (virtualNetworks.size() > 1) {
                             throw new InvalidParameterValueException("More than 1 default Isolated networks are found " +

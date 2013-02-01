@@ -492,7 +492,7 @@ public class MockConfigurationManagerImpl implements ConfigurationManager, Confi
      */
     @Override
     public Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, String vlanId,
-            Account vlanOwner) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException {
+            Account vlanOwner, String startIPv6, String endIPv6, String vlanGatewayv6, String vlanCidrv6) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException {
         // TODO Auto-generated method stub
         return null;
     }

@@ -144,6 +144,12 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with network", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
+    @SerializedName(ApiConstants.IP6_GATEWAY) @Param(description="the gateway of IPv6 network")
+    private String ip6Gateway;
+    
+    @SerializedName(ApiConstants.IP6_CIDR) @Param(description="the cidr of IPv6 network")
+    private String ip6Cidr;
+    
     public void setId(String id) {
         this.id = id;
     }
@@ -298,4 +304,12 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }
+
+	public void setIp6Gateway(String ip6Gateway) {
+		this.ip6Gateway = ip6Gateway;
+	}
+
+	public void setIp6Cidr(String ip6Cidr) {
+		this.ip6Cidr = ip6Cidr;
+	}
 }

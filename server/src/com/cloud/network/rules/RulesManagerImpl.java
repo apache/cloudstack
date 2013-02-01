@@ -20,7 +20,7 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -276,9 +276,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                     throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                 }
                 UserContext.current().setEventDetails("Rule Id: " + newRule.getId());
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 
-                        ipAddress.getDataCenterId(), newRule.getId(), null);
-                _usageEventDao.persist(usageEvent);
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(),
+                        ipAddress.getDataCenterId(), newRule.getId(), null, PortForwardingRule.class.getName(),
+                        newRule.getUuid());
                 txn.commit();
                 return newRule;
             } catch (Exception e) {
@@ -358,8 +358,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
             UserContext.current().setEventDetails("Rule Id: " + newRule.getId());
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 0, newRule.getId(), null);
-            _usageEventDao.persist(usageEvent);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 0, newRule.getId(),
+                    null, FirewallRule.class.getName(), newRule.getUuid());
 
             txn.commit();
             StaticNatRule staticNatRule = new StaticNatRuleImpl(newRule, dstIp);

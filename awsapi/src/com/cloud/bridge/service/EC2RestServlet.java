@@ -56,6 +56,7 @@ import org.apache.axis2.databinding.ADBException;
 import org.apache.axis2.databinding.utils.writer.MTOMAwareXMLSerializer;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 
 import com.amazon.ec2.AllocateAddressResponse;
 import com.amazon.ec2.AssociateAddressResponse;
@@ -94,7 +95,9 @@ import com.amazon.ec2.RunInstancesResponse;
 import com.amazon.ec2.StartInstancesResponse;
 import com.amazon.ec2.StopInstancesResponse;
 import com.amazon.ec2.TerminateInstancesResponse;
+import com.cloud.bridge.model.CloudStackUserVO;
 import com.cloud.bridge.model.UserCredentialsVO;
+import com.cloud.bridge.persist.dao.CloudStackUserDaoImpl;
 import com.cloud.bridge.persist.dao.OfferingDaoImpl;
 import com.cloud.bridge.persist.dao.UserCredentialsDaoImpl;
 import com.cloud.bridge.service.controller.s3.ServiceProvider;
@@ -138,6 +141,7 @@ import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
 import com.cloud.bridge.util.AuthenticationUtils;
 import com.cloud.bridge.util.ConfigurationHelper;
 import com.cloud.bridge.util.EC2RestAuth;
+import com.cloud.bridge.util.EncryptionSecretKeyCheckerUtil;
 import com.cloud.stack.models.CloudStackAccount;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Transaction;
@@ -147,6 +151,7 @@ public class EC2RestServlet extends HttpServlet {
 
 	private static final long serialVersionUID = -6168996266762804888L;
 	protected final UserCredentialsDaoImpl ucDao = ComponentLocator.inject(UserCredentialsDaoImpl.class);
+    protected final CloudStackUserDaoImpl userDao = ComponentLocator.inject(CloudStackUserDaoImpl.class);
 	protected final OfferingDaoImpl ofDao = ComponentLocator.inject(OfferingDaoImpl.class);
 	
 	public static final Logger logger = Logger.getLogger(EC2RestServlet.class);
@@ -676,48 +681,65 @@ public class EC2RestServlet extends HttpServlet {
         String[] groupName = request.getParameterValues( "GroupName" );
 		if ( null != groupName && 0 < groupName.length ) 
 			 EC2request.setName( groupName[0] );
-		else { response.sendError(530, "Missing GroupName parameter" ); return; }
+        else { response.sendError(530, "Missing GroupName parameter" ); return; }
 
-		EC2IpPermission perm = new EC2IpPermission();       	
+        // -> not clear how many parameters there are until we fail to get IpPermissions.n.IpProtocol
+        int nCount = 1, mCount;
+        do  {
+            EC2IpPermission perm = new EC2IpPermission();
 
-        String[] protocol = request.getParameterValues( "IpProtocol" );
-		if ( null != protocol && 0 < protocol.length ) 
-		     perm.setProtocol( protocol[0] );
-		else { response.sendError(530, "Missing IpProtocol parameter" ); return; }
+            String[] protocol = request.getParameterValues( "IpPermissions." + nCount + ".IpProtocol" );
+            if ( null != protocol && 0 < protocol.length )
+                perm.setProtocol( protocol[0]);
+            else break;
 
-        String[] fromPort = request.getParameterValues( "FromPort" );
-	    if ( null != fromPort && 0 < fromPort.length ) 
-	    	 perm.setProtocol( fromPort[0] );
-		else { response.sendError(530, "Missing FromPort parameter" ); return; }
+            String[] fromPort = request.getParameterValues( "IpPermissions." + nCount + ".FromPort" );
+            if ( null != fromPort && 0 < fromPort.length)
+                perm.setFromPort( Integer.parseInt( fromPort[0]));
 
-        String[] toPort = request.getParameterValues( "ToPort" );
-		if ( null != toPort && 0 < toPort.length ) 
-			 perm.setProtocol( toPort[0] );
-		else { response.sendError(530, "Missing ToPort parameter" ); return; }
-		    		    
-	    String[] ranges = request.getParameterValues( "CidrIp" );
-		if ( null != ranges && 0 < ranges.length) 
-		 	 perm.addIpRange( ranges[0] );
-		else { response.sendError(530, "Missing CidrIp parameter" ); return; }
-		
-	    String[] user = request.getParameterValues( "SourceSecurityGroupOwnerId" );
-		if ( null == user || 0 == user.length) { 
-		     response.sendError(530, "Missing SourceSecurityGroupOwnerId parameter" ); 
-		     return; 
-		}
-	
-		String[] name = request.getParameterValues( "SourceSecurityGroupName" );
-		if ( null == name || 0 == name.length) {
-		     response.sendError(530, "Missing SourceSecurityGroupName parameter" ); 
-		     return; 		
-		}
+            String[] toPort = request.getParameterValues( "IpPermissions." + nCount + ".ToPort" );
+            if ( null != toPort && 0 < toPort.length)
+                perm.setToPort( Integer.parseInt( toPort[0]));
 
-		EC2SecurityGroup group = new EC2SecurityGroup();
-		group.setAccount( user[0] );
-		group.setName( name[0] );
-		perm.addUser( group );
-	    EC2request.addIpPermission( perm );	
-		
+            // -> list: IpPermissions.n.IpRanges.m.CidrIp
+            mCount = 1;
+            do {
+                String[] ranges = request.getParameterValues( "IpPermissions." + nCount + ".IpRanges." + mCount + ".CidrIp" );
+                if ( null != ranges && 0 < ranges.length)
+                    perm.addIpRange( ranges[0]);
+                else break;
+                mCount++;
+            } while( true );
+
+            // -> list: IpPermissions.n.Groups.m.UserId and IpPermissions.n.Groups.m.GroupName
+            mCount = 1;
+            do {
+                EC2SecurityGroup group = new EC2SecurityGroup();
+
+                String[] user = request.getParameterValues( "IpPermissions." + nCount + ".Groups." + mCount + ".UserId" );
+                if ( null != user && 0 < user.length)
+                    group.setAccount( user[0]);
+                else break;
+
+                String[] name = request.getParameterValues( "IpPermissions." + nCount + ".Groups." + mCount + ".GroupName" );
+                if ( null != name && 0 < name.length)
+                    group.setName( name[0]);
+                else break;
+
+                perm.addUser( group);
+                mCount++;
+            } while( true );
+
+            // -> multiple IP permissions can be specified per group name
+            EC2request.addIpPermission( perm);
+            nCount++;
+        } while( true );
+
+        if (1 == nCount) {
+            response.sendError(530, "At least one IpPermissions required" );
+            return;
+        }
+
 	    // -> execute the request
         RevokeSecurityGroupIngressResponse EC2response = EC2SoapServiceImpl.toRevokeSecurityGroupIngressResponse( 
         		ServiceProvider.getInstance().getEC2Engine().revokeSecurityGroup( EC2request ));
@@ -732,7 +754,7 @@ public class EC2RestServlet extends HttpServlet {
         String[] groupName = request.getParameterValues( "GroupName" );
 		if ( null != groupName && 0 < groupName.length ) 
 			 EC2request.setName( groupName[0] );
-		else { response.sendError(530, "Missing GroupName parameter" ); return; }
+        else { response.sendError(530, "Missing GroupName parameter" ); return; }
 
 		// -> not clear how many parameters there are until we fail to get IpPermissions.n.IpProtocol
 		int nCount = 1;
@@ -745,16 +767,18 @@ public class EC2RestServlet extends HttpServlet {
 		    else break;
 
             String[] fromPort = request.getParameterValues( "IpPermissions." + nCount + ".FromPort" );
-		    if (null != fromPort && 0 < fromPort.length) perm.setProtocol( fromPort[0] );
+            if ( null != fromPort && 0 < fromPort.length)
+                perm.setFromPort( Integer.parseInt( fromPort[0]));
 
             String[] toPort = request.getParameterValues( "IpPermissions." + nCount + ".ToPort" );
-		    if (null != toPort && 0 < toPort.length) perm.setProtocol( toPort[0] );
-		    		    
+            if ( null != toPort && 0 < toPort.length)
+                perm.setToPort( Integer.parseInt( toPort[0]));
+
             // -> list: IpPermissions.n.IpRanges.m.CidrIp
 			int mCount = 1;
 	        do 
 	        {  String[] ranges = request.getParameterValues( "IpPermissions." + nCount + ".IpRanges." + mCount + ".CidrIp" );
-		       if ( null != ranges && 0 < ranges.length) 
+               if ( null != ranges && 0 < ranges.length)
 		    	    perm.addIpRange( ranges[0] );
 		       else break;
 		       mCount++;
@@ -1715,18 +1739,14 @@ public class EC2RestServlet extends HttpServlet {
              }
 		} 
 		
-		// [B] Use the cloudAccessKey to get the users secret key in the db
-	    UserCredentialsVO cloudKeys = ucDao.getByAccessKey( cloudAccessKey );
+        // [B] Use the access key to get the users secret key from the cloud DB
+        cloudSecretKey = userDao.getSecretKeyByAccessKey( cloudAccessKey );
+        if ( cloudSecretKey == null ) {
+            logger.debug("No Secret key found for Access key '" + cloudAccessKey + "' in the the EC2 service");
+            throw new EC2ServiceException( ClientError.AuthFailure, "No Secret key found for Access key '" + cloudAccessKey +
+                    "' in the the EC2 service" );
+        }
 
-	    if ( null == cloudKeys ) 
-	    {
-	    	 logger.debug( cloudAccessKey + " is not defined in the EC2 service - call SetUserKeys" );
-	         response.sendError(404, cloudAccessKey + " is not defined in the EC2 service - call SetUserKeys" ); 
-	         return false; 
-	    }
-		else cloudSecretKey = cloudKeys.getSecretKey(); 
-
-		
 		// [C] Verify the signature
 		//  -> getting the query-string in this way maintains its URL encoding
 	    EC2RestAuth restAuth = new EC2RestAuth();
@@ -1751,8 +1771,8 @@ public class EC2RestServlet extends HttpServlet {
                     String paramName = (String) params.nextElement();
                     // exclude the signature string obviously. ;)
                     if (paramName.equalsIgnoreCase("Signature")) continue;
-                    if (queryString == null) 
-                        queryString = paramName + "=" + request.getParameter(paramName);
+                    if (queryString == null)
+                        queryString = paramName + "=" + URLEncoder.encode(request.getParameter(paramName), "UTF-8"); 
                     else 
                         queryString = queryString + "&" + paramName + "=" + URLEncoder.encode(request.getParameter(paramName), "UTF-8"); 
                 }
