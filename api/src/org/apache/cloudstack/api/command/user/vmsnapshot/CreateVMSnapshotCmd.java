@@ -75,7 +75,7 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        VMSnapshot vmsnapshot = _vmSnapshotService.allocVMSnapshot(this);
+        VMSnapshot vmsnapshot = _vmSnapshotService.allocVMSnapshot(getVmId(),getDisplayName(),getDescription(),snapshotMemory());
         if (vmsnapshot != null) {
             this.setEntityId(vmsnapshot.getId());
         } else {
@@ -86,7 +86,7 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating snapshot for vm: " + getVmId();
+        return "creating snapshot for VM: " + getVmId();
     }
 
     @Override
@@ -97,7 +97,7 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         UserContext.current().setEventDetails("VM Id: " + getVmId());
-        VMSnapshot result = _vmSnapshotService.creatVMSnapshot(this);
+        VMSnapshot result = _vmSnapshotService.creatVMSnapshot(getVmId(),getEntityId());
         if (result != null) {
             VMSnapshotResponse response = _responseGenerator
                     .createVMSnapshotResponse(result);

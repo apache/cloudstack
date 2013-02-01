@@ -42,11 +42,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         Migrating(true, "VM is being migrated.  host id holds to from host"),
         Error(false, "VM is in error"),
         Unknown(false, "VM state is unknown."),
-        Shutdowned(false, "VM is shutdowned from inside"),
-        RunningSnapshotting(true, "VM is taking a snapshot in running state"),
-        StoppedSnapshotting(true, "VM is taking a snapshot in stopped state"),
-        RevertingToRunning(true, "VM is reverting to snapshot"),
-        RevertingToStopped(true, "VM is reverting to snapshot");
+        Shutdowned(false, "VM is shutdowned from inside");
 
         private final boolean _transitional;
         String _description;
@@ -114,22 +110,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             s_fsm.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging);
-            
-            s_fsm.addTransition(State.Running, VirtualMachine.Event.SnapshotRequested, State.RunningSnapshotting);
-            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.SnapshotRequested, State.StoppedSnapshotting);
-            s_fsm.addTransition(State.RunningSnapshotting, VirtualMachine.Event.OperationSucceeded, State.Running);
-            s_fsm.addTransition(State.StoppedSnapshotting, VirtualMachine.Event.OperationSucceeded, State.Stopped);
-            s_fsm.addTransition(State.RunningSnapshotting, VirtualMachine.Event.OperationFailed, State.Running);
-            s_fsm.addTransition(State.StoppedSnapshotting, VirtualMachine.Event.OperationFailed, State.Stopped);
-            
-            s_fsm.addTransition(State.Running, VirtualMachine.Event.RevertRequested, State.RevertingToRunning);
-            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.RevertRequested, State.RevertingToStopped);
-            s_fsm.addTransition(State.RevertingToRunning, VirtualMachine.Event.OperationFailed, State.Running);
-            s_fsm.addTransition(State.RevertingToStopped, VirtualMachine.Event.OperationFailed, State.Stopped);
-            s_fsm.addTransition(State.RevertingToRunning, VirtualMachine.Event.OperationSucceeded, State.Running);
-            s_fsm.addTransition(State.RevertingToStopped, VirtualMachine.Event.OperationSucceeded, State.Stopped);
-
-            
         }
         
         public static boolean isVmStarted(State oldState, Event e, State newState) {

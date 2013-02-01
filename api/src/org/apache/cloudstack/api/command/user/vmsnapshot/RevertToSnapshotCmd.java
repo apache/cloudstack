@@ -30,9 +30,9 @@ import org.apache.cloudstack.api.response.VMSnapshotResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.snapshot.VMSnapshot;
@@ -55,33 +55,27 @@ public class RevertToSnapshotCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-    public static String getResultObjectName() {
-        return "vm_snapshots";
-    }
-
     @Override
     public long getEntityOwnerId() {
-        VMSnapshot vmSnapshot = _vmSnapshotService.getVMSnapshotById(getVmSnapShotId());
-        if (vmSnapshot == null) {
-            throw new InvalidParameterValueException(
-                    "Unable to find the snapshot by id=" + getVmSnapShotId());
+        VMSnapshot vmSnapshot = _entityMgr.findById(VMSnapshot.class, getVmSnapShotId());
+        if (vmSnapshot != null) {
+            return vmSnapshot.getAccountId();
         }
-        UserVm userVM = _userVmService.getUserVm(vmSnapshot.getVmId());
-        return userVM.getAccountId();
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
     public void execute() throws  ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, ConcurrentOperationException {
         UserContext.current().setEventDetails(
                 "vmsnapshot id: " + getVmSnapShotId());
-        UserVm result = _vmSnapshotService.revertToSnapshot(this);
+        UserVm result = _vmSnapshotService.revertToSnapshot(getVmSnapShotId());
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse(
                     "virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,"Failed to revert vm snapshot");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,"Failed to revert VM snapshot");
         }
     }
 

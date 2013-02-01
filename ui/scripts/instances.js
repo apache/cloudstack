@@ -49,14 +49,6 @@
         zonename: { label: 'label.zone.name' },
         state: {
           label: 'label.state',
-          converter: function(data) {
-            if(data == 'StoppedSnapshotting' || data == 'RunningSnapshotting')
-              return  'Snapshotting';
-            if(data == 'RevertingToRunning' || data == 'RevertingToStopped'){
-              return 'Reverting';
-            } 
-            return data;
-          },          
           indicator: {
             'Running': 'on',
             'Stopped': 'off',

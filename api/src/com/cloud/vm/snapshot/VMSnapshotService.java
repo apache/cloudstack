@@ -19,10 +19,7 @@ package com.cloud.vm.snapshot;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.command.user.vmsnapshot.CreateVMSnapshotCmd;
-import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
-import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToSnapshotCmd;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -36,16 +33,16 @@ public interface VMSnapshotService {
 
     List<? extends VMSnapshot> listVMSnapshots(ListVMSnapshotCmd cmd);
 
-    VMSnapshot getVMSnapshotById(long id);
+    VMSnapshot getVMSnapshotById(Long id);
 
-    VMSnapshot creatVMSnapshot(CreateVMSnapshotCmd cmd);
+    VMSnapshot creatVMSnapshot(Long vmId, Long vmSnapshotId);
 
-    VMSnapshot allocVMSnapshot(CreateVMSnapshotCmd cmd)
+    VMSnapshot allocVMSnapshot(Long vmId, String vsDisplayName, String vsDescription, Boolean snapshotMemory)
             throws ResourceAllocationException;
 
-    boolean deleteVMSnapshot(DeleteVMSnapshotCmd cmd);
+    boolean deleteVMSnapshot(Long vmSnapshotId);
 
-    UserVm revertToSnapshot(RevertToSnapshotCmd cmd) throws InsufficientServerCapacityException, InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+    UserVm revertToSnapshot(Long vmSnapshotId) throws InsufficientServerCapacityException, InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 
     VirtualMachine getVMBySnapshotId(Long id);
 }

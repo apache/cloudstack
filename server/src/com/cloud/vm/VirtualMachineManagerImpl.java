@@ -154,7 +154,6 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.ItWorkVO.Step;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
@@ -1162,6 +1161,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException {
+        // if there are active vm snapshots task, state change is not allowed
+        if(_vmSnapshotMgr.hasActiveVMSnapshotTasks(vm.getId())){
+            s_logger.error("State transit with event: " + e + " failed due to: " + vm.getInstanceName() + " has active VM snapshots tasks");
+            return false;
+        }
+        
         State oldState = vm.getState();
         if (oldState == State.Starting) {
             if (e == Event.OperationSucceeded) {
@@ -1650,19 +1655,15 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             AgentVmInfo info = infos.remove(vm.getId());
             
             // sync VM Snapshots related transient states
-            List<VMSnapshotVO> expungingVMSnapshot = _vmSnapshotDao.listByInstanceId(vm.getId(), VMSnapshot.State.Expunging);
-            if( vm.getState() == State.RevertingToRunning || vm.getState() == State.RevertingToStopped 
-                    || vm.getState() == State.RunningSnapshotting || vm.getState() == State.StoppedSnapshotting 
-                    || expungingVMSnapshot.size() == 1){
-                s_logger.info("Found vm " + vm.getInstanceName() + " in state. " + vm.getState() + ", needs to sync VM snapshot state");
-                if(!_vmSnapshotMgr.syncVMSnapshot(vm, null, hostId)){
+            List<VMSnapshotVO> vmSnapshotsInTrasientStates = _vmSnapshotDao.listByInstanceId(vm.getId(), VMSnapshot.State.Expunging,VMSnapshot.State.Reverting, VMSnapshot.State.Creating);
+            if(vmSnapshotsInTrasientStates.size() > 1){
+                s_logger.info("Found vm " + vm.getInstanceName() + " with VM snapshots in transient states, needs to sync VM snapshot state");
+                if(!_vmSnapshotMgr.syncVMSnapshot(vm, hostId)){
                     s_logger.warn("Failed to sync VM in a transient snapshot related state: " + vm.getInstanceName());
                     continue;
                 }else{
-                    s_logger.info("Successfully sync VM in a transient snapshot related state: " + vm.getInstanceName() + " to " + vm.getState());
+                    s_logger.info("Successfully sync VM with transient snapshot: " + vm.getInstanceName());
                 }
-                if(expungingVMSnapshot.size() == 1)
-                    _vmSnapshotMgr.syncVMSnapshot(vm, expungingVMSnapshot.get(0), hostId);
             }
             
             VMInstanceVO castedVm = null;
@@ -1784,29 +1785,25 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             VMInstanceVO castedVm = null;
             
             // sync VM Snapshots related transient states
-            List<VMSnapshotVO> expungingVMSnapshot = _vmSnapshotDao.listByInstanceId(vm.getId(), VMSnapshot.State.Expunging);
-            if( vm.getState() == State.RevertingToRunning || vm.getState() == State.RevertingToStopped 
-                    || vm.getState() == State.RunningSnapshotting || vm.getState() == State.StoppedSnapshotting 
-                    || expungingVMSnapshot.size() == 1){
+            List<VMSnapshotVO> vmSnapshotsInExpungingStates = _vmSnapshotDao.listByInstanceId(vm.getId(), VMSnapshot.State.Expunging, VMSnapshot.State.Creating,VMSnapshot.State.Reverting);
+            if(vmSnapshotsInExpungingStates.size() > 0){
                 s_logger.info("Found vm " + vm.getInstanceName() + " in state. " + vm.getState() + ", needs to sync VM snapshot state");
                 Long hostId = null;
+                Host host = null;
                 if(info != null && info.getHostUuid() != null){
-                    Host host = _hostDao.findByGuid(info.getHostUuid());
-                    hostId = host == null ? (vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId()) : host.getId();
+                    host = _hostDao.findByGuid(info.getHostUuid());
                 }
-                if(!_vmSnapshotMgr.syncVMSnapshot(vm, null, hostId)){
-                    s_logger.warn("Failed to sync VM in a transient snapshot related state: " + vm.getInstanceName());
+                hostId = host == null ? (vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId()) : host.getId();
+                if(!_vmSnapshotMgr.syncVMSnapshot(vm, hostId)){
+                    s_logger.warn("Failed to sync VM with transient snapshot: " + vm.getInstanceName());
                     continue;
                 }else{
-                    s_logger.info("Successfully sync VM in a transient snapshot related state: " + vm.getInstanceName() + " to " + vm.getState());
+                    s_logger.info("Successfully sync VM with transient snapshot: " + vm.getInstanceName());
                 }
-                if(expungingVMSnapshot.size() == 1)
-                    _vmSnapshotMgr.syncVMSnapshot(vm, expungingVMSnapshot.get(0), hostId);
             }
             
             if ((info == null && (vm.getState() == State.Running || vm.getState() == State.Starting ))  
-            		||  (info != null && (info.state == State.Running && vm.getState() == State.Starting))
-					||  (info != null && (info.state == State.Running && vm.getState() == State.RevertingToRunning))) 
+            		||  (info != null && (info.state == State.Running && vm.getState() == State.Starting))) 
             {
             	s_logger.info("Found vm " + vm.getInstanceName() + " in inconsistent state. " + vm.getState() + " on CS while " +  (info == null ? "Stopped" : "Running") + " on agent");
                 info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);

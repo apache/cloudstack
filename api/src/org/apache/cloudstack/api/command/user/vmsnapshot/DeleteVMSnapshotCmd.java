@@ -17,30 +17,20 @@
 
 package org.apache.cloudstack.api.command.user.vmsnapshot;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
-import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.uservm.UserVm;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
-//import com.cloud.api.ApiDBUtils;
 
 @APICommand(name="deleteVMSnapshot", description = "Deletes a vmsnapshot.", responseObject = SuccessResponse.class)
 public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
@@ -61,10 +51,6 @@ public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-    public static String getResultObjectName() {
-        return "vm_snapshots";
-    }
-
     @Override
     public long getEntityOwnerId() {
         VMSnapshot vmSnapshot = _entityMgr.findById(VMSnapshot.class, getId());
@@ -77,7 +63,7 @@ public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         UserContext.current().setEventDetails("vmsnapshot id: " + getId());
-        boolean result = _vmSnapshotService.deleteVMSnapshot(this);
+        boolean result = _vmSnapshotService.deleteVMSnapshot(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

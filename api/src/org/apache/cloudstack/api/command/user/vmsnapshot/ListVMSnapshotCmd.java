@@ -39,10 +39,6 @@ public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
 
     private static final String s_name = "listvmsnapshotresponse";
 
-    // ///////////////////////////////////////////////////
-    // ////////////// API parameters /////////////////////
-    // ///////////////////////////////////////////////////
-
     @Parameter(name=ApiConstants.VM_SNAPSHOT_ID, type=CommandType.UUID, entityType=VMSnapshotResponse.class,
              description="The ID of the VM snapshot")
     private Long id;
@@ -55,10 +51,6 @@ public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists snapshot by snapshot name or display name")
     private String vmSnapshotName;
-
-    // ///////////////////////////////////////////////////
-    // ///////////////// Accessors ///////////////////////
-    // ///////////////////////////////////////////////////
 
     public String getState() {
         return state;
@@ -75,10 +67,6 @@ public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
     public Long getId() {
         return id;
     }
-
-    // ///////////////////////////////////////////////////
-    // ///////////// API Implementation///////////////////
-    // ///////////////////////////////////////////////////
 
     @Override
     public void execute() {

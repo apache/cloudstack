@@ -33,14 +33,15 @@ public interface VMSnapshotManager extends VMSnapshotService, Manager {
     boolean deleteAllVMSnapshots(long id, VMSnapshot.Type type);
 
     /**
-     * Sync VM's state when VM in reverting or snapshotting, or VM snapshot in expunging state
+     * Sync VM snapshot state when VM snapshot in reverting or snapshoting or expunging state
      * Used for fullsync after agent connects
      * 
      * @param vm, the VM in question
-     * @param vmSnapshot, if this is not null, sync an VM snapshot in expunging state
      * @param hostId
      * @return true if succeeds, false if fails
      */
-    boolean syncVMSnapshot(VMInstanceVO vm, VMSnapshotVO vmSnapshot, Long hostId);
+    boolean syncVMSnapshot(VMInstanceVO vm, Long hostId);
+
+    boolean hasActiveVMSnapshotTasks(Long vmId);
 
 }

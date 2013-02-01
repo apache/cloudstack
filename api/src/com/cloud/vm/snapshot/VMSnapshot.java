@@ -61,6 +61,7 @@ public interface VMSnapshot extends ControlledEntity, Identity, InternalIdentity
             s_fsm.addTransition(Reverting, Event.OperationFailed, Ready);
             s_fsm.addTransition(Ready, Event.ExpungeRequested, Expunging);
             s_fsm.addTransition(Error, Event.ExpungeRequested, Expunging);  
+            s_fsm.addTransition(Expunging, Event.ExpungeRequested, Expunging);  
             s_fsm.addTransition(Expunging, Event.OperationSucceeded, Removed);  
         }
     }
