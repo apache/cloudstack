@@ -302,11 +302,20 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     		s_logger.debug("Cannot find related vlan or too many vlan attached to network " + networkId);
     		return null;
     	}
-    	String ip = NetUtils.getIp6FromRange(vlan.getIp6Range());
-    	//Check for duplicate IP
-    	if (_ipv6Dao.findByDcIdAndIp(dcId, ip) != null) {
-    		//TODO regenerate ip
-    		throw new CloudRuntimeException("Fail to get unique ipv6 address");
+    	String ip = null;
+    	int count = 0;
+    	while (ip == null || count >= 10) {
+    		ip = NetUtils.getIp6FromRange(vlan.getIp6Range());
+    		//Check for duplicate IP
+    		if (_ipv6Dao.findByDcIdAndIp(dcId, ip) == null) {
+    			break;
+    		} else {
+    			ip = null;
+    		}
+    		count ++;
+    	}
+    	if (ip == null) {
+    		throw new CloudRuntimeException("Fail to get unique ipv6 address after 10 times trying!");
     	}
     	DataCenterVO dc = _dcDao.findById(dcId);
         Long mac = dc.getMacAddress();
