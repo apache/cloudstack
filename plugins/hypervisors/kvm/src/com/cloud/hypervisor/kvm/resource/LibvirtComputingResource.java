@@ -4592,19 +4592,43 @@ ServerResource {
 
     private Pair<Double, Double> getNicStats(String nicName) {
         double rx = 0.0;
-        OutputInterpreter.OneLineParser rxParser = new OutputInterpreter.OneLineParser();
-        String result = executeBashScript("cat /sys/class/net/" + nicName
-                + "/statistics/rx_bytes", rxParser);
-        if (result == null && rxParser.getLine() != null) {
-            rx = Double.parseDouble(rxParser.getLine());
+        File rxFile = new File("/sys/class/net/" + nicName + "/statistics/rx_bytes");
+        try {
+            FileInputStream rxStream = new FileInputStream(rxFile);
+            StringBuffer rxContent = new StringBuffer("");
+            byte[] rxBuffer = new byte[1024];
+            int rxLength;
+
+            while ((rxLength = rxStream.read(rxBuffer)) != -1) {
+                rxContent.append(new String(rxBuffer));
+            }
+            rx = Double.parseDouble(rxContent.toString());
+        } catch (final FileNotFoundException e) {
+            throw new CloudRuntimeException("Cannot find the file: "
+                    + rxFile.getAbsolutePath(), e);
+        } catch (final IOException e) {
+            throw new CloudRuntimeException("IOException in reading "
+                    + rxFile.getAbsolutePath(), e);
         }
 
         double tx = 0.0;
-        OutputInterpreter.OneLineParser txParser = new OutputInterpreter.OneLineParser();
-        result = executeBashScript("cat /sys/class/net/" + nicName
-                + "/statistics/tx_bytes", txParser);
-        if (result == null && txParser.getLine() != null) {
-            tx = Double.parseDouble(txParser.getLine());
+        File txFile = new File("/sys/class/net/" + nicName + "/statistics/tx_bytes");
+        try {
+            FileInputStream txStream = new FileInputStream(txFile);
+            StringBuffer txContent = new StringBuffer("");
+            byte[] txBuffer = new byte[1024];
+            int txLength;
+
+            while((txLength = txStream.read(txBuffer)) != -1) {
+                txContent.append(new String(txBuffer));
+            }
+            tx = Double.parseDouble(txContent.toString());
+        } catch (final FileNotFoundException e) {
+            throw new CloudRuntimeException("Cannot find the file: "
+                    + txFile.getAbsolutePath(), e);
+        } catch (final IOException e) {
+            throw new CloudRuntimeException("IOException in reading "
+                    + txFile.getAbsolutePath(), e);
         }
 
         return new Pair<Double, Double>(rx, tx);
