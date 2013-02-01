@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -28,6 +30,7 @@ import com.cloud.utils.time.InaccurateClock;
 import com.cloud.vm.ItWorkVO.Step;
 import com.cloud.vm.VirtualMachine.State;
 
+@Component
 @Local(value=ItWorkDao.class)
 public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements ItWorkDao {
     protected final SearchBuilder<ItWorkVO> AllFieldsSearch;

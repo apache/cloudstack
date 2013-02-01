@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import com.cloud.utils.PropertiesUtil;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
@@ -74,7 +75,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
@@ -841,7 +841,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
-            
+
             if (network.getIp6Gateway() != null) {
             	s_logger.info("Skip password and userdata service setup for IPv6 VM");
             	return true;

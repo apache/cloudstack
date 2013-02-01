@@ -51,8 +51,9 @@ import com.cloud.network.bigswitch.Attachment;
 import com.cloud.network.bigswitch.Network;
 import com.cloud.network.bigswitch.Port;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.component.ManagerBase;
 
-public class BigSwitchVnsResource implements ServerResource {
+public class BigSwitchVnsResource extends ManagerBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(BigSwitchVnsResource.class);
 
     private String _name;

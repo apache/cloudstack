@@ -17,6 +17,8 @@
 
 package com.cloud.api.commands;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -24,7 +26,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.api.response.CiscoNexusVSMResponse;
@@ -41,7 +42,7 @@ public class DeleteCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteCiscoNexusVSMCmd.class.getName());
     private static final String s_name = "deletecisconexusvsmresponse";
-    @PlugService CiscoNexusVSMElementService _ciscoNexusVSMService;
+    @Inject CiscoNexusVSMElementService _ciscoNexusVSMService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -84,7 +85,7 @@ public class DeleteCiscoNexusVSMCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-
+    
     @Override
     public String getEventType() {
     	return EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DELETE;

@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.agent.api.to;
 
-import com.cloud.utils.S3Utils;
-
 import java.util.Date;
+
+import com.cloud.utils.S3Utils;
 
 public final class S3TO implements S3Utils.ClientOptions {
 

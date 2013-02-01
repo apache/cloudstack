@@ -23,9 +23,11 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import com.cloud.event.ActionEventUtils;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -40,28 +42,27 @@ import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
-import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -76,6 +77,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 
+@Component
 @Local(value = NetworkGuru.class)
 public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(GuestNetworkGuru.class);
@@ -429,7 +431,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         
         if (profile.getBroadcastDomainType() == BroadcastDomainType.Vlan && 
         		profile.getBroadcastUri() != null && !offering.getSpecifyVlan()) {
-        	s_logger.debug("Releasing vnet for the network id=" + profile.getId());
+        s_logger.debug("Releasing vnet for the network id=" + profile.getId());
             _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), 
                     profile.getPhysicalNetworkId(), profile.getAccountId(), profile.getReservationId());
             ActionEventUtils.onCompletedActionEvent(UserContext.current().getCallerUserId(), profile.getAccountId(),

@@ -17,6 +17,7 @@
 package com.cloud.network.guru;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
@@ -30,7 +31,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.Ipv6AddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -39,18 +39,18 @@ import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.UserIpv6AddressVO;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.Nic.ReservationStrategy;
@@ -222,14 +222,14 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         }
     	
     	if (nic.getIp4Address() != null) {
-    		IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
-    		if (ip != null) {
-    			Transaction txn = Transaction.currentTxn();
-    			txn.start();
-    			_networkMgr.markIpAsUnavailable(ip.getId());
-    			_ipAddressDao.unassignIpAddress(ip.getId());
-    			txn.commit();
-    		}
+        IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
+        if (ip != null) {
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            _networkMgr.markIpAsUnavailable(ip.getId());
+            _ipAddressDao.unassignIpAddress(ip.getId());
+            txn.commit();
+        }
     	}
     	
     	if (nic.getIp6Address() != null) {

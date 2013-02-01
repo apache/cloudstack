@@ -18,25 +18,26 @@
  */
 package org.apache.cloudstack.api.command.admin.storage;
 
+import static com.cloud.user.Account.ACCOUNT_ID_SYSTEM;
 import static org.apache.cloudstack.api.ApiConstants.S3_ACCESS_KEY;
+import static org.apache.cloudstack.api.ApiConstants.S3_BUCKET_NAME;
 import static org.apache.cloudstack.api.ApiConstants.S3_CONNECTION_TIMEOUT;
 import static org.apache.cloudstack.api.ApiConstants.S3_END_POINT;
 import static org.apache.cloudstack.api.ApiConstants.S3_HTTPS_FLAG;
 import static org.apache.cloudstack.api.ApiConstants.S3_MAX_ERROR_RETRY;
 import static org.apache.cloudstack.api.ApiConstants.S3_SECRET_KEY;
 import static org.apache.cloudstack.api.ApiConstants.S3_SOCKET_TIMEOUT;
-import static org.apache.cloudstack.api.ApiConstants.S3_BUCKET_NAME;
+import static org.apache.cloudstack.api.BaseCmd.CommandType.BOOLEAN;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.INTEGER;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.STRING;
-import static org.apache.cloudstack.api.BaseCmd.CommandType.BOOLEAN;
-import static com.cloud.user.Account.ACCOUNT_ID_SYSTEM;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.S3Response;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientCapacityException;

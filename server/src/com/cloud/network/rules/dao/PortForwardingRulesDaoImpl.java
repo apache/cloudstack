@@ -19,17 +19,21 @@ package com.cloud.network.rules.dao;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
 
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.PortForwardingRuleVO;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+@Component
 @Local(value=PortForwardingRulesDao.class)
 public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRuleVO, Long> implements PortForwardingRulesDao {
 
@@ -39,7 +43,7 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
     protected final SearchBuilder<PortForwardingRuleVO> AllRulesSearchByVM;
     protected final SearchBuilder<PortForwardingRuleVO> ActiveRulesSearchByAccount;
 
-    protected final FirewallRulesCidrsDaoImpl _portForwardingRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
+    @Inject protected FirewallRulesCidrsDaoImpl _portForwardingRulesCidrsDao;
     
     protected PortForwardingRulesDaoImpl() {
         super();

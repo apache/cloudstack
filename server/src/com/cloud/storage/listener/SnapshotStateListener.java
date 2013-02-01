@@ -22,9 +22,8 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Event;
 import com.cloud.storage.Snapshot.State;
 import com.cloud.server.ManagementServer;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.fsm.StateListener;
+
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.log4j.Logger;
@@ -33,19 +32,12 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 public class SnapshotStateListener implements StateListener<State, Event, Snapshot> {
 
     // get the event bus provider if configured
-    protected static EventBus _eventBus = null;
-    static {
-        Adapters<EventBus> eventBusImpls = ComponentLocator.getLocator(ManagementServer.Name).getAdapters(EventBus.class);
-        if (eventBusImpls != null) {
-            Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
-            if (eventBusenum != null && eventBusenum.hasMoreElements()) {
-                _eventBus = eventBusenum.nextElement(); // configure event bus if configured
-            }
-        }
-    }
+    @Inject protected EventBus _eventBus;
 
     private static final Logger s_logger = Logger.getLogger(VolumeStateListener.class);
 

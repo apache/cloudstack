@@ -24,11 +24,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.api.*;
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
-
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -39,6 +41,8 @@ import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -312,7 +316,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
         return ipToNetworkMap;
     }
-    
+
 	public String getIp6Address() {
 		if (ip6Address == null) {
 			return null;
@@ -375,11 +379,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         if (getStartVm()) {
             try {
                 UserContext.current().setEventDetails("Vm Id: "+getEntityId());
-                if (getHypervisor() == HypervisorType.BareMetal) {
-                    result = _bareMetalVmService.startVirtualMachine(this);
-                } else {
-                    result = _userVmService.startVirtualMachine(this);
-                }
+                result = _userVmService.startVirtualMachine(this);
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Exception: ", ex);
                 throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
@@ -448,28 +448,24 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             }
 
             UserVm vm = null;
-            if (getHypervisor() == HypervisorType.BareMetal) {
-                vm = _bareMetalVmService.createVirtualMachine(this);
-            } else {
-            	IpAddresses addrs = new IpAddresses(ipAddress, getIp6Address());
-                if (zone.getNetworkType() == NetworkType.Basic) {
-                    if (getNetworkIds() != null) {
-                        throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
-                    } else {
-                        vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
-                                displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard);
-                    }
+        	IpAddresses addrs = new IpAddresses(ipAddress, getIp6Address());
+            if (zone.getNetworkType() == NetworkType.Basic) {
+                if (getNetworkIds() != null) {
+                    throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
                 } else {
-                    if (zone.isSecurityGroupEnabled())  {
-                        vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
+                    vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
+                                displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard);
+                }
+            } else {
+                if (zone.isSecurityGroupEnabled())  {
+                    vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
                                 owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard);
-                    } else {
-                        if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
-                            throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
-                        }
-                        vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
-                                diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard);
+                } else {
+                    if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
+                        throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
                     }
+                    vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
+                                diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard);
                 }
             }
 

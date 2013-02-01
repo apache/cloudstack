@@ -38,11 +38,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -60,7 +63,6 @@ import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ClusteredAgentRebalanceService;
 import com.cloud.cluster.ManagementServerHost;
 import com.cloud.cluster.ManagementServerHostVO;
-import com.cloud.cluster.StackMaid;
 import com.cloud.cluster.agentlb.AgentLoadBalancerPlanner;
 import com.cloud.cluster.agentlb.HostTransferMapVO;
 import com.cloud.cluster.agentlb.HostTransferMapVO.HostTransferState;
@@ -78,9 +80,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
@@ -114,11 +113,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Inject
     protected HostTransferMapDao _hostTransferDao;
 
-    @Inject(adapter = AgentLoadBalancerPlanner.class)
-    protected Adapters<AgentLoadBalancerPlanner> _lbPlanners;
+    // @com.cloud.utils.component.Inject(adapter = AgentLoadBalancerPlanner.class)
+    @Inject protected List<AgentLoadBalancerPlanner> _lbPlanners;
 
-    @Inject
-    protected AgentManager _agentMgr;
+    @Inject ConfigurationDao _configDao;
 
     protected ClusteredAgentManagerImpl() {
         super();
@@ -132,8 +130,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         s_logger.info("Configuring ClusterAgentManagerImpl. management server node id(msid): " + _nodeId);
 
-        ConfigurationDao configDao = ComponentLocator.getCurrentLocator().getDao(ConfigurationDao.class);
-        Map<String, String> params = configDao.getConfiguration(xmlParams);
+        Map<String, String> params = _configDao.getConfiguration(xmlParams);
         String value = params.get(Config.DirectAgentLoadSize.key());
         _loadSize = NumbersUtil.parseInt(value, 16);
 
@@ -1135,8 +1132,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 rebalanceHost(hostId, currentOwnerId, futureOwnerId);
             } catch (Exception e) {
                 s_logger.warn("Unable to rebalance host id=" + hostId, e);
-            } finally {
-                StackMaid.current().exitCleanup();
             }
         }
     }

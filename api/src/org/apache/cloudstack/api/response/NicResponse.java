@@ -17,6 +17,10 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 import com.cloud.vm.Nic;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -124,7 +128,7 @@ public class NicResponse extends BaseResponse {
     public void setMacAddress(String macAddress) {
         this.macAddress = macAddress;
     }
-    
+
 	public void setIp6Gateway(String ip6Gateway) {
 		this.ip6Gateway = ip6Gateway;
 	}

@@ -23,14 +23,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
 import com.cloud.api.commands.GenerateUsageRecordsCmd;
 import com.cloud.api.commands.GetUsageRecordsCmd;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.projects.Project;
-import com.cloud.utils.PropertiesUtil;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
+
 import com.cloud.usage.UsageJobVO;
 import com.cloud.usage.UsageTypes;
 import com.cloud.usage.UsageVO;
@@ -40,33 +43,30 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
 public class ManagementServerExtImpl extends ManagementServerImpl implements ManagementServerExt {
-    private final AccountDao _accountDao;
-    private final DomainDao _domainDao;
-    private final UsageDao _usageDao;
-    private final UsageJobDao _usageJobDao;
-    private final TimeZone _usageTimezone;
+    @Inject private AccountDao _accountDao;
+    @Inject private DomainDao _domainDao;
+    @Inject private UsageDao _usageDao;
+    @Inject private UsageJobDao _usageJobDao;
+    private TimeZone _usageTimezone;
 
-    protected ManagementServerExtImpl() {
-        super();
-
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _accountDao = locator.getDao(AccountDao.class);
-        _domainDao = locator.getDao(DomainDao.class);
-        _usageDao = locator.getDao(UsageDao.class);
-        _usageJobDao = locator.getDao(UsageJobDao.class);
-
+    public ManagementServerExtImpl() {
+    }
+    
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    	super.configure(name,  params);
         Map<String, String> configs = getConfigs();
         String timeZoneStr = configs.get("usage.aggregation.timezone");
         if (timeZoneStr == null) {
-            timeZoneStr = "GMT";
+           timeZoneStr = "GMT";
         }
         _usageTimezone = TimeZone.getTimeZone(timeZoneStr);
+        return true;
     }
 
     @Override

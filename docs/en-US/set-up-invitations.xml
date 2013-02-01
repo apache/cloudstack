@@ -5,69 +5,76 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
 -->
-
 <section id="set-up-invitations">
     <title>Setting Up Invitations</title>
     <para>&PRODUCT; can be set up either so that project administrators can add people directly to a project, or so that it is necessary to send an invitation which the recipient must accept. The invitation can be sent by email or through the user’s &PRODUCT; account. If you want administrators to use invitations to add members to projects, turn on and set up the invitations feature in &PRODUCT;.</para>
-    <itemizedlist>
+    <orderedlist>
         <listitem><para>Log in as administrator to the &PRODUCT; UI.</para></listitem>
         <listitem><para>In the left navigation, click Global Settings.</para></listitem>
-        <listitem><para>In the search box, type project and click the search button.</para></listitem>
         <listitem><para>In the search box, type project and click the search button.<inlinemediaobject>
             <imageobject>
                 <imagedata fileref="./images/search-button.png" />
             </imageobject>
             <textobject><phrase>searchbutton.png: Searches projects</phrase></textobject>
         </inlinemediaobject></para></listitem>
-        <listitem><para>In the search results, you will see a few other parameters you need to set to control how invitations behave. The table below shows global configuration parameters related to project invitations. Click the edit button to set each parameter</para>
+        <listitem><para>In the search results, you can see a few other parameters you need to set to control how
+                invitations behave. The table below shows global configuration parameters related to
+                project invitations. Click the edit button to set each parameter.</para>
             <informaltable>
                 <tgroup cols="2" align="left" colsep="1" rowsep="1">
                     <thead>
                         <row>
                             <entry><para>Configuration Parameters</para></entry>
-                            <entry><para>Description</para></entry>
+                            <entry><para>Description</para></entry>                                                      
                         </row>
                         </thead>
                         <tbody>
                         <row>
                             <entry><para>project.invite.required</para></entry>
                             <entry><para>Set to true to turn on the invitations feature.</para></entry>
+                            
+                            
                         </row>
                         <row>
                             <entry><para>project.email.sender</para></entry>
                             <entry><para>The email address to show in the From field of invitation emails.</para></entry>
+                            
                         </row>
                         <row>
                             <entry><para>project.invite.timeout</para></entry>
                             <entry><para>Amount of time to allow for a new member to respond to the invitation.</para></entry>
+                            
                         </row>
                         <row>
                             <entry><para>project.smtp.host</para></entry>
                             <entry><para>Name of the host that acts as an email server to handle invitations.</para></entry>
+                            
                         </row>
                         <row>
                             <entry><para>project.smtp.password</para></entry>
                             <entry><para>(Optional) Password required by the SMTP server. You must also set project.smtp.username and set project.smtp.useAuth to true.</para></entry>
+                                
                             </row>
                             <row>
                                 <entry><para>project.smtp.port</para></entry>
                                 <entry><para>SMTP server’s listening port.</para></entry>
+                                
                             </row>
                             <row>
                                 <entry><para>project.smtp.useAuth</para></entry>
@@ -81,7 +88,9 @@
                 </tgroup>
             </informaltable>
         </listitem>
-        <listitem><para>Restart the Management Server</para>
+        <listitem><para>Restart the Management Server:</para>
         <programlisting>service cloud-management restart</programlisting></listitem>
-    </itemizedlist>
+    </orderedlist>
+    
 </section>
+      

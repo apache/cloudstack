@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
@@ -29,6 +30,7 @@ import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.region.RegionManager;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -50,8 +52,8 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -60,11 +62,11 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
+@Component
 @Local(value = { DomainManager.class, DomainService.class })
-public class DomainManagerImpl implements DomainManager, DomainService, Manager {
+public class DomainManagerImpl extends ManagerBase implements DomainManager, DomainService {
     public static final Logger s_logger = Logger.getLogger(DomainManagerImpl.class);
 
-    private String _name;
     @Inject
     private DomainDao _domainDao;
     @Inject
@@ -83,7 +85,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
     private ProjectManager _projectMgr;
     @Inject
     private RegionManager _regionMgr;
-    
+
     @Override
     public Domain getDomain(long domainId) {
         return _domainDao.findById(domainId);
@@ -92,28 +94,6 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
     @Override
     public Domain getDomain(String domainUuid) {
         return _domainDao.findByUuid(domainUuid);
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
-        return true;
     }
 
     @Override
@@ -182,12 +162,12 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
         }
 
         if(regionId == null){
-        	Transaction txn = Transaction.currentTxn();
-        	txn.start();
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
 
         	DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, _regionMgr.getId()));
-        	_resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
-        	txn.commit();
+        _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
+        txn.commit();
         	//Propagate domain creation to peer Regions
         	_regionMgr.propagateAddDomain(name, parentId, networkDomain, domain.getUuid());        	
         	return domain;
@@ -199,7 +179,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
         	_resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
 
         	txn.commit();
-        	return domain;
+        return domain;
         	
         }
         
@@ -386,7 +366,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
             _accountMgr.checkAccess(caller, domain);
         } else {
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                domainId = caller.getDomainId();
+            domainId = caller.getDomainId();
             }
             if (listAll) {
                 isRecursive = true;

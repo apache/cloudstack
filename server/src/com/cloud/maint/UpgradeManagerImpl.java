@@ -31,18 +31,20 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.maint.dao.AgentUpgradeDao;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.ManagerBase;
 
 /**
  *
@@ -52,20 +54,21 @@ import com.cloud.utils.component.ComponentLocator;
  *    2. Spread out a release update to agents so that the entire system
  *       does not come down at the same time.
  */
+@Component
 @Local(UpgradeManager.class)
-public class UpgradeManagerImpl implements UpgradeManager {
-	private final static Logger s_logger = Logger.getLogger(UpgradeManagerImpl.class);
+public class UpgradeManagerImpl extends ManagerBase implements UpgradeManager {
+    private final static Logger s_logger = Logger.getLogger(UpgradeManagerImpl.class);
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
-    String _name;
     String _minimalVersion;
     String _recommendedVersion;
 //    String _upgradeUrl;
     String _agentPath;
     long _checkInterval;
-    
-    AgentUpgradeDao _upgradeDao;
-    
+
+    @Inject AgentUpgradeDao _upgradeDao;
+    @Inject ConfigurationDao _configDao;
+
     @Override
     public State registerForUpgrade(long hostId, String version) {
         State state = State.UpToDate;
@@ -86,11 +89,11 @@ public class UpgradeManagerImpl implements UpgradeManager {
                 _upgradeDao.persist(vo);
             }
         }
-        */
-        
+         */
+
         return state;
     }
-    
+
     public String deployNewAgent(String url) {
         s_logger.info("Updating agent with binary from " + url);
 
@@ -128,18 +131,18 @@ public class UpgradeManagerImpl implements UpgradeManager {
 
             s_logger.debug("New Agent zip file is now retrieved");
         } catch (final HttpException e) {
-        	return "Unable to retrieve the file from " + url;
+            return "Unable to retrieve the file from " + url;
         } catch (final IOException e) {
-        	return "Unable to retrieve the file from " + url;
+            return "Unable to retrieve the file from " + url;
         } finally {
-               method.releaseConnection();
+            method.releaseConnection();
         }
-        
+
         file.delete();
-        
+
         return "File will be deployed.";
     }
-    
+
 //    @Override
 //    public String getAgentUrl() {
 //        return _upgradeUrl;
@@ -147,20 +150,8 @@ public class UpgradeManagerImpl implements UpgradeManager {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
 
-        final ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        _upgradeDao = locator.getDao(AgentUpgradeDao.class);
-        if (_upgradeDao == null) {
-            throw new ConfigurationException("Unable to retrieve the storage layer.");
-        }
-
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
-
-        final Map<String, String> configs = configDao.getConfiguration("UpgradeManager", params);
+        final Map<String, String> configs = _configDao.getConfiguration("UpgradeManager", params);
 
         File agentUpgradeFile = PropertiesUtil.findConfigFile("agent-update.properties");
         Properties agentUpgradeProps = new Properties();
@@ -181,7 +172,7 @@ public class UpgradeManagerImpl implements UpgradeManager {
             }
 
             //_upgradeUrl = configs.get("upgrade.url");
-            
+
 //			if (_upgradeUrl == null) {
 //				s_logger.debug("There is no upgrade url found in configuration table");
 //                // _upgradeUrl = "http://updates.vmops.com/releases/rss.xml";
@@ -194,20 +185,5 @@ public class UpgradeManagerImpl implements UpgradeManager {
             }
         }
         return false;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
     }
 }

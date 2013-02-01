@@ -19,12 +19,13 @@ package com.cloud.api.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
@@ -45,7 +46,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ListNiciraNvpDevicesCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListNiciraNvpDevicesCmd.class.getName());
     private static final String s_name = "listniciranvpdeviceresponse";
-    @PlugService NiciraNvpElementService _niciraNvpElementService;
+    @Inject NiciraNvpElementService _niciraNvpElementService;
 
    /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -103,5 +104,5 @@ public class ListNiciraNvpDevicesCmd extends BaseListCmd {
     public String getCommandName() {
         return s_name;
     }
-
+    
 }

@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -33,45 +34,36 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.NetworkModel;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.net.UrlUtil;
 
-public abstract class DiscovererBase implements Discoverer {
-    protected String _name;
+public abstract class DiscovererBase extends AdapterBase implements Discoverer {
     protected Map<String, String> _params;
     private static final Logger s_logger = Logger.getLogger(DiscovererBase.class);
     @Inject protected ClusterDao _clusterDao;
     @Inject protected ConfigurationDao _configDao;
     @Inject protected NetworkModel _networkMgr;
     @Inject protected HostDao _hostDao;
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        ConfigurationDao dao = ComponentLocator.getCurrentLocator().getDao(ConfigurationDao.class);
-        _params = dao.getConfiguration(params);
-        _name = name;
-        
+        _params = _configDao.getConfiguration(params);
+
         return true;
     }
-    
+
     protected Map<String, String> resolveInputParameters(URL url) {
         Map<String, String> params = UrlUtil.parseQueryParameters(url);
-        
+
         return null;
-    }
-    
-    @Override
-    public void putParam(Map<String, String> params) {
-    	if (_params == null) {
-    		_params = new HashMap<String, String>();
-    	}
-    	_params.putAll(params);
     }
 
     @Override
-    public String getName() {
-        return _name;
+    public void putParam(Map<String, String> params) {
+        if (_params == null) {
+            _params = new HashMap<String, String>();
+        }
+        _params.putAll(params);
     }
 
     @Override
@@ -83,7 +75,7 @@ public abstract class DiscovererBase implements Discoverer {
     public boolean stop() {
         return true;
     }
-    
+
     protected ServerResource getResource(String resourceName){
         ServerResource resource = null;
         try {
@@ -105,10 +97,10 @@ public abstract class DiscovererBase implements Discoverer {
         } catch (InvocationTargetException e) {
             s_logger.warn("InvocationTargetException error on " + resourceName, e);
         }
-        
+
         return resource;
     }
-    
+
     protected HashMap<String, Object> buildConfigParams(HostVO host){
         HashMap<String, Object> params = new HashMap<String, Object>(host.getDetails().size() + 5);
         params.putAll(host.getDetails());
@@ -139,16 +131,16 @@ public abstract class DiscovererBase implements Discoverer {
         return params;
 
     }
-    
+
     @Override
     public ServerResource reloadResource(HostVO host) {
         String resourceName = host.getResource();
         ServerResource resource = getResource(resourceName);
-        
+
         if(resource != null){
             _hostDao.loadDetails(host);
             updateNetworkLabels(host);
-            
+
             HashMap<String, Object> params = buildConfigParams(host);
             try {
                 resource.configure(host.getName(), params);
@@ -163,18 +155,18 @@ public abstract class DiscovererBase implements Discoverer {
         }
         return resource;
     }
-    
+
     private void updateNetworkLabels(HostVO host){
         //check if networkLabels need to be updated in details
         //we send only private and storage network label to the resource.
         String privateNetworkLabel = _networkMgr.getDefaultManagementTrafficLabel(host.getDataCenterId(), host.getHypervisorType());
         String storageNetworkLabel = _networkMgr.getDefaultStorageTrafficLabel(host.getDataCenterId(), host.getHypervisorType());
-        
+
         String privateDevice = host.getDetail("private.network.device");
         String storageDevice = host.getDetail("storage.network.device1");
-        
+
         boolean update = false;
-        
+
         if(privateNetworkLabel != null && !privateNetworkLabel.equalsIgnoreCase(privateDevice)){
             host.setDetail("private.network.device", privateNetworkLabel);
             update = true;

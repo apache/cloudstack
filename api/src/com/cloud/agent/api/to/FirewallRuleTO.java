@@ -19,10 +19,11 @@ package com.cloud.agent.api.to;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.utils.net.NetUtils;
-import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * FirewallRuleTO transfers a port range for an ip to be opened.
@@ -94,7 +95,7 @@ public class FirewallRuleTO implements InternalIdentity {
     public FirewallRuleTO(FirewallRule rule, String srcIp) {
         this(rule.getId(),null, srcIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getState()==State.Revoke, rule.getState()==State.Active, rule.getPurpose(),rule.getSourceCidrList(),rule.getIcmpType(),rule.getIcmpCode());
     }
-    
+
     public FirewallRuleTO(FirewallRule rule, String srcVlanTag, String srcIp, FirewallRule.Purpose purpose) {
         this(rule.getId(),srcVlanTag, srcIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getState()==State.Revoke, rule.getState()==State.Active, purpose,rule.getSourceCidrList(),rule.getIcmpType(),rule.getIcmpCode());
     }

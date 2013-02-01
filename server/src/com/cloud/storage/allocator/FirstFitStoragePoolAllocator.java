@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -42,7 +43,6 @@ import com.cloud.user.Account;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.utils.component.Inject;
 
 @Local(value=StoragePoolAllocator.class)
 public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {

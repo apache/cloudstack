@@ -23,6 +23,8 @@ import com.cloud.api.commands.DeleteTrafficMonitorCmd;
 import com.cloud.api.commands.ListTrafficMonitorsCmd;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.network.dao.IPAddressVO;
+
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import com.cloud.utils.component.Manager;
 

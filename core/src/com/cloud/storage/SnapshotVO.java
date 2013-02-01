@@ -31,7 +31,7 @@ public class SnapshotVO implements Snapshot {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private long id = -1;
+    private final long id = -1;
 
     @Column(name="data_center_id")
     long dataCenterId;
@@ -103,7 +103,7 @@ public class SnapshotVO implements Snapshot {
     String uuid;
 
     public SnapshotVO() {
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String path, String name, short snapshotType, String typeDescription, long size, HypervisorType hypervisorType ) {
@@ -121,7 +121,7 @@ public class SnapshotVO implements Snapshot {
         this.prevSnapshotId = 0;
         this.hypervisorType = hypervisorType;
         this.version = "2.2";
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -138,6 +138,7 @@ public class SnapshotVO implements Snapshot {
         return accountId;
     }
 
+    @Override
     public long getDomainId() {
         return domainId;
     }
@@ -161,7 +162,7 @@ public class SnapshotVO implements Snapshot {
     }
 
     public void setPath(String path) {
-    	this.path = path;
+        this.path = path;
     }
 
     @Override
@@ -199,7 +200,7 @@ public class SnapshotVO implements Snapshot {
 
     @Override
     public HypervisorType getHypervisorType() {
-    	return hypervisorType;
+        return hypervisorType;
     }
 
     public void setSnapshotType(short snapshotType) {
@@ -233,6 +234,7 @@ public class SnapshotVO implements Snapshot {
         this.version = version;
     }
 
+    @Override
     public Date getCreated() {
         return created;
     }
@@ -241,30 +243,30 @@ public class SnapshotVO implements Snapshot {
         return removed;
     }
 
-	@Override
+    @Override
     public State getState() {
-		return status;
-	}
+        return status;
+    }
 
 	public void setStatus(State status) {
-		this.status = status;
-	}
+        this.status = status;
+    }
 
-	public String getBackupSnapshotId(){
-		return backupSnapshotId;
-	}
+    public String getBackupSnapshotId(){
+        return backupSnapshotId;
+    }
 
     public long getPrevSnapshotId(){
-		return prevSnapshotId;
-	}
+        return prevSnapshotId;
+    }
 
-	public void setBackupSnapshotId(String backUpSnapshotId){
-		this.backupSnapshotId = backUpSnapshotId;
-	}
+    public void setBackupSnapshotId(String backUpSnapshotId){
+        this.backupSnapshotId = backUpSnapshotId;
+    }
 
-	public void setPrevSnapshotId(long prevSnapshotId){
-		this.prevSnapshotId = prevSnapshotId;
-	}
+    public void setPrevSnapshotId(long prevSnapshotId){
+        this.prevSnapshotId = prevSnapshotId;
+    }
 
     public static Type getSnapshotType(String snapshotType) {
         for ( Type type : Type.values()) {
@@ -277,11 +279,11 @@ public class SnapshotVO implements Snapshot {
 
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
 
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 
     public Long getS3Id() {

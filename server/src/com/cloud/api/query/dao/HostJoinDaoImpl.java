@@ -25,24 +25,24 @@ import java.util.List;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
-
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.response.HostResponse;
 import com.cloud.storage.StorageStats;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
+@Component
 @Local(value={HostJoinDao.class})
 public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements HostJoinDao {
     public static final Logger s_logger = Logger.getLogger(HostJoinDaoImpl.class);
@@ -50,9 +50,9 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     @Inject
     private ConfigurationDao  _configDao;
 
-    private SearchBuilder<HostJoinVO> hostSearch;
+    private final SearchBuilder<HostJoinVO> hostSearch;
 
-    private SearchBuilder<HostJoinVO> hostIdSearch;
+    private final SearchBuilder<HostJoinVO> hostIdSearch;
 
 
     protected HostJoinDaoImpl() {
@@ -95,14 +95,14 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity)
                 || details.contains(HostDetails.stats) || details.contains(HostDetails.events)) {
 
-                hostResponse.setOsCategoryId(host.getOsCategoryUuid());
-                hostResponse.setOsCategoryName(host.getOsCategoryName());
-                hostResponse.setZoneName(host.getZoneName());
-                hostResponse.setPodName(host.getPodName());
-                if ( host.getClusterId() > 0) {
-                    hostResponse.setClusterName(host.getClusterName());
-                    hostResponse.setClusterType(host.getClusterType().toString());
-                }
+            hostResponse.setOsCategoryId(host.getOsCategoryUuid());
+            hostResponse.setOsCategoryName(host.getOsCategoryName());
+            hostResponse.setZoneName(host.getZoneName());
+            hostResponse.setPodName(host.getPodName());
+            if ( host.getClusterId() > 0) {
+                hostResponse.setClusterName(host.getClusterName());
+                hostResponse.setClusterType(host.getClusterType().toString());
+            }
         }
 
         DecimalFormat decimalFormat = new DecimalFormat("#.##");

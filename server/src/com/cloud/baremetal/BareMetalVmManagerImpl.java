@@ -16,11 +16,31 @@
 // under the License.
 package com.cloud.baremetal;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
+import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
 import com.cloud.agent.api.baremetal.IpmiBootorResetCommand;
 import com.cloud.agent.manager.Commands;
+import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+
 import com.cloud.baremetal.PxeServerManager.PxeServerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -36,25 +56,28 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
-import com.cloud.template.TemplateProfile;
+import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
+import com.cloud.user.SSHKeyPair;
+import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.user.*;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -66,33 +89,21 @@ import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile.Param;
-import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
-import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Executors;
 
 @Local(value={BareMetalVmManager.class, BareMetalVmService.class})
-public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMetalVmManager, BareMetalVmService, Manager,
+public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMetalVmManager, BareMetalVmService,
 		StateListener<State, VirtualMachine.Event, VirtualMachine> {
 	private static final Logger s_logger = Logger.getLogger(BareMetalVmManagerImpl.class); 
-	private ConfigurationDao _configDao;
+	@Inject ConfigurationDao _configDao;
 	@Inject PxeServerManager _pxeMgr;
 	@Inject ResourceManager _resourceMgr;
 	
-    @Inject (adapter=TemplateAdapter.class)
-    protected Adapters<TemplateAdapter> _adapters;
+    @Inject protected List<TemplateAdapter> _adapters;
 
+    @PostConstruct
+    public void init() {
+    }
+    
 	@Override
 	public boolean attachISOToVM(long vmId, long isoId, boolean attach) {
 		s_logger.warn("attachISOToVM is not supported by Bare Metal, just fake a true");
@@ -157,7 +168,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
          * prepare() will check if current account has right for creating
          * template
          */
-        TemplateAdapter adapter = _adapters.get(TemplateAdapterType.BareMetal.getName());
+        TemplateAdapter adapter = AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.BareMetal.getName());
         Long userId = UserContext.current().getCallerUserId();
         userId = (userId == null ? User.UID_SYSTEM : userId);
         AccountVO account = _accountDao.findById(vm.getAccountId());
@@ -328,7 +339,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
         }
         
         UserVmVO vm = new UserVmVO(id, instanceName, cmd.getDisplayName(), template.getId(), HypervisorType.BareMetal,
-                template.getGuestOSId(), offering.getOfferHA(), false, domainId, owner.getId(), offering.getId(), userData, hostName);
+                template.getGuestOSId(), offering.getOfferHA(), false, domainId, owner.getId(), offering.getId(), userData, hostName, null);
         
         if (sshPublicKey != null) {
             vm.setDetail("SSH.PublicKey", sshPublicKey);
@@ -371,7 +382,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
 	    UserVmVO vm = _vmDao.findById(cmd.getInstanceId());
 	    
-		List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.PxeServer, vm.getDataCenterIdToDeployIn()); 
+		List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.PxeServer, vm.getDataCenterId()); 
 	    if (servers.size() == 0) {
 	    	throw new CloudRuntimeException("Cannot find PXE server, please make sure there is one PXE server per zone");
 	    }
@@ -399,7 +410,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
         
         Map<VirtualMachineProfile.Param, Object> params = null;
         if (vm.isUpdateParameters()) {
-            List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.PxeServer, vm.getDataCenterIdToDeployIn()); 
+            List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.PxeServer, vm.getDataCenterId()); 
             if (servers.size() == 0) {
                 throw new CloudRuntimeException("Cannot find PXE server, please make sure there is one PXE server per zone");
             }
@@ -415,12 +426,6 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		_name = name;
-
-		ComponentLocator locator = ComponentLocator.getCurrentLocator();
-		_configDao = locator.getDao(ConfigurationDao.class);
-		if (_configDao == null) {
-			throw new ConfigurationException("Unable to get the configuration dao.");
-		}
 
 		Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 

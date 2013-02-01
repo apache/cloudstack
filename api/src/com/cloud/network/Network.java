@@ -16,11 +16,24 @@
 // under the License.
 package com.cloud.network;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.Mode;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -34,7 +47,7 @@ import java.util.List;
  */
 public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity {
 
-  public enum GuestType {
+    public enum GuestType {
         Shared,
         Isolated
     }
@@ -46,7 +59,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service Dhcp = new Service("Dhcp");
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
         public static final Service Gateway = new Service("Gateway");
-        public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, 
+        public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols,
                 Capability.MultipleIps, Capability.TrafficStatistics, Capability.SupportedTrafficDirection, Capability.SupportedEgressProtocols);
         public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation,
                 Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps,
@@ -232,7 +245,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
             _description = description;
         }
     }
-    
+
     public class IpAddresses {
     	private String ip4Address;
     	private String ip6Address;
@@ -270,7 +283,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     String getGateway();
 
     String getCidr();
-    
+
     String getIp6Gateway();
     
     String getIp6Cidr();

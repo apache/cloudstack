@@ -25,14 +25,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.cluster.agentlb.HostTransferMapVO;
+import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -44,7 +49,6 @@ import com.cloud.info.RunningHostCountInfo;
 import com.cloud.org.Managed;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -60,6 +64,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value = { HostDao.class })
 @DB(txn = false)
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
@@ -68,61 +73,65 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     private static final Logger status_logger = Logger.getLogger(Status.class);
     private static final Logger state_logger = Logger.getLogger(ResourceState.class);
 
-    protected final SearchBuilder<HostVO> TypePodDcStatusSearch;
+    protected SearchBuilder<HostVO> TypePodDcStatusSearch;
 
-    protected final SearchBuilder<HostVO> IdStatusSearch;
-    protected final SearchBuilder<HostVO> TypeDcSearch;
-    protected final SearchBuilder<HostVO> TypeDcStatusSearch;
-    protected final SearchBuilder<HostVO> MsStatusSearch;
-    protected final SearchBuilder<HostVO> DcPrivateIpAddressSearch;
-    protected final SearchBuilder<HostVO> DcStorageIpAddressSearch;
+    protected SearchBuilder<HostVO> IdStatusSearch;
+    protected SearchBuilder<HostVO> TypeDcSearch;
+    protected SearchBuilder<HostVO> TypeDcStatusSearch;
+    protected SearchBuilder<HostVO> TypeClusterStatusSearch;
+    protected SearchBuilder<HostVO> MsStatusSearch;
+    protected SearchBuilder<HostVO> DcPrivateIpAddressSearch;
+    protected SearchBuilder<HostVO> DcStorageIpAddressSearch;
 
-    protected final SearchBuilder<HostVO> GuidSearch;
-    protected final SearchBuilder<HostVO> DcSearch;
-    protected final SearchBuilder<HostVO> PodSearch;
-    protected final SearchBuilder<HostVO> TypeSearch;
-    protected final SearchBuilder<HostVO> StatusSearch;
-    protected final SearchBuilder<HostVO> ResourceStateSearch;
-    protected final SearchBuilder<HostVO> NameLikeSearch;
-    protected final SearchBuilder<HostVO> NameSearch;
-    protected final SearchBuilder<HostVO> SequenceSearch;
-    protected final SearchBuilder<HostVO> DirectlyConnectedSearch;
-    protected final SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
-    protected final SearchBuilder<HostVO> UnmanagedApplianceSearch;
-    protected final SearchBuilder<HostVO> MaintenanceCountSearch;
-    protected final SearchBuilder<HostVO> ClusterStatusSearch;
-    protected final SearchBuilder<HostVO> TypeNameZoneSearch;
-    protected final SearchBuilder<HostVO> AvailHypevisorInZone;
+    protected SearchBuilder<HostVO> GuidSearch;
+    protected SearchBuilder<HostVO> DcSearch;
+    protected SearchBuilder<HostVO> PodSearch;
+    protected SearchBuilder<HostVO> TypeSearch;
+    protected SearchBuilder<HostVO> StatusSearch;
+    protected SearchBuilder<HostVO> ResourceStateSearch;
+    protected SearchBuilder<HostVO> NameLikeSearch;
+    protected SearchBuilder<HostVO> NameSearch;
+    protected SearchBuilder<HostVO> SequenceSearch;
+    protected SearchBuilder<HostVO> DirectlyConnectedSearch;
+    protected SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
+    protected SearchBuilder<HostVO> UnmanagedApplianceSearch;
+    protected SearchBuilder<HostVO> MaintenanceCountSearch;
+    protected SearchBuilder<HostVO> ClusterStatusSearch;
+    protected SearchBuilder<HostVO> TypeNameZoneSearch;
+    protected SearchBuilder<HostVO> AvailHypevisorInZone;
 
-    protected final SearchBuilder<HostVO> DirectConnectSearch;
-    protected final SearchBuilder<HostVO> ManagedDirectConnectSearch;
-    protected final SearchBuilder<HostVO> ManagedRoutingServersSearch;
-    protected final SearchBuilder<HostVO> SecondaryStorageVMSearch;
-    
+    protected SearchBuilder<HostVO> DirectConnectSearch;
+    protected SearchBuilder<HostVO> ManagedDirectConnectSearch;
+    protected SearchBuilder<HostVO> ManagedRoutingServersSearch;
+    protected SearchBuilder<HostVO> SecondaryStorageVMSearch;
 
-    protected final GenericSearchBuilder<HostVO, Long> HostsInStatusSearch;
-    protected final GenericSearchBuilder<HostVO, Long> CountRoutingByDc;
-    protected final SearchBuilder<HostTransferMapVO> HostTransferSearch;
+
+    protected GenericSearchBuilder<HostVO, Long> HostsInStatusSearch;
+    protected GenericSearchBuilder<HostVO, Long> CountRoutingByDc;
+    protected SearchBuilder<HostTransferMapVO> HostTransferSearch;
     protected SearchBuilder<ClusterVO> ClusterManagedSearch;
-    protected final SearchBuilder<HostVO> RoutingSearch;
+    protected SearchBuilder<HostVO> RoutingSearch;
 
-    protected final SearchBuilder<HostVO> HostsForReconnectSearch;
-    protected final GenericSearchBuilder<HostVO, Long> ClustersOwnedByMSSearch;
-    protected final GenericSearchBuilder<ClusterVO, Long> AllClustersSearch;
-    protected final SearchBuilder<HostVO> HostsInClusterSearch;
-
-    protected final Attribute _statusAttr;
-    protected final Attribute _resourceStateAttr;
-    protected final Attribute _msIdAttr;
-    protected final Attribute _pingTimeAttr;
-
-    protected final HostDetailsDaoImpl _detailsDao = ComponentLocator.inject(HostDetailsDaoImpl.class);
-    protected final HostTagsDaoImpl _hostTagsDao = ComponentLocator.inject(HostTagsDaoImpl.class);
-    protected final HostTransferMapDaoImpl _hostTransferDao = ComponentLocator.inject(HostTransferMapDaoImpl.class);
-    protected final ClusterDaoImpl _clusterDao = ComponentLocator.inject(ClusterDaoImpl.class);
+    protected SearchBuilder<HostVO> HostsForReconnectSearch;
+    protected GenericSearchBuilder<HostVO, Long> ClustersOwnedByMSSearch;
+    protected GenericSearchBuilder<ClusterVO, Long> AllClustersSearch;
+    protected SearchBuilder<HostVO> HostsInClusterSearch;
     
+    protected Attribute _statusAttr;
+    protected Attribute _resourceStateAttr;
+    protected Attribute _msIdAttr;
+    protected Attribute _pingTimeAttr;
+    
+    @Inject protected HostDetailsDao _detailsDao;
+    @Inject protected HostTagsDao _hostTagsDao;
+    @Inject protected HostTransferMapDao _hostTransferDao;
+    @Inject protected ClusterDao _clusterDao;
 
     public HostDaoImpl() {
+    }
+
+    @PostConstruct
+    public void init() {
 
         MaintenanceCountSearch = createSearchBuilder();
         MaintenanceCountSearch.and("cluster", MaintenanceCountSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
@@ -162,6 +171,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         TypeDcStatusSearch.and("status", TypeDcStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.and("resourceState", TypeDcStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.done();
+
+        TypeClusterStatusSearch = createSearchBuilder();
+        TypeClusterStatusSearch.and("type", TypeClusterStatusSearch.entity().getType(), SearchCriteria.Op.EQ);
+        TypeClusterStatusSearch.and("cluster", TypeClusterStatusSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        TypeClusterStatusSearch.and("status", TypeClusterStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        TypeClusterStatusSearch.and("resourceState", TypeClusterStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
+        TypeClusterStatusSearch.done();
 
         IdStatusSearch = createSearchBuilder();
         IdStatusSearch.and("id", IdStatusSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -883,6 +899,17 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("name", name);
         sc.setParameters("zoneId", zoneId);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<HostVO> findHypervisorHostInCluster(long clusterId) {
+        SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("cluster", clusterId);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", ResourceState.Enabled);
+
+        return listBy(sc);
     }
 
 }

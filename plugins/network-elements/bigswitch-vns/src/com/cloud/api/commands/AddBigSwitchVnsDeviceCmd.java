@@ -16,12 +16,13 @@
 // under the License.
 package com.cloud.api.commands;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 
@@ -39,7 +40,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "addBigSwitchVnsDevice", responseObject=BigSwitchVnsDeviceResponse.class, description="Adds a BigSwitch VNS device")
 public class AddBigSwitchVnsDeviceCmd extends BaseAsyncCmd {
     private static final String s_name = "addbigswitchvnsdeviceresponse";
-    @PlugService BigSwitchVnsElementService _bigswitchVnsElementService;
+    @Inject BigSwitchVnsElementService _bigswitchVnsElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

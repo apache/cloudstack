@@ -16,12 +16,16 @@
 // under the License.
 package com.cloud.vpc.dao;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.ejb.Local;
 
 import com.cloud.network.Network.Service;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.SearchCriteria;
 
 @Local(value = NetworkOfferingServiceMapDao.class)
 @DB(txn = false)
@@ -36,4 +40,5 @@ public class MockNetworkOfferingServiceMapDaoImpl extends NetworkOfferingService
         }
         return false;
     }
+    
 }

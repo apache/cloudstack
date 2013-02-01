@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import org.apache.cloudstack.api.InternalIdentity;
 
 public class StaticRouteProfile implements StaticRoute {
     private long id;

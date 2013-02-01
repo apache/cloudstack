@@ -16,28 +16,31 @@
 // under the License.
 package com.cloud.api.commands;
 
-import org.apache.log4j.Logger;
+import javax.inject.Inject;
 
-import com.cloud.agent.manager.SimulatorManager;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.log4j.Logger;
+
+import com.cloud.agent.manager.SimulatorManager;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "configureSimulator", description="configure simulator", responseObject=SuccessResponse.class)
 public class ConfigureSimulator extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureSimulator.class.getName());
     private static final String s_name = "configuresimulatorresponse";
+
+    @Inject SimulatorManager _simMgr;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="configure range: in a zone")
     private Long zoneId;
@@ -59,8 +62,6 @@ public class ConfigureSimulator extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-        SimulatorManager _simMgr = locator.getManager(SimulatorManager.class);
         boolean result = _simMgr.configureSimulator(zoneId, podId, clusterId, hostId, command, values);
         if (!result) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure simulator");

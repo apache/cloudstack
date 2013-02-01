@@ -31,12 +31,13 @@ import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.NetworkOffering.State;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value = NetworkOfferingDao.class)
 @DB(txn = false)
-public class MockNetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Long> implements NetworkOfferingDao {
+public class MockNetworkOfferingDaoImpl extends NetworkOfferingDaoImpl implements NetworkOfferingDao{
     private static final Logger s_logger = Logger.getLogger(MockNetworkOfferingDaoImpl.class);
 
     /* (non-Javadoc)

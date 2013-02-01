@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.command.admin.ratelimit.ResetApiLimitCmd;
@@ -45,17 +44,16 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import javax.inject.Inject;
+
 @APICommand(name = "getApiLimit", responseObject=ApiLimitResponse.class, description="Get API limit count for the caller")
 public class GetApiLimitCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(GetApiLimitCmd.class.getName());
 
     private static final String s_name = "getapilimitresponse";
 
-    @PlugService
+    @Inject
     ApiRateLimitService _apiLimitService;
-
-
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

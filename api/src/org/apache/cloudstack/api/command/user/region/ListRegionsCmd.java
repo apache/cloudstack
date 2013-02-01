@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.region;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -26,6 +28,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.region.RegionService;
 import org.apache.log4j.Logger;
 
 @APICommand(name = "listRegions", description="Lists Regions", responseObject=RegionResponse.class)
@@ -43,6 +46,8 @@ public class ListRegionsCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="List Region by region name.")
     private String name;
+    
+    @Inject RegionService _regionService;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

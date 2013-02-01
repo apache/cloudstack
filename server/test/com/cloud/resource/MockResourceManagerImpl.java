@@ -54,10 +54,11 @@ import com.cloud.storage.Swift;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.fsm.NoTransitionException;
 
 @Local(value = {ResourceManager.class})
-public class MockResourceManagerImpl implements ResourceManager, Manager {
+public class MockResourceManagerImpl extends ManagerBase implements ResourceManager {
 
     /* (non-Javadoc)
      * @see com.cloud.resource.ResourceService#updateHost(com.cloud.api.commands.UpdateHostCmd)

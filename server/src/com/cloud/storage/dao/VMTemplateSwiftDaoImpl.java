@@ -22,6 +22,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.utils.db.GenericDaoBase;
@@ -33,6 +34,7 @@ import com.cloud.utils.db.SearchCriteria;
  * 
  */
 
+@Component
 @Local(value = { VMTemplateSwiftDao.class })
 public class VMTemplateSwiftDaoImpl extends GenericDaoBase<VMTemplateSwiftVO, Long> implements VMTemplateSwiftDao {
     public static final Logger s_logger = Logger.getLogger(VMTemplateSwiftDaoImpl.class.getName());

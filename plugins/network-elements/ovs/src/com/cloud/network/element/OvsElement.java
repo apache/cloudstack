@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -34,7 +35,6 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -64,18 +64,18 @@ public class OvsElement extends AdapterBase implements NetworkElement {
     @Override
     public boolean implement(Network network, NetworkOffering offering,
             DeployDestination dest, ReservationContext context)
-                    throws ConcurrentOperationException, ResourceUnavailableException,
-                    InsufficientCapacityException {
+            throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
         //Consider actually implementing the network here
-        return true;
+    	return true;
     }
 
     @Override
     public boolean prepare(Network network, NicProfile nic,
             VirtualMachineProfile<? extends VirtualMachine> vm,
             DeployDestination dest, ReservationContext context)
-                    throws ConcurrentOperationException, ResourceUnavailableException,
-                    InsufficientCapacityException {
+            throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
         if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vswitch) {
             return true;
         }
@@ -115,7 +115,7 @@ public class OvsElement extends AdapterBase implements NetworkElement {
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        return true;
+    	return true;
     }
 
     @Override

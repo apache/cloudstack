@@ -18,6 +18,8 @@ package com.cloud.api.commands.netapp;
 
 import java.rmi.ServerException;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,23 +36,22 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DeleteLUNCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "destroyLunOnFiler", description="Destroy a LUN", responseObject = DeleteLUNCmdResponse.class)
 public class DestroyLunCmd extends BaseCmd {
-
+    
 	public static final Logger s_logger = Logger.getLogger(DestroyLunCmd.class.getName());
     private static final String s_name = "destroylunresponse";
 
     @Parameter(name=ApiConstants.PATH, type=CommandType.STRING, required = true, description="LUN path.")
 	private String path;
 
+    @Inject NetappManager netappMgr;
     @Override
     public void execute() throws ResourceUnavailableException,
     InsufficientCapacityException, ServerApiException,
     ConcurrentOperationException, ResourceAllocationException {
-    	ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
     	try {
 			netappMgr.destroyLunOnFiler(path);
     		DeleteLUNCmdResponse response = new DeleteLUNCmdResponse();
@@ -74,5 +75,5 @@ public class DestroyLunCmd extends BaseCmd {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-
+    
 }

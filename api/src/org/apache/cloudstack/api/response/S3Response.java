@@ -18,11 +18,20 @@
  */
 package org.apache.cloudstack.api.response;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
+import static org.apache.cloudstack.api.ApiConstants.ID;
+import static org.apache.cloudstack.api.ApiConstants.S3_ACCESS_KEY;
+import static org.apache.cloudstack.api.ApiConstants.S3_BUCKET_NAME;
+import static org.apache.cloudstack.api.ApiConstants.S3_CONNECTION_TIMEOUT;
+import static org.apache.cloudstack.api.ApiConstants.S3_END_POINT;
+import static org.apache.cloudstack.api.ApiConstants.S3_HTTPS_FLAG;
+import static org.apache.cloudstack.api.ApiConstants.S3_MAX_ERROR_RETRY;
+import static org.apache.cloudstack.api.ApiConstants.S3_SECRET_KEY;
+import static org.apache.cloudstack.api.ApiConstants.S3_SOCKET_TIMEOUT;
+
 import org.apache.cloudstack.api.BaseResponse;
 
-import static org.apache.cloudstack.api.ApiConstants.*;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class S3Response extends BaseResponse {
 

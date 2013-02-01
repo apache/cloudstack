@@ -16,8 +16,9 @@
 // under the License.
 package com.cloud.storage;
 
-import com.cloud.agent.api.to.SwiftTO;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.agent.api.to.SwiftTO;
 
 public interface Swift extends InternalIdentity {
     public long getId();

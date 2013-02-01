@@ -17,7 +17,6 @@
 package com.cloud.utils.log;
 
 import java.io.PrintWriter;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 import org.apache.log4j.spi.ThrowableRenderer;
@@ -36,25 +35,10 @@ import org.apache.log4j.spi.ThrowableRenderer;
  */
 public class CglibThrowableRenderer implements ThrowableRenderer {
     /**
-     * Throwable.getStackTrace() method.
-     */
-    private Method getStackTraceMethod;
-    /**
-     * StackTraceElement.getClassName() method.
-     */
-    private Method getClassNameMethod;
-
-    /**
      * Construct new instance.
      */
     public CglibThrowableRenderer() {
-        try {
-            Class[] noArgs = null;
-            getStackTraceMethod = Throwable.class.getMethod("getStackTrace", noArgs);
-            Class ste = Class.forName("java.lang.StackTraceElement");
-            getClassNameMethod = ste.getMethod("getClassName", noArgs);
-        } catch (Exception ex) {
-        }
+        super();
     }
 
     @Override
@@ -94,24 +78,4 @@ public class CglibThrowableRenderer implements ThrowableRenderer {
             return null;
         }
     }
-
-    /**
-     * Find class given class name.
-     * 
-     * @param className class name, may not be null.
-     * @return class, will not be null.
-     * @throws ClassNotFoundException thrown if class can not be found.
-     */
-    private Class findClass(final String className) throws ClassNotFoundException {
-        try {
-            return Thread.currentThread().getContextClassLoader().loadClass(className);
-        } catch (ClassNotFoundException e) {
-            try {
-                return Class.forName(className);
-            } catch (ClassNotFoundException e1) {
-                return getClass().getClassLoader().loadClass(className);
-            }
-        }
-    }
-
 }

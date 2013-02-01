@@ -24,44 +24,23 @@ package com.cloud.baremetal.networkservice;
 
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.host.dao.HostDao;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.dao.NicDao;
 
-public abstract class BareMetalPxeServiceBase implements BaremetalPxeService {
-	protected String _name;
+public abstract class BareMetalPxeServiceBase extends ManagerBase implements BaremetalPxeService {
 	@Inject DataCenterDao _dcDao;
 	@Inject HostDao _hostDao;
 	@Inject AgentManager _agentMgr;
 	@Inject HostPodDao _podDao;
 	@Inject NicDao _nicDao;
 	
-	@Override
-	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		_name = name;
-		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
-	}
-
-	@Override
-	public boolean start() {
-		return true;
-	}
-
-	@Override
-	public boolean stop() {
-		return true;
-	}
-
 	protected String getPxeServerGuid(String zoneId, String name, String ip) {
 		return zoneId + "-" + name + "-" + ip;
 	}

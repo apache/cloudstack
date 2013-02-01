@@ -5,33 +5,41 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
 -->
-
 <section id="vpn">
-    <title>VPN</title>
-    <para>&PRODUCT; account owners can create virtual private networks (VPN) to access their virtual machines. If the guest network is instantiated from a network offering that offers the Remote Access VPN service, the virtual router (based on the System VM) is used to provide the service. &PRODUCT; provides a L2TP-over-IPsec-based remote access VPN service to guest virtual networks.  Since each network gets its own virtual router, VPNs are not shared across the networks. VPN clients native to Windows, Mac OS X and iOS can be used to connect to the guest networks.  The account owner can create and manage users for their VPN.  &PRODUCT; does not use its account database for this purpose but uses a separate table. The VPN user database is shared across all the VPNs created by the account owner. All VPN users get access to all VPNs created by the account owner.</para>
-    <note><para>Make sure that not all traffic goes through the VPN.  That is, the route installed by the VPN should be only for the guest network and not for all traffic.</para></note>
-    <itemizedlist>
-    <listitem><para><emphasis role="bold">Road Warrior / Remote Access</emphasis>. Users want to be able to connect securely from a home or office to a private network in the cloud. Typically, the IP address of the connecting client is dynamic and cannot be preconfigured on the VPN server.</para></listitem>
-    <listitem><para><emphasis role="bold">Site to Site</emphasis>. In this scenario, two private subnets are connected over the public Internet with a secure VPN tunnel. The cloud user’s subnet (for example, an office network) is connected through a gateway to the network in the cloud. The address of the user’s gateway must be preconfigured on the VPN server in the cloud. Note that although L2TP-over-IPsec can be used to set up Site-to-Site VPNs, this is not the primary intent of this feature.</para></listitem>
-    </itemizedlist>
-  <xi:include href="configure-vpn.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-  <xi:include href="using-vpn-with-windows.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-  <xi:include href="using-vpn-with-mac.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-  <xi:include href="site-to-site-vpn.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+	<title>VPN</title>
+	<para>&PRODUCT; account owners can create virtual private networks (VPN) to access their virtual machines. If the guest network is instantiated from a network offering that offers the Remote Access VPN service, the virtual router (based on the System VM) is used to provide the service. &PRODUCT; provides a L2TP-over-IPsec-based remote access VPN service to guest virtual networks.  Since each network gets its own virtual router, VPNs are not shared across the networks. VPN clients native to Windows, Mac OS X and iOS can be used to connect to the guest networks.  The account owner can create and manage users for their VPN.  &PRODUCT; does not use its account database for this purpose but uses a separate table. The VPN user database is shared across all the VPNs created by the account owner. All VPN users get access to all VPNs created by the account owner.</para>
+	<note><para>Make sure that not all traffic goes through the VPN.  That is, the route installed by the VPN should be only for the guest network and not for all traffic.</para></note>
+	<para></para>
+	<itemizedlist>
+	<listitem><para><emphasis role="bold">Road Warrior / Remote Access</emphasis>. Users want to be able to
+				connect securely from a home or office to a private network in the cloud. Typically,
+				the IP address of the connecting client is dynamic and cannot be preconfigured on
+				the VPN server.</para></listitem>
+	<listitem><para><emphasis role="bold">Site to Site</emphasis>. In this scenario, two private subnets are
+				connected over the public Internet with a secure VPN tunnel. The cloud user’s subnet
+				(for example, an office network) is connected through a gateway to the network in
+				the cloud. The address of the user’s gateway must be preconfigured on the VPN server
+				in the cloud. Note that although L2TP-over-IPsec can be used to set up Site-to-Site
+				VPNs, this is not the primary intent of this feature. For more information, see <xref linkend="site-to-site-vpn"/></para></listitem>
+	</itemizedlist>
+	<xi:include href="configure-vpn.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+	<xi:include href="using-vpn-with-windows.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+	<xi:include href="using-vpn-with-mac.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+	<xi:include href="site-to-site-vpn.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

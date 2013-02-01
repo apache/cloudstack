@@ -20,6 +20,7 @@ package com.cloud.network;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -31,16 +32,14 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.user.Account;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Local(value = { Ipv6AddressManager.class } )
-public class Ipv6AddressManagerImpl implements Ipv6AddressManager {
+public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressManager {
     public static final Logger s_logger = Logger.getLogger(Ipv6AddressManagerImpl.class.getName());
 
-	String _name = null;
-			
     @Inject
     DataCenterDao _dcDao;
     @Inject
@@ -50,28 +49,6 @@ public class Ipv6AddressManagerImpl implements Ipv6AddressManager {
     @Inject
     UserIpv6AddressDao _ipv6Dao;
     
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
-		_name = name;
-		return true;
-	}
-
-	@Override
-	public boolean start() {
-		return true;
-	}
-
-	@Override
-	public boolean stop() {
-		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
-	}
-
 	@Override
 	public UserIpv6Address assignDirectIp6Address(long dcId, Account owner, Long networkId, String requestedIp6)
 			throws InsufficientAddressCapacityException {

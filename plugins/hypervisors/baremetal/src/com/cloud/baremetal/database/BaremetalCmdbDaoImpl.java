@@ -20,8 +20,11 @@ package com.cloud.baremetal.database;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+@Component
 @Local(value = {BaremetalCmdbDao.class})
 @DB(txn = false)
 public class BaremetalCmdbDaoImpl extends GenericDaoBase<BaremetalCmdbVO, Long> implements BaremetalCmdbDao {

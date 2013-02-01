@@ -24,6 +24,7 @@ import org.apache.cloudstack.framework.events.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ManagerBase;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -36,7 +37,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Local(value=EventBus.class)
-public class RabbitMQEventBus implements EventBus {
+public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
     // details of AMQP server
     private static String _amqpHost;

@@ -20,21 +20,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.Network.Event;
-import com.cloud.network.NetworkAccountDaoImpl;
-import com.cloud.network.NetworkAccountVO;
-import com.cloud.network.NetworkDomainVO;
-import com.cloud.network.NetworkServiceMapVO;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -43,55 +42,58 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.*;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.net.NetUtils;
 
-import javax.ejb.Local;
-import javax.persistence.TableGenerator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
+@Component
 @Local(value = NetworkDao.class)
 @DB(txn = false)
 public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao {
-    final SearchBuilder<NetworkVO> AllFieldsSearch;
-    final SearchBuilder<NetworkVO> AccountSearch;
-    final SearchBuilder<NetworkVO> RelatedConfigSearch;
-    final SearchBuilder<NetworkVO> AccountNetworkSearch;
-    final SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
-    final SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
-    final GenericSearchBuilder<NetworkVO, Integer> CountBy;
-    final SearchBuilder<NetworkVO> PhysicalNetworkSearch;
-    final SearchBuilder<NetworkVO> SecurityGroupSearch;
-    final GenericSearchBuilder<NetworkVO, Long> NetworksRegularUserCanCreateSearch;
-    private final GenericSearchBuilder<NetworkVO, Integer> NetworksCount;
-    final SearchBuilder<NetworkVO> SourceNATSearch;
-    final GenericSearchBuilder<NetworkVO, Long>  CountByZoneAndURI;
-    final GenericSearchBuilder<NetworkVO, Long> VpcNetworksCount;
-    final SearchBuilder<NetworkVO> OfferingAccountNetworkSearch;
-    final GenericSearchBuilder<NetworkVO, Long> GarbageCollectedSearch;
+    SearchBuilder<NetworkVO> AllFieldsSearch;
+    SearchBuilder<NetworkVO> AccountSearch;
+    SearchBuilder<NetworkVO> RelatedConfigSearch;
+    SearchBuilder<NetworkVO> AccountNetworkSearch;
+    SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
+    SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
+    GenericSearchBuilder<NetworkVO, Integer> CountBy;
+    SearchBuilder<NetworkVO> PhysicalNetworkSearch;
+    SearchBuilder<NetworkVO> SecurityGroupSearch;
+    GenericSearchBuilder<NetworkVO, Long> NetworksRegularUserCanCreateSearch;
+    GenericSearchBuilder<NetworkVO, Integer> NetworksCount;
+    SearchBuilder<NetworkVO> SourceNATSearch;
+    GenericSearchBuilder<NetworkVO, Long>  CountByZoneAndURI;
+    GenericSearchBuilder<NetworkVO, Long> VpcNetworksCount;
+    SearchBuilder<NetworkVO> OfferingAccountNetworkSearch;
 
-    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
-    NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
-    NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
-    NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
-    NetworkServiceMapDaoImpl _ntwkSvcMap = ComponentLocator.inject(NetworkServiceMapDaoImpl.class);
-    NetworkOfferingDaoImpl _ntwkOffDao = ComponentLocator.inject(NetworkOfferingDaoImpl.class);
-    NetworkOpDaoImpl _ntwkOpDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
+    GenericSearchBuilder<NetworkVO, Long> GarbageCollectedSearch;
+    
+    
+    
+    @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject NetworkAccountDaoImpl _accountsDao;
+    @Inject NetworkDomainDaoImpl _domainsDao;
+    @Inject NetworkOpDaoImpl _opDao;
+    @Inject NetworkServiceMapDaoImpl _ntwkSvcMap;
+    @Inject NetworkOfferingDaoImpl _ntwkOffDao;
+    @Inject NetworkOpDaoImpl _ntwkOpDao;
 
+    TableGenerator _tgMacAddress;
 
-    final TableGenerator _tgMacAddress;
     Random _rand = new Random(System.currentTimeMillis());
     long _prefix = 0x2;
 
-    protected NetworkDaoImpl() {
-        super();
+    public NetworkDaoImpl() {
+    }
 
+    @PostConstruct
+    protected void init() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("trafficType", AllFieldsSearch.entity().getTrafficType(), Op.EQ);
         AllFieldsSearch.and("cidr", AllFieldsSearch.entity().getCidr(), Op.EQ);
@@ -565,6 +567,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         return findOneBy(sc);
     }
 
+    @Override
     @DB
     public boolean remove(Long id) {
         Transaction txn = Transaction.currentTxn();

@@ -23,8 +23,6 @@ import com.cloud.network.Network.Event;
 import com.cloud.network.Network.State;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.server.ManagementServer;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.fsm.StateListener;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
@@ -34,22 +32,15 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 public class NetworkStateListener implements StateListener<State, Event, Network> {
 
-    protected UsageEventDao _usageEventDao;
-    protected NetworkDao _networkDao;
+    @Inject protected UsageEventDao _usageEventDao;
+    @Inject protected NetworkDao _networkDao;
 
     // get the event bus provider if configured
-    protected static EventBus _eventBus = null;
-    static {
-        Adapters<EventBus> eventBusImpls = ComponentLocator.getLocator(ManagementServer.Name).getAdapters(EventBus.class);
-        if (eventBusImpls != null) {
-            Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
-            if (eventBusenum != null && eventBusenum.hasMoreElements()) {
-                _eventBus = eventBusenum.nextElement(); // configure event bus if configured
-            }
-        }
-    }
+    @Inject protected EventBus _eventBus;
 
     private static final Logger s_logger = Logger.getLogger(NetworkStateListener.class);
 

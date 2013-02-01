@@ -20,9 +20,11 @@ import javax.ejb.Local;
 
 import org.apache.cloudstack.region.RegionSyncVO;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 
+@Component
 @Local(value={RegionSyncDao.class})
 public class RegionSyncDaoImpl extends GenericDaoBase<RegionSyncVO, Integer> implements RegionSyncDao {
     private static final Logger s_logger = Logger.getLogger(RegionSyncDaoImpl.class);

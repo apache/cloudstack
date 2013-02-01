@@ -29,11 +29,11 @@ import org.apache.log4j.Logger;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.AdapterBase;
 
 @Local(value=Processor.class)
-public class QCOW2Processor implements Processor {
+public class QCOW2Processor extends AdapterBase implements Processor {
     private static final Logger s_logger = Logger.getLogger(QCOW2Processor.class);
-    String _name;
     StorageLayer _storage;
 
 	@Override
@@ -85,7 +85,6 @@ public class QCOW2Processor implements Processor {
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
-		  _name = name;
 	        _storage = (StorageLayer)params.get(StorageLayer.InstanceConfigKey);
 	        if (_storage == null) {
 	            throw new ConfigurationException("Unable to get storage implementation");
@@ -93,22 +92,4 @@ public class QCOW2Processor implements Processor {
 	        
 	        return true;
 	}
-
-	@Override
-	public String getName() {
-		 return _name;
-	}
-
-	@Override
-	public boolean start() {
-		// TODO Auto-generated method stub
-		return true;
-	}
-
-	@Override
-	public boolean stop() {
-		// TODO Auto-generated method stub
-		return true;
-	}
-
 }

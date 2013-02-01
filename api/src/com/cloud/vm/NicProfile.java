@@ -18,13 +18,14 @@ package com.cloud.vm;
 
 import java.net.URI;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.network.Network;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.vm.Nic.ReservationStrategy;
-import org.apache.cloudstack.api.InternalIdentity;
 
 public class NicProfile implements InternalIdentity {
     long id;

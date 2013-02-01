@@ -16,14 +16,11 @@
 // under the License.
 package com.cloud.user;
 
-import com.cloud.server.ManagementService;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.ComponentContext;
+import javax.inject.Inject;
 
 public class UserContext {
-
     private static ThreadLocal<UserContext> s_currentContext = new ThreadLocal<UserContext>();
-    private static final ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    private static final AccountService _accountMgr = locator.getManager(AccountService.class);
 
     private long userId;
     private String sessionId;
@@ -31,10 +28,9 @@ public class UserContext {
     private long startEventId = 0;
     private long accountId;
     private String eventDetails;
-
     private boolean apiServer;
 
-    private static UserContext s_adminContext = new UserContext(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
+    @Inject private AccountService _accountMgr = null;
 
     public UserContext() {
     }
@@ -51,6 +47,9 @@ public class UserContext {
     }
 
     public User getCallerUser() {
+        if (_accountMgr == null) {
+            _accountMgr = ComponentContext.getComponent(AccountService.class);
+        }
         return _accountMgr.getActiveUser(userId);
     }
 
@@ -90,10 +89,10 @@ public class UserContext {
             // however, there are many places that run background jobs assume the system context.
             //
             // If there is a security concern, all entry points from user (including the front end that takes HTTP
-// request in and
+            // request in and
             // the core async-job manager that runs commands from user) have explicitly setup the UserContext.
             //
-            return s_adminContext;
+            return UserContextInitializer.getInstance().getAdminContext();
         }
         return context;
     }

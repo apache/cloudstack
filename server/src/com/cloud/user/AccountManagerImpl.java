@@ -20,8 +20,8 @@ import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -34,25 +34,27 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.vo.ControlledViewEntity;
 
 
-import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
-import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.region.RegionManager;
 
 import com.cloud.configuration.Config;
@@ -74,16 +76,16 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkVO;
-import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
@@ -116,10 +118,9 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -142,11 +143,11 @@ import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+@Component
 @Local(value = { AccountManager.class, AccountService.class })
-public class AccountManagerImpl implements AccountManager, Manager {
+public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
     public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
 
-    private String _name;
     @Inject
     private AccountDao _accountDao;
     @Inject
@@ -226,7 +227,8 @@ public class AccountManagerImpl implements AccountManager, Manager {
     @Inject
     private AutoScaleManager _autoscaleMgr;
 
-    private Adapters<UserAuthenticator> _userAuthenticators;
+    @Inject
+    private List<UserAuthenticator> _userAuthenticators;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 
@@ -234,14 +236,13 @@ public class AccountManagerImpl implements AccountManager, Manager {
 
     UserVO _systemUser;
     AccountVO _systemAccount;
-    @Inject(adapter = SecurityChecker.class)
-    Adapters<SecurityChecker> _securityCheckers;
+
+    @Inject
+    List<SecurityChecker> _securityCheckers;
     int _cleanupInterval;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
         _systemAccount = _accountDao.findById(AccountVO.ACCOUNT_ID_SYSTEM);
         if (_systemAccount == null) {
             throw new ConfigurationException("Unable to find the system account using " + Account.ACCOUNT_ID_SYSTEM);
@@ -252,9 +253,7 @@ public class AccountManagerImpl implements AccountManager, Manager {
             throw new ConfigurationException("Unable to find the system user using " + User.UID_SYSTEM);
         }
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> configs = configDao.getConfiguration(params);
+        Map<String, String> configs = _configDao.getConfiguration(params);
 
         String loginAttempts = configs.get(Config.IncorrectLoginAttemptsAllowed.key());
         _allowedLoginAttempts = NumbersUtil.parseInt(loginAttempts, 5);
@@ -262,22 +261,15 @@ public class AccountManagerImpl implements AccountManager, Manager {
         String value = configs.get(Config.AccountCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
 
-        _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
-        if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
-            s_logger.error("Unable to find an user authenticator.");
-        }
-
         return true;
     }
 
     @Override
     public UserVO getSystemUser() {
-        return _systemUser;
+        if (_systemUser == null) {
+            _systemUser = _userDao.findById(User.UID_SYSTEM);
     }
-
-    @Override
-    public String getName() {
-        return _name;
+        return _systemUser;
     }
 
     @Override
@@ -291,6 +283,7 @@ public class AccountManagerImpl implements AccountManager, Manager {
         return true;
     }
 
+    @Override
     public AccountVO getSystemAccount() {
         if (_systemAccount == null) {
             _systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
@@ -973,8 +966,8 @@ public class AccountManagerImpl implements AccountManager, Manager {
 
         if (password != null) {
             String encodedPassword = null;
-            for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
-                UserAuthenticator authenticator = en.nextElement();
+            for (Iterator<UserAuthenticator> en = _userAuthenticators.iterator(); en.hasNext();) {
+                UserAuthenticator authenticator = en.next();
                 encodedPassword = authenticator.encode(password);
                 if (encodedPassword != null) {
                     break;
@@ -1757,8 +1750,7 @@ public class AccountManagerImpl implements AccountManager, Manager {
         }
         
         String encodedPassword = null;
-        for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
-            UserAuthenticator authenticator = en.nextElement();
+        for (UserAuthenticator  authenticator : _userAuthenticators) {
             encodedPassword = authenticator.encode(password);
             if (encodedPassword != null) {
                 break;
@@ -1780,8 +1772,8 @@ public class AccountManagerImpl implements AccountManager, Manager {
         }
 
         String encodedPassword = null;
-        for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
-            UserAuthenticator authenticator = en.nextElement();
+        for (Iterator<UserAuthenticator> en = _userAuthenticators.iterator(); en.hasNext();) {
+            UserAuthenticator authenticator = en.next();
             encodedPassword = authenticator.encode(password);
             if (encodedPassword != null) {
                 break;
@@ -1952,8 +1944,7 @@ public class AccountManagerImpl implements AccountManager, Manager {
         }
 
         boolean authenticated = false;
-        for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
-            UserAuthenticator authenticator = en.nextElement();
+        for(UserAuthenticator authenticator : _userAuthenticators) {
             if (authenticator.authenticate(username, password, domainId, requestParameters)) {
                 authenticated = true;
                 break;

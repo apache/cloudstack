@@ -22,33 +22,39 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.server.ManagementServer;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
 import org.apache.cloudstack.framework.events.*;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+@Component
 public class AlertGenerator {
 
     private static final Logger s_logger = Logger.getLogger(AlertGenerator.class);
-    private static DataCenterDao _dcDao =  ComponentLocator.getLocator(ManagementServer.Name).getDao(DataCenterDao.class);
-    private static HostPodDao _podDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(HostPodDao.class);
+    private static DataCenterDao _dcDao;
+    private static HostPodDao _podDao;
 
     // get the event bus provider if configured
     protected static EventBus _eventBus = null;
-    static {
-        Adapters<EventBus> eventBusImpls = ComponentLocator.getLocator(ManagementServer.Name).getAdapters(EventBus.class);
-        if (eventBusImpls != null) {
-            Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
-            if (eventBusenum != null && eventBusenum.hasMoreElements()) {
-                _eventBus = eventBusenum.nextElement(); // configure event bus if configured
-            }
-        }
-    }
 
+    @Inject DataCenterDao dcDao;
+    @Inject HostPodDao podDao;
+    
+    public AlertGenerator() {
+    }
+    
+    @PostConstruct
+    void init() {
+    	_dcDao = dcDao;
+    	_podDao = podDao;
+    }
+    
     public static void publishAlertOnEventBus(String alertType, long dataCenterId, Long podId, String subject, String body) {
         if (_eventBus == null) {
             return; // no provider is configured to provider events bus, so just return

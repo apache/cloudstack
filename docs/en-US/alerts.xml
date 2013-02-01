@@ -4,50 +4,50 @@
 %BOOK_ENTITIES;
 ]>
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
 -->
 
 <appendix id="alerts">
-    <title>Alerts</title>
-        <para>The following is the list of alert type numbers. The current alerts can be found by calling listAlerts.</para>
-        <programlisting>MEMORY = 0</programlisting>
-        <programlisting>CPU = 1</programlisting>
-        <programlisting>STORAGE =2</programlisting>
-        <programlisting>STORAGE_ALLOCATED = 3</programlisting>
-        <programlisting>PUBLIC_IP = 4</programlisting>
-        <programlisting>PRIVATE_IP = 5</programlisting>
-        <programlisting>HOST = 6</programlisting>
-        <programlisting>USERVM = 7</programlisting>
-        <programlisting>DOMAIN_ROUTER = 8</programlisting>
-        <programlisting>CONSOLE_PROXY = 9</programlisting>
-        <programlisting>ROUTING = 10// lost connection to default route (to the gateway)</programlisting>
-        <programlisting>STORAGE_MISC = 11 // lost connection to default route (to the gateway)</programlisting>
-        <programlisting>USAGE_SERVER = 12 // lost connection to default route (to the gateway)</programlisting>
-        <programlisting>MANAGMENT_NODE = 13 // lost connection to default route (to the gateway)</programlisting>
-        <programlisting>DOMAIN_ROUTER_MIGRATE = 14</programlisting>
-        <programlisting>CONSOLE_PROXY_MIGRATE = 15</programlisting>
-        <programlisting>USERVM_MIGRATE = 16</programlisting>
-        <programlisting>VLAN = 17</programlisting>
-        <programlisting>SSVM = 18</programlisting>
-        <programlisting>USAGE_SERVER_RESULT = 19</programlisting>
-        <programlisting>STORAGE_DELETE = 20;</programlisting>
-        <programlisting>UPDATE_RESOURCE_COUNT = 21; //Generated when we fail to update the resource count</programlisting>
-        <programlisting>USAGE_SANITY_RESULT = 22;</programlisting>
-        <programlisting>DIRECT_ATTACHED_PUBLIC_IP = 23;</programlisting>
-        <programlisting>LOCAL_STORAGE = 24;</programlisting>
-        <programlisting>RESOURCE_LIMIT_EXCEEDED = 25; //Generated when the resource limit exceeds the limit. Currently used for recurring snapshots only</programlisting>
+		<title>Alerts</title>
+		<para>The following is the list of alert type numbers. The current alerts can be found by calling listAlerts.</para>
+		<programlisting>MEMORY = 0</programlisting>
+		<programlisting>CPU = 1</programlisting>
+		<programlisting>STORAGE =2</programlisting>
+		<programlisting>STORAGE_ALLOCATED = 3</programlisting>
+		<programlisting>PUBLIC_IP = 4</programlisting>
+		<programlisting>PRIVATE_IP = 5</programlisting>
+		<programlisting>HOST = 6</programlisting>
+		<programlisting>USERVM = 7</programlisting>
+		<programlisting>DOMAIN_ROUTER = 8</programlisting>
+		<programlisting>CONSOLE_PROXY = 9</programlisting>
+		<programlisting>ROUTING = 10// lost connection to default route (to the gateway)</programlisting>
+		<programlisting>STORAGE_MISC = 11 // lost connection to default route (to the gateway)</programlisting>
+		<programlisting>USAGE_SERVER = 12 // lost connection to default route (to the gateway)</programlisting>
+		<programlisting>MANAGMENT_NODE = 13 // lost connection to default route (to the gateway)</programlisting>
+		<programlisting>DOMAIN_ROUTER_MIGRATE = 14</programlisting>
+		<programlisting>CONSOLE_PROXY_MIGRATE = 15</programlisting>
+		<programlisting>USERVM_MIGRATE = 16</programlisting>
+		<programlisting>VLAN = 17</programlisting>
+		<programlisting>SSVM = 18</programlisting>
+		<programlisting>USAGE_SERVER_RESULT = 19</programlisting>
+		<programlisting>STORAGE_DELETE = 20;</programlisting>
+		<programlisting>UPDATE_RESOURCE_COUNT = 21; //Generated when we fail to update the resource count</programlisting>
+		<programlisting>USAGE_SANITY_RESULT = 22;</programlisting>
+		<programlisting>DIRECT_ATTACHED_PUBLIC_IP = 23;</programlisting>
+		<programlisting>LOCAL_STORAGE = 24;</programlisting>
+		<programlisting>RESOURCE_LIMIT_EXCEEDED = 25; //Generated when the resource limit exceeds the limit. Currently used for recurring snapshots only</programlisting>
 </appendix>

@@ -29,8 +29,9 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.springframework.stereotype.Component;
 
-
+@Component
 @Local(value={ServiceOfferingJoinDao.class})
 public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJoinVO, Long> implements ServiceOfferingJoinDao {
     public static final Logger s_logger = Logger.getLogger(ServiceOfferingJoinDaoImpl.class);

@@ -26,16 +26,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -56,34 +61,35 @@ import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachine.Type;
 
+@Component
 @Local(value = { VMInstanceDao.class })
 public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implements VMInstanceDao {
 
     public static final Logger s_logger = Logger.getLogger(VMInstanceDaoImpl.class);
 
-    protected final SearchBuilder<VMInstanceVO> VMClusterSearch;
-    protected final SearchBuilder<VMInstanceVO> LHVMClusterSearch;
-    protected final SearchBuilder<VMInstanceVO> IdStatesSearch;
-    protected final SearchBuilder<VMInstanceVO> AllFieldsSearch;
-    protected final SearchBuilder<VMInstanceVO> ZoneTemplateNonExpungedSearch;
-    protected final SearchBuilder<VMInstanceVO> NameLikeSearch;
-    protected final SearchBuilder<VMInstanceVO> StateChangeSearch;
-    protected final SearchBuilder<VMInstanceVO> TransitionSearch;
-    protected final SearchBuilder<VMInstanceVO> TypesSearch;
-    protected final SearchBuilder<VMInstanceVO> IdTypesSearch;
-    protected final SearchBuilder<VMInstanceVO> HostIdTypesSearch;
-    protected final SearchBuilder<VMInstanceVO> HostIdUpTypesSearch;
-    protected final SearchBuilder<VMInstanceVO> HostUpSearch;
-    protected final GenericSearchBuilder<VMInstanceVO, Long> CountVirtualRoutersByAccount;
+    protected SearchBuilder<VMInstanceVO> VMClusterSearch;
+    protected SearchBuilder<VMInstanceVO> LHVMClusterSearch;
+    protected SearchBuilder<VMInstanceVO> IdStatesSearch;
+    protected SearchBuilder<VMInstanceVO> AllFieldsSearch;
+    protected SearchBuilder<VMInstanceVO> ZoneTemplateNonExpungedSearch;
+    protected SearchBuilder<VMInstanceVO> NameLikeSearch;
+    protected SearchBuilder<VMInstanceVO> StateChangeSearch;
+    protected SearchBuilder<VMInstanceVO> TransitionSearch;
+    protected SearchBuilder<VMInstanceVO> TypesSearch;
+    protected SearchBuilder<VMInstanceVO> IdTypesSearch;
+    protected SearchBuilder<VMInstanceVO> HostIdTypesSearch;
+    protected SearchBuilder<VMInstanceVO> HostIdUpTypesSearch;
+    protected SearchBuilder<VMInstanceVO> HostUpSearch;
+    protected GenericSearchBuilder<VMInstanceVO, Long> CountVirtualRoutersByAccount;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByHost;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
     protected SearchBuilder<VMInstanceVO> NetworkTypeSearch;
     protected GenericSearchBuilder<VMInstanceVO, String> DistinctHostNameSearch;
     
-    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
-    NicDao _nicDao = ComponentLocator.inject(NicDaoImpl.class);
-
-    protected final Attribute _updateTimeAttr;
+    @Inject ResourceTagDao _tagsDao;
+    @Inject NicDao _nicDao;
+    
+    protected Attribute _updateTimeAttr;
     
     private static final String ORDER_CLUSTERS_NUMBER_OF_VMS_FOR_ACCOUNT_PART1 = 
             "SELECT host.cluster_id, SUM(IF(vm.state='Running' AND vm.account_id = ?, 1, 0)) FROM `cloud`.`host` host LEFT JOIN `cloud`.`vm_instance` vm ON host.id = vm.host_id WHERE ";
@@ -98,9 +104,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     		                                                            " AND host.pod_id = ? AND host.cluster_id = ? AND host.type = 'Routing' " +
     		                                                            " GROUP BY host.id ORDER BY 2 ASC ";
 
-    protected final HostDaoImpl _hostDao = ComponentLocator.inject(HostDaoImpl.class);
+    @Inject protected HostDao _hostDao;
     
-    protected VMInstanceDaoImpl() {
+    public VMInstanceDaoImpl() {
+    }
+    
+    @PostConstruct
+    protected void init() {
 
         IdStatesSearch = createSearchBuilder();
         IdStatesSearch.and("id", IdStatesSearch.entity().getId(), Op.EQ);
@@ -126,13 +136,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         AllFieldsSearch.and("host", AllFieldsSearch.entity().getHostId(), Op.EQ);
         AllFieldsSearch.and("lastHost", AllFieldsSearch.entity().getLastHostId(), Op.EQ);
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
-        AllFieldsSearch.and("zone", AllFieldsSearch.entity().getDataCenterIdToDeployIn(), Op.EQ);
+        AllFieldsSearch.and("zone", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
         AllFieldsSearch.and("type", AllFieldsSearch.entity().getType(), Op.EQ);
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.done();
 
         ZoneTemplateNonExpungedSearch = createSearchBuilder();
-        ZoneTemplateNonExpungedSearch.and("zone", ZoneTemplateNonExpungedSearch.entity().getDataCenterIdToDeployIn(), Op.EQ);
+        ZoneTemplateNonExpungedSearch.and("zone", ZoneTemplateNonExpungedSearch.entity().getDataCenterId(), Op.EQ);
         ZoneTemplateNonExpungedSearch.and("template", ZoneTemplateNonExpungedSearch.entity().getTemplateId(), Op.EQ);
         ZoneTemplateNonExpungedSearch.and("state", ZoneTemplateNonExpungedSearch.entity().getState(), Op.NEQ);
         ZoneTemplateNonExpungedSearch.done();
@@ -230,7 +240,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
         return listBy(sc);
     }
-
+    
     @Override
     public List<VMInstanceVO> listByPodId(long podId) {
         SearchCriteria<VMInstanceVO> sc = AllFieldsSearch.create();
@@ -244,7 +254,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setJoinParameters("hostSearch", "clusterId", clusterId);
         return listBy(sc);
     }
-    
+
     @Override
     public List<VMInstanceVO> listLHByClusterId(long clusterId) {
         SearchCriteria<VMInstanceVO> sc = LHVMClusterSearch.create();
@@ -606,4 +616,5 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         txn.commit();
         return result;
     }
+
 }

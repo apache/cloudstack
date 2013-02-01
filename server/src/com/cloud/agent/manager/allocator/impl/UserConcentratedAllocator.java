@@ -24,6 +24,7 @@ import java.util.Random;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -48,7 +49,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -59,10 +60,8 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = PodAllocator.class)
-public class UserConcentratedAllocator implements PodAllocator {
+public class UserConcentratedAllocator extends AdapterBase implements PodAllocator {
     private final static Logger s_logger = Logger.getLogger(UserConcentratedAllocator.class);
-
-    String _name;
 
     @Inject
     UserVmDao _vmDao;
@@ -292,11 +291,6 @@ public class UserConcentratedAllocator implements PodAllocator {
     }
 
     @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
     public boolean start() {
         return true;
     }
@@ -308,8 +302,6 @@ public class UserConcentratedAllocator implements PodAllocator {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         String stoppedValue = configs.get("vm.resource.release.interval");
         // String destroyedValue = configs.get("capacity.skipcounting.destroyed.hours");

@@ -17,9 +17,10 @@
 package com.cloud.network.vpc;
 
 import org.apache.cloudstack.acl.ControlledEntity;
-import com.cloud.network.Network;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.network.Network;
 
 public interface Vpc extends ControlledEntity, Identity, InternalIdentity {
     public enum State {

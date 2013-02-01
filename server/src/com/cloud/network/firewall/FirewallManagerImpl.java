@@ -24,10 +24,12 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.mysql.jdbc.ConnectionPropertiesImpl;
 import org.apache.log4j.Logger;
@@ -46,10 +48,8 @@ import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -59,6 +59,7 @@ import com.cloud.network.NetworkRuleApplier;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.PortForwardingServiceProvider;
@@ -79,26 +80,23 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.Inject;
-import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.*;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
-import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
-import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.util.*;
-
+@Component
 @Local(value = { FirewallService.class, FirewallManager.class})
-public class FirewallManagerImpl implements FirewallService, FirewallManager, NetworkRuleApplier, Manager {
+public class FirewallManagerImpl extends ManagerBase implements FirewallService, FirewallManager, NetworkRuleApplier {
     private static final Logger s_logger = Logger.getLogger(FirewallManagerImpl.class);
-    String _name;
 
     @Inject
     FirewallRulesDao _firewallDao;
@@ -130,34 +128,15 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
     ResourceTagDao _resourceTagDao;
     @Inject
     VpcManager _vpcMgr;
-    @Inject(adapter = FirewallServiceProvider.class)
-    Adapters<FirewallServiceProvider> _firewallElements;
+    @Inject List<FirewallServiceProvider> _firewallElements;
 
-    @Inject(adapter = PortForwardingServiceProvider.class)
-    Adapters<PortForwardingServiceProvider> _pfElements;
-    
-    @Inject(adapter = StaticNatServiceProvider.class)
-    Adapters<StaticNatServiceProvider> _staticNatElements;
-    
-    @Inject(adapter = NetworkACLServiceProvider.class)
-    Adapters<NetworkACLServiceProvider> _networkAclElements;
+    @Inject List<PortForwardingServiceProvider> _pfElements;
+
+    @Inject List<StaticNatServiceProvider> _staticNatElements;
+
+    @Inject List<NetworkACLServiceProvider> _networkAclElements;
 
     private boolean _elbEnabled = false;
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -171,7 +150,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
     @Override
     public FirewallRule createEgressFirewallRule(FirewallRule rule) throws NetworkRuleConflictException {
         Account caller = UserContext.current().getCaller();
-
+        
         return createFirewallRule(null, caller, rule.getXid(), rule.getSourcePortStart(), 
                 rule.getSourcePortEnd(), rule.getProtocol(), rule.getSourceCidrList(), rule.getIcmpCode(),
                 rule.getIcmpType(), null, rule.getType(), rule.getNetworkId(), rule.getTrafficType());
@@ -184,29 +163,29 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
         return createFirewallRule(sourceIpAddressId, caller, rule.getXid(), rule.getSourcePortStart(), 
                  rule.getSourcePortEnd(), rule.getProtocol(), rule.getSourceCidrList(), rule.getIcmpCode(),
                 rule.getIcmpType(), null, rule.getType(), rule.getNetworkId(), rule.getTrafficType());
-     }
+    }
 
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewall rule", create = true)
     public FirewallRule createFirewallRule(Long ipAddrId, Account caller, String xId, Integer portStart,
-             Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType,
+            Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType,
             Long relatedRuleId, FirewallRule.FirewallRuleType type, Long networkId, FirewallRule.TrafficType trafficType) throws NetworkRuleConflictException {
- 
+
         IPAddressVO ipAddress = null;
         if (ipAddrId != null){
             // this for ingress firewall rule, for egress id is null
              ipAddress = _ipAddressDao.findById(ipAddrId);
-           // Validate ip address
-           if (ipAddress == null && type == FirewallRule.FirewallRuleType.User) {
+        // Validate ip address
+        if (ipAddress == null && type == FirewallRule.FirewallRuleType.User) {
               throw new InvalidParameterValueException("Unable to create firewall rule; " +
                     "couldn't locate IP address by id in the system");
-           }
-           _networkModel.checkIpForService(ipAddress, Service.Firewall, null);
         }
- 
+        _networkModel.checkIpForService(ipAddress, Service.Firewall, null);  
+        }
+
         validateFirewallRule(caller, ipAddress, portStart, portEnd, protocol, Purpose.Firewall, type, networkId, trafficType);
- 
+
         // icmp code and icmp type can't be passed in for any other protocol rather than icmp
         if (!protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (icmpCode != null || icmpType != null)) {
             throw new InvalidParameterValueException("Can specify icmpCode and icmpType for ICMP protocol only");
@@ -286,22 +265,22 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
             networkId =((ListEgressFirewallRulesCmd)cmd).getNetworkId();
             sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
         } else {
-            sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
+        sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
         }
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
 
 
         if (tags != null && !tags.isEmpty()) {
-        SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
-        for (int count=0; count < tags.size(); count++) {
-            tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
-            tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
-            tagSearch.cp();
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count=0; count < tags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
-        tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
-        sb.groupBy(sb.entity().getId());
-        sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
-    }
 
         SearchCriteria<FirewallRuleVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
@@ -340,8 +319,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
         List<FirewallRuleVO> rules;
         if(newRule.getSourceIpAddressId() != null){
              rules = _firewallDao.listByIpAndPurposeAndNotRevoked(newRule.getSourceIpAddressId(), null);
-             assert (rules.size() >= 1) : "For network rules, we now always first persist the rule and then check for " +
-             "network conflicts so we should at least have one rule at this point.";
+        assert (rules.size() >= 1) : "For network rules, we now always first persist the rule and then check for " +
+        "network conflicts so we should at least have one rule at this point.";
         } else {
             // fetches only firewall egress rules.
             rules = _firewallDao.listByNetworkPurposeTrafficTypeAndNotRevoked(newRule.getNetworkId(), Purpose.Firewall, newRule.getTrafficType());
@@ -356,13 +335,16 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
 
             boolean oneOfRulesIsFirewall = ((rule.getPurpose() == Purpose.Firewall || newRule.getPurpose() == Purpose.Firewall)
                     && ((newRule.getPurpose() != rule.getPurpose()) || (!newRule.getProtocol()
-                    .equalsIgnoreCase(rule.getProtocol()))));
+                            .equalsIgnoreCase(rule.getProtocol()))));
 
             // if both rules are firewall and their cidrs are different, we can skip port ranges verification
             boolean bothRulesFirewall = (rule.getPurpose() == newRule.getPurpose() && rule.getPurpose() == Purpose.Firewall);
             boolean duplicatedCidrs = false;
             if (bothRulesFirewall) {
                 // Verify that the rules have different cidrs
+                _firewallDao.loadSourceCidrs(rule);
+                _firewallDao.loadSourceCidrs((FirewallRuleVO)newRule);
+                
                 List<String> ruleCidrList = rule.getSourceCidrList();
                 List<String> newRuleCidrList = newRule.getSourceCidrList();
 
@@ -408,12 +390,12 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
             } else if (!oneOfRulesIsFirewall && !(bothRulesFirewall && !duplicatedCidrs)
                     && ((rule.getSourcePortStart().intValue() <= newRule.getSourcePortStart().intValue() 
                     && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortStart().intValue())
-                            || (rule.getSourcePortStart().intValue() <= newRule.getSourcePortEnd().intValue() 
-                            && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortEnd().intValue())
-                            || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortStart().intValue() 
-                            && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortStart().intValue())
-                            || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortEnd().intValue() 
-                            && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortEnd().intValue()))) {
+                    || (rule.getSourcePortStart().intValue() <= newRule.getSourcePortEnd().intValue() 
+                    && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortEnd().intValue())
+                    || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortStart().intValue() 
+                    && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortStart().intValue())
+                    || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortEnd().intValue() 
+                    && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortEnd().intValue()))) {
 
                 // we allow port forwarding rules with the same parameters but different protocols
                 boolean allowPf = (rule.getPurpose() == Purpose.PortForwarding && newRule.getPurpose() == Purpose.PortForwarding
@@ -453,36 +435,36 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
         }
 
         if (ipAddress!=null){
-            if (ipAddress.getAssociatedWithNetworkId() == null) {
+        if (ipAddress.getAssociatedWithNetworkId() == null) {
                 throw new InvalidParameterValueException("Unable to create firewall rule ; ip with specified id is not associated with any network");
-            } else {
-                networkId = ipAddress.getAssociatedWithNetworkId();
-            }
+        } else {
+            networkId = ipAddress.getAssociatedWithNetworkId();
+        }
 
             // Validate ip address
             _accountMgr.checkAccess(caller, null, true, ipAddress);
 
-            Network network = _networkModel.getNetwork(networkId);
-            assert network != null : "Can't create port forwarding rule as network associated with public ip address is null?";
+        Network network = _networkModel.getNetwork(networkId);
+        assert network != null : "Can't create port forwarding rule as network associated with public ip address is null?";
 
             if (trafficType == FirewallRule.TrafficType.Egress) {
                 _accountMgr.checkAccess(caller, null, true, network);
             }
 
-            // Verify that the network guru supports the protocol specified
-            Map<Network.Capability, String> caps = null;
+        // Verify that the network guru supports the protocol specified
+        Map<Network.Capability, String> caps = null;
 
-            if (purpose == Purpose.LoadBalancing) {
-                if (!_elbEnabled) {
-                    caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.Lb);
-                }
-            } else if (purpose == Purpose.PortForwarding) {
-                caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.PortForwarding);
+        if (purpose == Purpose.LoadBalancing) {
+            if (!_elbEnabled) {
+                caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.Lb);
+            }
+        } else if (purpose == Purpose.PortForwarding) {
+            caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.PortForwarding);
             }else if (purpose == Purpose.Firewall){
                 caps = _networkModel.getNetworkServiceCapabilities(network.getId(),Service.Firewall);
-            }
+        }
 
-            if (caps != null) {
+        if (caps != null) {
                 String supportedProtocols;
                 String supportedTrafficTypes = null;
                 if (purpose == FirewallRule.Purpose.Firewall) {
@@ -495,10 +477,10 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
                     supportedProtocols = caps.get(Capability.SupportedProtocols).toLowerCase();
                 }
 
-                if (!supportedProtocols.contains(proto.toLowerCase())) {
-                    throw new InvalidParameterValueException("Protocol " + proto + " is not supported in zone " + network.getDataCenterId());
-                } else if (proto.equalsIgnoreCase(NetUtils.ICMP_PROTO) && purpose != Purpose.Firewall) {
-                    throw new InvalidParameterValueException("Protocol " + proto + " is currently supported only for rules with purpose " + Purpose.Firewall);
+            if (!supportedProtocols.contains(proto.toLowerCase())) {
+                throw new InvalidParameterValueException("Protocol " + proto + " is not supported in zone " + network.getDataCenterId());
+            } else if (proto.equalsIgnoreCase(NetUtils.ICMP_PROTO) && purpose != Purpose.Firewall) {
+                throw new InvalidParameterValueException("Protocol " + proto + " is currently supported only for rules with purpose " + Purpose.Firewall);
                 } else if (purpose == Purpose.Firewall && !supportedTrafficTypes.contains(trafficType.toString().toLowerCase())) {
                     throw new InvalidParameterValueException("Traffic Type " + trafficType + " is currently supported by Firewall in network " + networkId);
                 }
@@ -533,7 +515,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
                                 //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
                                 IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
                                 _vpcMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());
-                             }
+                            }
                         }
                     } else if (rule.getState() == FirewallRule.State.Add) {
                         FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());
@@ -550,43 +532,43 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
     @Override
     public  boolean applyRules(Network network, Purpose purpose, List<? extends FirewallRule> rules) 
             throws ResourceUnavailableException {
-    	boolean handled = false;
-    	switch (purpose){
-    	case Firewall:
-    	    for (FirewallServiceProvider fwElement: _firewallElements) {
-    	        handled = fwElement.applyFWRules(network, rules);
-    	        if (handled)
-    	            break;
-    	    }
-    	case PortForwarding:
-    	    for (PortForwardingServiceProvider element: _pfElements) {
+        boolean handled = false;
+        switch (purpose){
+        case Firewall:
+            for (FirewallServiceProvider fwElement: _firewallElements) {
+                handled = fwElement.applyFWRules(network, rules);
+                if (handled)
+                    break;
+            }
+        case PortForwarding:
+            for (PortForwardingServiceProvider element: _pfElements) {
                 handled = element.applyPFRules(network, (List<PortForwardingRule>) rules);
                 if (handled)
                     break;
             }
-    	    break;
-    	case StaticNat:
+            break;
+        case StaticNat:
             for (StaticNatServiceProvider element: _staticNatElements) {
                 handled = element.applyStaticNats(network, (List<? extends StaticNat>) rules);
                 if (handled)
                     break;
             }
             break;
-    	case NetworkACL:
+        case NetworkACL:
             for (NetworkACLServiceProvider element: _networkAclElements) {
-                handled = element.applyNetworkACLs(network, (List<? extends FirewallRule>) rules);
+                handled = element.applyNetworkACLs(network, rules);
                 if (handled)
                     break;
             }
             break;
-    	default:
-    	    assert(false): "Unexpected fall through in applying rules to the network elements";
-    	    s_logger.error("FirewallManager cannot process rules of type " + purpose);
-    	    throw new CloudRuntimeException("FirewallManager cannot process rules of type " + purpose);
-    	}
-    	return handled;
+        default:
+            assert(false): "Unexpected fall through in applying rules to the network elements";
+            s_logger.error("FirewallManager cannot process rules of type " + purpose);
+            throw new CloudRuntimeException("FirewallManager cannot process rules of type " + purpose);
+        }
+        return handled;
     }
-    
+
     @Override
     public void removeRule(FirewallRule rule) {
 
@@ -659,8 +641,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
             // ingress firewall rule
             if (rule.getSourceIpAddressId() != null){ 
                 //feteches ingress firewall, ingress firewall rules associated with the ip
-                List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(rule.getSourceIpAddressId(), Purpose.Firewall);
-                return applyFirewallRules(rules, false, caller);
+            List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(rule.getSourceIpAddressId(), Purpose.Firewall);
+            return applyFirewallRules(rules, false, caller);
                 //egress firewall rule
             } else if ( networkId != null){
                 List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), Purpose.Firewall, FirewallRule.TrafficType.Egress);
@@ -748,7 +730,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
     @Override
     public FirewallRule createRuleForAllCidrs(long ipAddrId, Account caller,
             Integer startPort, Integer endPort, String protocol, Integer icmpCode, Integer icmpType, Long relatedRuleId, long networkId)
-            throws NetworkRuleConflictException {
+                    throws NetworkRuleConflictException {
 
         // If firwallRule for this port range already exists, return it
         List<FirewallRuleVO> rules = _firewallDao.listByIpPurposeAndProtocolAndNotRevoked(ipAddrId, startPort, endPort,
@@ -867,6 +849,9 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ne
         List<FirewallRuleVO> systemRules = _firewallDao.listSystemRules();
         for (FirewallRuleVO rule : systemRules) {
             try {
+                if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
+                    _firewallDao.loadSourceCidrs(rule);
+                } 
                 this.createFirewallRule(ip.getId(), acct, rule.getXid(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(),
                         rule.getSourceCidrList(), rule.getIcmpCode(), rule.getIcmpType(), rule.getRelated(), FirewallRuleType.System, rule.getNetworkId(), rule.getTrafficType());
             } catch (Exception e) {

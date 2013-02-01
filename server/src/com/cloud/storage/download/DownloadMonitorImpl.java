@@ -16,6 +16,23 @@
 // under the License.
 package com.cloud.storage.download;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
@@ -51,8 +68,12 @@ import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.utils.component.Inject;
-import com.cloud.utils.db.*;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
@@ -60,17 +81,11 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import edu.emory.mathcs.backport.java.util.Collections;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 
+@Component
 @Local(value={DownloadMonitor.class})
-public class DownloadMonitorImpl implements  DownloadMonitor {
+public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor {
     static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);
 	
     @Inject 
@@ -120,7 +135,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     @Inject
     protected ResourceLimitService _resourceLimitMgr;
 
-	private String _name;
 	private Boolean _sslCopy = new Boolean(false);
 	private String _copyAuthPasswd;
 	private String _proxy = null;
@@ -138,7 +152,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 
 	@Override
 	public boolean configure(String name, Map<String, Object> params) {
-		_name = name;
         final Map<String, String> configs = _configDao.getConfiguration("ManagementServer", params);
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
         _proxy = configs.get(Config.SecStorageProxy.key());
@@ -166,11 +179,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         ReadyTemplateStatesSearch.done();
                
 		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
 	}
 
 	@Override

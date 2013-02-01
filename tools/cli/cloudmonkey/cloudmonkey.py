@@ -91,12 +91,12 @@ class CloudMonkeyShell(cmd.Cmd, object):
 
         for section in config_fields.keys():
             for key in config_fields[section].keys():
-                try:
+            try:
                     self.config_options.append(key)
                     setattr(self, key, config.get(section, key))
-                except Exception:
+            except Exception:
                     print "Please fix `%s` in %s" % (key, self.config_file)
-                    sys.exit()
+                sys.exit()
 
         if first_time:
             print "Welcome! Using `set` configure the necessary settings:"
@@ -166,9 +166,9 @@ class CloudMonkeyShell(cmd.Cmd, object):
                 if isinstance(type(args), types.NoneType):
                     continue
                 output += arg
-            if self.color == 'true':
+                if self.color == 'true':
                 monkeyprint(output)
-            else:
+                else:
                 print output
         except Exception, e:
             self.print_shell("Error: " + e)

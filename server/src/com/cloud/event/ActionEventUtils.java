@@ -25,40 +25,48 @@ import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.AnnotationInterceptor;
-import com.cloud.utils.component.ComponentLocator;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ActionEventUtils {
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 
-    private static EventDao _eventDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(EventDao.class);
-    private static AccountDao _accountDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(AccountDao.class);
-    protected static UserDao _userDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(UserDao.class);
+@Component
+public class ActionEventUtils {
     private static final Logger s_logger = Logger.getLogger(ActionEventUtils.class);
 
-    // get the event bus provider if configured
-    protected static EventBus _eventBus = null;
+    private static EventDao _eventDao;
+    private static AccountDao _accountDao;
+    protected static UserDao _userDao;
 
-    static {
-        Adapters<EventBus> eventBusImpls = ComponentLocator.getLocator(ManagementServer.Name).getAdapters(EventBus.class);
-        if (eventBusImpls != null) {
-            Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
-            if (eventBusenum != null && eventBusenum.hasMoreElements()) {
-                _eventBus = eventBusenum.nextElement(); // configure event bus if configured
-            }
-        }
+    // get the event bus provider if configured
+    protected static EventBus _eventBus;
+
+    @Inject EventDao eventDao;
+    @Inject AccountDao accountDao;
+    @Inject UserDao userDao;
+    
+    public ActionEventUtils() {
+    }
+    
+    @PostConstruct
+    void init() {
+    	_eventDao = eventDao;
+    	_accountDao = accountDao;
+    	_userDao = userDao;
+    	
+    	// TODO we will do injection of event bus later
     }
 
     public static Long onActionEvent(Long userId, Long accountId, Long domainId, String type, String description) {

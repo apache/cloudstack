@@ -36,12 +36,15 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
 import java.lang.Class;
 import java.util.Map;
 import java.util.Set;
 
+
+@Component
 @Local(value = NetworkElement.class)
 public class MidokuraMidonetElement extends AdapterBase implements ConnectivityProvider, PluggableService {
     private static final Logger s_logger = Logger.getLogger(MidokuraMidonetElement.class);

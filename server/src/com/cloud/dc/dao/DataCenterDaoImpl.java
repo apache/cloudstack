@@ -21,10 +21,12 @@ import java.util.Map;
 import java.util.Random;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
@@ -34,7 +36,6 @@ import com.cloud.dc.PodVlanVO;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -50,6 +51,7 @@ import com.cloud.utils.net.NetUtils;
  *    || mac.address.prefix | prefix to attach to all public and private mac addresses | number | 06 ||
  *  }
  **/
+@Component
 @Local(value={DataCenterDao.class})
 public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implements DataCenterDao {
     private static final Logger s_logger = Logger.getLogger(DataCenterDaoImpl.class);
@@ -60,44 +62,44 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     protected SearchBuilder<DataCenterVO> ChildZonesSearch;
     protected SearchBuilder<DataCenterVO> DisabledZonesSearch;
     protected SearchBuilder<DataCenterVO> TokenSearch;
-    
-    protected final DataCenterIpAddressDaoImpl _ipAllocDao = ComponentLocator.inject(DataCenterIpAddressDaoImpl.class);
-    protected final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
-    protected final DataCenterVnetDaoImpl _vnetAllocDao = ComponentLocator.inject(DataCenterVnetDaoImpl.class);
-    protected final PodVlanDaoImpl _podVlanAllocDao = ComponentLocator.inject(PodVlanDaoImpl.class);
+
+    @Inject protected DataCenterIpAddressDaoImpl _ipAllocDao = null;
+    @Inject protected DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = null;
+    @Inject protected DataCenterVnetDaoImpl _vnetAllocDao = null;
+    @Inject protected PodVlanDaoImpl _podVlanAllocDao = null;
+    @Inject protected DcDetailsDaoImpl _detailsDao = null;
+
     protected long _prefix;
     protected Random _rand = new Random(System.currentTimeMillis());
     protected TableGenerator _tgMacAddress;
-    
-    protected final DcDetailsDaoImpl _detailsDao = ComponentLocator.inject(DcDetailsDaoImpl.class);
 
 
     @Override
     public DataCenterVO findByName(String name) {
-    	SearchCriteria<DataCenterVO> sc = NameSearch.create();
-    	sc.setParameters("name", name);
+        SearchCriteria<DataCenterVO> sc = NameSearch.create();
+        sc.setParameters("name", name);
         return findOneBy(sc);
     }
-    
+
     @Override
     public DataCenterVO findByToken(String zoneToken){
-    	SearchCriteria<DataCenterVO> sc = TokenSearch.create();
-    	sc.setParameters("zoneToken", zoneToken);
+        SearchCriteria<DataCenterVO> sc = TokenSearch.create();
+        sc.setParameters("zoneToken", zoneToken);
         return findOneBy(sc);
     }
-    
+
     @Override
     public List<DataCenterVO> findZonesByDomainId(Long domainId){
-    	SearchCriteria<DataCenterVO> sc = ListZonesByDomainIdSearch.create();
-    	sc.setParameters("domainId", domainId);
+        SearchCriteria<DataCenterVO> sc = ListZonesByDomainIdSearch.create();
+        sc.setParameters("domainId", domainId);
         return listBy(sc);    	
     }
-    
+
     @Override
     public List<DataCenterVO> findZonesByDomainId(Long domainId, String keyword){
-    	SearchCriteria<DataCenterVO> sc = ListZonesByDomainIdSearch.create();
-    	sc.setParameters("domainId", domainId);
-    	if (keyword != null) {
+        SearchCriteria<DataCenterVO> sc = ListZonesByDomainIdSearch.create();
+        sc.setParameters("domainId", domainId);
+        if (keyword != null) {
             SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -105,12 +107,12 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         }
         return listBy(sc);    	
     }
-    
+
     @Override
     public List<DataCenterVO> findChildZones(Object[] ids, String keyword){
-    	SearchCriteria<DataCenterVO> sc = ChildZonesSearch.create();
-    	sc.setParameters("domainid", ids);
-    	if (keyword != null) {
+        SearchCriteria<DataCenterVO> sc = ChildZonesSearch.create();
+        sc.setParameters("domainid", ids);
+        if (keyword != null) {
             SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -118,71 +120,71 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         }
         return listBy(sc);  
     }
-    
+
     @Override
     public List<DataCenterVO> listPublicZones(String keyword){
-    	SearchCriteria<DataCenterVO> sc = PublicZonesSearch.create();
-    	if (keyword != null) {
+        SearchCriteria<DataCenterVO> sc = PublicZonesSearch.create();
+        if (keyword != null) {
             SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
-    	//sc.setParameters("domainId", domainId);
+        //sc.setParameters("domainId", domainId);
         return listBy(sc);    	    	
     }
-    
+
     @Override
     public List<DataCenterVO> findByKeyword(String keyword){
-    	SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
-    	ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-    	ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        SearchCriteria<DataCenterVO> ssc = createSearchCriteria();
+        ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         return listBy(ssc);
     }
-    
+
     @Override
     public void releaseVnet(String vnet, long dcId, long physicalNetworkId, long accountId, String reservationId) {
         _vnetAllocDao.release(vnet, physicalNetworkId, accountId, reservationId);
     }
-    
+
     @Override
     public List<DataCenterVnetVO> findVnet(long dcId, long physicalNetworkId, String vnet) {
-    	return _vnetAllocDao.findVnet(dcId, physicalNetworkId, vnet);
+        return _vnetAllocDao.findVnet(dcId, physicalNetworkId, vnet);
     }
-    
+
     @Override
     public int countZoneVlans(long dcId, boolean onlyCountAllocated){    	
-    	return _vnetAllocDao.countZoneVlans(dcId, onlyCountAllocated);
+        return _vnetAllocDao.countZoneVlans(dcId, onlyCountAllocated);
     }
 
     @Override
     public void releasePrivateIpAddress(String ipAddress, long dcId, Long instanceId) {
         _ipAllocDao.releaseIpAddress(ipAddress, dcId, instanceId);
     }
-    
+
     @Override
     public void releasePrivateIpAddress(long nicId, String reservationId) {
         _ipAllocDao.releaseIpAddress(nicId, reservationId);
     }
-    
+
     @Override
     public void releaseLinkLocalIpAddress(long nicId, String reservationId) {
         _LinkLocalIpAllocDao.releaseIpAddress(nicId, reservationId);
     }
-    
+
     @Override
     public void releaseLinkLocalIpAddress(String ipAddress, long dcId, Long instanceId) {
-    	_LinkLocalIpAllocDao.releaseIpAddress(ipAddress, dcId, instanceId);
+        _LinkLocalIpAllocDao.releaseIpAddress(ipAddress, dcId, instanceId);
     }
-    
+
     @Override
     public boolean deletePrivateIpAddressByPod(long podId) {
-    	return _ipAllocDao.deleteIpAddressByPod(podId);
+        return _ipAllocDao.deleteIpAddressByPod(podId);
     }
-    
+
     @Override
     public boolean deleteLinkLocalIpAddressByPod(long podId) {
-    	return _LinkLocalIpAllocDao.deleteIpAddressByPod(podId);
+        return _LinkLocalIpAllocDao.deleteIpAddressByPod(podId);
     }
 
     @Override
@@ -194,7 +196,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
         return vo.getVnet();
     }
-    
+
     @Override
     public String allocatePodVlan(long podId, long accountId) {
         PodVlanVO vo = _podVlanAllocDao.take(podId, accountId);
@@ -212,7 +214,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     @Override
     public String[] getNextAvailableMacAddressPair(long id, long mask) {
         SequenceFetcher fetch = SequenceFetcher.getInstance();
-        
+
         long seq = fetch.getNextSequence(Long.class, _tgMacAddress, id);
         seq = seq | _prefix | ((id & 0x7f) << 32);
         seq |= mask;
@@ -232,43 +234,44 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         return new Pair<String, Long>(vo.getIpAddress(), vo.getMacAddress());
     }
 
+    @Override
     public DataCenterIpAddressVO allocatePrivateIpAddress(long dcId, String reservationId) {
-    	DataCenterIpAddressVO vo = _ipAllocDao.takeDataCenterIpAddress(dcId, reservationId);
-    	return vo;
+        DataCenterIpAddressVO vo = _ipAllocDao.takeDataCenterIpAddress(dcId, reservationId);
+        return vo;
     }
 
     @Override
     public String allocateLinkLocalIpAddress(long dcId, long podId, long instanceId, String reservationId) {
-    	DataCenterLinkLocalIpAddressVO vo = _LinkLocalIpAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId);
+        DataCenterLinkLocalIpAddressVO vo = _LinkLocalIpAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId);
         if (vo == null) {
             return null;
         }
         return vo.getIpAddress();
     }
-   
+
     @Override
     public void addVnet(long dcId, long physicalNetworkId, int start, int end) {
         _vnetAllocDao.add(dcId, physicalNetworkId, start, end);
     }
-    
+
     @Override
     public void deleteVnet(long physicalNetworkId) {
         _vnetAllocDao.delete(physicalNetworkId);
     }
-    
+
     @Override
     public List<DataCenterVnetVO> listAllocatedVnets(long physicalNetworkId) {
         return _vnetAllocDao.listAllocatedVnets(physicalNetworkId);
     }    
-    
+
     @Override
     public void addPrivateIpAddress(long dcId,long podId, String start, String end) {
         _ipAllocDao.addIpRange(dcId, podId, start, end);
     }
-    
+
     @Override
     public void addLinkLocalIpAddress(long dcId,long podId, String start, String end) {
-    	_LinkLocalIpAllocDao.addIpRange(dcId, podId, start, end);
+        _LinkLocalIpAllocDao.addIpRange(dcId, podId, start, end);
     }
 
     @Override
@@ -276,7 +279,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         if (!super.configure(name, params)) {
             return false;
         }
-        
+
         String value = (String)params.get("mac.address.prefix");
         _prefix = (long)NumbersUtil.parseInt(value, 06) << 40;
 
@@ -289,33 +292,33 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         }
         return true;
     }
-    
-    protected DataCenterDaoImpl() {
+
+    public DataCenterDaoImpl() {
         super();
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         NameSearch.done();
-        
+
         ListZonesByDomainIdSearch = createSearchBuilder();
         ListZonesByDomainIdSearch.and("domainId", ListZonesByDomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         ListZonesByDomainIdSearch.done();
-        
+
         PublicZonesSearch = createSearchBuilder();
         PublicZonesSearch.and("domainId", PublicZonesSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
         PublicZonesSearch.done();        
-        
+
         ChildZonesSearch = createSearchBuilder();
         ChildZonesSearch.and("domainid", ChildZonesSearch.entity().getDomainId(), SearchCriteria.Op.IN);
         ChildZonesSearch.done();
-        
+
         DisabledZonesSearch = createSearchBuilder();
         DisabledZonesSearch.and("allocationState", DisabledZonesSearch.entity().getAllocationState(), SearchCriteria.Op.EQ);
         DisabledZonesSearch.done();
-        
+
         TokenSearch = createSearchBuilder();
         TokenSearch.and("zoneToken", TokenSearch.entity().getZoneToken(), SearchCriteria.Op.EQ);
         TokenSearch.done();                
-        
+
         _tgMacAddress = _tgs.get("macAddress");
         assert _tgMacAddress != null : "Couldn't get mac address table generator";
     }
@@ -332,7 +335,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         txn.commit();
         return persisted;
     }
-    
+
     @Override
     public void loadDetails(DataCenterVO zone) {
         Map<String, String> details =_detailsDao.findDetails(zone.getId());
@@ -347,25 +350,25 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         }
         _detailsDao.persist(zone.getId(), details);
     }
-    
+
     @Override
     public List<DataCenterVO> listDisabledZones(){
-    	SearchCriteria<DataCenterVO> sc = DisabledZonesSearch.create();
-    	sc.setParameters("allocationState", Grouping.AllocationState.Disabled);
-    	
-    	List<DataCenterVO> dcs =  listBy(sc);
-    	
-    	return dcs;
+        SearchCriteria<DataCenterVO> sc = DisabledZonesSearch.create();
+        sc.setParameters("allocationState", Grouping.AllocationState.Disabled);
+
+        List<DataCenterVO> dcs =  listBy(sc);
+
+        return dcs;
     }
-    
+
     @Override
     public List<DataCenterVO> listEnabledZones(){
-    	SearchCriteria<DataCenterVO> sc = DisabledZonesSearch.create();
-    	sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
-    	
-    	List<DataCenterVO> dcs =  listBy(sc);
-    	
-    	return dcs;
+        SearchCriteria<DataCenterVO> sc = DisabledZonesSearch.create();
+        sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
+
+        List<DataCenterVO> dcs =  listBy(sc);
+
+        return dcs;
     }
 
     @Override
@@ -378,20 +381,20 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
                     Long dcId = Long.parseLong(tokenOrIdOrName);
                     return findById(dcId);
                 } catch (NumberFormatException nfe) {
-                    
+
                 }
             }
         }
         return result;
     }
-    
+
     @Override
     public boolean remove(Long id) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         DataCenterVO zone = createForUpdate();
         zone.setName(null);
-        
+
         update(id, zone);
 
         boolean result = super.remove(id);

@@ -16,33 +16,19 @@
 // under the License.
 package com.cloud.utils.component;
 
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
+import java.util.List;
 
 // Typical Adapter implementation.
-public class AdapterBase implements Adapter {
-    String _name;
+public class AdapterBase extends ComponentLifecycleBase implements Adapter {
 
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        return true;
+	public AdapterBase() {
+	}
+	
+	public static <T extends Adapter> T getAdapterByName(List<T> adapters, String name) {
+    	for(T adapter : adapters) {
+    		if(adapter.getName() != null && adapter.getName().equalsIgnoreCase(name))
+    			return adapter;
+    	}
+    	return null;
     }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
 }

@@ -18,7 +18,6 @@ package org.apache.cloudstack.discovery;
 
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
-import com.cloud.utils.component.Adapters;
 
 import java.util.*;
 import javax.naming.ConfigurationException;
@@ -58,7 +57,7 @@ public class ApiDiscoveryTest {
         Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
         cmdClasses.add(ListApisCmd.class);
         _discoveryService.cacheResponseMap(cmdClasses);
-        _discoveryService.s_apiAccessCheckers =  (Adapters<APIChecker>) mock(Adapters.class);
+        _discoveryService.s_apiAccessCheckers =  (List<APIChecker>) mock(List.class);
 
         when(_apiChecker.checkAccess(any(User.class), anyString())).thenReturn(true);
         when(_discoveryService.s_apiAccessCheckers.iterator()).thenReturn(Arrays.asList(_apiChecker).iterator());

@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.TreeMap;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
@@ -62,7 +63,7 @@ import com.cloud.upgrade.dao.VersionDao;
 import com.cloud.upgrade.dao.VersionDaoImpl;
 import com.cloud.upgrade.dao.VersionVO;
 import com.cloud.upgrade.dao.VersionVO.Step;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.ScriptRunner;
@@ -75,10 +76,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
     protected HashMap<String, DbUpgrade[]> _upgradeMap = new HashMap<String, DbUpgrade[]>();
 
-    VersionDao _dao;
+    @Inject VersionDao _dao;
 
     public DatabaseUpgradeChecker() {
-        _dao = ComponentLocator.inject(VersionDaoImpl.class);
         _upgradeMap.put("2.1.7", new DbUpgrade[] { new Upgrade217to218(), new Upgrade218to22(), new Upgrade221to222(),
                 new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade224to225(), new Upgrade225to226(),
                 new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(),
@@ -132,7 +132,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         _upgradeMap.put("2.2.8", new DbUpgrade[] { new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(),
                 new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30()
-                , new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40() });
+        , new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40() });
 
         _upgradeMap.put("2.2.9", new DbUpgrade[] { new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(),
                 new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(),
@@ -338,8 +338,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 }
 
                 if ( currentVersion == null )
-                	return;
-                
+                    return;
+
                 s_logger.info("DB version = " + dbVersion + " Code Version = " + currentVersion);
 
                 if (Version.compare(Version.trimToPatch(dbVersion), Version.trimToPatch(currentVersion)) > 0) {

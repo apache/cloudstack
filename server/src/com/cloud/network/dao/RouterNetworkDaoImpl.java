@@ -18,7 +18,8 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.network.RouterNetworkVO;
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -26,7 +27,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
-
+@Component
 public class RouterNetworkDaoImpl extends GenericDaoBase<RouterNetworkVO, Long> implements GenericDao<RouterNetworkVO, Long>{
     protected final GenericSearchBuilder<RouterNetworkVO, Long> RouterNetworksSearch;
     protected final SearchBuilder<RouterNetworkVO> AllFieldsSearch;

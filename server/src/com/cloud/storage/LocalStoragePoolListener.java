@@ -18,6 +18,8 @@ package com.cloud.storage;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
@@ -39,7 +41,6 @@ import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -116,6 +117,7 @@ public class LocalStoragePoolListener implements Listener {
                                          host.getPodId(), pInfo.getAvailableBytes(), pInfo.getCapacityBytes(), pInfo.getHost(), 0,
                                          pInfo.getHostPath());
                 pool.setClusterId(host.getClusterId());
+                pool.setStatus(StoragePoolStatus.Up);
                 _storagePoolDao.persist(pool, pInfo.getDetails());
                 StoragePoolHostVO poolHost = new StoragePoolHostVO(pool.getId(), host.getId(), pInfo.getLocalPath());
                 _storagePoolHostDao.persist(poolHost);

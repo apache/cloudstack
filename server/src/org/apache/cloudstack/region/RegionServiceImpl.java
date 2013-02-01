@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
@@ -48,11 +49,11 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 
 @Local(value = { RegionService.class })
-public class RegionServiceImpl implements RegionService, Manager {
+public class RegionServiceImpl extends ManagerBase implements RegionService, Manager {
     public static final Logger s_logger = Logger.getLogger(RegionServiceImpl.class);
     
     @Inject

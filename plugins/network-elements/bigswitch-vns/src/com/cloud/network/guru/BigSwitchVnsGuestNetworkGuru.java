@@ -36,20 +36,19 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.BigSwitchVnsDeviceVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkProfile;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
-import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.BigSwitchVnsDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -62,6 +61,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 
 @Local(value = NetworkGuru.class)

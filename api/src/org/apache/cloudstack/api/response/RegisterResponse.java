@@ -16,9 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import org.apache.cloudstack.api.BaseResponse;
+
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.BaseResponse;
 
 public class RegisterResponse extends BaseResponse {
     @SerializedName("apikey") @Param(description="the api key of the registered user")

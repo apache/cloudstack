@@ -16,6 +16,33 @@
 // under the License.
 package com.cloud.template;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.command.user.iso.*;
+import org.apache.cloudstack.api.command.user.template.*;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.downloadTemplateFromSwiftToSecondaryStorageCommand;
@@ -53,6 +80,13 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.storage.*;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.TemplateProfile;
+import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Type;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.*;
@@ -68,10 +102,9 @@ import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
-import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ManagerBase;
+
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.*;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -81,27 +114,11 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
-import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
-import org.apache.cloudstack.api.command.user.iso.*;
-import org.apache.cloudstack.api.command.user.template.*;
-import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-
+@Component
 @Local(value={TemplateManager.class, TemplateService.class})
-public class TemplateManagerImpl implements TemplateManager, Manager, TemplateService {
+public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateService {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
-    String _name;
     @Inject VMTemplateDao _tmpltDao;
     @Inject VMTemplateHostDao _tmpltHostDao;
     @Inject VMTemplatePoolDao _tmpltPoolDao;
@@ -159,16 +176,16 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     
     private ScheduledExecutorService _s3TemplateSyncExecutor = null;
 
-    @Inject (adapter=TemplateAdapter.class)
-    protected Adapters<TemplateAdapter> _adapters;
+    @Inject
+    protected List<TemplateAdapter> _adapters;
     
     private TemplateAdapter getAdapter(HypervisorType type) {
     	TemplateAdapter adapter = null;
     	if (type == HypervisorType.BareMetal) {
-    		adapter = _adapters.get(TemplateAdapterType.BareMetal.getName());
+    		adapter = AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.BareMetal.getName());
     	} else {
     		// see HyervisorTemplateAdapter
-    		adapter =  _adapters.get(TemplateAdapterType.Hypervisor.getName());
+    		adapter =  AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.Hypervisor.getName());
     	}
     	
     	if (adapter == null) {
@@ -959,11 +976,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }
     }
 
-    @Override
-    public String getName() {
-        return _name;
-    }
-
     private Runnable getSwiftTemplateSyncTask() {
         return new Runnable() {
             @Override
@@ -1013,9 +1025,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
         
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
         _routerTemplateId = NumbersUtil.parseInt(configs.get("router.template.id"), 1);
@@ -1049,7 +1058,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             s_logger.info("S3 secondary storage synchronization is disabled.");
         }
 
-      return false;
+        return true;
     }
     
     protected TemplateManagerImpl() {

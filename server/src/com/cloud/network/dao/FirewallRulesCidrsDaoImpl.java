@@ -22,15 +22,15 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
-import com.cloud.network.FirewallRulesCidrsVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
-
+@Component
 @Local(value=FirewallRulesCidrsDao.class)
 public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrsVO, Long> implements FirewallRulesCidrsDao {
     private static final Logger s_logger = Logger.getLogger(FirewallRulesCidrsDaoImpl.class);

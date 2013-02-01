@@ -18,9 +18,9 @@
 package com.cloud.network;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.Matchers.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +33,7 @@ import org.junit.Test;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.user.Account;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -42,9 +43,9 @@ import com.cloud.utils.net.Ip;
 public class NetworkModelTest {
     @Before
     public void setUp() {
-        
+
     }
-    
+
     @Test
     public void testGetSourceNatIpAddressForGuestNetwork() {
         NetworkModelImpl modelImpl = new NetworkModelImpl();
@@ -60,14 +61,14 @@ public class NetworkModelTest {
         modelImpl._vlanDao = fakeVlanDao;
         when(fakeSearch.create()).thenReturn(mock(SearchCriteria.class));
         when(
-            ipAddressDao.search(
-                    any(SearchCriteria.class), 
-                    (Filter)org.mockito.Matchers.isNull()
-                    )
-            ).thenReturn(fakeList);
+                ipAddressDao.search(
+                        any(SearchCriteria.class), 
+                        (Filter)org.mockito.Matchers.isNull()
+                        )
+                ).thenReturn(fakeList);
         when (
                 ipAddressDao.findById(anyLong())
-             ).thenReturn(fakeIp);
+                ).thenReturn(fakeIp);
         Account fakeAccount = mock(Account.class);
         when(fakeAccount.getId()).thenReturn(1L);
         Network fakeNetwork = mock(Network.class);
@@ -78,7 +79,7 @@ public class NetworkModelTest {
         fakeList.add(fakeIp2);
         when (
                 ipAddressDao.findById(anyLong())
-             ).thenReturn(fakeIp2);
+                ).thenReturn(fakeIp2);
         answer = modelImpl.getSourceNatIpAddressForGuestNetwork(fakeAccount, fakeNetwork);
         Assert.assertNotNull(answer);
         Assert.assertEquals(answer.getAddress().addr(), "76.75.75.75");

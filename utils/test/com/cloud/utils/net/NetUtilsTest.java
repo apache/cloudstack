@@ -54,11 +54,12 @@ public class NetUtilsTest extends TestCase {
         assertTrue("We should be able to retrieve an ip on the third call.", ip != -1);
         assertTrue("ip returned is not in the avoid list", !avoid.contains(ip));
         avoid.add(ip);
-       
+
         ip = NetUtils.getRandomIpFromCidr(cidr, 30, avoid);
         assertEquals("This should be -1 because we ran out of ip addresses: " + ip, ip, -1);
     }
 
+    @Test 
     public void testVpnPolicy() {
         assertTrue(NetUtils.isValidS2SVpnPolicy("aes128-sha1"));
         assertTrue(NetUtils.isValidS2SVpnPolicy("3des-sha1"));

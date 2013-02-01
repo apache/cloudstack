@@ -25,13 +25,13 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import com.cloud.api.query.vo.ControlledViewEntity;
-
+import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
-import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.springframework.stereotype.Component;
 
+import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
@@ -40,12 +40,14 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 
+@Component
 @Local(value = { AccountManager.class, AccountService.class })
-public class MockAccountManagerImpl implements Manager, AccountManager {
+public class MockAccountManagerImpl extends ManagerBase implements Manager, AccountManager {
 
 
     @Override
@@ -276,11 +278,11 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
         return true;
     }
 
-	@Override
-	public boolean enableAccount(long accountId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean enableAccount(long accountId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
     @Override
     public void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
@@ -322,7 +324,7 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
         return null;
     }
 
-	@Override
+    @Override
 	public UserAccount createUserAccount(String userName, String password,
 			String firstName, String lastName, String email, String timezone,
 			String accountName, short accountType, Long domainId,

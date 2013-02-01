@@ -18,23 +18,25 @@ package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
 import java.util.List;
-import javax.ejb.Local;
 
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageStats;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 
+@Component
 @Local(value={StoragePoolJoinDao.class})
 public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Long> implements StoragePoolJoinDao {
     public static final Logger s_logger = Logger.getLogger(StoragePoolJoinDaoImpl.class);
@@ -42,9 +44,9 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     @Inject
     private ConfigurationDao  _configDao;
 
-    private SearchBuilder<StoragePoolJoinVO> spSearch;
+    private final SearchBuilder<StoragePoolJoinVO> spSearch;
 
-    private SearchBuilder<StoragePoolJoinVO> spIdSearch;
+    private final SearchBuilder<StoragePoolJoinVO> spIdSearch;
 
 
     protected StoragePoolJoinDaoImpl() {

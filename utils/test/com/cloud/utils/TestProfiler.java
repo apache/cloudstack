@@ -18,28 +18,29 @@ package com.cloud.utils;
 
 import org.apache.log4j.Logger;
 import org.junit.Assert;
+import org.junit.Test;
 
-import com.cloud.utils.Profiler;
 import com.cloud.utils.testcase.Log4jEnabledTestCase;
 
 public class TestProfiler extends Log4jEnabledTestCase {
     protected final static Logger s_logger = Logger.getLogger(TestProfiler.class);
-	
-	public void testProfiler() {
-		s_logger.info("testProfiler() started");
-		
-		Profiler pf = new Profiler();
-		pf.start();
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-		}
-		pf.stop();
-		
-		s_logger.info("Duration : " + pf.getDuration());
-		
-		Assert.assertTrue(pf.getDuration() >= 1000);
-		
-		s_logger.info("testProfiler() stopped");
-	}
+
+    @Test
+    public void testProfiler() {
+        s_logger.info("testProfiler() started");
+
+        Profiler pf = new Profiler();
+        pf.start();
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+        }
+        pf.stop();
+
+        s_logger.info("Duration : " + pf.getDuration());
+
+        Assert.assertTrue(pf.getDuration() >= 1000);
+
+        s_logger.info("testProfiler() stopped");
+    }
 }

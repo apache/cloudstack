@@ -20,26 +20,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import javax.inject.Inject;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
-import org.apache.cloudstack.api.response.NetworkDeviceResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.NetworkDeviceResponse;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
+import org.apache.log4j.Logger;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
-import com.cloud.server.ManagementService;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "listNetworkDevice", description="List network devices", responseObject = NetworkDeviceResponse.class)
@@ -47,6 +46,7 @@ public class ListNetworkDeviceCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkDeviceCmd.class);
     private static final String s_name = "listnetworkdevice";
 
+    @Inject ExternalNetworkDeviceManager nwDeviceMgr;
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -67,11 +67,8 @@ public class ListNetworkDeviceCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException {
+    ResourceAllocationException {
         try {
-            ExternalNetworkDeviceManager nwDeviceMgr;
-            ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-            nwDeviceMgr = locator.getManager(ExternalNetworkDeviceManager.class);
             List<Host> devices = nwDeviceMgr.listNetworkDevice(this);
             List<NetworkDeviceResponse> nwdeviceResponses = new ArrayList<NetworkDeviceResponse>();
             ListResponse<NetworkDeviceResponse> listResponse = new ListResponse<NetworkDeviceResponse>();

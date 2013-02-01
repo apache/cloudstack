@@ -20,14 +20,14 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-
-import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.serializer.Param;
-import com.cloud.vm.VirtualMachine.State;
-import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+
+import com.cloud.serializer.Param;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value=VirtualMachine.class)
 @SuppressWarnings("unused")

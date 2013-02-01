@@ -24,9 +24,11 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.manager.allocator.HostAllocator;
@@ -50,10 +52,10 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
+@Component
 @Local(value=HostAllocator.class)
 public class RecreateHostAllocator extends FirstFitRoutingAllocator {
     private final static Logger s_logger = Logger.getLogger(RecreateHostAllocator.class);

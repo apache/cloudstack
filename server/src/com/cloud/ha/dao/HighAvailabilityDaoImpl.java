@@ -22,9 +22,9 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.ha.HaWorkVO;
-import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.Step;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.utils.db.Filter;
@@ -35,10 +35,11 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value={HighAvailabilityDao.class})
 public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> implements HighAvailabilityDao {
     private static final Logger s_logger = Logger.getLogger(HighAvailabilityDaoImpl.class);
-	
+
     private final SearchBuilder<HaWorkVO> TBASearch;
     private final SearchBuilder<HaWorkVO> PreviousInstanceSearch;
     private final SearchBuilder<HaWorkVO> UntakenMigrationSearch;
@@ -51,54 +52,54 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
 
     protected HighAvailabilityDaoImpl() {
         super();
-        
+
         CleanupSearch = createSearchBuilder();
         CleanupSearch.and("time", CleanupSearch.entity().getTimeToTry(), Op.LTEQ);
         CleanupSearch.and("step", CleanupSearch.entity().getStep(), Op.IN);
         CleanupSearch.done();
-        
+
         TBASearch = createSearchBuilder();
         TBASearch.and("server", TBASearch.entity().getServerId(), Op.NULL);
         TBASearch.and("taken", TBASearch.entity().getDateTaken(), Op.NULL);
         TBASearch.and("time", TBASearch.entity().getTimeToTry(), Op.LTEQ);
         TBASearch.done();
-        
+
         PreviousInstanceSearch = createSearchBuilder();
         PreviousInstanceSearch.and("instance", PreviousInstanceSearch.entity().getInstanceId(), Op.EQ);
         PreviousInstanceSearch.done();
-        
+
         UntakenMigrationSearch = createSearchBuilder();
         UntakenMigrationSearch.and("host", UntakenMigrationSearch.entity().getHostId(), Op.EQ);
         UntakenMigrationSearch.and("type", UntakenMigrationSearch.entity().getWorkType(), Op.EQ);
         UntakenMigrationSearch.and("server", UntakenMigrationSearch.entity().getServerId(), Op.NULL);
         UntakenMigrationSearch.and("taken", UntakenMigrationSearch.entity().getDateTaken(), Op.NULL);
         UntakenMigrationSearch.done();
-        
+
         TakenWorkSearch = createSearchBuilder();
         TakenWorkSearch.and("type", TakenWorkSearch.entity().getWorkType(), Op.EQ);
         TakenWorkSearch.and("server", TakenWorkSearch.entity().getServerId(), Op.NNULL);
         TakenWorkSearch.and("taken", TakenWorkSearch.entity().getDateTaken(), Op.NNULL);
         TakenWorkSearch.and("step", TakenWorkSearch.entity().getStep(), Op.NIN);
         TakenWorkSearch.done();
-        
+
         PreviousWorkSearch = createSearchBuilder();
         PreviousWorkSearch.and("instance", PreviousWorkSearch.entity().getInstanceId(), Op.EQ);
         PreviousWorkSearch.and("type", PreviousWorkSearch.entity().getWorkType(), Op.EQ);
         PreviousWorkSearch.and("taken", PreviousWorkSearch.entity().getDateTaken(), Op.NULL);
         PreviousWorkSearch.done();
-        
+
         ReleaseSearch = createSearchBuilder();
         ReleaseSearch.and("server", ReleaseSearch.entity().getServerId(), Op.EQ);
         ReleaseSearch.and("step", ReleaseSearch.entity().getStep(), Op.NIN);
         ReleaseSearch.and("taken", ReleaseSearch.entity().getDateTaken(), Op.NNULL);
         ReleaseSearch.done();
-        
+
         FutureHaWorkSearch = createSearchBuilder();
         FutureHaWorkSearch.and("instance", FutureHaWorkSearch.entity().getInstanceId(), Op.EQ);
         FutureHaWorkSearch.and("type", FutureHaWorkSearch.entity().getType(), Op.EQ);
         FutureHaWorkSearch.and("id", FutureHaWorkSearch.entity().getId(), Op.GT);
         FutureHaWorkSearch.done();
-        
+
         RunningHaWorkSearch = createSearchBuilder();
         RunningHaWorkSearch.and("instance", RunningHaWorkSearch.entity().getInstanceId(), Op.EQ);
         RunningHaWorkSearch.and("type", RunningHaWorkSearch.entity().getType(), Op.EQ);
@@ -106,24 +107,24 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
         RunningHaWorkSearch.and("step", RunningHaWorkSearch.entity().getStep(), Op.NIN);
         RunningHaWorkSearch.done();
     }
-    
+
     @Override
     public List<HaWorkVO> listRunningHaWorkForVm(long vmId) {
         SearchCriteria<HaWorkVO> sc = RunningHaWorkSearch.create();
         sc.setParameters("instance", vmId);
         sc.setParameters("type", WorkType.HA);
         sc.setParameters("step", Step.Done, Step.Error, Step.Cancelled);
-        
+
         return search(sc, null);
     }
-    
+
     @Override
     public List<HaWorkVO> listFutureHaWorkForVm(long vmId, long workId) {
         SearchCriteria<HaWorkVO> sc = FutureHaWorkSearch.create();
         sc.setParameters("instance", vmId);
-        sc.setParameters("type", HighAvailabilityManager.WorkType.HA);
+        sc.setParameters("type", WorkType.HA);
         sc.setParameters("id", workId);
-        
+
         return search(sc, null);
     }
 
@@ -169,7 +170,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
     public void cleanup(final long time) {
         final SearchCriteria<HaWorkVO> sc = CleanupSearch.create();
         sc.setParameters("time", time);
-        sc.setParameters("step", HighAvailabilityManager.Step.Done, HighAvailabilityManager.Step.Cancelled);
+        sc.setParameters("step", Step.Done, Step.Cancelled);
         expunge(sc);
     }
 
@@ -183,47 +184,47 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
         Date date = new Date();
         work.setDateTaken(date);
         work.setServerId(serverId);
-        work.setStep(HighAvailabilityManager.Step.Cancelled);
-        
+        work.setStep(Step.Cancelled);
+
         update(work, sc);
     }
 
     @Override
     public List<HaWorkVO> findTakenWorkItems(WorkType type) {
-    	SearchCriteria<HaWorkVO> sc = TakenWorkSearch.create();
-    	sc.setParameters("type", type);
-    	sc.setParameters("step", Step.Done, Step.Cancelled, Step.Error);
-    	
-    	return listBy(sc);
+        SearchCriteria<HaWorkVO> sc = TakenWorkSearch.create();
+        sc.setParameters("type", type);
+        sc.setParameters("step", Step.Done, Step.Cancelled, Step.Error);
+
+        return listBy(sc);
     }
-    
-    
+
+
     @Override
     public boolean delete(long instanceId, WorkType type) {
-    	SearchCriteria<HaWorkVO> sc = PreviousWorkSearch.create();
-    	sc.setParameters("instance", instanceId);
-    	sc.setParameters("type", type);
-    	return expunge(sc) > 0;
+        SearchCriteria<HaWorkVO> sc = PreviousWorkSearch.create();
+        sc.setParameters("instance", instanceId);
+        sc.setParameters("type", type);
+        return expunge(sc) > 0;
     }
-    
+
     @Override
     public boolean hasBeenScheduled(long instanceId, WorkType type) {
-    	SearchCriteria<HaWorkVO> sc = PreviousWorkSearch.create();
-    	sc.setParameters("instance", instanceId);
-    	sc.setParameters("type", type);
-    	return listBy(sc, null).size() > 0;
+        SearchCriteria<HaWorkVO> sc = PreviousWorkSearch.create();
+        sc.setParameters("instance", instanceId);
+        sc.setParameters("type", type);
+        return listBy(sc, null).size() > 0;
     }
-    
+
     @Override
     public int releaseWorkItems(long nodeId) {
         SearchCriteria<HaWorkVO> sc = ReleaseSearch.create();
         sc.setParameters("server", nodeId);
         sc.setParameters("step", Step.Done, Step.Cancelled, Step.Error);
-        
+
         HaWorkVO vo = createForUpdate();
         vo.setDateTaken(null);
         vo.setServerId(null);
-        
+
         return update(vo, sc);
     }
 }

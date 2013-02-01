@@ -18,24 +18,24 @@ package org.apache.cloudstack.api.command.admin.network;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import javax.inject.Inject;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.NetworkDeviceResponse;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
+import org.apache.log4j.Logger;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
-import com.cloud.server.ManagementService;
-import org.apache.cloudstack.api.response.NetworkDeviceResponse;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "addNetworkDevice", description="Adds a network device of one of the following types: ExternalDhcp, ExternalFirewall, ExternalLoadBalancer, PxeServer", responseObject = NetworkDeviceResponse.class)
@@ -47,6 +47,7 @@ public class AddNetworkDeviceCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    @Inject ExternalNetworkDeviceManager nwDeviceMgr;
     @Parameter(name = ApiConstants.NETWORK_DEVICE_TYPE, type = CommandType.STRING, description = "Network device type, now supports ExternalDhcp, PxeServer, NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer, F5BigIpLoadBalancer, JuniperSRXFirewall")
     private String type;
 
@@ -64,11 +65,8 @@ public class AddNetworkDeviceCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException {
+    ResourceAllocationException {
         try {
-            ExternalNetworkDeviceManager nwDeviceMgr;
-            ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-            nwDeviceMgr = locator.getManager(ExternalNetworkDeviceManager.class);
             Host device = nwDeviceMgr.addNetworkDevice(this);
             NetworkDeviceResponse response = nwDeviceMgr.getApiResponse(device);
             response.setObjectName("networkdevice");

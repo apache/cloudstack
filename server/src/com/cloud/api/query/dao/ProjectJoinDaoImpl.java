@@ -20,21 +20,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
-
-import org.apache.cloudstack.api.response.ProjectResponse;
 import com.cloud.projects.Project;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 @Local(value={ProjectJoinDao.class})
 public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> implements ProjectJoinDao {
     public static final Logger s_logger = Logger.getLogger(ProjectJoinDaoImpl.class);
@@ -42,9 +43,9 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
     @Inject
     private ConfigurationDao  _configDao;
 
-    private SearchBuilder<ProjectJoinVO> prjSearch;
+    private final SearchBuilder<ProjectJoinVO> prjSearch;
 
-    private SearchBuilder<ProjectJoinVO> prjIdSearch;
+    private final SearchBuilder<ProjectJoinVO> prjIdSearch;
 
     protected ProjectJoinDaoImpl() {
 

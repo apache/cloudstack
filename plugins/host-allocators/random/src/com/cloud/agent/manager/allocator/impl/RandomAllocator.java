@@ -22,8 +22,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.deploy.DeploymentPlan;
@@ -34,55 +36,55 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
+@Component
 @Local(value=HostAllocator.class)
-public class RandomAllocator implements HostAllocator {
+public class RandomAllocator extends AdapterBase implements HostAllocator {
     private static final Logger s_logger = Logger.getLogger(RandomAllocator.class);
-    private String _name;
-    private HostDao _hostDao;
-    private ResourceManager _resourceMgr;
+    @Inject private HostDao _hostDao;
+    @Inject private ResourceManager _resourceMgr;
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
             ExcludeList avoid, int returnUpTo) {
         return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
     }
-    
+
     @Override
     public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
-			ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
+            ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
 
-		long dcId = plan.getDataCenterId();
-		Long podId = plan.getPodId();
-		Long clusterId = plan.getClusterId();
-		ServiceOffering offering = vmProfile.getServiceOffering();
-    	
-    	List<Host> suitableHosts = new ArrayList<Host>();
-    	
+        long dcId = plan.getDataCenterId();
+        Long podId = plan.getPodId();
+        Long clusterId = plan.getClusterId();
+        ServiceOffering offering = vmProfile.getServiceOffering();
+
+        List<Host> suitableHosts = new ArrayList<Host>();
+
         if (type == Host.Type.Storage) {
             return suitableHosts;
         }
 
         String hostTag = offering.getHostTag();
         if(hostTag != null){
-        	s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having host tag:" + hostTag);
+            s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having host tag:" + hostTag);
         }else{
-        	s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
+            s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
         }
 
         // list all computing hosts, regardless of whether they support routing...it's random after all
         List<? extends Host> hosts = new ArrayList<HostVO>();
         if(hostTag != null){
-        	hosts = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTag);
+            hosts = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTag);
         }else{
-        	hosts = _resourceMgr.listAllUpAndEnabledHosts(type, clusterId, podId, dcId);
+            hosts = _resourceMgr.listAllUpAndEnabledHosts(type, clusterId, podId, dcId);
         }
-        
+
         s_logger.debug("Random Allocator found " + hosts.size() + "  hosts");
-        
+
         if (hosts.size() == 0) {
             return suitableHosts;
         }
@@ -90,12 +92,12 @@ public class RandomAllocator implements HostAllocator {
 
         Collections.shuffle(hosts);
         for (Host host : hosts) {
-        	if(suitableHosts.size() == returnUpTo){
-        		break;
-        	}
-        	
+            if(suitableHosts.size() == returnUpTo){
+                break;
+            }
+
             if (!avoid.shouldAvoid(host)) {
-            	suitableHosts.add(host);
+                suitableHosts.add(host);
             }else{
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Host name: " + host.getName() + ", hostId: "+ host.getId() +" is in avoid set, skipping this and trying other available hosts");
@@ -112,35 +114,6 @@ public class RandomAllocator implements HostAllocator {
     public boolean isVirtualMachineUpgradable(VirtualMachine vm, ServiceOffering offering) {
         // currently we do no special checks to rule out a VM being upgradable to an offering, so
         // return true
-        return true;
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) {
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        _hostDao = locator.getDao(HostDao.class);
-        _resourceMgr = locator.getManager(ResourceManager.class);
-        if (_hostDao == null) {
-            s_logger.error("Unable to get host dao.");
-            return false;
-        }
-        _name=name;
-        
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
         return true;
     }
 }

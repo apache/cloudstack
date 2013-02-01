@@ -23,28 +23,33 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
+import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
+import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
+import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
+import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
+import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
+import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.query.vo.UserVmJoinVO;
-
-import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
-import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
-import org.apache.cloudstack.api.command.user.vm.*;
-import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
-import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
-import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
-import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
-import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
-import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
-import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
-import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -70,11 +75,13 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value = { UserVmManager.class, UserVmService.class })
-public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Manager {
+public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager, UserVmService {
 
     @Override
     public UserVmVO findByName(String name) {
@@ -404,30 +411,30 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
 
     @Override
     public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-            VirtualMachineMigrationException {
+    VirtualMachineMigrationException {
         // TODO Auto-generated method stub
         return null;
     }
 
-	@Override
-	public UserVm moveVMToUser(AssignVMCmd moveUserVMCmd)
-			throws ResourceAllocationException, ConcurrentOperationException,
-			ResourceUnavailableException, InsufficientCapacityException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public UserVm moveVMToUser(AssignVMCmd moveUserVMCmd)
+            throws ResourceAllocationException, ConcurrentOperationException,
+            ResourceUnavailableException, InsufficientCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public UserVm restoreVM(RestoreVMCmd cmd) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public UserVm restoreVM(RestoreVMCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 
 
@@ -437,18 +444,18 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
         return null;
     }
 
-	@Override
-	public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
-		// TODO Auto-generated method stub
+    @Override
+    public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
     /* (non-Javadoc)
      * @see com.cloud.vm.VirtualMachineGuru#plugNic(com.cloud.network.Network, com.cloud.agent.api.to.NicTO, com.cloud.agent.api.to.VirtualMachineTO, com.cloud.vm.ReservationContext, com.cloud.deploy.DeployDestination)
      */
     @Override
     public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
+    InsufficientCapacityException {
         // TODO Auto-generated method stub
         return false;
     }

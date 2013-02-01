@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import org.omg.CORBA.PUBLIC_MEMBER;
 
 public class ApiConstants {
     public static final String ACCOUNT = "account";
@@ -438,6 +437,7 @@ public class ApiConstants {
     public static final String COUNTERPARAM_LIST = "counterparam";
     public static final String AUTOSCALE_USER_ID = "autoscaleuserid";
     public static final String BAREMETAL_DISCOVER_NAME = "baremetaldiscovername";
+    public static final String UCS_DN = "ucsdn";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

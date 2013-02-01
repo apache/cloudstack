@@ -16,6 +16,21 @@
 // under the License.
 package com.cloud.template;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.util.List;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
@@ -30,12 +45,12 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
@@ -48,6 +63,7 @@ import javax.ejb.Local;
 import java.net.*;
 import java.util.List;
 
+@Component
 @Local(value=TemplateAdapter.class)
 public class HyervisorTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
 	private final static Logger s_logger = Logger.getLogger(HyervisorTemplateAdapter.class);
@@ -144,7 +160,7 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 	public boolean delete(TemplateProfile profile) {
 		boolean success = true;
     	
-    	VMTemplateVO template = profile.getTemplate();
+    	VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
     	Long zoneId = profile.getZoneId();
     	Long templateId = template.getId();
         
@@ -260,7 +276,7 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 	
 	public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
 		TemplateProfile profile = super.prepareDelete(cmd);
-		VMTemplateVO template = profile.getTemplate();
+		VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
 		Long zoneId = profile.getZoneId();
 		
 		if (template.getTemplateType() == TemplateType.SYSTEM) {

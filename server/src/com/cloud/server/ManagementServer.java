@@ -44,7 +44,7 @@ public interface ManagementServer extends ManagementService, PluggableService  {
     */
     @Override
     String getVersion();
-
+    
     /**
      * Retrieves a host by id
      * 

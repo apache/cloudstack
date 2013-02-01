@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,32 +37,60 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import javax.inject.Inject;
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.naming.ConfigurationException;
+
+import com.cloud.storage.dao.*;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ApiConstants;
 
 import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
+import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
+import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
+import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.UpgradeSystemVMCmd;
+import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
 import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
+import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
+import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
+import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
 import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
+import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
 import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
+import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
+import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
+import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
@@ -74,23 +101,7 @@ import com.cloud.alert.Alert;
 import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
-import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDBUtils;
-import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
-import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
-import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
-import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
-import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
-import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
-import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
-import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
-import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
-import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
-import org.apache.cloudstack.api.response.ExtractResponse;
-
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
@@ -100,8 +111,10 @@ import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
+import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Configuration;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
@@ -130,6 +143,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
@@ -150,13 +164,13 @@ import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.keystore.KeystoreManager;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
-import com.cloud.network.LoadBalancerVO;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project;
@@ -181,12 +195,6 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.GuestOSCategoryDao;
-import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.StoragePoolDao;
-import com.cloud.storage.dao.UploadDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -210,13 +218,17 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.Adapter;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.component.ComponentLifecycle;
+import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -224,6 +236,8 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.mgmt.JmxUtil;
+import com.cloud.utils.mgmt.ManagementBean;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHKeysHelper;
@@ -247,60 +261,110 @@ import com.cloud.vm.dao.VMInstanceDao;
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
 
-public class ManagementServerImpl implements ManagementServer {
+public class ManagementServerImpl extends ManagerBase implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
-    private final AccountManager _accountMgr;
-    private final AgentManager _agentMgr;
-    private final AlertManager _alertMgr;
-    private final IPAddressDao _publicIpAddressDao;
-    private final DomainRouterDao _routerDao;
-    private final ConsoleProxyDao _consoleProxyDao;
-    private final ClusterDao _clusterDao;
-    private final SecondaryStorageVmDao _secStorageVmDao;
-    private final EventDao _eventDao;
-    private final DataCenterDao _dcDao;
-    private final VlanDao _vlanDao;
-    private final AccountVlanMapDao _accountVlanMapDao;
-    private final PodVlanMapDao _podVlanMapDao;
-    private final HostDao _hostDao;
-    private final HostDetailsDao _detailsDao;
-    private final UserDao _userDao;
-    private final UserVmDao _userVmDao;
-    private final ConfigurationDao _configDao;
-    private final ConsoleProxyManager _consoleProxyMgr;
-    private final SecondaryStorageVmManager _secStorageVmMgr;
-    private final SwiftManager _swiftMgr;
-    private final S3Manager _s3Mgr;
-    private final ServiceOfferingDao _offeringsDao;
-    private final VMTemplateDao _templateDao;
-    private final DomainDao _domainDao;
-    private final AccountDao _accountDao;
-    private final AlertDao _alertDao;
-    private final CapacityDao _capacityDao;
-    private final GuestOSDao _guestOSDao;
-    private final GuestOSCategoryDao _guestOSCategoryDao;
-    private final StoragePoolDao _poolDao;
-    private final NetworkDao _networkDao;
-    private final StorageManager _storageMgr;
-    private final VirtualMachineManager _itMgr;
-    private final HostPodDao _hostPodDao;
-    private final VMInstanceDao _vmInstanceDao;
-    private final VolumeDao _volumeDao;
-    private final AsyncJobManager _asyncMgr;
-    private final int _purgeDelay;
-    private final InstanceGroupDao _vmGroupDao;
-    private final UploadMonitor _uploadMonitor;
-    private final UploadDao _uploadDao;
-    private final SSHKeyPairDao _sshKeyPairDao;
-    private final LoadBalancerDao _loadbalancerDao;
-    private final HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
-    private final Adapters<HostAllocator> _hostAllocators;
-    private final ResourceTagDao _resourceTagDao;
+    @Inject
+    private AccountManager _accountMgr;
+    @Inject
+    private AgentManager _agentMgr;
+    @Inject
+    private AlertManager _alertMgr;
+    @Inject
+    private IPAddressDao _publicIpAddressDao;
+    @Inject
+    private DomainRouterDao _routerDao;
+    @Inject
+    private ConsoleProxyDao _consoleProxyDao;
+    @Inject
+    private ClusterDao _clusterDao;
+    @Inject
+    private SecondaryStorageVmDao _secStorageVmDao;
+    @Inject
+    private EventDao _eventDao;
+    @Inject
+    private DataCenterDao _dcDao;
+    @Inject
+    private VlanDao _vlanDao;
+    @Inject
+    private AccountVlanMapDao _accountVlanMapDao;
+    @Inject
+    private PodVlanMapDao _podVlanMapDao;
+    @Inject
+    private HostDao _hostDao;
+    @Inject
+    private HostDetailsDao _detailsDao;
+    @Inject
+    private UserDao _userDao;
+    @Inject
+    private UserVmDao _userVmDao;
+    @Inject
+    private ConfigurationDao _configDao;
+    @Inject
+    private ConsoleProxyManager _consoleProxyMgr;
+    @Inject
+    private SecondaryStorageVmManager _secStorageVmMgr;
+    @Inject
+    private SwiftManager _swiftMgr;
+    @Inject
+    private ServiceOfferingDao _offeringsDao;
+    @Inject
+    private DiskOfferingDao _diskOfferingDao;
+    @Inject
+    private VMTemplateDao _templateDao;
+    @Inject
+    private DomainDao _domainDao;
+    @Inject
+    private AccountDao _accountDao;
+    @Inject
+    private AlertDao _alertDao;
+    @Inject
+    private CapacityDao _capacityDao;
+    @Inject
+    private GuestOSDao _guestOSDao;
+    @Inject
+    private GuestOSCategoryDao _guestOSCategoryDao;
+    @Inject
+    private StoragePoolDao _poolDao;
+    @Inject
+    private NetworkDao _networkDao;
+    @Inject
+    private StorageManager _storageMgr;
+    @Inject
+    private VirtualMachineManager _itMgr;
+    @Inject
+    private HostPodDao _hostPodDao;
+    @Inject
+    private VMInstanceDao _vmInstanceDao;
+    @Inject
+    private VolumeDao _volumeDao;
+    @Inject
+    private AsyncJobManager _asyncMgr;
+    private int _purgeDelay;
+    @Inject
+    private InstanceGroupDao _vmGroupDao;
+    @Inject
+    private UploadMonitor _uploadMonitor;
+    @Inject
+    private UploadDao _uploadDao;
+    @Inject
+    private SSHKeyPairDao _sshKeyPairDao;
+    @Inject
+    private LoadBalancerDao _loadbalancerDao;
+    @Inject
+    private HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
+
+    @Inject
+    private List<HostAllocator> _hostAllocators;
+    @Inject
+    private ConfigurationManager _configMgr;
+    @Inject
+    private ResourceTagDao _resourceTagDao;
 
     @Inject
     ProjectManager _projectMgr;
-    private final ResourceManager _resourceMgr;
+    @Inject
+    ResourceManager _resourceMgr;
     @Inject
     SnapshotManager _snapshotMgr;
     @Inject
@@ -308,84 +372,40 @@ public class ManagementServerImpl implements ManagementServer {
     @Inject
     HostTagsDao _hostTagsDao;
 
-    private final KeystoreManager _ksMgr;
+    @Inject
+    S3Manager _s3Mgr;
 
+/*   
+    @Inject
+    ComponentContext _forceContextRef;			// create a dependency to ComponentContext so that it can be loaded beforehead
+
+    @Inject
+    EventUtils	_forceEventUtilsRef;
+*/
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
+    private KeystoreManager _ksMgr;
 
-    private final Map<String, String> _configs;
+    private Map<String, String> _configs;
 
-    // even though this _statsCollector is never used here, but we create the singleton here to avoid null pointer exception in other places
-    // like ApiDbUtils to reference StatsCollector instance.
-    private final StatsCollector _statsCollector;
+    private Map<String, Boolean> _availableIdsMap;
 
-    private final Map<String, Boolean> _availableIdsMap;
+    @Inject List<UserAuthenticator> _userAuthenticators;
 
-    private Adapters<UserAuthenticator> _userAuthenticators;
-
+    @Inject ClusterManager _clusterMgr;
     private String _hashKey = null;
 
-    protected ManagementServerImpl() {
-        ComponentLocator locator = ComponentLocator.getLocator(Name);
-        _configDao = locator.getDao(ConfigurationDao.class);
-        _routerDao = locator.getDao(DomainRouterDao.class);
-        _eventDao = locator.getDao(EventDao.class);
-        _dcDao = locator.getDao(DataCenterDao.class);
-        _vlanDao = locator.getDao(VlanDao.class);
-        _accountVlanMapDao = locator.getDao(AccountVlanMapDao.class);
-        _podVlanMapDao = locator.getDao(PodVlanMapDao.class);
-        _hostDao = locator.getDao(HostDao.class);
-        _detailsDao = locator.getDao(HostDetailsDao.class);
-        _hostPodDao = locator.getDao(HostPodDao.class);
-        _clusterDao = locator.getDao(ClusterDao.class);
-        _networkDao = locator.getDao(NetworkDao.class);
-        _loadbalancerDao = locator.getDao(LoadBalancerDao.class);
+    public ManagementServerImpl() {
+    	setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
+    }
 
-        _accountMgr = locator.getManager(AccountManager.class);
-        _agentMgr = locator.getManager(AgentManager.class);
-        _alertMgr = locator.getManager(AlertManager.class);
-        _consoleProxyMgr = locator.getManager(ConsoleProxyManager.class);
-        _secStorageVmMgr = locator.getManager(SecondaryStorageVmManager.class);
-        _swiftMgr = locator.getManager(SwiftManager.class);
-        _s3Mgr = locator.getManager(S3Manager.class);
-        _storageMgr = locator.getManager(StorageManager.class);
-        _publicIpAddressDao = locator.getDao(IPAddressDao.class);
-        _consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
-        _secStorageVmDao = locator.getDao(SecondaryStorageVmDao.class);
-        _userDao = locator.getDao(UserDao.class);
-        _userVmDao = locator.getDao(UserVmDao.class);
-        _offeringsDao = locator.getDao(ServiceOfferingDao.class);
-        _templateDao = locator.getDao(VMTemplateDao.class);
-        _domainDao = locator.getDao(DomainDao.class);
-        _accountDao = locator.getDao(AccountDao.class);
-        _alertDao = locator.getDao(AlertDao.class);
-        _capacityDao = locator.getDao(CapacityDao.class);
-        _guestOSDao = locator.getDao(GuestOSDao.class);
-        _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
-        _poolDao = locator.getDao(StoragePoolDao.class);
-        _vmGroupDao = locator.getDao(InstanceGroupDao.class);
-        _uploadDao = locator.getDao(UploadDao.class);
-        _configs = _configDao.getConfiguration();
-        _vmInstanceDao = locator.getDao(VMInstanceDao.class);
-        _volumeDao = locator.getDao(VolumeDao.class);
-        _asyncMgr = locator.getManager(AsyncJobManager.class);
-        _uploadMonitor = locator.getManager(UploadMonitor.class);
-        _sshKeyPairDao = locator.getDao(SSHKeyPairDao.class);
-        _itMgr = locator.getManager(VirtualMachineManager.class);
-        _ksMgr = locator.getManager(KeystoreManager.class);
-        _resourceMgr = locator.getManager(ResourceManager.class);
-        _resourceTagDao = locator.getDao(ResourceTagDao.class);
+	@Override
+	public boolean configure(String name, Map<String, Object> params)
+			throws ConfigurationException {
 
-        _hypervisorCapabilitiesDao = locator.getDao(HypervisorCapabilitiesDao.class);
-
-        _hostAllocators = locator.getAdapters(HostAllocator.class);
-        if (_hostAllocators == null || !_hostAllocators.isSet()) {
-            s_logger.error("Unable to find HostAllocators");
-        }
+		_configs = _configDao.getConfiguration();
 
         String value = _configs.get("event.purge.interval");
         int cleanup = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
-
-        _statsCollector = StatsCollector.getInstance(_configs);
 
         _purgeDelay = NumbersUtil.parseInt(_configs.get("event.purge.delay"), 0);
         if (_purgeDelay != 0) {
@@ -397,11 +417,16 @@ public class ManagementServerImpl implements ManagementServer {
         for (String id : availableIds) {
             _availableIdsMap.put(id, true);
         }
-
-        _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
-        if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
-            s_logger.error("Unable to find an user authenticator.");
-        }
+		
+		return true;
+	}
+   
+    @Override
+    public boolean start() {
+        s_logger.info("Startup CloudStack management server...");
+    	
+        enableAdminUser("password");
+        return true;
     }
 
     protected Map<String, String> getConfigs() {
@@ -412,8 +437,6 @@ public class ManagementServerImpl implements ManagementServer {
     public String generateRandomPassword() {
         return PasswordGenerator.generateRandomPassword(6);
     }
-
-
 
     @Override
     public HostVO getHostBy(long hostId) {
@@ -653,15 +676,14 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         List<Host> suitableHosts = new ArrayList<Host>();
-        Enumeration<HostAllocator> enHost = _hostAllocators.enumeration();
 
         VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
 
         DataCenterDeployment plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
-        while (enHost.hasMoreElements()) {
-            final HostAllocator allocator = enHost.nextElement();
+
+        for (HostAllocator allocator : _hostAllocators) {
             suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
             if (suitableHosts != null && !suitableHosts.isEmpty()) {
                 break;
@@ -1209,9 +1231,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _templateDao.findById(id);
     }
 
-
-
-
     @Override
     public Pair<List<? extends IpAddress>, Integer> searchForIPAddresses(ListPublicIpAddressesCmd cmd) {
         Object keyword = cmd.getKeyword();
@@ -1262,7 +1281,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("isStaticNat", sb.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
 
-        if (forLoadBalancing != null && (Boolean) forLoadBalancing) {
+        if (forLoadBalancing != null && forLoadBalancing) {
             SearchBuilder<LoadBalancerVO> lbSearch = _loadbalancerDao.createSearchBuilder();
             sb.join("lbSearch", lbSearch, sb.entity().getId(), lbSearch.entity().getSourceIpAddressId(), JoinType.INNER);
             sb.groupBy(sb.entity().getId());
@@ -1296,7 +1315,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         VlanType vlanType = null;
         if (forVirtualNetwork != null) {
-            vlanType = (Boolean) forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
+            vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
         } else {
             vlanType = VlanType.VirtualNetwork;
         }
@@ -1429,7 +1448,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @ActionEvent(eventType = EventTypes.EVENT_PROXY_STOP, eventDescription = "stopping console proxy Vm", async = true)
     private ConsoleProxyVO stopConsoleProxy(VMInstanceVO systemVm, boolean isForced) throws ResourceUnavailableException, OperationTimedoutException,
-            ConcurrentOperationException {
+    ConcurrentOperationException {
 
         User caller = _userDao.findById(UserContext.current().getCallerUserId());
 
@@ -1459,7 +1478,7 @@ public class ManagementServerImpl implements ManagementServer {
     public String getConsoleAccessUrlRoot(long vmId) {
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm != null) {
-            ConsoleProxyInfo proxy = getConsoleProxyForVm(vm.getDataCenterIdToDeployIn(), vmId);
+            ConsoleProxyInfo proxy = getConsoleProxyForVm(vm.getDataCenterId(), vmId);
             if (proxy != null) {
                 return proxy.getProxyImageUrl();
             }
@@ -1891,7 +1910,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _poolDao.searchAndCount(sc, searchFilter);
     }
 
-
     @ActionEvent(eventType = EventTypes.EVENT_SSVM_START, eventDescription = "starting secondary storage Vm", async = true)
     public SecondaryStorageVmVO startSecondaryStorageVm(long instanceId) {
         return _secStorageVmMgr.startSecStorageVm(instanceId);
@@ -1899,7 +1917,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @ActionEvent(eventType = EventTypes.EVENT_SSVM_STOP, eventDescription = "stopping secondary storage Vm", async = true)
     private SecondaryStorageVmVO stopSecondaryStorageVm(VMInstanceVO systemVm, boolean isForced) throws ResourceUnavailableException,
-            OperationTimedoutException, ConcurrentOperationException {
+    OperationTimedoutException, ConcurrentOperationException {
 
         User caller = _userDao.findById(UserContext.current().getCallerUserId());
 
@@ -1942,7 +1960,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("hostName", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
@@ -2170,7 +2188,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         capabilities.put("securityGroupsEnabled", securityGroupsEnabled);
         capabilities
-                .put("userPublicTemplateEnabled", (userPublicTemplateEnabled == null || userPublicTemplateEnabled.equals("false") ? false : true));
+        .put("userPublicTemplateEnabled", (userPublicTemplateEnabled == null || userPublicTemplateEnabled.equals("false") ? false : true));
         capabilities.put("cloudStackVersion", getVersion());
         capabilities.put("supportELB", supportELB);
         capabilities.put("projectInviteRequired", _projectMgr.projectInviteRequired());
@@ -2227,17 +2245,17 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont
-                                                              // have any
-                                                              // template
-                                                              // dependence.
+            // have any
+            // template
+            // dependence.
 
             VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
             if (template != null) { // For ISO based volumes template = null and
-                                    // we allow extraction of all ISO based
-                                    // volumes
+                // we allow extraction of all ISO based
+                // volumes
                 boolean isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
                 if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global
-                // admins are always allowed to extract
+                    // admins are always allowed to extract
                     PermissionDeniedException ex = new PermissionDeniedException("The volume with specified volumeId is not allowed to be extracted");
                     ex.addProxyObject(volume, volumeId, "volumeId");
                     throw ex;
@@ -2288,7 +2306,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (extractMode == Upload.Mode.HTTP_DOWNLOAD && extractURLList.size() > 0) {
             return extractURLList.get(0).getId(); // If download url already
-                                                  // exists then return
+            // exists then return
         } else {
             UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(sserver.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, Upload.Type.VOLUME,
                     url, extractMode);
@@ -2346,12 +2364,12 @@ public class ManagementServerImpl implements ManagementServer {
             _uploadDao.update(uploadJob.getId(), uploadJob);
 
             if (extractMode == Mode.FTP_UPLOAD) { // Now that the volume is
-                                                  // copied perform the actual
-                                                  // uploading
+                // copied perform the actual
+                // uploading
                 _uploadMonitor.extractVolume(uploadJob, sserver, volume, url, zoneId, volumeLocalPath, cmd.getStartEventId(), job.getId(), _asyncMgr);
                 return uploadJob.getId();
             } else { // Volume is copied now make it visible under apache and
-                     // create a URL.
+                // create a URL.
                 _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Upload.Type.VOLUME, zoneId, uploadJob.getId());
                 return uploadJob.getId();
             }
@@ -2403,8 +2421,6 @@ public class ManagementServerImpl implements ManagementServer {
 
         return _vmGroupDao.findById(groupId);
     }
-
-
 
     @Override
     public String getVersion() {
@@ -2811,8 +2827,7 @@ public class ManagementServerImpl implements ManagementServer {
             // This means its a new account, set the password using the
             // authenticator
 
-            for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
-                UserAuthenticator authenticator = en.nextElement();
+            for (UserAuthenticator  authenticator: _userAuthenticators) {
                 encodedPassword = authenticator.encode(password);
                 if (encodedPassword != null) {
                     break;

@@ -158,6 +158,44 @@ DROP TABLE IF EXISTS `cloud`.`autoscale_vmprofiles`;
 DROP TABLE IF EXISTS `cloud`.`autoscale_policies`;
 DROP TABLE IF EXISTS `cloud`.`counter`;
 DROP TABLE IF EXISTS `cloud`.`conditions`;
+DROP TABLE IF EXISTS `cloud`.`inline_load_balancer_nic_map`;
+DROP TABLE IF EXISTS `cloud`.`cmd_exec_log`;
+DROP TABLE IF EXISTS `cloud`.`keystore`;
+DROP TABLE IF EXISTS `cloud`.`swift`;
+DROP TABLE IF EXISTS `cloud`.`project_account`;
+DROP TABLE IF EXISTS `cloud`.`project_invitations`;
+DROP TABLE IF EXISTS `cloud`.`elastic_lb_vm_map`;
+DROP TABLE IF EXISTS `cloud`.`ntwk_offering_service_map`;
+DROP TABLE IF EXISTS `cloud`.`ntwk_service_map`;
+DROP TABLE IF EXISTS `cloud`.`external_load_balancer_devices`;
+DROP TABLE IF EXISTS `cloud`.`external_firewall_devices`;
+DROP TABLE IF EXISTS `cloud`.`network_external_lb_device_map`;
+DROP TABLE IF EXISTS `cloud`.`network_external_firewall_device_map`;
+DROP TABLE IF EXISTS `cloud`.`virtual_router_providers`;
+DROP TABLE IF EXISTS `cloud`.`op_user_stats_log`;
+DROP TABLE IF EXISTS `cloud`.`netscaler_pod_ref`;
+DROP TABLE IF EXISTS `cloud`.`mshost_peer`;
+DROP TABLE IF EXISTS `cloud`.`vm_template_details`;
+DROP TABLE IF EXISTS `cloud`.`hypervisor_capabilities`;
+DROP TABLE IF EXISTS `cloud`.`template_swift_ref`;
+DROP TABLE IF EXISTS `cloud`.`account_details`;
+DROP TABLE IF EXISTS `cloud`.`vpc`;
+DROP TABLE IF EXISTS `cloud`.`vpc_offerings`;
+DROP TABLE IF EXISTS `cloud`.`vpc_offering_service_map`;
+DROP TABLE IF EXISTS `cloud`.`vpc_gateways`;
+DROP TABLE IF EXISTS `cloud`.`router_network_ref`;
+DROP TABLE IF EXISTS `cloud`.`private_ip_address`;
+DROP TABLE IF EXISTS `cloud`.`static_routes`;
+DROP TABLE IF EXISTS `cloud`.`resource_tags`;
+DROP TABLE IF EXISTS `cloud`.`primary_data_store_provider`;
+DROP TABLE IF EXISTS `cloud`.`image_data_store_provider`;
+DROP TABLE IF EXISTS `cloud`.`image_data_store`;
+DROP TABLE IF EXISTS `cloud`.`vm_compute_tags`;
+DROP TABLE IF EXISTS `cloud`.`vm_root_disk_tags`;
+DROP TABLE IF EXISTS `cloud`.`vm_network_map`;
+DROP TABLE IF EXISTS `cloud`.`netapp_volume`;
+DROP TABLE IF EXISTS `cloud`.`netapp_pool`;
+DROP TABLE IF EXISTS `cloud`.`netapp_lun`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -1041,6 +1079,7 @@ CREATE TABLE  `cloud`.`vm_instance` (
   `uuid` varchar(40),
   `instance_name` varchar(255) NOT NULL COMMENT 'name of the vm instance running on the hosts',
   `state` varchar(32) NOT NULL,
+  `desired_state` varchar(32) NULL,
   `vm_template_id` bigint unsigned,
   `guest_os_id` bigint unsigned NOT NULL,
   `private_mac_address` varchar(17),

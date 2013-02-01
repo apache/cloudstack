@@ -22,9 +22,11 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -43,15 +45,15 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value ={OCFS2Manager.class})
-public class OCFS2ManagerImpl implements OCFS2Manager, ResourceListener {
-    String _name;
+public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, ResourceListener {
     private static final Logger s_logger = Logger.getLogger(OCFS2ManagerImpl.class);
     
     @Inject ClusterDetailsDao _clusterDetailsDao;
@@ -64,7 +66,6 @@ public class OCFS2ManagerImpl implements OCFS2Manager, ResourceListener {
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
         return true;
     }
 
@@ -78,11 +79,6 @@ public class OCFS2ManagerImpl implements OCFS2Manager, ResourceListener {
     public boolean stop() {
         _resourceMgr.unregisterResourceEvent(this);
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     private List<Ternary<Integer, String, String>> marshalNodes(List<HostVO> hosts) {

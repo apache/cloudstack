@@ -18,6 +18,8 @@ package com.cloud.api.commands.netapp;
 
 import java.rmi.ServerException;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,7 +32,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.AssociateLunCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "associateLun", description="Associate a LUN with a guest IQN", responseObject = AssociateLunCmdResponse.class)
 public class AssociateLunCmd extends BaseCmd {
@@ -40,27 +42,27 @@ public class AssociateLunCmd extends BaseCmd {
 	/////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
+    
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required = true, description="LUN name.")
 	private String lunName;
-
+    
     @Parameter(name=ApiConstants.IQN, type=CommandType.STRING, required = true, description="Guest IQN to which the LUN associate.")
 	private String guestIqn;
-
-
+    
+    
     ///////////////////////////////////////////////////
 	/////////////////// Accessors ///////////////////////
 	/////////////////////////////////////////////////////
-
-
+	 
+    
     public String getLunName() {
         return lunName;
     }
-
+    
     public String getGuestIQN() {
     	return guestIqn;
     }
-
+    
 	/////////////////////////////////////////////////////
 	/////////////// API Implementation///////////////////
 	/////////////////////////////////////////////////////
@@ -69,12 +71,12 @@ public class AssociateLunCmd extends BaseCmd {
 	public String getCommandName() {
 		return s_name;
 	}
-
+	
+	@Inject NetappManager netappMgr;
+	
     @Override
     public void execute(){
-    	ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
-
+    	
     	try {
     		AssociateLunCmdResponse response = new AssociateLunCmdResponse();
     		String returnVals[] = null;
@@ -97,5 +99,5 @@ public class AssociateLunCmd extends BaseCmd {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-
+    
 }

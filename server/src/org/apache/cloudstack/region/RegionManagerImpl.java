@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -48,13 +49,13 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uuididentity.dao.IdentityDao;
 
 @Local(value = { RegionManager.class })
-public class RegionManagerImpl implements RegionManager, Manager{
+public class RegionManagerImpl extends ManagerBase implements RegionManager, Manager{
     public static final Logger s_logger = Logger.getLogger(RegionManagerImpl.class);
     
     @Inject

@@ -20,7 +20,7 @@ import java.util.List;
 
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IPAddressVO;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;

@@ -25,11 +25,13 @@ import java.io.IOException;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.certificate.CertificateVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 
+@Component
 @Local(value={CertificateDao.class}) @DB(txn=false)
 public class CertificateDaoImpl extends GenericDaoBase<CertificateVO, Long>  implements CertificateDao {
 	

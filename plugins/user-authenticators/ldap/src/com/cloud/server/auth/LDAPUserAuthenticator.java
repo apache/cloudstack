@@ -21,6 +21,7 @@ import java.util.Hashtable;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -30,25 +31,22 @@ import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
+import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 
-import org.apache.cloudstack.api.ApiConstants.LDAPParams;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
-
 
 @Local(value={UserAuthenticator.class})
 public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
     public static final Logger s_logger = Logger.getLogger(LDAPUserAuthenticator.class);
 
-    private ConfigurationDao _configDao;
-    private UserAccountDao _userAccountDao;
-    
+    @Inject private ConfigurationDao _configDao;
+    @Inject private UserAccountDao _userAccountDao;
+
     @Override
     public boolean authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters ) {
         if (s_logger.isDebugEnabled()) {
@@ -73,14 +71,14 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
         String bindPasswd = _configDao.getValue(LDAPParams.passwd.toString());
         String trustStore = _configDao.getValue(LDAPParams.truststore.toString());
         String trustStorePassword = _configDao.getValue(LDAPParams.truststorepass.toString());
-        
+
         try {
             // get all params
             Hashtable<String, String> env = new Hashtable<String, String>(11);
             env.put(Context.INITIAL_CONTEXT_FACTORY,"com.sun.jndi.ldap.LdapCtxFactory");
             String protocol = "ldap://" ;
             if (new Boolean(useSSL)){
-            	env.put(Context.SECURITY_PROTOCOL, "ssl");
+                env.put(Context.SECURITY_PROTOCOL, "ssl");
                 protocol="ldaps://" ;
                 System.setProperty("javax.net.ssl.trustStore", trustStore);
                 System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
@@ -92,10 +90,10 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
                 env.put(Context.SECURITY_CREDENTIALS, bindPasswd);
             }
             else {
-            	// Use anonymous authentication
-            	env.put(Context.SECURITY_AUTHENTICATION, "none");
+                // Use anonymous authentication
+                env.put(Context.SECURITY_AUTHENTICATION, "none");
             }
-           // Create the initial context
+            // Create the initial context
             DirContext ctx = new InitialDirContext(env);
             // use this context to search
 
@@ -103,7 +101,7 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
             queryFilter = queryFilter.replaceAll("\\%u", username);
             queryFilter = queryFilter.replaceAll("\\%n", user.getFirstname() + " " + user.getLastname());
             queryFilter = queryFilter.replaceAll("\\%e", user.getEmail());
-            
+
 
             SearchControls sc = new SearchControls();
             String[] searchFilter = { "dn" };
@@ -111,22 +109,22 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
             sc.setReturningAttributes(searchFilter);
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             sc.setCountLimit(1);
-            
+
             // Search for objects with those matching attributes
             NamingEnumeration<SearchResult> answer = ctx.search(searchBase, queryFilter,  sc);
-            SearchResult sr = (SearchResult)answer.next();
+            SearchResult sr = answer.next();
             String cn = sr.getName();
             answer.close();
             ctx.close();
-            
+
             s_logger.info("DN from LDAP =" + cn);
-            
+
             // check the password
             env = new Hashtable<String, String>(11);
             env.put(Context.INITIAL_CONTEXT_FACTORY,"com.sun.jndi.ldap.LdapCtxFactory");
             protocol = "ldap://" ;
             if (new Boolean(useSSL)){
-            	env.put(Context.SECURITY_PROTOCOL, "ssl");
+                env.put(Context.SECURITY_PROTOCOL, "ssl");
                 protocol="ldaps://" ;
             }
             env.put(Context.PROVIDER_URL, protocol + url  + ":" + port);
@@ -135,41 +133,39 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
             // Create the initial context
             ctx = new InitialDirContext(env);
             ctx.close();
-            
+
         } catch (NamingException ne) {
             ne.printStackTrace();
             s_logger.warn("Authentication failed due to " + ne.getMessage());
             return false;
         }
         catch (Exception e){
-        	e.printStackTrace();
+            e.printStackTrace();
             s_logger.warn("Unknown error encountered " + e.getMessage());
             return false;
         }
-        
+
         // authenticate
         return true;
     }
 
+    @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
         super.configure(name, params);
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _configDao = locator.getDao(ConfigurationDao.class);
-        _userAccountDao = locator.getDao(UserAccountDao.class);
         return true;
     }
 
-	@Override
-	public String encode(String password) {
-		// Password is not used, so set to a random string
-		try {
-			SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
-			byte bytes[] = new byte[20];
-			randomGen.nextBytes(bytes);
-			return Base64.encode(bytes).toString();
-		} catch (NoSuchAlgorithmException e) {
-			throw new CloudRuntimeException("Failed to generate random password",e);
-		}	
-	}
+    @Override
+    public String encode(String password) {
+        // Password is not used, so set to a random string
+        try {
+            SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
+            byte bytes[] = new byte[20];
+            randomGen.nextBytes(bytes);
+            return Base64.encode(bytes).toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new CloudRuntimeException("Failed to generate random password",e);
+        }	
+    }
 }

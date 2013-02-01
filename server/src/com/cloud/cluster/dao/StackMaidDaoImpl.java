@@ -27,6 +27,7 @@ import java.util.TimeZone;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.cluster.CheckPointVO;
 import com.cloud.serializer.SerializerHelper;
@@ -39,6 +40,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value = { StackMaidDao.class }) @DB(txn=false)
 public class StackMaidDaoImpl extends GenericDaoBase<CheckPointVO, Long> implements StackMaidDao {
     private static final Logger s_logger = Logger.getLogger(StackMaidDaoImpl.class);

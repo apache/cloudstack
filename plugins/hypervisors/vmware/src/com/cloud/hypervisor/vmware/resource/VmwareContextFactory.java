@@ -19,9 +19,11 @@ package com.cloud.hypervisor.vmware.resource;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
+import com.cloud.hypervisor.vmware.manager.VmwareManagerImpl;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.ComponentContext;
+
 import com.vmware.apputils.version.ExtendedAppUtil;
 
 public class VmwareContextFactory {
@@ -34,9 +36,7 @@ public class VmwareContextFactory {
 	static {
 		// skip certificate check
 		System.setProperty("axis.socketSecureFactory", "org.apache.axis.components.net.SunFakeTrustSocketFactory");
-		
-		ComponentLocator locator = ComponentLocator.getLocator("management-server");
-		s_vmwareMgr = locator.getManager(VmwareManager.class);
+		s_vmwareMgr = ComponentContext.inject(VmwareManagerImpl.class);
 	}
 
 	public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {

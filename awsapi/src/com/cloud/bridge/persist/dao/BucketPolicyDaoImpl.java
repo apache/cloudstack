@@ -20,53 +20,55 @@ package com.cloud.bridge.persist.dao;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.bridge.model.BucketPolicyVO;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={BucketPolicyDao.class})
 public class BucketPolicyDaoImpl extends GenericDaoBase<BucketPolicyVO, Long> implements BucketPolicyDao{
     public static final Logger logger = Logger.getLogger(BucketPolicyDaoImpl.class);
-	public BucketPolicyDaoImpl(){ }
+    public BucketPolicyDaoImpl(){ }
 
-	/**
-	 * Since a bucket policy can exist before its bucket we also need to keep the policy's owner
-	 * so we can restrict who modifies it (because of the "s3:CreateBucket" action).
-	 */
-	@Override
-	public BucketPolicyVO getByName( String bucketName ) {
-	    SearchBuilder <BucketPolicyVO> searchByBucket = createSearchBuilder();
-	    searchByBucket.and("BucketName", searchByBucket.entity().getBucketName(), SearchCriteria.Op.EQ);
-	    Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+    /**
+     * Since a bucket policy can exist before its bucket we also need to keep the policy's owner
+     * so we can restrict who modifies it (because of the "s3:CreateBucket" action).
+     */
+    @Override
+    public BucketPolicyVO getByName( String bucketName ) {
+        SearchBuilder <BucketPolicyVO> searchByBucket = createSearchBuilder();
+        searchByBucket.and("BucketName", searchByBucket.entity().getBucketName(), SearchCriteria.Op.EQ);
+        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
         try {
             txn.start();
             SearchCriteria<BucketPolicyVO> sc = searchByBucket.create();
             sc.setParameters("BucketName", bucketName);
             return findOneBy(sc);
 
-	    }finally {
-		txn.close();
-	    }
-	    
-	}
-	
-	@Override
-	public void deletePolicy( String bucketName ) {
-	    SearchBuilder <BucketPolicyVO> deleteByBucket = createSearchBuilder();
-	    deleteByBucket.and("BucketName", deleteByBucket.entity().getBucketName(), SearchCriteria.Op.EQ);
-	    Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
-	    try {
+        }finally {
+            txn.close();
+        }
+
+    }
+
+    @Override
+    public void deletePolicy( String bucketName ) {
+        SearchBuilder <BucketPolicyVO> deleteByBucket = createSearchBuilder();
+        deleteByBucket.and("BucketName", deleteByBucket.entity().getBucketName(), SearchCriteria.Op.EQ);
+        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        try {
             txn.start();
             SearchCriteria<BucketPolicyVO> sc = deleteByBucket.create();
             sc.setParameters("BucketName", bucketName);
             remove(sc);
-		
-	    }finally {
-		txn.close();
-	    }
-	    
-	}
+
+        }finally {
+            txn.close();
+        }
+
+    }
 }

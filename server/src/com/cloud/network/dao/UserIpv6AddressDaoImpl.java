@@ -23,6 +23,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.network.Network;
 import com.cloud.network.UserIpv6AddressVO;
@@ -36,6 +37,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 
+@Component
 @Local(value=UserIpv6AddressDao.class)
 public class UserIpv6AddressDaoImpl extends GenericDaoBase<UserIpv6AddressVO, Long> implements UserIpv6AddressDao {
     private static final Logger s_logger = Logger.getLogger(IPAddressDaoImpl.class);

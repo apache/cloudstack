@@ -23,12 +23,14 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -51,7 +53,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -59,15 +61,11 @@ import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-
-
+@Component
 @Local(value = { SwiftManager.class })
-public class SwiftManagerImpl implements SwiftManager {
+public class SwiftManagerImpl extends ManagerBase implements SwiftManager {
     private static final Logger s_logger = Logger.getLogger(SwiftManagerImpl.class);
 
-
-
-    private String _name;
     @Inject
     private SwiftDao _swiftDao;
     @Inject
@@ -120,11 +118,6 @@ public class SwiftManagerImpl implements SwiftManager {
         SwiftVO swift = new SwiftVO(cmd.getUrl(), cmd.getAccount(), cmd.getUsername(), cmd.getKey());
         swift = _swiftDao.persist(swift);
         return swift;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override
@@ -243,7 +236,7 @@ public class SwiftManagerImpl implements SwiftManager {
         if (swift == null) {
             return null;
         }
-
+        
         List<VMTemplateHostVO> tmpltHosts = _vmTmpltHostDao.listByOnlyTemplateId(tmpltId);
         if (tmpltHosts != null) {
             Collections.shuffle(tmpltHosts);
@@ -289,8 +282,6 @@ public class SwiftManagerImpl implements SwiftManager {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Start configuring Swift Manager : " + name);
         }
-
-        _name = name;
 
         return true;
     }

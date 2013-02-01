@@ -25,9 +25,20 @@
 <chapter id="projects">
 	<title>Using Projects to Organize Users and Resources</title>
     <xi:include href="projects-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+<<<<<<< HEAD
+    <xi:include href="set-up-invitations.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="configuring-projects.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="set-resource-limits-for-projects.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="set-projects-creator-permissions.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="create-new-projects.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="add-members-to-projects.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="send-projects-membership-invitation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="add-projects-members-from-ui.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+=======
     <xi:include href="configuring-projects.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="create-new-projects.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="add-members-to-projects.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+>>>>>>> master
     <xi:include href="accept-membership-invite.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="suspend-project.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="use-project-view.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />  

@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.utils.nio;
 
-import java.util.List;
 
 /**
  * WorkerFactory creates and selects workers.

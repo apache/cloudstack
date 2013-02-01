@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api.commands;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
@@ -37,8 +39,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     private static final Logger s_logger = Logger.getLogger(AddNiciraNvpDeviceCmd.class.getName());
     private static final String s_name = "addniciranvpdeviceresponse";
-    @PlugService NiciraNvpElementService _niciraNvpElementService;
-
+    @Inject NiciraNvpElementService _niciraNvpElementService;
+    
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -52,16 +54,16 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to access the Nicira Controller API")
     private String username;
-
+    
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to access the Nicira Controller API")
     private String password;
-
+    
     @Parameter(name=ApiConstants.NICIRA_NVP_TRANSPORT_ZONE_UUID, type=CommandType.STRING, required = true, description="The Transportzone UUID configured on the Nicira Controller")
     private String transportzoneuuid;
-
+    
     @Parameter(name=ApiConstants.NICIRA_NVP_GATEWAYSERVICE_UUID, type=CommandType.STRING, required = false, description="The L3 Gateway Service UUID configured on the Nicira Controller")
     private String l3gatewayserviceuuid;
-
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -81,11 +83,11 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     public String getPassword() {
         return password;
     }
-
+    
     public String getTransportzoneUuid() {
         return transportzoneuuid;
     }
-
+    
     public String getL3GatewayServiceUuid() {
     	return l3gatewayserviceuuid;
     }
@@ -112,7 +114,7 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
-
+ 
     @Override
     public String getCommandName() {
         return s_name;

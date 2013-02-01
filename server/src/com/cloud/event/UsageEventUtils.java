@@ -23,36 +23,43 @@ import com.cloud.event.dao.UsageEventDao;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+@Component
 public class UsageEventUtils {
 
-    private static UsageEventDao _usageEventDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(UsageEventDao.class);
-    private static AccountDao _accountDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(AccountDao.class);
-    private static DataCenterDao _dcDao =  ComponentLocator.getLocator(ManagementServer.Name).getDao(DataCenterDao.class);
+    private static UsageEventDao _usageEventDao;
+    private static AccountDao _accountDao;
+    private static DataCenterDao _dcDao;
     private static final Logger s_logger = Logger.getLogger(UsageEventUtils.class);
 
     // get the event bus provider if configured
-    protected static EventBus _eventBus = null;
-    static {
-        Adapters<EventBus> eventBusImpls = ComponentLocator.getLocator(ManagementServer.Name).getAdapters(EventBus.class);
-        if (eventBusImpls != null) {
-            Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
-            if (eventBusenum != null && eventBusenum.hasMoreElements()) {
-                _eventBus = eventBusenum.nextElement(); // configure event bus if configured
-            }
-        }
-    }
+    protected static EventBus _eventBus;
 
+    @Inject UsageEventDao usageEventDao;
+    @Inject AccountDao accountDao;
+    @Inject DataCenterDao dcDao;
+    
+    public UsageEventUtils() {
+    }
+    
+    @PostConstruct
+    void init() {
+    	_usageEventDao = usageEventDao;
+    	_accountDao = accountDao;
+    	_dcDao = dcDao;
+    }
+    
     public static void publishUsageEvent(String usageType, long accountId, long zoneId,
                                          long resourceId, String resourceName,
                                          Long offeringId, Long templateId, Long size,

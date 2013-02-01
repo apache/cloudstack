@@ -26,12 +26,14 @@ import java.util.TimeZone;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVPNUserVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={UsageVPNUserDao.class})
 public class UsageVPNUserDaoImpl extends GenericDaoBase<UsageVPNUserVO, Long> implements UsageVPNUserDao {
 	public static final Logger s_logger = Logger.getLogger(UsageVPNUserDaoImpl.class.getName());

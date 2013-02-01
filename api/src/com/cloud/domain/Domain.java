@@ -18,9 +18,10 @@ package com.cloud.domain;
 
 import java.util.Date;
 
-import com.cloud.user.OwnedBy;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.user.OwnedBy;
 
 /**
  * Domain defines the Domain object.

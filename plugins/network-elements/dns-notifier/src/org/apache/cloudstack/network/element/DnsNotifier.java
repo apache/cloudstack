@@ -35,6 +35,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -45,32 +46,10 @@ import com.cloud.vm.VirtualMachineProfile;
  *
  */
 @Local(NetworkElement.class)
-public class DnsNotifier implements NetworkElement {
-    String _name = null;
+public class DnsNotifier extends AdapterBase implements NetworkElement {
 
     public DnsNotifier() {
 
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
     }
 
     @Override

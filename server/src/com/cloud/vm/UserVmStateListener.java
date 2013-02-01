@@ -20,18 +20,15 @@ import com.cloud.event.EventCategory;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
-import com.cloud.network.Network;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.Network;
 import com.cloud.server.ManagementServer;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.NicDao;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
+
 import org.apache.log4j.Logger;
 
 import java.util.Enumeration;
@@ -39,25 +36,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 public class UserVmStateListener implements StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
-    protected UsageEventDao _usageEventDao;
-    protected NetworkDao _networkDao;
-    protected NicDao _nicDao;
+    @Inject protected UsageEventDao _usageEventDao;
+    @Inject protected NetworkDao _networkDao;
+    @Inject protected NicDao _nicDao;
     private static final Logger s_logger = Logger.getLogger(UserVmStateListener.class);
 
     // get the event bus provider if configured
-    protected static EventBus _eventBus = null;
-    static {
-        Adapters<EventBus> eventBusImpls = ComponentLocator.getLocator(ManagementServer.Name).getAdapters(EventBus.class);
-        if (eventBusImpls != null) {
-            Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
-            if (eventBusenum != null && eventBusenum.hasMoreElements()) {
-                _eventBus = eventBusenum.nextElement(); // configure event bus if configured
-            }
-        }
-    }
-
+    @Inject protected org.apache.cloudstack.framework.events.EventBus _eventBus = null;
+    
     public UserVmStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, NicDao nicDao) {
         this._usageEventDao = usageEventDao;
         this._networkDao = networkDao;
@@ -79,24 +69,24 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         if(vo.getType() != VirtualMachine.Type.User){
             return true;
         }
-
+        
         pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
 
         if (VirtualMachine.State.isVmCreated(oldState, event, newState)) {
-            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_CREATE, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(),
+            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_CREATE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(),
                     vo.getTemplateId(), vo.getHypervisorType().toString());
         } else if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
-            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_START, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(),
+            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_START, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(),
                     vo.getTemplateId(), vo.getHypervisorType().toString());
         } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
-            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_STOP, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), vo.getHostName());
+            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_STOP, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName());
             List<NicVO> nics = _nicDao.listByVmId(vo.getId());
             for (NicVO nic : nics) {
                 NetworkVO network = _networkDao.findById(nic.getNetworkId());
-                UsageEventUtils.saveUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), null, network.getNetworkOfferingId(), null, 0L);
+                UsageEventUtils.saveUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), null, network.getNetworkOfferingId(), null, 0L);
             }
         } else if (VirtualMachine.State.isVmDestroyed(oldState, event, newState)) {
-            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_DESTROY, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(),
+            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_DESTROY, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(),
                     vo.getTemplateId(), vo.getHypervisorType().toString());
         } 
         return true;
@@ -123,7 +113,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         eventMsg.setDescription(eventDescription);
         try {
             _eventBus.publish(eventMsg);
-        } catch (EventBusException e) {
+        } catch (org.apache.cloudstack.framework.events.EventBusException e) {
             s_logger.warn("Failed to publish state change event on the the event bus.");
         }
 

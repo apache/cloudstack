@@ -19,7 +19,6 @@ package com.cloud.agent.api.storage;
 import java.util.Map;
 
 import com.cloud.agent.api.Answer;
-
 import com.cloud.storage.template.TemplateInfo;
 
 public class ListTemplateAnswer extends Answer  {

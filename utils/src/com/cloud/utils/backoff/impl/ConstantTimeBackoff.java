@@ -25,6 +25,7 @@ import javax.ejb.Local;
 
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
+import com.cloud.utils.component.AdapterBase;
 
 /**
  * Implementation of the Agent Manager.  This class controls the connection
@@ -36,10 +37,9 @@ import com.cloud.utils.backoff.BackoffAlgorithm;
  *  }
  **/ 
 @Local(value={BackoffAlgorithm.class})
-public class ConstantTimeBackoff implements BackoffAlgorithm, ConstantTimeBackoffMBean {
+public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm, ConstantTimeBackoffMBean {
     int _count = 0;
     long _time;
-    String _name;
     ConcurrentHashMap<String, Thread> _asleep = new ConcurrentHashMap<String, Thread>();
 
     @Override
@@ -63,16 +63,10 @@ public class ConstantTimeBackoff implements BackoffAlgorithm, ConstantTimeBackof
 
     @Override
     public boolean configure(String name, Map<String, Object> params) {
-        _name = name;
         _time = NumbersUtil.parseLong((String)params.get("seconds"), 5) * 1000;
         return true;
     }
 
-    @Override
-    public String getName() {
-        return _name;
-    }
-    
     @Override
     public Collection<String> getWaiters() {
         return _asleep.keySet();

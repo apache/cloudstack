@@ -18,6 +18,8 @@ package com.cloud.upgrade;
 
 import java.sql.SQLException;
 
+import javax.inject.Inject;
+
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
@@ -25,11 +27,14 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.cloud.upgrade.dao.VersionDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.DbTestUtils;
 
 public class HostCapacity218to22Test extends TestCase {
     private static final Logger s_logger = Logger.getLogger(HostCapacity218to22Test.class);
+
+    @Inject VersionDaoImpl dao;
+    @Inject DatabaseUpgradeChecker checker;
 	
     @Override
     @Before
@@ -45,9 +50,6 @@ public class HostCapacity218to22Test extends TestCase {
     public void test218to22Upgrade() throws SQLException {
         s_logger.debug("Finding sample data from 2.1.8");
         DbTestUtils.executeScript("fake.sql", false, true);
-        
-        VersionDaoImpl dao = ComponentLocator.inject(VersionDaoImpl.class);
-        DatabaseUpgradeChecker checker = ComponentLocator.inject(DatabaseUpgradeChecker.class);
         
         String version = dao.getCurrentVersion();
         

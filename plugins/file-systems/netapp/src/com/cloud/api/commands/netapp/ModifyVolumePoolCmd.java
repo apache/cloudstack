@@ -17,6 +17,8 @@
 package com.cloud.api.commands.netapp;
 
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,9 +31,8 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
-import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ModifyVolumePoolCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "modifyPool", description="Modify pool", responseObject = ModifyVolumePoolCmdResponse.class)
 public class ModifyVolumePoolCmd extends BaseCmd {
@@ -43,14 +44,13 @@ public class ModifyVolumePoolCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.ALGORITHM, type=CommandType.STRING, required = true, description="algorithm.")
 	private String algorithm;
+    
+    @Inject NetappManager netappMgr;
 
     @Override
     public void execute() throws ResourceUnavailableException,
     InsufficientCapacityException, ServerApiException,
     ConcurrentOperationException, ResourceAllocationException {
-    	ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
-
     	netappMgr.modifyPool(poolName, algorithm);
 
     	ModifyVolumePoolCmdResponse response = new ModifyVolumePoolCmdResponse();

@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
+import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -46,14 +47,16 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
+@Component
 @Local(value = {VpcVirtualNetworkApplianceManager.class, VpcVirtualNetworkApplianceService.class})
-public class MockVpcVirtualNetworkApplianceManager implements VpcVirtualNetworkApplianceManager,
-        VpcVirtualNetworkApplianceService, Manager {
+public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implements VpcVirtualNetworkApplianceManager,
+VpcVirtualNetworkApplianceService {
 
     /* (non-Javadoc)
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#sendSshKeysToHost(java.lang.Long, java.lang.String, java.lang.String)
@@ -213,7 +216,7 @@ public class MockVpcVirtualNetworkApplianceManager implements VpcVirtualNetworkA
      */
     @Override
     public VirtualRouter startRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException,
-            ResourceUnavailableException, InsufficientCapacityException {
+    ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -223,7 +226,7 @@ public class MockVpcVirtualNetworkApplianceManager implements VpcVirtualNetworkA
      */
     @Override
     public VirtualRouter rebootRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException,
-            ResourceUnavailableException, InsufficientCapacityException {
+    ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -242,7 +245,7 @@ public class MockVpcVirtualNetworkApplianceManager implements VpcVirtualNetworkA
      */
     @Override
     public VirtualRouter stopRouter(long routerId, boolean forced) throws ResourceUnavailableException,
-            ConcurrentOperationException {
+    ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -252,7 +255,7 @@ public class MockVpcVirtualNetworkApplianceManager implements VpcVirtualNetworkA
      */
     @Override
     public VirtualRouter startRouter(long id) throws ResourceUnavailableException, InsufficientCapacityException,
-            ConcurrentOperationException {
+    ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -281,7 +284,7 @@ public class MockVpcVirtualNetworkApplianceManager implements VpcVirtualNetworkA
      */
     @Override
     public boolean start() {
-       return true;
+        return true;
     }
 
     /* (non-Javadoc)

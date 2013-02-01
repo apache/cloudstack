@@ -26,12 +26,12 @@ import org.apache.log4j.Logger;
 
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.utils.component.AdapterBase;
 
 @Local(value=Processor.class)
-public class IsoProcessor implements Processor {
+public class IsoProcessor extends AdapterBase implements Processor {
     private static final Logger s_logger = Logger.getLogger(IsoProcessor.class);
     
-    String _name;
     StorageLayer _storage;
 
     @Override
@@ -59,26 +59,10 @@ public class IsoProcessor implements Processor {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
         _storage = (StorageLayer)params.get(StorageLayer.InstanceConfigKey);
         if (_storage == null) {
             throw new ConfigurationException("Unable to get storage implementation");
         }
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
         return true;
     }
 }
