@@ -1763,6 +1763,8 @@ public class ApiResponseHelper implements ResponseGenerator {
                         routerResponse.setGuestIpAddress(singleNicProfile.getIp4Address());
                         routerResponse.setGuestMacAddress(singleNicProfile.getMacAddress());
                         routerResponse.setGuestNetmask(singleNicProfile.getNetmask());
+                        routerResponse.setGuestIp6Address(singleNicProfile.getIp6Address());
+                        routerResponse.setGuestIp6Cidr(singleNicProfile.getIp6Cidr());
                         routerResponse.setGuestNetworkId(singleNicProfile.getNetworkId());
                         routerResponse.setNetworkDomain(network.getNetworkDomain());
                     }

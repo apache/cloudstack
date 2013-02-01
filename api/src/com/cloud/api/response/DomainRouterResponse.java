@@ -87,12 +87,18 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     @SerializedName("guestipaddress") @Param(description="the guest IP address for the router")
     private String guestIpAddress;
 
+    @SerializedName("guestip6address") @Param(description="the guest IPv6 address for the router")
+    private String guestIp6Address;
+
     @SerializedName("guestmacaddress") @Param(description="the guest MAC address for the router")
     private String guestMacAddress;
 
     @SerializedName("guestnetmask") @Param(description="the guest netmask for the router")
     private String guestNetmask;
     
+    @SerializedName("guestip6cidr") @Param(description="the guest IPv6 cidr for the router")
+    private String guestIp6Cidr;
+
     @SerializedName("guestnetworkid") @Param(description="the ID of the corresponding guest network")
     private IdentityProxy guestNetworkId = new IdentityProxy("networks");
 
@@ -321,4 +327,20 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     public void setNics(List<NicResponse> nics) {
         this.nics = nics;
     }
+
+	public String getGuestIp6Address() {
+		return guestIp6Address;
+	}
+
+	public void setGuestIp6Address(String guestIp6Address) {
+		this.guestIp6Address = guestIp6Address;
+	}
+
+	public String getGuestIp6Cidr() {
+		return guestIp6Cidr;
+	}
+
+	public void setGuestIp6Cidr(String guestIp6Cidr) {
+		this.guestIp6Cidr = guestIp6Cidr;
+	}
 }
