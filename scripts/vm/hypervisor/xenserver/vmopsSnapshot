@@ -35,7 +35,7 @@ import cleanup
 import stat
 import random
 
-VHD_UTIL = '/usr/sbin/vhd-util'
+VHD_UTIL = '/opt/xensource/bin/vhd-util'
 VHD_PREFIX = 'VHD-'
 CLOUD_DIR = '/var/run/cloud_mount'
 
