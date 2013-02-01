@@ -70,7 +70,9 @@ import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.*;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.AnnotationHelper;
+import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
@@ -117,7 +119,8 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
     AccountDao _accountDao = null;
     @Inject
     DomainDao _domainDao = null;
-
+    @Inject
+    UserDao _userDao = null;
     @Inject
     EventDao _eventDao = null;
     @Inject
@@ -887,10 +890,32 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
 
         txn.commit();
 
+        // if the network offering has persistent set to true, implement the network
+        if ( ntwkOff.getIsPersistent() ) {
+            try {
+                if ( network.getState() == Network.State.Setup ) {
+                    s_logger.debug("Network id=" + network.getId() + " is already provisioned");
+                    return network;
+                }
+                DeployDestination dest = new DeployDestination(zone, null, null, null);
+                UserVO callerUser = _userDao.findById(UserContext.current().getCallerUserId());
+                Journal journal = new Journal.LogJournal("Implementing " + network, s_logger);
+                ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), journal, callerUser, caller);
+                s_logger.debug("Implementing network " + network + " as a part of network provision for persistent network");
+                Pair<NetworkGuru, NetworkVO> implementedNetwork = _networkMgr.implementNetwork(network.getId(), dest, context);
+                if (implementedNetwork.first() == null) {
+                    s_logger.warn("Failed to provision the network " + network);
+                }
+                network = implementedNetwork.second();
+            } catch (ResourceUnavailableException ex) {
+                s_logger.warn("Failed to implement persistent guest network " + network + "due to ", ex);
+                CloudRuntimeException e = new CloudRuntimeException("Failed to implement persistent guest network");
+                e.addProxyObject(network, network.getId(), "networkId");
+                throw e;
+            }
+        }
         return network;
     }
-
-   
 
     @Override
     public List<? extends Network> searchForNetworks(ListNetworksCmd cmd) {
@@ -1507,9 +1532,9 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
         boolean networkOfferingChanged = false;
 
         long oldNetworkOfferingId = network.getNetworkOfferingId();
+        NetworkOffering oldNtwkOff = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);
+        NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         if (networkOfferingId != null) {
-
-            NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
             if (networkOffering == null || networkOffering.isSystemOnly()) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find network offering with specified id");
                 ex.addProxyObject(networkOffering, networkOfferingId, "networkOfferingId");                
@@ -1533,7 +1558,6 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
             }
 
             if (networkOfferingId != oldNetworkOfferingId) {
-                NetworkOffering oldNtwkOff = _networkOfferingDao.findByIdIncludingRemoved(oldNetworkOfferingId);
                 Collection<String> newProviders = _networkMgr.finalizeServicesAndProvidersForNetwork(networkOffering, network.getPhysicalNetworkId()).values();
                 Collection<String> oldProviders = _networkMgr.finalizeServicesAndProvidersForNetwork(oldNtwkOff, network.getPhysicalNetworkId()).values();
                 
@@ -1675,6 +1699,24 @@ public class NetworkServiceImpl implements  NetworkService, Manager {
                     s_logger.warn("Failed to implement network " + network + " elements and resources as a part of network update due to ", ex);
                     CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id) elements and resources as a part of network update");
                     e.addProxyObject(network, networkId, "networkId");                    
+                    throw e;
+                }
+            }
+        }
+
+        // 4) if network has been upgraded from a non persistent ntwk offering to a persistent ntwk offering,
+        // implement the network if its not already
+        if ( !oldNtwkOff.getIsPersistent() && networkOffering.getIsPersistent()) {
+            if( network.getState() == Network.State.Allocated) {
+                try {
+                    DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
+                    _networkMgr.implementNetwork(network.getId(), dest, context);
+                } catch (Exception ex) {
+                    s_logger.warn("Failed to implement network " + network + " elements and resources as a part o" +
+                            "f network update due to ", ex);
+                    CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified" +
+                            " id) elements and resources as a part of network update");
+                    e.addProxyObject(network, networkId, "networkId");
                     throw e;
                 }
             }

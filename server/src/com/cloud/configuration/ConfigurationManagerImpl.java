@@ -2995,6 +2995,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Availability availability = null;
         Network.GuestType guestType = null;
         boolean specifyIpRanges = cmd.getSpecifyIpRanges();
+        boolean isPersistent = cmd.getIsPersistent();
 
         // Verify traffic type
         for (TrafficType tType : TrafficType.values()) {
@@ -3165,7 +3166,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         return createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent);
     }
 
     void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
@@ -3253,7 +3254,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @DB
     public NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate,
             Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId,
-            boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges) {
+            boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
@@ -3272,6 +3273,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (specifyVlan && type == GuestType.Isolated && serviceProviderMap.containsKey(Service.SourceNat)) {
             throw new InvalidParameterValueException("SpecifyVlan should be false if the network offering type is " 
                                                         + type + " and service " + Service.SourceNat.getName() + " is supported");
+        }
+
+        // isPersistent should always be false for Shared network Offerings
+        if (isPersistent && type == GuestType.Shared) {
+            throw new InvalidParameterValueException("isPersistent should be false if network offering's type is " + type);
         }
 
         // validate availability value
@@ -3352,7 +3358,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, 
                 networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb,
-                sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline);
+                sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline, isPersistent);
 
         if (serviceOfferingId != null) {
             offering.setServiceOfferingId(serviceOfferingId);

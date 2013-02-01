@@ -116,6 +116,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "inline")
     boolean inline;
 
+    @Column(name = "is_persistent")
+    boolean isPersistent;
+
     @Override
     public String getDisplayText() {
         return displayText;
@@ -256,7 +259,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
-            Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean specifyIpRanges) {
+            Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean specifyIpRanges, boolean isPersistent) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -278,12 +281,13 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.elasticLb = false;
         this.inline = false;
         this.specifyIpRanges = specifyIpRanges;
+        this.isPersistent=isPersistent;
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, boolean isDefault,
             Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb, boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb,
-            boolean specifyIpRanges, boolean inline) {
-        this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability, tags, guestType, conserveMode, specifyIpRanges);
+            boolean specifyIpRanges, boolean inline, boolean isPersistent) {
+        this(name, displayText, trafficType, systemOnly, specifyVlan, rateMbps, multicastRateMbps, isDefault, availability, tags, guestType, conserveMode, specifyIpRanges, isPersistent);
         this.dedicatedLB = dedicatedLb;
         this.sharedSourceNat = sharedSourceNat;
         this.redundantRouter = redundantRouter;
@@ -304,13 +308,13 @@ public class NetworkOfferingVO implements NetworkOffering {
      *            TODO
      */
     public NetworkOfferingVO(String name, TrafficType trafficType, boolean specifyIpRanges) {
-        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, true, Availability.Required, null, null, true, specifyIpRanges);
+        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, true, Availability.Required, null, null, true, specifyIpRanges, false);
         this.state = State.Enabled;
     }
 
     public NetworkOfferingVO(String name, Network.GuestType guestType) {
         this(name, "System Offering for " + name, TrafficType.Guest, true, true, 0, 0, true, Availability.Optional,
-                null, Network.GuestType.Isolated, true, false);
+                null, Network.GuestType.Isolated, true, false, false);
         this.state = State.Enabled;
     }
 
@@ -365,4 +369,13 @@ public class NetworkOfferingVO implements NetworkOffering {
     public boolean isInline() {
         return inline;
     }
+
+    public void setIsPersistent(Boolean isPersistent) {
+        this.isPersistent = isPersistent;
+    }
+
+    public boolean getIsPersistent() {
+        return isPersistent;
+    }
+
 }

@@ -141,6 +141,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY) @Param(description="list networks available for vm deployment")
     private Boolean canUseForDeploy;
 
+    @SerializedName(ApiConstants.IS_PERSISTENT) @Param(description="list networks that are persistent")
+    private Boolean isPersistent;
+
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with network", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
@@ -299,6 +302,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setCanUseForDeploy(Boolean canUseForDeploy) {
         this.canUseForDeploy = canUseForDeploy;
+    }
+
+    public void setIsPersistent(Boolean isPersistent) {
+        this.isPersistent = isPersistent;
     }
 
     public void setTags(List<ResourceTagResponse> tags) {

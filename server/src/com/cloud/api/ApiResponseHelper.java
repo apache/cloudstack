@@ -1901,6 +1901,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setConserveMode(offering.isConserveMode());
         response.setSpecifyIpRanges(offering.getSpecifyIpRanges());
         response.setAvailability(offering.getAvailability().toString());
+        response.setIsPersistent(offering.getIsPersistent());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
         Long so = null;
         if (offering.getServiceOfferingId() != null) {
@@ -2053,6 +2054,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetworkOfferingDisplayText(networkOffering.getDisplayText());
             response.setIsSystem(networkOffering.isSystemOnly());
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
+            response.setIsPersistent(networkOffering.getIsPersistent());
         }
 
         if (network.getAclType() != null) {

@@ -482,7 +482,7 @@ public class MockConfigurationManagerImpl implements ConfigurationManager, Confi
     @Override
     public NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate,
             Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode,
-            Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges) {
+            Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent) {
         // TODO Auto-generated method stub
         return null;
     }

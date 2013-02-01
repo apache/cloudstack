@@ -88,6 +88,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.SPECIFY_IP_RANGES, type=CommandType.BOOLEAN, description="true if network offering supports specifying ip ranges; defaulted to false if not specified")
     private Boolean specifyIpRanges;
 
+    @Parameter(name=ApiConstants.IS_PERSISTENT, type=CommandType.BOOLEAN, description="true if network offering supports persistent networks; defaulted to false if not specified")
+    private Boolean isPersistent;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -145,6 +148,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             return true;
         }
         return conserveMode;
+    }
+
+    public Boolean getIsPersistent() {
+        return isPersistent == null ? false : isPersistent;
     }
 
     public Map<String, List<String>> getServiceProviders() {

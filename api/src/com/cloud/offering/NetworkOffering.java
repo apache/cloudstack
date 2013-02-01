@@ -110,4 +110,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     boolean getSpecifyIpRanges();
 
     boolean isInline();
+
+    boolean getIsPersistent();
+
 }

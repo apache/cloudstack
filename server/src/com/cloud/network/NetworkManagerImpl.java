@@ -77,6 +77,8 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.user.*;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
+import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
@@ -126,6 +128,8 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
     AccountDao _accountDao = null;
     @Inject
     DomainDao _domainDao = null;
+    @Inject
+    UserDao _userDao = null;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -856,14 +860,14 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
         NetworkOfferingVO offering = null;
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOfferingWithSGService) == null) {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOfferingWithSGService, "Offering for Shared Security group enabled networks", TrafficType.Guest, null,
-                    true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true);
+                    true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOffering) == null) {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, true, Availability.Optional, null,
-                    defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true);
+                    defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -886,7 +890,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService,
                     "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest,
                     null, false, Availability.Required, null, defaultINetworkOfferingProvidersForVpcNetwork,
-                    true, Network.GuestType.Isolated, false, null, true, null, false);
+                    true, Network.GuestType.Isolated, false, null, true, null, false, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -895,7 +899,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
                     "Offering for Isolated VPC networks with Source Nat service enabled", TrafficType.Guest,
                     null, false, Availability.Optional, null, defaultVPCOffProviders,
-                    true, Network.GuestType.Isolated, false, null, false, null, false);
+                    true, Network.GuestType.Isolated, false, null, false, null, false, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -906,7 +910,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
                     "Offering for Isolated VPC networks with Source Nat service enabled and LB service disabled", TrafficType.Guest,
                     null, false, Availability.Optional, null, defaultVPCOffProviders,
-                    true, Network.GuestType.Isolated, false, null, false, null, false);
+                    true, Network.GuestType.Isolated, false, null, false, null, false, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -915,7 +919,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOffering,
                     "Offering for Isolated networks with no Source Nat service", TrafficType.Guest, null, true,
                     Availability.Optional, null, defaultIsolatedNetworkOfferingProviders, true, Network.GuestType.Isolated,
-                    false, null, true, null, true);
+                    false, null, true, null, true, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -944,7 +948,7 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedEIPandELBNetworkOffering) == null) {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedEIPandELBNetworkOffering, "Offering for Shared networks with Elastic IP and Elastic LB capabilities", TrafficType.Guest, null, true,
-                    Availability.Optional, null, netscalerServiceProviders, true, Network.GuestType.Shared, false, null, true, serviceCapabilityMap, true);
+                    Availability.Optional, null, netscalerServiceProviders, true, Network.GuestType.Shared, false, null, true, serviceCapabilityMap, true, false);
             offering.setState(NetworkOffering.State.Enabled);
             offering.setDedicatedLB(false);
             _networkOfferingDao.update(offering.getId(), offering);
@@ -1999,8 +2003,6 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
         return network;
     }
 
-    
-
     @Override
     @DB
     public boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements) {
@@ -2533,14 +2535,13 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
         }
 
         // create new Virtual network (Isolated with SourceNAT) for the user if it doesn't exist
+        List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
+        if (requiredOfferings.size() < 1) {
+            throw new CloudRuntimeException("Unable to find network offering with availability=" +
+        Availability.Required + " to automatically create the network as part of createVlanIpRange");
+        }
         if (createNetwork) {
-            List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
-            if (requiredOfferings.size() < 1) {
-                throw new CloudRuntimeException("Unable to find network offering with availability=" +
-            Availability.Required + " to automatically create the network as part of createVlanIpRange");
-            }
             if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
-                
                 long physicalNetworkId = _networkModel.findPhysicalNetworkId(zoneId, requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                 // Validate physical network
                 PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
@@ -2595,6 +2596,31 @@ public class NetworkManagerImpl implements NetworkManager, Manager, Listener {
         }
 
         txn.commit();
+
+        // if the network offering has persistent set to true, implement the network
+        if ( createNetwork && requiredOfferings.get(0).getIsPersistent() ) {
+            DataCenter zone = _dcDao.findById(zoneId);
+            DeployDestination dest = new DeployDestination(zone, null, null, null);
+            Account callerAccount = UserContext.current().getCaller();
+            UserVO callerUser = _userDao.findById(UserContext.current().getCallerUserId());
+            Journal journal = new Journal.LogJournal("Implementing " + guestNetwork, s_logger);
+            ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), journal, callerUser, callerAccount);
+            s_logger.debug("Implementing network " + guestNetwork + " as a part of network provision for persistent network");
+            try {
+                Pair<NetworkGuru, NetworkVO> implementedNetwork = implementNetwork(guestNetwork.getId(), dest, context);
+                if (implementedNetwork.first() == null) {
+                    s_logger.warn("Failed to implement the network " + guestNetwork);
+                }
+                guestNetwork = implementedNetwork.second();
+            } catch (Exception ex) {
+                s_logger.warn("Failed to implement network " + guestNetwork + " elements and resources as a part of" +
+                        " network provision due to ", ex);
+                CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id)" +
+                        " elements and resources as a part of network provision for persistent network");
+                e.addProxyObject(guestNetwork, guestNetwork.getId(), "networkId");
+                throw e;
+            }
+        }
         return true;
     }
 

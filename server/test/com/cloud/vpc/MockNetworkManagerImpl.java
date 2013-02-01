@@ -215,8 +215,6 @@ public class MockNetworkManagerImpl implements NetworkManager, NetworkService, M
 
 
 
-
-
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkService#searchForNetworks(com.cloud.api.commands.ListNetworksCmd)
      */

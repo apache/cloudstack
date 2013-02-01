@@ -70,6 +70,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.*;
 import com.cloud.network.element.UserDataServiceProvider;
+import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -112,6 +113,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
@@ -3917,6 +3919,30 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(),
                                     newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
                                     null, null, newAccount, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null);
+                            // if the network offering has persistent set to true, implement the network
+                            if (requiredOfferings.get(0).getIsPersistent()) {
+                                DeployDestination dest = new DeployDestination(zone, null, null, null);
+                                UserVO callerUser = _userDao.findById(UserContext.current().getCallerUserId());
+                                Journal journal = new Journal.LogJournal("Implementing " + newNetwork, s_logger);
+                                ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(),
+                                        journal, callerUser, caller);
+                                s_logger.debug("Implementing the network for account" + newNetwork + " as a part of" +
+                                        " network provision for persistent networks");
+                                try {
+                                    Pair<NetworkGuru, NetworkVO> implementedNetwork = _networkMgr.implementNetwork(newNetwork.getId(), dest, context);
+                                    if (implementedNetwork.first() == null) {
+                                        s_logger.warn("Failed to implement the network " + newNetwork);
+                                    }
+                                    newNetwork = implementedNetwork.second();
+                                } catch (Exception ex) {
+                                    s_logger.warn("Failed to implement network " + newNetwork + " elements and" +
+                                            " resources as a part of network provision for persistent network due to ", ex);
+                                    CloudRuntimeException e = new CloudRuntimeException("Failed to implement network" +
+                                            " (with specified id) elements and resources as a part of network provision");
+                                    e.addProxyObject(newNetwork, newNetwork.getId(), "networkId");
+                                    throw e;
+                                }
+                            }
                             defaultNetwork = _networkDao.findById(newNetwork.getId());
                         } else if (virtualNetworks.size() > 1) {
                             throw new InvalidParameterValueException("More than 1 default Isolated networks are found " +

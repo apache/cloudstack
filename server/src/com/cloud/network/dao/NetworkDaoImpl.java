@@ -74,6 +74,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final GenericSearchBuilder<NetworkVO, Long>  CountByZoneAndURI;
     final GenericSearchBuilder<NetworkVO, Long> VpcNetworksCount;
     final SearchBuilder<NetworkVO> OfferingAccountNetworkSearch;
+    final GenericSearchBuilder<NetworkVO, Long> GarbageCollectedSearch;
 
     ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
@@ -81,6 +82,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
     NetworkServiceMapDaoImpl _ntwkSvcMap = ComponentLocator.inject(NetworkServiceMapDaoImpl.class);
     NetworkOfferingDaoImpl _ntwkOffDao = ComponentLocator.inject(NetworkOfferingDaoImpl.class);
+    NetworkOpDaoImpl _ntwkOpDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
 
 
     final TableGenerator _tgMacAddress;
@@ -215,6 +217,19 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         OfferingAccountNetworkSearch.and("zoneId", OfferingAccountNetworkSearch.entity().getDataCenterId(), Op.EQ);
         OfferingAccountNetworkSearch.and("type", OfferingAccountNetworkSearch.entity().getGuestType(), Op.EQ);
         OfferingAccountNetworkSearch.done();
+
+        GarbageCollectedSearch = createSearchBuilder(Long.class);
+        GarbageCollectedSearch.selectField(GarbageCollectedSearch.entity().getId());
+        SearchBuilder<NetworkOpVO> join7 = _ntwkOpDao.createSearchBuilder();
+        join7.and("activenics", join7.entity().getActiveNicsCount(), Op.EQ);
+        join7.and("gc", join7.entity().isGarbageCollected(), Op.EQ);
+        join7.and("check", join7.entity().isCheckForGc(), Op.EQ);
+        GarbageCollectedSearch.join("ntwkOpGC", join7, GarbageCollectedSearch.entity().getId(), join7.entity().getId(), JoinBuilder.JoinType.INNER);
+        SearchBuilder<NetworkOfferingVO> join8 = _ntwkOffDao.createSearchBuilder();
+        join8.and("isPersistent", join8.entity().getIsPersistent(), Op.EQ);
+        GarbageCollectedSearch.join("ntwkOffGC", join8, GarbageCollectedSearch.entity().getNetworkOfferingId(), join8.entity().getId(), JoinBuilder.JoinType.INNER);
+        GarbageCollectedSearch.done();
+
     }
 
     @Override
@@ -398,7 +413,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
 
     @Override
     public List<Long> findNetworksToGarbageCollect() {
-        return _opDao.getNetworksToGarbageCollect();
+        SearchCriteria<Long> sc = GarbageCollectedSearch.create();
+        sc.setJoinParameters("ntwkOffGC", "isPersistent", false);
+        sc.setJoinParameters("ntwkOpGC", "activenics", 0);
+        sc.setJoinParameters("ntwkOpGC", "gc", true);
+        sc.setJoinParameters("ntwkOpGC", "check", true);
+        return customSearch(sc, null);
     }
 
     @Override

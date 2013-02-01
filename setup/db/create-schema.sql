@@ -315,6 +315,7 @@ CREATE TABLE `cloud`.`network_offerings` (
   `elastic_lb_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides elastic lb service',
   `specify_ip_ranges` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides an ability to define ip ranges',
   `inline` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering LB provider is in inline mode',
+  `is_persistent` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides an ability to create persistent networks',
   PRIMARY KEY (`id`),
   INDEX `i_network_offerings__system_only`(`system_only`),
   INDEX `i_network_offerings__removed`(`removed`),
