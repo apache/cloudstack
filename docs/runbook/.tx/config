@@ -1,0 +1,68 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#  
+#    http://www.apache.org/licenses/LICENSE-2.0
+#  
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an
+#  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#  KIND, either express or implied.  See the License for the
+#  specific language governing permissions and limitations
+#  under the License.
+
+[main]
+host = https://www.transifex.net
+
+
+[ACS-Runbook.book_info]
+file_filter = <lang>/Book_Info.po
+source_file = pot/Book_Info.pot
+source_lang = en
+type = PO
+
+[ACS-Runbook.configuration]
+file_filter = <lang>/config.po
+source_file = pot/config.pot
+source_lang = en
+type = PO
+
+[ACS-Runbook.environment]
+file_filter = <lang>/Environment.po
+source_file = pot/Environment.pot
+source_lang = en
+type = PO
+
+[ACS-Runbook.kvm]
+file_filter = <lang>/kvm.po
+source_file = pot/kvm.pot
+source_lang = en
+type = PO
+
+[ACS-Runbook.management]
+file_filter = <lang>/Management.po
+source_file = pot/Management.pot
+source_lang = en
+type = PO
+
+[ACS-Runbook.overview]
+file_filter = <lang>/Overview.po
+source_file = pot/Overview.pot
+source_lang = en
+type = PO
+
+[ACS-Runbook.preface]
+file_filter = <lang>/Preface.po
+source_file = pot/Preface.pot
+source_lang = en
+type = PO
+
+[ACS-Runbook.revision_history]
+file_filter = <lang>/Revision_History.po
+source_file = pot/Revision_History.pot
+source_lang = en
+type = PO
