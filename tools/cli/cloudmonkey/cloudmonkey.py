@@ -20,7 +20,6 @@
 try:
     import atexit
     import cmd
-    import codecs
     import json
     import logging
     import os
@@ -28,18 +27,16 @@ try:
     import re
     import shlex
     import sys
-    import time
-    import types
 
-    from ConfigParser import ConfigParser, SafeConfigParser
     from urllib2 import HTTPError, URLError
     from httplib import BadStatusLine
 
-    from prettytable import PrettyTable
-    from common import __version__, config_dir, config_file, config_fields
-    from common import precached_verbs
-    from lexer import monkeyprint
+    from config import __version__, config_file
+    from config import precached_verbs, read_config, write_config
+    from printer import monkeyprint
+    from requester import monkeyrequest
 
+    from prettytable import PrettyTable
     from marvin.cloudstackConnection import cloudConnection
     from marvin.cloudstackException import cloudstackAPIException
     from marvin.cloudstackAPI import *
@@ -70,8 +67,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
     intro = ("☁ Apache CloudStack 🐵 cloudmonkey " + __version__ +
              ". Type help or ? to list commands.\n")
     ruler = "="
-    config_dir = config_dir
-    config_file = config_file
+    apicache = {}
     # datastructure {'verb': {cmd': ['api', [params], doc, required=[]]}}
     cache_verbs = precached_verbs
     config_options = []
@@ -79,31 +75,8 @@ class CloudMonkeyShell(cmd.Cmd, object):
     def __init__(self, pname, verbs):
         self.program_name = pname
         self.verbs = verbs
-        global config_fields
-        first_time = False
-        if not os.path.exists(self.config_dir):
-            os.makedirs(self.config_dir)
-        if os.path.exists(self.config_file):
-            config = self.read_config()
-        else:
-            first_time = True
-            config = self.write_config(first_time)
 
-        for section in config_fields.keys():
-            for key in config_fields[section].keys():
-            try:
-                    self.config_options.append(key)
-                    setattr(self, key, config.get(section, key))
-            except Exception:
-                    print "Please fix `%s` in %s" % (key, self.config_file)
-                sys.exit()
-
-        if first_time:
-            print "Welcome! Using `set` configure the necessary settings:"
-            print " ".join(sorted(self.config_options))
-            print "Config file:", self.config_file
-            print "For debugging, tail -f", self.log_file, "\n"
-
+        self.config_options = read_config(self.get_attr, self.set_attr)
         self.prompt = self.prompt.strip() + " "  # Cosmetic fix for prompt
 
         logging.basicConfig(filename=self.log_file,
@@ -111,40 +84,20 @@ class CloudMonkeyShell(cmd.Cmd, object):
         logger.debug("Loaded config fields:\n%s" % map(lambda x: "%s=%s" %
                                                        (x, getattr(self, x)),
                                                        self.config_options))
-
         cmd.Cmd.__init__(self)
-        if not os.path.exists(self.config_file):
-            config = self.write_config()
 
         try:
             if os.path.exists(self.history_file):
                 readline.read_history_file(self.history_file)
             atexit.register(readline.write_history_file, self.history_file)
         except IOError:
-            print("Error: history support")
+            monkeyprint("Error: history support")
 
-    def read_config(self):
-        config = ConfigParser()
-        try:
-            with open(self.config_file, 'r') as cfg:
-                config.readfp(cfg)
-        except IOError, e:
-            self.print_shell("Error: config_file not found", e)
-        return config
+    def get_attr(self, field):
+        return getattr(self, field)
 
-    def write_config(self, first_time=False):
-        global config_fields
-        config = ConfigParser()
-        for section in config_fields.keys():
-            config.add_section(section)
-            for key in config_fields[section].keys():
-                if first_time:
-                    config.set(section, key, config_fields[section][key])
-                else:
-                    config.set(section, key, getattr(self, key))
-        with open(self.config_file, 'w') as cfg:
-            config.write(cfg)
-        return config
+    def set_attr(self, field, value):
+        return setattr(self, field, value)
 
     def emptyline(self):
         pass
@@ -158,20 +111,8 @@ class CloudMonkeyShell(cmd.Cmd, object):
             except KeyboardInterrupt:
                 print("^C")
 
-    def print_shell(self, *args):
-        output = ""
-        try:
-            for arg in args:
-                arg = str(arg)
-                if isinstance(type(args), types.NoneType):
-                    continue
-                output += arg
-                if self.color == 'true':
-                monkeyprint(output)
-                else:
-                print output
-        except Exception, e:
-            self.print_shell("Error: " + e)
+    def monkeyprint(self, *args):
+        monkeyprint((self.color == 'true'), *args)
 
     def print_result(self, result, result_filter=None):
         if result is None or len(result) == 0:
@@ -179,7 +120,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
 
         def printer_helper(printer, toprow):
             if printer:
-                self.print_shell(printer)
+                self.monkeyprint(printer)
             return PrettyTable(toprow)
 
         def print_result_tabular(result, result_filter=None):
@@ -200,16 +141,16 @@ class CloudMonkeyShell(cmd.Cmd, object):
                 if printer and row:
                     printer.add_row(row)
             if printer:
-                self.print_shell(printer)
+                self.monkeyprint(printer)
 
         def print_result_as_dict(result, result_filter=None):
             for key in sorted(result.keys(), key=lambda x:
                               x not in ['id', 'count', 'name'] and x):
                 if not (isinstance(result[key], list) or
                         isinstance(result[key], dict)):
-                    self.print_shell("%s = %s" % (key, result[key]))
+                    self.monkeyprint("%s = %s" % (key, result[key]))
                 else:
-                    self.print_shell(key + ":")
+                    self.monkeyprint(key + ":")
                     self.print_result(result[key], result_filter)
 
         def print_result_as_list(result, result_filter=None):
@@ -220,7 +161,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
                     break
                 self.print_result(node)
                 if len(result) > 1:
-                    self.print_shell(self.ruler * 80)
+                    self.monkeyprint(self.ruler * 80)
 
         if isinstance(result, dict):
             print_result_as_dict(result, result_filter)
@@ -229,91 +170,17 @@ class CloudMonkeyShell(cmd.Cmd, object):
         elif isinstance(result, str):
             print result
         elif not (str(result) is None):
-            self.print_shell(result)
+            self.monkeyprint(result)
 
-    def make_request(self, command, requests={}, isAsync=False):
-        conn = cloudConnection(self.host, port=int(self.port),
-                               apiKey=self.apikey, securityKey=self.secretkey,
-                               asyncTimeout=self.timeout, logging=logger,
-                               protocol=self.protocol, path=self.path)
-        response = None
-        logger.debug("====START Request====")
-        logger.debug("Requesting command=%s, args=%s" % (command, requests))
-        try:
-            response = conn.make_request_with_auth(command, requests)
-        except cloudstackAPIException, e:
-            self.print_shell("API Error:", e)
-        except HTTPError, e:
-            self.print_shell(e)
-        except (URLError, BadStatusLine), e:
-            self.print_shell("Connection Error:", e)
-        logger.debug("====END Request====\n")
-
-        def process_json(response):
-            try:
-                response = json.loads(str(response))
-            except ValueError, e:
-                pass
-            return response
-
-        response = process_json(response)
-        if response is None:
-            return
-
-        isAsync = isAsync and (self.asyncblock == "true")
-        responsekey = filter(lambda x: 'response' in x, response.keys())[0]
-        if isAsync and 'jobid' in response[responsekey]:
-            jobId = response[responsekey]['jobid']
-            command = "queryAsyncJobResult"
-            requests = {'jobid': jobId}
-            timeout = int(self.timeout)
-            pollperiod = 3
-            progress = 1
-            while timeout > 0:
-                print '\r' + '.' * progress,
-                sys.stdout.flush()
-                response = process_json(conn.make_request_with_auth(command,
-                                                                    requests))
-                responsekeys = filter(lambda x: 'response' in x,
-                                      response.keys())
-                if len(responsekeys) < 1:
-                    continue
-                result = response[responsekeys[0]]
-                jobstatus = result['jobstatus']
-                if jobstatus == 2:
-                    jobresult = result["jobresult"]
-                    self.print_shell("\rAsync query failed for jobid",
-                                     jobId, "\nError", jobresult["errorcode"],
-                                     jobresult["errortext"])
-                    return
-                elif jobstatus == 1:
-                    print '\r',
-                    return response
-                time.sleep(pollperiod)
-                timeout = timeout - pollperiod
-                progress += 1
-                logger.debug("job: %s to timeout in %ds" % (jobId, timeout))
-            self.print_shell("Error:", "Async query timeout for jobid", jobId)
-
+    def make_request(self, command, args={}, isasync=False):
+        response, error = monkeyrequest(command, args, isasync,
+                                        self.asyncblock, logger,
+                                        self.host, self.port,
+                                        self.apikey, self.secretkey,
+                                        self.timeout, self.protocol, self.path)
+        if error is not None:
+            self.monkeyprint(error)
         return response
-
-    def get_api_module(self, api_name, api_class_strs=[]):
-        try:
-            api_mod = __import__("marvin.cloudstackAPI.%s" % api_name,
-                                 globals(), locals(), api_class_strs, -1)
-        except ImportError, e:
-            self.print_shell("Error: API not found", e)
-            return None
-        return api_mod
-
-    def pipe_runner(self, args):
-        if args.find(' |') > -1:
-            pname = self.program_name
-            if '.py' in pname:
-                pname = "python " + pname
-            self.do_shell("%s %s" % (pname, args))
-            return True
-        return False
 
     def default(self, args):
         if self.pipe_runner(args):
@@ -340,31 +207,20 @@ class CloudMonkeyShell(cmd.Cmd, object):
                                   map(lambda x: x.strip(),
                                       args_dict.pop('filter').split(',')))
 
-        api_cmd_str = "%sCmd" % api_name
-        api_mod = self.get_api_module(api_name, [api_cmd_str])
-        if api_mod is None:
-            return
-
-        try:
-            api_cmd = getattr(api_mod, api_cmd_str)
-        except AttributeError, e:
-            self.print_shell("Error: API attribute %s not found!" % e)
-            return
-
         for attribute in args_dict.keys():
             setattr(api_cmd, attribute, args_dict[attribute])
 
-        command = api_cmd()
-        missing_args = filter(lambda x: x not in args_dict.keys(),
-                              command.required)
+        #command = api_cmd()
+        #missing_args = filter(lambda x: x not in args_dict.keys(),
+        #                      command.required)
 
-        if len(missing_args) > 0:
-            self.print_shell("Missing arguments: ", ' '.join(missing_args))
-            return
+        #if len(missing_args) > 0:
+        #    self.monkeyprint("Missing arguments: ", ' '.join(missing_args))
+        #    return
 
         isAsync = False
-        if "isAsync" in dir(command):
-            isAsync = (command.isAsync == "true")
+        #if "isAsync" in dir(command):
+        #    isAsync = (command.isAsync == "true")
 
         result = self.make_request(api_name, args_dict, isAsync)
         if result is None:
@@ -375,7 +231,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
                 self.print_result(result[responsekey], field_filter)
             print
         except Exception as e:
-            self.print_shell("🙈  Error on parsing and printing", e)
+            self.monkeyprint("🙈  Error on parsing and printing", e)
 
     def completedefault(self, text, line, begidx, endidx):
         partitions = line.partition(" ")
@@ -403,6 +259,17 @@ class CloudMonkeyShell(cmd.Cmd, object):
             autocompletions.append("filter=")
         return [s for s in autocompletions if s.startswith(search_string)]
 
+    def do_sync(self, args):
+        """
+        Asks cloudmonkey to discovery and sync apis available on user specified
+        CloudStack host server which has the API discovery plugin, on failure
+        it rollbacks last datastore or api precached datastore.
+        """
+        response = self.make_request("listApis")
+        f = open('test.json', "w")
+        f.write(json.dumps(response))
+        f.close()
+
     def do_api(self, args):
         """
         Make raw api calls. Syntax: api <apiName> <args>=<values>.
@@ -413,7 +280,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
         if len(args) > 0:
             return self.default(args)
         else:
-            self.print_shell("Please use a valid syntax")
+            self.monkeyprint("Please use a valid syntax")
 
     def complete_api(self, text, line, begidx, endidx):
         mline = line.partition(" ")[2]
@@ -435,13 +302,22 @@ class CloudMonkeyShell(cmd.Cmd, object):
         key, value = (args[0], args[2])
         setattr(self, key, value)  # keys and attributes should have same names
         self.prompt = self.prompt.strip() + " "  # prompt fix
-        self.write_config()
+        write_config(self.get_attr)
 
     def complete_set(self, text, line, begidx, endidx):
         mline = line.partition(" ")[2]
         offs = len(mline) - len(text)
         return [s[offs:] for s in self.config_options
                 if s.startswith(mline)]
+
+    def pipe_runner(self, args):
+        if args.find(' |') > -1:
+            pname = self.program_name
+            if '.py' in pname:
+                pname = "python " + pname
+            self.do_shell("%s %s" % (pname, args))
+            return True
+        return False
 
     def do_shell(self, args):
         """
@@ -474,9 +350,9 @@ class CloudMonkeyShell(cmd.Cmd, object):
             subject = fields[2].partition(" ")[0]
 
             if subject in self.cache_verbs[verb]:
-                self.print_shell(self.cache_verbs[verb][subject][2])
+                self.monkeyprint(self.cache_verbs[verb][subject][2])
             else:
-                self.print_shell("Error: no such api (%s) on %s" %
+                self.monkeyprint("Error: no such api (%s) on %s" %
                                  (subject, verb))
 
     def complete_help(self, text, line, begidx, endidx):
@@ -500,7 +376,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
         """
         Quit CloudMonkey CLI
         """
-        self.print_shell("Bye!")
+        self.monkeyprint("Bye!")
         return self.do_EOF(args)
 
     def do_EOF(self, args):
@@ -526,10 +402,10 @@ def main():
                     helpdoc = res[2]
                     args = args_partition[2]
                 except KeyError, e:
-                    self.print_shell("Error: invalid %s api arg" % verb, e)
+                    self.monkeyprint("Error: invalid %s api arg" % verb, e)
                     return
                 if ' --help' in args or ' -h' in args:
-                    self.print_shell(helpdoc)
+                    self.monkeyprint(helpdoc)
                     return
                 self.default("%s %s" % (cmd, args))
             return grammar_closure

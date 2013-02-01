@@ -25,6 +25,7 @@ try:
     from pygments.token import *
 
     import sys
+    import types
 except ImportError, e:
     print e
 
@@ -92,7 +93,6 @@ class MonkeyFormatter(Formatter):
         self.colorscheme = get_colorscheme()
 
     def format(self, tokensource, outfile):
-        self.encoding = outfile.encoding
         return Formatter.format(self, tokensource, outfile)
 
     def format_unencoded(self, tokensource, outfile):
@@ -113,9 +113,21 @@ class MonkeyFormatter(Formatter):
                 outfile.write(value)
 
 
-def monkeyprint(text):
+def monkeyprint(color=True, *args):
     fmter = MonkeyFormatter()
     lexer = MonkeyLexer()
     lexer.encoding = 'utf-8'
     fmter.encoding = 'utf-8'
-    highlight(text, lexer, fmter, sys.stdout)
+    output = ""
+    try:
+        for arg in args:
+            if isinstance(type(arg), types.NoneType):
+                continue
+            output += str(arg)
+    except Exception, e:
+        print e
+
+    if color:
+        highlight(output, lexer, fmter, sys.stdout)
+    else:
+        print output

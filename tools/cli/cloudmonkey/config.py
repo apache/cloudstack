@@ -21,14 +21,19 @@
 __version__ = "4.1.0-0"
 
 try:
-    from os.path import expanduser
     import os
+    import sys
+
+    from ConfigParser import ConfigParser, SafeConfigParser
+    from os.path import expanduser
     from precache import precached_verbs
 except ImportError, e:
     precached_verbs = {}
 
 param_type = ['boolean', 'date', 'float', 'integer', 'short', 'list',
               'long', 'object', 'map', 'string', 'tzdate', 'uuid']
+
+iterable_type = ['set', 'list', 'object']
 
 config_dir = expanduser('~/.cloudmonkey')
 config_file = expanduser(config_dir + '/config')
@@ -57,3 +62,54 @@ config_fields['server']['timeout'] = '3600'
 # user
 config_fields['user']['apikey'] = ''
 config_fields['user']['secretkey'] = ''
+
+
+def write_config(get_attr, first_time=False):
+    global config_fields, config_file
+    config = ConfigParser()
+    for section in config_fields.keys():
+        config.add_section(section)
+        for key in config_fields[section].keys():
+            if first_time:
+                config.set(section, key, config_fields[section][key])
+            else:
+                config.set(section, key, get_attr(key))
+    with open(config_file, 'w') as cfg:
+        config.write(cfg)
+    return config
+
+
+def read_config(get_attr, set_attr):
+    global config_fields, config_dir, config_file
+    if not os.path.exists(config_dir):
+        os.makedirs(config_dir)
+
+    config_options = reduce(lambda x, y: x + y, map(lambda x:
+                            config_fields[x].keys(), config_fields.keys()))
+
+    if os.path.exists(config_file):
+        config = ConfigParser()
+        try:
+            with open(config_file, 'r') as cfg:
+                config.readfp(cfg)
+        except IOError, e:
+            print "Error: config_file not found", e
+    else:
+        config = write_config(get_attr, True)
+        print "Welcome! Using `set` configure the necessary settings:"
+        print " ".join(sorted(config_options))
+        print "Config file:", config_file
+
+    missing_keys = []
+    for section in config_fields.keys():
+        for key in config_fields[section].keys():
+            try:
+                set_attr(key, config.get(section, key))
+            except Exception:
+                missing_keys.appned(key)
+
+    if len(missing_keys) > 0:
+        print "Please fix `%s` in %s" % (key, config_file)
+        sys.exit()
+
+    return config_options
