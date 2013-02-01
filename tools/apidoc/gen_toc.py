@@ -126,6 +126,7 @@ known_categories = {
     'StaticRoute': 'VPC',
     'Tags': 'Resource tags',
     'NiciraNvpDevice': 'Nicira NVP',
+    'BigSwitchVnsDevice': 'BigSwitch VNS',
     'AutoScale': 'AutoScale',
     'Counter': 'AutoScale',
     'Condition': 'AutoScale',

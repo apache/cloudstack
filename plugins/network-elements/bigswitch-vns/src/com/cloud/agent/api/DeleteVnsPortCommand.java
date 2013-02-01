@@ -14,54 +14,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.agent.api;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+public class DeleteVnsPortCommand extends Command {
 
-import java.util.List;
+    private String _networkUuid;
+    private String _portUuid;
+    private String _tenantUuid;
 
-/**
- *
- */
-public interface PhysicalNetwork extends Identity, InternalIdentity {
-
-    public enum State {
-        Disabled,
-        Enabled;
+    public DeleteVnsPortCommand(String networkUuid, String portUuid, String tenantUuid) {
+        this._networkUuid = networkUuid;
+        this._portUuid = portUuid;
+        this._tenantUuid = tenantUuid;
     }
 
-    public enum IsolationMethod {
-        VLAN,
-        L3,
-        GRE,
-        STT,
-        VNS;
+    public String getNetworkUuid() {
+        return _networkUuid;
     }
 
-    public enum BroadcastDomainRange {
-        POD,
-        ZONE;
+    public String getPortUuid() {
+        return _portUuid;
     }
 
-    BroadcastDomainRange getBroadcastDomainRange();
+    public String getTenantUuid() {
+        return _tenantUuid;
+    }
 
-    // TrafficType getTrafficType();
-
-    long getDataCenterId();
-
-    State getState();
-
-    List<String> getTags();
-
-    List<String> getIsolationMethods();
-
-    Long getDomainId();
-
-    String getVnet();
-
-    String getSpeed();
-
-    String getName();
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 
 }

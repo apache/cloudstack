@@ -14,54 +14,43 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.network.bigswitch;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+public class Port {
+    private String id;
+    private String name;
+    private String tenant_id;
+    private String state;
 
-import java.util.List;
-
-/**
- *
- */
-public interface PhysicalNetwork extends Identity, InternalIdentity {
-
-    public enum State {
-        Disabled,
-        Enabled;
+    public String getId() {
+        return id;
     }
 
-    public enum IsolationMethod {
-        VLAN,
-        L3,
-        GRE,
-        STT,
-        VNS;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public enum BroadcastDomainRange {
-        POD,
-        ZONE;
+    public String getName() {
+        return name;
     }
 
-    BroadcastDomainRange getBroadcastDomainRange();
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    // TrafficType getTrafficType();
+    public String getTenant_id() {
+        return tenant_id;
+    }
 
-    long getDataCenterId();
+    public void setTenant_id(String tenant_id) {
+        this.tenant_id = tenant_id;
+    }
 
-    State getState();
+    public String getState() {
+        return state;
+    }
 
-    List<String> getTags();
-
-    List<String> getIsolationMethods();
-
-    Long getDomainId();
-
-    String getVnet();
-
-    String getSpeed();
-
-    String getName();
-
+    public void setState(String state) {
+        this.state = state;
+    }
 }

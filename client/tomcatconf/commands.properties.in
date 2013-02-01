@@ -513,6 +513,12 @@ listNiciraNvpDeviceNetworks=1
 # Not implemented (yet)
 #configureNiciraNvpDevice=1
 
+#### bigswitch vns commands
+
+addBigSwitchVnsDevice=1
+deleteBigSwitchVnsDevice=1
+listBigSwitchVnsDevices=1
+
 #### host simulator commands
 
 configureSimulator=1

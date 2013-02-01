@@ -14,54 +14,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.network.bigswitch;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+public class BigSwitchVnsApiException extends Exception {
 
-import java.util.List;
 
-/**
- *
- */
-public interface PhysicalNetwork extends Identity, InternalIdentity {
+    private static final long serialVersionUID = -5864952230870945604L;
 
-    public enum State {
-        Disabled,
-        Enabled;
+    public BigSwitchVnsApiException() {
     }
 
-    public enum IsolationMethod {
-        VLAN,
-        L3,
-        GRE,
-        STT,
-        VNS;
+    public BigSwitchVnsApiException(String message) {
+        super(message);
     }
 
-    public enum BroadcastDomainRange {
-        POD,
-        ZONE;
+    public BigSwitchVnsApiException(Throwable cause) {
+        super(cause);
     }
 
-    BroadcastDomainRange getBroadcastDomainRange();
-
-    // TrafficType getTrafficType();
-
-    long getDataCenterId();
-
-    State getState();
-
-    List<String> getTags();
-
-    List<String> getIsolationMethods();
-
-    Long getDomainId();
-
-    String getVnet();
-
-    String getSpeed();
-
-    String getName();
+    public BigSwitchVnsApiException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
 }

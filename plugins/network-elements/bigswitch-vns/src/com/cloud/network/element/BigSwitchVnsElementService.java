@@ -14,54 +14,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
-
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+package com.cloud.network.element;
 
 import java.util.List;
 
-/**
- *
- */
-public interface PhysicalNetwork extends Identity, InternalIdentity {
+import com.cloud.api.commands.AddBigSwitchVnsDeviceCmd;
+import com.cloud.api.commands.DeleteBigSwitchVnsDeviceCmd;
+import com.cloud.api.commands.ListBigSwitchVnsDevicesCmd;
+import com.cloud.api.response.BigSwitchVnsDeviceResponse;
+import com.cloud.network.BigSwitchVnsDeviceVO;
+import com.cloud.utils.component.PluggableService;
 
-    public enum State {
-        Disabled,
-        Enabled;
-    }
+public interface BigSwitchVnsElementService extends PluggableService {
 
-    public enum IsolationMethod {
-        VLAN,
-        L3,
-        GRE,
-        STT,
-        VNS;
-    }
+    public BigSwitchVnsDeviceVO addBigSwitchVnsDevice(AddBigSwitchVnsDeviceCmd cmd);
 
-    public enum BroadcastDomainRange {
-        POD,
-        ZONE;
-    }
+    public BigSwitchVnsDeviceResponse createBigSwitchVnsDeviceResponse(
+            BigSwitchVnsDeviceVO bigswitchDeviceVO);
 
-    BroadcastDomainRange getBroadcastDomainRange();
+    boolean deleteBigSwitchVnsDevice(DeleteBigSwitchVnsDeviceCmd cmd);
 
-    // TrafficType getTrafficType();
-
-    long getDataCenterId();
-
-    State getState();
-
-    List<String> getTags();
-
-    List<String> getIsolationMethods();
-
-    Long getDomainId();
-
-    String getVnet();
-
-    String getSpeed();
-
-    String getName();
+    List<BigSwitchVnsDeviceVO> listBigSwitchVnsDevices(ListBigSwitchVnsDevicesCmd cmd);
 
 }

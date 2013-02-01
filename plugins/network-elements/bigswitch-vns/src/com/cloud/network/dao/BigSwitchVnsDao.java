@@ -14,54 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
-
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+package com.cloud.network.dao;
 
 import java.util.List;
 
-/**
- *
- */
-public interface PhysicalNetwork extends Identity, InternalIdentity {
+import com.cloud.network.BigSwitchVnsDeviceVO;
+import com.cloud.utils.db.GenericDao;
 
-    public enum State {
-        Disabled,
-        Enabled;
-    }
-
-    public enum IsolationMethod {
-        VLAN,
-        L3,
-        GRE,
-        STT,
-        VNS;
-    }
-
-    public enum BroadcastDomainRange {
-        POD,
-        ZONE;
-    }
-
-    BroadcastDomainRange getBroadcastDomainRange();
-
-    // TrafficType getTrafficType();
-
-    long getDataCenterId();
-
-    State getState();
-
-    List<String> getTags();
-
-    List<String> getIsolationMethods();
-
-    Long getDomainId();
-
-    String getVnet();
-
-    String getSpeed();
-
-    String getName();
+public interface BigSwitchVnsDao extends GenericDao<BigSwitchVnsDeviceVO, Long>{
+    /**
+     * list all the bigswitch Vns devices added in to this physical network
+     * @param physicalNetworkId physical Network Id
+     * @return list of BigSwitchVnsDeviceVO for this physical network.
+     */
+    List<BigSwitchVnsDeviceVO> listByPhysicalNetwork(long physicalNetworkId);
 
 }

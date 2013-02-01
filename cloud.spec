@@ -448,6 +448,7 @@ fi
 %{_javadir}/%{name}-plugin-hypervisor-xen.jar
 %{_javadir}/%{name}-plugin-elb.jar
 %{_javadir}/%{name}-plugin-nicira-nvp.jar
+%{_javadir}/%{name}-plugin-bigswitch-vns.jar
 %config(noreplace) %{_sysconfdir}/%{name}/server/*
 %doc LICENSE
 %doc NOTICE

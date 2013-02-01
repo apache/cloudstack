@@ -14,54 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.network.bigswitch;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+public class ControlClusterStatus {
+    private boolean healthy;
 
-import java.util.List;
-
-/**
- *
- */
-public interface PhysicalNetwork extends Identity, InternalIdentity {
-
-    public enum State {
-        Disabled,
-        Enabled;
+    public boolean getStatus() {
+        return healthy;
     }
-
-    public enum IsolationMethod {
-        VLAN,
-        L3,
-        GRE,
-        STT,
-        VNS;
-    }
-
-    public enum BroadcastDomainRange {
-        POD,
-        ZONE;
-    }
-
-    BroadcastDomainRange getBroadcastDomainRange();
-
-    // TrafficType getTrafficType();
-
-    long getDataCenterId();
-
-    State getState();
-
-    List<String> getTags();
-
-    List<String> getIsolationMethods();
-
-    Long getDomainId();
-
-    String getVnet();
-
-    String getSpeed();
-
-    String getName();
-
 }

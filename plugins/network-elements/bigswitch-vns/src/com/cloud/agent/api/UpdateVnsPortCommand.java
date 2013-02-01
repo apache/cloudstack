@@ -14,54 +14,45 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.agent.api;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+public class UpdateVnsPortCommand extends Command {
+    private String _networkUuid;
+    private String _portUuid;
+    private String _tenantUuid;
+    private String _portName;
 
-import java.util.List;
-
-/**
- *
- */
-public interface PhysicalNetwork extends Identity, InternalIdentity {
-
-    public enum State {
-        Disabled,
-        Enabled;
+    public UpdateVnsPortCommand(String networkUuid, String portUuid, String tenantUuid, String portName) {
+        this._networkUuid = networkUuid;
+        this._portUuid = portUuid;
+        this._tenantUuid = tenantUuid;
+        this._portName = portName;
     }
 
-    public enum IsolationMethod {
-        VLAN,
-        L3,
-        GRE,
-        STT,
-        VNS;
+
+    public String getNetworkUuid() {
+        return _networkUuid;
     }
 
-    public enum BroadcastDomainRange {
-        POD,
-        ZONE;
+
+    public String getPortUuid() {
+        return _portUuid;
     }
 
-    BroadcastDomainRange getBroadcastDomainRange();
 
-    // TrafficType getTrafficType();
+    public String getTenantUuid() {
+        return _tenantUuid;
+    }
 
-    long getDataCenterId();
 
-    State getState();
+    public String getPortName() {
+        return _portName;
+    }
 
-    List<String> getTags();
 
-    List<String> getIsolationMethods();
-
-    Long getDomainId();
-
-    String getVnet();
-
-    String getSpeed();
-
-    String getName();
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 
 }

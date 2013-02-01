@@ -14,54 +14,39 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.agent.api;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+public class CreateVnsNetworkCommand extends Command {
+    private String _networkUuid;
+    private String _name;
+    private String _tenantUuid;
+    private int _vlan;
 
-import java.util.List;
-
-/**
- *
- */
-public interface PhysicalNetwork extends Identity, InternalIdentity {
-
-    public enum State {
-        Disabled,
-        Enabled;
+    public CreateVnsNetworkCommand(String networkUuid, String name, String tenantUuid, int vlan) {
+	this._networkUuid = networkUuid;
+        this._name = name;
+        this._tenantUuid = tenantUuid;
+        this._vlan = vlan;
     }
 
-    public enum IsolationMethod {
-        VLAN,
-        L3,
-        GRE,
-        STT,
-        VNS;
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 
-    public enum BroadcastDomainRange {
-        POD,
-        ZONE;
+    public String getNetworkUuid() {
+	return _networkUuid;
     }
 
-    BroadcastDomainRange getBroadcastDomainRange();
+    public String getName() {
+        return _name;
+    }
 
-    // TrafficType getTrafficType();
+    public String getTenantUuid() {
+        return _tenantUuid;
+    }
 
-    long getDataCenterId();
-
-    State getState();
-
-    List<String> getTags();
-
-    List<String> getIsolationMethods();
-
-    Long getDomainId();
-
-    String getVnet();
-
-    String getSpeed();
-
-    String getName();
-
+    public int getVlan() {
+        return _vlan;
+    }
 }
