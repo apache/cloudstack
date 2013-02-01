@@ -1,0 +1,229 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-01T09:17:06\n"
+"PO-Revision-Date: 2013-02-01T09:17:06\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "KVM Setup and installation"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "KVM is the hypervisor we'll be using - we will recover the initial setup which has already been done on the hypervisor host and cover installation of the agent software, you can use the same steps to add additional KVM nodes to your CloudStack environment."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Prerequisites"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "We explicitly are using the management server as a compute node as well, which means that we have already performed many of the prerequisite steps when setting up the management server, but we will list them here for clarity. Those steps are:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-Runbook-Environment-operatingsys-network\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-Runbook-Environment-operatingsys-hostname\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-Runbook-Environment-operatingsys-selinux\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-Runbook-Environment-operatingsys-ntp\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-Runbook-Environment-operatingsys-repoconfig\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You shouldn't need to do that for the management server, of course, but any additional hosts will need for you to complete the above steps."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Installation"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Installation of the KVM agent is trivial with just a single command, but afterwards we'll need to configure a few things."
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "<prompt># </prompt><userinput><command>yum</command> -y install cloud-agent</userinput>"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "KVM Configuration"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "We have two different parts of KVM to configure, libvirt, and QEMU."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "QEMU Configuration"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "KVM configuration is relatively simple at only a single item. We need to edit the QEMU VNC configuration. This is done by editing <filename>/etc/libvirt/qemu.conf</filename> and ensuring the following line is present and uncommented."
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "vnc_listen=0.0.0.0"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Libvirt Configuration"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack uses libvirt for managing virtual machines. Therefore it is vital that libvirt is configured correctly. Libvirt is a dependency of cloud-agent and should already be installed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In order to have live migration working libvirt has to listen for unsecured TCP connections. We also need to turn off libvirts attempt to use Multicast DNS advertising. Both of these settings are in <filename>/etc/libvirt/libvirtd.conf</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set the following paramaters:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "listen_tls = 0"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "listen_tcp = 1"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "tcp_port = \"16059\""
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "auth_tcp = \"none\""
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mdns_adv = 0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Turning on \"listen_tcp\" in libvirtd.conf is not enough, we have to change the parameters as well:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL or CentOS modify <filename>/etc/sysconfig/libvirtd</filename>:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Uncomment the following line:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "#LIBVIRTD_ARGS=\"--listen\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu: modify <filename>/etc/init/libvirt-bin.conf</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Change the following line (at the end of the file):"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "exec /usr/sbin/libvirtd -d"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "to (just add -l)"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "exec /usr/sbin/libvirtd -d -l"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart libvirt"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In RHEL or CentOS:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ service libvirtd restart</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Ubuntu:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ service libvirt-bin restart</command>"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "KVM configuration complete"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "That concludes our installation and configuration of KVM, and we'll now move to using the CloudStack UI for the actual configuration of our cloud."
+msgstr ""
+
