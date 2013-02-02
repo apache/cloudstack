@@ -57,7 +57,7 @@ version="1.0">
 				<xsl:for-each select="command/command">
                            		<!-- Modify this line for the release version -->
                            		<span>
-									Apache CloudStack v4.0.0 User API Reference
+									Apache CloudStack v4.2.0 User API Reference
 								</span>
 								<p></p>
                                 <h1><xsl:value-of select="name"/></h1>
