@@ -27,7 +27,7 @@
   </parent>
   <artifactId>cloud-engine-service</artifactId>
   <packaging>war</packaging>
-  <name>CloudStack Cloud-Engine Service</name>
+  <name>Apache CloudStack Cloud Engine Service</name>
   <url>http://www.cloudstack.org</url>
   <dependencies>
     <dependency>
