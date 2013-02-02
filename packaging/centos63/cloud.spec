@@ -78,7 +78,13 @@ Requires: mkisofs
 Requires: MySQL-python
 Requires: python-paramiko
 Requires: ipmitool
-Requires: %{name}-setup = %{_ver}
+Requires: %{name}-setup = 4.1.0
+Obsoletes: cloud-client < 4.1.0
+Obsoletes: cloud-client-ui < 4.1.0
+Obsoletes: cloud-daemonize < 4.1.0
+Obsoletes: cloud-server < 4.1.0
+Obsoletes: cloud-test < 4.1.0 
+Provides:  cloud-client
 Group:     System Environment/Libraries
 %description management-server
 The CloudStack management server is the central point of coordination,
@@ -114,6 +120,10 @@ Requires: jsvc
 Requires: jna
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
+Provides: cloud-agent
+Obsoletes: cloud-agent < 4.1.0
+Obsoletes: cloud-agent < 4.1.0
+Obsoletes: cloud-test < 4.1.0
 Group: System Environment/Libraries
 %description agent
 The CloudStack agent for KVM hypervisors
@@ -124,12 +134,20 @@ Requires: java >= 1.6.0
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
+Obsoletes: cloud-usage < 4.1.0
+Provides: cloud-usage 
 %description usage
 The CloudStack usage calculation service
 
+%package cli
+Summary: Apache CloudStack CLI
+Provides: python-cloudmonkey
+Provides: python-marvin
+%description cli
+Apache CloudStack command line interface
+
 %prep
 echo Doing CloudStack build
-
 %setup -q -n %{name}-%{_maventag}
 
 %build
@@ -327,6 +345,11 @@ fi
 %attr(0755,root,root) %{_sysconfdir}/init.d/cloud-usage
 %attr(0644,root,root) /usr/share/cloud/usage/java/*.jar
 %dir /var/log/cloud/usage
+
+%files cli
+%doc LICENSE
+%doc NOTICE
+
 
 %changelog
 * Fri Oct 03 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
