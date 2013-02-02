@@ -125,8 +125,8 @@
         <version>1.7</version>
         <executions>
           <execution>
-            <id>generate-resource</id>
-            <phase>generate-resources</phase>
+            <id>copy-cloud-scripts</id>
+            <phase>package</phase>
             <goals>
               <goal>run</goal>
             </goals>
