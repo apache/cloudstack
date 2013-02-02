@@ -21,7 +21,7 @@
 # DISABLE the post-percentinstall java repacking and line number stripping
 # we need to find a way to just disable the java repacking and line number stripping, but not the autodeps
 
-Name:      cloud
+Name:      cloudstack
 Summary:   CloudStack IaaS Platform
 #http://fedoraproject.org/wiki/PackageNamingGuidelines#Pre-Release_packages
 %if "%{?_prerelease}" != ""
@@ -54,7 +54,7 @@ BuildRequires: MySQL-python
 CloudStack is a highly-scalable elastic, open source,
 intelligent IaaS cloud implementation.
 
-%package management-server
+%package management
 Summary:   CloudStack management server UI
 Requires: tomcat6
 Requires: java >= 1.6.0
@@ -78,7 +78,7 @@ Requires: mkisofs
 Requires: MySQL-python
 Requires: python-paramiko
 Requires: ipmitool
-Requires: %{name}-setup = 4.1.0
+Requires: %{name}-common = 4.1.0
 Obsoletes: cloud-client < 4.1.0
 Obsoletes: cloud-client-ui < 4.1.0
 Obsoletes: cloud-daemonize < 4.1.0
@@ -86,33 +86,20 @@ Obsoletes: cloud-server < 4.1.0
 Obsoletes: cloud-test < 4.1.0 
 Provides:  cloud-client
 Group:     System Environment/Libraries
-%description management-server
+%description management
 The CloudStack management server is the central point of coordination,
 management, and intelligence in CloudStack.  
 
-%package setup
-Summary: CloudStack database setup scripts
-Requires: java >= 1.6.0
-Requires: python
-Requires: MySQL-python
-Requires: %{name}-python = %{_ver}
-Group: System Environment/Libraries
-%description setup
-The scripts and commands used to setup and configure the database
-
-%package python
-Summary:   CloudStack Python library
-# FIXME nuke the archdependency
-Requires: python
-Group:     System Environment/Libraries
-%description python
-The CloudStack Python library contains a few Python modules that the
-CloudStack uses.
+%package common
+Summary: Apache CloudStack common files and scripts
+Group:   System Environment/Libraries
+%description common
+The Apache CloudStack files shared between agent and management server
 
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: java >= 1.6.0
-Requires: %{name}-python = %{_ver}
+Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
 Requires: ebtables
@@ -146,6 +133,16 @@ Provides: python-marvin
 %description cli
 Apache CloudStack command line interface
 
+%package awsapi
+Summary: Apache CloudStack AWS API compatibility wrapper
+%description awsapi
+Apache Cloudstack AWS API compatibility wrapper
+
+%package docs
+Summary: Apache CloudStack documentation
+%description docs
+Apache CloudStack documentations
+
 %prep
 echo Doing CloudStack build
 %setup -q -n %{name}-%{_maventag}
@@ -162,44 +159,49 @@ mvn package -Dsystemvm
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
+# Common
+mkdir -p ${RPM_BUILD_ROOT}/usr/share/cloudstack-scripts
+cp -r scripts/* ${RPM_BUILD_ROOT}/usr/share/cloudstack-scripts
+
+# Management
 mkdir -p ${RPM_BUILD_ROOT}%{_bindir}
-mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}/setup
-mkdir -p ${RPM_BUILD_ROOT}/usr/share/%{name}/management/
-ln -sf /usr/share/tomcat6/bin ${RPM_BUILD_ROOT}/usr/share/%{name}/management/bin
-ln -sf /etc/cloud/management ${RPM_BUILD_ROOT}/usr/share/%{name}/management/conf
-ln -sf /usr/share/tomcat6/lib ${RPM_BUILD_ROOT}/usr/share/%{name}/management/lib
-ln -sf /var/log/cloud/management ${RPM_BUILD_ROOT}/usr/share/%{name}/management/logs
-ln -sf /var/cache/cloud/management/temp ${RPM_BUILD_ROOT}/usr/share/%{name}/management/temp
-ln -sf /var/cache/cloud/management/work ${RPM_BUILD_ROOT}/usr/share/%{name}/management/work
-mkdir -p ${RPM_BUILD_ROOT}/usr/share/%{name}/management/webapps/client
-mkdir -p ${RPM_BUILD_ROOT}/var/log/%{name}/management
-mkdir -p ${RPM_BUILD_ROOT}/var/log/%{name}/agent
-mkdir -p ${RPM_BUILD_ROOT}/var/log/%{name}/awsapi
-mkdir -p ${RPM_BUILD_ROOT}/var/log/%{name}/ipallocator
-mkdir -p ${RPM_BUILD_ROOT}/var/cache/%{name}/management/work
-mkdir -p ${RPM_BUILD_ROOT}/var/cache/%{name}/management/temp
-mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{name}/mnt
-mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{name}/management
-mkdir -p ${RPM_BUILD_ROOT}/etc/%{name}/management
-mkdir -p ${RPM_BUILD_ROOT}/etc/%{name}/management/Catalina/localhost/client
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/cloud/setup
+mkdir -p ${RPM_BUILD_ROOT}/usr/share/cloud/management/
+ln -sf /usr/share/tomcat6/bin ${RPM_BUILD_ROOT}/usr/share/cloud/management/bin
+ln -sf /etc/cloud/management ${RPM_BUILD_ROOT}/usr/share/cloud/management/conf
+ln -sf /usr/share/tomcat6/lib ${RPM_BUILD_ROOT}/usr/share/cloud/management/lib
+ln -sf /var/log/cloud/management ${RPM_BUILD_ROOT}/usr/share/cloud/management/logs
+ln -sf /var/cache/cloud/management/temp ${RPM_BUILD_ROOT}/usr/share/cloud/management/temp
+ln -sf /var/cache/cloud/management/work ${RPM_BUILD_ROOT}/usr/share/cloud/management/work
+mkdir -p ${RPM_BUILD_ROOT}/usr/share/cloud/management/webapps/client
+mkdir -p ${RPM_BUILD_ROOT}/var/log/cloud/management
+mkdir -p ${RPM_BUILD_ROOT}/var/log/cloud/agent
+mkdir -p ${RPM_BUILD_ROOT}/var/log/cloud/awsapi
+mkdir -p ${RPM_BUILD_ROOT}/var/log/cloud/ipallocator
+mkdir -p ${RPM_BUILD_ROOT}/var/cache/cloud/management/work
+mkdir -p ${RPM_BUILD_ROOT}/var/cache/cloud/management/temp
+mkdir -p ${RPM_BUILD_ROOT}/var/lib/cloud/mnt
+mkdir -p ${RPM_BUILD_ROOT}/var/lib/cloud/management
+mkdir -p ${RPM_BUILD_ROOT}/etc/cloud/management
+mkdir -p ${RPM_BUILD_ROOT}/etc/cloud/management/Catalina/localhost/client
 mkdir -p ${RPM_BUILD_ROOT}/etc/rc.d/init.d
 mkdir -p ${RPM_BUILD_ROOT}/etc/sysconfig
-mkdir -p ${RPM_BUILD_ROOT}/etc/%{name}/management/Catalina/localhost/client
+mkdir -p ${RPM_BUILD_ROOT}/etc/cloud/management/Catalina/localhost/client
 
 install -D client/target/utilities/bin/* ${RPM_BUILD_ROOT}%{_bindir}
-install -D console-proxy/dist/systemvm.iso ${RPM_BUILD_ROOT}/usr/share/%{name}/management/webapps/client/WEB-INF/classes/vms/systemvm.iso
-install -D console-proxy/dist/systemvm.zip ${RPM_BUILD_ROOT}/usr/share/%{name}/management/webapps/client/WEB-INF/classes/vms/systemvm.zip
+install -D console-proxy/dist/systemvm.iso ${RPM_BUILD_ROOT}/usr/share/cloud/management/webapps/client/WEB-INF/classes/vms/systemvm.iso
+install -D console-proxy/dist/systemvm.zip ${RPM_BUILD_ROOT}/usr/share/cloud/management/webapps/client/WEB-INF/classes/vms/systemvm.zip
 
-cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}/setup
-cp -r client/target/cloud-client-ui-4.1.0-SNAPSHOT/* ${RPM_BUILD_ROOT}/usr/share/%{name}/management/webapps/client
+cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/cloud/setup
+cp -r client/target/cloud-client-ui-4.1.0-SNAPSHOT/* ${RPM_BUILD_ROOT}/usr/share/cloud/management/webapps/client
 
 for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf server-ssl.xml server-nonssl.xml \
             catalina.policy catalina.properties db-enc.properties classpath.conf tomcat-users.xml web.xml ; do
-  mv ${RPM_BUILD_ROOT}/usr/share/%{name}/management/webapps/client/WEB-INF/classes/$name \
-    ${RPM_BUILD_ROOT}/etc/%{name}/management/$name
+  mv ${RPM_BUILD_ROOT}/usr/share/cloud/management/webapps/client/WEB-INF/classes/$name \
+    ${RPM_BUILD_ROOT}/etc/cloud/management/$name
 done
-mv ${RPM_BUILD_ROOT}/usr/share/%{name}/management/webapps/client/WEB-INF/classes/context.xml \
-    ${RPM_BUILD_ROOT}/etc/%{name}/management/Catalina/localhost/client
+mv ${RPM_BUILD_ROOT}/usr/share/cloud/management/webapps/client/WEB-INF/classes/context.xml \
+    ${RPM_BUILD_ROOT}/etc/cloud/management/Catalina/localhost/client
 
 mkdir -p ${RPM_BUILD_ROOT}/usr/lib/python2.6/site-packages/
 cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}/usr/lib/python2.6/site-packages/
@@ -210,143 +212,150 @@ install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/
 install -D client/target/pythonlibs/jasypt-1.9.0.jar ${RPM_BUILD_ROOT}%{_javadir}/jasypt-1.9.0.jar
 install -D client/target/pythonlibs/jasypt-1.8.jar ${RPM_BUILD_ROOT}%{_javadir}/jasypt-1.8.jar
 
-install -D packaging/centos63/cloud-ipallocator.rc ${RPM_BUILD_ROOT}/etc/rc.d/init.d/%{name}-ipallocator
-install -D packaging/centos63/cloud-management.rc ${RPM_BUILD_ROOT}/etc/rc.d/init.d/%{name}-management
-install -D packaging/centos63/cloud-management.sysconfig ${RPM_BUILD_ROOT}/etc/sysconfig/%{name}-management
+install -D packaging/centos63/cloud-ipallocator.rc ${RPM_BUILD_ROOT}/etc/rc.d/init.d/cloud-ipallocator
+install -D packaging/centos63/cloud-management.rc ${RPM_BUILD_ROOT}/etc/rc.d/init.d/cloud-management
+install -D packaging/centos63/cloud-management.sysconfig ${RPM_BUILD_ROOT}/etc/sysconfig/cloud-management
 
-chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina
-chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost
-chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
-chmod 770 ${RPM_BUILD_ROOT}%{_sharedstatedir}/%{name}/mnt
-chmod 770 ${RPM_BUILD_ROOT}%{_sharedstatedir}/%{name}/management
-chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/work
-chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/%{name}/management/temp
-chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
-chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
-chmod -R ugo+x ${RPM_BUILD_ROOT}/usr/share/%{name}/management/webapps/client/WEB-INF/classes/scripts
+chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/cloud/management/Catalina
+chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/cloud/management/Catalina/localhost
+chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/cloud/management/Catalina/localhost/client
+chmod 770 ${RPM_BUILD_ROOT}%{_sharedstatedir}/cloud/mnt
+chmod 770 ${RPM_BUILD_ROOT}%{_sharedstatedir}/cloud/management
+chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/cloud/management/work
+chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/cache/cloud/management/temp
+chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/cloud/management
+chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/cloud/agent
+chmod -R ugo+x ${RPM_BUILD_ROOT}/usr/share/cloud/management/webapps/client/WEB-INF/classes/scripts
 
 # KVM Agent
 mkdir -p ${RPM_BUILD_ROOT}/etc/cloud/agent
 mkdir -p ${RPM_BUILD_ROOT}/var/log/cloud/agent
-install -D packaging/centos63/cloud-agent.rc ${RPM_BUILD_ROOT}/etc/init.d/%{name}-agent
+install -D packaging/centos63/cloud-agent.rc ${RPM_BUILD_ROOT}/etc/init.d/cloud-agent
 install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}/etc/cloud/agent/agent.properties
 install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}/etc/cloud/agent/environment.properties
 install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}/etc/cloud/agent/log4j-cloud.xml
 install -D agent/target/transformed/cloud-setup-agent ${RPM_BUILD_ROOT}/usr/bin/cloud-setup-agent
 install -D agent/target/transformed/cloud-ssh ${RPM_BUILD_ROOT}/usr/bin/cloud-ssh
-install -D plugins/hypervisors/kvm/target/%{name}-plugin-hypervisor-kvm-%{_maventag}.jar ${RPM_BUILD_ROOT}/usr/share/cloud/java/%{name}-plugin-hypervisor-kvm-%{_maventag}.jar
+install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-%{_maventag}.jar ${RPM_BUILD_ROOT}/usr/share/cloud/java/cloud-plugin-hypervisor-kvm-%{_maventag}.jar
 cp plugins/hypervisors/kvm/target/dependencies/*  ${RPM_BUILD_ROOT}/usr/share/cloud/java
-mkdir -p ${RPM_BUILD_ROOT}/usr/share/cloud/scripts
-cp -r scripts/* ${RPM_BUILD_ROOT}/usr/share/cloud/scripts
 
 # Usage server
-install -D usage/target/%{name}-usage-%{_maventag}.jar ${RPM_BUILD_ROOT}/usr/share/cloud/usage/java/%{name}-usage-%{_maventag}.jar
+install -D usage/target/cloud-usage-%{_maventag}.jar ${RPM_BUILD_ROOT}/usr/share/cloud/usage/java/cloud-usage-%{_maventag}.jar
 cp usage/target/dependencies/* ${RPM_BUILD_ROOT}/usr/share/cloud/usage/java
-install -D packaging/centos63/cloud-usage.rc ${RPM_BUILD_ROOT}/etc/init.d/%{name}-usage
+install -D packaging/centos63/cloud-usage.rc ${RPM_BUILD_ROOT}/etc/init.d/cloud-usage
 mkdir -p ${RPM_BUILD_ROOT}/var/log/cloud/usage/
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
 
-%preun management-server
-/sbin/service %{name}-management stop || true
+%preun management
+/sbin/service cloud-management stop || true
 if [ "$1" == "0" ] ; then
-    /sbin/chkconfig --del %{name}-management  > /dev/null 2>&1 || true
-    /sbin/service %{name}-management stop > /dev/null 2>&1 || true
+    /sbin/chkconfig --del cloud-management  > /dev/null 2>&1 || true
+    /sbin/service cloud-management stop > /dev/null 2>&1 || true
 fi
 
-%pre management-server
-id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
-     -r -s /bin/sh -d %{_sharedstatedir}/%{name}/management %{name}|| true
+%pre management
+id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
+     -r -s /bin/sh -d %{_sharedstatedir}/cloud/management cloud|| true
 
 # set max file descriptors for cloud user to 4096
 sed -i /"cloud hard nofile"/d /etc/security/limits.conf
 sed -i /"cloud soft nofile"/d /etc/security/limits.conf
 echo "cloud hard nofile 4096" >> /etc/security/limits.conf
 echo "cloud soft nofile 4096" >> /etc/security/limits.conf
-rm -rf %{_localstatedir}/cache/%{name}
+rm -rf %{_localstatedir}/cache/cloud
 # user harcoded here, also hardcoded on wscript
 
-%post management-server
+%post management
 if [ "$1" == "1" ] ; then
-    /sbin/chkconfig --add %{name}-management > /dev/null 2>&1 || true
-    /sbin/chkconfig --level 345 %{name}-management on > /dev/null 2>&1 || true
+    /sbin/chkconfig --add cloud-management > /dev/null 2>&1 || true
+    /sbin/chkconfig --level 345 cloud-management on > /dev/null 2>&1 || true
 fi
 
-if [ ! -f %{_datadir}/%{name}/management/webapps/client/WEB-INF/classes/scripts/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
+if [ ! -f %{_datadir}/cloud/management/webapps/client/WEB-INF/classes/scripts/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
-    echo %{_datadir}/%{name}/management/webapps/client/WEB-INF/classes/scripts/vm/hypervisor/xenserver/
+    echo %{_datadir}/cloud/management/webapps/client/WEB-INF/classes/scripts/vm/hypervisor/xenserver/
 fi
 
 #No default permission as the permission setup is complex
-%files management-server
+%files management
 %defattr(-,root,root,-)
 %doc LICENSE
 %doc NOTICE
-%dir %attr(0770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina
-%dir %attr(0770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina/localhost
-%dir %attr(0770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina/localhost/client
-%dir %{_datadir}/%{name}/management
-%dir %attr(0770,root,%{name}) %{_sharedstatedir}/%{name}/mnt
-%dir %attr(0770,%{name},%{name}) %{_sharedstatedir}/%{name}/management
-%dir %attr(0770,root,%{name}) %{_localstatedir}/cache/%{name}/management
-%dir %attr(0770,root,%{name}) %{_localstatedir}/cache/%{name}/management/work
-%dir %attr(0770,root,%{name}) %{_localstatedir}/cache/%{name}/management/temp
-%dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/management
-%dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/agent
-%config(noreplace) %{_sysconfdir}/sysconfig/%{name}-management
-%config(noreplace) %{_sysconfdir}/%{name}/management
-%config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/management/db.properties
-%config(noreplace) %{_sysconfdir}/%{name}/management/log4j-%{name}.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf
-%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf
-%attr(0755,root,root) %{_initrddir}/%{name}-management
-%attr(0755,root,root) %{_bindir}/%{name}-setup-management
-%attr(0755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
-%{_datadir}/%{name}/management/*
-
-%files setup
-%attr(0755,root,root) %{_bindir}/%{name}-setup-databases
-%attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
-%attr(0755,root,root) %{_bindir}/%{name}-set-guest-password
-%attr(0755,root,root) %{_bindir}/%{name}-set-guest-sshkey
-%attr(0755,root,root) %{_bindir}/%{name}-sysvmadm
-%attr(0755,root,root) %{_bindir}/%{name}-setup-encryption
-%dir %{_datadir}/%{name}/setup
-%{_datadir}/%{name}/setup/*.sql
-%{_datadir}/%{name}/setup/db/*.sql
-%{_datadir}/%{name}/setup/*.sh
-%{_datadir}/%{name}/setup/server-setup.xml
+%dir %attr(0770,root,cloud) %{_sysconfdir}/cloud/management/Catalina
+%dir %attr(0770,root,cloud) %{_sysconfdir}/cloud/management/Catalina/localhost
+%dir %attr(0770,root,cloud) %{_sysconfdir}/cloud/management/Catalina/localhost/client
+%dir %{_datadir}/cloud/management
+%dir %attr(0770,root,cloud) %{_sharedstatedir}/cloud/mnt
+%dir %attr(0770,cloud,cloud) %{_sharedstatedir}/cloud/management
+%dir %attr(0770,root,cloud) %{_localstatedir}/cache/cloud/management
+%dir %attr(0770,root,cloud) %{_localstatedir}/cache/cloud/management/work
+%dir %attr(0770,root,cloud) %{_localstatedir}/cache/cloud/management/temp
+%dir %attr(0770,root,cloud) %{_localstatedir}/log/cloud/management
+%dir %attr(0770,root,cloud) %{_localstatedir}/log/cloud/agent
+%config(noreplace) %{_sysconfdir}/sysconfig/cloud-management
+%config(noreplace) %{_sysconfdir}/cloud/management
+%config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/cloud/management/db.properties
+%config(noreplace) %{_sysconfdir}/cloud/management/log4j-cloud.xml
+%config(noreplace) %{_sysconfdir}/cloud/management/tomcat6-nonssl.conf
+%config(noreplace) %{_sysconfdir}/cloud/management/tomcat6-ssl.conf
+%attr(0755,root,root) %{_initrddir}/cloud-management
+%attr(0755,root,root) %{_bindir}/cloud-setup-management
+%attr(0755,root,root) %{_bindir}/cloud-update-xenserver-licenses
+%{_datadir}/cloud/management/*
+%attr(0755,root,root) %{_bindir}/cloud-setup-databases
+%attr(0755,root,root) %{_bindir}/cloud-migrate-databases
+%attr(0755,root,root) %{_bindir}/cloud-set-guest-password
+%attr(0755,root,root) %{_bindir}/cloud-set-guest-sshkey
+%attr(0755,root,root) %{_bindir}/cloud-sysvmadm
+%attr(0755,root,root) %{_bindir}/cloud-setup-encryption
+%dir %{_datadir}/cloud/setup
+%{_datadir}/cloud/setup/*.sql
+%{_datadir}/cloud/setup/db/*.sql
+%{_datadir}/cloud/setup/*.sh
+%{_datadir}/cloud/setup/server-setup.xml
 %{_javadir}/jasypt-1.9.0.jar
 %{_javadir}/jasypt-1.8.jar
-%doc LICENSE
-%doc NOTICE
-
-%files python
-%defattr(0644,root,root,0755)
-%{_prefix}/lib*/python*/site-packages/%{name}*
 %attr(0755,root,root) %{_bindir}/cloud-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/cloud-ipallocator
-%dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
+%dir %attr(0770,root,root) %{_localstatedir}/log/cloud/ipallocator
 %doc LICENSE
 %doc NOTICE
 
 %files agent
-%attr(0755,root,root) %{_bindir}/%{name}-setup-agent
-%attr(0755,root,root) %{_bindir}/%{name}-ssh
+%attr(0755,root,root) %{_bindir}/cloud-setup-agent
+%attr(0755,root,root) %{_bindir}/cloud-ssh
 %attr(0755,root,root) %{_sysconfdir}/init.d/cloud-agent
 %config(noreplace) %{_sysconfdir}/cloud/agent
 %dir /var/log/cloud/agent
 %attr(0644,root,root) /usr/share/cloud/java/*.jar
-%attr(0755,root,root) /usr/share/cloud/scripts
+%doc LICENSE
+%doc NOTICE
+
+%files common
+%attr(0755,root,root) /usr/share/cloudstack-scripts/
+%doc LICENSE
+%doc NOTICE
 
 %files usage
 %attr(0755,root,root) %{_sysconfdir}/init.d/cloud-usage
 %attr(0644,root,root) /usr/share/cloud/usage/java/*.jar
 %dir /var/log/cloud/usage
+%doc LICENSE
+%doc NOTICE
 
 %files cli
+%doc LICENSE
+%doc NOTICE
+%{_prefix}/lib*/python*/site-packages/cloud*
+
+%files docs
+%doc LICENSE
+%doc NOTICE
+
+%files awsapi
 %doc LICENSE
 %doc NOTICE
 
