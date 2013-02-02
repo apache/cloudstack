@@ -1,0 +1,44 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "DevCloud"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "DevCloud is the &PRODUCT; sandbox. It is provided as a Virtual Box appliance. It is meant to be used as a development environment to easily test new &PRODUCT; development. It has also been used for training and &PRODUCT; demos since it provides a <emphasis>Cloud in a box</emphasis>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "DevCloud is provided as a convenience by community members. It is not an official &PRODUCT; release artifact."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; source code however, contains tools to build your own DevCloud."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "DevCloud is under development and should be considered a Work In Progress (WIP), the wiki is the most up to date documentation:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<ulink url=\"https://cwiki.apache.org/confluence/display/CLOUDSTACK/DevCloud\" />"
+msgstr ""
+

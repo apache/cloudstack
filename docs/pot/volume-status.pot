@@ -1,0 +1,29 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:12:00\n"
+"PO-Revision-Date: 2013-02-02T20:12:00\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Volume Status"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When a snapshot operation is triggered by means of a recurring snapshot policy, a snapshot is skipped if a volume has remained inactive since its last snapshot was taken. A volume is considered to be inactive if it is either detached or attached to a VM that is not running. &PRODUCT; ensures that at least one snapshot is taken since the volume last became inactive."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When a snapshot is taken manually, a snapshot is always created regardless of whether a volume has been active or not."
+msgstr ""
+

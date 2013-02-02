@@ -1,0 +1,59 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Maintenance mode not working on vCenter"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Symptom"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Host was placed in maintenance mode, but still appears live in vCenter."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Cause"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; administrator UI was used to place the host in scheduled maintenance mode. This mode is separate from vCenter's maintenance mode."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Solution"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Use vCenter to place the host in maintenance mode."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "More Information"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "See <xref linkend=\"scheduled-maintenance-maintenance-mode-hosts\" />"
+msgstr ""
+

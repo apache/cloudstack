@@ -1,0 +1,24 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Add More Clusters (Optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You need to tell &PRODUCT; about the hosts that it will manage. Hosts exist inside clusters, so before you begin adding hosts to the cloud, you must add at least one cluster."
+msgstr ""
+

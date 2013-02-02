@@ -1,0 +1,44 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Features of the Nicira NVP Plugin"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In CloudStack release 4.0.0-incubating this plugin supports the Connectivity service. This service is responsible for creating Layer 2 networks supporting the networks created by Guests. In other words when an tennant creates a new network, instead of the traditional VLAN a logical network will be created by sending the appropriate calls to the Nicira NVP Controller."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The plugin has been tested with Nicira NVP versions 2.1.0, 2.2.0 and 2.2.1"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In CloudStack 4.0.0-incubating only the XenServer hypervisor is supported for use in combination with Nicira NVP."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In CloudStack 4.1.0-incubating both KVM and XenServer hypervisors are supported."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In CloudStack 4.0.0-incubating the UI components for this plugin are not complete, configuration is done by sending commands to the API."
+msgstr ""
+

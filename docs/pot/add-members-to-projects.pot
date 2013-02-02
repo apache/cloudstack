@@ -1,0 +1,34 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding Members to a Project"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New members can be added to a project by the project’s administrator, the domain administrator of the domain where the project resides or any parent domain, or the &PRODUCT; root administrator. There are two ways to add members in &PRODUCT;, but only one way is enabled at a time:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If invitations have been enabled, you can send invitations to new members."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If invitations are not enabled, you can add members directly through the UI."
+msgstr ""
+
