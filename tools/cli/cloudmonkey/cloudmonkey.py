@@ -24,27 +24,31 @@ try:
     import logging
     import os
     import pdb
-    import re
     import shlex
     import sys
+    import types
 
     from urllib2 import HTTPError, URLError
     from httplib import BadStatusLine
 
-    from config import __version__, config_file
-    from config import precached_verbs, read_config, write_config
+    from config import __version__, cache_file
+    from config import read_config, write_config
+
     from printer import monkeyprint
     from requester import monkeyrequest
+    from cachemaker import loadcache, savecache, monkeycache
+    from cachemaker import splitverbsubject
 
     from prettytable import PrettyTable
-    from marvin.cloudstackConnection import cloudConnection
-    from marvin.cloudstackException import cloudstackAPIException
-    from marvin.cloudstackAPI import *
-    from marvin import cloudstackAPI
 except ImportError, e:
     print "Import error in %s : %s" % (__name__, e)
     import sys
     sys.exit()
+
+try:
+    from precache import apicache
+except ImportError:
+    apicache = {}
 
 # Fix autocompletion issue, can be put in .pythonstartup
 try:
@@ -60,23 +64,21 @@ else:
 
 log_fmt = '%(asctime)s - %(filename)s:%(lineno)s - [%(levelname)s] %(message)s'
 logger = logging.getLogger(__name__)
-completions = cloudstackAPI.__all__
 
 
 class CloudMonkeyShell(cmd.Cmd, object):
     intro = ("☁ Apache CloudStack 🐵 cloudmonkey " + __version__ +
              ". Type help or ? to list commands.\n")
     ruler = "="
-    apicache = {}
-    # datastructure {'verb': {cmd': ['api', [params], doc, required=[]]}}
-    cache_verbs = precached_verbs
+    cache_file = cache_file
+    ## datastructure {'verb': {cmd': ['api', [params], doc, required=[]]}}
+    #cache_verbs = apicache
     config_options = []
 
-    def __init__(self, pname, verbs):
+    def __init__(self, pname):
         self.program_name = pname
-        self.verbs = verbs
-
         self.config_options = read_config(self.get_attr, self.set_attr)
+        self.loadcache()
         self.prompt = self.prompt.strip() + " "  # Cosmetic fix for prompt
 
         logging.basicConfig(filename=self.log_file,
@@ -111,8 +113,27 @@ class CloudMonkeyShell(cmd.Cmd, object):
             except KeyboardInterrupt:
                 print("^C")
 
+    def loadcache(self):
+        if os.path.exists(self.cache_file):
+            self.apicache = loadcache(self.cache_file)
+        else:
+            self.apicache = apicache
+        self.verbs = apicache['verbs']
+
     def monkeyprint(self, *args):
-        monkeyprint((self.color == 'true'), *args)
+        output = ""
+        try:
+            for arg in args:
+                if isinstance(type(arg), types.NoneType):
+                    continue
+                output += str(arg)
+        except Exception, e:
+            print e
+
+        if self.color == 'true':
+            monkeyprint(output)
+        else:
+            print output
 
     def print_result(self, result, result_filter=None):
         if result is None or len(result) == 0:
@@ -186,6 +207,9 @@ class CloudMonkeyShell(cmd.Cmd, object):
         if self.pipe_runner(args):
             return
 
+        apiname = args.partition(' ')[0]
+        verb, subject = splitverbsubject(apiname)
+
         lexp = shlex.shlex(args.strip())
         lexp.whitespace = " "
         lexp.whitespace_split = True
@@ -196,7 +220,6 @@ class CloudMonkeyShell(cmd.Cmd, object):
             if next_val is None:
                 break
             args.append(next_val)
-        api_name = args[0]
 
         args_dict = dict(map(lambda x: [x.partition("=")[0],
                                         x.partition("=")[2]],
@@ -207,22 +230,15 @@ class CloudMonkeyShell(cmd.Cmd, object):
                                   map(lambda x: x.strip(),
                                       args_dict.pop('filter').split(',')))
 
-        for attribute in args_dict.keys():
-            setattr(api_cmd, attribute, args_dict[attribute])
+        missing_args = filter(lambda x: x not in args_dict.keys(),
+                              self.apicache[verb][subject]['requiredparams'])
 
-        #command = api_cmd()
-        #missing_args = filter(lambda x: x not in args_dict.keys(),
-        #                      command.required)
+        if len(missing_args) > 0:
+            self.monkeyprint("Missing arguments: ", ' '.join(missing_args))
+            return
 
-        #if len(missing_args) > 0:
-        #    self.monkeyprint("Missing arguments: ", ' '.join(missing_args))
-        #    return
-
-        isAsync = False
-        #if "isAsync" in dir(command):
-        #    isAsync = (command.isAsync == "true")
-
-        result = self.make_request(api_name, args_dict, isAsync)
+        result = self.make_request(apiname, args_dict,
+                                   apiname in self.apicache['asyncapis'])
         if result is None:
             return
         try:
@@ -248,16 +264,18 @@ class CloudMonkeyShell(cmd.Cmd, object):
         search_string = ""
 
         if separator != " ":   # Complete verb subjects
-            autocompletions = self.cache_verbs[verb].keys()
+            autocompletions = self.apicache[verb].keys()
             search_string = subject
         else:                  # Complete subject params
             autocompletions = map(lambda x: x + "=",
-                                  self.cache_verbs[verb][subject][1])
+                                  map(lambda x: x['name'],
+                                      self.apicache[verb][subject]['params']))
             search_string = text
 
         if self.tabularize == "true" and subject != "":
             autocompletions.append("filter=")
         return [s for s in autocompletions if s.startswith(search_string)]
+
 
     def do_sync(self, args):
         """
@@ -266,9 +284,9 @@ class CloudMonkeyShell(cmd.Cmd, object):
         it rollbacks last datastore or api precached datastore.
         """
         response = self.make_request("listApis")
-        f = open('test.json', "w")
-        f.write(json.dumps(response))
-        f.close()
+        self.apicache = monkeycache(response)
+        savecache(self.apicache, self.cache_file)
+        self.loadcache()
 
     def do_api(self, args):
         """
@@ -281,11 +299,6 @@ class CloudMonkeyShell(cmd.Cmd, object):
             return self.default(args)
         else:
             self.monkeyprint("Please use a valid syntax")
-
-    def complete_api(self, text, line, begidx, endidx):
-        mline = line.partition(" ")[2]
-        offs = len(mline) - len(text)
-        return [s[offs:] for s in completions if s.startswith(mline)]
 
     def do_set(self, args):
         """
@@ -387,9 +400,12 @@ class CloudMonkeyShell(cmd.Cmd, object):
 
 
 def main():
-    pattern = re.compile("[A-Z]")
-    verbs = list(set([x[:pattern.search(x).start()] for x in completions
-                 if pattern.search(x) is not None]).difference(['cloudstack']))
+    verbs = []
+    if os.path.exists(cache_file):
+        verbs = loadcache(cache_file)['verbs']
+    elif 'verbs' in apicache:
+        verbs = apicache['verbs']
+
     for verb in verbs:
         def add_grammar(verb):
             def grammar_closure(self, args):
@@ -397,9 +413,9 @@ def main():
                     return
                 try:
                     args_partition = args.partition(" ")
-                    res = self.cache_verbs[verb][args_partition[0]]
-                    cmd = res[0]
-                    helpdoc = res[2]
+                    api = self.apicache[verb][args_partition[0]]
+                    cmd = api['name']
+                    helpdoc = api['description']
                     args = args_partition[2]
                 except KeyError, e:
                     self.monkeyprint("Error: invalid %s api arg" % verb, e)
@@ -412,10 +428,10 @@ def main():
 
         grammar_handler = add_grammar(verb)
         grammar_handler.__doc__ = "%ss resources" % verb.capitalize()
-        grammar_handler.__name__ = 'do_' + verb
+        grammar_handler.__name__ = 'do_' + str(verb)
         setattr(CloudMonkeyShell, grammar_handler.__name__, grammar_handler)
 
-    shell = CloudMonkeyShell(sys.argv[0], verbs)
+    shell = CloudMonkeyShell(sys.argv[0])
     if len(sys.argv) > 1:
         shell.onecmd(' '.join(sys.argv[1:]))
     else:

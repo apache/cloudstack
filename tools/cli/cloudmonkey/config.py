@@ -26,9 +26,8 @@ try:
 
     from ConfigParser import ConfigParser, SafeConfigParser
     from os.path import expanduser
-    from precache import precached_verbs
 except ImportError, e:
-    precached_verbs = {}
+    print "ImportError", e
 
 param_type = ['boolean', 'date', 'float', 'integer', 'short', 'list',
               'long', 'object', 'map', 'string', 'tzdate', 'uuid']
@@ -37,12 +36,12 @@ iterable_type = ['set', 'list', 'object']
 
 config_dir = expanduser('~/.cloudmonkey')
 config_file = expanduser(config_dir + '/config')
+cache_file = expanduser(config_dir + '/cache')
 
 # cloudmonkey config fields
 config_fields = {'core': {}, 'ui': {}, 'server': {}, 'user': {}}
 
 # core
-config_fields['core']['cache_file'] = expanduser(config_dir + '/cache')
 config_fields['core']['history_file'] = expanduser(config_dir + '/history')
 config_fields['core']['log_file'] = expanduser(config_dir + '/log')
 
@@ -106,10 +105,10 @@ def read_config(get_attr, set_attr):
             try:
                 set_attr(key, config.get(section, key))
             except Exception:
-                missing_keys.appned(key)
+                missing_keys.append(key)
 
     if len(missing_keys) > 0:
-        print "Please fix `%s` in %s" % (key, config_file)
+        print "Please fix `%s` in %s" % (', '.join(missing_keys), config_file)
         sys.exit()
 
     return config_options
