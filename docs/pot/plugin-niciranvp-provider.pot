@@ -1,0 +1,54 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Enabling the service provider"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To allow CloudStack to use the Nicira NVP Plugin the network service provider needs to be enabled on the physical network. The following sequence of API calls will enable the network service provider"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addNetworkServiceProvider"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "name = \"NiciraNvp\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "physicalnetworkid = &lt;the uuid of the physical network&gt;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateNetworkServiceProvider"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "id = &lt;the provider uuid returned by the previous call&gt;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "state = \"Enabled\""
+msgstr ""
+

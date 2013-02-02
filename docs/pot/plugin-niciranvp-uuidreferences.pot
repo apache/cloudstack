@@ -1,0 +1,39 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "UUID References"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The plugin maintains several references in the CloudStack database to items created on the NVP Controller."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Every guest network this is created will have its broadcast type set to Lswitch and if the network is in state \"Implemented\", the broadcast URI will have the UUID of the Logical Switch that was created for this network on the NVP Controller."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Nics that are connected to one of the Logical Switches will have their Logical Switch Port UUID listed in the nicira_nvp_nic_map table"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All devices created on the NVP Controller will have a tag set to domain-account of the owner of the network, this string can be used to search for items in the NVP Controller."
+msgstr ""
+

@@ -1,0 +1,39 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Extracting source"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Extracting the &PRODUCT; release is relatively simple and can be done with a single command as follows:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>$</prompt> <command>tar</command> -jxvf apache-cloudstack-4.0.0-incubating-src.tar.bz2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can now move into the directory:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>$</prompt> <command>cd</command> ./apache-cloudstack-4.0.0-incubating-src"
+msgstr ""
+

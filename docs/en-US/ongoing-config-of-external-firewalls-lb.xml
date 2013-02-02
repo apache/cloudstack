@@ -18,7 +18,7 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<section id="ongoing-configuration-of-external-firewalls-loadbalancer">
+<section id="ongoing-config-of-external-firewalls-ld">
   <title>Ongoing Configuration of External Firewalls and Load Balancers</title>
   <para>Additional user actions (e.g. setting a port forward) will cause further programming of the
     firewall and load balancer. A user may request additional public IP addresses and forward

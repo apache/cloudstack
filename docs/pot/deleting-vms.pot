@@ -1,0 +1,49 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Deleting VMs"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Users can delete their own virtual machines. A running virtual machine will be abruptly stopped before it is deleted. Administrators can delete any virtual machines."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To delete a virtual machine:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Instances."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the VM that you want to delete."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Destroy Instance button <inlinemediaobject> <imageobject> <imagedata fileref=\"./images/destroy-instance.png\" /> </imageobject> <textobject><phrase>Destroyinstance.png: button to destroy an instance</phrase></textobject> </inlinemediaobject>"
+msgstr ""
+
