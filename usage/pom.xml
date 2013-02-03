@@ -31,11 +31,22 @@
       <artifactId>cloud-server</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>${cs.mysql.version}</version>
+      <scope>runtime</scope>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+    <resources>
+      <resource>
+          <directory>resources</directory>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -102,7 +113,6 @@
           </execution>
         </executions>
       </plugin>
-
     </plugins>
   </build>
 </project>

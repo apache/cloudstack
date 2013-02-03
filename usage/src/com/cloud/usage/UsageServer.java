@@ -38,17 +38,17 @@ public class UsageServer {
      */
     public static void main(String[] args) {
     	initLog4j();
-    	ApplicationContext appContext = new ClassPathXmlApplicationContext("usageApplicationContext.xml");
-	    
         UsageServer usage = new UsageServer();
         usage.init(args);
-        usage.start(appContext);
+        usage.start();
     }
 
     public void init(String[] args) {
     }
 
-    public void start(ApplicationContext appContext) {
+    public void start() {
+    	ApplicationContext appContext = new ClassPathXmlApplicationContext("usageApplicationContext.xml");
+	    
     	try {
     		ComponentContext.initComponentsLifeCycle();
     	} catch(Exception e) {
