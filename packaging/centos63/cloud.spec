@@ -240,10 +240,11 @@ install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-%{_maventa
 cp plugins/hypervisors/kvm/target/dependencies/*  ${RPM_BUILD_ROOT}/usr/share/cloud/java
 
 # Usage server
-install -D usage/target/cloud-usage-%{_maventag}.jar ${RPM_BUILD_ROOT}/usr/share/cloud/usage/java/cloud-usage-%{_maventag}.jar
-cp usage/target/dependencies/* ${RPM_BUILD_ROOT}/usr/share/cloud/usage/java
-install -D packaging/centos63/cloud-usage.rc ${RPM_BUILD_ROOT}/etc/init.d/cloud-usage
-mkdir -p ${RPM_BUILD_ROOT}/var/log/cloud/usage/
+mkdir -p ${RPM_BUILD_ROOT}/usr/share/%{name}-usage/lib
+install -D usage/target/cloud-usage-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/cloud-usage-%{_maventag}.jar
+cp usage/target/dependencies/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib/
+install -D packaging/centos63/cloud-usage.rc ${RPM_BUILD_ROOT}/%{_sysconfdir}/init.d/%{name}-usage
+mkdir -p ${RPM_BUILD_ROOT}/var/log/%{name}/usage/
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -335,14 +336,15 @@ fi
 %doc NOTICE
 
 %files common
-%attr(0755,root,root) /usr/share/cloudstack-scripts/
+%attr(0755,root,root) %{_datadir}/cloudstack-scripts/
 %doc LICENSE
 %doc NOTICE
 
 %files usage
-%attr(0755,root,root) %{_sysconfdir}/init.d/cloud-usage
-%attr(0644,root,root) /usr/share/cloud/usage/java/*.jar
-%dir /var/log/cloud/usage
+%attr(0755,root,root) %{_sysconfdir}/init.d/%{name}-usage
+%attr(0644,root,root) %{_datadir}/%{name}-usage/*.jar
+%attr(0644,root,root) %{_datadir}/%{name}-usage/lib/*.jar
+%dir /var/log/%{name}/usage
 %doc LICENSE
 %doc NOTICE
 

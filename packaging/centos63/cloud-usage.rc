@@ -32,10 +32,10 @@
 
 . /etc/rc.d/init.d/functions
 
-SHORTNAME="cloud-usage"
+SHORTNAME="cloudstack-usage"
 PIDFILE=/var/run/"$SHORTNAME".pid
 LOCKFILE=/var/lock/subsys/"$SHORTNAME"
-LOGFILE=/var/log/cloud/usage/usage.log
+LOGFILE=/var/log/cloudstack/usage/usage.log
 PROGNAME="CloudStack Usage Monitor"
 CLASS="com.cloud.usage.UsageServer"
 PROG="jsvc"
@@ -57,12 +57,12 @@ export JAVA_HOME
 
 SCP=""
 DCP=""
-UCP=`ls /usr/share/cloud/usage/java/* | tr '\n' ':'`
+UCP=`ls /usr/share/cloudstack-usage/cloud-usage-*.jar`":"`ls /usr/share/cloudstack-usage/lib/* | tr '\n' ':'`
 JCP="/usr/share/java/commons-daemon.jar"
 
 # We need to append the JSVC daemon JAR to the classpath
 # AgentShell implements the JSVC daemon methods
-export CLASSPATH="$SCP:$DCP:$UCP:$JCP:/etc/sysconfig
+export CLASSPATH="$SCP:$DCP:$UCP:$JCP:/etc/sysconfig"
 
 start() {
     if [ -s "$PIDFILE" ] && kill -0 $(cat "$PIDFILE") >/dev/null 2>&1; then
