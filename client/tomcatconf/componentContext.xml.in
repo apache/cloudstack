@@ -77,9 +77,11 @@
   <bean id="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement">
     <property name="name" value="VpcVirtualRouter"/>
   </bean>
+  <!--
   <bean id="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement">
     <property name="name" value="NiciraNvp"/>
   </bean>
+  -->
   
 <!--
   <bean id="BigSwitchVnsElementService" class="com.cloud.network.element.BigSwitchVnsElement">
