@@ -244,7 +244,7 @@ for full help
             self.runMysql(text, p, True)
             self.info(None, True)
 
-        for f in ["templates","create-index-fk"]:
+        for f in ["templates"]:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             text = file(p).read()
             self.info("Applying %s"%p)
@@ -359,7 +359,7 @@ for example:
                 if not os.path.exists(dbf):
                     self.errorAndExit("Cannot find %s"%dbf)
 
-            coreSchemas = ['create-database.sql', 'create-schema.sql', 'create-schema-view.sql', 'templates.sql', 'create-index-fk.sql']
+            coreSchemas = ['create-database.sql', 'create-schema.sql', 'create-schema-view.sql', 'templates.sql']
             if not self.serversetup:
                 coreSchemas.append('server-setup.sql')
 
