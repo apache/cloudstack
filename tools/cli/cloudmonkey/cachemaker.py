@@ -56,6 +56,8 @@ def savecache(apicache, json_file):
     """
     Saves apicache dictionary as json_file, returns dictionary as indented str
     """
+    if isinstance(type(apicache), types.NoneType) or apicache is None or apicache is {}:
+      return ""
     apicachestr = json.dumps(apicache, indent=2)
     with open(json_file, 'w') as cache_file:
         cache_file.write(apicachestr)
@@ -81,8 +83,9 @@ def monkeycache(apis):
     """
     Feed this a dictionary of api bananas, it spits out processed cache
     """
-    if isinstance(type(apis), types.NoneType):
+    if isinstance(type(apis), types.NoneType) or apis is None:
         return {}
+
     responsekey = filter(lambda x: 'response' in x, apis.keys())
 
     if len(responsekey) == 0:
