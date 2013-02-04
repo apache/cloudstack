@@ -98,12 +98,17 @@ binlog-format = 'ROW'</programlisting>
             recommended that you replace this with a more secure value. See <xref
               linkend="about-password-encryption"/>.</para>
         </listitem>
+	<listitem>
+	  <para>(Optional) For management_server_ip, you may explicitly specify cluster management
+             server node IP. If not specified, the local IP address will be used.</para>
+	</listitem>
       </itemizedlist>
       <programlisting language="Bash">cloud-setup-databases cloud:&lt;dbpassword&gt;@localhost \
 --deploy-as=root:&lt;password&gt; \
 -e &lt;encryption_type&gt; \
 -m &lt;management_server_key&gt; \
--k &lt;database_key&gt;</programlisting>
+-k &lt;database_key&gt; \
+-i &lt;management_server_ip&gt;</programlisting>
       <para>When this script is finished, you should see a message like “Successfully initialized
         the database.”</para>
     </listitem>
@@ -118,7 +123,7 @@ binlog-format = 'ROW'</programlisting>
     <listitem>
       <para>Now that the database is set up, you can finish configuring the OS for the Management
         Server. This command will set up iptables, sudoers, and start the Management Server.</para>
-      <programlisting language="Bash"># cloud-setup-management</programlisting>
+      <programlisting><prompt>#</prompt> cloud-setup-management</programlisting>
       <para>You should see the message “&PRODUCT; Management Server setup is done.”</para>
     </listitem>
   </orderedlist>
