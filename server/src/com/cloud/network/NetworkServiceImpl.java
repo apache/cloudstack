@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.network;
 
+import java.net.InetAddress;
+import java.net.Inet6Address;
+import java.net.UnknownHostException;
 import java.security.InvalidParameterException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -72,20 +75,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork.BroadcastDomainRange;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkDomainDao;
-import com.cloud.network.dao.NetworkDomainVO;
-import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
-import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
-import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
-import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.*;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.VirtualRouterElement;
@@ -116,11 +105,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.*;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -717,13 +701,31 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         UserContext.current().setAccountId(owner.getAccountId());
 
-        boolean ipv4 = false, ipv6 = false;
+        boolean ipv4 = true, ipv6 = false;
         if (startIP != null) {
         	ipv4 = true;
         }
         if (startIPv6 != null) {
         	ipv6 = true;
         }
+        
+        if (gateway != null) {
+        	try {
+        		// getByName on a literal representation will only check validity of the address
+        		// http://docs.oracle.com/javase/6/docs/api/java/net/InetAddress.html#getByName(java.lang.String)
+        		InetAddress gatewayAddress = InetAddress.getByName(gateway);
+        		if (gatewayAddress instanceof Inet6Address) {
+        			ipv6 = true;
+        		} else {
+        			ipv4 = true;
+        		}
+        	}
+        	catch (UnknownHostException e) {
+        		s_logger.error("Unable to convert gateway IP to a InetAddress", e);
+        		throw new InvalidParameterValueException("Gateway parameter is invalid");
+        	}
+        }
+        
         
         String cidr = null;
         if (ipv4) {
