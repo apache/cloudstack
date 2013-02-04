@@ -236,7 +236,7 @@ public class GetUsageRecordsCmd extends BaseListCmd {
                 Account account = ApiDBUtils.findAccountByIdIncludingRemoved(usageRecord.getAccountId());
                 if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                     //find the project
-                    Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+                    Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getId());
                     usageRecResponse.setProjectId(project.getUuid());
                     usageRecResponse.setProjectName(project.getName());
                 } else {
