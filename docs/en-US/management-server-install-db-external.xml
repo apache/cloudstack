@@ -127,12 +127,17 @@ bind-address = 0.0.0.0</programlisting>
             recommended that you replace this with a more secure value. See <xref
               linkend="about-password-encryption"/>.</para>
         </listitem>
+        <listitem>
+          <para>(Optional) For management_server_ip, you may explicitly specify cluster management
+             server node IP. If not specified, the local IP address will be used.</para>
+        </listitem>
       </itemizedlist>
       <programlisting language="Bash">cloud-setup-databases cloud:&lt;dbpassword&gt;@&lt;ip address mysql server&gt; \
 --deploy-as=root:&lt;password&gt; \
 -e &lt;encryption_type&gt; \
 -m &lt;management_server_key&gt; \
--k &lt;database_key&gt;</programlisting>
+-k &lt;database_key&gt; \
+-i &lt;management_server_ip&gt;</programlisting>
       <para>When this script is finished, you should see a message like “Successfully initialized
         the database.”</para>
     </listitem>
