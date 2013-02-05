@@ -742,6 +742,7 @@
       var $physicalNetworks = physicalNetwork.getNetworks($wizard);
       var $tabs = guestTraffic.makeTabs($physicalNetworks, args);
       var $container = guestTraffic.getMainContainer($wizard);
+      var $expand = $('<div title="Add multiple VLAN Ranges">').addClass('expand');
 
       // Cleanup
       guestTraffic.remove($wizard);
@@ -753,6 +754,15 @@
       $container.prepend($subnav);
       $container.find('.field').hide();
       $container.find('[rel=vlanRange]').show();
+      $expand.appendTo($container.find('.content .select-container .physical-network-item form [rel=vlanRange]'));
+      //Multiple Vlan Ranges functionality
+      $expand.click(function() {
+
+           var $vlanClone = $container.find('[rel=vlanRange]:first').clone().removeClass('field').insertBefore($container.find('.expand'));
+          //$vlan.appendTo($container.find('.content .select-container .physical-network-item form'));
+
+       });
+
     },
 
     /**
