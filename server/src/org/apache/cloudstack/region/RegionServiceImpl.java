@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.command.user.region.ListRegionsCmd;
 import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
@@ -52,6 +53,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 
+@Component
 @Local(value = { RegionService.class })
 public class RegionServiceImpl extends ManagerBase implements RegionService, Manager {
     public static final Logger s_logger = Logger.getLogger(RegionServiceImpl.class);
