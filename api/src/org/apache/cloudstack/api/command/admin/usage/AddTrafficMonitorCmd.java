@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.command.admin.usage;
 
 import javax.inject.Inject;
 
@@ -30,7 +30,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
-import com.cloud.network.NetworkUsageManager;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -38,7 +37,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class AddTrafficMonitorCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddTrafficMonitorCmd.class.getName());	
     private static final String s_name = "addtrafficmonitorresponse";	
-    @Inject NetworkUsageManager networkUsageMgr;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -94,8 +92,8 @@ public class AddTrafficMonitorCmd extends BaseCmd {
     @Override
     public void execute(){
         try {
-            Host trafficMonitor = networkUsageMgr.addTrafficMonitor(this);
-            TrafficMonitorResponse response = networkUsageMgr.getApiResponse(trafficMonitor);
+            Host trafficMonitor = _networkUsageService.addTrafficMonitor(this);
+            TrafficMonitorResponse response = _responseGenerator.createTrafficMonitorResponse(trafficMonitor);
             response.setObjectName("trafficmonitor");
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

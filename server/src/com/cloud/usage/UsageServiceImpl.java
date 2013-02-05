@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.server;
+package com.cloud.usage;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -23,45 +23,59 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.api.commands.GenerateUsageRecordsCmd;
-import com.cloud.api.commands.GetUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
+import org.apache.cloudstack.api.response.UsageTypeResponse;
+import org.apache.cloudstack.usage.UsageService;
+import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.projects.Project;
-import org.apache.cloudstack.api.response.UsageTypeResponse;
-
-import com.cloud.usage.UsageJobVO;
-import com.cloud.usage.UsageTypes;
-import com.cloud.usage.UsageVO;
+import com.cloud.projects.ProjectManager;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
-public class ManagementServerExtImpl extends ManagementServerImpl implements ManagementServerExt {
+@Component
+@Local(value = { UsageService.class })
+public class UsageServiceImpl extends ManagerBase implements UsageService, Manager {
+    public static final Logger s_logger = Logger.getLogger(UsageServiceImpl.class);
+    
+    //ToDo: Move implementation to ManagaerImpl
+    
     @Inject private AccountDao _accountDao;
     @Inject private DomainDao _domainDao;
     @Inject private UsageDao _usageDao;
     @Inject private UsageJobDao _usageJobDao;
+    @Inject private ConfigurationDao _configDao;
+    @Inject private ProjectManager _projectMgr;
     private TimeZone _usageTimezone;
 
-    public ManagementServerExtImpl() {
+    public UsageServiceImpl() {
     }
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	super.configure(name,  params);
-        Map<String, String> configs = getConfigs();
-        String timeZoneStr = configs.get("usage.aggregation.timezone");
+        String timeZoneStr = _configDao.getValue(Config.UsageAggregationTimezone.toString());
         if (timeZoneStr == null) {
            timeZoneStr = "GMT";
         }
@@ -195,21 +209,12 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
             swap.close();
         }
 
-        // now that we are done with the records, update the command with the correct timezone so it can write the proper response
-        cmd.setUsageTimezone(getUsageTimezone());
-
         return usageRecords;
     }
 
     @Override
     public TimeZone getUsageTimezone() {
         return _usageTimezone;
-    }
-
-    @Override
-    public List<Class<?>> getCommands() {
-        //TODO: Add api cmd classes
-        return null;
     }
 
     private Date computeAdjustedTime(Date initialDate, TimeZone targetTZ, boolean adjustToDayStart) {
@@ -251,4 +256,6 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
 	public List<UsageTypeResponse> listUsageTypes() {
 		return UsageTypes.listUsageTypes();
 	}
+
+
 }

@@ -27,7 +27,6 @@ import org.springframework.stereotype.Component;
 
 import net.sf.ehcache.Cache;
 
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
@@ -46,6 +45,12 @@ public class EntityManagerImpl extends ManagerBase implements EntityManager {
     public <T, K extends Serializable> T findById(Class<T> entityType, K id) {
         GenericDao<? extends T, K> dao = (GenericDao<? extends T, K>)GenericDaoBase.getDao(entityType);
         return dao.findById(id);
+    }
+    
+    @Override
+    public <T, K extends Serializable> T findByIdIncludingRemoved(Class<T> entityType, K id) {
+        GenericDao<? extends T, K> dao = (GenericDao<? extends T, K>)GenericDaoBase.getDao(entityType);
+        return dao.findByIdIncludingRemoved(id);
     }
 
     @Override
