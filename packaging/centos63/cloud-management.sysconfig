@@ -18,6 +18,6 @@
 # This file is loaded in /etc/init.d/vmopsmanagement
 # ATM we only do two things here:
 
-dummy=1 ; export TOMCAT_CFG=/etc/cloud/management/tomcat6.conf ; . /etc/cloud/management/tomcat6.conf
+dummy=1 ; export TOMCAT_CFG=/etc/cloudstack/management/tomcat6.conf ; . /etc/cloudstack/management/tomcat6.conf
 #--------------------------
 
