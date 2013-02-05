@@ -1,0 +1,279 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an
+#  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#  KIND, either express or implied.  See the License for the
+#  specific language governing permissions and limitations
+#  under the License.
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Sebastien Goasguen <runseb@gmail.com>, 2013.
+# Simon Devineau <simon.devineau@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2013-02-01T09:17:06\n"
+"PO-Revision-Date: 2013-02-05 10:29+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fr\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "KVM Setup and installation"
+msgstr "Installation et configuration de KVM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"KVM is the hypervisor we'll be using - we will recover the initial setup "
+"which has already been done on the hypervisor host and cover installation of"
+" the agent software, you can use the same steps to add additional KVM nodes "
+"to your CloudStack environment."
+msgstr "KVM est l'hyperviseur qui sera utilisé - ici sera rétablie la configuration initiale sur l'hôte de l'hyperviseur, et l'installation du logiciel agent sera détaillée. La même démarche pourra être suivie pour ajouter des noeuds KVM supplémentaires sur l'environnement CloudStack."
+
+#. Tag: title
+#, no-c-format
+msgid "Prerequisites"
+msgstr "Prérequis"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"We explicitly are using the management server as a compute node as well, "
+"which means that we have already performed many of the prerequisite steps "
+"when setting up the management server, but we will list them here for "
+"clarity. Those steps are:"
+msgstr "Le management server sera explicitement aussi utilisé comme un noeud de calcul, ce qui suppose que la plupart des étapes prérequises aient été réalisées auparavant, lors de la configuration du management server. Ces étapes sont ici listées pour plus de clarté:"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-Runbook-Environment-operatingsys-network\" />"
+msgstr " <xref linkend=\"sect-Runbook-Environment-operatingsys-network\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-Runbook-Environment-operatingsys-hostname\" />"
+msgstr "<xref linkend=\"sect-Runbook-Environment-operatingsys-hostname\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-Runbook-Environment-operatingsys-selinux\" />"
+msgstr "<xref linkend=\"sect-Runbook-Environment-operatingsys-selinux\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-Runbook-Environment-operatingsys-ntp\" />"
+msgstr " <xref linkend=\"sect-Runbook-Environment-operatingsys-ntp\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-Runbook-Environment-operatingsys-repoconfig\" />"
+msgstr "<xref linkend=\"sect-Runbook-Environment-operatingsys-repoconfig\" />"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You shouldn't need to do that for the management server, of course, but any "
+"additional hosts will need for you to complete the above steps."
+msgstr "Bien sûr, il ne devrait pas être indispensable de reproduire ces êtapes pour le management server, mais l'ajout d'hôtes supplémentaires pourra nécessiter de procéder aux étapes ci-dessus sur chacun d'entre eux."
+
+#. Tag: title
+#, no-c-format
+msgid "Installation"
+msgstr "Installation"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Installation of the KVM agent is trivial with just a single command, but "
+"afterwards we'll need to configure a few things."
+msgstr "L'installation de KVM est très simple et ce fait avec une seul commande mais il y a quelques configurations à faire."
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>yum</command> -y install cloud-"
+"agent</userinput>"
+msgstr "<prompt># </prompt><userinput><command>yum</command> -y install cloud-agent</userinput>"
+
+#. Tag: title
+#, no-c-format
+msgid "KVM Configuration"
+msgstr "Configuration de KVM"
+
+#. Tag: para
+#, no-c-format
+msgid "We have two different parts of KVM to configure, libvirt, and QEMU."
+msgstr "Nous avons deux parties différentes à configurer pour KVM: libvirt et QEMU."
+
+#. Tag: title
+#, no-c-format
+msgid "QEMU Configuration"
+msgstr "Configuration de QEMU"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"KVM configuration is relatively simple at only a single item. We need to "
+"edit the QEMU VNC configuration. This is done by editing "
+"<filename>/etc/libvirt/qemu.conf</filename> and ensuring the following line "
+"is present and uncommented."
+msgstr "La configuration de KVM est relativement simple et se fait en une seule étape. Il faut modifier la configuration de QEMU VNC. Cela se fait en modifiant <filename>/etc/libvirt/qemu.conf</filename> et en s'assurant que la ligne suivante est présente et décommentée:"
+
+#. Tag: screen
+#, no-c-format
+msgid "vnc_listen=0.0.0.0"
+msgstr "vnc_listen=0.0.0.0"
+
+#. Tag: title
+#, no-c-format
+msgid "Libvirt Configuration"
+msgstr "Configuration de Libvirt"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"CloudStack uses libvirt for managing virtual machines. Therefore it is vital"
+" that libvirt is configured correctly. Libvirt is a dependency of cloud-"
+"agent and should already be installed."
+msgstr "CloudStack utilise libvirt pour gérer les machines virtuelles. Il est donc impératif que libvirt soit bien configurer. Le pacquet cloud-agent dépend de libvirt et devrait donc être déja installé."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"In order to have live migration working libvirt has to listen for unsecured "
+"TCP connections. We also need to turn off libvirts attempt to use Multicast "
+"DNS advertising. Both of these settings are in "
+"<filename>/etc/libvirt/libvirtd.conf</filename>"
+msgstr "Pour pouvoir utiliser la migration à chaud, libvirt doit accepter des connections TCP non sécurisées. Nous devons aussi désactiver les requetes multicastDNS de libvirt. Ces deux configurations sont dans le fichier <filename>/etc/libvirt/libvirtd.conf</filename>"
+
+#. Tag: para
+#, no-c-format
+msgid "Set the following paramaters:"
+msgstr "Configurez les paramêtres suivant:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "listen_tls = 0"
+msgstr "listen_tls = 0"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "listen_tcp = 1"
+msgstr "listen_tcp = 1"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "tcp_port = \"16059\""
+msgstr "tcp_port = \"16059\""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "auth_tcp = \"none\""
+msgstr "auth_tcp = \"none\""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mdns_adv = 0"
+msgstr "mdns_adv = 0"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Turning on \"listen_tcp\" in libvirtd.conf is not enough, we have to change "
+"the parameters as well:"
+msgstr "Activer \"listen_tcp\" in libvirtd.conf n'est pas suffisant, vous devez aussi modifier les paramêtres suivant:"
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL or CentOS modify <filename>/etc/sysconfig/libvirtd</filename>:"
+msgstr "Sur RHEL et CentOS modifiez <filename>/etc/sysconfig/libvirtd</filename>:"
+
+#. Tag: para
+#, no-c-format
+msgid "Uncomment the following line:"
+msgstr "Décommentez la ligne suivante:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "#LIBVIRTD_ARGS=\"--listen\""
+msgstr "#LIBVIRTD_ARGS=\"--listen\""
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu: modify <filename>/etc/init/libvirt-bin.conf</filename>"
+msgstr "Sur Ubuntu: modifier <filename>/etc/init/libvirt-bin.conf</filename>."
+
+#. Tag: para
+#, no-c-format
+msgid "Change the following line (at the end of the file):"
+msgstr "Modifier la ligne suivante (à la fin de la ligne)"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "exec /usr/sbin/libvirtd -d"
+msgstr "exec /usr/sbin/libvirtd -d"
+
+#. Tag: para
+#, no-c-format
+msgid "to (just add -l)"
+msgstr "pour (ajoutez juste -l)"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "exec /usr/sbin/libvirtd -d -l"
+msgstr "exec /usr/sbin/libvirtd -d -l"
+
+#. Tag: para
+#, no-c-format
+msgid "Restart libvirt"
+msgstr "Redémarrer libvirt"
+
+#. Tag: para
+#, no-c-format
+msgid "In RHEL or CentOS:"
+msgstr "Pour RHEL ou CentOS:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ service libvirtd restart</command>"
+msgstr "<command>$ service libvirtd restart</command>"
+
+#. Tag: para
+#, no-c-format
+msgid "In Ubuntu:"
+msgstr "Pour Ubuntu:"
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ service libvirt-bin restart</command>"
+msgstr "<command>$ service libvirt-bin restart</command>"
+
+#. Tag: title
+#, no-c-format
+msgid "KVM configuration complete"
+msgstr "Fin de l'installation KVM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"That concludes our installation and configuration of KVM, and we'll now move"
+" to using the CloudStack UI for the actual configuration of our cloud."
+msgstr "Ceci conclut l'installation et la configuration de KVM, ce qui permet maintenant de se concentrer sur l'utilisation de l'interface utilisateur CloudStack avec la configuration actuelle de notre cloud."
