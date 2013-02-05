@@ -14,16 +14,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.server;
+package org.apache.cloudstack.usage;
 
 import java.util.List;
 import java.util.TimeZone;
 
-import com.cloud.api.commands.GenerateUsageRecordsCmd;
-import com.cloud.api.commands.GetUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
-import com.cloud.usage.UsageVO;
-public interface ManagementServerExt extends ManagementServer {
+
+public interface UsageService {
     /**
      * Generate Billing Records from the last time it was generated to the
      * time specified.
@@ -50,7 +50,7 @@ public interface ManagementServerExt extends ManagementServer {
      *             the appropriate page number)
      * @return a list of usage records
      */
-    List<UsageVO> getUsageRecords(GetUsageRecordsCmd cmd);
+    List<? extends Usage> getUsageRecords(GetUsageRecordsCmd cmd);
 
     /**
      * Retrieves the timezone used for usage aggregation.  One day is represented as midnight to 11:59:59pm
@@ -60,4 +60,5 @@ public interface ManagementServerExt extends ManagementServer {
     TimeZone getUsageTimezone();
 
 	List<UsageTypeResponse> listUsageTypes();
+
 }

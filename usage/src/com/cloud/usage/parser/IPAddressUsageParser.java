@@ -26,11 +26,11 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.usage.UsageTypes;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.usage.UsageServer;
-import com.cloud.usage.UsageTypes;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageIPAddressDao;

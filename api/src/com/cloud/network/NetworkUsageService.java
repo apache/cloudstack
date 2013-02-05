@@ -14,18 +14,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.server;
-
+package com.cloud.network;
 
 import java.util.List;
 
-import com.cloud.api.commands.ConfigureSimulator;
+import com.cloud.host.Host;
 
-public class ManagementServerSimulatorImpl extends ManagementServerImpl {
-    @Override
-    public List<Class<?>> getCommands() {
-        List<Class<?>> cmdList = super.getCommands();
-        cmdList.add(ConfigureSimulator.class);
-        return cmdList;
-    }
+import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
+import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
+import org.apache.cloudstack.api.response.TrafficMonitorResponse;
+import com.cloud.utils.component.Manager;
+
+public interface NetworkUsageService extends Manager {
+
+    Host addTrafficMonitor(AddTrafficMonitorCmd cmd);
+
+    boolean deleteTrafficMonitor(DeleteTrafficMonitorCmd cmd);
+
+    List<? extends Host> listTrafficMonitors(ListTrafficMonitorsCmd cmd);
+
 }

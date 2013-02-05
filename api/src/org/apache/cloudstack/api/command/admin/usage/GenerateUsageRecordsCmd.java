@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.command.admin.usage;
 
 import java.util.Date;
 
@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import com.cloud.server.ManagementServerExt;
 import com.cloud.user.Account;
 
 @APICommand(name = "generateUsageRecords", description="Generates usage records. This will generate records only if there any records to be generated, i.e if the scheduled usage job was not run or failed", responseObject=SuccessResponse.class)
@@ -79,8 +78,7 @@ public class GenerateUsageRecordsCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        ManagementServerExt _mgrExt = (ManagementServerExt)_mgr;
-        boolean result = _mgrExt.generateUsageRecords(this);
+        boolean result = _usageService.generateUsageRecords(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

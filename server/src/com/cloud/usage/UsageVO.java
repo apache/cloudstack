@@ -17,6 +17,7 @@
 package com.cloud.usage;
 
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.usage.Usage;
 
 import java.util.Date;
 
@@ -31,7 +32,7 @@ import javax.persistence.TemporalType;
 
 @Entity
 @Table(name="cloud_usage")
-public class UsageVO implements InternalIdentity {
+public class UsageVO implements Usage, InternalIdentity {
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -167,74 +168,92 @@ public class UsageVO implements InternalIdentity {
 	    this.endDate = endDate;
 	}
 	
+	@Override
 	public long getId() {
 		return id;
 	}
 
+	@Override
 	public Long getZoneId() {
 	    return zoneId;
 	}
 
+	@Override
 	public Long getAccountId() {
 		return accountId;
 	}
 
+	@Override
     public Long getDomainId() {
         return domainId;
     }
 
+	@Override
 	public String getDescription() {
 		return description;
 	}
-
+	
+	@Override
 	public String getUsageDisplay() {
 		return usageDisplay;
 	}
 
+	@Override
 	public int getUsageType() {
 	    return usageType;
 	}
 
+	@Override
     public Double getRawUsage() {
         return rawUsage;
     }
 
+	@Override
     public Long getVmInstanceId() {
         return vmInstanceId;
     }
 
+	@Override
     public String getVmName() {
         return vmName;
     }
 
+	@Override
     public Long getOfferingId() {
         return offeringId;
     }
 
+	@Override
     public Long getTemplateId() {
         return templateId;
     }
 
+	@Override
     public Long getUsageId() {
         return usageId;
     }
     
+	@Override
     public String getType() {
         return type;
     }
     
+	@Override
     public Long getNetworkId() {
         return networkId;
     }
 
+	@Override
     public Long getSize() {
         return size;
     }
     
+	@Override
 	public Date getStartDate() {
 		return startDate;
 	}
 
+	@Override
 	public Date getEndDate() {
         return endDate;
     }

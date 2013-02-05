@@ -36,7 +36,7 @@
   -->
   <bean id="databaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker" />
   
-  <bean id="management-server" class ="com.cloud.server.ManagementServerExtImpl" />
+  <bean id="management-server" class ="com.cloud.server.ManagementServerImpl" />
   <bean id="configuration-server" class="com.cloud.server.ConfigurationServerImpl" />
    
   <bean id="clusterManagerImpl" class="com.cloud.cluster.ClusterManagerImpl" />
