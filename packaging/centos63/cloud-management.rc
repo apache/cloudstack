@@ -46,8 +46,8 @@ NAME="$(basename $0)"
 stop() {
 	SHUTDOWN_WAIT="30"
 	count="0"
-	if [ -f /var/run/cloud-management.pid ]; then
-		pid=`cat /var/run/cloud-management.pid`
+	if [ -f /var/run/${NAME}.pid ]; then
+		pid=`cat /var/run/${NAME}.pid`
 		kill $pid &>/dev/null
 		until [ "$(ps --pid $pid | grep -c $pid)" -eq "0" ] || \
 			[ "$count" -gt "$SHUTDOWN_WAIT" ]
@@ -78,8 +78,8 @@ set_ulimit() {
 
 handle_pid_file() {
     if [ "$1" -ne 0 ] ; then
-        echo "The pid file locates at /var/run/cloud-management.pid and lock file at /var/lock/subsys/cloud-management.
-        Starting cloud-management will take care of them or you can manually clean up."
+        echo "The pid file locates at /var/run/${NAME}.pid and lock file at /var/lock/subsys/${NAME}.
+        Starting ${NAME} will take care of them or you can manually clean up."
     fi
 }
 

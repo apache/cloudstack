@@ -39,6 +39,16 @@ public interface EntityManager {
     public <T, K extends Serializable> T findById(Class<T> entityType, K id);
 
     /**
+     * Finds an entity by its id including removed.
+     * @param <T> class of the entity you're trying to find.
+     * @param <K> class of the id that the entity uses.
+     * @param entityType Type of the entity.
+     * @param id id value
+     * @return T if found; null if not.
+     */
+    public <T, K extends Serializable> T findByIdIncludingRemoved(Class<T> entityType, K id);
+    
+    /**
      * Finds a unique entity by uuid string
      * @param <T> entity class
      * @param entityType type of entity you're looking for.

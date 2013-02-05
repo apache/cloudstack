@@ -25,14 +25,19 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
@@ -40,6 +45,9 @@ import com.cloud.utils.net.NetUtils;
 public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressManager {
     public static final Logger s_logger = Logger.getLogger(Ipv6AddressManagerImpl.class.getName());
 
+	String _name = null;
+	int _ipv6RetryMax = 0;
+			
     @Inject
     DataCenterDao _dcDao;
     @Inject
@@ -48,30 +56,50 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
     NetworkModel _networkModel;
     @Inject
     UserIpv6AddressDao _ipv6Dao;
+    @Inject
+    NetworkDao _networkDao;
+    @Inject
+    ConfigurationDao _configDao;
     
 	@Override
+	public boolean configure(String name, Map<String, Object> params)
+			throws ConfigurationException {
+		_name = name;
+        Map<String, String> configs = _configDao.getConfiguration(params);
+        _ipv6RetryMax = NumbersUtil.parseInt(configs.get(Config.NetworkIPv6SearchRetryMax.key()), 10000);
+		return true;
+	}
+
 	public UserIpv6Address assignDirectIp6Address(long dcId, Account owner, Long networkId, String requestedIp6)
 			throws InsufficientAddressCapacityException {
+		Network network = _networkDao.findById(networkId);
+		if (network == null) {
+			return null;
+		}
     	Vlan vlan = _networkModel.getVlanForNetwork(networkId);
     	if (vlan == null) {
     		s_logger.debug("Cannot find related vlan or too many vlan attached to network " + networkId);
     		return null;
     	}
-    	String ip = null;
+    	String ip = null; 
     	if (requestedIp6 == null) {
+    		if (!_networkModel.isIP6AddressAvailable(networkId)) {
+    			throw new InsufficientAddressCapacityException("There is no more address available in the network " + network.getName(), DataCenter.class, network.getDataCenterId());
+    		}
+    		ip = NetUtils.getIp6FromRange(vlan.getIp6Range());
     		int count = 0;
-    		while (ip == null || count >= 10) {
-    			ip = NetUtils.getIp6FromRange(vlan.getIp6Range());
-    			//Check for duplicate IP
-    			if (_ipv6Dao.findByNetworkIdAndIp(networkId, ip) == null) {
-    				break;
-    			} else {
-    				ip = null;
-    			}
+    		while (_ipv6Dao.findByNetworkIdAndIp(networkId, ip) != null) {
+    			ip = NetUtils.getNextIp6InRange(ip, vlan.getIp6Range());
     			count ++;
+    			// It's an arbitrate number to prevent the infinite loop 
+    			if (count > _ipv6RetryMax) {
+    				ip = null;
+    				break;
+    			}
     		}
     		if (ip == null) {
-    			throw new CloudRuntimeException("Fail to get unique ipv6 address after 10 times trying!");
+    			throw new InsufficientAddressCapacityException("Cannot find a usable IP in the network " + network.getName() + " after network.ipv6.search.retry.max = " + _ipv6RetryMax + " times retry!",
+    						DataCenter.class, network.getDataCenterId());
     		}
     	} else {
     		if (!NetUtils.isIp6InRange(requestedIp6, vlan.getIp6Range())) {

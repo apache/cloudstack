@@ -138,7 +138,7 @@
                         &PRODUCT; default system service offering and any custom system service
                         offerings that have been defined by the &PRODUCT; root administrator.
                         For more information, see System Service Offerings.</para></listitem>
-            <listitem><para><emphasis role="bold">Redundant router capability</emphasis>. (v3.0.3 and greater) Available
+            <listitem><para><emphasis role="bold">Redundant router capability</emphasis>. Available
                         only when Virtual Router is selected as the Source NAT provider. Select this
                         option if you want to use two virtual routers in the network for
                         uninterrupted connection: one operating as the master virtual router and the
@@ -160,7 +160,7 @@
             <listitem><para><emphasis role="bold">Tags</emphasis>. Network tag to specify which physical network to
                         use.</para></listitem>
         </itemizedlist></listitem> 
-        <listitem><para>Click Add.</para></listitem>        
+        <listitem><para>Click Add.</para></listitem>
     </orderedlist>                
     
     

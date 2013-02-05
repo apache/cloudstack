@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -96,6 +97,10 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
 	@Inject
     NetworkModel _netmgr;
 
+	public VmwareServerDiscoverer() {
+		s_logger.info("VmwareServerDiscoverer is constructed");
+	}
+	
 	@Override
 	public Map<? extends ServerResource, Map<String, String>> find(long dcId,
 			Long podId, Long clusterId, URI url, String username,

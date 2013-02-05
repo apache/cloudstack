@@ -1211,6 +1211,17 @@ public class NetUtils {
 		return false;
 	}
 	
+	public static boolean isIp6InNetwork(String ip6, String ip6Cidr) {
+		IPv6Network network = null;
+		try {
+			network = IPv6Network.fromString(ip6Cidr);
+		} catch (IllegalArgumentException ex) {
+			return false;
+		}
+    	IPv6Address ip = IPv6Address.fromString(ip6);
+		return network.contains(ip);
+	}
+	
 	public static boolean isIp6RangeOverlap(String ipRange1, String ipRange2) {
 		String[] ips = ipRange1.split("-");
     	String startIp1 = ips[0];
@@ -1231,5 +1242,28 @@ public class NetUtils {
     	IPv6Address end2 = IPv6Address.fromString(endIp2);
     	IPv6AddressRange range2 = IPv6AddressRange.fromFirstAndLast(start2, end2);
     	return range1.overlaps(range2);
+	}
+
+	public static String getNextIp6InRange(String currentIp, String ipRange) {
+		String[] ips = ipRange.split("-");
+    	String startIp = ips[0];
+    	String endIp = null;
+    	if (ips.length > 1) {
+    		endIp = ips[1];
+    	}
+    	IPv6Address start = IPv6Address.fromString(startIp);
+    	IPv6Address end = IPv6Address.fromString(endIp);
+    	IPv6Address current = IPv6Address.fromString(currentIp); 
+    	IPv6Address result = null;
+    	if (current.equals(end)) {
+    		result = start;
+    	} else{
+    		result = current.add(1);
+    	}
+    	String resultIp = null;
+    	if (result != null) {
+    		resultIp = result.toString();
+    	}
+		return resultIp;
 	}
 }

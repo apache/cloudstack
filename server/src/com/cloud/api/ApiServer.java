@@ -19,13 +19,11 @@ package com.cloud.api;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.text.DateFormat;
@@ -292,7 +290,7 @@ public class ApiServer implements HttpRequestHandler {
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
                 UserContext.registerContext(_systemUser.getId(), _systemAccount, null, true);
                 sb.insert(0, "(userId=" + User.UID_SYSTEM + " accountId=" + Account.ACCOUNT_ID_SYSTEM + " sessionId=" + null + ") ");
-                String responseText = handleRequest(parameterMap, true, responseType, sb);
+                String responseText = handleRequest(parameterMap, responseType, sb);
                 sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
 
                 writeResponse(response, responseText, HttpStatus.SC_OK, responseType, null);
@@ -312,7 +310,7 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     @SuppressWarnings("rawtypes")
-    public String handleRequest(Map params, boolean decode, String responseType, StringBuffer auditTrailSb) throws ServerApiException {
+    public String handleRequest(Map params, String responseType, StringBuffer auditTrailSb) throws ServerApiException {
         String response = null;
         String[] command = null;
         try {
@@ -338,22 +336,7 @@ public class ApiServer implements HttpRequestHandler {
                         continue;
                     }
                     String[] value = (String[]) params.get(key);
-
-                    String decodedValue = null;
-                    if (decode) {
-                        try {
-                            decodedValue = URLDecoder.decode(value[0], "UTF-8");
-                        } catch (UnsupportedEncodingException usex) {
-                            s_logger.warn(key + " could not be decoded, value = " + value[0]);
-                            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, key + " could not be decoded, received value " + value[0]);
-                        } catch (IllegalArgumentException iae) {
-                            s_logger.warn(key + " could not be decoded, value = " + value[0]);
-                            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, key + " could not be decoded, received value " + value[0] + " which contains illegal characters eg.%");
-                        }
-                    } else {
-                        decodedValue = value[0];
-                    }
-                    paramMap.put(key, decodedValue);
+                    paramMap.put(key, value[0]);
                 }
 
                 Class<?> cmdClass = getCmdClass(command[0]);

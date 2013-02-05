@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.command.admin.usage;
 
 import javax.inject.Inject;
 
@@ -29,14 +29,12 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.NetworkUsageManager;
 import com.cloud.user.Account;
 
 @APICommand(name = "deleteTrafficMonitor", description="Deletes an traffic monitor host.", responseObject = SuccessResponse.class)
 public class DeleteTrafficMonitorCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteTrafficMonitorCmd.class.getName());	
     private static final String s_name = "deletetrafficmonitorresponse";	
-    @Inject NetworkUsageManager _networkUsageMgr;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -71,7 +69,7 @@ public class DeleteTrafficMonitorCmd extends BaseCmd {
     @Override
     public void execute(){
         try {
-            boolean result = _networkUsageMgr.deleteTrafficMonitor(this);
+            boolean result = _networkUsageService.deleteTrafficMonitor(this);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

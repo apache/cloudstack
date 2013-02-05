@@ -45,7 +45,9 @@ public class EncryptionSecretKeyChecker extends AdapterBase implements SystemInt
 
     private static final Logger s_logger = Logger.getLogger(EncryptionSecretKeyChecker.class);
 
-    private static final String s_keyFile = "/etc/cloud/management/key";
+    // Two possible locations with the new packaging naming
+    private static final String s_altKeyFile = "/etc/cloud/management/key";
+    private static final String s_keyFile = "/etc/cloudstack/management/key";
     private static final String s_envKey = "CLOUD_SECRET_KEY";
     private static StandardPBEStringEncryptor s_encryptor = new StandardPBEStringEncryptor();
     private static boolean s_useEncryption = false;
@@ -76,8 +78,12 @@ public class EncryptionSecretKeyChecker extends AdapterBase implements SystemInt
             SimpleStringPBEConfig stringConfig = new SimpleStringPBEConfig(); 
 
             if(encryptionType.equals("file")){
+                File keyFile = new File(s_keyFile);
+                if (!keyFile.exists()) {
+                    keyFile = new File(s_altKeyFile);
+                }
                 try {
-                    BufferedReader in = new BufferedReader(new FileReader(s_keyFile));
+                    BufferedReader in = new BufferedReader(new FileReader(keyFile));
                     secretKey = in.readLine();
                     //Check for null or empty secret key
                 } catch (FileNotFoundException e) {

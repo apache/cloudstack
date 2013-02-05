@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -15,9 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# This file is loaded in /etc/init.d/vmopsmanagement
-# ATM we only do two things here:
-
-dummy=1 ; export TOMCAT_CFG=/etc/cloudstack/management/tomcat6.conf ; . /etc/cloudstack/management/tomcat6.conf
-#--------------------------
-
+# Zero out the free space to save space in the final image:
+dd if=/dev/zero of=/EMPTY bs=1M
+rm -f /EMPTY
