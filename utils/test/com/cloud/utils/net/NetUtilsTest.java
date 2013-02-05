@@ -88,6 +88,7 @@ public class NetUtilsTest extends TestCase {
     	assertEquals(NetUtils.countIp6InRange("1234:5678::2-1234:5678::0"), 0);
     	assertEquals(NetUtils.getIp6FromRange("1234:5678::1-1234:5678::1"), "1234:5678::1");
     	String ipString = null;
+    	String range = "1234:5678::1-1234:5678::8000:0000";
     	IPv6Address ipStart = IPv6Address.fromString("1234:5678::1");
     	IPv6Address ipEnd = IPv6Address.fromString("1234:5678::8000:0000");
     	for (int i = 0; i < 10; i ++) {
@@ -97,6 +98,7 @@ public class NetUtilsTest extends TestCase {
     		assertTrue(ip.compareTo(ipStart) >= 0);
     		assertTrue(ip.compareTo(ipEnd) <= 0);
     	}
+    	//Test isIp6RangeOverlap
     	assertFalse(NetUtils.isIp6RangeOverlap("1234:5678::1-1234:5678::ffff", "1234:5678:1::1-1234:5678:1::ffff"));
     	assertTrue(NetUtils.isIp6RangeOverlap("1234:5678::1-1234:5678::ffff", "1234:5678::2-1234:5678::f"));
     	assertTrue(NetUtils.isIp6RangeOverlap("1234:5678::f-1234:5678::ffff", "1234:5678::2-1234:5678::f"));
