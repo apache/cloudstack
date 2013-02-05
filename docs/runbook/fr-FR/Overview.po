@@ -1,0 +1,127 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an
+#  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#  KIND, either express or implied.  See the License for the
+#  specific language governing permissions and limitations
+#  under the License.
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Sebastien Goasguen <runseb@gmail.com>, 2013.
+# Simon Devineau <simon.devineau@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2013-02-01T09:17:06\n"
+"PO-Revision-Date: 2013-02-05 09:43+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fr\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Overview"
+msgstr "Présentation"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Infrastructure-as-a-Service (IaaS) clouds can be a complex thing to build, "
+"and by definition they have a plethora of options, which often lead to "
+"confusion for even experienced admins who are newcomers to building cloud "
+"platforms. The goal for this runbook is to provide a straightforward set of "
+"instructions to get you up and running with CloudStack with a minimum amount"
+" of trouble."
+msgstr "Un cloud d'infrastructure en tant que service (IaaS) peut être difficile à mettre en place, et a, par définition, une multitude d'options possibles, qui peuvent troubler même les administrateurs expérimentés qui n'auraient pas forcément d'expérience préalable de mise en place de plateformes de cloud computing. Le but de ce guide est de fournir les instructions à suivre pour mettre en place et faire tourner CloudStack de façon aussi simple et avec aussi peu de problèmes que possible."
+
+#. Tag: title
+#, no-c-format
+msgid "What exactly are we building?"
+msgstr "Que va-t-on construire exactement ?"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This runbook will focus on building a CloudStack cloud using KVM with CentOS"
+" 6.3 with NFS storage on a flat layer-2 network utilizing layer-3 network "
+"isolation (aka Security Groups), and doing it all on a single piece of "
+"hardware."
+msgstr "Ce runbook est un guide pratique pour déployer CloudStack rapidement en utilisant KVM, CentOS 6.3 et NFS pour le stockage des images. Le réseau est un simple Layer-2 à plat, avec de l'isolation au Layer-3 qui utilise les \"security groups\". Tout s'installe sur une seule machine physique. "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"KVM, or Kernel-based Virtual Machine is a virtualization technology for the "
+"Linux kernel. KVM supports native virtualization atop processors with "
+"hardware virtualization extensions."
+msgstr "KVM, ou Kernel-based Virtual Machine, est une technologie de virtualisation pour les noyaux Linux. KVM supporte la virtualisation native sur la base de processeurs pourvus d'extensions matérielles de virtualisation. "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Security Groups act as distributed firewalls that control access to a group "
+"of virtual machines."
+msgstr "Les groupes de sécurité fonctionnent comme des pare-feu distribués qui contrôlent l'accès à des groupes de machines virtuelles."
+
+#. Tag: title
+#, no-c-format
+msgid "High level overview of the process"
+msgstr "Vue globale à haut niveau du processus"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before we actually get to installing CloudStack, we'll start with installing"
+" our base operating system, and then configuring that to act as an NFS "
+"server for several types of storage. We'll install the management server, "
+"download the systemVMs, and finally install the agent software. Finally "
+"we'll spend a good deal of time configuring the entire cloud in the "
+"CloudStack web interface."
+msgstr "Avant d'entreprendre l'installation de CloudStack à proprement parler, on commencera par l'installation du système d'exploitation, pour ensuite configurer un serveur NFS avec plusieurs types de stockage. Ensuite, le serveur de management sera installé, les machines virtuelles seront téléchargées et enfin le logiciel agent sera installé. Durant la dernière étape, on s'étendra sur la configuration complète du cloud sur l'interface web de CloudStack."
+
+#. Tag: title
+#, no-c-format
+msgid "Prerequisites"
+msgstr "Prérequis"
+
+#. Tag: para
+#, no-c-format
+msgid "To complete this runbook you'll need the following items:"
+msgstr "Pour mener à bien les différentes étapes de ce guide, les configurations suivantes sont nécessaires:"
+
+#. Tag: para
+#, no-c-format
+msgid "At least one computer which supports hardware virtualization."
+msgstr "Au moins un ordinateur qui peut supporter la virtualisation matérielle."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <ulink "
+"url=\"http://mirrors.kernel.org/centos/6.3/isos/x86_64/CentOS-6.3-x86_64-minimal.iso\">"
+" CentOS 6.3 x86_64 minimal install CD </ulink>"
+msgstr "Le <ulink url=\"http://mirrors.kernel.org/centos/6.3/isos/x86_64/CentOS-6.3-x86_64-minimal.iso\">disque d'installation minimal CentOS 6.3 x86_64</ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A /24 network with the gateway being at xxx.xxx.xxx.1, no DHCP should be on "
+"this network and none of the computers running CloudStack will have a "
+"dynamic address. Again this is done for the sake of simplicity."
+msgstr "Un réseau /24 avec une gateway à xxx.xxx.xxx.1, pas de serveur DHCP sur le réseau et aucun des serveurs contenant CloudStack n'auront d'addresse dynamique. Pour simplifier l'installation."

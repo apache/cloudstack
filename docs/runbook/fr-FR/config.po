@@ -1,0 +1,285 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an
+#  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#  KIND, either express or implied.  See the License for the
+#  specific language governing permissions and limitations
+#  under the License.
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Sebastien Goasguen <runseb@gmail.com>, 2013.
+# Simon Devineau <simon.devineau@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2013-02-01T09:17:06\n"
+"PO-Revision-Date: 2013-02-05 08:49+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fr\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuration"
+msgstr "Configuration"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"As we noted before we will be using security groups to provide isolation and"
+" by default that implies that we'll be using a flat layer-2 network. It also"
+" means that the simplicity of our setup means that we can use the quick "
+"installer."
+msgstr "Comme indiqué précédemment, la sécurité par groupes sera utilisée pour \nassurer l'isolation, et cela implique par défaut l'utilisation d'un réseau plat de niveau 2, c'est-à-dire non hiérarchique, où les machines peuvent communiquer entre elles sans passer par des intermédiaires autre que des switches.Cela signifie aussi que la simplicité de la configuration permet d'utiliser l'installeur rapide."
+
+#. Tag: title
+#, no-c-format
+msgid "UI Access"
+msgstr "Accès à l'interface utilisateur"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To get access to CloudStack's web interface, merely point your browser to "
+"http://<replaceable>172.16.10.</replaceable>2:8080/client The default "
+"username is 'admin', and the default password is 'password'. You should see "
+"a splash screen that allows you to choose several options for setting up "
+"CloudStack. You should choose the <option>Continue with Basic Setup</option>"
+" option."
+msgstr "Pour accéder à l'interface web CloudStack, il suffit de visiter\nhttp://<replaceable>172.16.10.</replaceable>2:8080/client à l'aide d'un navigateur.\nL'utilisateur par défaut est 'admin' et le mot de passe par défaut est 'password'.\nUn écran d'accueil permet alors de choisir entre différentes options pour configurer\nCloudStack. Choisir l'option <option>Continue with Basic Setup</option>. "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You should now see a prompt requiring you to change the password for the "
+"admin user. Please do so."
+msgstr "Un formulaire demande alors de changer le mot de passe pour l'administrateur.\n\tIl est recommandé de changer ce mot de passe."
+
+#. Tag: title
+#, no-c-format
+msgid "Setting up a Zone"
+msgstr "Conigurer une zone"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A zone is the largest organization entity in CloudStack - and we'll be "
+"creating one, this should be the screen that you see in front of you now. "
+"And for us there are 5 pieces of information that we need."
+msgstr "Une zone est l'entité la plus large de CloudStack - et quand une zone sera créée, cet écran devra apparaitre. Il contient cinq informations essentielles."
+
+#. Tag: para
+#, no-c-format
+msgid "Name - we will set this to the ever-descriptive 'Zone1' for our cloud."
+msgstr "Name - le nom sera initialisé à 'Zone1' pour ce cloud."
+
+#. Tag: para
+#, no-c-format
+msgid "Public DNS 1 - we will set this to '8.8.8.8' for our cloud."
+msgstr "Public DNS 1 - initialiser à '8.8.8.8' pour ce cloud."
+
+#. Tag: para
+#, no-c-format
+msgid "Public DNS 2 - we will set this to '8.8.4.4' for our cloud."
+msgstr "Public DNS 2 - initialiser à '8.8.4.4' pour ce cloud."
+
+#. Tag: para
+#, no-c-format
+msgid "Internal DNS1 - we will also set this to '8.8.8.8' for our cloud."
+msgstr "Internal DNS1 - initialiser à '8.8.8.8' pour ce cloud."
+
+#. Tag: para
+#, no-c-format
+msgid "Internal DNS2 - we will also set this to '8.8.8.4' for our cloud."
+msgstr "Internal DNS2 - initialiser à '8.8.8.4' pour ce cloud."
+
+#. Tag: title
+#, no-c-format
+msgid "Notes about DNS settings"
+msgstr "Notes à propos des paramètres DNS"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"CloudStack distinguishes between internal and public DNS. Internal DNS is "
+"assumed to be capable of resolving internal-only hostnames, such as your NFS"
+" server’s DNS name. Public DNS is provided to the guest VMs to resolve "
+"public IP addresses. You can enter the same DNS server for both types, but "
+"if you do so, you must make sure that both internal and public IP addresses "
+"can route to the DNS server. In our specific case we will not use any names "
+"for resources internally, and we have indeed them set to look to the same "
+"external resource so as to not add a namerserver setup to our list of "
+"requirements."
+msgstr "CloudStack fait la distinction entre les DNS public et interne.\nLe DNS interne est capable de résoudre seulement les noms de domaine internes, comme le nom DNS du serveur NFS.\nLe DNS public est fourni aux machines virtuelles invitées pour leur permettre de résoudre les adresses IP publiques.\nIl est possible d'utiliser le même serveur DNS pour les deux types, mais il faut alors être sûr que les adresses IP interne et publique puissent router vers le serveur DNS.\nPour la suite, dans le cas présent, aucun nom ne sera donné aux ressources en interne, et elles seront définies afin de pointer vers la même ressource externe pour ne pas ajouter la configuration d'un serveur de noms dans la liste des prérequis."
+
+#. Tag: title
+#, no-c-format
+msgid "Pod Configuration"
+msgstr "Configuration du pod"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now that we've added a Zone, the next step that comes up is a prompt for "
+"information regading a pod. Which is looking for 4 items."
+msgstr "Maintenant que la zone est ajoutée, la prochaine fenêtre qui apparaît concerne la création d'un pod. Elle demande 4 éléments."
+
+#. Tag: para
+#, no-c-format
+msgid "Name - We'll use Pod1 for our cloud."
+msgstr "Name - Le nom sera Pod1 pour ce cloud."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Gateway - We'll use <replaceable>172.16.10</replaceable>.1 as our gateway"
+msgstr "Gateway - <replaceable>172.16.10</replaceable>.1 sera utilisé comme passerelle"
+
+#. Tag: para
+#, no-c-format
+msgid "Netmask - We'll use 255.255.255.0"
+msgstr "Netmask - initialiser à 255.255.255.0"
+
+#. Tag: para
+#, no-c-format
+msgid "Start/end reserved system IPs - we will use 172.16.10.10-172.16.10.20"
+msgstr "Start/end reserved system IPs - utiliser 172.16.10.10-172.16.10.20 comme plage d'addresses IP système réservées"
+
+#. Tag: para
+#, no-c-format
+msgid "Guest gateway - We'll use <replaceable>172.16.10</replaceable>.1"
+msgstr "Guest gateway - utiliser <replaceable>172.16.10</replaceable>.1"
+
+#. Tag: para
+#, no-c-format
+msgid "Guest netmask - We'll use 255.255.255.0"
+msgstr "Guest netmask - le masque sera 255.255.255.0"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Guest start/end IP - We'll use "
+"<replaceable>172.16.10.</replaceable>30-<replaceable>172.16.10.</replaceable>200"
+msgstr "Guest start/end IP - les IP seront <replaceable>172.16.10.</replaceable>30-<replaceable>172.16.10.</replaceable>200"
+
+#. Tag: title
+#, no-c-format
+msgid "Cluster"
+msgstr "Cluster"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now that we've added a Zone, we need only add a few more items for "
+"configuring the cluster."
+msgstr "Maintenant que la zone est ajoutée, seules quelques informations supplémentaires sont nécessaires pour configurer le cluster."
+
+#. Tag: para
+#, no-c-format
+msgid "Name - We'll use Cluster1"
+msgstr "Name - le nom sera Cluster1"
+
+#. Tag: para
+#, no-c-format
+msgid "Hypervisor - Choose KVM"
+msgstr "Hypervisor - Choisir KVM"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You should be prompted to add the first host to your cluster at this point. "
+"Only a few bits of information are needed."
+msgstr "Le premier hôte du cluster peut alors être ajouté. Seuls quelques détails sont nécessaires."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Hostname - we'll use the IP address <replaceable>172.16.10.</replaceable>2 "
+"since we didn't set up a DNS server."
+msgstr "Hostname - l'adresse IP <replaceable>172.16.10.</replaceable>2 sera utilisée puisque le serveur DNS n'est pas configuré."
+
+#. Tag: para
+#, no-c-format
+msgid "Username - we'll use 'root'"
+msgstr "Hostname - l'adresse IP <replaceable>172.16.10.</replaceable>2 sera utilisée puisque le serveur DNS n'est pas configuré."
+
+#. Tag: para
+#, no-c-format
+msgid "Password - enter the operating system password for the root user"
+msgstr "Password - entrer le mot de passe du système d'exploitation correspondant à l'utilisateur root"
+
+#. Tag: title
+#, no-c-format
+msgid "Primary Storage"
+msgstr "Premier stockage"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"With your cluster now setup - you should be prompted for primary storage "
+"information. Choose NFS as the storage type and then enter the following "
+"values in the fields:"
+msgstr "Maintenant que votre cluster est configuré vous devriez rentrer les informations pour le système de stockage primaire. Choisissez NFS comme type de stockage et entrez les valeurs suivantes:"
+
+#. Tag: para
+#, no-c-format
+msgid "Name - We'll use 'Primary1'"
+msgstr "Name - utiliser 'Primary1'"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Server - We'll be using the IP address "
+"<replaceable>172.16.10.</replaceable>2"
+msgstr "Server - utiliser l'adresse IP <replaceable>172.16.10.</replaceable>2"
+
+#. Tag: para
+#, no-c-format
+msgid "Path - Well define /primary as the path we are using"
+msgstr "Path - définir /primary comme chemin utilisé "
+
+#. Tag: title
+#, no-c-format
+msgid "Secondary Storage"
+msgstr "Stockage secondaire"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"If this is a new zone, you'll be prompted for secondary storage information "
+"- populate it as follows:"
+msgstr " Si c'est une nouvelle zone, il sera demandé des informations complémentaires pour l'espace de stockage secondaire- les renseigner comme suit :"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"NFS server - We'll use the IP address <replaceable>172.16.10.</replaceable>2"
+msgstr "NFS server - utiliser l'adresse IP <replaceable>172.16.10.</replaceable>2"
+
+#. Tag: para
+#, no-c-format
+msgid "Path - We'll use /secondary"
+msgstr "Path - utiliser le répertoire /secondary"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now, click Launch and your cloud should begin setup - it may take several "
+"minutes depending on your internet connection speed for setup to finalize."
+msgstr "Maintenant, cliquer sur Launch et le cloud devrait commencer à se configurer - cela peut prendre plusieurs minutes selon la vitesse de la connexion internet lors de la finalisation de la configuration."

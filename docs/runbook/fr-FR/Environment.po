@@ -1,0 +1,529 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+# 
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an
+#  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#  KIND, either express or implied.  See the License for the
+#  specific language governing permissions and limitations
+#  under the License.
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Sebastien Goasguen <runseb@gmail.com>, 2013.
+# Simon Devineau <simon.devineau@gmail.com>, 2013.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2013-02-01T09:17:06\n"
+"PO-Revision-Date: 2013-02-05 09:02+0000\n"
+"Last-Translator: sebgoa <runseb@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fr\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Environment"
+msgstr "Environnement"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before you begin, you need to prepare the environment before you install "
+"CloudStack. We will go over the steps to prepare now."
+msgstr "Avant de commencer, il est nécessaire de préparer l'environnement pour pouvoir installer CloudStack. Les étapes à suivre sont présentées ci-après."
+
+#. Tag: title
+#, no-c-format
+msgid "Operating System"
+msgstr "Système d'Exploitation"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Using the CentOS 6.3 x86_64 minimal install ISO, you'll need to install "
+"CentOS on your hardware. The defaults will generally be acceptable for this "
+"installation."
+msgstr "En utilisant l'ISO installation minimal CentOS 6.3 x86_64, installez CentOS sur votre machine physique. Les valeurs par défaut devraient normalement être acceptable pour cette installation."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Once this installation is complete, you'll want to connect to your freshly "
+"installed machine via SSH as the root user. Note that you should not allow "
+"root logins in a production environment, so be sure to turn off remote "
+"logins once you have finished the installation and configuration."
+msgstr "Une fois l'installation terminée, il est utile de pouvoir se connecter en SSH en tant que root à la machine fraichement installée. Il est à noter que l'authentification en tant que root ne devrait pas être autorisée en environnement de production; s'assurer de désactiver l'authentification à distance une fois l'installation et la configuration terminées."
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring the network"
+msgstr "Configuration du réseau"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"By default the network will not come up on your hardware and you will need "
+"to configure it to work in your environment. Since we specified that there "
+"will be no DHCP server in this environment we will be manually configuring "
+"your network interface. We will assume, for the purposes of this exercise, "
+"that eth0 is the only network interface that will be connected and used."
+msgstr "Par défaut, le réseau ne sera pas disponible sur votre matériel, et il faudra le configurer pour qu'il fonctionne dans l'environnement. Puisqu'il a été spécifié qu'il n'y aura pas de serveur DHCP dans cet environnement, on configurera manuellement l'interface réseau. On supposera, pour les besoins de cet exercice, que eth0 est la seule interface réseau qui sera connectée et utilisée."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Connecting via the console you should login as root. Check the file "
+"<filename>/etc/sysconfig/network-scripts/ifcfg-eth0</filename>, it will look"
+" like this by default:"
+msgstr "Pour se connecter à la console, s'authentifier en tant que root. Vérifier que le fichier <filename>/etc/sysconfig/network-scripts/ifcfg-eth0</filename>,\n        ressemble par défaut à ceci :"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"DEVICE=\"eth0\"\n"
+"HWADDR=\"52:54:00:B9:A6:C0\"\n"
+"NM_CONTROLLED=\"yes\"\n"
+"ONBOOT=\"no\"\n"
+"        "
+msgstr "\nDEVICE=\"eth0\"\nHWADDR=\"52:54:00:B9:A6:C0\"\nNM_CONTROLLED=\"yes\"\nONBOOT=\"no\"\n        "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Unfortunately, this configuration will not permit you to connect to the "
+"network, and is also unsuitable for our purposes with CloudStack. We want to"
+" configure that file so that it specifies the IP address, netmask, etc., as "
+"shown in the following example:"
+msgstr "Malheureusement, cette configuration ne permet pas de se connecter au réseau, ni ne convient aux besoins de Cloudstack. On souhaite configurer ce fichier pour qu'il spécifie l'adresse IP, le masque réseau, etc., comme dans l'exemple suivant:"
+
+#. Tag: title
+#, no-c-format
+msgid "Hardware Addresses"
+msgstr "Adresses Physiques"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You should not use the hardware address (aka MAC address) from our example "
+"for your configuration. It is network interface specific, so you should keep"
+" the address already provided in the HWADDR directive."
+msgstr "L'adresse physique (adresse MAC) de l'exemple ne doit pas être utilisée pour la configuration. Cette adresse est différente pour chaque interface réseau, donc il faut garder l'adresse disponible dans la directive HWADDR."
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"DEVICE=eth0\n"
+"HWADDR=52:54:00:B9:A6:C0\n"
+"NM_CONTROLLED=no\n"
+"ONBOOT=yes\n"
+"BOOTPROTO=none\n"
+"IPADDR=172.16.10.2\n"
+"NETMASK=255.255.255.0\n"
+"GATEWAY=172.16.10.1\n"
+"DNS1=8.8.8.8\n"
+"DNS2=8.8.4.4\n"
+"      "
+msgstr "\nDEVICE=eth0\nHWADDR=52:54:00:B9:A6:C0\nNM_CONTROLLED=no\nONBOOT=yes\nBOOTPROTO=none\nIPADDR=172.16.10.2\nNETMASK=255.255.255.0\nGATEWAY=172.16.10.1\nDNS1=8.8.8.8\nDNS2=8.8.4.4\n      "
+
+#. Tag: title
+#, no-c-format
+msgid "IP Addressing"
+msgstr "Adressage IP"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Throughout this document we are assuming that you will have a /24 network "
+"for your CloudStack implementation. This can be any RFC 1918 network. "
+"However, we are assuming that you will match the machine address that we are"
+" using. Thus we may use "
+"<userinput><replaceable>172.16.10</replaceable>.2</userinput> and because "
+"you might be using the 192.168.55.0/24 network you would use "
+"<userinput><replaceable>192.168.55</replaceable>.2</userinput>"
+msgstr "Tout au long de ce document, on suppose que l'on aura un réseau /24 pour l'implémentation CloudStack. Ceci peut être n'importe quel réseau RFC 1918. Cependant, on suppose que l'adresse machine utilisée sera celle mentionnée ici. Ainsi, on utilise \n<userinput>\n<replaceable>172.16.10</replaceable>.2</userinput> et comme le réseau 192.168.55.0/24 pourrait être utilisé, on utiliserait \n<userinput><replaceable>192.168.55</replaceable>.2</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now that we have the configuration files properly set up, we need to run a "
+"few commands to start up the network"
+msgstr "Une fois les fichiers de configuration correctement paramétrés, il faut lancer quelques commandes pour démarrer le réseau :"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>chkconfig</command> network "
+"on</userinput>"
+msgstr "<prompt># </prompt><userinput><command>chkconfig</command> network on</userinput>"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>service</command> network "
+"start</userinput>"
+msgstr "<prompt># </prompt><userinput><command>service</command> network start</userinput>"
+
+#. Tag: title
+#, no-c-format
+msgid "Hostname"
+msgstr "Nom d'hôte"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Cloudstack requires that the hostname be properly set. If you used the "
+"default options in the installation, then your hostname is currently set to "
+"localhost.localdomain. To test this we will run:"
+msgstr "Cloudstack exige que le nom d'hôte soit paramétré correctement. Si les options par défaut ont été utilisées lors de l'installation, alors le nom d'hôte est à présent localhost.localdomain. Pour vérifier ceci, on lancera :"
+
+#. Tag: screen
+#, no-c-format
+msgid "<prompt># </prompt><userinput>hostname --fqdn</userinput>"
+msgstr "<prompt># </prompt><userinput>hostname --fqdn</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid "At this point it will likely return:"
+msgstr "À ce point, cela retournera probablement :"
+
+#. Tag: screen
+#, no-c-format
+msgid "localhost"
+msgstr "localhost"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To rectify this situation - we'll set the hostname by editing the "
+"<filename>/etc/hosts</filename> file so that it follows a similar format to "
+"this example:"
+msgstr "Pour rectifier cette situation, on paramétrera le nom d'hôte en éditant le fichier <filename>/etc/hosts</filename> pour que son format ressemble à l'exemple suivant :"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n"
+"172.16.10.2 srvr1.cloud.priv\n"
+msgstr "\n127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n172.16.10.2 srvr1.cloud.priv\n"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After you've modified that file, go ahead and restart the network using:"
+msgstr "Une fois ce fichier modifié, continuer et redémarrer le réseau en utilisant :"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>service</command> network "
+"restart</userinput>"
+msgstr "<prompt># </prompt><userinput><command>service</command> network restart</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now recheck with the <command>hostname --fqdn</command> command and ensure "
+"that it returns a FQDN response"
+msgstr "Puis vérifier à nouveau avec la commande <command>hostname --fqdn</command> et s'assurer qu'elle renvoie une réponse FQDN"
+
+#. Tag: title
+#, no-c-format
+msgid "SELinux"
+msgstr "SELinux"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"At the moment, for CloudStack to work properly SELinux must be set to "
+"permissive. We want to both configure this for future boots and modify it in"
+" the current running system."
+msgstr "À ce point, SELinux doit être paramétré comme permissif pour que CloudStack fonctionne correctement. On souhaite à la fois configurer ceci pour des démarrages futurs et le modifier dans le système en cours de fonctionnement."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To configure SELinux to be permissive in the running system we need to run "
+"the following command:"
+msgstr "Pour configurer SELinux en mode permissif dans le système en cours de fonctionnement, lancer la commande suivante :"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>setenforce</command> 0</userinput>"
+msgstr "<prompt># </prompt><userinput><command>setenforce</command> 0</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To ensure that it remains in that state we need to configure the file "
+"<filename>/etc/selinux/config</filename> to reflect the permissive state, as"
+" shown in this example:"
+msgstr "Afin de s'assurer que SELinux reste dans cet état, on doit configurer le fichier \n<filename>/etc/selinux/config</filename> pour refléter l'état permissif, comme dans l'exemple suivant : "
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"\n"
+"# This file controls the state of SELinux on the system.\n"
+"# SELINUX= can take one of these three values:\n"
+"#     enforcing - SELinux security policy is enforced.\n"
+"#     permissive - SELinux prints warnings instead of enforcing.\n"
+"#     disabled - No SELinux policy is loaded.\n"
+"SELINUX=permissive\n"
+"# SELINUXTYPE= can take one of these two values:\n"
+"#     targeted - Targeted processes are protected,\n"
+"#     mls - Multi Level Security protection.\n"
+"SELINUXTYPE=targeted\n"
+"      "
+msgstr "\n\n# This file controls the state of SELinux on the system.\n# SELINUX= can take one of these three values:\n#     enforcing - SELinux security policy is enforced.\n#     permissive - SELinux prints warnings instead of enforcing.\n#     disabled - No SELinux policy is loaded.\nSELINUX=permissive\n# SELINUXTYPE= can take one of these two values:\n#     targeted - Targeted processes are protected,\n#     mls - Multi Level Security protection.\nSELINUXTYPE=targeted\n      "
+
+#. Tag: title
+#, no-c-format
+msgid "NTP"
+msgstr "NTP"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"NTP configuration is a necessity for keeping all of the clocks in your cloud"
+" servers in sync. However, NTP is not installed by default. So we'll install"
+" and and configure NTP at this stage. Installation is accomplished as "
+"follows:"
+msgstr "La configuration de NTP est nécessaire pour que les horloges de tous les serveurs du cloud restent synchronisées. Cependant, NTP n'est pas installé par défaut, donc on l'installera et on le configurera à ce stade.L'installation de NTP se fait comme suit :"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>yum</command> -y install "
+"ntp</userinput>"
+msgstr "<prompt># </prompt><userinput><command>yum</command> -y install ntp</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The actual default configuration is fine for our purposes, so we merely need"
+" to enable it and set it to start on boot as follows:"
+msgstr "L'actuelle configuration par défaut est convenable pour nos besoins, donc il est surtout nécessaire de l'activer et de faire en sorte qu'elle se charge au démarrage. Ce qui se fait de la façon suivante :"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>chkconfig</command> ntpd "
+"on</userinput>"
+msgstr "<prompt># </prompt><userinput><command>chkconfig</command> ntpd on</userinput>"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>service</command> ntpd "
+"start</userinput>"
+msgstr "<prompt># </prompt><userinput><command>service</command> ntpd start</userinput>"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring the CloudStack Package Repository"
+msgstr "Configuration du dépot de paquet CloudStack"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"We need to configure the machine to use a CloudStack package repository."
+msgstr "Nous devons configurer la machine pour qu'elle utilise le dépot de paquet CloudStack."
+
+#. Tag: title
+#, no-c-format
+msgid ""
+"The below repository is not an official Apache CloudStack project repository"
+msgstr "The dépot suivant n'est pas une source officielle du projet Apache CloudStack, mais est fourni par un membre de la communauté."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The Apache CloudStack official releases are source code. As such there are "
+"no 'official' binaries available. The full installation guide describes how "
+"to take the source release and generate RPMs and and yum repository. This "
+"guide attempts to keep things as simple as possible, and thus we are using "
+"one of the community-provided yum repositories."
+msgstr "Les releases officiel de Apache CloudStack sont des releases de code source. En tant que telle il n'y a donc pas de fichiers binaires officiels. Le guide d'installation complet décrit comment utiliser le code source et générer des fichiers RPMs à placer dans un dépot yum. Ce guide essaie de faire les choses aussi simplement que possible et nous utilisons donc un dépot fournit par un membre de la communauté aux Pays-Bas."
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To add the CloudStack repository, create "
+"<filename>/etc/yum.repos.d/cloudstack.repo</filename> and insert the "
+"following information."
+msgstr "Pour ajouter le dépot, créer <filename>/etc/yum.repos.d/cloudstack.repo</filename> et ajoutez les informations suivantes."
+
+#. Tag: programlisting
+#, no-c-format
+msgid ""
+"\n"
+"[cloudstack]\n"
+"name=cloudstack\n"
+"baseurl=http://cloudstack.apt-get.eu/rhel/4.0/\n"
+"enabled=1\n"
+"gpgcheck=0\n"
+"      "
+msgstr "\n[cloudstack]\nname=cloudstack\nbaseurl=http://cloudstack.apt-get.eu/rhel/4.0/\nenabled=1\ngpgcheck=0\n      "
+
+#. Tag: title
+#, no-c-format
+msgid "NFS"
+msgstr "NFS"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Our configuration is going to use NFS for both primary and secondary "
+"storage. We are going to go ahead and setup two NFS shares for those "
+"purposes. We'll start out by installing <application>nfs-"
+"utils</application>."
+msgstr "Notre configuration va utiliser NFS à la fois pour le stockage primaire et le stockage secondaire. Ainsi, on va configurer deux périphériques NFS. Commencer par installer <application>nfs-utils</application>."
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>yum</command> install nfs-"
+"utils</userinput>"
+msgstr "<prompt># </prompt><userinput><command>yum</command> install nfs-utils</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"We now need to configure NFS to serve up two different shares. This is "
+"handled comparatively easily in the <filename>/etc/exports</filename> file. "
+"You should ensure that it has the following content:"
+msgstr "Il faut à présent configurer NFS pour fonctionner avec deux périphériques différents. Ceci est réalisé assez facilement dans le fichier <filename>/etc/exports</filename>. On doit s'assurer qu'il contient les données suivantes:"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"/secondary *(rw,async,no_root_squash)\n"
+"/primary   *(rw,async,no_root_squash)\n"
+"    "
+msgstr "\n/secondary *(rw,async,no_root_squash)\n/primary   *(rw,async,no_root_squash)\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You will note that we specified two directories that don't exist (yet) on "
+"the system. We'll go ahead and create those directories and set permissions "
+"appropriately on them with the following commands:"
+msgstr "Il est à noter que l'on a spécifié deux répertoires qui n'existent pas (encore) sur le système. On va continuer en créant ces répertoires, et en configurant leurs permissions de façon appropriée à l'aide des commandes suivantes :"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"<prompt># </prompt><userinput><command>mkdir</command> /primary</userinput>\n"
+"<prompt># </prompt><userinput><command>mkdir</command> /secondary</userinput>\n"
+"    "
+msgstr "\n<prompt># </prompt><userinput><command>mkdir</command> /primary</userinput>\n<prompt># </prompt><userinput><command>mkdir</command> /secondary</userinput>\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"CentOS 6.x releases use NFSv4 by default. NFSv4 requires that domain setting"
+" matches on all clients. In our case, the domain is cloud.priv, so ensure "
+"that the domain setting in <filename>/etc/idmapd.conf</filename> is "
+"uncommented and set as follows:"
+msgstr "Les versions CentOS 6.x utilisent NFSv4 par défaut. NFSv4 exige que les configurations de domaines concordent sur tous les clients. Dans le cas présent, le domaine est cloud.priv, donc il faut s'assurer que la configuration du domaine dans <filename>/etc/idmapd.conf</filename> est décommentée et fixée comme suit:"
+
+#. Tag: screen
+#, no-c-format
+msgid "Domain = cloud.priv"
+msgstr "Domain = cloud.priv"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now you'll need uncomment the configuration values in the file "
+"<filename>/etc/sysconfig/nfs</filename>"
+msgstr "À présent, décommenter les valeurs de configuration dans le fichier <filename>/etc/sysconfig/nfs</filename>"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"LOCKD_TCPPORT=32803\n"
+"LOCKD_UDPPORT=32769\n"
+"MOUNTD_PORT=892\n"
+"RQUOTAD_PORT=875\n"
+"STATD_PORT=662\n"
+"STATD_OUTGOING_PORT=2020\n"
+"    "
+msgstr "\nLOCKD_TCPPORT=32803\nLOCKD_UDPPORT=32769\nMOUNTD_PORT=892\nRQUOTAD_PORT=875\nSTATD_PORT=662\nSTATD_OUTGOING_PORT=2020\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now we need to configure the firewall to permit incoming NFS connections. "
+"Edit the file <filename>/etc/sysconfig/iptables</filename>"
+msgstr "Il faut ensuite configurer le pare-feu pour autoriser les connexions NFS entrantes. Éditer le fichier <filename>/etc/sysconfig/iptables</filename> en y ajoutant les lignes suivantes:"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 111 -j ACCEPT\n"
+"-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 111 -j ACCEPT\n"
+"-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 2049 -j ACCEPT\n"
+"-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 32803 -j ACCEPT\n"
+"-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 32769 -j ACCEPT\n"
+"-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 892 -j ACCEPT\n"
+"-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 892 -j ACCEPT\n"
+"-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 875 -j ACCEPT\n"
+"-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 875 -j ACCEPT\n"
+"-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 662 -j ACCEPT\n"
+"-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 662 -j ACCEPT\n"
+"    "
+msgstr "\n-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 111 -j ACCEPT\n-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 111 -j ACCEPT\n-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 2049 -j ACCEPT\n-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 32803 -j ACCEPT\n-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 32769 -j ACCEPT\n-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 892 -j ACCEPT\n-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 892 -j ACCEPT\n-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 875 -j ACCEPT\n-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 875 -j ACCEPT\n-A INPUT -s 172.16.10.0/24 -m state --state NEW -p tcp --dport 662 -j ACCEPT\n-A INPUT -s 172.16.10.0/24 -m state --state NEW -p udp --dport 662 -j ACCEPT\n    "
+
+#. Tag: para
+#, no-c-format
+msgid "Now you can restart the iptables service with the following command:"
+msgstr "On peut maintenant redémarrer le service iptables par la commande suivante:"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>service</command> iptables "
+"restart</userinput>"
+msgstr "<prompt># </prompt><userinput><command>service</command> iptables restart</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"We now need to configure nfs service to start on boot and actually start it "
+"on the host by executing the following commands:"
+msgstr "Il faut à présent configurer le service nfs pour qu'il se lance au démarrage, et le lancer sur l'hôte en exécutant les commandes suivantes :"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"<prompt># </prompt><userinput><command>service</command> rpcbind start</userinput>\n"
+"<prompt># </prompt><userinput><command>service</command> nfs start</userinput>\n"
+"<prompt># </prompt><userinput><command>chkconfig</command> rpcbind on</userinput>\n"
+"<prompt># </prompt><userinput><command>chkconfig</command> nfs on</userinput>\n"
+"    "
+msgstr "\n<prompt># </prompt><userinput><command>service</command> rpcbind start</userinput>\n<prompt># </prompt><userinput><command>service</command> nfs start</userinput>\n<prompt># </prompt><userinput><command>chkconfig</command> rpcbind on</userinput>\n<prompt># </prompt><userinput><command>chkconfig</command> nfs on</userinput>\n    "
