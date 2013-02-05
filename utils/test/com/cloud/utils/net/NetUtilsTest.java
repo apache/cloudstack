@@ -102,5 +102,14 @@ public class NetUtilsTest extends TestCase {
     	assertTrue(NetUtils.isIp6RangeOverlap("1234:5678::f-1234:5678::ffff", "1234:5678::2-1234:5678::f"));
     	assertFalse(NetUtils.isIp6RangeOverlap("1234:5678::f-1234:5678::ffff", "1234:5678::2-1234:5678::e"));
     	assertFalse(NetUtils.isIp6RangeOverlap("1234:5678::f-1234:5678::f", "1234:5678::2-1234:5678::e"));
+    	//Test getNextIp6InRange
+    	assertEquals(NetUtils.getNextIp6InRange("1234:5678::8000:0000", range), "1234:5678::1");
+    	assertEquals(NetUtils.getNextIp6InRange("1234:5678::7fff:ffff", range), "1234:5678::8000:0");
+    	assertEquals(NetUtils.getNextIp6InRange("1234:5678::1", range), "1234:5678::2");
+    	//Test isIp6InNetwork
+    	assertFalse(NetUtils.isIp6InNetwork("1234:5678:abcd::1", "1234:5678::/64"));
+    	assertTrue(NetUtils.isIp6InNetwork("1234:5678::1", "1234:5678::/64"));
+    	assertTrue(NetUtils.isIp6InNetwork("1234:5678::ffff:ffff:ffff:ffff", "1234:5678::/64"));
+    	assertTrue(NetUtils.isIp6InNetwork("1234:5678::", "1234:5678::/64"));
     }
 }
