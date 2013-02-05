@@ -1020,7 +1020,7 @@ public class Transaction {
                 s_logger.fatal("Unable to load db properties file, pl. check the classpath and file path configuration", e);
                 return;
             } catch (NullPointerException e) {
-                s_logger.fatal("Unable to load and read db properties file " + propsFileName + "Error: " + e);
+                s_logger.fatal("Unable to locate db properties file within classpath or absolute path: " + propsFileName);
                 return;
             }
 
