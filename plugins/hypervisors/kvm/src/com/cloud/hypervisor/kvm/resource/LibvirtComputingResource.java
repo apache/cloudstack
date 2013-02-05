@@ -1429,6 +1429,8 @@ ServerResource {
             if (type == null) {
                 return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '" 
                                 + pool.getType() + "' and volume format '" + vol.getFormat() + "'");
+            } else if (type.equals("QCOW2") && shrinkOk) {
+                return new ResizeVolumeAnswer(cmd, false, "Unable to shrink volumes of type " + type);
             }
 
             s_logger.debug("got to the stage where we execute the volume resize, params:" 
