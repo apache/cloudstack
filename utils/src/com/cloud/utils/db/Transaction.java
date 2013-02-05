@@ -1006,10 +1006,7 @@ public class Transaction {
 
     public static void initDataSource(String propsFileName) {
         try {
-            File dbPropsFile = new File(propsFileName);
-            if (!dbPropsFile.exists()) {
-                dbPropsFile = PropertiesUtil.findConfigFile(propsFileName);
-            }
+            File dbPropsFile = PropertiesUtil.findConfigFile(propsFileName);
             final Properties dbProps;
             if (EncryptionSecretKeyChecker.useEncryption()) {
                 StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();
@@ -1021,6 +1018,9 @@ public class Transaction {
                 dbProps.load(new FileInputStream(dbPropsFile));
             } catch (IOException e) {
                 s_logger.fatal("Unable to load db properties file, pl. check the classpath and file path configuration", e);
+                return;
+            } catch (NullPointerException e) {
+                s_logger.fatal("Unable to load and read db properties file " + propsFileName + "Error: " + e);
                 return;
             }
 
