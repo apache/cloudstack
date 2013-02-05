@@ -526,7 +526,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         		return false;
         	}
         	if (network.getIp6Gateway() != null) {
-        		hasFreeIps = isIP6AddressAvailable(network);
+        		hasFreeIps = isIP6AddressAvailable(network.getId());
         	}
         } else {
             hasFreeIps = (getAvailableIps(network, null)).size() > 0;
@@ -544,8 +544,13 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     	}
     	return vlans.get(0);
     }
-   
-    private boolean isIP6AddressAvailable(Network network) {
+
+    @Override
+    public boolean isIP6AddressAvailable(long networkId) {
+    	Network network = _networksDao.findById(networkId);
+    	if (network == null) {
+    		return false;
+    	}
     	if (network.getIp6Gateway() == null) {
     		return false;
     	}
