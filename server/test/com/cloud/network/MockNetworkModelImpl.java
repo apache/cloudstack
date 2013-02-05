@@ -802,4 +802,10 @@ public class MockNetworkModelImpl implements NetworkModel, Manager {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public boolean isIP6AddressAvailable(long networkId) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }
