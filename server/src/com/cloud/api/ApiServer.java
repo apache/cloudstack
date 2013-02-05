@@ -292,7 +292,7 @@ public class ApiServer implements HttpRequestHandler {
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
                 UserContext.registerContext(_systemUser.getId(), _systemAccount, null, true);
                 sb.insert(0, "(userId=" + User.UID_SYSTEM + " accountId=" + Account.ACCOUNT_ID_SYSTEM + " sessionId=" + null + ") ");
-                String responseText = handleRequest(parameterMap, true, responseType, sb);
+                String responseText = handleRequest(parameterMap, false, responseType, sb);
                 sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
 
                 writeResponse(response, responseText, HttpStatus.SC_OK, responseType, null);
