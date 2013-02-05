@@ -16,27 +16,29 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.ComponentLocator;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.log4j.Logger;
+import com.cloud.utils.component.PluggableService;
 
 // This is the default API access checker that grab's the user's account
 // based on the account type, access is granted
-@Local(value = APIChecker.class)
+@Local(value=APIChecker.class)
 public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
 
     protected static final Logger s_logger = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);
@@ -44,23 +46,24 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
     private static Map<RoleType, Set<String>> s_roleBasedApisMap =
             new HashMap<RoleType, Set<String>>();
 
-    private static AccountService s_accountService;
+    @Inject List<PluggableService> _services;
+    @Inject AccountService _accountService;
 
     protected StaticRoleBasedAPIAccessChecker() {
         super();
-        for (RoleType roleType : RoleType.values())
+        for (RoleType roleType: RoleType.values())
             s_roleBasedApisMap.put(roleType, new HashSet<String>());
     }
 
     @Override
     public boolean checkAccess(User user, String commandName)
             throws PermissionDeniedException {
-        Account account = s_accountService.getAccount(user.getAccountId());
+        Account account = _accountService.getAccount(user.getAccountId());
         if (account == null) {
             throw new PermissionDeniedException("The account id=" + user.getAccountId() + "for user id=" + user.getId() + "is null");
         }
 
-        RoleType roleType = s_accountService.getRoleType(account);
+        RoleType roleType = _accountService.getRoleType(account);
         boolean isAllowed = s_roleBasedApisMap.get(roleType).contains(commandName);
         if (!isAllowed) {
             throw new PermissionDeniedException("The API does not exist or is blacklisted. Role type=" + roleType.toString() + " is not allowed to request the api: " + commandName);
@@ -72,23 +75,18 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        // Read command properties files to build the static map per role.
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        s_accountService = locator.getManager(AccountService.class);
-
         processMapping(PropertiesUtil.processConfigFile(new String[]
                 {"commands.properties"}));
-
         return true;
     }
 
     private void processMapping(Map<String, String> configMap) {
-        for (Map.Entry<String, String> entry : configMap.entrySet()) {
+        for (Map.Entry<String, String> entry: configMap.entrySet()) {
             String apiName = entry.getKey();
             String roleMask = entry.getValue();
             try {
                 short cmdPermissions = Short.parseShort(roleMask);
-                for (RoleType roleType : RoleType.values()) {
+                for (RoleType roleType: RoleType.values()) {
                     if ((cmdPermissions & roleType.getValue()) != 0)
                         s_roleBasedApisMap.get(roleType).add(apiName);
                 }

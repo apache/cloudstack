@@ -1291,6 +1291,15 @@ Done restarting router(s).
           appropriate calls to the Nicira NVP Controller. The plug-in has been tested with Nicira
           NVP versions 2.1.0, 2.2.0 and 2.2.1.</para>
       </section>
+      <section id="bigswitch-vns-plugin">
+        <title>The BigSwitch Controller Plugin</title>
+        <para>The BigSwitch Controller plug-in adds OpenFlow based solution for network virtualization
+          to CloudStack. The plugin supports both BigSwitch commercial controller and the opensource
+          Floodlight controller. The plugin functions as a provider for CloudStack networks and Connectivity
+          service. This service is responsible for creating Layer 2 networks supporting the networks
+          created by guests. When a tenant creates a new network, a virutal network segment will be
+          created by sending the appropriate calls to the BigSwitch Controller.</para>
+      </section>
       <section id="castor-support">
         <title>Support for CAStor Cluster</title>
         <para>CloudStack 4.0.0-incubating supports using a CAStor cluster as the back-end storage

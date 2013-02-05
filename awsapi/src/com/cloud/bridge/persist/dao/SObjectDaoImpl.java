@@ -22,33 +22,33 @@ import java.util.List;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
-import com.cloud.bridge.model.SBucket;
+import org.springframework.stereotype.Component;
+
 import com.cloud.bridge.model.SBucketVO;
 import com.cloud.bridge.model.SObjectItemVO;
 import com.cloud.bridge.model.SObjectVO;
-import com.cloud.bridge.util.EntityParam;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={SObjectDao.class})
 public class SObjectDaoImpl extends GenericDaoBase<SObjectVO, Long> implements SObjectDao {
-    protected final SObjectItemDao itemDao = ComponentLocator.inject(SObjectItemDaoImpl.class);
-    
-	public SObjectDaoImpl() {}
+    @Inject SObjectItemDao itemDao;
 
-	@Override
-	public SObjectVO getByNameKey(SBucketVO bucket, String nameKey) {
-		SObjectVO object = null; 
-	    SearchBuilder<SObjectVO> SearchByName = createSearchBuilder();
-	    SearchByName.and("SBucketID", SearchByName.entity().getBucketID() , SearchCriteria.Op.EQ);
-	    SearchByName.and("NameKey", SearchByName.entity().getNameKey() , SearchCriteria.Op.EQ);
-	    Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
-	    try {
+    public SObjectDaoImpl() {}
+
+    @Override
+    public SObjectVO getByNameKey(SBucketVO bucket, String nameKey) {
+        SObjectVO object = null; 
+        SearchBuilder<SObjectVO> SearchByName = createSearchBuilder();
+        SearchByName.and("SBucketID", SearchByName.entity().getBucketID() , SearchCriteria.Op.EQ);
+        SearchByName.and("NameKey", SearchByName.entity().getNameKey() , SearchCriteria.Op.EQ);
+        Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+        try {
             txn.start();
             SearchCriteria<SObjectVO> sc = SearchByName.create();
             sc.setParameters("SBucketID", bucket.getId());
@@ -59,23 +59,23 @@ public class SObjectDaoImpl extends GenericDaoBase<SObjectVO, Long> implements S
                         itemDao.getItems(object.getId()));
                 object.setItems(items);
             }
-		return object;
-		
-	    }finally {
+            return object;
+
+        }finally {
             txn.close();
-	    }
-	    
-	}
-	
-	@Override
-	public List<SObjectVO> listBucketObjects(SBucketVO bucket, String prefix, String marker, int maxKeys) {
-		StringBuffer sb = new StringBuffer();
-		List<Object> params = new ArrayList<Object>();
-		SearchBuilder<SObjectVO> SearchByBucket = createSearchBuilder();
-		List<SObjectVO> objects = new ArrayList<SObjectVO>();
-		
-		SearchByBucket.and("SBucketID", SearchByBucket.entity().getBucketID(), SearchCriteria.Op.EQ);
-		SearchByBucket.and("DeletionMark", SearchByBucket.entity().getDeletionMark(), SearchCriteria.Op.NULL);		
+        }
+
+    }
+
+    @Override
+    public List<SObjectVO> listBucketObjects(SBucketVO bucket, String prefix, String marker, int maxKeys) {
+        StringBuffer sb = new StringBuffer();
+        List<Object> params = new ArrayList<Object>();
+        SearchBuilder<SObjectVO> SearchByBucket = createSearchBuilder();
+        List<SObjectVO> objects = new ArrayList<SObjectVO>();
+
+        SearchByBucket.and("SBucketID", SearchByBucket.entity().getBucketID(), SearchCriteria.Op.EQ);
+        SearchByBucket.and("DeletionMark", SearchByBucket.entity().getDeletionMark(), SearchCriteria.Op.NULL);		
         Transaction txn = Transaction.currentTxn();  // Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
         try {
             txn.start();
@@ -88,19 +88,19 @@ public class SObjectDaoImpl extends GenericDaoBase<SObjectVO, Long> implements S
             }
             return objects;
         }finally {
-        txn.close();
+            txn.close();
         }
-	}
-	
-	@Override
-	public List<SObjectVO> listAllBucketObjects(SBucketVO bucket, String prefix, String marker, int maxKeys) {
-		StringBuffer sb = new StringBuffer();
-		List<Object> params = new ArrayList<Object>();
-		SearchBuilder<SObjectVO> getAllBuckets = createSearchBuilder();
-		List<SObjectVO> objects = new ArrayList<SObjectVO>();
-		getAllBuckets.and("SBucketID", getAllBuckets.entity().getBucketID(), SearchCriteria.Op.EQ);
+    }
 
-		Transaction txn = Transaction.currentTxn();  // Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
+    @Override
+    public List<SObjectVO> listAllBucketObjects(SBucketVO bucket, String prefix, String marker, int maxKeys) {
+        StringBuffer sb = new StringBuffer();
+        List<Object> params = new ArrayList<Object>();
+        SearchBuilder<SObjectVO> getAllBuckets = createSearchBuilder();
+        List<SObjectVO> objects = new ArrayList<SObjectVO>();
+        getAllBuckets.and("SBucketID", getAllBuckets.entity().getBucketID(), SearchCriteria.Op.EQ);
+
+        Transaction txn = Transaction.currentTxn();  // Transaction.open("cloudbridge", Transaction.AWSAPI_DB, true);
         try {
             txn.start();
             SearchCriteria<SObjectVO> sc = getAllBuckets.create();
@@ -112,8 +112,8 @@ public class SObjectDaoImpl extends GenericDaoBase<SObjectVO, Long> implements S
             }
             return objects;
         }finally {
-        txn.close();
+            txn.close();
         }
-		
-	}
+
+    }
 }

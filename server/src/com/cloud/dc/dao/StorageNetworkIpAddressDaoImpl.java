@@ -23,6 +23,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.StorageNetworkIpAddressVO;
 import com.cloud.utils.db.DB;
@@ -36,6 +38,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+@Component
 @Local(value={StorageNetworkIpAddressDao.class})
 @DB(txn=false)
 public class StorageNetworkIpAddressDaoImpl extends GenericDaoBase<StorageNetworkIpAddressVO, Long> implements StorageNetworkIpAddressDao {

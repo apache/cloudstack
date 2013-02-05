@@ -24,6 +24,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -32,6 +34,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria2;
 
+@Component
 @Local(value=BaremetalDhcpDao.class)
 @DB(txn=false)
 public class BaremetalDhcpDaoImpl extends GenericDaoBase<BaremetalDhcpVO, Long> implements BaremetalDhcpDao {

@@ -31,7 +31,6 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.SearchCriteria;
 
 

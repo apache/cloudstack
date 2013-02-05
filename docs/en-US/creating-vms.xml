@@ -3,47 +3,53 @@
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
-
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
 -->
-
 <section id="creating-vms">
-        <title>Creating VMs</title>
-        <para>Virtual machines are usually created from a template. Users can also create blank virtual machines. A blank virtual machine is a virtual machine without an OS template. Users can attach an ISO file and install the OS from the CD/DVD-ROM.</para>
-    <para>To create a VM from a template:</para>
-        <orderedlist>
-            <listitem><para>Log in to the &PRODUCT; UI as an administrator or user.</para></listitem>
-            <listitem><para>In the left navigation bar, click Instances.</para></listitem>
-            <listitem><para>Click Add Instance.</para></listitem>
-            <listitem><para>Select a template, then follow the steps in the wizard. (For more information about how the templates came to be in this list, see Working with Templates.</para></listitem>
-            <listitem><para>Be sure that the hardware you have allows starting the selected service offering.</para></listitem>
-            <listitem><para>Click Submit and your VM will be created and started.</para>
-                <note><para>For security reason, the internal name of the VM is visible only to the root admin.</para></note></listitem>
-        </orderedlist>
-        <note><para>Starting with v3.0.3, you can create a VM without starting it. You can determine whether the VM needs to be started as part of the VM deployment.  A new request parameter, startVM, is introduced in the deployVm API to support this feature.  For more information, see the Developer's Guide</para></note>
-        <para>To create a VM from an ISO:</para>
-        <note><para>(XenServer) Windows VMs running on XenServer require PV drivers, which may be provided in the template or added after the VM is created. The PV drivers are necessary for essential management functions such as mounting additional volumes and ISO images, live migration, and graceful shutdown.</para></note>
-    <orderedlist>
-        <listitem><para>Log in to the &PRODUCT; UI as an administrator or user.</para></listitem>
-        <listitem><para>In the left navigation bar, click Instances.</para></listitem>
-        <listitem><para>Click Add Instance.</para></listitem>
-        <listitem><para>Select ISO Boot, and follow the steps in the wizard.</para></listitem>
-        <listitem><para>Click Submit and your VM will be created and started.</para></listitem>
+		<title>Creating VMs</title>
+		<para>Virtual machines are usually created from a template. Users can also create blank virtual machines. A blank virtual machine is a virtual machine without an OS template. Users can attach an ISO file and install the OS from the CD/DVD-ROM.</para>
+	<note><para>Starting with v3.0.3, you can create a VM without starting it. You can determine whether the VM needs to be started as part of the VM deployment.  A new request parameter, startVM, is introduced in the deployVm API to support this feature.  For more information, see the Developer's Guide</para></note>	
+	<para>To create a VM from a template:</para>
+		<orderedlist>
+			<listitem><para>Log in to the &PRODUCT; UI as an administrator or user.</para></listitem>
+			<listitem><para>In the left navigation bar, click Instances.</para></listitem>
+			<listitem>
+			<para>Click Add Instance.</para>
+		</listitem>
+		<listitem>
+			<para>Select a zone.</para>
+		</listitem>
+			<listitem><para>Select a template, then follow the steps in the wizard. For more information about how the templates came to be in this list, see <xref linkend="working-with-templates"/>.</para></listitem>
+			<listitem><para>Be sure that the hardware you have allows starting the selected service offering.</para></listitem>
+			<listitem><para>Click Submit and your VM will be created and started.</para>
+			<note><para>For security reason, the internal name of the VM is visible only to the root admin.</para></note>
+			</listitem>
+		</orderedlist>
+		<para>To create a VM from an ISO:</para>
+		<note><para>(XenServer) Windows VMs running on XenServer require PV drivers, which may be provided in the template or added after the VM is created. The PV drivers are necessary for essential management functions such as mounting additional volumes and ISO images, live migration, and graceful shutdown.</para></note>
+	<orderedlist>
+		<listitem><para>Log in to the &PRODUCT; UI as an administrator or user.</para></listitem>
+		<listitem><para>In the left navigation bar, click Instances.</para></listitem>
+		<listitem><para>Click Add Instance.</para></listitem>
+		<listitem><para>Select a zone.</para></listitem>
+		<listitem><para>Select ISO Boot, and follow the steps in the wizard.</para></listitem>
+		<listitem><para>Click Submit and your VM will be created and started.</para></listitem>
         <!-- <listitem><para>(Oracle VM only) After ISO installation, the installer reboots into the operating system. Due to a known issue in OVM, the reboot will place the VM in the Stopped state. In the &PRODUCT; UI, detach the ISO from the VM (so that the VM will not boot from the ISO again), then click the Start button to restart the VM.</para></listitem> -->
-    </orderedlist>
+	</orderedlist>
 </section>
+

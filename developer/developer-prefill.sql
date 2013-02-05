@@ -18,25 +18,25 @@
 -- Add a default ROOT domain
 use cloud;
 
-INSERT INTO `cloud`.`domain` (id, uuid, name, parent, path, owner) VALUES
-            (1, UUID(), 'ROOT', NULL, '/', 2);
+INSERT INTO `cloud`.`domain` (id, uuid, name, parent, path, owner, region_id) VALUES
+            (1, UUID(), 'ROOT', NULL, '/', 2, 1);
 
 -- Add system and admin accounts
-INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, state) VALUES
-            (1, UUID(), 'system', 1, 1, 'enabled');
+INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, state, region_id) VALUES
+            (1, UUID(), 'system', 1, 1, 'enabled', 1);
 
-INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, state) VALUES
-            (2, UUID(), 'admin', 1, 1, 'enabled');
+INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, state, region_id) VALUES
+            (2, UUID(), 'admin', 1, 1, 'enabled', 1);
 
 -- Add system user
 INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname,
-            lastname, email, state, created) VALUES (1, UUID(), 'system', RAND(),
-            '1', 'system', 'cloud', NULL, 'enabled', NOW());
+            lastname, email, state, created, region_id) VALUES (1, UUID(), 'system', RAND(),
+            '1', 'system', 'cloud', NULL, 'enabled', NOW(), 1);
 
 -- Add system user with encrypted password=password
 INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname,
-            lastname, email, state, created) VALUES (2, UUID(), 'admin', '5f4dcc3b5aa765d61d8327deb882cf99',
-            '2', 'Admin', 'User', 'admin@mailprovider.com', 'enabled', NOW());
+            lastname, email, state, created, region_id) VALUES (2, UUID(), 'admin', '5f4dcc3b5aa765d61d8327deb882cf99',
+            '2', 'Admin', 'User', 'admin@mailprovider.com', 'enabled', NOW(), 1);
 
 -- Add configurations
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)

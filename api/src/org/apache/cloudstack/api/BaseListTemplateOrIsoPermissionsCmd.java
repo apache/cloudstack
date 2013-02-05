@@ -18,9 +18,9 @@ package org.apache.cloudstack.api;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;

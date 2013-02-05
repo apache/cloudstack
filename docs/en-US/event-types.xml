@@ -5,216 +5,216 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
--->
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->	
 
 <appendix id="event-types">
-    <title>Event Types</title>
-    <informaltable frame="all">
-        <tgroup cols="3" align="left" colsep="1" rowsep="1">
-            <colspec colname="c1" />
-            <colspec colname="c2" />
-            <tbody>
-                <row>
-                    <entry><para>VM.CREATE</para></entry>
-                    <entry><para>TEMPLATE.EXTRACT</para></entry>
-                    <entry><para>SG.REVOKE.INGRESS</para></entry>
-                </row>
-                <row>
-                    <entry><para>VM.DESTROY</para></entry>
-                    <entry><para>TEMPLATE.UPLOAD</para></entry>
-                    <entry><para>HOST.RECONNECT</para></entry>
-                </row>
-                <row>
-                    <entry><para>VM.START</para></entry>
-                    <entry><para>TEMPLATE.CLEANUP</para></entry>
-                    <entry><para>MAINT.CANCEL</para></entry>
-                </row>
-                <row>
-                    <entry><para>VM.STOP</para></entry>
-                    <entry><para>VOLUME.CREATE</para></entry>
-                    <entry><para>MAINT.CANCEL.PS</para></entry>
-                </row>
-                <row>
-                    <entry><para>VM.REBOOT</para></entry>
-                    <entry><para>VOLUME.DELETE</para></entry>
-                    <entry><para>MAINT.PREPARE</para></entry>
-                </row>
-                <row>
-                    <entry><para>VM.UPGRADE</para></entry>
-                    <entry><para>VOLUME.ATTACH</para></entry>
-                    <entry><para>MAINT.PREPARE.PS</para></entry>
-                </row>
-                <row>
-                    <entry><para>VM.RESETPASSWORD</para></entry>
-                    <entry><para>VOLUME.DETACH</para></entry>
-                    <entry><para>VPN.REMOTE.ACCESS.CREATE</para></entry>
-                </row>
-                <row>
-                    <entry><para>ROUTER.CREATE</para></entry>
-                    <entry><para>VOLUME.UPLOAD</para></entry>
-                    <entry><para>VPN.USER.ADD</para></entry>
-                </row>
-                <row>
-                    <entry><para>ROUTER.DESTROY</para></entry>
-                    <entry><para>SERVICEOFFERING.CREATE</para></entry>
-                    <entry><para>VPN.USER.REMOVE</para></entry>
-                </row>
-                <row>
-                    <entry><para>ROUTER.START</para></entry>
-                    <entry><para>SERVICEOFFERING.UPDATE</para></entry>
-                    <entry><para>NETWORK.RESTART</para></entry>
-                </row>
-                <row>
-                    <entry><para>ROUTER.STOP</para></entry>
-                    <entry><para>SERVICEOFFERING.DELETE</para></entry>
-                    <entry><para>UPLOAD.CUSTOM.CERTIFICATE</para></entry>
-                </row>
-                <row>
-                    <entry><para>ROUTER.REBOOT</para></entry>
-                    <entry><para>DOMAIN.CREATE</para></entry>
-                    <entry><para>UPLOAD.CUSTOM.CERTIFICATE</para></entry>
-                </row>
-                <row>
-                    <entry><para>ROUTER.HA</para></entry>
-                    <entry><para>DOMAIN.DELETE</para></entry>
-                    <entry><para>STATICNAT.DISABLE</para></entry>
-                </row>
-                <row>
-                    <entry><para>PROXY.CREATE</para></entry>
-                    <entry><para>DOMAIN.UPDATE</para></entry>
-                    <entry><para>SSVM.CREATE</para></entry>
-                </row>
-                <row>
-                    <entry><para>PROXY.DESTROY</para></entry>
-                    <entry><para>SNAPSHOT.CREATE</para></entry>
-                    <entry><para>SSVM.DESTROY</para></entry>
-                </row>
-                <row>
-                    <entry><para>PROXY.START</para></entry>
-                    <entry><para>SNAPSHOT.DELETE</para></entry>
-                    <entry><para>SSVM.START</para></entry>
-                </row>
-                <row>
-                    <entry><para>PROXY.STOP</para></entry>
-                    <entry><para>SNAPSHOTPOLICY.CREATE</para></entry>
-                    <entry><para>SSVM.STOP</para></entry>
-                </row>
-                <row>
-                    <entry><para>PROXY.REBOOT</para></entry>
-                    <entry><para>SNAPSHOTPOLICY.UPDATE</para></entry>
-                    <entry><para>SSVM.REBOOT</para></entry>
-                </row>
-                <row>
-                    <entry><para>PROXY.HA</para></entry>
-                    <entry><para>SNAPSHOTPOLICY.DELETE</para></entry>
-                    <entry><para>SSVM.H</para></entry>
-                </row>
-                <row>
-                    <entry><para>VNC.CONNECT</para></entry>
-                    <entry><para>VNC.DISCONNECT</para></entry>
-                    <entry><para>NET.IPASSIGN</para></entry>
-                </row>
-                <row>
-                    <entry><para>NET.IPRELEASE</para></entry>
-                    <entry><para>NET.RULEADD</para></entry>
-                    <entry><para>NET.RULEDELETE</para></entry>
-                </row>
-                <row>
-                    <entry><para>NET.RULEMODIFY</para></entry>
-                    <entry><para>NETWORK.CREATE</para></entry>
-                    <entry><para>NETWORK.DELETE</para></entry>
-                </row>
-                <row>
-                    <entry><para>LB.ASSIGN.TO.RULE</para></entry>
-                    <entry><para>LB.REMOVE.FROM.RULE</para></entry>
-                    <entry><para>LB.CREATE</para></entry>
-                </row>
-                <row>
-                    <entry><para>LB.DELETE</para></entry>
-                    <entry><para>LB.UPDATE</para></entry>
-                    <entry><para>USER.LOGIN</para></entry>
-                </row>
-                <row>
-                    <entry><para>USER.LOGOUT</para></entry>
-                    <entry><para>USER.CREATE</para></entry>
-                    <entry><para>USER.DELETE</para></entry>
-                </row>
-                <row>
-                    <entry><para>USER.UPDATE</para></entry>
-                    <entry><para>USER.DISABLE</para></entry>
-                    <entry><para>TEMPLATE.CREATE</para></entry>
-                </row>
-                <row>
-                    <entry><para>TEMPLATE.DELETE</para></entry>
-                    <entry><para>TEMPLATE.UPDATE</para></entry>
-                    <entry><para>TEMPLATE.COPY</para></entry>
-                </row>
-                <row>
-                    <entry><para>TEMPLATE.DOWNLOAD.START</para></entry>
-                    <entry><para>TEMPLATE.DOWNLOAD.SUCCESS</para></entry>
-                    <entry><para>TEMPLATE.DOWNLOAD.FAILED</para></entry>
-                </row>
-                <row>
-                    <entry><para>ISO.CREATE</para></entry>
-                    <entry><para>ISO.DELETE</para></entry>
-                    <entry><para>ISO.COPY</para></entry>
-                </row>
-                <row>
-                    <entry><para>ISO.ATTACH</para></entry>
-                    <entry><para>ISO.DETACH</para></entry>
-                    <entry><para>ISO.EXTRACT</para></entry>
-                </row>
-                <row>
-                    <entry><para>ISO.UPLOAD</para></entry>
-                    <entry><para>SERVICE.OFFERING.CREATE</para></entry>
-                    <entry><para>SERVICE.OFFERING.EDIT</para></entry>
-                </row>
-                <row>
-                    <entry><para>SERVICE.OFFERING.DELETE</para></entry>
-                    <entry><para>DISK.OFFERING.CREATE</para></entry>
-                    <entry><para>DISK.OFFERING.EDIT</para></entry>
-                </row>
-                <row>
-                    <entry><para>DISK.OFFERING.DELETE</para></entry>
-                    <entry><para>NETWORK.OFFERING.CREATE</para></entry>
-                    <entry><para>NETWORK.OFFERING.EDIT</para></entry>
-                </row>
-                <row>
-                    <entry><para>NETWORK.OFFERING.DELETE</para></entry>
-                    <entry><para>POD.CREATE</para></entry>
-                    <entry><para>POD.EDIT</para></entry>
-                </row>
-                <row>
-                    <entry><para>POD.DELETE</para></entry>
-                    <entry><para>ZONE.CREATE</para></entry>
-                    <entry><para>ZONE.EDIT</para></entry>
-                </row>
-                <row>
-                    <entry><para>ZONE.DELETE</para></entry>
-                    <entry><para>VLAN.IP.RANGE.CREATE</para></entry>
-                    <entry><para>VLAN.IP.RANGE.DELETE</para></entry>
-                </row>
-                <row>
-                    <entry><para>CONFIGURATION.VALUE.EDIT</para></entry>
-                    <entry><para>SG.AUTH.INGRESS</para></entry>
-                    <entry><para></para></entry>
-                </row>
-            </tbody>
-        </tgroup>
-    </informaltable>
+		<title>Event Types</title>
+		<informaltable frame="all">
+			<tgroup cols="3" align="left" colsep="1" rowsep="1">
+				<colspec colname="c1" />
+					<colspec colname="c2" />
+				<tbody>
+					<row>
+						<entry><para>VM.CREATE</para></entry>
+						<entry><para>TEMPLATE.EXTRACT</para></entry>
+						<entry><para>SG.REVOKE.INGRESS</para></entry>
+					</row>
+					<row>
+						<entry><para>VM.DESTROY</para></entry>
+						<entry><para>TEMPLATE.UPLOAD</para></entry>
+						<entry><para>HOST.RECONNECT</para></entry>
+					</row>
+					<row>
+						<entry><para>VM.START</para></entry>
+						<entry><para>TEMPLATE.CLEANUP</para></entry>
+						<entry><para>MAINT.CANCEL</para></entry>
+					</row>
+					<row>
+						<entry><para>VM.STOP</para></entry>
+						<entry><para>VOLUME.CREATE</para></entry>
+						<entry><para>MAINT.CANCEL.PS</para></entry>
+					</row>
+					<row>
+						<entry><para>VM.REBOOT</para></entry>
+						<entry><para>VOLUME.DELETE</para></entry>
+						<entry><para>MAINT.PREPARE</para></entry>
+					</row>
+					<row>
+						<entry><para>VM.UPGRADE</para></entry>
+						<entry><para>VOLUME.ATTACH</para></entry>
+						<entry><para>MAINT.PREPARE.PS</para></entry>
+					</row>
+					<row>
+						<entry><para>VM.RESETPASSWORD</para></entry>
+						<entry><para>VOLUME.DETACH</para></entry>
+						<entry><para>VPN.REMOTE.ACCESS.CREATE</para></entry>
+					</row>
+					<row>
+						<entry><para>ROUTER.CREATE</para></entry>
+						<entry><para>VOLUME.UPLOAD</para></entry>
+						<entry><para>VPN.USER.ADD</para></entry>
+					</row>
+					<row>
+						<entry><para>ROUTER.DESTROY</para></entry>
+						<entry><para>SERVICEOFFERING.CREATE</para></entry>
+						<entry><para>VPN.USER.REMOVE</para></entry>
+					</row>
+					<row>
+						<entry><para>ROUTER.START</para></entry>
+						<entry><para>SERVICEOFFERING.UPDATE</para></entry>
+						<entry><para>NETWORK.RESTART</para></entry>
+					</row>
+					<row>
+						<entry><para>ROUTER.STOP</para></entry>
+						<entry><para>SERVICEOFFERING.DELETE</para></entry>
+						<entry><para>UPLOAD.CUSTOM.CERTIFICATE</para></entry>
+					</row>
+					<row>
+						<entry><para>ROUTER.REBOOT</para></entry>
+						<entry><para>DOMAIN.CREATE</para></entry>
+						<entry><para>UPLOAD.CUSTOM.CERTIFICATE</para></entry>
+					</row>
+					<row>
+						<entry><para>ROUTER.HA</para></entry>
+						<entry><para>DOMAIN.DELETE</para></entry>
+						<entry><para>STATICNAT.DISABLE</para></entry>
+					</row>
+					<row>
+						<entry><para>PROXY.CREATE</para></entry>
+						<entry><para>DOMAIN.UPDATE</para></entry>
+						<entry><para>SSVM.CREATE</para></entry>
+					</row>
+					<row>
+						<entry><para>PROXY.DESTROY</para></entry>
+						<entry><para>SNAPSHOT.CREATE</para></entry>
+						<entry><para>SSVM.DESTROY</para></entry>
+					</row>
+					<row>
+						<entry><para>PROXY.START</para></entry>
+						<entry><para>SNAPSHOT.DELETE</para></entry>
+						<entry><para>SSVM.START</para></entry>
+					</row>
+					<row>
+						<entry><para>PROXY.STOP</para></entry>
+						<entry><para>SNAPSHOTPOLICY.CREATE</para></entry>
+						<entry><para>SSVM.STOP</para></entry>
+					</row>
+					<row>
+						<entry><para>PROXY.REBOOT</para></entry>
+						<entry><para>SNAPSHOTPOLICY.UPDATE</para></entry>
+						<entry><para>SSVM.REBOOT</para></entry>
+					</row>
+					<row>
+						<entry><para>PROXY.HA</para></entry>
+						<entry><para>SNAPSHOTPOLICY.DELETE</para></entry>
+						<entry><para>SSVM.H</para></entry>
+					</row>
+					<row>
+						<entry><para>VNC.CONNECT</para></entry>
+						<entry><para>VNC.DISCONNECT</para></entry>
+						<entry><para>NET.IPASSIGN</para></entry>
+					</row>
+					<row>
+						<entry><para>NET.IPRELEASE</para></entry>
+						<entry><para>NET.RULEADD</para></entry>
+						<entry><para>NET.RULEDELETE</para></entry>
+					</row>
+					<row>
+						<entry><para>NET.RULEMODIFY</para></entry>
+						<entry><para>NETWORK.CREATE</para></entry>
+						<entry><para>NETWORK.DELETE</para></entry>
+					</row>
+					<row>
+						<entry><para>LB.ASSIGN.TO.RULE</para></entry>
+						<entry><para>LB.REMOVE.FROM.RULE</para></entry>
+						<entry><para>LB.CREATE</para></entry>
+					</row>
+					<row>
+						<entry><para>LB.DELETE</para></entry>
+						<entry><para>LB.UPDATE</para></entry>
+						<entry><para>USER.LOGIN</para></entry>
+					</row>
+					<row>
+						<entry><para>USER.LOGOUT</para></entry>
+						<entry><para>USER.CREATE</para></entry>
+						<entry><para>USER.DELETE</para></entry>
+					</row>
+					<row>
+						<entry><para>USER.UPDATE</para></entry>
+						<entry><para>USER.DISABLE</para></entry>
+						<entry><para>TEMPLATE.CREATE</para></entry>
+					</row>
+					<row>
+						<entry><para>TEMPLATE.DELETE</para></entry>
+						<entry><para>TEMPLATE.UPDATE</para></entry>
+						<entry><para>TEMPLATE.COPY</para></entry>
+					</row>
+					<row>
+						<entry><para>TEMPLATE.DOWNLOAD.START</para></entry>
+						<entry><para>TEMPLATE.DOWNLOAD.SUCCESS</para></entry>
+						<entry><para>TEMPLATE.DOWNLOAD.FAILED</para></entry>
+					</row>
+					<row>
+						<entry><para>ISO.CREATE</para></entry>
+						<entry><para>ISO.DELETE</para></entry>
+						<entry><para>ISO.COPY</para></entry>
+					</row>
+					<row>
+						<entry><para>ISO.ATTACH</para></entry>
+						<entry><para>ISO.DETACH</para></entry>
+						<entry><para>ISO.EXTRACT</para></entry>
+					</row>
+					<row>
+						<entry><para>ISO.UPLOAD</para></entry>
+						<entry><para>SERVICE.OFFERING.CREATE</para></entry>
+						<entry><para>SERVICE.OFFERING.EDIT</para></entry>
+					</row>
+					<row>
+						<entry><para>SERVICE.OFFERING.DELETE</para></entry>
+						<entry><para>DISK.OFFERING.CREATE</para></entry>
+						<entry><para>DISK.OFFERING.EDIT</para></entry>
+					</row>
+					<row>
+						<entry><para>DISK.OFFERING.DELETE</para></entry>
+						<entry><para>NETWORK.OFFERING.CREATE</para></entry>
+						<entry><para>NETWORK.OFFERING.EDIT</para></entry>
+					</row>
+					<row>
+						<entry><para>NETWORK.OFFERING.DELETE</para></entry>
+						<entry><para>POD.CREATE</para></entry>
+						<entry><para>POD.EDIT</para></entry>
+					</row>
+					<row>
+						<entry><para>POD.DELETE</para></entry>
+						<entry><para>ZONE.CREATE</para></entry>
+						<entry><para>ZONE.EDIT</para></entry>
+					</row>
+					<row>
+						<entry><para>ZONE.DELETE</para></entry>
+						<entry><para>VLAN.IP.RANGE.CREATE</para></entry>
+						<entry><para>VLAN.IP.RANGE.DELETE</para></entry>
+					</row>
+					<row>
+						<entry><para>CONFIGURATION.VALUE.EDIT</para></entry>
+						<entry><para>SG.AUTH.INGRESS</para></entry>
+						<entry><para></para></entry>
+					</row>
+				</tbody>
+				</tgroup>
+		</informaltable>
 </appendix>

@@ -16,12 +16,20 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.router;
 
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.ProviderResponse;
-import org.apache.log4j.Logger;
+import java.util.List;
+
+import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.VirtualRouterProvider;
@@ -35,8 +43,8 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVirtualRouterElementCmd.class.getName());
     private static final String s_name = "createvirtualrouterelementresponse";
 
-    @PlugService
-    private VirtualRouterElementService _service;
+    @Inject
+    private List<VirtualRouterElementService> _service;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -76,7 +84,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Virtual router element Id: "+getEntityId());
-        VirtualRouterProvider result = _service.getCreatedElement(getEntityId());
+        VirtualRouterProvider result = _service.get(0).getCreatedElement(getEntityId());
         if (result != null) {
             VirtualRouterProviderResponse response = _responseGenerator.createVirtualRouterProviderResponse(result);
             response.setResponseName(getCommandName());
@@ -88,7 +96,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        VirtualRouterProvider result = _service.addElement(getNspId(), VirtualRouterProviderType.VirtualRouter);
+        VirtualRouterProvider result = _service.get(0).addElement(getNspId(), VirtualRouterProviderType.VirtualRouter);
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

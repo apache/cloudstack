@@ -1,57 +1,56 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
 -->
-
 <section id="deployment-architecture-overview">
-    <title>Deployment Architecture Overview</title>
-    <para>
+	<title>Deployment Architecture Overview</title>
+	<para>
         A &PRODUCT; installation consists of two parts: the Management Server
         and the cloud infrastructure that it manages. When you set up and 
         manage a &PRODUCT; cloud, you provision resources such as hosts,
         storage devices, and IP addresses into the Management Server, and
         the Management Server manages those resources.
-    </para>
-    <para>
+	</para>
+	<para>
         The minimum production installation consists of one machine running
         the &PRODUCT; Management Server and another machine to act as the
         cloud infrastructure (in this case, a very simple infrastructure
         consisting of one host running hypervisor software). In its smallest 
         deployment, a single machine can act as both the Management Server
         and the hypervisor host (using the KVM hypervisor).
-    </para>
-    <mediaobject>
-        <imageobject>
-            <imagedata fileref="./images/basic-deployment.png" />
-        </imageobject>
-        <textobject><phrase>basic-deployment.png: Basic two-machine deployment</phrase></textobject>
-    </mediaobject>
+	</para>
+	<mediaobject>
+		<imageobject>
+			<imagedata fileref="./images/basic-deployment.png" />
+		</imageobject>
+		<textobject><phrase>basic-deployment.png: Basic two-machine deployment</phrase></textobject>
+	</mediaobject>
     <para>
        A more full-featured installation consists of a highly-available
        multi-node Management Server installation and up to tens of thousands of
        hosts using any of several advanced networking setups. For 
        information about deployment options, see Choosing a Deployment Architecture.
-    </para>
-    <xi:include href="management-server-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="cloud-infrastructure-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="networking-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+	</para>
+	<xi:include href="management-server-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+	<xi:include href="cloud-infrastructure-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+	<xi:include href="networking-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

@@ -16,11 +16,18 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.user;
 
-import org.apache.cloudstack.api.*;
-import org.apache.log4j.Logger;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.region.RegionService;
+import org.apache.log4j.Logger;
+
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
@@ -39,7 +46,11 @@ public class EnableUserCmd extends BaseCmd {
             required=true, description="Enables user by user ID.")
     private Long id;
 
+    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
+    private Boolean isPropagate;
 
+    @Inject RegionService _regionService;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -48,6 +59,10 @@ public class EnableUserCmd extends BaseCmd {
         return id;
     }
 
+	public Boolean getIsPropagate() {
+		return isPropagate;
+	}
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -70,7 +85,8 @@ public class EnableUserCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
-        UserAccount user = _accountService.enableUser(getId());
+        UserAccount user = _regionService.enableUser(this);
+        
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());

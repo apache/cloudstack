@@ -22,7 +22,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApiLimitResponse;
@@ -33,13 +32,15 @@ import org.apache.log4j.Logger;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
+import javax.inject.Inject;
+
 @APICommand(name = "resetApiLimit", responseObject=ApiLimitResponse.class, description="Reset api count")
 public class ResetApiLimitCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(ResetApiLimitCmd.class.getName());
 
     private static final String s_name = "resetapilimitresponse";
 
-    @PlugService
+    @Inject
     ApiRateLimitService _apiLimitService;
 
     /////////////////////////////////////////////////////

@@ -19,6 +19,7 @@ package com.cloud.network.guru;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -37,15 +38,13 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
@@ -58,34 +57,35 @@ import com.cloud.vm.VirtualMachineProfile;
 public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(ControlNetworkGuru.class);
     @Inject DataCenterDao _dcDao;
+    @Inject ConfigurationDao _configDao;
     @Inject NetworkModel _networkMgr;
     String _cidr;
     String _gateway;
-    
+
     private static final TrafficType[] _trafficTypes = {TrafficType.Control};
-    
+
     @Override
     public boolean isMyTrafficType(TrafficType type) {
-    	for (TrafficType t : _trafficTypes) {
-    		if (t == type) {
-    			return true;
-    		}
-    	}
-    	return false;
+        for (TrafficType t : _trafficTypes) {
+            if (t == type) {
+                return true;
+            }
+        }
+        return false;
     }
-    
+
     @Override
     public TrafficType[] getSupportedTrafficType() {
-    	return _trafficTypes;
+        return _trafficTypes;
     }
-    
+
     protected boolean canHandle(NetworkOffering offering) {
-       if (offering.isSystemOnly() && isMyTrafficType(offering.getTrafficType())) {
-           return true;
-       } else {
-           s_logger.trace("We only care about System only Control network");
-           return false;
-       }
+        if (offering.isSystemOnly() && isMyTrafficType(offering.getTrafficType())) {
+            return true;
+        } else {
+            s_logger.trace("We only care about System only Control network");
+            return false;
+        }
     }
 
     @Override
@@ -93,67 +93,67 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         if (!canHandle(offering)) {
             return null;
         }
-        
+
         NetworkVO config = new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.LinkLocal, offering.getId(), Network.State.Setup, plan.getDataCenterId(), plan.getPhysicalNetworkId());
         config.setCidr(_cidr);
         config.setGateway(_gateway);
-        
+
         return config;
     }
-    
+
     protected ControlNetworkGuru() {
         super();
     }
-    
+
     @Override
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException {
-    	
+    InsufficientAddressCapacityException {
+
         if(vm.getHypervisorType() == HypervisorType.VMware && vm.getType() != VirtualMachine.Type.DomainRouter) {
-        	NicProfile nicProf = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
+            NicProfile nicProf = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
             String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
             nicProf.setMacAddress(mac);
             return nicProf;
         }
-        
+
         if (nic != null) {
             throw new CloudRuntimeException("Does not support nic specification at this time: " + nic);
         }
-        
+
         return new NicProfile(Nic.ReservationStrategy.Start, null, null, null, null);
     }
-    
+
     @Override
     public void deallocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
     }
 
     @Override
     public void reserve(NicProfile nic, Network config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException {
+    InsufficientAddressCapacityException {
         assert nic.getTrafficType() == TrafficType.Control;
 
         if (dest.getHost().getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.DomainRouter) {
-        	if(dest.getDataCenter().getNetworkType() != NetworkType.Basic) {
-	            super.reserve(nic, config, vm, dest, context);
-	            
-	            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
-	            nic.setMacAddress(mac);
-	            return;
-        	} else {
-        		// in basic mode and in VMware case, control network will be shared with guest network
-	            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
-	            nic.setMacAddress(mac);
-	            nic.setIp4Address("0.0.0.0");
-	            nic.setNetmask("0.0.0.0");
-	            nic.setFormat(AddressFormat.Ip4);
-	            nic.setGateway("0.0.0.0");
-        		return;
-        	}
+            if(dest.getDataCenter().getNetworkType() != NetworkType.Basic) {
+                super.reserve(nic, config, vm, dest, context);
+
+                String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
+                nic.setMacAddress(mac);
+                return;
+            } else {
+                // in basic mode and in VMware case, control network will be shared with guest network
+                String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
+                nic.setMacAddress(mac);
+                nic.setIp4Address("0.0.0.0");
+                nic.setNetmask("0.0.0.0");
+                nic.setFormat(AddressFormat.Ip4);
+                nic.setGateway("0.0.0.0");
+                return;
+            }
         }
-        
+
         String ip = _dcDao.allocateLinkLocalIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId(), context.getReservationId());
         if (ip == null) {
-        	throw new InsufficientAddressCapacityException("Insufficient link local address capacity", DataCenter.class, dest.getDataCenter().getId());
+            throw new InsufficientAddressCapacityException("Insufficient link local address capacity", DataCenter.class, dest.getDataCenter().getId());
         }
         nic.setIp4Address(ip);
         nic.setMacAddress(NetUtils.long2Mac(NetUtils.ip2Long(ip) | (14l << 40)));
@@ -167,30 +167,30 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         assert nic.getTrafficType() == TrafficType.Control;
 
         if (vm.getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.DomainRouter) {
-        	long dcId = vm.getVirtualMachine().getDataCenterIdToDeployIn();
-        	DataCenterVO dcVo = _dcDao.findById(dcId);
-        	if(dcVo.getNetworkType() != NetworkType.Basic) {
-	        	super.release(nic, vm, reservationId);
-	        	if (s_logger.isDebugEnabled()) {
-	                s_logger.debug("Released nic: " + nic);
-	            }
-	        	return true;
-        	} else {
+            long dcId = vm.getVirtualMachine().getDataCenterId();
+            DataCenterVO dcVo = _dcDao.findById(dcId);
+            if(dcVo.getNetworkType() != NetworkType.Basic) {
+                super.release(nic, vm, reservationId);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Released nic: " + nic);
+                }
+                return true;
+            } else {
                 nic.deallocate();
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Released nic: " + nic);
                 }
-        		return true;
-        	}
+                return true;
+            }
         }
-        
+
         _dcDao.releaseLinkLocalIpAddress(nic.getId(), reservationId);
-        
+
         nic.deallocate();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Released nic: " + nic);
         }
-        
+
         return true;
     }
 
@@ -199,33 +199,30 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         assert config.getTrafficType() == TrafficType.Control : "Why are you sending this configuration to me " + config;
         return config;
     }
-    
+
     @Override
     public void shutdown(NetworkProfile config, NetworkOffering offering) {
         assert false : "Destroying a link local...Either you're out of your mind or something has changed.";
     }
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> dbParams = configDao.getConfiguration(params);
-        
+
+        Map<String, String> dbParams = _configDao.getConfiguration(params);
+
         _cidr = dbParams.get(Config.ControlCidr);
         if (_cidr == null) {
             _cidr = "169.254.0.0/16";
         }
-        
+
         _gateway = dbParams.get(Config.ControlGateway);
         if (_gateway == null) {
             _gateway = NetUtils.getLinkLocalGateway();
         }
-        
+
         s_logger.info("Control network setup: cidr=" + _cidr + "; gateway = " + _gateway);
-        
+
         return true;
     }
 

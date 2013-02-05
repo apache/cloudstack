@@ -21,6 +21,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectAccountVO;
@@ -31,6 +32,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+@Component
 @Local(value = { ProjectAccountDao.class })
 public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long> implements ProjectAccountDao {
     protected final SearchBuilder<ProjectAccountVO> AllFieldsSearch;

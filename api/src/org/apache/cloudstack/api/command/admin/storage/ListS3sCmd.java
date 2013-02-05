@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.S3Response;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -34,7 +35,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.S3;
 
 @APICommand(name = "listS3s", description = "Lists S3s", responseObject = S3Response.class, since = "4.0.0")
-public final class ListS3sCmd extends BaseListCmd {
+public class ListS3sCmd extends BaseListCmd {
 
     private static final String COMMAND_NAME = "lists3sresponse";
 

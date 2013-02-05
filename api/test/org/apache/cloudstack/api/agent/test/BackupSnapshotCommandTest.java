@@ -35,83 +35,113 @@ import com.cloud.storage.StoragePoolStatus;
 
 public class BackupSnapshotCommandTest {
     public StoragePool pool = new StoragePool() {
+        @Override
         public long getId() {
             return 1L;
         };
 
+        @Override
         public String getName() {
             return "name";
         };
 
+        @Override
         public String getUuid() {
             return "bed9f83e-cac3-11e1-ac8a-0050568b007e";
         };
 
+        @Override
         public StoragePoolType getPoolType() {
             return StoragePoolType.Filesystem;
         };
 
+        @Override
         public Date getCreated() {
             Date date = null;
             try {
                 date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
-                        .parse("01/01/1970 12:12:12");
+                .parse("01/01/1970 12:12:12");
             } catch (ParseException e) {
                 e.printStackTrace();
             }
             return date;
         }
 
+        @Override
         public Date getUpdateTime() {
             return new Date();
         };
 
+        @Override
         public long getDataCenterId() {
             return 0L;
         };
 
+        @Override
         public long getCapacityBytes() {
             return 0L;
         };
 
+        @Override
         public long getAvailableBytes() {
             return 0L;
         };
 
+        @Override
         public Long getClusterId() {
             return 0L;
         };
 
+        @Override
         public String getHostAddress() {
             return "hostAddress";
         };
 
+        @Override
         public String getPath() {
             return "path";
         };
 
+        @Override
         public String getUserInfo() {
             return "userInfo";
         };
 
+        @Override
         public boolean isShared() {
             return false;
         };
 
+        @Override
         public boolean isLocal() {
             return false;
         };
 
+        @Override
         public StoragePoolStatus getStatus() {
             return StoragePoolStatus.Up;
         };
 
+        @Override
         public int getPort() {
             return 25;
         };
 
+        @Override
         public Long getPodId() {
             return 0L;
+        }
+
+        @Override
+        public String getStorageProvider() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public String getStorageType() {
+            // TODO Auto-generated method stub
+            return null;
         };
     };
 
@@ -205,7 +235,7 @@ public class BackupSnapshotCommandTest {
     public void testGetCreated() {
         try {
             Date date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
-                    .parse("01/01/1970 12:12:12");
+            .parse("01/01/1970 12:12:12");
             Date d = pool.getCreated();
             assertTrue(d.compareTo(date) == 0);
         } catch (ParseException e) {

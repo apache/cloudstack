@@ -940,6 +940,12 @@
                     state: {
                       label: 'label.state'
                     },
+
+                    ispersistent:{
+                      label:'Persistent ',
+                      converter:cloudStack.converters.toBooleanText
+
+                     },
                     restartrequired: {
                       label: 'label.restart.required',
                       converter: function(booleanValue) {

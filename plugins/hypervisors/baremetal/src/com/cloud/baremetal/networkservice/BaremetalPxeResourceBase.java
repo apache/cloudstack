@@ -38,8 +38,9 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupPxeServerCommand;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.component.ManagerBase;
 
-public class BaremetalPxeResourceBase implements ServerResource {
+public class BaremetalPxeResourceBase extends ManagerBase implements ServerResource {
 	private static final Logger s_logger = Logger.getLogger(BaremetalPxeResourceBase.class);
 	String _name;
 	String _guid;

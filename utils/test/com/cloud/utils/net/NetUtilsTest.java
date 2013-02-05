@@ -16,16 +16,20 @@
 // under the License.
 package com.cloud.utils.net;
 
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import junit.framework.TestCase;
 
+import org.apache.log4j.Logger;
 import org.junit.Test;
+
+import com.googlecode.ipv6.IPv6Address;
 
 public class NetUtilsTest extends TestCase {
 
+    private static final Logger s_logger = Logger.getLogger(NetUtilsTest.class);
+    
     @Test
     public void testGetRandomIpFromCidr() {
         String cidr = "192.168.124.1";
@@ -50,11 +54,12 @@ public class NetUtilsTest extends TestCase {
         assertTrue("We should be able to retrieve an ip on the third call.", ip != -1);
         assertTrue("ip returned is not in the avoid list", !avoid.contains(ip));
         avoid.add(ip);
-       
+
         ip = NetUtils.getRandomIpFromCidr(cidr, 30, avoid);
         assertEquals("This should be -1 because we ran out of ip addresses: " + ip, ip, -1);
     }
 
+    @Test 
     public void testVpnPolicy() {
         assertTrue(NetUtils.isValidS2SVpnPolicy("aes128-sha1"));
         assertTrue(NetUtils.isValidS2SVpnPolicy("3des-sha1"));
@@ -68,5 +73,34 @@ public class NetUtilsTest extends TestCase {
         assertFalse(NetUtils.isValidS2SVpnPolicy(""));
         assertFalse(NetUtils.isValidS2SVpnPolicy(";modp1536"));
         assertFalse(NetUtils.isValidS2SVpnPolicy(",aes;modp1536,,,"));
+    }
+    
+    public void testIpv6() {
+    	assertTrue(NetUtils.isValidIpv6("fc00::1"));
+    	assertFalse(NetUtils.isValidIpv6(""));
+    	assertFalse(NetUtils.isValidIpv6(null));
+    	assertFalse(NetUtils.isValidIpv6("1234:5678::1/64"));
+    	assertTrue(NetUtils.isValidIp6Cidr("1234:5678::1/64"));
+    	assertFalse(NetUtils.isValidIp6Cidr("1234:5678::1"));
+    	assertEquals(NetUtils.getIp6CidrSize("1234:5678::1/32"), 32);
+    	assertEquals(NetUtils.getIp6CidrSize("1234:5678::1"), 0);
+    	assertEquals(NetUtils.countIp6InRange("1234:5678::1-1234:5678::2"), 2);
+    	assertEquals(NetUtils.countIp6InRange("1234:5678::2-1234:5678::0"), 0);
+    	assertEquals(NetUtils.getIp6FromRange("1234:5678::1-1234:5678::1"), "1234:5678::1");
+    	String ipString = null;
+    	IPv6Address ipStart = IPv6Address.fromString("1234:5678::1");
+    	IPv6Address ipEnd = IPv6Address.fromString("1234:5678::8000:0000");
+    	for (int i = 0; i < 10; i ++) {
+    		ipString = NetUtils.getIp6FromRange(ipStart.toString() + "-" + ipEnd.toString());
+    		s_logger.info("IP is " + ipString);
+    		IPv6Address ip = IPv6Address.fromString(ipString);
+    		assertTrue(ip.compareTo(ipStart) >= 0);
+    		assertTrue(ip.compareTo(ipEnd) <= 0);
+    	}
+    	assertFalse(NetUtils.isIp6RangeOverlap("1234:5678::1-1234:5678::ffff", "1234:5678:1::1-1234:5678:1::ffff"));
+    	assertTrue(NetUtils.isIp6RangeOverlap("1234:5678::1-1234:5678::ffff", "1234:5678::2-1234:5678::f"));
+    	assertTrue(NetUtils.isIp6RangeOverlap("1234:5678::f-1234:5678::ffff", "1234:5678::2-1234:5678::f"));
+    	assertFalse(NetUtils.isIp6RangeOverlap("1234:5678::f-1234:5678::ffff", "1234:5678::2-1234:5678::e"));
+    	assertFalse(NetUtils.isIp6RangeOverlap("1234:5678::f-1234:5678::f", "1234:5678::2-1234:5678::e"));
     }
 }

@@ -106,6 +106,7 @@ under the License.
             <adapter name="OvsGuestNetworkGuru" class="com.cloud.network.guru.OvsGuestNetworkGuru"/>
             <adapter name="PrivateNetworkGuru" class="com.cloud.network.guru.PrivateNetworkGuru"/>
             <adapter name="NiciraNvpGuestNetworkGuru" class="com.cloud.network.guru.NiciraNvpGuestNetworkGuru"/>
+            <adapter name="BigSwitchVnsGuestNetworkGuru" class="com.cloud.network.guru.BigSwitchVnsGuestNetworkGuru"/>
         </adapters>
         <adapters key="com.cloud.cluster.ClusterServiceAdapter">
             <adapter name="ClusterService" class="com.cloud.cluster.ClusterServiceServletAdapter"/>
@@ -166,6 +167,7 @@ under the License.
             <adapter name="SecurityGroupProvider" class="com.cloud.network.element.SecurityGroupElement"/>
             <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
             <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>
+            <adapter name="BigSwitchVns" class="com.cloud.network.element.BigSwitchVnsElement"/>
         </adapters>
         <adapters key="com.cloud.network.element.FirewallServiceProvider">
             <adapter name="VirtualRouter" class="com.cloud.network.element.VirtualRouterElement"/>
@@ -212,6 +214,7 @@ under the License.
         </adapters>
         <adapters key="com.cloud.network.element.ConnectivityProvider">
             <adapter name="NiciraNvp" class="com.cloud.network.element.NiciraNvpElement"/>
+            <adapter name="BigSwitchVns" class="com.cloud.network.element.BigSwitchVnsElement"/>
         </adapters>
         <adapters key="com.cloud.network.element.NetworkACLServiceProvider">
             <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
@@ -239,12 +242,14 @@ under the License.
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
         <pluggableservice name="NiciraNvpElementService" key="com.cloud.network.element.NiciraNvpElementService" class="com.cloud.network.element.NiciraNvpElement"/>
         <pluggableservice name="ApiRateLimitService" key="org.apache.cloudstack.ratelimit.ApiRateLimitService" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
+        <pluggableservice name="BigSwitchVnsElementService" key="com.cloud.network.element.BigSwitchVnsElementService" class="com.cloud.network.element.BigSwitchVnsElement"/>
         <dao name="OvsTunnelInterfaceDao" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" singleton="false"/>
         <dao name="OvsTunnelAccountDao" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" singleton="false"/>
         <dao name="NiciraNvpDao" class="com.cloud.network.dao.NiciraNvpDaoImpl" singleton="false"/>
         <dao name="NiciraNvpNicMappingDao" class="com.cloud.network.dao.NiciraNvpNicMappingDaoImpl" singleton="false"/>
         <dao name="NiciraNvpRouterMappingDao" class="com.cloud.network.dao.NiciraNvpRouterMappingDaoImpl" singleton="false"/>
         <dao name="ElasticLbVmMapDao" class="com.cloud.network.lb.dao.ElasticLbVmMapDaoImpl" singleton="false"/>
+        <dao name="BigSwitchVnsDao" class="com.cloud.network.dao.BigSwitchVnsDaoImpl" singleton="false"/>
     </management-server>
 
     <configuration-server class="com.cloud.server.ConfigurationServerImpl">
@@ -271,6 +276,8 @@ under the License.
         <dao name="Site2SiteCustomerGatewayDao" class="com.cloud.network.dao.Site2SiteCustomerGatewayDaoImpl" singleton="false"/>
         <dao name="Site2SiteVpnGatewayDao" class="com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl" singleton="false"/>
         <dao name="Site2SiteVpnConnectionDao" class="com.cloud.network.dao.Site2SiteVpnConnectionDaoImpl" singleton="false"/>
+        <dao name="RegionDao" class="org.apache.cloudstack.region.dao.RegionDaoImpl" singleton="false"/>
+        <dao name="UserIpv6AddressDao" class="com.cloud.network.dao.UserIpv6AddressDaoImpl" singleton="false"/>
     </configuration-server>
     
     <awsapi-ec2server class="com.cloud.bridge.service.EC2MainServlet">

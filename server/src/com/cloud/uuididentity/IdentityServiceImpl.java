@@ -19,47 +19,28 @@ package com.cloud.uuididentity;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.IdentityService;
-import com.cloud.utils.component.Inject;
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.uuididentity.dao.IdentityDao;
 
+@Component
 @Local(value = { IdentityService.class })
-public class IdentityServiceImpl implements Manager, IdentityService {
-    private String _name;
-	
-	@Inject	private IdentityDao _identityDao;
-	
+public class IdentityServiceImpl extends ManagerBase implements IdentityService {
+    @Inject	private IdentityDao _identityDao;
+
+    @Override
     public Long getIdentityId(String tableName, String identityString) {
-		return _identityDao.getIdentityId(tableName, identityString);
+        return _identityDao.getIdentityId(tableName, identityString);
     }
-	
-	public String getIdentityUuid(String tableName, String identityString) {
-		return _identityDao.getIdentityUuid(tableName, identityString);
-	}
 
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
-		_name = name;
-		
-		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
-	}
-
-	@Override
-	public boolean start() {
-		return true;
-	}
-
-	@Override
-	public boolean stop() {
-		return true;
-	}
+    @Override
+    public String getIdentityUuid(String tableName, String identityString) {
+        return _identityDao.getIdentityUuid(tableName, identityString);
+    }
 }

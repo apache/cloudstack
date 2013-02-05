@@ -16,50 +16,8 @@
 // under the License.
 package com.cloud.api;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
-import org.apache.cloudstack.api.response.AccountResponse;
-
 import com.cloud.api.query.ViewResponseHelper;
-import com.cloud.api.query.vo.AccountJoinVO;
-import com.cloud.api.query.vo.AsyncJobJoinVO;
-import com.cloud.api.query.vo.ControlledViewEntity;
-import com.cloud.api.query.vo.DataCenterJoinVO;
-import com.cloud.api.query.vo.DiskOfferingJoinVO;
-import com.cloud.api.query.vo.DomainRouterJoinVO;
-import com.cloud.api.query.vo.EventJoinVO;
-import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.api.query.vo.InstanceGroupJoinVO;
-import com.cloud.api.query.vo.ProjectAccountJoinVO;
-import com.cloud.api.query.vo.ProjectInvitationJoinVO;
-import com.cloud.api.query.vo.ProjectJoinVO;
-import com.cloud.api.query.vo.ResourceTagJoinVO;
-import com.cloud.api.query.vo.SecurityGroupJoinVO;
-import com.cloud.api.query.vo.ServiceOfferingJoinVO;
-import com.cloud.api.query.vo.StoragePoolJoinVO;
-import com.cloud.api.query.vo.UserAccountJoinVO;
-import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.api.query.vo.*;
 import com.cloud.api.response.ApiResponseSerializer;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
@@ -135,6 +93,8 @@ import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
 import org.apache.cloudstack.api.response.S3Response;
+import org.springframework.stereotype.Component;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
@@ -143,33 +103,23 @@ import com.cloud.configuration.Configuration;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Pod;
-import com.cloud.dc.StorageNetworkIpRange;
-import com.cloud.dc.Vlan;
+import com.cloud.dc.*;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
 import com.cloud.domain.Domain;
 import com.cloud.event.Event;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.HypervisorCapabilities;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkProfile;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
-import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
@@ -183,13 +133,11 @@ import com.cloud.network.as.AutoScaleVmProfileVO;
 import com.cloud.network.as.Condition;
 import com.cloud.network.as.ConditionVO;
 import com.cloud.network.as.Counter;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.LoadBalancer;
-import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.rules.StickinessPolicy;
+import com.cloud.network.rules.*;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
@@ -207,25 +155,11 @@ import com.cloud.projects.ProjectInvitation;
 import com.cloud.server.Criteria;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
-import com.cloud.storage.GuestOS;
-import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.storage.S3;
-import com.cloud.storage.Snapshot;
+import com.cloud.storage.*;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.StorageStats;
-import com.cloud.storage.Swift;
-import com.cloud.storage.UploadVO;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateS3VO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateSwiftVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.storage.snapshot.SnapshotSchedule;
 import com.cloud.template.VirtualMachineTemplate;
@@ -242,7 +176,24 @@ import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
+import org.apache.cloudstack.api.response.*;
+import org.apache.cloudstack.region.Region;
+import org.apache.log4j.Logger;
 
+import java.text.DecimalFormat;
+import java.util.*;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+
+@Component
 public class ApiResponseHelper implements ResponseGenerator {
 
     public final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
@@ -378,7 +329,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         snapshotResponse.setCreated(snapshot.getCreated());
         snapshotResponse.setName(snapshot.getName());
         snapshotResponse.setIntervalType(ApiDBUtils.getSnapshotIntervalTypes(snapshot.getId()));
-        snapshotResponse.setState(snapshot.getStatus());
+        snapshotResponse.setState(snapshot.getState());
 
         //set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Snapshot, snapshot.getId());
@@ -481,9 +432,21 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // get start ip and end ip of corresponding vlan
         String ipRange = vlan.getIpRange();
-        String[] range = ipRange.split("-");
-        vlanResponse.setStartIp(range[0]);
-        vlanResponse.setEndIp(range[1]);
+        if (ipRange != null) {
+        	String[] range = ipRange.split("-");
+        	vlanResponse.setStartIp(range[0]);
+        	vlanResponse.setEndIp(range[1]);
+        }
+
+        vlanResponse.setIp6Gateway(vlan.getIp6Gateway());
+        vlanResponse.setIp6Cidr(vlan.getIp6Cidr());
+        
+        String ip6Range = vlan.getIp6Range();
+        if (ip6Range != null) {
+        	String[] range = ip6Range.split("-");
+        	vlanResponse.setStartIpv6(range[0]);
+        	vlanResponse.setEndIpv6(range[1]);
+        }
 
         if (vlan.getNetworkId() != null) {
             Network nw = ApiDBUtils.findNetworkById(vlan.getNetworkId());
@@ -1011,7 +974,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
 
-            DataCenter zone = ApiDBUtils.findZoneById(vm.getDataCenterIdToDeployIn());
+            DataCenter zone = ApiDBUtils.findZoneById(vm.getDataCenterId());
             if (zone != null) {
                 vmResponse.setZoneId(zone.getUuid());
                 vmResponse.setZoneName(zone.getName());
@@ -2034,6 +1997,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setConserveMode(offering.isConserveMode());
         response.setSpecifyIpRanges(offering.getSpecifyIpRanges());
         response.setAvailability(offering.getAvailability().toString());
+        response.setIsPersistent(offering.getIsPersistent());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
         Long so = null;
         if (offering.getServiceOfferingId() != null) {
@@ -2151,6 +2115,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (network.getCidr() != null) {
             response.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
         }
+        
+        response.setIp6Gateway(network.getIp6Gateway());
+        response.setIp6Cidr(network.getIp6Cidr());
 
         //return vlan information only to Root admin
         if (network.getBroadcastUri() != null && UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
@@ -2183,6 +2150,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetworkOfferingDisplayText(networkOffering.getDisplayText());
             response.setIsSystem(networkOffering.isSystemOnly());
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
+            response.setIsPersistent(networkOffering.getIsPersistent());
         }
 
         if (network.getAclType() != null) {
@@ -2723,6 +2691,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
+	@Override
+	public RegionResponse createRegionResponse(Region region) {
+		RegionResponse response = new RegionResponse();
+		response.setId(region.getId());
+		response.setName(region.getName());
+		response.setEndPoint(region.getEndPoint());
+		response.setObjectName("region");
+		return response;
+	}
+
     @Override
     public ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag, boolean keyValueOnly) {
         ResourceTagJoinVO rto = ApiDBUtils.newResourceTagView(resourceTag);
@@ -3101,9 +3079,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("vpnconnection");
         return response;
     }
-
-
-
+    
     @Override
     public GuestOSResponse createGuestOSResponse(GuestOS guestOS) {
         GuestOSResponse response = new GuestOSResponse();
@@ -3141,6 +3117,5 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("snapshot");
         return response;
     }
-
 
 }

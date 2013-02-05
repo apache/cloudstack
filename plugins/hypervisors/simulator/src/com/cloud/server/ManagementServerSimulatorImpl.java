@@ -17,11 +17,9 @@
 package com.cloud.server;
 
 
-import com.cloud.api.commands.ConfigureSimulator;
-import com.cloud.utils.PropertiesUtil;
-
 import java.util.List;
-import java.util.Map;
+
+import com.cloud.api.commands.ConfigureSimulator;
 
 public class ManagementServerSimulatorImpl extends ManagementServerExtImpl {
     @Override

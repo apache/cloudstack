@@ -1,0 +1,24 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring the Nicira NVP plugin from the UI"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In CloudStack 4.1.0-incubating the Nicira NVP plugin and its resources can be configured in the infrastructure tab of the UI. Navigate to the physical network with STT isolation and configure the network elements. The NiciraNvp is listed here."
+msgstr ""
+

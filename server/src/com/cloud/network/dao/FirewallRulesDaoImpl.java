@@ -19,8 +19,10 @@ package com.cloud.network.dao;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
-import com.cloud.network.IPAddressVO;
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -29,7 +31,6 @@ import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -40,6 +41,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value = FirewallRulesDao.class)
 @DB(txn = false)
 public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> implements FirewallRulesDao {
@@ -51,8 +53,9 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     protected final SearchBuilder<FirewallRuleVO> SystemRuleSearch;
     protected final GenericSearchBuilder<FirewallRuleVO, Long> RulesByIpCount;
 
-    protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
-    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
+    @Inject protected FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao;
+    @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject IPAddressDao _ipDao;
 
     protected FirewallRulesDaoImpl() {
         super();
@@ -195,8 +198,6 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
     @Override
     public List<FirewallRuleVO> listStaticNatByVmId(long vmId) {
-        IPAddressDao _ipDao = ComponentLocator.getLocator("management-server").getDao(IPAddressDao.class);
-
         if (VmSearch == null) {
             SearchBuilder<IPAddressVO> IpSearch = _ipDao.createSearchBuilder();
             IpSearch.and("associatedWithVmId", IpSearch.entity().getAssociatedWithVmId(), SearchCriteria.Op.EQ);
@@ -223,6 +224,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
         FirewallRuleVO dbfirewallRule = super.persist(firewallRule);
         saveSourceCidrs(firewallRule, firewallRule.getSourceCidrList());
+        loadSourceCidrs(dbfirewallRule);
 
         txn.commit();
         return dbfirewallRule;
@@ -297,7 +299,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         if (purpose != null) {
             sc.setParameters("purpose", purpose);
         }
-        
+
         sc.setParameters("trafficType", trafficType);
 
         return listBy(sc);
@@ -329,7 +331,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     public List<FirewallRuleVO> listByIpAndPurposeWithState(Long ipId, Purpose purpose, State state) {
         SearchCriteria<FirewallRuleVO> sc = AllFieldsSearch.create();
         sc.setParameters("ipId", ipId);
-        
+
         if (state != null) {
             sc.setParameters("state", state);
         }
@@ -339,5 +341,11 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         }
 
         return listBy(sc);
+    }
+
+    @Override
+    public void loadSourceCidrs(FirewallRuleVO rule) {
+        List<String> sourceCidrs = _firewallRulesCidrsDao.getSourceCidrs(rule.getId());
+        rule.setSourceCidrList(sourceCidrs);
     }
 }

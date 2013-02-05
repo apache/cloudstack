@@ -21,7 +21,8 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import com.cloud.network.ExternalLoadBalancerDeviceVO;
+
+import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 
 @EntityReference(value=ExternalLoadBalancerDeviceVO.class)
 public class F5LoadBalancerResponse extends BaseResponse {

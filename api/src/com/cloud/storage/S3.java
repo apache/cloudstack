@@ -18,11 +18,12 @@
  */
 package com.cloud.storage;
 
-import com.cloud.agent.api.to.S3TO;
+import java.util.Date;
+
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-import java.util.Date;
+import com.cloud.agent.api.to.S3TO;
 
 public interface S3 extends InternalIdentity, Identity {
 

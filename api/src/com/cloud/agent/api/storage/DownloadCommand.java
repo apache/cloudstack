@@ -18,10 +18,11 @@ package com.cloud.agent.api.storage;
 
 import java.net.URI;
 
-import com.cloud.storage.Volume;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.template.VirtualMachineTemplate;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Volume;
+import com.cloud.template.VirtualMachineTemplate;
 
 
 public class DownloadCommand extends AbstractDownloadCommand implements InternalIdentity {

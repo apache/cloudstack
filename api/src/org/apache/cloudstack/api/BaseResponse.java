@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ResponseObject;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 

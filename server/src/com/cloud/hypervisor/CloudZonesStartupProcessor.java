@@ -20,9 +20,11 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.StartupCommandProcessor;
@@ -48,7 +50,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
@@ -57,8 +59,9 @@ import com.cloud.utils.net.NetUtils;
  * Creates a host record and supporting records such as pod and ip address
  *
  */
+@Component
 @Local(value=StartupCommandProcessor.class)
-public class CloudZonesStartupProcessor implements StartupCommandProcessor {
+public class CloudZonesStartupProcessor extends AdapterBase implements StartupCommandProcessor {
     private static final Logger s_logger = Logger.getLogger(CloudZonesStartupProcessor.class);
     @Inject ClusterDao _clusterDao = null;
     @Inject ConfigurationDao _configDao = null;
@@ -82,24 +85,6 @@ public class CloudZonesStartupProcessor implements StartupCommandProcessor {
             // at config time and is stored as a config variable.
             _nodeId = MacAddress.getMacAddress().toLong();
         }
-        return true;
-    }
-
-    
-    @Override
-    public String getName() {
-        return getClass().getName();
-    }
-
- 
-    @Override
-    public boolean start() {
-       return true;
-    }
-
-
-    @Override
-    public boolean stop() {
         return true;
     }
 

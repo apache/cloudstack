@@ -5,48 +5,47 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
 -->
-
 <section id="manual-live-migration">
-    <title>Moving VMs Between Hosts (Manual Live Migration)</title>
-        <para>The &PRODUCT; administrator can move a running VM from one host to another without interrupting service to users or going into maintenance mode. This is called manual live migration, and can be done under the following conditions:</para>
-        <itemizedlist>
-            <listitem><para>The root administrator is logged in. Domain admins and users can not perform manual live migration of VMs.</para></listitem>
-            <listitem><para>The VM is running. Stopped VMs can not be live migrated.</para></listitem>
-            <listitem><para>The destination host must be in the same cluster as the original host.</para></listitem>
-            <listitem><para>The VM must not be using local disk storage.</para></listitem>    
-            <listitem><para>The destination host must have enough available capacity. If not, the VM will remain in the "migrating" state until memory becomes available.</para></listitem>
+	<title>Moving VMs Between Hosts (Manual Live Migration)</title>
+		<para>The &PRODUCT; administrator can move a running VM from one host to another without interrupting service to users or going into maintenance mode. This is called manual live migration, and can be done under the following conditions:</para>
+		<itemizedlist>
+			<listitem><para>The root administrator is logged in. Domain admins and users can not perform manual live migration of VMs.</para></listitem>
+			<listitem><para>The VM is running. Stopped VMs can not be live migrated.</para></listitem>
+			<listitem><para>The destination host must be in the same cluster as the original host.</para></listitem>
+			<listitem><para>The VM must not be using local disk storage.</para></listitem>	
+			<listitem><para>The destination host must have enough available capacity. If not, the VM will remain in the "migrating" state until memory becomes available.</para></listitem>
             <!--            <listitem><para>(OVM) If the VM is running on the OVM hypervisor, it must not have an ISO attached. Live migration of a VM with attached ISO is not supported in OVM.</para></listitem> -->
-        </itemizedlist>
-        <para>To manually live migrate a virtual machine</para>
-        <orderedlist>
-            <listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
-            <listitem><para>In the left navigation, click Instances.</para></listitem>
-            <listitem><para>Choose the VM that you want to migrate.</para></listitem>
-            <listitem><para>Click the Migrate Instance button <inlinemediaobject>
-                <imageobject>
-                    <imagedata fileref="./images/migrate-instance.png" />
-                </imageobject>
-                <textobject><phrase>Migrateinstance.png: button to migrate an instance</phrase></textobject>
-            </inlinemediaobject>
-                </para></listitem>
-            <listitem><para>From the list of hosts, choose the one to which you want to move the VM.</para></listitem>
-            <listitem><para>Click OK.</para></listitem>
-        </orderedlist>
-    </section>
+		</itemizedlist>
+		<para>To manually live migrate a virtual machine</para>
+		<orderedlist>
+			<listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
+			<listitem><para>In the left navigation, click Instances.</para></listitem>
+			<listitem><para>Choose the VM that you want to migrate.</para></listitem>
+			<listitem><para>Click the Migrate Instance button.<inlinemediaobject>
+				<imageobject>
+					<imagedata fileref="./images/migrate-instance.png" />
+				</imageobject>
+				<textobject><phrase>Migrateinstance.png: button to migrate an instance</phrase></textobject>
+			</inlinemediaobject>
+				</para></listitem>
+			<listitem><para>From the list of hosts, choose the one to which you want to move the VM.</para></listitem>
+			<listitem><para>Click OK.</para></listitem>
+		</orderedlist>
+	</section>
 

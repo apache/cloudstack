@@ -17,7 +17,6 @@
 package com.cloud.agent.manager;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.Answer;

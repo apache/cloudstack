@@ -29,8 +29,8 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -43,7 +43,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadCommand.Proxy;
@@ -60,19 +59,16 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
 import com.cloud.storage.template.TemplateDownloader.Status;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Adapter;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.ComponentLocator.ComponentInfo;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 @Local(value = DownloadManager.class)
-public class DownloadManagerImpl implements DownloadManager {
+public class DownloadManagerImpl extends ManagerBase implements DownloadManager {
     private String _name;
     StorageLayer _storage;
-    Adapters<Processor> _processors;
+    Map<String, Processor> _processors;
 
     public class Completion implements DownloadCompleteCallback {
         private final String jobId;
@@ -94,14 +90,14 @@ public class DownloadManagerImpl implements DownloadManager {
         private final boolean hvm;
         private final ImageFormat format;
         private String tmpltPath;
-        private String description;
+        private final String description;
         private String checksum;
-        private Long accountId;
-        private String installPathPrefix;
+        private final Long accountId;
+        private final String installPathPrefix;
         private long templatesize;
         private long templatePhysicalSize;
-        private long id;
-		private ResourceType resourceType;
+        private final long id;
+        private final ResourceType resourceType;
 
         public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix, ResourceType resourceType) {
             super();
@@ -160,10 +156,10 @@ public class DownloadManagerImpl implements DownloadManager {
         }
 
         public ResourceType getResourceType() {
-			return resourceType;
-		}
+            return resourceType;
+        }
 
-		public void setTmpltPath(String tmpltPath) {
+        public void setTmpltPath(String tmpltPath) {
             this.tmpltPath = tmpltPath;
         }
 
@@ -205,9 +201,9 @@ public class DownloadManagerImpl implements DownloadManager {
         public long getTemplatePhysicalSize() {
             return templatePhysicalSize;
         }
-        
+
         public void setCheckSum(String checksum) {
-        	this.checksum = checksum;
+            this.checksum = checksum;
         }
     }
 
@@ -216,7 +212,7 @@ public class DownloadManagerImpl implements DownloadManager {
     private String _volumeDir;
     private String createTmpltScr;
     private String createVolScr;
-    private Adapters<Processor> processors;
+    private List<Processor> processors;
 
     private ExecutorService threadPool;
 
@@ -278,9 +274,9 @@ public class DownloadManagerImpl implements DownloadManager {
             break;
         }
     }
-    
+
     private String computeCheckSum(File f) {
-    	byte[] buffer = new byte[8192];
+        byte[] buffer = new byte[8192];
         int read = 0;
         MessageDigest digest;
         String checksum = null;        
@@ -296,16 +292,16 @@ public class DownloadManagerImpl implements DownloadManager {
             checksum = String.format("%032x",bigInt);
             return checksum;
         }catch(IOException e) {
-        	return null;
+            return null;
         }catch (NoSuchAlgorithmException e) {         
-        	return null;
+            return null;
         }
         finally {
             try {
-            	if(is != null)
-            		is.close();
+                if(is != null)
+                    is.close();
             } catch (IOException e) {
-            	return null;
+                return null;
             }                        
         }
     }
@@ -320,17 +316,17 @@ public class DownloadManagerImpl implements DownloadManager {
         TemplateDownloader td = dnld.getTemplateDownloader();
         String resourcePath = null;               
         ResourceType resourceType = dnld.getResourceType();
-       
+
         // once template path is set, remove the parent dir so that the template is installed with a relative path
         String finalResourcePath = "";
         if (resourceType == ResourceType.TEMPLATE){
-        	finalResourcePath += _templateDir + File.separator + dnld.getAccountId() + File.separator + dnld.getId() + File.separator;
-        	resourcePath = dnld.getInstallPathPrefix() + dnld.getAccountId() + File.separator + dnld.getId() + File.separator;// dnld.getTmpltName();
+            finalResourcePath += _templateDir + File.separator + dnld.getAccountId() + File.separator + dnld.getId() + File.separator;
+            resourcePath = dnld.getInstallPathPrefix() + dnld.getAccountId() + File.separator + dnld.getId() + File.separator;// dnld.getTmpltName();
         }else {
-        	finalResourcePath += _volumeDir + File.separator + dnld.getId() + File.separator;
-        	resourcePath = dnld.getInstallPathPrefix() + dnld.getId() + File.separator;// dnld.getTmpltName();
+            finalResourcePath += _volumeDir + File.separator + dnld.getId() + File.separator;
+            resourcePath = dnld.getInstallPathPrefix() + dnld.getId() + File.separator;// dnld.getTmpltName();
         }
-        
+
         _storage.mkdirs(resourcePath);
         dnld.setTmpltPath(finalResourcePath);
 
@@ -389,9 +385,9 @@ public class DownloadManagerImpl implements DownloadManager {
         // Set permissions for template/volume.properties
         String propertiesFile = resourcePath;
         if (resourceType == ResourceType.TEMPLATE){
-        	propertiesFile += "/template.properties";
+            propertiesFile += "/template.properties";
         }else{
-        	propertiesFile += "/volume.properties";
+            propertiesFile += "/volume.properties";
         }
         File templateProperties = new File(propertiesFile);
         _storage.setWorldReadableAndWriteable(templateProperties);
@@ -405,9 +401,9 @@ public class DownloadManagerImpl implements DownloadManager {
             return "Unable to download due to " + e.getMessage();
         }
 
-        Enumeration<Processor> en = _processors.enumeration();
-        while (en.hasMoreElements()) {
-            Processor processor = en.nextElement();
+        Iterator<Processor> en = _processors.values().iterator();
+        while (en.hasNext()) {
+            Processor processor = en.next();
 
             FormatInfo info = null;
             try {
@@ -423,7 +419,7 @@ public class DownloadManagerImpl implements DownloadManager {
                 break;
             }
         }
-        
+
         if (!loc.save()) {
             s_logger.warn("Cleaning up because we're unable to save the formats");
             loc.purge();
@@ -450,9 +446,9 @@ public class DownloadManagerImpl implements DownloadManager {
         String jobId = uuid.toString();
         String tmpDir = "";
         if(resourceType == ResourceType.TEMPLATE){
-        	tmpDir = installPathPrefix + File.separator + accountId + File.separator + id;
+            tmpDir = installPathPrefix + File.separator + accountId + File.separator + id;
         }else {
-        	tmpDir = installPathPrefix + File.separator + id;
+            tmpDir = installPathPrefix + File.separator + id;
         }
 
         try {
@@ -463,7 +459,7 @@ public class DownloadManagerImpl implements DownloadManager {
             }
             //	TO DO - define constant for volume properties.
             File file = ResourceType.TEMPLATE == resourceType ? _storage.getFile(tmpDir + File.separator + TemplateLocation.Filename) : 
-            	_storage.getFile(tmpDir + File.separator + "volume.properties");
+                _storage.getFile(tmpDir + File.separator + "volume.properties");
             if ( file.exists() ) {
                 file.delete();
             }
@@ -524,9 +520,9 @@ public class DownloadManagerImpl implements DownloadManager {
         }
         return 0;
     }
-    
+
     public String getDownloadCheckSum(String jobId) {
-    	DownloadJob dj = jobs.get(jobId);
+        DownloadJob dj = jobs.get(jobId);
         if (dj != null) {
             return dj.getChecksum();
         }
@@ -589,7 +585,7 @@ public class DownloadManagerImpl implements DownloadManager {
 
     @Override
     public DownloadAnswer handleDownloadCommand(SecondaryStorageResource resource, DownloadCommand cmd) {
-    	ResourceType resourceType = cmd.getResourceType();
+        ResourceType resourceType = cmd.getResourceType();
         if (cmd instanceof DownloadProgressCommand) {
             return handleDownloadProgressCmd( resource, (DownloadProgressCommand) cmd);
         }
@@ -604,9 +600,9 @@ public class DownloadManagerImpl implements DownloadManager {
 
         String installPathPrefix = null;
         if (ResourceType.TEMPLATE == resourceType){
-        	installPathPrefix = resource.getRootDir(cmd) + File.separator + _templateDir;
+            installPathPrefix = resource.getRootDir(cmd) + File.separator + _templateDir;
         }else {
-        	installPathPrefix = resource.getRootDir(cmd) + File.separator + _volumeDir;
+            installPathPrefix = resource.getRootDir(cmd) + File.separator + _volumeDir;
         }
 
         String user = null;
@@ -693,10 +689,10 @@ public class DownloadManagerImpl implements DownloadManager {
 
     }
 
-    
+
     private List<String> listVolumes(String rootdir) {
         List<String> result = new ArrayList<String>();
-        
+
         Script script = new Script(listVolScr, s_logger);
         script.add("-r", rootdir);
         ZfsPathParser zpp = new ZfsPathParser(rootdir);
@@ -705,12 +701,12 @@ public class DownloadManagerImpl implements DownloadManager {
         s_logger.info("found " + zpp.getPaths().size() + " volumes" + zpp.getPaths());
         return result;
     }
-    
-    
-    
+
+
+
     private List<String> listTemplates(String rootdir) {
         List<String> result = new ArrayList<String>();
-        
+
         Script script = new Script(listTmpltScr, s_logger);
         script.add("-r", rootdir);
         ZfsPathParser zpp = new ZfsPathParser(rootdir);
@@ -724,11 +720,11 @@ public class DownloadManagerImpl implements DownloadManager {
     public Map<String, TemplateInfo> gatherTemplateInfo(String rootDir) {
         Map<String, TemplateInfo> result = new HashMap<String, TemplateInfo>();
         String templateDir = rootDir + File.separator + _templateDir;
-        
+
         if (! _storage.exists(templateDir)) {
             _storage.mkdirs(templateDir);
         }
-        
+
         List<String> publicTmplts = listTemplates(templateDir);
         for (String tmplt : publicTmplts) {
             String path = tmplt.substring(0, tmplt.lastIndexOf(File.separator));
@@ -746,18 +742,18 @@ public class DownloadManagerImpl implements DownloadManager {
             }
 
             TemplateInfo tInfo = loc.getTemplateInfo();
-            
+
             if ((tInfo.size == tInfo.physicalSize) && (tInfo.installPath.endsWith(ImageFormat.OVA.getFileExtension()))) {
-            	try {
-            	    Processor processor = _processors.get("VMDK Processor");
-            	    VmdkProcessor vmdkProcessor = (VmdkProcessor)processor;
-            	    long vSize = vmdkProcessor.getTemplateVirtualSize(path, tInfo.installPath.substring(tInfo.installPath.lastIndexOf(File.separator) + 1));
-                	tInfo.size = vSize;
-                	loc.updateVirtualSize(vSize);
-                	loc.save();
-            	} catch (Exception e) {
-            		s_logger.error("Unable to get the virtual size of the template: " + tInfo.installPath + " due to " + e.getMessage());
-            	}
+                try {
+                    Processor processor = _processors.get("VMDK Processor");
+                    VmdkProcessor vmdkProcessor = (VmdkProcessor)processor;
+                    long vSize = vmdkProcessor.getTemplateVirtualSize(path, tInfo.installPath.substring(tInfo.installPath.lastIndexOf(File.separator) + 1));
+                    tInfo.size = vSize;
+                    loc.updateVirtualSize(vSize);
+                    loc.save();
+                } catch (Exception e) {
+                    s_logger.error("Unable to get the virtual size of the template: " + tInfo.installPath + " due to " + e.getMessage());
+                }
             }
 
             result.put(tInfo.templateName, tInfo);
@@ -777,52 +773,52 @@ public class DownloadManagerImpl implements DownloadManager {
         return result;
     }
 
-	@Override
-	public Map<Long, TemplateInfo> gatherVolumeInfo(String rootDir) {	
-	        Map<Long, TemplateInfo> result = new HashMap<Long, TemplateInfo>();
-	        String volumeDir = rootDir + File.separator + _volumeDir;
-	        
-	        if (! _storage.exists(volumeDir)) {
-	            _storage.mkdirs(volumeDir);
-	        }
-	        
-	        List<String> vols = listVolumes(volumeDir);
-	        for (String vol : vols) {
-	            String path = vol.substring(0, vol.lastIndexOf(File.separator));
-	            TemplateLocation loc = new TemplateLocation(_storage, path);
-	            try {
-	                if (!loc.load()) {
-	                    s_logger.warn("Post download installation was not completed for " + path);
-	                    //loc.purge();
-	                    _storage.cleanup(path, volumeDir);
-	                    continue;
-	                }
-	            } catch (IOException e) {
-	                s_logger.warn("Unable to load volume location " + path, e);
-	                continue;
-	            }
+    @Override
+    public Map<Long, TemplateInfo> gatherVolumeInfo(String rootDir) {	
+        Map<Long, TemplateInfo> result = new HashMap<Long, TemplateInfo>();
+        String volumeDir = rootDir + File.separator + _volumeDir;
 
-	            TemplateInfo vInfo = loc.getTemplateInfo();
-	            
-	            if ((vInfo.size == vInfo.physicalSize) && (vInfo.installPath.endsWith(ImageFormat.OVA.getFileExtension()))) {
-	            	try {
-	            	    Processor processor = _processors.get("VMDK Processor");
-	            	    VmdkProcessor vmdkProcessor = (VmdkProcessor)processor;
-	            	    long vSize = vmdkProcessor.getTemplateVirtualSize(path, vInfo.installPath.substring(vInfo.installPath.lastIndexOf(File.separator) + 1));
-	                	vInfo.size = vSize;
-	                	loc.updateVirtualSize(vSize);
-	                	loc.save();
-	            	} catch (Exception e) {
-	            		s_logger.error("Unable to get the virtual size of the volume: " + vInfo.installPath + " due to " + e.getMessage());
-	            	}
-	            }
+        if (! _storage.exists(volumeDir)) {
+            _storage.mkdirs(volumeDir);
+        }
 
-	            result.put(vInfo.getId(), vInfo);
-	            s_logger.debug("Added volume name: " + vInfo.templateName + ", path: " + vol);
-	        }
-	        return result;
-	    }
-	
+        List<String> vols = listVolumes(volumeDir);
+        for (String vol : vols) {
+            String path = vol.substring(0, vol.lastIndexOf(File.separator));
+            TemplateLocation loc = new TemplateLocation(_storage, path);
+            try {
+                if (!loc.load()) {
+                    s_logger.warn("Post download installation was not completed for " + path);
+                    //loc.purge();
+                    _storage.cleanup(path, volumeDir);
+                    continue;
+                }
+            } catch (IOException e) {
+                s_logger.warn("Unable to load volume location " + path, e);
+                continue;
+            }
+
+            TemplateInfo vInfo = loc.getTemplateInfo();
+
+            if ((vInfo.size == vInfo.physicalSize) && (vInfo.installPath.endsWith(ImageFormat.OVA.getFileExtension()))) {
+                try {
+                    Processor processor = _processors.get("VMDK Processor");
+                    VmdkProcessor vmdkProcessor = (VmdkProcessor)processor;
+                    long vSize = vmdkProcessor.getTemplateVirtualSize(path, vInfo.installPath.substring(vInfo.installPath.lastIndexOf(File.separator) + 1));
+                    vInfo.size = vSize;
+                    loc.updateVirtualSize(vSize);
+                    loc.save();
+                } catch (Exception e) {
+                    s_logger.error("Unable to get the virtual size of the volume: " + vInfo.installPath + " due to " + e.getMessage());
+                }
+            }
+
+            result.put(vInfo.getId(), vInfo);
+            s_logger.debug("Added volume name: " + vInfo.templateName + ", path: " + vol);
+        }
+        return result;
+    }
+
     private int deleteDownloadDirectories(File downloadPath, int deleted) {
         try {
             if (downloadPath.exists()) {
@@ -881,7 +877,7 @@ public class DownloadManagerImpl implements DownloadManager {
 
         String value = null;
 
-        _storage = (StorageLayer) params.get(StorageLayer.InstanceConfigKey);
+        _storage = (StorageLayer)params.get(StorageLayer.InstanceConfigKey);
         if (_storage == null) {
             value = (String) params.get(StorageLayer.ClassConfigKey);
             if (value == null) {
@@ -891,10 +887,14 @@ public class DownloadManagerImpl implements DownloadManager {
             Class<StorageLayer> clazz;
             try {
                 clazz = (Class<StorageLayer>) Class.forName(value);
+                _storage = clazz.newInstance();
             } catch (ClassNotFoundException e) {
                 throw new ConfigurationException("Unable to instantiate " + value);
+            } catch (InstantiationException e) {
+                throw new ConfigurationException("Unable to instantiate " + value);
+            } catch (IllegalAccessException e) {
+                throw new ConfigurationException("Unable to instantiate " + value);
             }
-            _storage = ComponentLocator.inject(clazz);
         }
         String useSsl = (String)params.get("sslcopy");
         if (useSsl != null) {
@@ -943,29 +943,27 @@ public class DownloadManagerImpl implements DownloadManager {
         }
         s_logger.info("createvolume.sh found in " + createVolScr);
 
-        List<ComponentInfo<Adapter>> processors = new ArrayList<ComponentInfo<Adapter>>();
+        _processors = new HashMap<String, Processor>();
 
         Processor processor = new VhdProcessor();
         processor.configure("VHD Processor", params);
-        processors.add(new ComponentInfo<Adapter>("VHD Processor", VhdProcessor.class, processor));
+        _processors.put("VHD Processor", processor);
 
         processor = new IsoProcessor();
         processor.configure("ISO Processor", params);
-        processors.add(new ComponentInfo<Adapter>("ISO Processor", IsoProcessor.class, processor));
+        _processors.put("ISO Processor", processor);
 
         processor = new QCOW2Processor();
         processor.configure("QCOW2 Processor", params);
-        processors.add(new ComponentInfo<Adapter>("QCOW2 Processor", QCOW2Processor.class, processor));
+        _processors.put("QCOW2 Processor", processor);
 
         processor = new VmdkProcessor();
         processor.configure("VMDK Processor", params);
-        processors.add(new ComponentInfo<Adapter>("VMDK Processor", VmdkProcessor.class, processor));
+        _processors.put("VMDK Processor", processor);
 
         processor = new RawImageProcessor();
         processor.configure("Raw Image Processor", params);
-        processors.add(new ComponentInfo<Adapter>("Raw Image Processor", RawImageProcessor.class, processor));
-        
-        _processors = new Adapters<Processor>("processors", processors);
+        _processors.put("Raw Image Processor", processor);
 
         _templateDir = (String) params.get("public.templates.root.dir");
         if (_templateDir == null) {
@@ -1047,5 +1045,5 @@ public class DownloadManagerImpl implements DownloadManager {
             return;
         }
     }
-	
+
 }

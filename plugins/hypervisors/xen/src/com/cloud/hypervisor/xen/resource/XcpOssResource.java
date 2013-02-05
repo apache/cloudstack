@@ -20,6 +20,7 @@ package com.cloud.hypervisor.xen.resource;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
@@ -166,5 +167,4 @@ public class XcpOssResource extends CitrixResourceBase {
     	}
     	return answer;
     }
-    
 }

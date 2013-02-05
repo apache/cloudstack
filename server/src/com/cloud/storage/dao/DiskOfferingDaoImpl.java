@@ -23,6 +23,7 @@ import javax.ejb.Local;
 import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.DiskOfferingVO.Type;
@@ -33,6 +34,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+@Component
 @Local(value={DiskOfferingDao.class})
 public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> implements DiskOfferingDao {
     private static final Logger s_logger = Logger.getLogger(DiskOfferingDaoImpl.class);

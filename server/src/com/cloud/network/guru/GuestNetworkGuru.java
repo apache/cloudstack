@@ -19,13 +19,15 @@ package com.cloud.network.guru;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
+import com.cloud.event.ActionEventUtils;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -36,33 +38,31 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
-import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -77,6 +77,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 
+@Component
 @Local(value = NetworkGuru.class)
 public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(GuestNetworkGuru.class);
@@ -298,8 +299,8 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                 		"part of network " + network + " implement ", DataCenter.class, dcId);
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnet));
-            EventUtils.saveEvent(UserContext.current().getCallerUserId(), network.getAccountId(), 
-                    EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: "+vnet+ " Network Id: "+network.getId(), 0);
+            ActionEventUtils.onCompletedActionEvent(UserContext.current().getCallerUserId(), network.getAccountId(),
+                    EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + network.getId(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }
@@ -352,7 +353,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
             String guestIp = null;
             if (network.getSpecifyIpRanges()) {
-                _networkMgr.allocateDirectIp(nic, dc, vm, network, nic.getRequestedIp());
+                _networkMgr.allocateDirectIp(nic, dc, vm, network, nic.getRequestedIpv4(), null);
             } else {
                 //if Vm is router vm and source nat is enabled in the network, set ip4 to the network gateway
                 boolean isGateway = false;
@@ -371,7 +372,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                 if (isGateway) {
                     guestIp = network.getGateway();
                 } else {
-                    guestIp = _networkMgr.acquireGuestIpAddress(network, nic.getRequestedIp());
+                    guestIp = _networkMgr.acquireGuestIpAddress(network, nic.getRequestedIpv4());
                     if (guestIp == null) {
                         throw new InsufficientVirtualNetworkCapcityException("Unable to acquire Guest IP" +
                                 " address for network " + network, DataCenter.class, dc.getId());
@@ -430,12 +431,12 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         
         if (profile.getBroadcastDomainType() == BroadcastDomainType.Vlan && 
         		profile.getBroadcastUri() != null && !offering.getSpecifyVlan()) {
-        	s_logger.debug("Releasing vnet for the network id=" + profile.getId());
+        s_logger.debug("Releasing vnet for the network id=" + profile.getId());
             _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), 
                     profile.getPhysicalNetworkId(), profile.getAccountId(), profile.getReservationId());
-            EventUtils.saveEvent(UserContext.current().getCallerUserId(), profile.getAccountId(), 
+            ActionEventUtils.onCompletedActionEvent(UserContext.current().getCallerUserId(), profile.getAccountId(),
                     EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_RELEASE, "Released Zone Vlan: "
-                    +profile.getBroadcastUri().getHost()+" for Network: "+profile.getId(), 0);
+                    + profile.getBroadcastUri().getHost() + " for Network: " + profile.getId(), 0);
         }
         profile.setBroadcastUri(null);
     }

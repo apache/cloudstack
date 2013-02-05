@@ -19,18 +19,19 @@ package org.apache.cloudstack.api.command.admin.router;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
-import org.apache.cloudstack.api.response.ProviderResponse;
-import org.apache.log4j.Logger;
+import javax.inject.Inject;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -43,8 +44,9 @@ public class ListVirtualRouterElementsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkOfferingsCmd.class.getName());
     private static final String _name = "listvirtualrouterelementsresponse";
 
-    @PlugService
-    private VirtualRouterElementService _service;
+    // TODO, VirtualRouterElementServer is not singleton in system!
+    @Inject
+    private List<VirtualRouterElementService> _service;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -95,7 +97,7 @@ public class ListVirtualRouterElementsCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
-        List<? extends VirtualRouterProvider> providers = _service.searchForVirtualRouterElement(this);
+        List<? extends VirtualRouterProvider> providers = _service.get(0).searchForVirtualRouterElement(this);
         ListResponse<VirtualRouterProviderResponse> response = new ListResponse<VirtualRouterProviderResponse>();
         List<VirtualRouterProviderResponse> providerResponses = new ArrayList<VirtualRouterProviderResponse>();
         for (VirtualRouterProvider provider : providers) {

@@ -29,7 +29,6 @@ import java.sql.SQLException;
 import java.sql.SQLRecoverableException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -41,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -53,6 +53,8 @@ import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PropagateResourceEventCommand;
 import com.cloud.agent.api.TransferAgentCommand;
+import com.cloud.agent.api.ScheduleHostScanTaskCommand;
+import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.agent.manager.Commands;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -72,9 +74,8 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Profiler;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ComponentLifecycle;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
@@ -90,7 +91,7 @@ import com.cloud.utils.net.NetUtils;
 import com.google.gson.Gson;
 
 @Local(value = { ClusterManager.class })
-public class ClusterManagerImpl implements ClusterManager {
+public class ClusterManagerImpl extends ManagerBase implements ClusterManager {
     private static final Logger s_logger = Logger.getLogger(ClusterManagerImpl.class);
 
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT = 1000; // 1 second
@@ -120,10 +121,14 @@ public class ClusterManagerImpl implements ClusterManager {
 
     private ClusterServiceAdapter _currentServiceAdapter;
 
-    private ManagementServerHostDao _mshostDao;
-    private ManagementServerHostPeerDao _mshostPeerDao;
-    private HostDao _hostDao;
-    private HostTransferMapDao _hostTransferDao;
+    @Inject
+    private List<ClusterServiceAdapter> _serviceAdapters;
+
+    @Inject private ManagementServerHostDao _mshostDao;
+    @Inject private ManagementServerHostPeerDao _mshostPeerDao;
+    @Inject private HostDao _hostDao;
+    @Inject private HostTransferMapDao _hostTransferDao;
+    @Inject private ConfigurationDao _configDao;
 
     //
     // pay attention to _mshostId and _msid
@@ -136,15 +141,14 @@ public class ClusterManagerImpl implements ClusterManager {
 
     private boolean _peerScanInited = false;
 
-    private String _name;
     private String _clusterNodeIP = "127.0.0.1";
     private boolean _agentLBEnabled = false;
     private double _connectedAgentsThreshold = 0.7;
     private static boolean _agentLbHappened = false;
     
-    private List<ClusterServicePdu> _clusterPduOutgoingQueue = new ArrayList<ClusterServicePdu>();
-    private List<ClusterServicePdu> _clusterPduIncomingQueue = new ArrayList<ClusterServicePdu>();
-    private Map<Long, ClusterServiceRequestPdu> _outgoingPdusWaitingForAck = new HashMap<Long, ClusterServiceRequestPdu>();
+    private final List<ClusterServicePdu> _clusterPduOutgoingQueue = new ArrayList<ClusterServicePdu>();
+    private final List<ClusterServicePdu> _clusterPduIncomingQueue = new ArrayList<ClusterServicePdu>();
+    private final Map<Long, ClusterServiceRequestPdu> _outgoingPdusWaitingForAck = new HashMap<Long, ClusterServiceRequestPdu>();
     
     public ClusterManagerImpl() {
         _clusterPeers = new HashMap<String, ClusterService>();
@@ -155,6 +159,7 @@ public class ClusterManagerImpl implements ClusterManager {
         // recursive remote calls between nodes
         //
         _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Cluster-Worker"));
+        setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK);
     }
     
     private void registerRequestPdu(ClusterServiceRequestPdu pdu) {
@@ -244,6 +249,7 @@ public class ClusterManagerImpl implements ClusterManager {
     
     private Runnable getClusterPduSendingTask() {
         return new Runnable() {
+            @Override
             public void run() {
                 onSendingClusterPdu();
             }
@@ -252,6 +258,7 @@ public class ClusterManagerImpl implements ClusterManager {
     
     private Runnable getClusterPduNotificationTask() {
         return new Runnable() {
+            @Override
             public void run() {
                 onNotifyingClusterPdu();
             }
@@ -314,6 +321,7 @@ public class ClusterManagerImpl implements ClusterManager {
                 	continue;
 
                 _executor.execute(new Runnable() {
+                    @Override
                 	public void run() {
 		                if(pdu.getPduType() == ClusterServicePdu.PDU_TYPE_RESPONSE) {
 		                    ClusterServiceRequestPdu requestPdu = popRequestPdu(pdu.getAckSequenceId());
@@ -348,7 +356,33 @@ public class ClusterManagerImpl implements ClusterManager {
             }
         }
     }
-    
+
+    private String handleScheduleHostScanTaskCommand(ScheduleHostScanTaskCommand cmd) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Intercepting resource manager command: " + _gson.toJson(cmd));
+        }
+
+        try {
+            // schedule a scan task immediately
+            if (_agentMgr instanceof ClusteredAgentManagerImpl) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Received notification as part of addHost command to start a host scan task");
+                }
+                ClusteredAgentManagerImpl clusteredAgentMgr = (ClusteredAgentManagerImpl)_agentMgr;
+                clusteredAgentMgr.scheduleHostScanTask();
+            }
+        } catch (Exception e) {
+            // Scheduling host scan task in peer MS is a best effort operation during host add, regular host scan
+            // happens at fixed intervals anyways. So handling any exceptions that may be thrown
+            s_logger.warn("Exception happened while trying to schedule host scan task on mgmt server " + getSelfPeerName() + ", ignoring as regular host scan happens at fixed interval anyways", e);
+            return null;
+        }
+
+        Answer[] answers = new Answer[1];
+        answers[0] = new Answer(cmd, true, null);
+        return _gson.toJson(answers);
+    }
+
     private String dispatchClusterServicePdu(ClusterServicePdu pdu) {
 
         if(s_logger.isDebugEnabled()) {
@@ -424,6 +458,10 @@ public class ClusterManagerImpl implements ClusterManager {
         	Answer[] answers = new Answer[1];
         	answers[0] = new Answer(cmd, result, null);
         	return _gson.toJson(answers);
+        } else if (cmds.length == 1 && cmds[0] instanceof ScheduleHostScanTaskCommand) {
+            ScheduleHostScanTaskCommand cmd = (ScheduleHostScanTaskCommand) cmds[0];
+            String response = handleScheduleHostScanTaskCommand(cmd);
+            return response;
         }
 
         try {
@@ -457,6 +495,7 @@ public class ClusterManagerImpl implements ClusterManager {
         return null;
     }
 
+    @Override
     public void OnReceiveClusterServicePdu(ClusterServicePdu pdu) {
     	addIncomingClusterPdu(pdu);
     }
@@ -1148,11 +1187,6 @@ public class ClusterManagerImpl implements ClusterManager {
         return null;
     }
 
-    @Override
-    public String getName() {
-        return _name;
-    }
-
     @Override @DB
     public boolean start() {
         if(s_logger.isInfoEnabled()) {
@@ -1248,40 +1282,8 @@ public class ClusterManagerImpl implements ClusterManager {
         if(s_logger.isInfoEnabled()) {
             s_logger.info("Start configuring cluster manager : " + name);
         }
-        _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        _agentMgr = locator.getManager(AgentManager.class);
-        if (_agentMgr == null) {
-            throw new ConfigurationException("Unable to get " + AgentManager.class.getName());
-        }
-
-        _mshostDao = locator.getDao(ManagementServerHostDao.class);
-        if (_mshostDao == null) {
-            throw new ConfigurationException("Unable to get " + ManagementServerHostDao.class.getName());
-        }
-        
-        _mshostPeerDao = locator.getDao(ManagementServerHostPeerDao.class);
-        if (_mshostPeerDao == null) {
-            throw new ConfigurationException("Unable to get " + ManagementServerHostPeerDao.class.getName());
-        }
-        
-        _hostDao = locator.getDao(HostDao.class);
-        if (_hostDao == null) {
-            throw new ConfigurationException("Unable to get " + HostDao.class.getName());
-        }
-
-        _hostTransferDao = locator.getDao(HostTransferMapDao.class);
-        if (_hostTransferDao == null) {
-            throw new ConfigurationException("Unable to get agent transfer map dao");
-        }
-
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
-
-        Map<String, String> configs = configDao.getConfiguration("management-server", params);
+        Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
         String value = configs.get("cluster.heartbeat.interval");
         if (value != null) {
@@ -1322,20 +1324,16 @@ public class ClusterManagerImpl implements ClusterManager {
         // notification task itself in turn works as a task dispatcher
         _executor.execute(getClusterPduNotificationTask());
 
-        Adapters<ClusterServiceAdapter> adapters = locator.getAdapters(ClusterServiceAdapter.class);
-        if (adapters == null || !adapters.isSet()) {
+        if (_serviceAdapters == null) {
             throw new ConfigurationException("Unable to get cluster service adapters");
         }
-        Enumeration<ClusterServiceAdapter> it = adapters.enumeration();
-        if(it.hasMoreElements()) {
-            _currentServiceAdapter = it.nextElement();
-        }
+        _currentServiceAdapter = _serviceAdapters.get(0);
 
         if(_currentServiceAdapter == null) {
             throw new ConfigurationException("Unable to set current cluster service adapter");
         }
 
-        _agentLBEnabled = Boolean.valueOf(configDao.getValue(Config.AgentLbEnable.key()));
+        _agentLBEnabled = Boolean.valueOf(_configDao.getValue(Config.AgentLbEnable.key()));
         
         String connectedAgentsThreshold = configs.get("agent.load.threshold");
         

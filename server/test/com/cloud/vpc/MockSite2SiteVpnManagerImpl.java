@@ -22,7 +22,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.command.user.vpn.*;
+import org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpn.DeleteVpnConnectionCmd;
@@ -31,21 +31,26 @@ import org.apache.cloudstack.api.command.user.vpn.DeleteVpnGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnConnectionsCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnCustomerGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnGatewaysCmd;
+import org.apache.cloudstack.api.command.user.vpn.ResetVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
+import org.springframework.stereotype.Component;
+
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.Site2SiteVpnConnectionVO;
 import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.network.vpn.Site2SiteVpnService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 
+@Component
 @Local(value = { Site2SiteVpnManager.class, Site2SiteVpnService.class } )
-public class MockSite2SiteVpnManagerImpl implements Site2SiteVpnManager, Site2SiteVpnService, Manager{
+public class MockSite2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpnManager, Site2SiteVpnService {
 
     /* (non-Javadoc)
      * @see com.cloud.network.vpn.Site2SiteVpnService#createVpnGateway(org.apache.cloudstack.api.commands.CreateVpnGatewayCmd)
@@ -188,7 +193,7 @@ public class MockSite2SiteVpnManagerImpl implements Site2SiteVpnManager, Site2Si
     @Override
     public void markDisconnectVpnConnByVpc(long vpcId) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -251,7 +256,7 @@ public class MockSite2SiteVpnManagerImpl implements Site2SiteVpnManager, Site2Si
     @Override
     public void reconnectDisconnectedVpnByVpc(Long vpcId) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

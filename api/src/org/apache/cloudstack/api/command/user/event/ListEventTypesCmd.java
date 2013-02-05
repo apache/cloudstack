@@ -19,11 +19,11 @@ package org.apache.cloudstack.api.command.user.event;
 import java.util.ArrayList;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.response.EventTypeResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.user.Account;
 
 @APICommand(name = "listEventTypes", description = "List Event Types", responseObject = EventTypeResponse.class)

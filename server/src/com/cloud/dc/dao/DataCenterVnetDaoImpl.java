@@ -21,6 +21,8 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDao;
@@ -37,6 +39,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  * DataCenterVnetDaoImpl maintains the one-to-many relationship between
  * data center/physical_network and the vnet that appears within the physical network.
  */
+@Component
 @DB(txn=false)
 public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long> implements GenericDao<DataCenterVnetVO, Long> {
     private final SearchBuilder<DataCenterVnetVO> FreeVnetSearch;
@@ -139,7 +142,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         update(vo.getId(), vo);
     }
 
-    protected DataCenterVnetDaoImpl() {
+    public DataCenterVnetDaoImpl() {
     	super();
         DcSearchAllocated = createSearchBuilder();
         DcSearchAllocated.and("dc", DcSearchAllocated.entity().getDataCenterId(), SearchCriteria.Op.EQ);

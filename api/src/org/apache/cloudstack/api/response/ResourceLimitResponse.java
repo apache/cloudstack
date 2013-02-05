@@ -16,12 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.configuration.ResourceLimit;
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+
+import com.cloud.configuration.ResourceLimit;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ResourceLimit.class)
 @SuppressWarnings("unused")

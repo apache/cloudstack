@@ -19,12 +19,13 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+
+import com.cloud.offering.NetworkOffering;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value=NetworkOffering.class)
 @SuppressWarnings("unused")
@@ -80,6 +81,8 @@ public class NetworkOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.FOR_VPC) @Param(description="true if network offering can be used by VPC networks only")
     private Boolean forVpc;
 
+    @SerializedName(ApiConstants.IS_PERSISTENT) @Param(description="true if network offering supports persistent networks, false otherwise")
+    private Boolean isPersistent;
 
     public void setId(String id) {
         this.id = id;
@@ -149,4 +152,9 @@ public class NetworkOfferingResponse extends BaseResponse {
     public void setForVpc(Boolean forVpc) {
         this.forVpc = forVpc;
     }
+
+    public void setIsPersistent(Boolean isPersistent) {
+        this.isPersistent = isPersistent;
+    }
+
 }

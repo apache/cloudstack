@@ -141,6 +141,7 @@ DROP TABLE IF EXISTS `cloud`.`op_dc_storage_network_ip_address`;
 DROP TABLE IF EXISTS `cloud`.`cluster_vsm_map`;
 DROP TABLE IF EXISTS `cloud`.`virtual_supervisor_module`;
 DROP TABLE IF EXISTS `cloud`.`port_profile`;
+DROP TABLE IF EXISTS `cloud`.`region`;
 DROP TABLE IF EXISTS `cloud`.`s2s_customer_gateway`;
 DROP TABLE IF EXISTS `cloud`.`s2s_vpn_gateway`;
 DROP TABLE IF EXISTS `cloud`.`s2s_vpn_connection`;
@@ -149,6 +150,7 @@ DROP TABLE IF EXISTS `cloud`,`nicira_nvp_nic_map`;
 DROP TABLE IF EXISTS `cloud`,`s3`;
 DROP TABLE IF EXISTS `cloud`,`template_s3_ref`;
 DROP TABLE IF EXISTS `cloud`,`nicira_nvp_router_map`;
+DROP TABLE IF EXISTS `cloud`,`external_bigswitch_vns_devices`;
 DROP TABLE IF EXISTS `cloud`.`autoscale_vmgroup_policy_map`;
 DROP TABLE IF EXISTS `cloud`.`autoscale_policy_condition_map`;
 DROP TABLE IF EXISTS `cloud`.`autoscale_vmgroups`;
@@ -156,6 +158,44 @@ DROP TABLE IF EXISTS `cloud`.`autoscale_vmprofiles`;
 DROP TABLE IF EXISTS `cloud`.`autoscale_policies`;
 DROP TABLE IF EXISTS `cloud`.`counter`;
 DROP TABLE IF EXISTS `cloud`.`conditions`;
+DROP TABLE IF EXISTS `cloud`.`inline_load_balancer_nic_map`;
+DROP TABLE IF EXISTS `cloud`.`cmd_exec_log`;
+DROP TABLE IF EXISTS `cloud`.`keystore`;
+DROP TABLE IF EXISTS `cloud`.`swift`;
+DROP TABLE IF EXISTS `cloud`.`project_account`;
+DROP TABLE IF EXISTS `cloud`.`project_invitations`;
+DROP TABLE IF EXISTS `cloud`.`elastic_lb_vm_map`;
+DROP TABLE IF EXISTS `cloud`.`ntwk_offering_service_map`;
+DROP TABLE IF EXISTS `cloud`.`ntwk_service_map`;
+DROP TABLE IF EXISTS `cloud`.`external_load_balancer_devices`;
+DROP TABLE IF EXISTS `cloud`.`external_firewall_devices`;
+DROP TABLE IF EXISTS `cloud`.`network_external_lb_device_map`;
+DROP TABLE IF EXISTS `cloud`.`network_external_firewall_device_map`;
+DROP TABLE IF EXISTS `cloud`.`virtual_router_providers`;
+DROP TABLE IF EXISTS `cloud`.`op_user_stats_log`;
+DROP TABLE IF EXISTS `cloud`.`netscaler_pod_ref`;
+DROP TABLE IF EXISTS `cloud`.`mshost_peer`;
+DROP TABLE IF EXISTS `cloud`.`vm_template_details`;
+DROP TABLE IF EXISTS `cloud`.`hypervisor_capabilities`;
+DROP TABLE IF EXISTS `cloud`.`template_swift_ref`;
+DROP TABLE IF EXISTS `cloud`.`account_details`;
+DROP TABLE IF EXISTS `cloud`.`vpc`;
+DROP TABLE IF EXISTS `cloud`.`vpc_offerings`;
+DROP TABLE IF EXISTS `cloud`.`vpc_offering_service_map`;
+DROP TABLE IF EXISTS `cloud`.`vpc_gateways`;
+DROP TABLE IF EXISTS `cloud`.`router_network_ref`;
+DROP TABLE IF EXISTS `cloud`.`private_ip_address`;
+DROP TABLE IF EXISTS `cloud`.`static_routes`;
+DROP TABLE IF EXISTS `cloud`.`resource_tags`;
+DROP TABLE IF EXISTS `cloud`.`primary_data_store_provider`;
+DROP TABLE IF EXISTS `cloud`.`image_data_store_provider`;
+DROP TABLE IF EXISTS `cloud`.`image_data_store`;
+DROP TABLE IF EXISTS `cloud`.`vm_compute_tags`;
+DROP TABLE IF EXISTS `cloud`.`vm_root_disk_tags`;
+DROP TABLE IF EXISTS `cloud`.`vm_network_map`;
+DROP TABLE IF EXISTS `cloud`.`netapp_volume`;
+DROP TABLE IF EXISTS `cloud`.`netapp_pool`;
+DROP TABLE IF EXISTS `cloud`.`netapp_lun`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -207,6 +247,8 @@ CREATE TABLE `cloud`.`networks` (
   `broadcast_uri` varchar(255) COMMENT 'broadcast domain specifier',
   `gateway` varchar(15) COMMENT 'gateway for this network configuration',
   `cidr` varchar(18) COMMENT 'network cidr', 
+  `ip6_gateway` varchar(50) COMMENT 'IPv6 gateway for this network', 
+  `ip6_cidr` varchar(50) COMMENT 'IPv6 cidr for this network',
   `mode` varchar(32) COMMENT 'How to retrieve ip address in this network',
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this configuration is created from',
   `physical_network_id` bigint unsigned COMMENT 'physical network id that this configuration is based on',
@@ -270,6 +312,8 @@ CREATE TABLE `cloud`.`nics` (
   `update_time` timestamp NOT NULL COMMENT 'time the state was changed',
   `isolation_uri` varchar(255) COMMENT 'id for isolation',
   `ip6_address` char(40) COMMENT 'ip6 address',
+  `ip6_gateway` varchar(50) COMMENT 'gateway for ip6 address',
+  `ip6_cidr` varchar(50) COMMENT 'cidr for ip6 address',
   `default_nic` tinyint NOT NULL COMMENT "None", 
   `vm_type` varchar(32) COMMENT 'type of vm: System or User vm',
   `created` datetime NOT NULL COMMENT 'date created',
@@ -309,6 +353,7 @@ CREATE TABLE `cloud`.`network_offerings` (
   `elastic_lb_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides elastic lb service',
   `specify_ip_ranges` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides an ability to define ip ranges',
   `inline` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering LB provider is in inline mode',
+  `is_persistent` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if the network offering provides an ability to create persistent networks',
   PRIMARY KEY (`id`),
   INDEX `i_network_offerings__system_only`(`system_only`),
   INDEX `i_network_offerings__removed`(`removed`),
@@ -500,7 +545,10 @@ CREATE TABLE `cloud`.`vlan` (
   `vlan_id` varchar(255),
   `vlan_gateway` varchar(255),
   `vlan_netmask` varchar(255),
+  `ip6_gateway` varchar(255),
+  `ip6_cidr` varchar(255),
   `description` varchar(255),
+  `ip6_range` varchar(255),
   `vlan_type` varchar(255),
   `data_center_id` bigint unsigned NOT NULL,
   `network_id` bigint unsigned NOT NULL COMMENT 'id of corresponding network offering',
@@ -663,7 +711,7 @@ CREATE TABLE `cloud`.`op_dc_vnet_alloc` (
     PRIMARY KEY (`id`),
     UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id__account_id`(`vnet`, `data_center_id`, `account_id`),
     INDEX `i_op_dc_vnet_alloc__dc_taken`(`data_center_id`, `taken`),
-    UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id`(`vnet`, `data_center_id`),
+    UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id`(`vnet`, `physical_network_id`, `data_center_id`),
 	CONSTRAINT `fk_op_dc_vnet_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
 	CONSTRAINT `fk_op_dc_vnet_alloc__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -902,6 +950,7 @@ CREATE TABLE  `cloud`.`user` (
   `timezone` varchar(30) default NULL,
   `registration_token` varchar(255) default NULL,
   `is_registered` tinyint NOT NULL DEFAULT 0 COMMENT '1: yes, 0: no',
+  `region_id` int unsigned NOT NULL,
   `incorrect_login_attempts` integer unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY  (`id`),
   INDEX `i_user__removed`(`removed`),
@@ -1030,6 +1079,7 @@ CREATE TABLE  `cloud`.`vm_instance` (
   `uuid` varchar(40),
   `instance_name` varchar(255) NOT NULL COMMENT 'name of the vm instance running on the hosts',
   `state` varchar(32) NOT NULL,
+  `desired_state` varchar(32) NULL,
   `vm_template_id` bigint unsigned,
   `guest_os_id` bigint unsigned NOT NULL,
   `private_mac_address` varchar(17),
@@ -1252,6 +1302,7 @@ CREATE TABLE  `cloud`.`domain` (
   `state` char(32) NOT NULL default 'Active' COMMENT 'state of the domain',
   `network_domain` varchar(255),
   `type` varchar(255) NOT NULL DEFAULT 'Normal' COMMENT 'type of the domain - can be Normal or Project',
+  `region_id` int unsigned NOT NULL,  
   PRIMARY KEY  (`id`),
   UNIQUE (parent, name, removed),
   INDEX `i_domain__path`(`path`),
@@ -1270,6 +1321,7 @@ CREATE TABLE  `cloud`.`account` (
   `cleanup_needed` tinyint(1) NOT NULL default '0',
   `network_domain` varchar(255),
   `default_zone_id` bigint unsigned,
+  `region_id` int unsigned NOT NULL,  
   PRIMARY KEY  (`id`),
   INDEX i_account__removed(`removed`),
   CONSTRAINT `fk_account__default_zone_id` FOREIGN KEY `fk_account__default_zone_id`(`default_zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
@@ -2253,6 +2305,15 @@ CREATE TABLE  `cloud`.`netscaler_pod_ref` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+CREATE TABLE  `cloud`.`region` (
+  `id` int unsigned NOT NULL UNIQUE,
+  `name` varchar(255) NOT NULL UNIQUE,
+  `end_point` varchar(255) NOT NULL,
+  `api_key` varchar(255),
+  `secret_key` varchar(255),
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`vpc` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) NOT NULL,
@@ -2422,6 +2483,18 @@ CREATE TABLE `cloud`.`nicira_nvp_router_map` (
   CONSTRAINT `fk_nicira_nvp_router_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`external_bigswitch_vns_devices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which bigswitch vns device is added',
+  `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this bigswitch vns device',
+  `device_name` varchar(255) NOT NULL COMMENT 'name of the bigswitch vns device',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external bigswitch vns device',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_external_bigswitch_vns_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_bigswitch_vns_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`counter` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40),
@@ -2539,10 +2612,44 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
   INDEX `i_autoscale_vmgroup_policy_map__vmgroup_id`(`vmgroup_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`region_sync` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `region_id` int unsigned NOT NULL,
+  `api` varchar(1024) NOT NULL,
+  `created` datetime NOT NULL COMMENT 'date created',
+  `processed` tinyint NOT NULL default '0',
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (1, UUID(), 'snmp','Linux User CPU - percentage', '1.3.6.1.4.1.2021.11.9.0', now());
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (2, UUID(), 'snmp','Linux System CPU - percentage', '1.3.6.1.4.1.2021.11.10.0', now());
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (3, UUID(), 'snmp','Linux CPU Idle - percentage', '1.3.6.1.4.1.2021.11.11.0', now());
 INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (100, UUID(), 'netscaler','Response Time - microseconds', 'RESPTIME', now());
+
+CREATE TABLE  `cloud`.`user_ipv6_address` (
+  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
+  `uuid` varchar(40),
+  `account_id` bigint unsigned NULL,
+  `domain_id` bigint unsigned NULL,
+  `ip_address` char(50) NOT NULL,
+  `data_center_id` bigint unsigned NOT NULL COMMENT 'zone that it belongs to',
+  `vlan_id` bigint unsigned NOT NULL,
+  `state` char(32) NOT NULL default 'Free' COMMENT 'state of the ip address',
+  `mac_address` varchar(40) NOT NULL COMMENT 'mac address of this ip',
+  `source_network_id` bigint unsigned NOT NULL COMMENT 'network id ip belongs to',
+  `network_id` bigint unsigned COMMENT 'network this public ip address is associated with',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this configuration is based on',
+  `created` datetime NULL COMMENT 'Date this ip was allocated to someone',
+  PRIMARY KEY (`id`),
+  UNIQUE (`ip_address`, `source_network_id`),
+  CONSTRAINT `fk_user_ipv6_address__source_network_id` FOREIGN KEY (`source_network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_user_ipv6_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_user_ipv6_address__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`),
+  CONSTRAINT `fk_user_ipv6_address__vlan_id` FOREIGN KEY (`vlan_id`) REFERENCES `vlan`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_user_ipv6_address__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_user_ipv6_address__uuid` UNIQUE (`uuid`),
+  CONSTRAINT `fk_user_ipv6_address__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;
 

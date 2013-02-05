@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.query;
 
-import java.util.List;
-
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
@@ -56,11 +54,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-
-
-import com.cloud.async.AsyncJob;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.utils.Pair;
 
 /**
  * Service used for list api query.

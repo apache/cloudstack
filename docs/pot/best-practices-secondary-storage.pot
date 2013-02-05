@@ -1,0 +1,34 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Best Practices for Secondary Storage"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Each Zone can have one or more secondary storage servers. Multiple secondary storage servers provide increased scalability to the system."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Secondary storage has a high read:write ratio and is expected to consist of larger drives with lower IOPS than primary storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that nothing is stored on the server. Adding the server to &PRODUCT; will destroy any existing data."
+msgstr ""
+

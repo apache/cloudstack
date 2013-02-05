@@ -25,6 +25,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
@@ -36,6 +37,7 @@ import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine.State;
 
+@Component
 @Local(value={SecondaryStorageVmDao.class})
 public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVmVO, Long> implements SecondaryStorageVmDao {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageVmDaoImpl.class);
@@ -53,7 +55,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     
     public SecondaryStorageVmDaoImpl() {
         DataCenterStatusSearch = createSearchBuilder();
-        DataCenterStatusSearch.and("dc", DataCenterStatusSearch.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        DataCenterStatusSearch.and("dc", DataCenterStatusSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         DataCenterStatusSearch.and("states", DataCenterStatusSearch.entity().getState(), SearchCriteria.Op.IN);
         DataCenterStatusSearch.and("role", DataCenterStatusSearch.entity().getRole(), SearchCriteria.Op.EQ);
         DataCenterStatusSearch.done();
@@ -85,7 +87,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         HostUpSearch.done();
         
         ZoneSearch = createSearchBuilder();
-        ZoneSearch.and("zone", ZoneSearch.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        ZoneSearch.and("zone", ZoneSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         ZoneSearch.and("role", ZoneSearch.entity().getRole(), SearchCriteria.Op.EQ);
         ZoneSearch.done();
         

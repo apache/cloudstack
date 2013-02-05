@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api.commands;
 
+import javax.inject.Inject;
+
 import com.cloud.api.response.NiciraNvpDeviceResponse;
 import org.apache.log4j.Logger;
 
@@ -25,7 +27,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
@@ -42,7 +43,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class DeleteNiciraNvpDeviceCmd extends BaseAsyncCmd {
     private static final Logger s_logger = Logger.getLogger(DeleteNiciraNvpDeviceCmd.class.getName());
     private static final String s_name = "deleteniciranvpdeviceresponse";
-    @PlugService NiciraNvpElementService _niciraNvpElementService;
+    @Inject NiciraNvpElementService _niciraNvpElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

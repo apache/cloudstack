@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceOwnerType;
@@ -31,96 +34,99 @@ import com.cloud.configuration.ResourceLimit;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.user.dao.AccountDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={ResourceCountDao.class})
 public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> implements ResourceCountDao {
-	private SearchBuilder<ResourceCountVO> TypeSearch;
-	
-	private SearchBuilder<ResourceCountVO> AccountSearch;
-    private SearchBuilder<ResourceCountVO> DomainSearch;
-	
-	protected final DomainDaoImpl _domainDao = ComponentLocator.inject(DomainDaoImpl.class);
-	protected final AccountDaoImpl _accountDao = ComponentLocator.inject(AccountDaoImpl.class);
+    private final SearchBuilder<ResourceCountVO> TypeSearch;
 
-	public ResourceCountDaoImpl() {
-		TypeSearch = createSearchBuilder();
-		TypeSearch.and("type", TypeSearch.entity().getType(), SearchCriteria.Op.EQ);
-	    TypeSearch.and("accountId", TypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-	    TypeSearch.and("domainId", TypeSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-	    TypeSearch.done();
-		
-		AccountSearch = createSearchBuilder();
-		AccountSearch.and("accountId", AccountSearch.entity().getAccountId(), SearchCriteria.Op.NNULL);
-		AccountSearch.done();
-		
-		DomainSearch = createSearchBuilder();
-		DomainSearch.and("domainId", DomainSearch.entity().getDomainId(), SearchCriteria.Op.NNULL);
-		DomainSearch.done();
-	}
-	
-	@Override 
-	public ResourceCountVO findByOwnerAndType(long ownerId, ResourceOwnerType ownerType, ResourceType type) {
-	    SearchCriteria<ResourceCountVO> sc = TypeSearch.create();
-	    sc.setParameters("type", type);
-	    
-	    if (ownerType == ResourceOwnerType.Account) {
-	        sc.setParameters("accountId", ownerId);
-	        return findOneIncludingRemovedBy(sc);
-	    } else if (ownerType == ResourceOwnerType.Domain) {
-	        sc.setParameters("domainId", ownerId);
+    private final SearchBuilder<ResourceCountVO> AccountSearch;
+    private final SearchBuilder<ResourceCountVO> DomainSearch;
+
+    //protected final DomainDaoImpl _domainDao = ComponentLocator.inject(DomainDaoImpl.class);
+    //protected final AccountDaoImpl _accountDao = ComponentLocator.inject(AccountDaoImpl.class);
+
+    @Inject protected DomainDaoImpl _domainDao;
+    @Inject protected AccountDaoImpl _accountDao;
+
+    public ResourceCountDaoImpl() {
+        TypeSearch = createSearchBuilder();
+        TypeSearch.and("type", TypeSearch.entity().getType(), SearchCriteria.Op.EQ);
+        TypeSearch.and("accountId", TypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        TypeSearch.and("domainId", TypeSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        TypeSearch.done();
+
+        AccountSearch = createSearchBuilder();
+        AccountSearch.and("accountId", AccountSearch.entity().getAccountId(), SearchCriteria.Op.NNULL);
+        AccountSearch.done();
+
+        DomainSearch = createSearchBuilder();
+        DomainSearch.and("domainId", DomainSearch.entity().getDomainId(), SearchCriteria.Op.NNULL);
+        DomainSearch.done();
+    }
+
+    @Override 
+    public ResourceCountVO findByOwnerAndType(long ownerId, ResourceOwnerType ownerType, ResourceType type) {
+        SearchCriteria<ResourceCountVO> sc = TypeSearch.create();
+        sc.setParameters("type", type);
+
+        if (ownerType == ResourceOwnerType.Account) {
+            sc.setParameters("accountId", ownerId);
             return findOneIncludingRemovedBy(sc);
-	    } else {
-	        return null;
-	    }
-	}
-	
-	@Override
-	public long getResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type) {
-	    ResourceCountVO vo = findByOwnerAndType(ownerId, ownerType, type);
-	    if (vo != null) {
-	        return vo.getCount();
-	    } else {
-	        return 0;
-	    }
-	}
-	
-	@Override 
-	public void setResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type, long count) {
-	    ResourceCountVO resourceCountVO = findByOwnerAndType(ownerId, ownerType, type);
+        } else if (ownerType == ResourceOwnerType.Domain) {
+            sc.setParameters("domainId", ownerId);
+            return findOneIncludingRemovedBy(sc);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public long getResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type) {
+        ResourceCountVO vo = findByOwnerAndType(ownerId, ownerType, type);
+        if (vo != null) {
+            return vo.getCount();
+        } else {
+            return 0;
+        }
+    }
+
+    @Override 
+    public void setResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type, long count) {
+        ResourceCountVO resourceCountVO = findByOwnerAndType(ownerId, ownerType, type);
         if (count != resourceCountVO.getCount()) {
             resourceCountVO.setCount(count);
             update(resourceCountVO.getId(), resourceCountVO);
         }
-	}
+    }
 
-	@Override @Deprecated
-	public void updateDomainCount(long domainId, ResourceType type, boolean increment, long delta) {
-		delta = increment ? delta : delta * -1;
+    @Override @Deprecated
+    public void updateDomainCount(long domainId, ResourceType type, boolean increment, long delta) {
+        delta = increment ? delta : delta * -1;
 
         ResourceCountVO resourceCountVO = findByOwnerAndType(domainId, ResourceOwnerType.Domain, type);
-		resourceCountVO.setCount(resourceCountVO.getCount() + delta);
-		update(resourceCountVO.getId(), resourceCountVO);	
-	}
-	
-	@Override
-	public boolean updateById(long id, boolean increment, long delta) {
-	    delta = increment ? delta : delta * -1;
-	    
-	    ResourceCountVO resourceCountVO = findById(id);
-	    resourceCountVO.setCount(resourceCountVO.getCount() + delta);
-	    return update(resourceCountVO.getId(), resourceCountVO);
-	}
-	
-	@Override
-	public Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type) {
-	    Set<Long> rowIds = new HashSet<Long>();
-	    Set<Long> domainIdsToUpdate = _domainDao.getDomainParentIds(domainId);
+        resourceCountVO.setCount(resourceCountVO.getCount() + delta);
+        update(resourceCountVO.getId(), resourceCountVO);	
+    }
+
+    @Override
+    public boolean updateById(long id, boolean increment, long delta) {
+        delta = increment ? delta : delta * -1;
+
+        ResourceCountVO resourceCountVO = findById(id);
+        resourceCountVO.setCount(resourceCountVO.getCount() + delta);
+        return update(resourceCountVO.getId(), resourceCountVO);
+    }
+
+    @Override
+    public Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type) {
+        Set<Long> rowIds = new HashSet<Long>();
+        Set<Long> domainIdsToUpdate = _domainDao.getDomainParentIds(domainId);
         for (Long domainIdToUpdate : domainIdsToUpdate) {
             ResourceCountVO domainCountRecord = findByOwnerAndType(domainIdToUpdate, ResourceOwnerType.Domain, type);
             if (domainCountRecord != null) {
@@ -128,34 +134,34 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
             }
         }
         return rowIds;
-	}
-	
-	@Override
-	public Set<Long> listAllRowsToUpdate(long ownerId, ResourceOwnerType ownerType, ResourceType type) {
-	    Set<Long> rowIds = new HashSet<Long>();
-	    
-	    if (ownerType == ResourceOwnerType.Account) {
-	        //get records for account
-	        ResourceCountVO accountCountRecord = findByOwnerAndType(ownerId, ResourceOwnerType.Account, type);
-	        if (accountCountRecord != null) {
-	            rowIds.add(accountCountRecord.getId());
-	        }
-	        
-	        //get records for account's domain and all its parent domains
-	        rowIds.addAll(listRowsToUpdateForDomain(_accountDao.findByIdIncludingRemoved(ownerId).getDomainId(),type));
-	    } else if (ownerType == ResourceOwnerType.Domain) {
-	        return listRowsToUpdateForDomain(ownerId, type);
-	    } 
-	    
-	    return rowIds;
-	}
-	
-	@Override @DB
+    }
+
+    @Override
+    public Set<Long> listAllRowsToUpdate(long ownerId, ResourceOwnerType ownerType, ResourceType type) {
+        Set<Long> rowIds = new HashSet<Long>();
+
+        if (ownerType == ResourceOwnerType.Account) {
+            //get records for account
+            ResourceCountVO accountCountRecord = findByOwnerAndType(ownerId, ResourceOwnerType.Account, type);
+            if (accountCountRecord != null) {
+                rowIds.add(accountCountRecord.getId());
+            }
+
+            //get records for account's domain and all its parent domains
+            rowIds.addAll(listRowsToUpdateForDomain(_accountDao.findByIdIncludingRemoved(ownerId).getDomainId(),type));
+        } else if (ownerType == ResourceOwnerType.Domain) {
+            return listRowsToUpdateForDomain(ownerId, type);
+        } 
+
+        return rowIds;
+    }
+
+    @Override @DB
     public void createResourceCounts(long ownerId, ResourceLimit.ResourceOwnerType ownerType){
-        
+
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        
+
         ResourceType[] resourceTypes = Resource.ResourceType.values();
         for (ResourceType resourceType : resourceTypes) {
             if (!resourceType.supportsOwner(ownerType)) {
@@ -164,24 +170,24 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
             ResourceCountVO resourceCountVO = new ResourceCountVO(resourceType, 0, ownerId, ownerType);
             persist(resourceCountVO);
         }
-        
+
         txn.commit();
     }
-	
-	private List<ResourceCountVO> listByDomainId(long domainId) {
-	    SearchCriteria<ResourceCountVO> sc = TypeSearch.create();
+
+    private List<ResourceCountVO> listByDomainId(long domainId) {
+        SearchCriteria<ResourceCountVO> sc = TypeSearch.create();
         sc.setParameters("domainId", domainId);
 
         return listBy(sc);
-	}
-	
+    }
+
     private List<ResourceCountVO> listByAccountId(long accountId) {
-	    SearchCriteria<ResourceCountVO> sc = TypeSearch.create();
+        SearchCriteria<ResourceCountVO> sc = TypeSearch.create();
         sc.setParameters("accountId", accountId);
 
         return listBy(sc);
-	}
-    
+    }
+
     @Override
     public List<ResourceCountVO> listByOwnerId(long ownerId, ResourceOwnerType ownerType) {
         if (ownerType == ResourceOwnerType.Account) {
@@ -192,26 +198,26 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
             return new ArrayList<ResourceCountVO>();
         }
     }
-	
-	@Override
-	public List<ResourceCountVO> listResourceCountByOwnerType(ResourceOwnerType ownerType) {
-	    if (ownerType == ResourceOwnerType.Account) {
-	        return listBy(AccountSearch.create());
-	    } else if (ownerType == ResourceOwnerType.Domain) {
-	        return listBy(DomainSearch.create());
-	    } else {
-	        return new ArrayList<ResourceCountVO>();
-	    }
-	}
-	
-	@Override
+
+    @Override
+    public List<ResourceCountVO> listResourceCountByOwnerType(ResourceOwnerType ownerType) {
+        if (ownerType == ResourceOwnerType.Account) {
+            return listBy(AccountSearch.create());
+        } else if (ownerType == ResourceOwnerType.Domain) {
+            return listBy(DomainSearch.create());
+        } else {
+            return new ArrayList<ResourceCountVO>();
+        }
+    }
+
+    @Override
     public ResourceCountVO persist(ResourceCountVO resourceCountVO){
-	    ResourceOwnerType ownerType = resourceCountVO.getResourceOwnerType();
-	    ResourceType resourceType = resourceCountVO.getType();
-	    if (!resourceType.supportsOwner(ownerType)) {
-	        throw new UnsupportedServiceException("Resource type " + resourceType + " is not supported for owner of type " + ownerType.getName());
-	    }
-	    
+        ResourceOwnerType ownerType = resourceCountVO.getResourceOwnerType();
+        ResourceType resourceType = resourceCountVO.getType();
+        if (!resourceType.supportsOwner(ownerType)) {
+            throw new UnsupportedServiceException("Resource type " + resourceType + " is not supported for owner of type " + ownerType.getName());
+        }
+
         return super.persist(resourceCountVO);
     }
 }

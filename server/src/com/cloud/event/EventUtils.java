@@ -16,16 +16,32 @@
 // under the License.
 package com.cloud.event;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.event.dao.EventDao;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.component.ComponentLocator;
 
+@Component
 public class EventUtils {
-	private static EventDao _eventDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(EventDao.class);
-	private static AccountDao _accountDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(AccountDao.class);
+	private static EventDao _eventDao;
+	private static AccountDao _accountDao;
 
+	@Inject EventDao _placeHoderEventDao;
+	@Inject AccountDao _placeHoderAccountDao;
+	
+	public EventUtils() {
+	}
+	
+	@PostConstruct
+	void init() {
+		_eventDao = _placeHoderEventDao;
+		_accountDao = _placeHoderAccountDao;
+	}
+	
     public static Long saveEvent(Long userId, Long accountId, Long domainId, String type, String description) {
         EventVO event = new EventVO();
         event.setUserId(userId);

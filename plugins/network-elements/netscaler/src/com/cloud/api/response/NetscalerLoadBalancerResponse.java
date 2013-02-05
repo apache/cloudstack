@@ -23,7 +23,8 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
-import com.cloud.network.ExternalLoadBalancerDeviceVO;
+
+import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 
 @EntityReference(value=ExternalLoadBalancerDeviceVO.class)
 @SuppressWarnings("unused")

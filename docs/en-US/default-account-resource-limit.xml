@@ -5,36 +5,41 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
 -->
-
 <section id="default-account-resource-limit">
     <title>Default Account Resource Limits</title>
-    <para>You can limit resource use by accounts. The default limits are set using global configuration parameters, and they affect all accounts within a cloud. The relevant parameters are those beginning with max.account (max.account.snapshots, etc.)..</para>
+    <para>You can limit resource use by accounts. The default limits are set by using global
+        configuration parameters, and they affect all accounts within a cloud. The relevant
+        parameters are those beginning with max.account, for example: max.account.snapshots.</para>
     <para>To override a default limit for a particular account, set a per-account resource limit.</para>
     <orderedlist>
         <listitem><para>Log in to the &PRODUCT; UI.</para></listitem>
         <listitem><para>In the left navigation tree, click Accounts.</para></listitem>
-        <listitem><para>Select the account you want to modify. The current limits are displayed. A value of -1 shows that there is no limit in place</para></listitem>
-        <listitem><para>Click the Edit button<inlinemediaobject>
-            <imageobject>
-                <imagedata fileref="./images/edit-icon.png" />
-            </imageobject>
-            <textobject><phrase>editbutton.png: edits the settings.</phrase></textobject>
-        </inlinemediaobject></para></listitem>
+        <listitem><para>Select the account you want to modify. The current limits are displayed. A value of -1 shows
+                that there is no limit in place.</para></listitem>
+        <listitem><para>Click the Edit button.<inlinemediaobject>
+                    <imageobject>
+                        <imagedata fileref="./images/edit-icon.png"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>editbutton.png: edits the settings</phrase>
+                    </textobject>
+                </inlinemediaobject></para></listitem>
     </orderedlist>
+    
 </section>

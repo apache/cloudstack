@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.bridge.model.MultiPartPartsVO;
 import com.cloud.bridge.model.MultiPartUploadsVO;
 import com.cloud.bridge.model.SBucketVO;
@@ -32,6 +34,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={MultiPartUploadsDao.class})
 public class MultiPartUploadsDaoImpl extends GenericDaoBase<MultiPartUploadsVO, Long> implements MultiPartUploadsDao {
     

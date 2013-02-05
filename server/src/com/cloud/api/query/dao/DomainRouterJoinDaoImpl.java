@@ -20,24 +20,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
-
-import org.apache.cloudstack.api.response.DomainRouterResponse;
-import org.apache.cloudstack.api.response.NicResponse;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
+@Component
 @Local(value={DomainRouterJoinDao.class})
 public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, Long> implements DomainRouterJoinDao {
     public static final Logger s_logger = Logger.getLogger(DomainRouterJoinDaoImpl.class);
@@ -45,9 +45,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
     @Inject
     private ConfigurationDao  _configDao;
 
-    private SearchBuilder<DomainRouterJoinVO> vrSearch;
+    private final SearchBuilder<DomainRouterJoinVO> vrSearch;
 
-    private SearchBuilder<DomainRouterJoinVO> vrIdSearch;
+    private final SearchBuilder<DomainRouterJoinVO> vrIdSearch;
 
     protected DomainRouterJoinDaoImpl() {
 

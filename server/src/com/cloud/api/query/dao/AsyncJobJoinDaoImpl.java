@@ -29,11 +29,13 @@ import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.async.AsyncJob;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
+@Component
 @Local(value={AsyncJobJoinDao.class})
 public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> implements AsyncJobJoinDao {
     public static final Logger s_logger = Logger.getLogger(AsyncJobJoinDaoImpl.class);

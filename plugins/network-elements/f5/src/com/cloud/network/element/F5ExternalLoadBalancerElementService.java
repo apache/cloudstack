@@ -28,8 +28,9 @@ import com.cloud.api.commands.ListF5LoadBalancerNetworksCmd;
 import com.cloud.api.commands.ListF5LoadBalancersCmd;
 import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.host.Host;
-import com.cloud.network.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.Network;
+import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
+
 import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
 import com.cloud.utils.component.PluggableService;
 

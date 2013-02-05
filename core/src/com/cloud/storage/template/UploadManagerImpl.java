@@ -21,6 +21,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,15 +47,14 @@ import com.cloud.storage.resource.SecondaryStorageResource;
 import com.cloud.storage.template.TemplateUploader.Status;
 import com.cloud.storage.template.TemplateUploader.UploadCompleteCallback;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-public class UploadManagerImpl implements UploadManager {
+public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
 
-   public class Completion implements UploadCompleteCallback {
+    public class Completion implements UploadCompleteCallback {
         private final String jobId;
 
         public Completion(String jobId) {
@@ -66,180 +66,179 @@ public class UploadManagerImpl implements UploadManager {
             setUploadStatus(jobId, status);
         }
     }
-   
-   private static class UploadJob {
-       private final TemplateUploader tu;
-       private final String jobId;
-       private final String name;
-       private final ImageFormat format;
-       private String tmpltPath;
-       private String description;
-       private String checksum;
-       private Long accountId;
-       private String installPathPrefix;
-       private long templatesize;
-       private long id;
 
-       public UploadJob(TemplateUploader tu, String jobId, long id, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix) {
-           super();
-           this.tu = tu;
-           this.jobId = jobId;
-           this.name = name;
-           this.format = format;
-           this.accountId = accountId;
-           this.description = descr;
-           this.checksum = cksum;
-           this.installPathPrefix = installPathPrefix;
-           this.templatesize = 0;
-           this.id = id;
-       }
+    private static class UploadJob {
+        private final TemplateUploader tu;
+        private final String jobId;
+        private final String name;
+        private final ImageFormat format;
+        private String tmpltPath;
+        private String description;
+        private String checksum;
+        private Long accountId;
+        private String installPathPrefix;
+        private long templatesize;
+        private long id;
 
-       public TemplateUploader getTd() {
-           return tu;
-       }
+        public UploadJob(TemplateUploader tu, String jobId, long id, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix) {
+            super();
+            this.tu = tu;
+            this.jobId = jobId;
+            this.name = name;
+            this.format = format;
+            this.accountId = accountId;
+            this.description = descr;
+            this.checksum = cksum;
+            this.installPathPrefix = installPathPrefix;
+            this.templatesize = 0;
+            this.id = id;
+        }
 
-       public String getDescription() {
-           return description;
-       }
+        public TemplateUploader getTd() {
+            return tu;
+        }
 
-       public String getChecksum() {
-           return checksum;
-       }
+        public String getDescription() {
+            return description;
+        }
 
-       public UploadJob(TemplateUploader td, String jobId, UploadCommand cmd) {
-           this.tu = td;
-           this.jobId = jobId;
-           this.name = cmd.getName();
-           this.format = cmd.getFormat();           
-       }
+        public String getChecksum() {
+            return checksum;
+        }
 
-       public TemplateUploader getTemplateUploader() {
-           return tu;
-       }
+        public UploadJob(TemplateUploader td, String jobId, UploadCommand cmd) {
+            this.tu = td;
+            this.jobId = jobId;
+            this.name = cmd.getName();
+            this.format = cmd.getFormat();           
+        }
 
-       public String getJobId() {
-           return jobId;
-       }
+        public TemplateUploader getTemplateUploader() {
+            return tu;
+        }
 
-       public String getTmpltName() {
-           return name;
-       }
+        public String getJobId() {
+            return jobId;
+        }
 
-       public ImageFormat getFormat() {
-           return format;
-       }
+        public String getTmpltName() {
+            return name;
+        }
 
-       public Long getAccountId() {
-           return accountId;
-       }
+        public ImageFormat getFormat() {
+            return format;
+        }
 
-       public long getId() {
-           return id;
-       }
+        public Long getAccountId() {
+            return accountId;
+        }
 
-       public void setTmpltPath(String tmpltPath) {
-           this.tmpltPath = tmpltPath;
-       }
+        public long getId() {
+            return id;
+        }
 
-       public String getTmpltPath() {
-           return tmpltPath;
-       }
+        public void setTmpltPath(String tmpltPath) {
+            this.tmpltPath = tmpltPath;
+        }
 
-       public String getInstallPathPrefix() {
-           return installPathPrefix;
-       }
+        public String getTmpltPath() {
+            return tmpltPath;
+        }
 
-       public void cleanup() {
-           if (tu != null) {
-               String upldPath = tu.getUploadLocalPath();
-               if (upldPath != null) {
-                   File f = new File(upldPath);
-                   f.delete();
-               }
-           }
-       }
+        public String getInstallPathPrefix() {
+            return installPathPrefix;
+        }
 
-       public void setTemplatesize(long templatesize) {
-           this.templatesize = templatesize;
-       }
+        public void cleanup() {
+            if (tu != null) {
+                String upldPath = tu.getUploadLocalPath();
+                if (upldPath != null) {
+                    File f = new File(upldPath);
+                    f.delete();
+                }
+            }
+        }
 
-       public long getTemplatesize() {
-           return templatesize;
-       }
-   }
-       public static final Logger s_logger = Logger.getLogger(UploadManagerImpl.class);
-       private ExecutorService threadPool;
-       private final Map<String, UploadJob> jobs = new ConcurrentHashMap<String, UploadJob>();
-       private String parentDir;
-       private Adapters<Processor> _processors;
-       private String publicTemplateRepo;
-       private String extractMountPoint = "/mnt/SecStorage/extractmnt";
-       private StorageLayer _storage;
-       private int installTimeoutPerGig;
-       private boolean _sslCopy;
-       private String _name;
-       private boolean hvm;
-     	   
-	
-	@Override
-	public String uploadPublicTemplate(long id, String url, String name,
-			ImageFormat format, Long accountId, String descr,
-			String cksum, String installPathPrefix, String userName,
-			String passwd, long templateSizeInBytes) {		
-		
+        public void setTemplatesize(long templatesize) {
+            this.templatesize = templatesize;
+        }
+
+        public long getTemplatesize() {
+            return templatesize;
+        }
+    }
+    public static final Logger s_logger = Logger.getLogger(UploadManagerImpl.class);
+    private ExecutorService threadPool;
+    private final Map<String, UploadJob> jobs = new ConcurrentHashMap<String, UploadJob>();
+    private String parentDir;
+    private List<Processor> _processors;
+    private String publicTemplateRepo;
+    private final String extractMountPoint = "/mnt/SecStorage/extractmnt";
+    private StorageLayer _storage;
+    private int installTimeoutPerGig;
+    private boolean _sslCopy;
+    private boolean hvm;
+
+
+    @Override
+    public String uploadPublicTemplate(long id, String url, String name,
+            ImageFormat format, Long accountId, String descr,
+            String cksum, String installPathPrefix, String userName,
+            String passwd, long templateSizeInBytes) {		
+
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
 
         String completePath = parentDir + File.separator + installPathPrefix;
         s_logger.debug("Starting upload from " + completePath);
-        
+
         URI uri;
-		try {
-		    uri = new URI(url);
-		} catch (URISyntaxException e) {
-		    s_logger.error("URI is incorrect: " + url);
-		    throw new CloudRuntimeException("URI is incorrect: " + url);
-		}
-		TemplateUploader tu;
-		if ((uri != null) && (uri.getScheme() != null)) {
-		    if (uri.getScheme().equalsIgnoreCase("ftp")) {
-		        tu = new FtpTemplateUploader(completePath, url, new Completion(jobId), templateSizeInBytes);                                
-		    } else {
-		    	s_logger.error("Scheme is not supported " + url);
-		        throw new CloudRuntimeException("Scheme is not supported " + url);
-		    }
-		} else {
-		    s_logger.error("Unable to download from URL: " + url);
-		    throw new CloudRuntimeException("Unable to download from URL: " + url);
-		}
-		UploadJob uj = new UploadJob(tu, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix);
-		jobs.put(jobId, uj);
-		threadPool.execute(tu);
+        try {
+            uri = new URI(url);
+        } catch (URISyntaxException e) {
+            s_logger.error("URI is incorrect: " + url);
+            throw new CloudRuntimeException("URI is incorrect: " + url);
+        }
+        TemplateUploader tu;
+        if ((uri != null) && (uri.getScheme() != null)) {
+            if (uri.getScheme().equalsIgnoreCase("ftp")) {
+                tu = new FtpTemplateUploader(completePath, url, new Completion(jobId), templateSizeInBytes);                                
+            } else {
+                s_logger.error("Scheme is not supported " + url);
+                throw new CloudRuntimeException("Scheme is not supported " + url);
+            }
+        } else {
+            s_logger.error("Unable to download from URL: " + url);
+            throw new CloudRuntimeException("Unable to download from URL: " + url);
+        }
+        UploadJob uj = new UploadJob(tu, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix);
+        jobs.put(jobId, uj);
+        threadPool.execute(tu);
 
-		return jobId;
-				
-	}
+        return jobId;
 
-	@Override
-	public String getUploadError(String jobId) {
+    }
+
+    @Override
+    public String getUploadError(String jobId) {
         UploadJob uj = jobs.get(jobId);
         if (uj != null) {
             return uj.getTemplateUploader().getUploadError();
         }
         return null;
-	}
+    }
 
-	@Override
-	public int getUploadPct(String jobId) {
-		UploadJob uj = jobs.get(jobId);
+    @Override
+    public int getUploadPct(String jobId) {
+        UploadJob uj = jobs.get(jobId);
         if (uj != null) {
             return uj.getTemplateUploader().getUploadPercent();
         }
         return 0;
-	}
+    }
 
-	@Override
-	public Status getUploadStatus(String jobId) {
+    @Override
+    public Status getUploadStatus(String jobId) {
         UploadJob job = jobs.get(jobId);
         if (job != null) {
             TemplateUploader tu = job.getTemplateUploader();
@@ -248,8 +247,8 @@ public class UploadManagerImpl implements UploadManager {
             }
         }
         return Status.UNKNOWN;
-	}
-	
+    }
+
     public static UploadVO.Status convertStatus(Status tds) {
         switch (tds) {
         case ABORTED:
@@ -277,11 +276,11 @@ public class UploadManagerImpl implements UploadManager {
     public com.cloud.storage.UploadVO.Status getUploadStatus2(String jobId) {
         return convertStatus(getUploadStatus(jobId));
     }
-	@Override
-	public String getPublicTemplateRepo() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String getPublicTemplateRepo() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
     private UploadAnswer handleUploadProgressCmd(UploadProgressCommand cmd) {
         String jobId = cmd.getJobId();
@@ -290,7 +289,7 @@ public class UploadManagerImpl implements UploadManager {
         if (jobId != null)
             uj = jobs.get(jobId);
         if (uj == null) {           
-           return new UploadAnswer(null, 0, "Cannot find job", com.cloud.storage.UploadVO.Status.UNKNOWN, "", "", 0);            
+            return new UploadAnswer(null, 0, "Cannot find job", com.cloud.storage.UploadVO.Status.UNKNOWN, "", "", 0);            
         }
         TemplateUploader td = uj.getTemplateUploader();
         switch (cmd.getRequest()) {
@@ -300,7 +299,7 @@ public class UploadManagerImpl implements UploadManager {
             td.stopUpload();
             sleep();
             break;
-        /*case RESTART:
+            /*case RESTART:
             td.stopUpload();
             sleep();
             threadPool.execute(td);
@@ -316,10 +315,10 @@ public class UploadManagerImpl implements UploadManager {
         return new UploadAnswer(jobId, getUploadPct(jobId), getUploadError(jobId), getUploadStatus2(jobId), getUploadLocalPath(jobId), getInstallPath(jobId),
                 getUploadTemplateSize(jobId));
     }	
-	
+
     @Override
     public UploadAnswer handleUploadCommand(SecondaryStorageResource resource, UploadCommand cmd) {
-    	s_logger.warn("Handling the upload " +cmd.getInstallPath() + " " + cmd.getId());
+        s_logger.warn("Handling the upload " +cmd.getInstallPath() + " " + cmd.getId());
         if (cmd instanceof UploadProgressCommand) {
             return handleUploadProgressCmd((UploadProgressCommand) cmd);
         }
@@ -327,9 +326,9 @@ public class UploadManagerImpl implements UploadManager {
         String user = null;
         String password = null;
         String jobId = uploadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), 
-        									cmd.getFormat(), cmd.getAccountId(), cmd.getDescription(),
-        									cmd.getChecksum(), cmd.getInstallPath(), user, password,
-        									cmd.getTemplateSizeInBytes());
+                cmd.getFormat(), cmd.getAccountId(), cmd.getDescription(),
+                cmd.getChecksum(), cmd.getInstallPath(), user, password,
+                cmd.getTemplateSizeInBytes());
         sleep();
         if (jobId == null) {
             return new UploadAnswer(null, 0, "Internal Error", com.cloud.storage.UploadVO.Status.UPLOAD_ERROR, "", "", 0);
@@ -337,18 +336,18 @@ public class UploadManagerImpl implements UploadManager {
         return new UploadAnswer(jobId, getUploadPct(jobId), getUploadError(jobId), getUploadStatus2(jobId), getUploadLocalPath(jobId), getInstallPath(jobId),
                 getUploadTemplateSize(jobId));
     }
-    
+
     @Override
     public CreateEntityDownloadURLAnswer handleCreateEntityURLCommand(CreateEntityDownloadURLCommand cmd){       
-    	
-    	boolean isApacheUp = checkAndStartApache();
-    	if (!isApacheUp){
-    		String errorString = "Error in starting Apache server ";
+
+        boolean isApacheUp = checkAndStartApache();
+        if (!isApacheUp){
+            String errorString = "Error in starting Apache server ";
             s_logger.error(errorString);
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
-    	}
+        }
         // Create the directory structure so that its visible under apache server root
-    	String extractDir = "/var/www/html/userdata/";
+        String extractDir = "/var/www/html/userdata/";
         Script command = new Script("mkdir", s_logger);
         command.add("-p");
         command.add(extractDir);
@@ -358,19 +357,19 @@ public class UploadManagerImpl implements UploadManager {
             s_logger.error(errorString);
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
-        
+
         // Create a random file under the directory for security reasons.
         String uuid = cmd.getExtractLinkUUID();
-		command = new Script("touch", s_logger);
-    	command.add(extractDir + uuid);
-    	result = command.execute();
-    	if (result != null) {
-    		String errorString = "Error in creating file " +uuid+ " ,error: " + result; 
-    		s_logger.warn(errorString);
-    		return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
-    	}
+        command = new Script("touch", s_logger);
+        command.add(extractDir + uuid);
+        result = command.execute();
+        if (result != null) {
+            String errorString = "Error in creating file " +uuid+ " ,error: " + result; 
+            s_logger.warn(errorString);
+            return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
+        }
 
-        
+
         // Create a symbolic link from the actual directory to the template location. The entity would be directly visible under /var/www/html/userdata/cmd.getInstallPath();
         command = new Script("/bin/bash", s_logger);
         command.add("-c");
@@ -381,11 +380,11 @@ public class UploadManagerImpl implements UploadManager {
             s_logger.error(errorString);
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
-        
+
         return new CreateEntityDownloadURLAnswer("", CreateEntityDownloadURLAnswer.RESULT_SUCCESS);
-        
+
     }
-    
+
     @Override
     public DeleteEntityDownloadURLAnswer handleDeleteEntityDownloadURLCommand(DeleteEntityDownloadURLCommand cmd){
 
@@ -394,8 +393,8 @@ public class UploadManagerImpl implements UploadManager {
         String path = cmd.getPath();
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        
-		//We just need to remove the UUID.vhd
+
+        //We just need to remove the UUID.vhd
         String extractUrl = cmd.getExtractUrl();
         command.add("unlink /var/www/html/userdata/" +extractUrl.substring(extractUrl.lastIndexOf(File.separator) + 1));
         String result = command.execute();
@@ -404,7 +403,7 @@ public class UploadManagerImpl implements UploadManager {
             s_logger.warn(errorString);
             return new DeleteEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
-        
+
         // If its a volume also delete the Hard link since it was created only for the purpose of download.
         if(cmd.getType() == Upload.Type.VOLUME){
             command = new Script("/bin/bash", s_logger);
@@ -418,32 +417,31 @@ public class UploadManagerImpl implements UploadManager {
                 return new DeleteEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
             }
         }
-        
+
         return new DeleteEntityDownloadURLAnswer("", CreateEntityDownloadURLAnswer.RESULT_SUCCESS);
     }
 
-	private String getInstallPath(String jobId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    private String getInstallPath(String jobId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	private String getUploadLocalPath(String jobId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    private String getUploadLocalPath(String jobId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	private long getUploadTemplateSize(String jobId){
-		UploadJob uj = jobs.get(jobId);
+    private long getUploadTemplateSize(String jobId){
+        UploadJob uj = jobs.get(jobId);
         if (uj != null) {
             return uj.getTemplatesize();
         }
         return 0;
-	}
+    }
 
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
-        _name = name;
+    @Override
+    public boolean configure(String name, Map<String, Object> params)
+            throws ConfigurationException {
 
         String value = null;
 
@@ -457,21 +455,25 @@ public class UploadManagerImpl implements UploadManager {
             Class<StorageLayer> clazz;
             try {
                 clazz = (Class<StorageLayer>) Class.forName(value);
+                _storage = clazz.newInstance();
             } catch (ClassNotFoundException e) {
                 throw new ConfigurationException("Unable to instantiate " + value);
+            } catch (InstantiationException e) {
+                throw new ConfigurationException("Unable to instantiate " + value);
+            } catch (IllegalAccessException e) {
+                throw new ConfigurationException("Unable to instantiate " + value);
             }
-            _storage = ComponentLocator.inject(clazz);
         }
         String useSsl = (String)params.get("sslcopy");
         if (useSsl != null) {
-        	_sslCopy = Boolean.parseBoolean(useSsl);
-        	
+            _sslCopy = Boolean.parseBoolean(useSsl);
+
         }
         String inSystemVM = (String)params.get("secondary.storage.vm");
         if (inSystemVM != null && "true".equalsIgnoreCase(inSystemVM)) {
-        	s_logger.info("UploadManager: starting additional services since we are inside system vm");
-        	startAdditionalServices();
-        	//blockOutgoingOnPrivate();
+            s_logger.info("UploadManager: starting additional services since we are inside system vm");
+            startAdditionalServices();
+            //blockOutgoingOnPrivate();
         }
 
         value = (String) params.get("install.timeout.pergig");
@@ -489,53 +491,38 @@ public class UploadManagerImpl implements UploadManager {
         threadPool = Executors.newFixedThreadPool(numInstallThreads);
 
         return true;
-	}
-	
-	private void startAdditionalServices() {
-    	
-		
-		Script command = new Script("rm", s_logger);
-		command.add("-rf");
-    	command.add(extractMountPoint);
-    	String result = command.execute();
-    	if (result != null) {
-    		s_logger.warn("Error in creating file " +extractMountPoint+ " ,error: " + result );
-    		return;
-    	}
-    	
-		command = new Script("touch", s_logger);
-    	command.add(extractMountPoint);
-    	result = command.execute();
-    	if (result != null) {
-    		s_logger.warn("Error in creating file " +extractMountPoint+ " ,error: " + result );
-    		return;
-    	}
-    	
-    	command = new Script("/bin/bash", s_logger);
-		command.add("-c");
-    	command.add("ln -sf " + parentDir + " " +extractMountPoint);
-    	result = command.execute();
-    	if (result != null) {
-    		s_logger.warn("Error in linking  err=" + result );
-    		return;
-    	}
-		
-	}
+    }
 
-	@Override
-	public String getName() {
-		return _name;
-	}
+    private void startAdditionalServices() {
 
-	@Override
-	public boolean start() {
-		return true;
-	}
 
-	@Override
-	public boolean stop() {
-		return true;
-	}
+        Script command = new Script("rm", s_logger);
+        command.add("-rf");
+        command.add(extractMountPoint);
+        String result = command.execute();
+        if (result != null) {
+            s_logger.warn("Error in creating file " +extractMountPoint+ " ,error: " + result );
+            return;
+        }
+
+        command = new Script("touch", s_logger);
+        command.add(extractMountPoint);
+        result = command.execute();
+        if (result != null) {
+            s_logger.warn("Error in creating file " +extractMountPoint+ " ,error: " + result );
+            return;
+        }
+
+        command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("ln -sf " + parentDir + " " +extractMountPoint);
+        result = command.execute();
+        if (result != null) {
+            s_logger.warn("Error in linking  err=" + result );
+            return;
+        }
+
+    }
 
     /**
      * Get notified of change of job status. Executed in context of uploader thread
@@ -582,7 +569,7 @@ public class UploadManagerImpl implements UploadManager {
                 tu.setStatus(Status.UNRECOVERABLE_ERROR);
                 tu.setUploadError("Failed post upload script: " + result);
             } else {
-            	s_logger.warn("Upload completed successfully at " + new SimpleDateFormat().format(new Date()));
+                s_logger.warn("Upload completed successfully at " + new SimpleDateFormat().format(new Date()));
                 tu.setStatus(Status.POST_UPLOAD_FINISHED);
                 tu.setUploadError("Upload completed successfully at " + new SimpleDateFormat().format(new Date()));
             }
@@ -596,9 +583,9 @@ public class UploadManagerImpl implements UploadManager {
         }
     }
 
-	private String postUpload(String jobId) {
-		return null;
-	}
+    private String postUpload(String jobId) {
+        return null;
+    }
 
     private void sleep() {
         try {
@@ -608,21 +595,21 @@ public class UploadManagerImpl implements UploadManager {
         }
     }
 
-  private boolean checkAndStartApache() {
-    			  
-	  	//Check whether the Apache server is running
-	  	Script command = new Script("/bin/bash", s_logger);
-			command.add("-c");
-	  	command.add("if [ -d /etc/apache2 ] ; then service apache2 status | grep pid; else service httpd status | grep pid; fi ");
-	  	String result = command.execute();
-	  	
-	  	//Apache Server is not running. Try to start it.
-	  	if (result != null) { 				  	
-		  	
-	  		/*s_logger.warn("Apache server not running, trying to start it");
+    private boolean checkAndStartApache() {
+
+        //Check whether the Apache server is running
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("if [ -d /etc/apache2 ] ; then service apache2 status | grep pid; else service httpd status | grep pid; fi ");
+        String result = command.execute();
+
+        //Apache Server is not running. Try to start it.
+        if (result != null) { 				  	
+
+            /*s_logger.warn("Apache server not running, trying to start it");
 			String port = Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
 			String intf = TemplateConstants.DEFAULT_TMPLT_COPY_INTF;
-			
+
 			command = new Script("/bin/bash", s_logger);
 			command.add("-c");
 			command.add("iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j DROP;" +
@@ -636,23 +623,23 @@ public class UploadManagerImpl implements UploadManager {
 					    "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j DROP;" +
 					    "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j HTTP;" +
 			            "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j HTTP;");
-		
+
 			result = command.execute();
 			if (result != null) {
 				s_logger.warn("Error in opening up httpd port err=" + result );
 				return false;
 			}*/			
-			
-			command = new Script("/bin/bash", s_logger);
-			command.add("-c");
-			command.add("if [ -d /etc/apache2 ] ; then service apache2 start; else service httpd start; fi ");
-			result = command.execute();
-			if (result != null) {
-				s_logger.warn("Error in starting httpd service err=" + result );
-				return false;
-			}
-	  	}
-	  	
-		return true;
-	}
+
+            command = new Script("/bin/bash", s_logger);
+            command.add("-c");
+            command.add("if [ -d /etc/apache2 ] ; then service apache2 start; else service httpd start; fi ");
+            result = command.execute();
+            if (result != null) {
+                s_logger.warn("Error in starting httpd service err=" + result );
+                return false;
+            }
+        }
+
+        return true;
+    }
 }    

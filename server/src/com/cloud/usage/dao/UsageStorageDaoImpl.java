@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageStorageVO;
 import com.cloud.utils.DateUtil;
@@ -34,6 +35,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={UsageStorageDao.class})
 public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> implements UsageStorageDao {
 	public static final Logger s_logger = Logger.getLogger(UsageStorageDaoImpl.class.getName());

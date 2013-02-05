@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -43,8 +44,8 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
@@ -52,8 +53,8 @@ import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
@@ -67,15 +68,14 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value = {BaremetalPxeManager.class})
-public class BaremetalPxeManagerImpl implements BaremetalPxeManager, ResourceStateAdapter {
+public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxeManager, ResourceStateAdapter {
 	private static final org.apache.log4j.Logger s_logger = Logger.getLogger(BaremetalPxeManagerImpl.class);
 	protected String _name;
 	@Inject DataCenterDao _dcDao;
 	@Inject HostDao _hostDao;
 	@Inject AgentManager _agentMgr;
 	@Inject ResourceManager _resourceMgr;
-	@Inject(adapter=BaremetalPxeService.class)
-	protected Adapters<BaremetalPxeService> _services;
+	@Inject List<BaremetalPxeService> _services;
 	@Inject UserVmDao _vmDao;
 	@Inject ServiceOfferingDao _serviceOfferingDao;
 	@Inject NicDao _nicDao;
@@ -107,7 +107,7 @@ public class BaremetalPxeManagerImpl implements BaremetalPxeManager, ResourceSta
 
 	protected BaremetalPxeService getServiceByType(String type) {
 		BaremetalPxeService _service;
-		_service = _services.get(type);
+		_service = AdapterBase.getAdapterByName(_services, type);
 		if (_service == null) {
 			throw new CloudRuntimeException("Cannot find PXE service for " + type);
 		}
@@ -181,7 +181,7 @@ public class BaremetalPxeManagerImpl implements BaremetalPxeManager, ResourceSta
         _vmDao.loadDetails(vm);
         
         String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId()).getDisplayText();
-        String zoneName = _dcDao.findById(vm.getDataCenterIdToDeployIn()).getName();
+        String zoneName = _dcDao.findById(vm.getDataCenterId()).getName();
         NicVO nvo = _nicDao.findById(nic.getId());
         VmDataCommand cmd = new VmDataCommand(nvo.getIp4Address(), vm.getInstanceName());
         cmd.addVmData("userdata", "user-data", vm.getUserData());
@@ -202,12 +202,12 @@ public class BaremetalPxeManagerImpl implements BaremetalPxeManager, ResourceSta
         }
         cmd.addVmData("metadata", "cloud-identifier", cloudIdentifier);
         
-        List<PhysicalNetworkVO> phys = _phynwDao.listByZone(vm.getDataCenterIdToDeployIn());
+        List<PhysicalNetworkVO> phys = _phynwDao.listByZone(vm.getDataCenterId());
         if (phys.isEmpty()) {
-            throw new CloudRuntimeException(String.format("Cannot find physical network in zone %s", vm.getDataCenterIdToDeployIn()));
+            throw new CloudRuntimeException(String.format("Cannot find physical network in zone %s", vm.getDataCenterId()));
         }
         if (phys.size() > 1) {
-            throw new CloudRuntimeException(String.format("Baremetal only supports one physical network in zone, but zone %s has %s physical networks", vm.getDataCenterIdToDeployIn(), phys.size()));
+            throw new CloudRuntimeException(String.format("Baremetal only supports one physical network in zone, but zone %s has %s physical networks", vm.getDataCenterId(), phys.size()));
         }
         PhysicalNetworkVO phy = phys.get(0);
         

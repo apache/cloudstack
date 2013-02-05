@@ -25,14 +25,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.cluster.agentlb.HostTransferMapVO;
+import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -44,7 +49,6 @@ import com.cloud.info.RunningHostCountInfo;
 import com.cloud.org.Managed;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -60,6 +64,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value = { HostDao.class })
 @DB(txn = false)
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
@@ -68,56 +73,65 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     private static final Logger status_logger = Logger.getLogger(Status.class);
     private static final Logger state_logger = Logger.getLogger(ResourceState.class);
 
-    protected final SearchBuilder<HostVO> TypePodDcStatusSearch;
+    protected SearchBuilder<HostVO> TypePodDcStatusSearch;
 
-    protected final SearchBuilder<HostVO> IdStatusSearch;
-    protected final SearchBuilder<HostVO> TypeDcSearch;
-    protected final SearchBuilder<HostVO> TypeDcStatusSearch;
-    protected final SearchBuilder<HostVO> MsStatusSearch;
-    protected final SearchBuilder<HostVO> DcPrivateIpAddressSearch;
-    protected final SearchBuilder<HostVO> DcStorageIpAddressSearch;
+    protected SearchBuilder<HostVO> IdStatusSearch;
+    protected SearchBuilder<HostVO> TypeDcSearch;
+    protected SearchBuilder<HostVO> TypeDcStatusSearch;
+    protected SearchBuilder<HostVO> TypeClusterStatusSearch;
+    protected SearchBuilder<HostVO> MsStatusSearch;
+    protected SearchBuilder<HostVO> DcPrivateIpAddressSearch;
+    protected SearchBuilder<HostVO> DcStorageIpAddressSearch;
 
-    protected final SearchBuilder<HostVO> GuidSearch;
-    protected final SearchBuilder<HostVO> DcSearch;
-    protected final SearchBuilder<HostVO> PodSearch;
-    protected final SearchBuilder<HostVO> TypeSearch;
-    protected final SearchBuilder<HostVO> StatusSearch;
-    protected final SearchBuilder<HostVO> ResourceStateSearch;
-    protected final SearchBuilder<HostVO> NameLikeSearch;
-    protected final SearchBuilder<HostVO> NameSearch;
-    protected final SearchBuilder<HostVO> SequenceSearch;
-    protected final SearchBuilder<HostVO> DirectlyConnectedSearch;
-    protected final SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
-    protected final SearchBuilder<HostVO> UnmanagedApplianceSearch;
-    protected final SearchBuilder<HostVO> MaintenanceCountSearch;
-    protected final SearchBuilder<HostVO> ClusterStatusSearch;
-    protected final SearchBuilder<HostVO> TypeNameZoneSearch;
-    protected final SearchBuilder<HostVO> AvailHypevisorInZone;
+    protected SearchBuilder<HostVO> GuidSearch;
+    protected SearchBuilder<HostVO> DcSearch;
+    protected SearchBuilder<HostVO> PodSearch;
+    protected SearchBuilder<HostVO> TypeSearch;
+    protected SearchBuilder<HostVO> StatusSearch;
+    protected SearchBuilder<HostVO> ResourceStateSearch;
+    protected SearchBuilder<HostVO> NameLikeSearch;
+    protected SearchBuilder<HostVO> NameSearch;
+    protected SearchBuilder<HostVO> SequenceSearch;
+    protected SearchBuilder<HostVO> DirectlyConnectedSearch;
+    protected SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
+    protected SearchBuilder<HostVO> UnmanagedApplianceSearch;
+    protected SearchBuilder<HostVO> MaintenanceCountSearch;
+    protected SearchBuilder<HostVO> ClusterStatusSearch;
+    protected SearchBuilder<HostVO> TypeNameZoneSearch;
+    protected SearchBuilder<HostVO> AvailHypevisorInZone;
 
-    protected final SearchBuilder<HostVO> DirectConnectSearch;
-    protected final SearchBuilder<HostVO> ManagedDirectConnectSearch;
-    protected final SearchBuilder<HostVO> ManagedRoutingServersSearch;
-    protected final SearchBuilder<HostVO> SecondaryStorageVMSearch;
-    
+    protected SearchBuilder<HostVO> DirectConnectSearch;
+    protected SearchBuilder<HostVO> ManagedDirectConnectSearch;
+    protected SearchBuilder<HostVO> ManagedRoutingServersSearch;
+    protected SearchBuilder<HostVO> SecondaryStorageVMSearch;
 
-    protected final GenericSearchBuilder<HostVO, Long> HostsInStatusSearch;
-    protected final GenericSearchBuilder<HostVO, Long> CountRoutingByDc;
-    protected final SearchBuilder<HostTransferMapVO> HostTransferSearch;
+
+    protected GenericSearchBuilder<HostVO, Long> HostsInStatusSearch;
+    protected GenericSearchBuilder<HostVO, Long> CountRoutingByDc;
+    protected SearchBuilder<HostTransferMapVO> HostTransferSearch;
     protected SearchBuilder<ClusterVO> ClusterManagedSearch;
-    protected final SearchBuilder<HostVO> RoutingSearch;
+    protected SearchBuilder<HostVO> RoutingSearch;
 
-    protected final Attribute _statusAttr;
-    protected final Attribute _resourceStateAttr;
-    protected final Attribute _msIdAttr;
-    protected final Attribute _pingTimeAttr;
-
-    protected final HostDetailsDaoImpl _detailsDao = ComponentLocator.inject(HostDetailsDaoImpl.class);
-    protected final HostTagsDaoImpl _hostTagsDao = ComponentLocator.inject(HostTagsDaoImpl.class);
-    protected final HostTransferMapDaoImpl _hostTransferDao = ComponentLocator.inject(HostTransferMapDaoImpl.class);
-    protected final ClusterDaoImpl _clusterDao = ComponentLocator.inject(ClusterDaoImpl.class);
+    protected SearchBuilder<HostVO> HostsForReconnectSearch;
+    protected GenericSearchBuilder<HostVO, Long> ClustersOwnedByMSSearch;
+    protected GenericSearchBuilder<ClusterVO, Long> AllClustersSearch;
+    protected SearchBuilder<HostVO> HostsInClusterSearch;
     
+    protected Attribute _statusAttr;
+    protected Attribute _resourceStateAttr;
+    protected Attribute _msIdAttr;
+    protected Attribute _pingTimeAttr;
+    
+    @Inject protected HostDetailsDao _detailsDao;
+    @Inject protected HostTagsDao _hostTagsDao;
+    @Inject protected HostTransferMapDao _hostTransferDao;
+    @Inject protected ClusterDao _clusterDao;
 
     public HostDaoImpl() {
+    }
+
+    @PostConstruct
+    public void init() {
 
         MaintenanceCountSearch = createSearchBuilder();
         MaintenanceCountSearch.and("cluster", MaintenanceCountSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
@@ -157,6 +171,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         TypeDcStatusSearch.and("status", TypeDcStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.and("resourceState", TypeDcStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.done();
+
+        TypeClusterStatusSearch = createSearchBuilder();
+        TypeClusterStatusSearch.and("type", TypeClusterStatusSearch.entity().getType(), SearchCriteria.Op.EQ);
+        TypeClusterStatusSearch.and("cluster", TypeClusterStatusSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        TypeClusterStatusSearch.and("status", TypeClusterStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        TypeClusterStatusSearch.and("resourceState", TypeClusterStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
+        TypeClusterStatusSearch.done();
 
         IdStatusSearch = createSearchBuilder();
         IdStatusSearch.and("id", IdStatusSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -233,6 +254,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         UnmanagedDirectConnectSearch.and("server", UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
         UnmanagedDirectConnectSearch.and("lastPinged", UnmanagedDirectConnectSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
         UnmanagedDirectConnectSearch.and("resourceStates", UnmanagedDirectConnectSearch.entity().getResourceState(), SearchCriteria.Op.NIN);
+        UnmanagedDirectConnectSearch.and("cluster", UnmanagedDirectConnectSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         /*
          * UnmanagedDirectConnectSearch.op(SearchCriteria.Op.OR, "managementServerId",
          * UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
@@ -301,6 +323,33 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         RoutingSearch.and("type", RoutingSearch.entity().getType(), SearchCriteria.Op.EQ);
         RoutingSearch.done();
 
+        HostsForReconnectSearch = createSearchBuilder();
+        HostsForReconnectSearch.and("resource", HostsForReconnectSearch.entity().getResource(), SearchCriteria.Op.NNULL);
+        HostsForReconnectSearch.and("server", HostsForReconnectSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
+        HostsForReconnectSearch.and("lastPinged", HostsForReconnectSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
+        HostsForReconnectSearch.and("resourceStates", HostsForReconnectSearch.entity().getResourceState(), SearchCriteria.Op.NIN);
+        HostsForReconnectSearch.and("cluster", HostsForReconnectSearch.entity().getClusterId(), SearchCriteria.Op.NNULL);
+        HostsForReconnectSearch.and("status", HostsForReconnectSearch.entity().getStatus(), SearchCriteria.Op.IN);
+        HostsForReconnectSearch.done();
+
+        ClustersOwnedByMSSearch = createSearchBuilder(Long.class);
+        ClustersOwnedByMSSearch.select(null, Func.DISTINCT, ClustersOwnedByMSSearch.entity().getClusterId());
+        ClustersOwnedByMSSearch.and("resource", ClustersOwnedByMSSearch.entity().getResource(), SearchCriteria.Op.NNULL);
+        ClustersOwnedByMSSearch.and("cluster", ClustersOwnedByMSSearch.entity().getClusterId(), SearchCriteria.Op.NNULL);
+        ClustersOwnedByMSSearch.and("server", ClustersOwnedByMSSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
+        ClustersOwnedByMSSearch.done();
+
+        AllClustersSearch = _clusterDao.createSearchBuilder(Long.class);
+        AllClustersSearch.select(null, Func.NATIVE, AllClustersSearch.entity().getId());
+        AllClustersSearch.and("managed", AllClustersSearch.entity().getManagedState(), SearchCriteria.Op.EQ);
+        AllClustersSearch.done();
+
+        HostsInClusterSearch = createSearchBuilder();
+        HostsInClusterSearch.and("resource", HostsInClusterSearch.entity().getResource(), SearchCriteria.Op.NNULL);
+        HostsInClusterSearch.and("cluster", HostsInClusterSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        HostsInClusterSearch.and("server", HostsInClusterSearch.entity().getManagementServerId(), SearchCriteria.Op.NNULL);
+        HostsInClusterSearch.done();
+
         _statusAttr = _allAttributes.get("status");
         _msIdAttr = _allAttributes.get("managementServerId");
         _pingTimeAttr = _allAttributes.get("lastPinged");
@@ -326,25 +375,113 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SearchCriteria<HostVO> sc = GuidSearch.create("guid", guid);
         return findOneBy(sc);
     }
-    
+
+    /*
+     * Find hosts which is in Disconnected, Down, Alert and ping timeout and server is not null, set server to null
+     */
+    private void resetHosts(long managementServerId, long lastPingSecondsAfter) {
+        SearchCriteria<HostVO> sc = HostsForReconnectSearch.create();
+        sc.setParameters("server", managementServerId);
+        sc.setParameters("lastPinged", lastPingSecondsAfter);
+        sc.setParameters("status", Status.Disconnected, Status.Down, Status.Alert);
+
+        List<HostVO> hosts = lockRows(sc, null, true); // exclusive lock
+        for (HostVO host : hosts) {
+            host.setManagementServerId(null);
+            update(host.getId(), host);
+        }
+    }
+
+    /*
+     * Returns a list of cluster owned by @managementServerId
+     */
+    private List<Long> findClustersOwnedByManagementServer(long managementServerId) {
+        SearchCriteria<Long> sc = ClustersOwnedByMSSearch.create();
+        sc.setParameters("server", managementServerId);
+
+        List<Long> clusters = customSearch(sc, null);
+        return clusters;
+    }
+
+    /*
+     * Returns a list of all cluster Ids
+     */
+    private List<Long> listAllClusters() {
+        SearchCriteria<Long> sc = AllClustersSearch.create();
+        sc.setParameters("managed", Managed.ManagedState.Managed);
+
+        List<Long> clusters = _clusterDao.customSearch(sc, null);
+        return clusters;
+    }
+
+    /*
+     * This determines if hosts belonging to cluster(@clusterId) are up for grabs
+     *
+     * This is used for handling following cases:
+     * 1. First host added in cluster
+     * 2. During MS restart all hosts in a cluster are without any MS
+     */
+    private boolean canOwnCluster(long clusterId) {
+        SearchCriteria<HostVO> sc = HostsInClusterSearch.create();
+        sc.setParameters("cluster", clusterId);
+
+        List<HostVO> hosts = search(sc, null);
+        boolean ownCluster = (hosts == null || hosts.size() == 0);
+
+        return ownCluster;
+    }
+
     @Override @DB
     public List<HostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId) {
         Transaction txn = Transaction.currentTxn();
-        txn.start();       
-    	SearchCriteria<HostVO> sc = UnmanagedDirectConnectSearch.create();
-    	sc.setParameters("lastPinged", lastPingSecondsAfter);
-        //sc.setParameters("resourceStates", ResourceState.ErrorInMaintenance, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.Disabled);
-        sc.setJoinParameters("ClusterManagedSearch", "managed", Managed.ManagedState.Managed);
-        List<HostVO> hosts = lockRows(sc, new Filter(HostVO.class, "clusterId", true, 0L, limit), true);
-        
-        for (HostVO host : hosts) {
-            host.setManagementServerId(managementServerId);
-            update(host.getId(), host);
-        }
-        
+
+        // reset hosts that are suitable candidates for reconnect
+        txn.start();
+        resetHosts(managementServerId, lastPingSecondsAfter);
         txn.commit();
-        
-        return hosts;
+
+        List<Long> clusters = findClustersOwnedByManagementServer(managementServerId);
+        List<Long> allClusters = listAllClusters();
+
+        SearchCriteria<HostVO> sc = UnmanagedDirectConnectSearch.create();
+        sc.setParameters("lastPinged", lastPingSecondsAfter);
+        sc.setJoinParameters("ClusterManagedSearch", "managed", Managed.ManagedState.Managed);
+        List<HostVO> assignedHosts = new ArrayList<HostVO>();
+        List<Long> remainingClusters = new ArrayList<Long>();
+
+        // handle clusters already owned by @managementServerId
+        txn.start();
+        for (Long clusterId : allClusters) {
+            if (clusters.contains(clusterId)) { // host belongs to clusters owned by @managementServerId
+                sc.setParameters("cluster", clusterId);
+                List<HostVO> unmanagedHosts = lockRows(sc, null, true);
+                for (HostVO host : unmanagedHosts) {
+                    host.setManagementServerId(managementServerId);
+                    update(host.getId(), host);
+                    assignedHosts.add(host);
+                }
+            } else {
+                remainingClusters.add(clusterId);
+            }
+        }
+        txn.commit();
+
+        // for remaining clusters check if they can be owned
+        for (Long clusterId : remainingClusters) {
+            txn.start();
+            sc.setParameters("cluster", clusterId);
+            List<HostVO> unmanagedHosts = lockRows(sc, null, true);
+            if (canOwnCluster(clusterId)) { // cluster is not owned by any other MS, so @managementServerId can own it
+                for (HostVO host : unmanagedHosts) {
+                    host.setManagementServerId(managementServerId);
+                    update(host.getId(), host);
+                    assignedHosts.add(host);
+                }
+            }
+            txn.commit();
+        }
+
+        return assignedHosts;
     }
     
     @Override @DB
@@ -762,6 +899,17 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("name", name);
         sc.setParameters("zoneId", zoneId);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<HostVO> findHypervisorHostInCluster(long clusterId) {
+        SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("cluster", clusterId);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", ResourceState.Enabled);
+
+        return listBy(sc);
     }
 
 }

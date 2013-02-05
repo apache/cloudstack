@@ -4,36 +4,36 @@
 %BOOK_ENTITIES;
 ]>
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+        or more contributor license agreements.  See the NOTICE file
+        distributed with this work for additional information
+        regarding copyright ownership.  The ASF licenses this file
+        to you under the Apache License, Version 2.0 (the
+        "License"); you may not use this file except in compliance
+        with the License.  You may obtain a copy of the License at
+        
+        http://www.apache.org/licenses/LICENSE-2.0
+        
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an
+        "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+        KIND, either express or implied.  See the License for the
+        specific language governing permissions and limitations
+        under the License.
 -->
 
 <section id="best-practices-vm">
-  <title>Best Practices for Virtual Machines</title>
-  <para>The &PRODUCT; administrator should monitor the total number of VM instances in each
-    cluster, and disable allocation to the cluster if the total is approaching the maximum that
-    the hypervisor can handle. Be sure to leave a safety margin to allow for the possibility of
-    one or more hosts failing, which would increase the VM load on the other hosts as the VMs
-    are automatically redeployed. Consult the documentation for your chosen hypervisor to find
-    the maximum permitted number of VMs per host, then use &PRODUCT; global configuration
-    settings to set this as the default limit. Monitor the VM activity in each cluster at all
-    times. Keep the total number of VMs below a safe level that allows for the occasional host
-    failure. For example, if there are N hosts in the cluster, and you want to allow for one
-    host in the cluster to be down at any given time, the total number of VM instances you can
-    permit in the cluster is at most (N-1) * (per-host-limit). Once a cluster reaches this
-    number of VMs, use the &PRODUCT; UI to disable allocation of more VMs to the
-    cluster.</para>
+	<title>Best Practices for Virtual Machines</title>
+	<para>The &PRODUCT; administrator should monitor the total number of VM instances in each
+        cluster, and disable allocation to the cluster if the total is approaching the maximum that
+        the hypervisor can handle. Be sure to leave a safety margin to allow for the possibility of
+        one or more hosts failing, which would increase the VM load on the other hosts as the VMs
+        are automatically redeployed. Consult the documentation for your chosen hypervisor to find
+        the maximum permitted number of VMs per host, then use &PRODUCT; global configuration
+        settings to set this as the default limit. Monitor the VM activity in each cluster at all
+        times. Keep the total number of VMs below a safe level that allows for the occasional host
+        failure. For example, if there are N hosts in the cluster, and you want to allow for one
+        host in the cluster to be down at any given time, the total number of VM instances you can
+        permit in the cluster is at most (N-1) * (per-host-limit). Once a cluster reaches this
+        number of VMs, use the &PRODUCT; UI to disable allocation of more VMs to the
+        cluster.</para>
 </section>

@@ -18,50 +18,54 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
-import com.cloud.network.IPAddressVO;
-import com.cloud.network.Site2SiteVpnConnectionVO;
-import com.cloud.network.Site2SiteVpnGatewayVO;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 @Local(value={Site2SiteVpnConnectionDao.class})
 public class Site2SiteVpnConnectionDaoImpl extends GenericDaoBase<Site2SiteVpnConnectionVO, Long> implements Site2SiteVpnConnectionDao {
     private static final Logger s_logger = Logger.getLogger(Site2SiteVpnConnectionDaoImpl.class);
 
-    protected final IPAddressDaoImpl _addrDao = ComponentLocator.inject(IPAddressDaoImpl.class);
-    protected final Site2SiteVpnGatewayDaoImpl _vpnGatewayDao = ComponentLocator.inject(Site2SiteVpnGatewayDaoImpl.class);
-    
-    private final SearchBuilder<Site2SiteVpnConnectionVO> AllFieldsSearch;
-    private final SearchBuilder<Site2SiteVpnConnectionVO> VpcSearch;
-    private final SearchBuilder<Site2SiteVpnGatewayVO> VpnGatewaySearch;
+    @Inject protected IPAddressDaoImpl _addrDao;
+    @Inject protected Site2SiteVpnGatewayDaoImpl _vpnGatewayDao;
 
-    protected Site2SiteVpnConnectionDaoImpl() {
+    private SearchBuilder<Site2SiteVpnConnectionVO> AllFieldsSearch;
+    private SearchBuilder<Site2SiteVpnConnectionVO> VpcSearch;
+    private SearchBuilder<Site2SiteVpnGatewayVO> VpnGatewaySearch;
+
+    public Site2SiteVpnConnectionDaoImpl() {
+    }
+
+    @PostConstruct
+    protected void init() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("customerGatewayId", AllFieldsSearch.entity().getCustomerGatewayId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("vpnGatewayId", AllFieldsSearch.entity().getVpnGatewayId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
-        
+
         VpcSearch = createSearchBuilder();
         VpnGatewaySearch = _vpnGatewayDao.createSearchBuilder();
         VpnGatewaySearch.and("vpcId", VpnGatewaySearch.entity().getVpcId(), SearchCriteria.Op.EQ);
         VpcSearch.join("vpnGatewaySearch", VpnGatewaySearch, VpnGatewaySearch.entity().getId(), VpcSearch.entity().getVpnGatewayId(), JoinType.INNER);
         VpcSearch.done();
     }
-    
+
     @Override
     public List<Site2SiteVpnConnectionVO> listByCustomerGatewayId(long id) {
         SearchCriteria<Site2SiteVpnConnectionVO> sc = AllFieldsSearch.create();
         sc.setParameters("customerGatewayId", id);
         return listBy(sc);
     }
-    
+
     @Override
     public List<Site2SiteVpnConnectionVO> listByVpnGatewayId(long id) {
         SearchCriteria<Site2SiteVpnConnectionVO> sc = AllFieldsSearch.create();

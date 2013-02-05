@@ -20,13 +20,14 @@ import java.util.List;
 
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
+
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.utils.Pair;
 
 public interface DomainService {
 
-    Domain createDomain(String name, Long parentId, String networkDomain);
+    Domain createDomain(String name, Long parentId, String networkDomain, String domainUUID, Integer regionId);
 
     Domain getDomain(long id);
 
@@ -40,12 +41,19 @@ public interface DomainService {
      */
     boolean isChildDomain(Long parentId, Long childId);
 
-    boolean deleteDomain(long domainId, Boolean cleanup);
-
     Pair<List<? extends Domain>, Integer> searchForDomains(ListDomainsCmd cmd)
             throws PermissionDeniedException;
 
     Pair<List<? extends Domain>, Integer> searchForDomainChildren(ListDomainChildrenCmd cmd)
             throws PermissionDeniedException;
+
+    /**
+     * find the domain by its path
+     * 
+     * @param domainPath
+     *            the path to use to lookup a domain
+     * @return domainVO the domain with the matching path, or null if no domain with the given path exists
+     */
+    Domain findDomainByPath(String domainPath);
 
 }

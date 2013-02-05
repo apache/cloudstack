@@ -19,10 +19,10 @@ package org.apache.cloudstack.api;
 import java.util.List;
 
 import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.exception.InvalidParameterValueException;
 
 public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {

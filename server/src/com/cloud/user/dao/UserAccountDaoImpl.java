@@ -18,18 +18,21 @@ package com.cloud.user.dao;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 @Local(value={UserAccountDao.class})
 public class UserAccountDaoImpl extends GenericDaoBase<UserAccountVO, Long> implements UserAccountDao {
 	
 	protected final SearchBuilder<UserAccountVO> userAccountSearch;
 	
-    protected UserAccountDaoImpl() {
+    public UserAccountDaoImpl() {
     	userAccountSearch = createSearchBuilder();
     	userAccountSearch.and("apiKey", userAccountSearch.entity().getApiKey(), SearchCriteria.Op.EQ);
         userAccountSearch.done();
@@ -62,4 +65,5 @@ public class UserAccountDaoImpl extends GenericDaoBase<UserAccountVO, Long> impl
 		sc.setParameters("apiKey",apiKey);
 		return findOneBy(sc);
 	}
+	
 }

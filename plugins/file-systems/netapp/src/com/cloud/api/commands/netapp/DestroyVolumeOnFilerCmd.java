@@ -18,6 +18,8 @@ package com.cloud.api.commands.netapp;
 
 import java.rmi.ServerException;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
@@ -29,31 +31,30 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
-import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DeleteVolumeOnFilerCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "destroyVolumeOnFiler", description="Destroy a Volume", responseObject = DeleteVolumeOnFilerCmdResponse.class)
 public class DestroyVolumeOnFilerCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DestroyVolumeOnFilerCmd.class.getName());
     private static final String s_name = "destroyvolumeresponse";
-
+    
     @Parameter(name=ApiConstants.AGGREGATE_NAME, type=CommandType.STRING, required = true, description="aggregate name.")
 	private String aggrName;
-
+    
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required = true, description="ip address.")
 	private String ipAddr;
-
+    
     @Parameter(name=ApiConstants.VOLUME_NAME, type=CommandType.STRING, required = true, description="volume name.")
 	private String volumeName;
-
-
+    
+    @Inject NetappManager netappMgr;
+    
+    
 	@Override
 	public void execute() throws ResourceUnavailableException,
 			InsufficientCapacityException, ServerApiException,
 			ConcurrentOperationException, ResourceAllocationException {
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
     	try {
     		netappMgr.destroyVolumeOnFiler(ipAddr, aggrName, volumeName);
     		DeleteVolumeOnFilerCmdResponse response = new DeleteVolumeOnFilerCmdResponse();
@@ -66,7 +67,7 @@ public class DestroyVolumeOnFilerCmd extends BaseCmd {
     	} catch (ServerException e) {
     		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
 		}
-
+		
 	}
 
 	@Override
@@ -80,5 +81,5 @@ public class DestroyVolumeOnFilerCmd extends BaseCmd {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-
+    
 }

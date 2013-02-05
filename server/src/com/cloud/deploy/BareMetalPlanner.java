@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -42,12 +43,12 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=DeploymentPlanner.class)
-public class BareMetalPlanner implements DeploymentPlanner {
+public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
 	private static final Logger s_logger = Logger.getLogger(BareMetalPlanner.class);
 	@Inject protected DataCenterDao _dcDao;
 	@Inject protected HostPodDao _podDao;
@@ -56,7 +57,6 @@ public class BareMetalPlanner implements DeploymentPlanner {
 	@Inject protected ConfigurationDao _configDao;
 	@Inject protected CapacityManager _capacityMgr;
 	@Inject protected ResourceManager _resourceMgr;
-	String _name;
 	
 	@Override
 	public DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
@@ -87,7 +87,7 @@ public class BareMetalPlanner implements DeploymentPlanner {
 			}
 		}
 		
-		List<ClusterVO> clusters = _clusterDao.listByDcHyType(vm.getDataCenterIdToDeployIn(), HypervisorType.BareMetal.toString());
+		List<ClusterVO> clusters = _clusterDao.listByDcHyType(vm.getDataCenterId(), HypervisorType.BareMetal.toString());
 		int cpu_requested;
 		long ram_requested;
 		HostVO target = null;
@@ -142,13 +142,7 @@ public class BareMetalPlanner implements DeploymentPlanner {
 
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		_name = name;
 		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
 	}
 
 	@Override

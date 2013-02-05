@@ -21,7 +21,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -38,9 +41,7 @@ import com.cloud.host.Status;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.secondary.SecondaryStorageDiscoverer;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
 
 @Local(value=Discoverer.class)
 public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer implements ResourceStateAdapter, Listener {
@@ -52,7 +53,7 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-	_agentMgr.registerForHostEvents(this, true, false, false);
+        _agentMgr.registerForHostEvents(this, true, false, false);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return super.configure(name, params);
     }
@@ -88,40 +89,40 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
         }
     }
 
-	@Override
-	public HostVO createHostVOForConnectedAgent(HostVO host,
-			StartupCommand[] cmd) {
-		return null;
-	}
+    @Override
+    public HostVO createHostVOForConnectedAgent(HostVO host,
+            StartupCommand[] cmd) {
+        return null;
+    }
 
-	@Override
-	public HostVO createHostVOForDirectConnectAgent(HostVO host,
-			StartupCommand[] startup, ServerResource resource,
-			Map<String, String> details, List<String> hostTags) {
-		//for detecting SSVM dispatch
-		StartupCommand firstCmd = startup[0];
-	    if (!(firstCmd instanceof StartupSecondaryStorageCommand)) {
-		return null;
-	    }
+    @Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host,
+            StartupCommand[] startup, ServerResource resource,
+            Map<String, String> details, List<String> hostTags) {
+        //for detecting SSVM dispatch
+        StartupCommand firstCmd = startup[0];
+        if (!(firstCmd instanceof StartupSecondaryStorageCommand)) {
+            return null;
+        }
 
-		host.setType(com.cloud.host.Host.Type.SecondaryStorageVM);
-		return host;
-	}
+        host.setType(com.cloud.host.Host.Type.SecondaryStorageVM);
+        return host;
+    }
 
-	@Override
-	public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
-			boolean isForceDeleteStorage) throws UnableDeleteHostException {
-		long hostId = host.getId();
-		List<SnapshotVO> snapshots = _snapshotDao.listByHostId(hostId);
-		if (snapshots != null && !snapshots.isEmpty()) {
-			throw new CloudRuntimeException("Cannot delete this secondary storage because there are still snapshots on it ");
-		}
-		_vmTemplateHostDao.deleteByHost(hostId);
-		host.setGuid(null);
-		_hostDao.update(hostId, host);
-		_hostDao.remove(hostId);
-		return new DeleteHostAnswer(true);
-	}
+    @Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
+            boolean isForceDeleteStorage) throws UnableDeleteHostException {
+        long hostId = host.getId();
+        List<SnapshotVO> snapshots = _snapshotDao.listByHostId(hostId);
+        if (snapshots != null && !snapshots.isEmpty()) {
+            throw new CloudRuntimeException("Cannot delete this secondary storage because there are still snapshots on it ");
+        }
+        _vmTemplateHostDao.deleteByHost(hostId);
+        host.setGuid(null);
+        _hostDao.update(hostId, host);
+        _hostDao.remove(hostId);
+        return new DeleteHostAnswer(true);
+    }
 
     @Override
     public boolean start() {
@@ -130,49 +131,49 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
 
     @Override
     public boolean stop() {
-	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
+        _resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return true;
     }
 
-	@Override
-	public int getTimeout() {
-		return 0;
-	}
+    @Override
+    public int getTimeout() {
+        return 0;
+    }
 
-	@Override
-	public boolean isRecurring() {
-		return false;
-	}
+    @Override
+    public boolean isRecurring() {
+        return false;
+    }
 
-	@Override
-	public boolean processAnswers(long agentId, long seq, Answer[] answers) {
-		return false;
-	}
+    @Override
+    public boolean processAnswers(long agentId, long seq, Answer[] answers) {
+        return false;
+    }
 
-	@Override
-	public boolean processCommands(long agentId, long seq, Command[] commands) {
-		return false;
-	}
+    @Override
+    public boolean processCommands(long agentId, long seq, Command[] commands) {
+        return false;
+    }
 
-	@Override
-	public void processConnect(HostVO host, StartupCommand cmd,
-			boolean forRebalance) throws ConnectionException {
+    @Override
+    public void processConnect(HostVO host, StartupCommand cmd,
+            boolean forRebalance) throws ConnectionException {
 
-	}
+    }
 
-	@Override
-	public AgentControlAnswer processControlCommand(long agentId,
-			AgentControlCommand cmd) {
-		return null;
-	}
+    @Override
+    public AgentControlAnswer processControlCommand(long agentId,
+            AgentControlCommand cmd) {
+        return null;
+    }
 
-	@Override
-	public boolean processDisconnect(long agentId, Status state) {
-		return false;
-	}
+    @Override
+    public boolean processDisconnect(long agentId, Status state) {
+        return false;
+    }
 
-	@Override
-	public boolean processTimeout(long agentId, long seq) {
-		return false;
-	}
+    @Override
+    public boolean processTimeout(long agentId, long seq) {
+        return false;
+    }
 }

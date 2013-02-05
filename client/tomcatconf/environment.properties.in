@@ -19,4 +19,4 @@
 
 paths.script=@COMMONLIBDIR@
 mount.parent=@MSMNTDIR@
-cloud-stack-components-specification=@COMPONENTS-SPEC@
+cloud-stack-components-specification=components.xml

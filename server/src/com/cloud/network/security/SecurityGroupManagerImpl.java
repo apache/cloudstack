@@ -34,9 +34,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.command.user.securitygroup.*;
+import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupEgressCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupIngressCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.CreateSecurityGroupCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.DeleteSecurityGroupCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;
+import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupIngressCmd;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
@@ -47,20 +53,14 @@ import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
-
-import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupEgressCmd;
+import com.cloud.cluster.ManagementServerNode;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
-import com.cloud.event.dao.UsageEventDao;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceInUseException;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.*;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
@@ -73,9 +73,8 @@ import com.cloud.network.security.dao.SecurityGroupRulesDao;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.dao.SecurityGroupWorkDao;
 import com.cloud.network.security.dao.VmRulesetLogDao;
-import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.network.security.dao.*;
 import com.cloud.projects.ProjectManager;
-import com.cloud.server.ManagementServer;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -85,37 +84,27 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.Nic;
-import com.cloud.vm.NicProfile;
-import com.cloud.vm.UserVmManager;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.*;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
 import edu.emory.mathcs.backport.java.util.Collections;
+import org.apache.cloudstack.api.command.user.securitygroup.*;
+import java.util.*;
 
 @Local(value = { SecurityGroupManager.class, SecurityGroupService.class })
-public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityGroupService, Manager, StateListener<State, VirtualMachine.Event, VirtualMachine> {
+public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGroupManager, SecurityGroupService, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     public static final Logger s_logger = Logger.getLogger(SecurityGroupManagerImpl.class);
 
     @Inject
@@ -158,8 +147,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     DomainManager _domainMgr;
     @Inject
     ProjectManager _projectMgr;
-    @Inject
-    UsageEventDao _usageEventDao;
     @Inject
     ResourceTagDao _resourceTagDao;
 
@@ -400,7 +387,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + affectedVms.size() + " vms");
         }
-        boolean locked = _workLock.lock(_globalWorkLockTimeout);
+        boolean locked = _workLock.lock(_globalWorkLockTimeout); 
         if (!locked) {
             s_logger.warn("Security Group Mgr: failed to acquire global work lock");
             return;
@@ -460,8 +447,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         // For each group, find the security rules that allow the group
         for (SecurityGroupVMMapVO mapVO : groupsForVm) {// FIXME: use custom sql in the dao
         	//Add usage events for security group assign
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SECURITY_GROUP_ASSIGN, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), mapVO.getSecurityGroupId());
-            _usageEventDao.persist(usageEvent);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SECURITY_GROUP_ASSIGN, vm.getAccountId(),
+                    vm.getDataCenterId(), vm.getId(), mapVO.getSecurityGroupId(),
+                    vm.getClass().getName(), vm.getUuid());
 
             List<SecurityGroupRuleVO> allowingRules = _securityGroupRuleDao.listByAllowedSecurityGroupId(mapVO.getSecurityGroupId());
             // For each security rule that allows a group that the vm belongs to, find the group it belongs to
@@ -476,8 +464,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         // For each group, find the security rules rules that allow the group
         for (SecurityGroupVMMapVO mapVO : groupsForVm) {// FIXME: use custom sql in the dao
         	//Add usage events for security group remove
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SECURITY_GROUP_REMOVE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), mapVO.getSecurityGroupId());
-            _usageEventDao.persist(usageEvent);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SECURITY_GROUP_REMOVE,
+                    vm.getAccountId(), vm.getDataCenterId(), vm.getId(), mapVO.getSecurityGroupId(),
+                    vm.getClass().getName(), vm.getUuid());
 
             List<SecurityGroupRuleVO> allowingRules = _securityGroupRuleDao.listByAllowedSecurityGroupId(mapVO.getSecurityGroupId());
             // For each security rule that allows a group that the vm belongs to, find the group it belongs to
@@ -862,11 +851,10 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         _answerListener = new SecurityGroupListener(this, _agentMgr, _workDao);
         _agentMgr.registerForHostEvents(_answerListener, true, true, true);
 
+        _serverId = ManagementServerNode.getManagementServerId();
 
-        _serverId = ((ManagementServer) ComponentLocator.getComponent(ManagementServer.Name)).getId();
-
-        s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads +
-                       ", time between cleanups=" + _timeBetweenCleanups + " global lock timeout=" + _globalWorkLockTimeout);
+        s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads + 
+                ", time between cleanups=" + _timeBetweenCleanups + " global lock timeout=" + _globalWorkLockTimeout);
         createThreadPools();
 
         return true;
@@ -1031,10 +1019,10 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     @Override
     @DB
     public void removeInstanceFromGroups(long userVmId) {
-    	if (_securityGroupVMMapDao.countSGForVm(userVmId) < 1) {
-    		s_logger.trace("No security groups found for vm id=" + userVmId + ", returning");
-    		return;
-    	}
+        if (_securityGroupVMMapDao.countSGForVm(userVmId) < 1) {
+            s_logger.trace("No security groups found for vm id=" + userVmId + ", returning");
+            return;
+        }
         final Transaction txn = Transaction.currentTxn();
         txn.start();
         UserVm userVm = _userVMDao.acquireInLockTable(userVmId); // ensures that duplicate entries are not created in

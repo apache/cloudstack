@@ -21,6 +21,7 @@ package com.cloud.baremetal.manager;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -32,7 +33,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
@@ -46,7 +47,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = {BaremetalManager.class})
-public class BaremetalManagerImpl implements BaremetalManager,  StateListener<State, VirtualMachine.Event, VirtualMachine> {
+public class BaremetalManagerImpl extends ManagerBase implements BaremetalManager,  StateListener<State, VirtualMachine.Event, VirtualMachine> {
 	private static final Logger s_logger = Logger.getLogger(BaremetalManagerImpl.class);
 	
 	@Inject

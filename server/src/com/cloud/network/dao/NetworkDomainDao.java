@@ -18,7 +18,6 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.network.NetworkDomainVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface NetworkDomainDao extends GenericDao<NetworkDomainVO, Long>{

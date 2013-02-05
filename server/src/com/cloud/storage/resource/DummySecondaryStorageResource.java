@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -50,42 +51,45 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
-import com.cloud.utils.component.ComponentLocator;
+
 
 public class DummySecondaryStorageResource extends ServerResourceBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(DummySecondaryStorageResource.class);
-    
+
     String _dc;
     String _pod;
     String _guid;
     String _dummyPath;
-    VMTemplateDao _tmpltDao;
-	private boolean _useServiceVm;
-	
+    @Inject VMTemplateDao _tmpltDao;
+    private boolean _useServiceVm;
+
+    public DummySecondaryStorageResource() {
+        setUseServiceVm(true);
+    }
     
-	public DummySecondaryStorageResource(boolean useServiceVM) {
-		setUseServiceVm(useServiceVM);
-	}
+    public DummySecondaryStorageResource(boolean useServiceVM) {
+        setUseServiceVm(useServiceVM);
+    }
 
-	@Override
-	protected String getDefaultScriptsDir() {
-		return "dummy";
-	}
+    @Override
+    protected String getDefaultScriptsDir() {
+        return "dummy";
+    }
 
-	@Override
-	public Answer executeRequest(Command cmd) {
+    @Override
+    public Answer executeRequest(Command cmd) {
         if (cmd instanceof DownloadProgressCommand) {
             return new DownloadAnswer(null, 100, cmd,
-            		com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
-            		"dummyFS",
-            		"/dummy");
+                    com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
+                    "dummyFS",
+                    "/dummy");
         } else if (cmd instanceof DownloadCommand) {
             return new DownloadAnswer(null, 100, cmd,
-            		com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
-            		"dummyFS",
-            		"/dummy");
+                    com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
+                    "dummyFS",
+                    "/dummy");
         } else if (cmd instanceof GetStorageStatsCommand) {
-        	return execute((GetStorageStatsCommand)cmd);
+            return execute((GetStorageStatsCommand)cmd);
         } else if (cmd instanceof CheckHealthCommand) {
             return new CheckHealthAnswer((CheckHealthCommand)cmd, true);
         } else if (cmd instanceof ReadyCommand) {
@@ -93,33 +97,33 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
-	}
+    }
 
-	@Override
-	public PingCommand getCurrentStatus(long id) {
+    @Override
+    public PingCommand getCurrentStatus(long id) {
         return new PingStorageCommand(Host.Type.Storage, id, new HashMap<String, Boolean>());
-	}
+    }
 
-	@Override
-	public Type getType() {
+    @Override
+    public Type getType() {
         return Host.Type.SecondaryStorage;
-	}
+    }
 
-	@Override
-	public StartupCommand[] initialize() {
+    @Override
+    public StartupCommand[] initialize() {
         final StartupStorageCommand cmd = new StartupStorageCommand("dummy",
-        	StoragePoolType.NetworkFilesystem, 1024*1024*1024*100L,
-        	new HashMap<String, TemplateInfo>());
-        
+                StoragePoolType.NetworkFilesystem, 1024*1024*1024*100L,
+                new HashMap<String, TemplateInfo>());
+
         cmd.setResourceType(Storage.StorageResourceType.SECONDARY_STORAGE);
         cmd.setIqn(null);
         cmd.setNfsShare(_guid);
-        
+
         fillNetworkInformation(cmd);
         cmd.setDataCenter(_dc);
         cmd.setPod(_pod);
         cmd.setGuid(_guid);
-        
+
         cmd.setName(_guid);
         cmd.setVersion(DummySecondaryStorageResource.class.getPackage().getImplementationVersion());
         /* gather TemplateInfo in second storage */
@@ -127,62 +131,87 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
         cmd.getHostDetails().put("mount.parent", "dummy");
         cmd.getHostDetails().put("mount.path", "dummy");
         cmd.getHostDetails().put("orig.url", _guid);
-        
+
         String tok[] = _dummyPath.split(":");
         cmd.setPrivateIpAddress(tok[0]);
         return new StartupCommand [] {cmd};
-	}
-	
+    }
+
     protected GetStorageStatsAnswer execute(GetStorageStatsCommand cmd) {
         long size = 1024*1024*1024*100L;
         return new GetStorageStatsAnswer(cmd, 0, size);
     }
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        
+
         _guid = (String)params.get("guid");
         if (_guid == null) {
             throw new ConfigurationException("Unable to find the guid");
         }
-        
+
         _dc = (String)params.get("zone");
         if (_dc == null) {
             throw new ConfigurationException("Unable to find the zone");
         }
         _pod = (String)params.get("pod");
-        
+
         _dummyPath = (String)params.get("mount.path");
         if (_dummyPath == null) {
             throw new ConfigurationException("Unable to find mount.path");
         }
-        
-    	ComponentLocator locator = ComponentLocator.getLocator("management-server");
-    	_tmpltDao = locator.getDao(VMTemplateDao.class);
-    	if (_tmpltDao == null) {
-    		throw new ConfigurationException("Unable to find VMTemplate dao");
-    	}
+
         return true;
     }
 
-	public void setUseServiceVm(boolean _useServiceVm) {
-		this._useServiceVm = _useServiceVm;
+    public void setUseServiceVm(boolean _useServiceVm) {
+        this._useServiceVm = _useServiceVm;
+    }
+
+    public boolean useServiceVm() {
+        return _useServiceVm;
+    }
+
+    public Map<String, TemplateInfo> getDefaultSystemVmTemplateInfo() {	        
+        List<VMTemplateVO> tmplts = _tmpltDao.listAllSystemVMTemplates();
+        Map<String, TemplateInfo> tmpltInfo = new HashMap<String, TemplateInfo>();
+        if (tmplts != null) {
+            for (VMTemplateVO tmplt : tmplts) {
+                TemplateInfo routingInfo = new TemplateInfo(tmplt.getUniqueName(), TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, false, false);
+                tmpltInfo.put(tmplt.getUniqueName(), routingInfo);
+            }
+        }
+        return tmpltInfo;
+    }
+
+	@Override
+	public void setName(String name) {
+		// TODO Auto-generated method stub
+		
 	}
 
-	public boolean useServiceVm() {
-		return _useServiceVm;
+	@Override
+	public void setConfigParams(Map<String, Object> params) {
+		// TODO Auto-generated method stub
+		
 	}
-	
-	 public Map<String, TemplateInfo> getDefaultSystemVmTemplateInfo() {	        
-	        List<VMTemplateVO> tmplts = _tmpltDao.listAllSystemVMTemplates();
-	        Map<String, TemplateInfo> tmpltInfo = new HashMap<String, TemplateInfo>();
-	        if (tmplts != null) {
-	        	for (VMTemplateVO tmplt : tmplts) {
-	        		TemplateInfo routingInfo = new TemplateInfo(tmplt.getUniqueName(), TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, false, false);
-	        		tmpltInfo.put(tmplt.getUniqueName(), routingInfo);
-	        	}
-	        }
-	        return tmpltInfo;
-	    }
+
+	@Override
+	public Map<String, Object> getConfigParams() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int getRunLevel() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void setRunLevel(int level) {
+		// TODO Auto-generated method stub
+		
+	}
 }

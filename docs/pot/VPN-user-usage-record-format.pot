@@ -1,0 +1,69 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "VPN User Usage Record Format"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "account – name of the account"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "accountid – ID of the account"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "domainid – ID of the domain in which this account resides"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "zoneid – Zone where the usage occurred"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "description – A string describing what the usage record is tracking"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usage – String representation of the usage, including the units of usage (e.g. 'Hrs' for hours)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usagetype – A number representing the usage type (see Usage Types)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "rawusage – A number representing the actual usage in hours"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usageid – VPN user ID"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "startdate, enddate – The range of time for which the usage is aggregated; see Dates in the Usage Record"
+msgstr ""
+

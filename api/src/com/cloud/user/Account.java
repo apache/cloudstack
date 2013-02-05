@@ -62,5 +62,8 @@ public interface Account extends ControlledEntity, InternalIdentity, Identity {
     public String getNetworkDomain();
 
     public Long getDefaultZoneId();
-
+    
+    public int getRegionId();
+    
+    public String getUuid();
 }

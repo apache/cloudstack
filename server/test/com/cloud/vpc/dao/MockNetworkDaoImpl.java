@@ -16,20 +16,20 @@
 // under the License.
 package com.cloud.vpc.dao;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.ejb.Local;
-
+import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
-import com.cloud.network.NetworkAccountVO;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.NetworkAccountVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
+
+import javax.ejb.Local;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Local(value = NetworkDao.class)
 @DB(txn = false)
@@ -340,6 +340,11 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     public long countVpcNetworks(long vpcId) {
         // TODO Auto-generated method stub
         return 0;
+    }
+
+    @Override
+    public boolean updateState(Network.State currentState, Network.Event event, Network.State nextState, Network vo, Object data) {
+        return true;
     }
 
     /* (non-Javadoc)

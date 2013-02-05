@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.user.Account;
@@ -33,6 +34,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={UsageIPAddressDao.class})
 public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long> implements UsageIPAddressDao {
 	public static final Logger s_logger = Logger.getLogger(UsageIPAddressDaoImpl.class.getName());

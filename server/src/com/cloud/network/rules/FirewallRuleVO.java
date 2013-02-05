@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import javax.inject.Inject;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
@@ -34,19 +35,15 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.api.Identity;
-import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="firewall_rules")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="purpose", discriminatorType=DiscriminatorType.STRING, length=32)
-public class FirewallRuleVO implements Identity, FirewallRule {
-    protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
+public class FirewallRuleVO implements FirewallRule {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -88,7 +85,7 @@ public class FirewallRuleVO implements Identity, FirewallRule {
 
     @Column(name="network_id")
     Long networkId;
-    
+
     @Column(name="icmp_code")
     Integer icmpCode;
 
@@ -123,9 +120,6 @@ public class FirewallRuleVO implements Identity, FirewallRule {
 
     @Override
     public List<String> getSourceCidrList() {
-        if (sourceCidrs == null && (purpose == Purpose.Firewall || purpose == Purpose.NetworkACL)) {
-            return _firewallRulesCidrsDao.getSourceCidrs(id);
-        }
         return sourceCidrs;
     }
 
@@ -190,17 +184,17 @@ public class FirewallRuleVO implements Identity, FirewallRule {
 
     @Override
     public FirewallRuleType getType() {
-    	return type;
+        return type;
     }
     public Date getCreated() {
         return created;
     }
 
     protected FirewallRuleVO() {
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
-    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol,
+    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, 
             long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode,
             Integer icmpType, Long related, TrafficType trafficType) {
         this.xId = xId;
@@ -225,13 +219,13 @@ public class FirewallRuleVO implements Identity, FirewallRule {
         }
 
         this.related = related;
-    	this.uuid = UUID.randomUUID().toString();
-    	this.type = FirewallRuleType.User;
-    	this.trafficType = trafficType;
+        this.uuid = UUID.randomUUID().toString();
+        this.type = FirewallRuleType.User;
+        this.trafficType = trafficType;
     }
 
 
-    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId,
+    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, 
             long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
         this(xId, ipAddressId, port, port, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType, related, null);
     }
@@ -258,15 +252,15 @@ public class FirewallRuleVO implements Identity, FirewallRule {
 
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
 
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 
     public void setType(FirewallRuleType type) {
-    	this.type = type;
+        this.type = type;
     }
 
     @Override

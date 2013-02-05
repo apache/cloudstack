@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.user;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 public interface User extends OwnedBy, InternalIdentity {
     public static final long UID_SYSTEM = 1;
@@ -73,4 +73,5 @@ public interface User extends OwnedBy, InternalIdentity {
 
     boolean isRegistered();
 
+    public int getRegionId();
 }

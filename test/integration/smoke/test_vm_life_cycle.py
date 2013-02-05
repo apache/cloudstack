@@ -853,29 +853,34 @@ class TestVMLifeCycle(cloudstackTestCase):
                                      name='expunge.delay'
                                      )
 
-        response = config[0]
+        expunge_delay = int(config[0].value)
+        if expunge_delay < 600:
+            expunge_delay = 600
         # Wait for some time more than expunge.delay
-        time.sleep(int(response.value) * 2)
-        
+        time.sleep(expunge_delay * 2)
+
         #VM should be destroyed unless expunge thread hasn't run
         #Wait for two cycles of the expunge thread
         config = list_configurations(
                                      self.apiclient,
                                      name='expunge.interval'
                                      )
-        expunge_cycle = int(config[0].value)*2
-        while expunge_cycle > 0:
+        expunge_cycle = int(config[0].value)
+        if expunge_cycle < 600:
+            expunge_cycle = 600
+
+        wait_time = expunge_cycle * 2
+        while wait_time >= 0:
             list_vm_response = list_virtual_machines(
                                                 self.apiclient,
                                                 id=self.small_virtual_machine.id
                                                 )
             if list_vm_response:
                 time.sleep(expunge_cycle)
-                expunge_cycle = 0
-                continue
+                wait_time = wait_time - expunge_cycle
             else:
                 break
-            
+
         self.assertEqual(
                         list_vm_response,
                         None,

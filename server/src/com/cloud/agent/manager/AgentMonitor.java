@@ -21,7 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -43,7 +46,6 @@ import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria2;
@@ -53,28 +55,28 @@ import com.cloud.utils.time.InaccurateClock;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
+@Component
 public class AgentMonitor extends Thread implements Listener {
     private static Logger s_logger = Logger.getLogger(AgentMonitor.class);
     private static Logger status_Logger = Logger.getLogger(Status.class);
     private long _pingTimeout;
-    private HostDao _hostDao;
+    @Inject private HostDao _hostDao;
     private boolean _stop;
-    private AgentManagerImpl _agentMgr;
-    private VMInstanceDao _vmDao;
-    private DataCenterDao _dcDao = null;
-    private HostPodDao _podDao = null;
-    private AlertManager _alertMgr;
+    @Inject private AgentManagerImpl _agentMgr;
+    @Inject private VMInstanceDao _vmDao;
+    @Inject private DataCenterDao _dcDao = null;
+    @Inject private HostPodDao _podDao = null;
+    @Inject private AlertManager _alertMgr;
     private long _msId;
     private ConnectionConcierge _concierge;
-    @Inject
-    ClusterDao _clusterDao;
-    @Inject
-    ResourceManager _resourceMgr;
+    @Inject ClusterDao _clusterDao;
+    @Inject ResourceManager _resourceMgr;
     
     // private ConnectionConcierge _concierge;
     private Map<Long, Long> _pingMap;
 
-    protected AgentMonitor() {
+    public AgentMonitor() {
+        _pingMap = new ConcurrentHashMap<Long, Long>(10007);
     }
 
     public AgentMonitor(long msId, HostDao hostDao, VMInstanceDao vmDao, DataCenterDao dcDao, HostPodDao podDao, AgentManagerImpl agentMgr, AlertManager alertMgr, long pingTimeout) {

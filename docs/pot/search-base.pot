@@ -1,0 +1,54 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Search Base"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "An LDAP query is relative to a given node of the LDAP directory tree, called the search base. The search base is the distinguished name (DN) of a level of the directory tree below which all users can be found. The users can be in the immediate base directory or in some subdirectory. The search base may be equivalent to the organization, group, or domain name. The syntax for writing a DN varies depending on which LDAP server you are using. A full discussion of distinguished names is outside the scope of our documentation. The following table shows some examples of search bases to find users in the testing department.."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "LDAP Server"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Example Search Base DN"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ApacheDS"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ou=testing,o=project"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Active Directory"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "OU=testing, DC=company"
+msgstr ""
+

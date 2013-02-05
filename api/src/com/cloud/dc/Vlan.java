@@ -44,4 +44,9 @@ public interface Vlan extends InfrastructureEntity, InternalIdentity, Identity {
 
     public Long getPhysicalNetworkId();
 
+	public String getIp6Gateway();
+
+	public String getIp6Cidr();
+
+	public String getIp6Range();
 }

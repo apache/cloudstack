@@ -33,46 +33,12 @@
     <defaultGoal>install</defaultGoal>
     <plugins>
       <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>1.7</version>
-        <executions>
-          <execution>
-          <id>generate-resource</id>
-          <phase>generate-resources</phase>
-          <goals>
-            <goal>run</goal>
-          </goals>
-          <configuration>
-            <target>
-              <delete dir="${basedir}/cloudmonkey/marvin"/>
-            </target>
-          </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.2.1</version>
         <executions>
           <execution>
-            <id>compile</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <workingDirectory>${basedir}</workingDirectory>
-              <executable>cp</executable>
-              <arguments>
-                  <argument>-rv</argument>
-                  <argument>${basedir}/../marvin/marvin</argument>
-                  <argument>${basedir}/cloudmonkey</argument>
-              </arguments>
-            </configuration>
-          </execution>
-          <execution>
-            <id>cachegen</id>
+            <id>cachemaker</id>
             <phase>compile</phase>
             <goals>
               <goal>exec</goal>
@@ -81,7 +47,7 @@
               <workingDirectory>${basedir}/cloudmonkey</workingDirectory>
               <executable>python</executable>
               <arguments>
-                  <argument>cachegen.py</argument>
+                  <argument>cachemaker.py</argument>
               </arguments>
             </configuration>
           </execution>

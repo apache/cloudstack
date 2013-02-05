@@ -18,10 +18,11 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
-import com.cloud.network.Network;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+
+import com.cloud.network.Network;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -141,9 +142,18 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY) @Param(description="list networks available for vm deployment")
     private Boolean canUseForDeploy;
 
+    @SerializedName(ApiConstants.IS_PERSISTENT) @Param(description="list networks that are persistent")
+    private Boolean isPersistent;
+
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with network", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
+    @SerializedName(ApiConstants.IP6_GATEWAY) @Param(description="the gateway of IPv6 network")
+    private String ip6Gateway;
+    
+    @SerializedName(ApiConstants.IP6_CIDR) @Param(description="the cidr of IPv6 network")
+    private String ip6Cidr;
+    
     public void setId(String id) {
         this.id = id;
     }
@@ -295,7 +305,19 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.canUseForDeploy = canUseForDeploy;
     }
 
+    public void setIsPersistent(Boolean isPersistent) {
+        this.isPersistent = isPersistent;
+    }
+
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }
+
+	public void setIp6Gateway(String ip6Gateway) {
+		this.ip6Gateway = ip6Gateway;
+	}
+
+	public void setIp6Cidr(String ip6Cidr) {
+		this.ip6Cidr = ip6Cidr;
+	}
 }

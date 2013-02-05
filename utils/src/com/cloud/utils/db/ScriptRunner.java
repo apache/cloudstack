@@ -43,10 +43,11 @@ public class ScriptRunner {
 
     private boolean stopOnError;
     private boolean autoCommit;
+    private boolean verbosity = true;
 
     private String delimiter = DEFAULT_DELIMITER;
     private boolean fullLineDelimiter = false;
-    
+
     private StringBuffer _logBuffer = new StringBuffer();
 
     /**
@@ -56,6 +57,13 @@ public class ScriptRunner {
         this.connection = connection;
         this.autoCommit = autoCommit;
         this.stopOnError = stopOnError;
+    }
+
+    public ScriptRunner(Connection connection, boolean autoCommit, boolean stopOnError, boolean verbosity) {
+        this.connection = connection;
+        this.autoCommit = autoCommit;
+        this.stopOnError = stopOnError;
+        this.verbosity = verbosity;
     }
 
     public void setDelimiter(String delimiter, boolean fullLineDelimiter) {
@@ -170,7 +178,11 @@ public class ScriptRunner {
                     }
                     Thread.yield();
                 } else {
-                    command.append(line);
+                    int idx = line.indexOf("--");
+                    if (idx != -1)
+                        command.append(line.substring(0, idx));
+                    else
+                        command.append(line);
                     command.append(" ");
                 }
             }
@@ -203,7 +215,8 @@ public class ScriptRunner {
 
     private void println(Object o) {
         _logBuffer.append(o);
-        s_logger.debug(_logBuffer.toString());
+        if (verbosity)
+            s_logger.debug(_logBuffer.toString());
         _logBuffer = new StringBuffer();
     }
 

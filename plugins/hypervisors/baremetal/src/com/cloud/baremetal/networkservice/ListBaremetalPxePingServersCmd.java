@@ -20,13 +20,14 @@ package com.cloud.baremetal.networkservice;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.log4j.Logger;
@@ -41,7 +42,7 @@ public class ListBaremetalPxePingServersCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListBaremetalPxePingServersCmd.class);
     private static final String s_name = "listpingpxeserverresponse";
 
-    @PlugService
+    @Inject
     BaremetalPxeManager _pxeMgr;
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////

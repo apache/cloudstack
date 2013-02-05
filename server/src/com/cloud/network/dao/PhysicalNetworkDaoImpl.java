@@ -19,25 +19,25 @@ package com.cloud.network.dao;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
 
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetworkVO;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+@Component
 @Local(value=PhysicalNetworkDao.class) @DB(txn=false)
 public class PhysicalNetworkDaoImpl extends GenericDaoBase<PhysicalNetworkVO, Long> implements PhysicalNetworkDao {
     final SearchBuilder<PhysicalNetworkVO> ZoneSearch;
-    
-    protected final PhysicalNetworkTrafficTypeDaoImpl _trafficTypeDao = ComponentLocator.inject(PhysicalNetworkTrafficTypeDaoImpl.class);
-    
+
+    @Inject protected PhysicalNetworkTrafficTypeDaoImpl _trafficTypeDao;
+
     protected PhysicalNetworkDaoImpl() {
         super();
         ZoneSearch = createSearchBuilder();
@@ -61,7 +61,7 @@ public class PhysicalNetworkDaoImpl extends GenericDaoBase<PhysicalNetworkVO, Lo
 
     @Override
     public List<PhysicalNetworkVO> listByZoneAndTrafficType(long dataCenterId, TrafficType trafficType) {
-        
+
         SearchBuilder<PhysicalNetworkTrafficTypeVO> trafficTypeSearch = _trafficTypeDao.createSearchBuilder();
         PhysicalNetworkTrafficTypeVO trafficTypeEntity = trafficTypeSearch.entity();
         trafficTypeSearch.and("trafficType", trafficTypeSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);

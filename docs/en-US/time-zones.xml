@@ -1,137 +1,137 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
 -->
 
 <appendix id="time-zones">
-    <title>Time Zones</title>
+		<title>Time Zones</title>
     <para>The following time zone identifiers are accepted by &PRODUCT;. There are several places that have a time zone as a required or optional parameter. These include scheduling recurring snapshots, creating a user, and specifying the usage time zone in the Configuration table.</para>
-    <informaltable frame="all">
-        <tgroup cols="3" align="left" colsep="1" rowsep="1">
-            <colspec colname="c1" />
-                <colspec colname="c2" />
-            <colspec colname="c3" />
-            <tbody>
-                <row>
-                    <entry><para>Etc/GMT+12</para></entry>
-                    <entry><para>Etc/GMT+11</para></entry>
-                    <entry><para>Pacific/Samoa</para></entry>
-                </row>
-                <row>
-                    <entry><para>Pacific/Honolulu</para></entry>
-                    <entry><para>US/Alaska</para></entry>
-                    <entry><para>America/Los_Angeles</para></entry>
-                </row>
-                <row>
-                    <entry><para>Mexico/BajaNorte</para></entry>
-                    <entry><para>US/Arizona</para></entry>
-                    <entry><para>US/Mountain</para></entry>
-                </row>
-                <row>
-                    <entry><para>America/Chihuahua</para></entry>
-                    <entry><para>America/Chicago</para></entry>
-                    <entry><para>America/Costa_Rica</para></entry>
-                </row>
-                <row>
-                    <entry><para>America/Mexico_City</para></entry>
-                    <entry><para>Canada/Saskatchewan</para></entry>
-                    <entry><para>America/Bogota</para></entry>
-                </row>
-                <row>
-                    <entry><para>America/New_York</para></entry>
-                    <entry><para>America/Caracas</para></entry>
-                    <entry><para>America/Asuncion</para></entry>
-                </row>
-                <row>
-                    <entry><para>America/Cuiaba</para></entry>
-                    <entry><para>America/Halifax</para></entry>
-                    <entry><para>America/La_Paz</para></entry>
-                </row>
-                <row>
-                    <entry><para>America/Santiago</para></entry>
-                    <entry><para>America/St_Johns</para></entry>
-                    <entry><para>America/Araguaina</para></entry>
-                </row>
-                <row>
-                    <entry><para>America/Argentina/Buenos_Aires</para></entry>
-                    <entry><para>America/Cayenne</para></entry>
-                    <entry><para>America/Godthab</para></entry>
-                </row>
-                <row>
-                    <entry><para>America/Montevideo</para></entry>
-                    <entry><para>Etc/GMT+2</para></entry>
-                    <entry><para>Atlantic/Azores</para></entry>
-                </row>
-                <row>
-                    <entry><para>Atlantic/Cape_Verde</para></entry>
-                    <entry><para>Africa/Casablanca</para></entry>
-                    <entry><para>Etc/UTC</para></entry>
-                </row>
-                <row>
-                    <entry><para>Atlantic/Reykjavik</para></entry>
-                    <entry><para>Europe/London</para></entry>
-                    <entry><para>CET</para></entry>
-                </row>
-                <row>
-                    <entry><para>Europe/Bucharest</para></entry>
-                    <entry><para>Africa/Johannesburg</para></entry>
-                    <entry><para>Asia/Beirut</para></entry>
-                </row>
-                <row>
-                    <entry><para>Africa/Cairo</para></entry>
-                    <entry><para>Asia/Jerusalem</para></entry>
-                    <entry><para>Europe/Minsk</para></entry>
-                </row>
-                <row>
-                    <entry><para>Europe/Moscow</para></entry>
-                    <entry><para>Africa/Nairobi</para></entry>
-                    <entry><para>Asia/Karachi</para></entry>
-                </row>
-                <row>
-                    <entry><para>Asia/Kolkata</para></entry>
-                    <entry><para>Asia/Bangkok</para></entry>
-                    <entry><para>Asia/Shanghai</para></entry>
-                </row>
-                <row>
-                    <entry><para>Asia/Kuala_Lumpur</para></entry>
-                    <entry><para>Australia/Perth</para></entry>
-                    <entry><para>Asia/Taipei</para></entry>
-                </row>
-                <row>
-                    <entry><para>Asia/Tokyo</para></entry>
-                    <entry><para>Asia/Seoul</para></entry>
-                    <entry><para>Australia/Adelaide</para></entry>
-                </row>
-                <row>
-                    <entry><para>Australia/Darwin</para></entry>
-                    <entry><para>Australia/Brisbane</para></entry>
-                    <entry><para>Australia/Canberra</para></entry>
-                </row>
-                <row>
-                    <entry><para>Pacific/Guam</para></entry>
-                    <entry><para>Pacific/Auckland</para></entry>
-                    <entry><para></para></entry>
-                </row>
-            </tbody>
-        </tgroup>
-    </informaltable>    
+		<informaltable frame="all">
+			<tgroup cols="3" align="left" colsep="1" rowsep="1">
+				<colspec colname="c1" />
+					<colspec colname="c2" />
+				<colspec colname="c3" />
+				<tbody>
+					<row>
+						<entry><para>Etc/GMT+12</para></entry>
+						<entry><para>Etc/GMT+11</para></entry>
+						<entry><para>Pacific/Samoa</para></entry>
+					</row>
+					<row>
+						<entry><para>Pacific/Honolulu</para></entry>
+						<entry><para>US/Alaska</para></entry>
+						<entry><para>America/Los_Angeles</para></entry>
+					</row>
+					<row>
+						<entry><para>Mexico/BajaNorte</para></entry>
+						<entry><para>US/Arizona</para></entry>
+						<entry><para>US/Mountain</para></entry>
+					</row>
+					<row>
+						<entry><para>America/Chihuahua</para></entry>
+						<entry><para>America/Chicago</para></entry>
+						<entry><para>America/Costa_Rica</para></entry>
+					</row>
+					<row>
+						<entry><para>America/Mexico_City</para></entry>
+						<entry><para>Canada/Saskatchewan</para></entry>
+						<entry><para>America/Bogota</para></entry>
+					</row>
+					<row>
+						<entry><para>America/New_York</para></entry>
+						<entry><para>America/Caracas</para></entry>
+						<entry><para>America/Asuncion</para></entry>
+					</row>
+					<row>
+						<entry><para>America/Cuiaba</para></entry>
+						<entry><para>America/Halifax</para></entry>
+						<entry><para>America/La_Paz</para></entry>
+					</row>
+					<row>
+						<entry><para>America/Santiago</para></entry>
+						<entry><para>America/St_Johns</para></entry>
+						<entry><para>America/Araguaina</para></entry>
+					</row>
+					<row>
+						<entry><para>America/Argentina/Buenos_Aires</para></entry>
+						<entry><para>America/Cayenne</para></entry>
+						<entry><para>America/Godthab</para></entry>
+					</row>
+					<row>
+						<entry><para>America/Montevideo</para></entry>
+						<entry><para>Etc/GMT+2</para></entry>
+						<entry><para>Atlantic/Azores</para></entry>
+					</row>
+					<row>
+						<entry><para>Atlantic/Cape_Verde</para></entry>
+						<entry><para>Africa/Casablanca</para></entry>
+						<entry><para>Etc/UTC</para></entry>
+					</row>
+					<row>
+						<entry><para>Atlantic/Reykjavik</para></entry>
+						<entry><para>Europe/London</para></entry>
+						<entry><para>CET</para></entry>
+					</row>
+					<row>
+						<entry><para>Europe/Bucharest</para></entry>
+						<entry><para>Africa/Johannesburg</para></entry>
+						<entry><para>Asia/Beirut</para></entry>
+					</row>
+					<row>
+						<entry><para>Africa/Cairo</para></entry>
+						<entry><para>Asia/Jerusalem</para></entry>
+						<entry><para>Europe/Minsk</para></entry>
+					</row>
+					<row>
+						<entry><para>Europe/Moscow</para></entry>
+						<entry><para>Africa/Nairobi</para></entry>
+						<entry><para>Asia/Karachi</para></entry>
+					</row>
+					<row>
+						<entry><para>Asia/Kolkata</para></entry>
+						<entry><para>Asia/Bangkok</para></entry>
+						<entry><para>Asia/Shanghai</para></entry>
+					</row>
+					<row>
+						<entry><para>Asia/Kuala_Lumpur</para></entry>
+						<entry><para>Australia/Perth</para></entry>
+						<entry><para>Asia/Taipei</para></entry>
+					</row>
+					<row>
+						<entry><para>Asia/Tokyo</para></entry>
+						<entry><para>Asia/Seoul</para></entry>
+						<entry><para>Australia/Adelaide</para></entry>
+					</row>
+					<row>
+						<entry><para>Australia/Darwin</para></entry>
+						<entry><para>Australia/Brisbane</para></entry>
+						<entry><para>Australia/Canberra</para></entry>
+					</row>
+					<row>
+						<entry><para>Pacific/Guam</para></entry>
+						<entry><para>Pacific/Auckland</para></entry>
+						<entry><para></para></entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</informaltable>	
 </appendix>

@@ -25,47 +25,27 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteriaService;
 
-
+@Component
 @Local(value=AgentLoadBalancerPlanner.class)
-public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPlanner{
+public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements AgentLoadBalancerPlanner{
     private static final Logger s_logger = Logger.getLogger(AgentLoadBalancerPlanner.class);
-    private String _name;
     
     @Inject HostDao _hostDao = null;
-    
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
     
     @Override
     public List<HostVO> getHostsToRebalance(long msId, int avLoad) {

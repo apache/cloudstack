@@ -18,7 +18,6 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.network.LoadBalancerVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface LoadBalancerDao extends GenericDao<LoadBalancerVO, Long> {

@@ -19,7 +19,6 @@ package com.cloud.network.dao;
 import java.util.List;
 
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface PhysicalNetworkDao extends GenericDao<PhysicalNetworkVO, Long> {

@@ -29,14 +29,14 @@ public interface FiniteState<S, E> {
      * @return the state machine being used.
      */
     StateMachine<S, E> getStateMachine();
-    
+
     /**
      * get next state based on the event.
      * @param event
      * @return next State
      */
     S getNextState(E event);
-    
+
     /**
      * Get the states that could have traveled to the current state
      * via this event.
@@ -44,11 +44,12 @@ public interface FiniteState<S, E> {
      * @return array of states
      */
     List<S> getFromStates(E event);
-    
+
     /**
      * Get the possible events that can happen from the current state.
      * @return array of events.
      */
     Set<E> getPossibleEvents();
+
     String getDescription();
 }

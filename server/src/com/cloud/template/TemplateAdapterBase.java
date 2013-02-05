@@ -19,6 +19,7 @@ package com.cloud.template;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
@@ -42,6 +43,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.storage.GuestOS;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
@@ -56,13 +58,12 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.EnumUtils;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 
-public abstract class TemplateAdapterBase implements TemplateAdapter {
+public abstract class TemplateAdapterBase extends AdapterBase implements TemplateAdapter {
 	private final static Logger s_logger = Logger.getLogger(TemplateAdapterBase.class);
-	protected String _name;
 	protected @Inject DomainDao _domainDao;
 	protected @Inject AccountDao _accountDao;
 	protected @Inject ConfigurationDao _configDao;
@@ -76,22 +77,6 @@ public abstract class TemplateAdapterBase implements TemplateAdapter {
 	protected @Inject HostDao _hostDao;
 	protected @Inject ResourceLimitService _resourceLimitMgr;
 	
-	@Override
-	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		_name = name;
-		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
-	}
-
-	@Override
-	public boolean start() {
-		return true;
-	}
-
 	@Override
 	public boolean stop() {
 		return true;

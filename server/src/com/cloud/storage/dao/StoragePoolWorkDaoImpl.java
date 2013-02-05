@@ -24,6 +24,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.storage.StoragePoolWorkVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -32,6 +34,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value={StoragePoolWorkDao.class}) @DB(txn=false)
 public class StoragePoolWorkDaoImpl extends GenericDaoBase<StoragePoolWorkVO, Long>  implements StoragePoolWorkDao {
 

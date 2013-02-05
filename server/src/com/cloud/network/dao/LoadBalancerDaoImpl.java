@@ -22,18 +22,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
-import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.rules.FirewallRule.State;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value = { LoadBalancerDao.class })
 public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> implements LoadBalancerDao {
     private static final Logger s_logger = Logger.getLogger(LoadBalancerDaoImpl.class);
@@ -50,7 +51,7 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
     private final SearchBuilder<LoadBalancerVO> AccountAndNameSearch;
     protected final SearchBuilder<LoadBalancerVO> TransitionStateSearch;
 
-    protected final FirewallRulesCidrsDaoImpl _portForwardingRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
+    @Inject protected FirewallRulesCidrsDaoImpl _portForwardingRulesCidrsDao;
 
     protected LoadBalancerDaoImpl() {
         ListByIp = createSearchBuilder();
@@ -132,5 +133,5 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         sc.setParameters("state", State.Add.toString(), State.Revoke.toString());
         return listBy(sc);
     }
-    
+
 }

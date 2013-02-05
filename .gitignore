@@ -62,7 +62,6 @@ tools/cli/build/
 awsapi/modules/*
 !.gitignore
 .classpath
-.project
 .settings.xml
 .settings/
 db.properties.override
@@ -73,4 +72,5 @@ docs/tmp
 docs/publish
 docs/runbook/tmp
 docs/runbook/publish
+.project
 Gemfile.lock

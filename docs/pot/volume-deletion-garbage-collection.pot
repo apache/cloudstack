@@ -1,0 +1,49 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:12:00\n"
+"PO-Revision-Date: 2013-02-02T20:12:00\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Volume Deletion and Garbage Collection"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The deletion of a volume does not delete the snapshots that have been created from the volume"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When a VM is destroyed, data disk volumes that are attached to the VM are not deleted."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Volumes are permanently destroyed using a garbage collection process. The global configuration variables expunge.delay and expunge.interval determine when the physical deletion of volumes will occur."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "expunge.delay: determines how old the volume must be before it is destroyed, in seconds"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "expunge.interval: determines how often to run the garbage collection check"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Administrators should adjust these values depending on site policies around data retention."
+msgstr ""
+

@@ -25,6 +25,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.host.Status;
 import com.cloud.storage.StoragePoolHostVO;
@@ -34,6 +35,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value = { StoragePoolHostDao.class })
 public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Long> implements StoragePoolHostDao {
     public static final Logger s_logger = Logger.getLogger(StoragePoolHostDaoImpl.class.getName());

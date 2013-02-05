@@ -22,6 +22,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.bridge.model.OfferingBundleVO;
 import com.cloud.utils.db.GenericDaoBase;
@@ -29,6 +30,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={OfferingDao.class})
 public class OfferingDaoImpl extends GenericDaoBase<OfferingBundleVO, Long> implements OfferingDao {
 	public static final Logger logger = Logger.getLogger(OfferingDaoImpl.class);

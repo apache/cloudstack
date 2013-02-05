@@ -21,6 +21,8 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.persistence.EntityExistsException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
@@ -34,6 +36,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value = NetworkOfferingDao.class)
 @DB(txn = false)
 public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Long> implements NetworkOfferingDao {

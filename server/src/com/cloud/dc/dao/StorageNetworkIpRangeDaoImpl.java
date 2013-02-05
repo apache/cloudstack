@@ -22,6 +22,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.StorageNetworkIpRangeVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -34,6 +36,7 @@ import com.cloud.utils.db.SearchCriteriaService;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+@Component
 @Local(value={StorageNetworkIpRangeDao.class})
 @DB(txn=false)
 public class StorageNetworkIpRangeDaoImpl extends GenericDaoBase<StorageNetworkIpRangeVO, Long> implements StorageNetworkIpRangeDao {

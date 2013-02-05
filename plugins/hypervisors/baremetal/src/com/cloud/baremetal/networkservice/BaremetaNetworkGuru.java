@@ -21,6 +21,7 @@ package com.cloud.baremetal.networkservice;
 import java.net.URI;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
@@ -40,17 +41,16 @@ import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.guru.DirectPodBasedNetworkGuru;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;

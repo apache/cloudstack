@@ -302,8 +302,20 @@
       <resource>
           <directory>../utils/conf/</directory>
       </resource>
+      <resource>
+        <directory>${basedir}/resource/AmazonEC2</directory>
+      </resource>
     </resources>
     <plugins>
+	  <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>2.3</version>
+        <configuration>
+          <webXml>./web/web.xml</webXml>
+          <warSourceDirectory>./target/generated-webapp</warSourceDirectory>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.mortbay.jetty</groupId>
         <artifactId>maven-jetty-plugin</artifactId>
@@ -317,9 +329,40 @@
           </connectors>
           <contextPath>/awsapi</contextPath>
           <webXml>${basedir}/web/web.xml</webXml>
-          <webAppSourceDirectory>${basedir}/target/cloud-awsapi-${project.version}</webAppSourceDirectory>
+          <webAppSourceDirectory>${basedir}/target/generated-webapp</webAppSourceDirectory>
         </configuration>
-      </plugin>      
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <id>generate-resource</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <copy
+                  todir="${basedir}/target/generated-webapp/WEB-INF/classes">
+                  <fileset dir="${basedir}/conf">
+                    <include name="*.*" />
+                  </fileset>
+				  <globmapper from="*.in" to="*" />
+                  <filterchain>
+                    <filterreader
+                      classname="org.apache.tools.ant.filters.ReplaceTokens">
+                      <param type="propertiesfile"
+                        value="${basedir}/../build/replace.properties" />
+                    </filterreader>
+                  </filterchain>
+                </copy>
+              </target>
+            </configuration>
+          </execution>
+		</executions>
+	  </plugin>
     </plugins>
     <!--
         <plugins>

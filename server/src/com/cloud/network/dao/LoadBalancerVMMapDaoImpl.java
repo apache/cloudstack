@@ -20,12 +20,14 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.network.LoadBalancerVMMapVO;
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 
+@Component
 @Local(value={LoadBalancerVMMapDao.class})
 public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO, Long> implements LoadBalancerVMMapDao {
 
@@ -73,7 +75,7 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
 
         return listBy(sc);
     }
-
+    
     @Override
     public LoadBalancerVMMapVO findByLoadBalancerIdAndVmId(long loadBalancerId, long instanceId) {
         SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();

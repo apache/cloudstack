@@ -34,6 +34,8 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.rules.FirewallRule;
@@ -41,12 +43,13 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 
 @Local(value = {NetworkModel.class})
-public class MockNetworkModelImpl implements NetworkModel, Manager {
+public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
 
     /* (non-Javadoc)
      * @see com.cloud.utils.component.Manager#configure(java.lang.String, java.util.Map)
@@ -805,5 +808,11 @@ public class MockNetworkModelImpl implements NetworkModel, Manager {
         // TODO Auto-generated method stub
         return false;
     }
+
+	@Override
+	public Vlan getVlanForNetwork(long networkId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

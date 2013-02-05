@@ -25,7 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.region.RegionService;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
@@ -64,7 +67,6 @@ import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.BareMetalVmService;
 import com.cloud.vm.UserVmService;
 
@@ -92,74 +94,41 @@ public abstract class BaseCmd {
     @Parameter(name = "response", type = CommandType.STRING)
     private String responseType;
 
-    public static ComponentLocator s_locator;
-    public static ConfigurationService _configService;
-    public static AccountService _accountService;
-    public static UserVmService _userVmService;
-    public static ManagementService _mgr;
-    public static StorageService _storageService;
-    public static ResourceService _resourceService;
-    public static NetworkService _networkService;
-    public static TemplateService _templateService;
-    public static SecurityGroupService _securityGroupService;
-    public static SnapshotService _snapshotService;
-    public static ConsoleProxyService _consoleProxyService;
-    public static VpcVirtualNetworkApplianceService _routerService;
-    public static ResponseGenerator _responseGenerator;
-    public static EntityManager _entityMgr;
-    public static RulesService _rulesService;
-    public static AutoScaleService _autoScaleService;
-    public static LoadBalancingRulesService _lbService;
-    public static RemoteAccessVpnService _ravService;
-    public static BareMetalVmService _bareMetalVmService;
-    public static ProjectService _projectService;
-    public static FirewallService _firewallService;
-    public static DomainService _domainService;
-    public static ResourceLimitService _resourceLimitService;
-    public static IdentityService _identityService;
-    public static StorageNetworkService _storageNetworkService;
-    public static TaggedResourceService _taggedResourceService;
-    public static VpcService _vpcService;
-    public static NetworkACLService _networkACLService;
-    public static Site2SiteVpnService _s2sVpnService;
+    @Inject public ConfigurationService _configService;
+    @Inject public AccountService _accountService;
+    @Inject public UserVmService _userVmService;
+    @Inject public ManagementService _mgr;
+    @Inject public StorageService _storageService;
+    @Inject public ResourceService _resourceService;
+    @Inject public NetworkService _networkService;
+    @Inject public TemplateService _templateService;
+    @Inject public SecurityGroupService _securityGroupService;
+    @Inject public SnapshotService _snapshotService;
+    @Inject public ConsoleProxyService _consoleProxyService;
+    @Inject public VpcVirtualNetworkApplianceService _routerService;
+    @Inject public ResponseGenerator _responseGenerator;
+    @Inject public EntityManager _entityMgr;
+    @Inject public RulesService _rulesService;
+    @Inject public AutoScaleService _autoScaleService;
+    @Inject public LoadBalancingRulesService _lbService;
+    @Inject public RemoteAccessVpnService _ravService;
+    @Inject public ProjectService _projectService;
+    @Inject public FirewallService _firewallService;
+    @Inject public DomainService _domainService;
+    @Inject public ResourceLimitService _resourceLimitService;
+    @Inject public IdentityService _identityService;
+    @Inject public StorageNetworkService _storageNetworkService;
+    @Inject public TaggedResourceService _taggedResourceService;
+    @Inject public VpcService _vpcService;
+    @Inject public NetworkACLService _networkACLService;
+    @Inject public Site2SiteVpnService _s2sVpnService;
 
-    public static QueryService _queryService;
-
-    public static void setComponents(ResponseGenerator generator) {
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-        _mgr = (ManagementService) ComponentLocator.getComponent(ManagementService.Name);
-        _accountService = locator.getManager(AccountService.class);
-        _configService = locator.getManager(ConfigurationService.class);
-        _userVmService = locator.getManager(UserVmService.class);
-        _storageService = locator.getManager(StorageService.class);
-        _resourceService = locator.getManager(ResourceService.class);
-        _networkService = locator.getManager(NetworkService.class);
-        _templateService = locator.getManager(TemplateService.class);
-        _securityGroupService = locator.getManager(SecurityGroupService.class);
-        _snapshotService = locator.getManager(SnapshotService.class);
-        _consoleProxyService = locator.getManager(ConsoleProxyService.class);
-        _routerService = locator.getManager(VpcVirtualNetworkApplianceService.class);
-        _entityMgr = locator.getManager(EntityManager.class);
-        _rulesService = locator.getManager(RulesService.class);
-        _lbService = locator.getManager(LoadBalancingRulesService.class);
-        _autoScaleService = locator.getManager(AutoScaleService.class);
-        _ravService = locator.getManager(RemoteAccessVpnService.class);
-        _responseGenerator = generator;
-        _bareMetalVmService = locator.getManager(BareMetalVmService.class);
-        _projectService = locator.getManager(ProjectService.class);
-        _firewallService = locator.getManager(FirewallService.class);
-        _domainService = locator.getManager(DomainService.class);
-        _resourceLimitService = locator.getManager(ResourceLimitService.class);
-        _identityService = locator.getManager(IdentityService.class);
-        _storageNetworkService = locator.getManager(StorageNetworkService.class);
-        _taggedResourceService = locator.getManager(TaggedResourceService.class);
-        _vpcService = locator.getManager(VpcService.class);
-        _networkACLService = locator.getManager(NetworkACLService.class);
-        _s2sVpnService = locator.getManager(Site2SiteVpnService.class);
-        _queryService = locator.getManager(QueryService.class);
-    }
+    @Inject public QueryService _queryService;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
+
+    public void configure() {
+    }
 
     public String getResponseType() {
         if (responseType == null) {
@@ -177,7 +146,7 @@ public abstract class BaseCmd {
     /**
      * For commands the API framework needs to know the owner of the object being acted upon. This method is
      * used to determine that information.
-     *
+     * 
      * @return the id of the account that owns the object being acted upon
      */
     public abstract long getEntityOwnerId();
@@ -490,7 +459,7 @@ public abstract class BaseCmd {
                 if (!enabledOnly || account.getState() == Account.State.enabled) {
                     return account.getId();
                 } else {
-                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
+                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");                    
                 }
             } else {
                 // idList is not used anywhere, so removed it now
@@ -507,7 +476,7 @@ public abstract class BaseCmd {
                     return project.getProjectAccountId();
                 } else {
                     PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() + " as it's no longer active");
-                    ex.addProxyObject(project, projectId, "projectId");
+                    ex.addProxyObject(project, projectId, "projectId");                    
                     throw ex;
                 }
             } else {

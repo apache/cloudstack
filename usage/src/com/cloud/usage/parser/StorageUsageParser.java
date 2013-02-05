@@ -22,6 +22,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.usage.StorageTypes;
@@ -33,14 +36,22 @@ import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
+
 
 public class StorageUsageParser {
     public static final Logger s_logger = Logger.getLogger(StorageUsageParser.class.getName());
     
-    private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
-    private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
-    private static UsageStorageDao m_usageStorageDao = _locator.getDao(UsageStorageDao.class);
+    private static UsageDao m_usageDao;
+    private static UsageStorageDao m_usageStorageDao;
+
+    @Inject private UsageDao _usageDao;
+    @Inject private UsageStorageDao _usageStorageDao;
+ 
+    @PostConstruct
+    void init() {
+    	m_usageDao = _usageDao;
+    	m_usageStorageDao = _usageStorageDao;
+    }
     
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
         if (s_logger.isDebugEnabled()) {

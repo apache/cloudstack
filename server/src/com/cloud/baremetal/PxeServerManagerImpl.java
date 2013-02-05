@@ -21,9 +21,12 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupPxeServerCommand;
@@ -38,29 +41,29 @@ import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
+@Component
 @Local(value = {PxeServerManager.class})
-public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdapter {
+public class PxeServerManagerImpl extends ManagerBase implements PxeServerManager, ResourceStateAdapter {
 	private static final org.apache.log4j.Logger s_logger = Logger.getLogger(PxeServerManagerImpl.class);
-	protected String _name;
 	@Inject DataCenterDao _dcDao;
 	@Inject HostDao _hostDao;
 	@Inject AgentManager _agentMgr;
 	@Inject ExternalDhcpManager exDhcpMgr;
 	@Inject ResourceManager _resourceMgr;
-	@Inject(adapter=PxeServerService.class)
-	protected Adapters<PxeServerService> _services;
-
+	
+	// @com.cloud.utils.component.Inject(adapter=PxeServerService.class)
+	@Inject protected List<PxeServerService> _services;
+	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		_name = name;
 		_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
 		return true;
 	}
@@ -76,21 +79,16 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
 		return true;
 	}
 
-	@Override
-	public String getName() {
-		return _name;
-	}
-
 	protected PxeServerService getServiceByType(String type) {
 		PxeServerService _service;
-		_service = _services.get(type);
+		_service = AdapterBase.getAdapterByName(_services, type);
 		if (_service == null) {
 			throw new CloudRuntimeException("Cannot find PXE service for " + type);
 		}
 		return _service;
 	}
-
-
+	
+	
 	@Override
 	public Host addPxeServer(PxeServerProfile profile) {
 		return getServiceByType(profile.getType()).addPxeServer(profile);
@@ -112,7 +110,7 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
     public boolean prepareCreateTemplate(PxeServerType type, Long pxeServerId, UserVm vm, String templateUrl) {
         return getServiceByType(type.getName()).prepareCreateTemplate(pxeServerId, vm, templateUrl);
     }
-
+    
     @Override
     public PxeServerType getPxeServerType(HostVO host) {
         if (host.getResource().equalsIgnoreCase(PingPxeServerResource.class.getName())) {
@@ -134,7 +132,7 @@ public class PxeServerManagerImpl implements PxeServerManager, ResourceStateAdap
         if (!(startup[0] instanceof StartupPxeServerCommand)) {
             return null;
         }
-
+        
         host.setType(Host.Type.PxeServer);
         return host;
     }

@@ -28,6 +28,7 @@ import java.util.Set;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.network.security.VmRulesetLogVO;
 import com.cloud.utils.db.GenericDaoBase;
@@ -35,6 +36,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={VmRulesetLogDao.class})
 public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> implements VmRulesetLogDao {
     protected static Logger s_logger = Logger.getLogger(VmRulesetLogDaoImpl.class);

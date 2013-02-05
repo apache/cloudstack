@@ -18,9 +18,12 @@ package com.cloud.maint.dao;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.maint.AgentUpgradeVO;
 import com.cloud.utils.db.GenericDaoBase;
 
+@Component
 @Local(AgentUpgradeDao.class)
 public class AgentUpgradeDaoImpl extends GenericDaoBase<AgentUpgradeVO, Long> implements AgentUpgradeDao {
 }

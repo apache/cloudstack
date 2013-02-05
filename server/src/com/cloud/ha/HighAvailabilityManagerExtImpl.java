@@ -21,14 +21,15 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.server.ManagementServer;
 import com.cloud.usage.dao.UsageJobDao;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.Transaction;
 
 @Local(value={HighAvailabilityManager.class})
@@ -36,21 +37,12 @@ public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl 
 	
     @Inject
 	UsageJobDao _usageJobDao;
-    ConfigurationDao configDao;
+    
+    @Inject ConfigurationDao configDao;
     
 	@Override
 	public boolean configure(final String name, final Map<String, Object> xmlParams) throws ConfigurationException {
 		super.configure(name, xmlParams);
-
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        
-        configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) 
-        {
-        	s_logger.warn("Unable to get a configuration dao to check config value for enableUsageServer");
-        	return false;
-        }
-
         return true;
 	}
 

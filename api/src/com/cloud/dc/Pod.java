@@ -16,10 +16,11 @@
 // under the License.
 package com.cloud.dc;
 
-import com.cloud.org.Grouping;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.org.Grouping;
 
 /**
  * Represents one pod in the cloud stack.

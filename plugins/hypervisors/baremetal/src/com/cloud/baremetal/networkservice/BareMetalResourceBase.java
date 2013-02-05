@@ -67,7 +67,8 @@ import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
 import com.cloud.server.ManagementServer;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
@@ -81,7 +82,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
 
 @Local(value = ServerResource.class)
-public class BareMetalResourceBase implements ServerResource {
+public class BareMetalResourceBase extends ManagerBase implements ServerResource {
 	private static final Logger s_logger = Logger.getLogger(BareMetalResourceBase.class);
 	protected HashMap<String, State> _vms = new HashMap<String, State>(2);
 	protected String _name;
@@ -307,8 +308,7 @@ public class BareMetalResourceBase implements ServerResource {
     protected Map<String, State> fullSync() {
         Map<String, State> states = new HashMap<String, State>();
         if (hostId != null) {
-            ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-            vmDao = locator.getDao(VMInstanceDao.class);
+            vmDao = ComponentContext.getComponent(VMInstanceDao.class);
             final List<? extends VMInstanceVO> vms = vmDao.listByHostId(hostId);
             for (VMInstanceVO vm : vms) {
                 states.put(vm.getInstanceName(), vm.getState());

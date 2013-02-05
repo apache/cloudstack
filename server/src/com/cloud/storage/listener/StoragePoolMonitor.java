@@ -18,6 +18,8 @@ package com.cloud.storage.listener;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
@@ -31,97 +33,93 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.server.ManagementService;
 import com.cloud.storage.OCFS2Manager;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.StoragePoolDao;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+
 
 public class StoragePoolMonitor implements Listener {
     private static final Logger s_logger = Logger.getLogger(StoragePoolMonitor.class);
-	private final StorageManagerImpl _storageManager;
-	private final StoragePoolDao _poolDao;
-	OCFS2Manager _ocfs2Mgr;
-	
+    private final StorageManagerImpl _storageManager;
+    private final StoragePoolDao _poolDao;
+    @Inject OCFS2Manager _ocfs2Mgr;
+
     public StoragePoolMonitor(StorageManagerImpl mgr, StoragePoolDao poolDao) {
-    	this._storageManager = mgr;
-    	this._poolDao = poolDao;
-    	
-    	ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	this._ocfs2Mgr = locator.getManager(OCFS2Manager.class);
+        this._storageManager = mgr;
+        this._poolDao = poolDao;
+
     }
-    
-    
+
+
     @Override
     public boolean isRecurring() {
         return false;
     }
-    
+
     @Override
     public synchronized boolean processAnswers(long agentId, long seq, Answer[] resp) {
         return true;
     }
-    
+
     @Override
     public synchronized boolean processDisconnect(long agentId, Status state) {
         return true;
     }
-    
+
     @Override
     public void processConnect(HostVO host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
-    	if (cmd instanceof StartupRoutingCommand) {
-    		StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
-    		if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||
-				scCmd.getHypervisorType() == HypervisorType.VMware || scCmd.getHypervisorType() ==  HypervisorType.Simulator || scCmd.getHypervisorType() == HypervisorType.Ovm) {
-    			List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId());
-    			for (StoragePoolVO pool : pools) {
-    			    if (pool.getStatus() != StoragePoolStatus.Up) {
-    			        continue;
-    			    }
-    			    if (!pool.getPoolType().isShared()) {
-    			        continue;
-    			    }
-    			    
-    			    if (pool.getPoolType() == StoragePoolType.OCFS2 && !_ocfs2Mgr.prepareNodes(pool.getClusterId())) {
-    			        throw new ConnectionException(true, "Unable to prepare OCFS2 nodes for pool " + pool.getId());
-    			    }
-    			    
-    				Long hostId = host.getId();
-    				s_logger.debug("Host " + hostId + " connected, sending down storage pool information ...");
-    				try {
-    				    _storageManager.connectHostToSharedPool(hostId, pool);
-    					_storageManager.createCapacityEntry(pool);
-    				} catch (Exception e) {
-    				    s_logger.warn("Unable to connect host " + hostId + " to pool " + pool + " due to " + e.toString(), e);
-    				}
-    			}
-    		}
-    	}
+        if (cmd instanceof StartupRoutingCommand) {
+            StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
+            if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||
+                    scCmd.getHypervisorType() == HypervisorType.VMware || scCmd.getHypervisorType() ==  HypervisorType.Simulator || scCmd.getHypervisorType() == HypervisorType.Ovm) {
+                List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId());
+                for (StoragePoolVO pool : pools) {
+                    if (pool.getStatus() != StoragePoolStatus.Up) {
+                        continue;
+                    }
+                    if (!pool.getPoolType().isShared()) {
+                        continue;
+                    }
+
+                    if (pool.getPoolType() == StoragePoolType.OCFS2 && !_ocfs2Mgr.prepareNodes(pool.getClusterId())) {
+                        throw new ConnectionException(true, "Unable to prepare OCFS2 nodes for pool " + pool.getId());
+                    }
+
+                    Long hostId = host.getId();
+                    s_logger.debug("Host " + hostId + " connected, sending down storage pool information ...");
+                    try {
+                        _storageManager.connectHostToSharedPool(hostId, pool);
+                        _storageManager.createCapacityEntry(pool);
+                    } catch (Exception e) {
+                        s_logger.warn("Unable to connect host " + hostId + " to pool " + pool + " due to " + e.toString(), e);
+                    }
+                }
+            }
+        }
     }
-    
+
 
     @Override
     public boolean processCommands(long agentId, long seq, Command[] req) {
         return false;
     }
-   
+
     @Override
     public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
-    	return null;
+        return null;
     }
-    
+
     @Override
     public boolean processTimeout(long agentId, long seq) {
-    	return true;
+        return true;
     }
-    
+
     @Override
     public int getTimeout() {
-    	return -1;
+        return -1;
     }
-    
+
 }
