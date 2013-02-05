@@ -211,6 +211,7 @@ import com.cloud.storage.template.TemplateInfo;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.FileUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -4594,44 +4595,20 @@ ServerResource {
 
     private Pair<Double, Double> getNicStats(String nicName) {
         double rx = 0.0;
-        File rxFile = new File("/sys/class/net/" + nicName + "/statistics/rx_bytes");
-        try {
-            FileInputStream rxStream = new FileInputStream(rxFile);
-            StringBuffer rxContent = new StringBuffer("");
-            byte[] rxBuffer = new byte[1024];
-            int rxLength;
-
-            while ((rxLength = rxStream.read(rxBuffer)) != -1) {
-                rxContent.append(new String(rxBuffer));
-            }
-            rx = Double.parseDouble(rxContent.toString());
-        } catch (final FileNotFoundException e) {
-            throw new CloudRuntimeException("Cannot find the file: "
-                    + rxFile.getAbsolutePath(), e);
-        } catch (final IOException e) {
-            throw new CloudRuntimeException("IOException in reading "
-                    + rxFile.getAbsolutePath(), e);
+        String rxFile = "/sys/class/net/" + nicName + "/statistics/rx_bytes";
+        String rxContent = FileUtil.readFileAsString(rxFile);
+        if (rxContent == null) {
+            s_logger.warn("Failed to read the rx_bytes for " + nicName + " from " + rxFile);
         }
+        rx = Double.parseDouble(rxContent);
 
         double tx = 0.0;
-        File txFile = new File("/sys/class/net/" + nicName + "/statistics/tx_bytes");
-        try {
-            FileInputStream txStream = new FileInputStream(txFile);
-            StringBuffer txContent = new StringBuffer("");
-            byte[] txBuffer = new byte[1024];
-            int txLength;
-
-            while((txLength = txStream.read(txBuffer)) != -1) {
-                txContent.append(new String(txBuffer));
-            }
-            tx = Double.parseDouble(txContent.toString());
-        } catch (final FileNotFoundException e) {
-            throw new CloudRuntimeException("Cannot find the file: "
-                    + txFile.getAbsolutePath(), e);
-        } catch (final IOException e) {
-            throw new CloudRuntimeException("IOException in reading "
-                    + txFile.getAbsolutePath(), e);
+        String txFile = "/sys/class/net/" + nicName + "/statistics/tx_bytes";
+        String txContent = FileUtil.readFileAsString(txFile);
+        if (txContent == null) {
+            s_logger.warn("Failed to read the tx_bytes for " + nicName + " from " + txFile);
         }
+        tx = Double.parseDouble(txContent);
 
         return new Pair<Double, Double>(rx, tx);
     }
