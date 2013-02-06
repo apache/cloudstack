@@ -65,6 +65,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
     ruler = "="
     cache_file = cache_file
     config_options = []
+    verbs = []
 
     def __init__(self, pname):
         self.program_name = pname
@@ -246,7 +247,7 @@ class CloudMonkeyShell(cmd.Cmd, object):
                                       args_dict.pop('filter').split(',')))
 
         missing_args = []
-        if verb in self.apicache:
+        if verb in self.apicache and subject in self.apicache[verb]:
             missing_args = filter(lambda x: x not in args_dict.keys(),
                            self.apicache[verb][subject]['requiredparams'])
 
@@ -388,7 +389,6 @@ class CloudMonkeyShell(cmd.Cmd, object):
             if subject in self.apicache[verb]:
                 api = self.apicache[verb][subject]
                 helpdoc = "(%s) %s" % (api['name'], api['description'])
-                helpdoc = api['description']
                 if api['isasync']:
                     helpdoc += "\nThis API is asynchronous."
                 required = api['requiredparams']
