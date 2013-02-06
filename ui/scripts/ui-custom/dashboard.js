@@ -88,9 +88,9 @@
                               val.substring(0, concatValue).concat('...') : val;
                           }).toArray().join('<br/>');
 
-                          $arrayElem.html(val);
+                          $arrayElem.html(_s(val));
                         } else {
-                          $arrayElem.html(_l(arrayValue));
+                          $arrayElem.html(_s(_l(arrayValue)));
                         }
 
                         $arrayElem.attr('title', _l(arrayValue).toString().replace('<br/>', ', '));
@@ -98,7 +98,7 @@
                     });
                   });
 
-                  $li.attr({ title: _l(item.description) });
+                  $li.attr({ title: _s(_l(item.description)) });
 
                   $li.fadeIn();
                 });
@@ -108,7 +108,7 @@
                   if ($item.hasClass('chart-line')) {
                     $item.show().animate({ width: value + '%' });
                   } else {
-                    $item.hide().html(value).fadeIn();
+                    $item.hide().html(_s(value)).fadeIn();
                   }
                 });
               }
