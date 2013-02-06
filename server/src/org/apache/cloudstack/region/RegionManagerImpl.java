@@ -33,6 +33,7 @@ import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.region.dao.RegionSyncDao;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -54,6 +55,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uuididentity.dao.IdentityDao;
 
+@Component
 @Local(value = { RegionManager.class })
 public class RegionManagerImpl extends ManagerBase implements RegionManager, Manager{
     public static final Logger s_logger = Logger.getLogger(RegionManagerImpl.class);

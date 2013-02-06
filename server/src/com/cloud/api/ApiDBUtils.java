@@ -83,8 +83,6 @@ import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
-import com.cloud.api.query.dao.*;
-import com.cloud.api.query.vo.*;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -108,6 +106,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -156,10 +155,6 @@ import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
-import com.cloud.network.*;
-import com.cloud.network.as.*;
-import com.cloud.network.as.dao.*;
-import com.cloud.network.dao.*;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.security.SecurityGroup;
@@ -313,6 +308,7 @@ public class ApiDBUtils {
     static VpcOfferingDao _vpcOfferingDao;
     static SnapshotPolicyDao _snapshotPolicyDao;
     static AsyncJobDao _asyncJobDao;
+    static HostDetailsDao _hostDetailsDao;
 
     @Inject private ManagementServer ms;
     @Inject public AsyncJobManager asyncMgr;
@@ -410,6 +406,7 @@ public class ApiDBUtils {
     @Inject private VpcOfferingDao vpcOfferingDao;
     @Inject private SnapshotPolicyDao snapshotPolicyDao;
     @Inject private AsyncJobDao asyncJobDao;
+    @Inject private HostDetailsDao hostDetailsDao;
 
     @PostConstruct
     void init() {
@@ -507,6 +504,7 @@ public class ApiDBUtils {
         _vpcOfferingDao = vpcOfferingDao;
         _snapshotPolicyDao = snapshotPolicyDao;
         _asyncJobDao = asyncJobDao;
+        _hostDetailsDao = hostDetailsDao;
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -1492,5 +1490,9 @@ public class ApiDBUtils {
 
    public static DataCenterJoinVO newDataCenterView(DataCenter dc){
        return _dcJoinDao.newDataCenterView(dc);
+   }
+   
+   public static Map<String, String> findHostDetailsById(long hostId){
+	   return _hostDetailsDao.findDetails(hostId);
    }
 }

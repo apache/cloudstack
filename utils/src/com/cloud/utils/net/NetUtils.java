@@ -19,6 +19,7 @@ package com.cloud.utils.net;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.lang.reflect.Array;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
@@ -1151,19 +1152,25 @@ public class NetUtils {
 		return network.getNetmask().asPrefixLength();
 	}
 
-	//FIXME: only able to cover lower 32 bits
+	// Can cover 127 bits
 	public static String getIp6FromRange(String ip6Range) {
     	String[] ips = ip6Range.split("-");
     	String startIp = ips[0];
     	IPv6Address start = IPv6Address.fromString(startIp);
-    	// Find a random number based on lower 32 bits
-    	long gap = countIp6InRange(ip6Range);
-    	if (gap > Integer.MAX_VALUE) {
-    		gap = Integer.MAX_VALUE;
+    	BigInteger gap = countIp6InRange(ip6Range);
+    	BigInteger next = new BigInteger(gap.bitLength(), _rand);
+    	while (next.compareTo(gap) >= 0) {
+    		next = new BigInteger(gap.bitLength(), _rand);
     	}
-    	int next = _rand.nextInt((int)(gap));
-    	// And a number based on the difference of lower 32 bits
-    	IPv6Address ip = start.add(next);
+    	BigInteger startInt = convertIPv6AddressToBigInteger(start);
+    	BigInteger resultInt = startInt.add(next);
+    	InetAddress resultAddr;
+		try {
+			resultAddr = InetAddress.getByAddress(resultInt.toByteArray());
+		} catch (UnknownHostException e) {
+			return null;
+		}
+    	IPv6Address ip = IPv6Address.fromInetAddress(resultAddr);
     	return ip.toString();
 	}
 
@@ -1173,11 +1180,21 @@ public class NetUtils {
 		return duid;
 	}
 	
-	//FIXME: only able to cover lower 64 bits
-	public static long countIp6InRange(String ip6Range) {
+	private static BigInteger convertIPv6AddressToBigInteger(IPv6Address addr) {
+		InetAddress inetAddr;
+		try {
+			inetAddr = addr.toInetAddress();
+		} catch (UnknownHostException e) {
+			return null;
+		}
+		return new BigInteger(inetAddr.getAddress());
+	}
+	
+	// Can cover 127 bits
+	public static BigInteger countIp6InRange(String ip6Range) {
     	String[] ips = ip6Range.split("-");
     	String startIp = ips[0];
-    	String endIp = null;
+    	String endIp = ips[0];
     	if (ips.length > 1) {
     		endIp = ips[1];
     	}
@@ -1186,13 +1203,14 @@ public class NetUtils {
     		start = IPv6Address.fromString(startIp);
     		end = IPv6Address.fromString(endIp);
 		} catch (IllegalArgumentException ex) {
-			return 0;
+			return null;
 		}
-    	long startLow = start.getLowBits(), endLow = end.getLowBits();
-    	if (startLow > endLow) {
-    		return 0;
+    	BigInteger startInt = convertIPv6AddressToBigInteger(start);
+    	BigInteger endInt = convertIPv6AddressToBigInteger(end);
+    	if (startInt.compareTo(endInt) > 0) {
+    		return null;
     	}
-    	return endLow - startLow + 1;
+    	return endInt.subtract(startInt).add(BigInteger.ONE);
 	}
 
 	public static boolean isIp6InRange(String ip6, String ip6Range) {
@@ -1209,6 +1227,17 @@ public class NetUtils {
     		return true;
     	}
 		return false;
+	}
+	
+	public static boolean isIp6InNetwork(String ip6, String ip6Cidr) {
+		IPv6Network network = null;
+		try {
+			network = IPv6Network.fromString(ip6Cidr);
+		} catch (IllegalArgumentException ex) {
+			return false;
+		}
+    	IPv6Address ip = IPv6Address.fromString(ip6);
+		return network.contains(ip);
 	}
 	
 	public static boolean isIp6RangeOverlap(String ipRange1, String ipRange2) {
@@ -1231,5 +1260,28 @@ public class NetUtils {
     	IPv6Address end2 = IPv6Address.fromString(endIp2);
     	IPv6AddressRange range2 = IPv6AddressRange.fromFirstAndLast(start2, end2);
     	return range1.overlaps(range2);
+	}
+
+	public static String getNextIp6InRange(String currentIp, String ipRange) {
+		String[] ips = ipRange.split("-");
+    	String startIp = ips[0];
+    	String endIp = null;
+    	if (ips.length > 1) {
+    		endIp = ips[1];
+    	}
+    	IPv6Address start = IPv6Address.fromString(startIp);
+    	IPv6Address end = IPv6Address.fromString(endIp);
+    	IPv6Address current = IPv6Address.fromString(currentIp); 
+    	IPv6Address result = null;
+    	if (current.equals(end)) {
+    		result = start;
+    	} else{
+    		result = current.add(1);
+    	}
+    	String resultIp = null;
+    	if (result != null) {
+    		resultIp = result.toString();
+    	}
+		return resultIp;
 	}
 }

@@ -1432,6 +1432,10 @@ dictionary = {
 'label.delete.NiciraNvp': '<fmt:message key="label.delete.NiciraNvp" />',
 'label.nicira.controller.address': '<fmt:message key="label.nicira.controller.address" />',
 'label.nicira.transportzoneuuid': '<fmt:message key="label.nicira.transportzoneuuid" />',
-'label.nicira.l3gatewayserviceuuid': '<fmt:message key="label.nicira.l3gatewayserviceuuid" />'
+'label.nicira.l3gatewayserviceuuid': '<fmt:message key="label.nicira.l3gatewayserviceuuid" />',
+'label.resize.new.size': '<fmt:message key="label.resize.new.size" />',
+'label.action.resize.volume': '<fmt:message key="label.action.resize.volume" />',
+'label.resize.new.offering.id': '<fmt:message key="label.resize.new.offering.id" />',
+'label.resize.shrink.ok': '<fmt:message key="label.resize.shrink.ok" />'
 };
 </script>

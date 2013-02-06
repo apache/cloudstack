@@ -123,13 +123,13 @@ public class AccountResponse extends BaseResponse {
     @SerializedName("networkavailable") @Param(description="the total number of networks available to be created for this account", since="3.0.1")
     private String networkAvailable;
 
-    @SerializedName("vpclimit") @Param(description="the total number of vpcs the account can own", since="3.0.5")
+    @SerializedName("vpclimit") @Param(description="the total number of vpcs the account can own", since="4.0.0")
     private String vpcLimit;
 
-    @SerializedName("vpctotal") @Param(description="the total number of vpcs owned by account", since="3.0.5")
+    @SerializedName("vpctotal") @Param(description="the total number of vpcs owned by account", since="4.0.0")
     private Long vpcTotal;
 
-    @SerializedName("vpcavailable") @Param(description="the total number of vpcs available to be created for this account", since="3.0.5")
+    @SerializedName("vpcavailable") @Param(description="the total number of vpcs available to be created for this account", since="4.0.0")
     private String vpcAvailable;
 
 

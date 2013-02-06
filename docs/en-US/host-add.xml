@@ -26,7 +26,8 @@
 	<title>Adding a Host</title>
         <orderedlist>
             <listitem><para>Before adding a host to the &PRODUCT; configuration, you must first install your chosen hypervisor on the host. &PRODUCT; can manage hosts running VMs under a variety of hypervisors.</para> 
-              <para>The &PRODUCT; Installation Guide provides instructions on how to install each supported hypervisor</para>
+              <para>The &PRODUCT; Installation Guide provides instructions on how to install each supported hypervisor
+                  and configure it for use with &PRODUCT;. See the appropriate section in the Installation Guide for information about which version of your chosen hypervisor is supported, as well as crucial additional steps to configure the hypervisor hosts for use with &PRODUCT;.</para>
                 <warning><para>Be sure you have performed the additional &PRODUCT;-specific configuration steps described in the hypervisor installation section for your particular hypervisor.</para></warning>
             </listitem>
             <listitem><para>Now add the hypervisor host to &PRODUCT;. The technique to use varies depending on the hypervisor.</para>

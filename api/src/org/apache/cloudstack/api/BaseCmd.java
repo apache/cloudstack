@@ -29,6 +29,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.region.RegionService;
+import org.apache.cloudstack.usage.UsageService;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
@@ -43,6 +44,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkService;
+import com.cloud.network.NetworkUsageService;
 import com.cloud.network.StorageNetworkService;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.as.AutoScaleService;
@@ -124,6 +126,8 @@ public abstract class BaseCmd {
     @Inject public Site2SiteVpnService _s2sVpnService;
 
     @Inject public QueryService _queryService;
+    @Inject public UsageService _usageService;
+    @Inject public NetworkUsageService _networkUsageService;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
 

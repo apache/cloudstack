@@ -25,16 +25,13 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
-import com.cloud.server.ManagementServer;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 
-@Component
 @Local(value={UserAuthenticator.class})
 public class PlainTextUserAuthenticator extends DefaultUserAuthenticator {
 	public static final Logger s_logger = Logger.getLogger(PlainTextUserAuthenticator.class);

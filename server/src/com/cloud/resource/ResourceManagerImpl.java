@@ -1869,11 +1869,29 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return isFirstHost;
     }
 
+    private void markHostAsDisconnected(HostVO host, StartupCommand[] cmds) {
+        if (host == null) { // in case host is null due to some errors, try reloading the host from db
+            if (cmds != null) {
+                StartupCommand firstCmd = cmds[0];
+                host = findHostByGuid(firstCmd.getGuid());
+                if (host == null) {
+                    host = findHostByGuid(firstCmd.getGuidWithoutResource());
+                }
+            }
+        }
+
+        if (host != null) {
+            // Change agent status to Alert, so that host is considered for reconnection next time
+            _agentMgr.agentStatusTransitTo(host, Status.Event.AgentDisconnected, _nodeId);
+        }
+    }
+
     private Host createHostAndAgent(ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags,
             boolean forRebalance) {
         HostVO host = null;
         AgentAttache attache = null;
         StartupCommand[] cmds = null;
+        boolean hostExists = false;
 
         try {
             cmds = resource.initialize();
@@ -1902,10 +1920,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (host == null) {
                     host = findHostByGuid(firstCmd.getGuidWithoutResource());
                 }
-                if (host != null && host.getRemoved() == null) {
-					s_logger.debug("Found the host " + host.getId()
-							+ " by guid: " + firstCmd.getGuid()
-							+ ", old host reconnected as new");
+                if (host != null && host.getRemoved() == null) { // host already added, no need to add again
+                    s_logger.debug("Found the host " + host.getId() + " by guid: " + firstCmd.getGuid() + ", old host reconnected as new");
+                    hostExists = true; // ensures that host status is left unchanged in case of adding same one again
                     return null;
                 }
             }
@@ -1925,35 +1942,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         } catch (Exception e) {
             s_logger.warn("Unable to connect due to ", e);
         } finally {
-            if (attache == null) {
+            if (hostExists) {
                 if (cmds != null) {
                     resource.disconnected();
                 }
-				// In case of some db errors, we may land with the sitaution
-				// that host is null. We need to reload host from db and call
-				// disconnect on it so that it will be loaded for reconnection
-				// next time
-                HostVO tempHost = host;
-				if (tempHost == null) {
+            } else {
+                if (attache == null) {
                     if (cmds != null) {
-                        StartupCommand firstCmd = cmds[0];
-                        tempHost = findHostByGuid(firstCmd.getGuid());
-                        if (tempHost == null) {
-							tempHost = findHostByGuid(firstCmd
-									.getGuidWithoutResource());
-                        }
+                        resource.disconnected();
                     }
-                }
-
-                if (tempHost != null) {
-                    /* Change agent status to Alert */
-					_agentMgr.agentStatusTransitTo(tempHost,
-							Status.Event.AgentDisconnected, _nodeId);
-					/*
-					 * Don't change resource state here since HostVO is already
-					 * in database, which means resource state has had an
-					 * appropriate value
-					 */
+                    markHostAsDisconnected(host, cmds);
                 }
             }
         }
@@ -2060,23 +2058,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     if (cmds != null) {
                         resource.disconnected();
                     }
-
-                    // In case of some db errors, we may land with the situation that host is null. We need to reload host from db and call disconnect on it so that it will be loaded for reconnection next time
-                    HostVO tempHost = host;
-                    if (tempHost == null) {
-                        if (cmds != null) {
-                            StartupCommand firstCmd = cmds[0];
-                            tempHost = findHostByGuid(firstCmd.getGuid());
-                            if (tempHost == null) {
-                                tempHost = findHostByGuid(firstCmd.getGuidWithoutResource());
-                            }
-                        }
-                    }
-                    if (tempHost != null) {
-                        /* Change agent status to Alert */
-                        _agentMgr.agentStatusTransitTo(tempHost, Status.Event.AgentDisconnected, _nodeId);
-                        /* Don't change resource state here since HostVO is already in database, which means resource state has had an appropriate value*/
-                    }
+                    markHostAsDisconnected(host, cmds);
                 }
             }
         }

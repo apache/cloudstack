@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.command.admin.usage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.host.Host;
-import com.cloud.network.NetworkUsageManager;
 
 
 @APICommand(name = "listTrafficMonitors", description="List traffic monitor Hosts.", responseObject = TrafficMonitorResponse.class)
@@ -40,7 +39,6 @@ public class ListTrafficMonitorsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
     private static final String s_name = "listtrafficmonitorsresponse";
 
-    @Inject NetworkUsageManager networkUsageMgr;
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -68,12 +66,12 @@ public class ListTrafficMonitorsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends Host> trafficMonitors = networkUsageMgr.listTrafficMonitors(this);
+        List<? extends Host> trafficMonitors = _networkUsageService.listTrafficMonitors(this);
 
         ListResponse<TrafficMonitorResponse> listResponse = new ListResponse<TrafficMonitorResponse>();
         List<TrafficMonitorResponse> responses = new ArrayList<TrafficMonitorResponse>();
         for (Host trafficMonitor : trafficMonitors) {
-            TrafficMonitorResponse response = networkUsageMgr.getApiResponse(trafficMonitor);
+            TrafficMonitorResponse response =  _responseGenerator.createTrafficMonitorResponse(trafficMonitor);
             response.setObjectName("trafficmonitor");
             response.setResponseName(getCommandName());
             responses.add(response);

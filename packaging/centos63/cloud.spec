@@ -193,6 +193,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
+mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/awsapi
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
 
 # Specific for tomcat
@@ -316,6 +317,7 @@ fi
 %dir %attr(0770,root,cloud) %{_localstatedir}/cache/%{name}/management/temp
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/management
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/agent
+%dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/awsapi
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-management
 %config(noreplace) %{_sysconfdir}/%{name}/management
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties

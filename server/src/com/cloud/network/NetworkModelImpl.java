@@ -17,6 +17,7 @@
 
 package com.cloud.network;
 
+import java.math.BigInteger;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -526,7 +527,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         		return false;
         	}
         	if (network.getIp6Gateway() != null) {
-        		hasFreeIps = isIP6AddressAvailable(network);
+        		hasFreeIps = isIP6AddressAvailable(network.getId());
         	}
         } else {
             hasFreeIps = (getAvailableIps(network, null)).size() > 0;
@@ -544,15 +545,21 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     	}
     	return vlans.get(0);
     }
-   
-    private boolean isIP6AddressAvailable(Network network) {
+
+    @Override
+    public boolean isIP6AddressAvailable(long networkId) {
+    	Network network = _networksDao.findById(networkId);
+    	if (network == null) {
+    		return false;
+    	}
     	if (network.getIp6Gateway() == null) {
     		return false;
     	}
     	Vlan vlan = getVlanForNetwork(network.getId());
     	long existedCount = _ipv6Dao.countExistedIpsInNetwork(network.getId());
-    	long rangeCount = NetUtils.countIp6InRange(vlan.getIp6Range());
-		return (existedCount < rangeCount);
+    	BigInteger existedInt = BigInteger.valueOf(existedCount);
+    	BigInteger rangeInt = NetUtils.countIp6InRange(vlan.getIp6Range());
+		return (existedInt.compareTo(rangeInt) < 0);
 	}
 
     @Override

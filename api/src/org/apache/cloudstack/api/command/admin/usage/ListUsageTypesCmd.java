@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.commands;
+package org.apache.cloudstack.api.command.admin.usage;
 
 import java.util.List;
 
@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.response.ListResponse;
-import com.cloud.server.ManagementServerExt;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
 import com.cloud.user.Account;
 
@@ -43,8 +42,7 @@ public class ListUsageTypesCmd extends BaseCmd {
 
     @Override
     public void execute() {
-    	ManagementServerExt _mgrExt = (ManagementServerExt)_mgr;
-        List<UsageTypeResponse> result = _mgrExt.listUsageTypes();
+        List<UsageTypeResponse> result = _usageService.listUsageTypes();
         ListResponse<UsageTypeResponse> response = new ListResponse<UsageTypeResponse>();
         response.setResponses(result);
         response.setResponseName(getCommandName());

@@ -594,6 +594,7 @@ def destroy_network_rules_for_vm(session, args):
             util.SMlog("Ignoring failure to delete  chain " + vmchain_default)
     
     destroy_ebtables_rules(vmchain)
+    destroy_arptables_rules(vmchain)
     
     try:
         util.pread2(['iptables', '-F', vmchain])

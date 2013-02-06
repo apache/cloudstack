@@ -34,6 +34,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;

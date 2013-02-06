@@ -28,7 +28,9 @@
 		<listitem><para>Log in to the &PRODUCT; UI as an administrator or end user. </para></listitem>
 		<listitem><para>If you are changing from a network offering that uses the &PRODUCT; virtual router to one
 				that uses external devices as network service providers, you must first stop all the
-				VMs on the network. See <!-- FIXME <xref linkend="stopping-and-starting-vms"/>-->.</para></listitem>
+				VMs on the network. 
+			<phrase condition="install">See "Stopping and Starting Virtual Machines" in the Administrator's Guide.</phrase>
+			<phrase condition="admin">See <xref linkend="stopping-and-starting-vms"/>.</phrase></para></listitem>
 		<listitem><para>In the left navigation, choose Network.</para></listitem>
 		<listitem><para>Click the name of the network you want to modify.</para></listitem>
 		<listitem><para>In the Details tab, click Edit.<inlinemediaobject>

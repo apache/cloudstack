@@ -19,6 +19,7 @@ package com.cloud.utils.component;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.MBeanRegistrationException;
@@ -64,6 +65,13 @@ public class ComponentContext implements ApplicationContextAware {
     } 
 
     public static void initComponentsLifeCycle() {
+        // Run the SystemIntegrityCheckers first
+        Map<String, SystemIntegrityChecker> integrityCheckers = getApplicationContext().getBeansOfType(SystemIntegrityChecker.class);
+        for (Entry<String,SystemIntegrityChecker> entry : integrityCheckers.entrySet() ){
+            s_logger.info ("Running SystemIntegrityChecker " + entry.getKey());
+            entry.getValue().check();
+        }
+        
     	Map<String, ComponentLifecycle> lifecyleComponents = getApplicationContext().getBeansOfType(ComponentLifecycle.class);
  
     	Map[] classifiedComponents = new Map[ComponentLifecycle.MAX_RUN_LEVELS];

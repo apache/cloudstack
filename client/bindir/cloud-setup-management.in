@@ -24,7 +24,7 @@ from cloudutils.globalEnv import globalEnv
 from cloudutils.serviceConfigServer import cloudManagementConfig
 from optparse import OptionParser
 if __name__ == '__main__':
-    initLoging("/var/log/cloud/setupManagement.log")
+    initLoging("@MSLOGDIR@/setupManagement.log")
     glbEnv = globalEnv()
     
     parser = OptionParser()

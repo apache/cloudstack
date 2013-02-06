@@ -83,7 +83,9 @@ import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
+import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
@@ -94,6 +96,7 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.usage.Usage;
 
 import com.cloud.async.AsyncJob;
 import com.cloud.capacity.Capacity;
@@ -375,4 +378,8 @@ public interface ResponseGenerator {
     GuestOSResponse createGuestOSResponse(GuestOS os);
 
     SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
+    
+    UsageRecordResponse createUsageResponse(Usage usageRecord);
+
+	TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor);
 }
