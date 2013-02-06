@@ -893,9 +893,9 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                         "unable to find a snapshot with id " + snapshotId);
             }
 
-            if (snapshotCheck.getStatus() != Snapshot.Status.BackedUp) {
+            if (snapshotCheck.getState() != Snapshot.State.BackedUp) {
                 throw new InvalidParameterValueException("Snapshot id="
-                        + snapshotId + " is not in " + Snapshot.Status.BackedUp
+                        + snapshotId + " is not in " + Snapshot.State.BackedUp
                         + " state yet and can't be used for volume creation");
             }
 
