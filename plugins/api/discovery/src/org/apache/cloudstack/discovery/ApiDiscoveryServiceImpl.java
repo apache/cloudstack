@@ -67,6 +67,8 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
             //TODO: Fix and use PluggableService to get the classes
             Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
                     new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
+            for(PluggableService service: _services)
+                cmdClasses.addAll(service.getCommands());
             cacheResponseMap(cmdClasses);
             long endTime = System.nanoTime();
             s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
