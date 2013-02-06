@@ -154,6 +154,8 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.FirewallRuleTO;
+import com.cloud.agent.api.storage.ResizeVolumeAnswer;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
@@ -449,6 +451,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((Site2SiteVpnCfgCommand) cmd);
             } else if (clz == CheckS2SVpnConnectionsCommand.class) {
                 answer = execute((CheckS2SVpnConnectionsCommand) cmd);
+            } else if (clz == ResizeVolumeCommand.class) {
+                return execute((ResizeVolumeCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -486,6 +490,54 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.trace("End executeRequest(), cmd: " + cmd.getClass().getSimpleName());
 
         return answer;
+    }
+    
+    private Answer execute(ResizeVolumeCommand cmd) {
+        String path = cmd.getPath();
+        String vmName = cmd.getInstanceName();
+        long newSize = cmd.getNewSize()/1024;
+
+        try {
+            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+            ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
+            // find VM through datacenter (VM is not at the target host yet)
+            VirtualMachineMO vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+            if (vmMo == null) {
+                String msg = "VM " + vmName + " does not exist in VMware datacenter";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            Pair<VirtualDisk, String> vdisk = vmMo.getDiskDevice(path, false);
+            if(vdisk == null) {
+                if(s_logger.isTraceEnabled())
+                    s_logger.trace("resize volume done (failed)");
+                throw new Exception("No such disk device: " + path);
+            }
+            VirtualDisk disk = vdisk.first();
+            long oldSize = disk.getCapacityInKB();
+            if (newSize < oldSize){
+                throw new Exception("VMware doesn't support shrinking volume from larger size: " + oldSize+ " MB to a smaller size: " + newSize + " MB");
+            } else if(newSize == oldSize){
+                return new ResizeVolumeAnswer(cmd, true, "success", newSize*1024); 
+            }
+            disk.setCapacityInKB(newSize);
+
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+            deviceConfigSpec.setDevice(disk);
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.edit);
+            vmConfigSpec.setDeviceChange(new VirtualDeviceConfigSpec[] { deviceConfigSpec });
+            if (!vmMo.configureVm(vmConfigSpec)) {
+                throw new Exception("Failed to configure VM to resize disk. vmName: " + vmName);
+            }
+
+            return new ResizeVolumeAnswer(cmd, true, "success", newSize*1024);
+        } catch (Exception e) {
+            s_logger.error("Unable to resize volume",e);
+            String error = "failed to resize volume:"  +e;
+            return new ResizeVolumeAnswer(cmd, false, error );
+        }
     }
 
     protected Answer execute(CheckNetworkCommand cmd) {
