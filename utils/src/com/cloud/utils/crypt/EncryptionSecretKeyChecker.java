@@ -71,6 +71,11 @@ public class EncryptionSecretKeyChecker extends AdapterBase implements SystemInt
             if(encryptionType == null || encryptionType.equals("none")){
                 return;
             }
+            
+            if (s_useEncryption) {
+            	s_logger.warn("Encryption already enabled, is check() called twice?");
+            	return;
+            }
 
             s_encryptor.setAlgorithm("PBEWithMD5AndDES");
             String secretKey = null;
