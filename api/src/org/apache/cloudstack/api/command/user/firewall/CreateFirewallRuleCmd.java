@@ -324,7 +324,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
     @Override
     public TrafficType getTrafficType() {
-        return null;
+        return FirewallRule.TrafficType.Ingress;
     }
 
 }
