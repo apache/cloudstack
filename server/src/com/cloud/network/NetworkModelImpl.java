@@ -17,6 +17,7 @@
 
 package com.cloud.network;
 
+import java.math.BigInteger;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -550,8 +551,9 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
     	}
     	Vlan vlan = getVlanForNetwork(network.getId());
     	long existedCount = _ipv6Dao.countExistedIpsInNetwork(network.getId());
-    	long rangeCount = NetUtils.countIp6InRange(vlan.getIp6Range());
-		return (existedCount < rangeCount);
+    	BigInteger existedInt = BigInteger.valueOf(existedCount);
+    	BigInteger rangeInt = NetUtils.countIp6InRange(vlan.getIp6Range());
+		return (existedInt.compareTo(rangeInt) < 0);
 	}
 
 	@Override
