@@ -743,6 +743,9 @@
       var $tabs = guestTraffic.makeTabs($physicalNetworks, args);
       var $container = guestTraffic.getMainContainer($wizard);
       var $expand = $('<div title="Add multiple VLAN Ranges">').addClass('expand');
+      var $expandlabel = $('<div>').addClass('expand-label').html('Add VLAN Range');
+      var $hide = $('<div title="Hide VLAN Range">').addClass('hide');
+      var $hidelabel = $('<div>').addClass('hide-label').html('Hide VLAN Range');
 
       // Cleanup
       guestTraffic.remove($wizard);
@@ -755,13 +758,21 @@
       $container.find('.field').hide();
       $container.find('[rel=vlanRange]').show();
       $expand.appendTo($container.find('.content .select-container .physical-network-item form [rel=vlanRange]'));
+      $expandlabel.appendTo($container.find('.content .select-container .physical-network-item form .expand'));
+
       //Multiple Vlan Ranges functionality
       $expand.click(function() {
 
            var $vlanClone = $container.find('[rel=vlanRange]:first').clone().removeClass('field').insertBefore($container.find('.expand'));
           //$vlan.appendTo($container.find('.content .select-container .physical-network-item form'));
+          $hide.clone().appendTo($vlanClone);
+       });
+
+         $hide.click(function() {
+         $hide.closest('[rel=vlanRange]').remove();           
 
        });
+
 
     },
 
