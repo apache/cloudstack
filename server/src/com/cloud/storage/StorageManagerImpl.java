@@ -2043,10 +2043,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new InvalidParameterValueException("Can't resize a volume that has never been attached, not sure which hypervisor type. Recreate volume to resize.");
         }
 
-        /* Only works for KVM/Xen for now */
+        /* Only works for KVM/Xen/VMware for now */
         if(_volsDao.getHypervisorType(volume.getId()) != HypervisorType.KVM 
-           && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.XenServer){
-            throw new InvalidParameterValueException("Cloudstack currently only supports volumes marked as KVM or XenServer hypervisor for resize");
+           && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.XenServer
+           && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.VMware){
+            throw new InvalidParameterValueException("Cloudstack currently only supports volumes marked as KVM, XenServer or VMware hypervisor for resize");
         }
 
         if (volume == null) {
