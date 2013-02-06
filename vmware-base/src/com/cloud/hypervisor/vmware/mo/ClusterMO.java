@@ -295,8 +295,8 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
 
 		ManagedObjectReference morDs = null;
 		ManagedObjectReference morDsFirst = null;
-		ManagedObjectReference[] hosts = (ManagedObjectReference[])_context.getVimClient().getDynamicProperty(_mor, "host");
-		if(hosts != null && hosts.length > 0) {
+		List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)_context.getVimClient().getDynamicProperty(_mor, "host");
+		if(hosts != null && hosts.size() > 0) {
 			for(ManagedObjectReference morHost : hosts) {
 				HostMO hostMo = new HostMO(_context, morHost);
 				morDs = hostMo.mountDatastore(vmfsDatastore, poolHostAddress, poolHostPort, poolPath, poolUuid);
@@ -328,8 +328,8 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
 	    if(s_logger.isTraceEnabled())
 			s_logger.trace("vCenter API trace - unmountDatastore(). target MOR: " + _mor.getValue() + ", poolUuid: " + poolUuid);
 
-		ManagedObjectReference[] hosts = (ManagedObjectReference[])_context.getVimClient().getDynamicProperty(_mor, "host");
-		if(hosts != null && hosts.length > 0) {
+		List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)_context.getVimClient().getDynamicProperty(_mor, "host");
+		if(hosts != null && hosts.size() > 0) {
 			for(ManagedObjectReference morHost : hosts) {
 				HostMO hostMo = new HostMO(_context, morHost);
 				hostMo.unmountDatastore(poolUuid);
@@ -473,8 +473,8 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
 
 		// TODO, need to use traversal to optimize retrieve of
 		int cpuNumInCpuThreads = 1;
-		ManagedObjectReference[] hosts = (ManagedObjectReference[])_context.getVimClient().getDynamicProperty(_mor, "host");
-		if(hosts != null && hosts.length > 0) {
+		List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)_context.getVimClient().getDynamicProperty(_mor, "host");
+		if(hosts != null && hosts.size() > 0) {
 			for(ManagedObjectReference morHost : hosts) {
 				HostMO hostMo = new HostMO(_context, morHost);
 				HostHardwareSummary hardwareSummary = hostMo.getHostHardwareSummary();
@@ -498,9 +498,9 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
 	    if(s_logger.isTraceEnabled())
 			s_logger.trace("vCenter API trace - getHyperHostNetworkSummary(). target MOR: " + _mor.getValue() + ", mgmtPortgroup: " + esxServiceConsolePort);
 
-		ManagedObjectReference[] hosts = (ManagedObjectReference[])_context.getVimClient().getDynamicProperty(_mor, "host");
-		if(hosts != null && hosts.length > 0) {
-			VmwareHypervisorHostNetworkSummary summary = new HostMO(_context, hosts[0]).getHyperHostNetworkSummary(esxServiceConsolePort);
+		List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)_context.getVimClient().getDynamicProperty(_mor, "host");
+		if(hosts != null && hosts.size() > 0) {
+			VmwareHypervisorHostNetworkSummary summary = new HostMO(_context, hosts.get(0)).getHyperHostNetworkSummary(esxServiceConsolePort);
 
 		    if(s_logger.isTraceEnabled())
 				s_logger.trace("vCenter API trace - getHyperHostResourceSummary() done(successfully)");

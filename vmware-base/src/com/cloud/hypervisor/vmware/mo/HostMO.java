@@ -84,16 +84,14 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		return (HostConfigManager)_context.getVimClient().getDynamicProperty(_mor, "configManager");
 	}
 
-	public VirtualNicManagerNetConfig[] getHostVirtualNicManagerNetConfig() throws Exception {
-		VirtualNicManagerNetConfig[] netConfigs = (VirtualNicManagerNetConfig[])_context.getVimClient().getDynamicProperty(_mor,
+	public List<VirtualNicManagerNetConfig> getHostVirtualNicManagerNetConfig() throws Exception {
+		return (List<VirtualNicManagerNetConfig>)_context.getVimClient().getDynamicProperty(_mor,
 			"config.virtualNicManagerInfo.netConfig");
-		return netConfigs;
 	}
 
-	public HostIpRouteEntry[] getHostIpRouteEntries() throws Exception {
-		HostIpRouteEntry[] entries = (HostIpRouteEntry[])_context.getVimClient().getDynamicProperty(_mor,
+	public List<HostIpRouteEntry> getHostIpRouteEntries() throws Exception {
+		return (List<HostIpRouteEntry>)_context.getVimClient().getDynamicProperty(_mor,
 			"config.network.routeTableInfo.ipRoute");
-		return entries;
 	}
 
 	public HostListSummaryQuickStats getHostQuickStats() throws Exception {
@@ -142,7 +140,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
 	@Override
 	public String getHyperHostDefaultGateway() throws Exception {
-		HostIpRouteEntry[] entries = getHostIpRouteEntries();
+		List<HostIpRouteEntry> entries = getHostIpRouteEntries();
 		for(HostIpRouteEntry entry : entries) {
 			if(entry.getNetwork().equalsIgnoreCase("0.0.0.0"))
 				return entry.getGateway();
@@ -222,7 +220,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	}
 
 	public ManagedObjectReference[] getHostLocalDatastore() throws Exception {
-		ManagedObjectReference[] datastores = (ManagedObjectReference[])_context.getVimClient().getDynamicProperty(
+		List<ManagedObjectReference> datastores = (List<ManagedObjectReference>)_context.getVimClient().getDynamicProperty(
 			_mor, "datastore");
 		List<ManagedObjectReference> l = new ArrayList<ManagedObjectReference>();
 		if(datastores != null) {
@@ -236,7 +234,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	}
 
 	public HostVirtualSwitch getHostVirtualSwitchByName(String name) throws Exception {
-		HostVirtualSwitch[] switches = (HostVirtualSwitch[])_context.getVimClient().getDynamicProperty(
+		List<HostVirtualSwitch> switches = (List<HostVirtualSwitch>)_context.getVimClient().getDynamicProperty(
 			_mor, "config.network.vswitch");
 
 		if(switches != null) {
@@ -248,8 +246,8 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		return null;
 	}
 
-	public HostVirtualSwitch[] getHostVirtualSwitch() throws Exception {
-		return (HostVirtualSwitch[])_context.getVimClient().getDynamicProperty(_mor, "config.network.vswitch");
+	public List<HostVirtualSwitch> getHostVirtualSwitch() throws Exception {
+		return (List<HostVirtualSwitch>)_context.getVimClient().getDynamicProperty(_mor, "config.network.vswitch");
 	}
 
 	public AboutInfo getHostAboutInfo() throws Exception {
@@ -285,7 +283,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
 	public HostVirtualSwitch getVirtualSwitchByName(String vSwitchName) throws Exception {
 
-		HostVirtualSwitch[] vSwitchs = getHostVirtualSwitch();
+		List<HostVirtualSwitch> vSwitchs = getHostVirtualSwitch();
 		if(vSwitchs != null) {
 			for(HostVirtualSwitch vSwitch: vSwitchs) {
 				if(vSwitch.getName().equals(vSwitchName))
@@ -327,7 +325,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	public String getPortGroupNameByNicType(HostVirtualNicType nicType) throws Exception {
 		assert(nicType != null);
 
-		VirtualNicManagerNetConfig[] netConfigs = (VirtualNicManagerNetConfig[])_context.getVimClient().getDynamicProperty(_mor,
+		List<VirtualNicManagerNetConfig> netConfigs = (List<VirtualNicManagerNetConfig>)_context.getVimClient().getDynamicProperty(_mor,
 			"config.virtualNicManagerInfo.netConfig");
 
 		if(netConfigs != null) {
@@ -448,10 +446,10 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	    return null;
 	}
 
-	public ManagedObjectReference[] getVmMorsOnNetwork(String portGroupName) throws Exception {
+	public List<ManagedObjectReference> getVmMorsOnNetwork(String portGroupName) throws Exception {
 		ManagedObjectReference morNetwork = getNetworkMor(portGroupName);
 		if(morNetwork != null)
-			return (ManagedObjectReference[])_context.getVimClient().getDynamicProperty(morNetwork, "vm");
+			return (List<ManagedObjectReference>)_context.getVimClient().getDynamicProperty(morNetwork, "vm");
 		return null;
 	}
 
@@ -703,7 +701,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 	public ManagedObjectReference getExistingDataStoreOnHost(boolean vmfsDatastore, String hostAddress,
 			int hostPort, String path, String uuid, HostDatastoreSystemMO hostDatastoreSystemMo) {
 		// First retrieve the list of Datastores on the host.
-		ManagedObjectReference[] morArray;
+		List<ManagedObjectReference> morArray;
 		try {
 			morArray = hostDatastoreSystemMo.getDatastores();
 		} catch (Exception e) {
@@ -711,17 +709,17 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 			return null;
 		}
 		// Next, get all the NAS datastores from this array of datastores.
-		if (morArray.length > 0) {
+		if (morArray.size() > 0) {
 			int i;
-			for (i = 0; i < morArray.length; i++) {
+			for (i = 0; i < morArray.size(); i++) {
 				NasDatastoreInfo nasDS;
 				try {
-					nasDS = hostDatastoreSystemMo.getNasDatastoreInfo(morArray[i]);
+					nasDS = hostDatastoreSystemMo.getNasDatastoreInfo(morArray.get(i));
 					if (nasDS != null) {
 						//DatastoreInfo info = (DatastoreInfo)_context.getServiceUtil().getDynamicProperty(morDatastore, "info");
 						if (nasDS.getNas().getRemoteHost().equalsIgnoreCase(hostAddress) &&
 								nasDS.getNas().getRemotePath().equalsIgnoreCase(path)) {
-							return morArray[i];
+							return morArray.get(i);
 						}
 					}
 				}  catch (Exception e) {
@@ -861,13 +859,13 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		VmwareHypervisorHostNetworkSummary summary = new VmwareHypervisorHostNetworkSummary();
 
 		if(this.getHostType() == VmwareHostType.ESXi) {
-			VirtualNicManagerNetConfig[] netConfigs = (VirtualNicManagerNetConfig[])_context.getVimClient().getDynamicProperty(_mor,
+			List<VirtualNicManagerNetConfig> netConfigs = (List<VirtualNicManagerNetConfig>)_context.getVimClient().getDynamicProperty(_mor,
 				"config.virtualNicManagerInfo.netConfig");
 			assert(netConfigs != null);
 
-			for(int i = 0; i < netConfigs.length; i++) {
-				if(netConfigs[i].getNicType().equals("management")) {
-					for(HostVirtualNic nic : netConfigs[i].getCandidateVnic()) {
+			for(VirtualNicManagerNetConfig netConfig : netConfigs) {
+				if(netConfig.getNicType().equals("management")) {
+					for(HostVirtualNic nic : netConfig.getCandidateVnic()) {
 						if(nic.getPortgroup().equals(managementPortGroup)) {
 							summary.setHostIp(nic.getSpec().getIp().getIpAddress());
 							summary.setHostNetmask(nic.getSpec().getIp().getSubnetMask());
@@ -882,7 +880,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 			}
 		} else {
 			// try with ESX path
-			HostVirtualNic[] hostVNics = (HostVirtualNic[])_context.getVimClient().getDynamicProperty(_mor,
+			List<HostVirtualNic> hostVNics = (List<HostVirtualNic>)_context.getVimClient().getDynamicProperty(_mor,
 				"config.network.consoleVnic");
 
 			if(hostVNics != null) {

@@ -78,8 +78,8 @@ public class HostDatastoreSystemMO extends BaseMO {
 	public ManagedObjectReference findDatastoreByUrl(String storeUrl) throws Exception {
 		assert(storeUrl != null);
 
-		ManagedObjectReference[] datastores = getDatastores();
-		if(datastores != null && datastores.length > 0) {
+		List<ManagedObjectReference> datastores = getDatastores();
+		if(datastores != null && datastores.size() > 0) {
 			for(ManagedObjectReference morDatastore : datastores) {
 				NasDatastoreInfo info = getNasDatastoreInfo(morDatastore);
 				if(info != null) {
@@ -99,8 +99,8 @@ public class HostDatastoreSystemMO extends BaseMO {
 	public ManagedObjectReference findDatastoreByExportPath(String exportPath) throws Exception {
 		assert(exportPath != null);
 
-		ManagedObjectReference[] datastores = getDatastores();
-		if(datastores != null && datastores.length > 0) {
+		List<ManagedObjectReference> datastores = getDatastores();
+		if(datastores != null && datastores.size() > 0) {
 			for(ManagedObjectReference morDatastore : datastores) {
 				DatastoreMO dsMo = new DatastoreMO(_context, morDatastore);
 				if(dsMo.getInventoryPath().equals(exportPath))
@@ -145,8 +145,8 @@ public class HostDatastoreSystemMO extends BaseMO {
 		return _context.getService().createNasDatastore(_mor, spec);
 	}
 
-	public ManagedObjectReference[] getDatastores() throws Exception {
-		return (ManagedObjectReference[])_context.getVimClient().getDynamicProperty(
+	public List<ManagedObjectReference> getDatastores() throws Exception {
+		return (List<ManagedObjectReference>)_context.getVimClient().getDynamicProperty(
 			_mor, "datastore");
 	}
 

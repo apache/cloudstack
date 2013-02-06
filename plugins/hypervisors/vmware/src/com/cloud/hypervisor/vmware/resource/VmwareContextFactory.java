@@ -16,16 +16,18 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
-import com.cloud.hypervisor.vmware.manager.VmwareManagerImpl;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentContext;
 
-
+@Component
 public class VmwareContextFactory {
 
     private static final Logger s_logger = Logger.getLogger(VmwareContextFactory.class);
@@ -33,10 +35,17 @@ public class VmwareContextFactory {
 	private static volatile int s_seq = 1;
 	private static VmwareManager s_vmwareMgr;
 
+	@Inject VmwareManager _vmwareMgr;
+
 	static {
 		// skip certificate check
 		System.setProperty("axis.socketSecureFactory", "org.apache.axis.components.net.SunFakeTrustSocketFactory");
-		s_vmwareMgr = ComponentContext.inject(VmwareManagerImpl.class);
+		//s_vmwareMgr = ComponentContext.inject(VmwareManagerImpl.class);
+	}
+
+	@PostConstruct
+	void init() {
+	    s_vmwareMgr = _vmwareMgr;
 	}
 
 	public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {

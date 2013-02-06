@@ -1716,13 +1716,13 @@ public class VirtualMachineMO extends BaseMO {
 
 	// return pair of VirtualDisk and disk device bus name(ide0:0, etc)
 	public Pair<VirtualDisk, String> getDiskDevice(String vmdkDatastorePath, boolean matchExactly) throws Exception {
-		VirtualDevice[] devices = (VirtualDevice[])_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+		List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
 
 		s_logger.info("Look for disk device info from volume : " + vmdkDatastorePath);
 		DatastoreFile dsSrcFile = new DatastoreFile(vmdkDatastorePath);
 		String srcBaseName = dsSrcFile.getFileBaseName();
 
-		if(devices != null && devices.length > 0) {
+		if(devices != null && devices.size() > 0) {
 			for(VirtualDevice device : devices) {
 				if(device instanceof VirtualDisk) {
 					s_logger.info("Test against disk device, controller key: " + device.getControllerKey() + ", unit number: " + device.getUnitNumber());
@@ -1837,7 +1837,7 @@ public class VirtualMachineMO extends BaseMO {
 		return pathList;
 	}
 
-	private String getDeviceBusName(VirtualDevice[] allDevices, VirtualDevice theDevice) throws Exception {
+	private String getDeviceBusName(List<VirtualDevice> allDevices, VirtualDevice theDevice) throws Exception {
 		for(VirtualDevice device : allDevices) {
 			if(device.getKey() == theDevice.getControllerKey().intValue()) {
 				if(device instanceof VirtualIDEController) {
@@ -1854,8 +1854,8 @@ public class VirtualMachineMO extends BaseMO {
 
 	public VirtualDisk[] getAllDiskDevice() throws Exception {
 		List<VirtualDisk> deviceList = new ArrayList<VirtualDisk>();
-		VirtualDevice[] devices = (VirtualDevice[])_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
-		if(devices != null && devices.length > 0) {
+		List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+		if(devices != null && devices.size() > 0) {
 			for(VirtualDevice device : devices) {
 				if(device instanceof VirtualDisk) {
 					deviceList.add((VirtualDisk)device);

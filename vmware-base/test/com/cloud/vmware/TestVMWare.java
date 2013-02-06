@@ -37,7 +37,6 @@ import javax.net.ssl.SSLSession;
 import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.utils.PropertiesUtil;
-import com.vmware.apputils.version.ExtendedAppUtil;
 import com.vmware.vim25.HostIpConfig;
 import com.vmware.vim25.HostVirtualNicSpec;
 import com.vmware.vim25.HostConfigManager;

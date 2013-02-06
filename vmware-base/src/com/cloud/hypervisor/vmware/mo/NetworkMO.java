@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import java.util.List;
+
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.ManagedObjectReference;
 
@@ -32,8 +34,7 @@ public class NetworkMO extends BaseMO {
         _context.getService().destroyNetwork(_mor);
     }
 
-    public ManagedObjectReference[] getVMsOnNetwork() throws Exception {
-        ManagedObjectReference[] vms = (ManagedObjectReference[])_context.getVimClient().getDynamicProperty(_mor, "vm");
-        return vms;
+    public List<ManagedObjectReference> getVMsOnNetwork() throws Exception {
+        return (List<ManagedObjectReference>)_context.getVimClient().getDynamicProperty(_mor, "vm");
     }
 }

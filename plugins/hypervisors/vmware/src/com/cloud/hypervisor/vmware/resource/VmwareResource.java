@@ -4494,14 +4494,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         PerfCounterInfo rxPerfCounterInfo = null;
         PerfCounterInfo txPerfCounterInfo = null;
 
-        PerfCounterInfo[] cInfo = (PerfCounterInfo[]) getServiceContext().getVimClient().getDynamicProperty(perfMgr, "perfCounter");
-        for(int i=0; i<cInfo.length; ++i) {
-            if ("net".equalsIgnoreCase(cInfo[i].getGroupInfo().getKey())) {
-                if ("transmitted".equalsIgnoreCase(cInfo[i].getNameInfo().getKey())) {
-                    txPerfCounterInfo = cInfo[i];
+        List<PerfCounterInfo> cInfo = (List<PerfCounterInfo>) getServiceContext().getVimClient().getDynamicProperty(perfMgr, "perfCounter");
+        for(PerfCounterInfo info : cInfo) {
+            if ("net".equalsIgnoreCase(info.getGroupInfo().getKey())) {
+                if ("transmitted".equalsIgnoreCase(info.getNameInfo().getKey())) {
+                    txPerfCounterInfo = info;
                 }
-                if ("received".equalsIgnoreCase(cInfo[i].getNameInfo().getKey())) {
-                    rxPerfCounterInfo = cInfo[i];
+                if ("received".equalsIgnoreCase(info.getNameInfo().getKey())) {
+                    rxPerfCounterInfo = info;
                 }
             }
         }

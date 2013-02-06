@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import java.util.List;
+
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.CustomFieldDef;
 import com.vmware.vim25.ManagedObjectReference;
@@ -48,12 +50,12 @@ public class CustomFieldsManagerMO extends BaseMO {
 		_context.getService().setField(getMor(), morEntity, key, value);
 	}
 
-	public CustomFieldDef[] getFields() throws Exception {
-		return (CustomFieldDef[])_context.getVimClient().getDynamicProperty(getMor(), "field");
+	public List<CustomFieldDef> getFields() throws Exception {
+		return (List<CustomFieldDef>)_context.getVimClient().getDynamicProperty(getMor(), "field");
 	}
 
 	public int getCustomFieldKey(String morType, String fieldName) throws Exception {
-		CustomFieldDef[] fields = getFields();
+		List<CustomFieldDef> fields = getFields();
 		if(fields != null) {
 			for(CustomFieldDef field : fields) {
 				if(field.getName().equals(fieldName) && field.getManagedObjectType().equals(morType))

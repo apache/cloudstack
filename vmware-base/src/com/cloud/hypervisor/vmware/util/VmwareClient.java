@@ -97,6 +97,7 @@ public class VmwareClient {
 
         ctxt.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
         ctxt.put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);
+        ctxt.put("com.sun.xml.internal.ws.request.timeout", 60000);
 
         serviceContent = vimPort.retrieveServiceContent(SVC_INST_REF);
         vimPort.login(serviceContent.getSessionManager(), userName, password, null);
@@ -177,7 +178,7 @@ public class VmwareClient {
                  */
                 Class dpCls = propertyValue.getClass();
                 String dynamicPropertyName = dpCls.getName();
-                if (dynamicPropertyName.startsWith("ArrayOf")) {
+                if (dynamicPropertyName.indexOf("ArrayOf") != -1) {
                     String methodName = "get"
                             + dynamicPropertyName
                                     .substring(dynamicPropertyName.indexOf("ArrayOf") + "ArrayOf".length(), dynamicPropertyName.length());

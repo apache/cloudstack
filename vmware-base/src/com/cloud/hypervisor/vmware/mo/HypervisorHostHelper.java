@@ -625,7 +625,7 @@ public class HypervisorHostHelper {
                 try {
                     if(lock.lock(DEFAULT_LOCK_TIMEOUT_SECONDS)) {
                         try {
-                            ManagedObjectReference[] hosts = (ManagedObjectReference[])hostMo.getContext().getVimClient().getDynamicProperty(morParent, "host");
+                            List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)hostMo.getContext().getVimClient().getDynamicProperty(morParent, "host");
                             if(hosts != null) {
                                 for(ManagedObjectReference otherHost: hosts) {
                                     if(!otherHost.getValue().equals(hostMo.getMor().getValue())) {

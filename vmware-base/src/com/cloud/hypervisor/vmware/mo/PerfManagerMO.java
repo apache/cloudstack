@@ -114,11 +114,11 @@ public class PerfManagerMO extends BaseMO {
         _context.getService().updatePerfInterval(_mor, interval);
     }
 
-    public PerfCounterInfo[] getCounterInfo() throws Exception {
-        return (PerfCounterInfo[])_context.getVimClient().getDynamicProperty(_mor, "perfCounter");
+    public List<PerfCounterInfo> getCounterInfo() throws Exception {
+        return (List<PerfCounterInfo>)_context.getVimClient().getDynamicProperty(_mor, "perfCounter");
     }
 
-    public PerfInterval[] getIntervalInfo() throws Exception {
-        return (PerfInterval[])_context.getVimClient().getDynamicProperty(_mor, "historicalInterval");
+    public List<PerfInterval> getIntervalInfo() throws Exception {
+        return (List<PerfInterval>)_context.getVimClient().getDynamicProperty(_mor, "historicalInterval");
     }
 }

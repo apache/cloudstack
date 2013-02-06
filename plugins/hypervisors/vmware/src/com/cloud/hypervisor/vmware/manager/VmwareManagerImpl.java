@@ -390,20 +390,20 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             List<ManagedObjectReference> returnedHostList = new ArrayList<ManagedObjectReference>();
 
             if(mor.getType().equals("ComputeResource")) {
-                ManagedObjectReference[] hosts = (ManagedObjectReference[])serviceContext.getVimClient().getDynamicProperty(mor, "host");
-                assert(hosts != null);
+                List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)serviceContext.getVimClient().getDynamicProperty(mor, "host");
+                assert(hosts != null && hosts.size() > 0);
 
                 // For ESX host, we need to enable host firewall to allow VNC access
-                HostMO hostMo = new HostMO(serviceContext, hosts[0]);
+                HostMO hostMo = new HostMO(serviceContext, hosts.get(0));
 
                 prepareHost(hostMo, privateTrafficLabel);
-                returnedHostList.add(hosts[0]);
+                returnedHostList.add(hosts.get(0));
                 return returnedHostList;
             } else if(mor.getType().equals("ClusterComputeResource")) {
-                ManagedObjectReference[] hosts = (ManagedObjectReference[])serviceContext.getVimClient().getDynamicProperty(mor, "host");
+                List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)serviceContext.getVimClient().getDynamicProperty(mor, "host");
                 assert(hosts != null);
 
-                if(hosts.length > _maxHostsPerCluster) {
+                if(hosts.size() > _maxHostsPerCluster) {
                     String msg = "vCenter cluster size is too big (current configured cluster size: " + _maxHostsPerCluster + ")";
                     s_logger.error(msg);
                     throw new DiscoveredWithErrorException(msg);
