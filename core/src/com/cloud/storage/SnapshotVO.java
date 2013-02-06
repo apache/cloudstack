@@ -59,7 +59,7 @@ public class SnapshotVO implements Snapshot {
     @Expose
     @Column(name="status", updatable = true, nullable=false)
     @Enumerated(value=EnumType.STRING)
-    private State status;
+    private State state;
 
     @Column(name="snapshot_type")
     short snapshotType;
@@ -117,7 +117,7 @@ public class SnapshotVO implements Snapshot {
         this.snapshotType = snapshotType;
         this.typeDescription = typeDescription;
         this.size = size;
-        this.status = State.Creating;
+        this.state = State.Creating;
         this.prevSnapshotId = 0;
         this.hypervisorType = hypervisorType;
         this.version = "2.2";
@@ -245,11 +245,11 @@ public class SnapshotVO implements Snapshot {
 
     @Override
     public State getState() {
-        return status;
+        return state;
     }
 
-	public void setStatus(State status) {
-        this.status = status;
+	public void setStatus(State state) {
+        this.state = state;
     }
 
     public String getBackupSnapshotId(){

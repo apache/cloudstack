@@ -35,6 +35,7 @@
       Compose a CloudStack deployment with selected components here
   -->
   <bean id="databaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker" />
+  <bean id="encryptionSecretKeyChecker" class="com.cloud.utils.crypt.EncryptionSecretKeyChecker" />
   
   <bean id="managementServerImpl" class ="com.cloud.server.ManagementServerImpl" />
   <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />

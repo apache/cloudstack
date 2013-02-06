@@ -93,6 +93,12 @@ public class Transaction {
         } catch (Exception e) {
             s_logger.error("Unable to register mbean for transaction", e);
         }
+        
+        /* FIXME: We need a better solution for this
+         * Initialize encryption if we need it for db.properties
+         */ 
+        EncryptionSecretKeyChecker enc = new EncryptionSecretKeyChecker();
+        enc.check();        
     }
 
     private final LinkedList<StackElement> _stack;
