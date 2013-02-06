@@ -222,6 +222,9 @@ public class ApiServer implements HttpRequestHandler {
         Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
                 new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
 
+        for(PluggableService pluggableService: _pluggableServices)
+            cmdClasses.addAll(pluggableService.getCommands());
+
         for(Class<?> cmdClass: cmdClasses) {
             String apiName = cmdClass.getAnnotation(APICommand.class).name();
             if (_apiNameCmdClassMap.containsKey(apiName)) {
