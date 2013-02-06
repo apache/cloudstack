@@ -58,6 +58,7 @@ SOB=$(git var GIT_AUTHOR_IDENT)
 cat <<EOF > $file
 ################################# 80 chars #####################################
 Summary: 
+
 Detail: 
 
 BUG-ID: 
