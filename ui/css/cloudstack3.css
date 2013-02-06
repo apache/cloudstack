@@ -10681,6 +10681,28 @@ div.ui-dialog div.multi-wizard div.steps div.setup-guest-traffic div.content div
   width: 14px;
 }
 
+div.ui-dialog div.multi-wizard div.steps div.setup-guest-traffic div.content div.select-container div.physical-network-item [rel=vlanRange]  div.hide {
+  background: url("../images/minus.png") no-repeat scroll 38% 59% #FFFFFF;
+  border: 1px solid #D0D0D0;
+  border-radius: 9px 9px 9px 9px;
+  cursor: pointer;
+  float: right;
+  height: 15px;
+  margin-right:-5px;
+  margin-top:17px;
+  width: 14px;
+}
+
+ div.ui-dialog div.multi-wizard div.steps div.setup-guest-traffic div.content div.select-container div.physical-network-item div.expand div.expand-label{
+
+    float: left;
+    font-size: 11px;
+    margin-left: 18px;
+    margin-top: 2px;
+    width: 100px;
+
+}
+
 
 
 
