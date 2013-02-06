@@ -1819,8 +1819,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
         //TODO: Add cmd classes
-        return null;
+        return cmdList;
     }
 
     protected class EventPurgeTask implements Runnable {
