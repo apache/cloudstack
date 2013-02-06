@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -54,13 +55,16 @@ import com.google.gson.annotations.SerializedName;
 public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
     private static final Logger s_logger = Logger.getLogger(ApiDiscoveryServiceImpl.class);
 
-    @Inject protected List<APIChecker> s_apiAccessCheckers = null;
+    @Inject protected List<APIChecker> _apiAccessCheckers = null;
+    @Inject protected List<PluggableService> _services = null;
     private static Map<String, ApiDiscoveryResponse> s_apiNameDiscoveryResponseMap = null;
-
-    @Inject List<PluggableService> _services;
 
     protected ApiDiscoveryServiceImpl() {
         super();
+    }
+
+    @PostConstruct
+    void init() {
         if (s_apiNameDiscoveryResponseMap == null) {
             long startTime = System.nanoTime();
             s_apiNameDiscoveryResponseMap = new HashMap<String, ApiDiscoveryResponse>();
@@ -182,7 +186,7 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
             if (!s_apiNameDiscoveryResponseMap.containsKey(name))
                 return null;
 
-            for (APIChecker apiChecker : s_apiAccessCheckers) {
+            for (APIChecker apiChecker : _apiAccessCheckers) {
                 try {
                     apiChecker.checkAccess(user, name);
                 } catch (Exception ex) {
@@ -194,7 +198,7 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
         } else {
             for (String apiName : s_apiNameDiscoveryResponseMap.keySet()) {
                 boolean isAllowed = true;
-                for (APIChecker apiChecker : s_apiAccessCheckers) {
+                for (APIChecker apiChecker : _apiAccessCheckers) {
                     try {
                         apiChecker.checkAccess(user, apiName);
                     } catch (Exception ex) {
