@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.utils.net;
 
+import java.math.BigInteger;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -84,13 +85,18 @@ public class NetUtilsTest extends TestCase {
     	assertFalse(NetUtils.isValidIp6Cidr("1234:5678::1"));
     	assertEquals(NetUtils.getIp6CidrSize("1234:5678::1/32"), 32);
     	assertEquals(NetUtils.getIp6CidrSize("1234:5678::1"), 0);
-    	assertEquals(NetUtils.countIp6InRange("1234:5678::1-1234:5678::2"), 2);
-    	assertEquals(NetUtils.countIp6InRange("1234:5678::2-1234:5678::0"), 0);
+    	BigInteger two = new BigInteger("2");
+    	assertEquals(NetUtils.countIp6InRange("1234:5678::1-1234:5678::2"), two);
+    	assertEquals(NetUtils.countIp6InRange("1234:5678::2-1234:5678::0"), null);
     	assertEquals(NetUtils.getIp6FromRange("1234:5678::1-1234:5678::1"), "1234:5678::1");
+    	for (int i = 0; i < 5; i ++) {
+    		String ip = NetUtils.getIp6FromRange("1234:5678::1-1234:5678::2");
+    		assertTrue(ip.equals("1234:5678::1") || ip.equals("1234:5678::2"));
+    		s_logger.info("IP is " + ip);
+    	}
     	String ipString = null;
-    	String range = "1234:5678::1-1234:5678::8000:0000";
     	IPv6Address ipStart = IPv6Address.fromString("1234:5678::1");
-    	IPv6Address ipEnd = IPv6Address.fromString("1234:5678::8000:0000");
+    	IPv6Address ipEnd = IPv6Address.fromString("1234:5678::ffff:ffff:ffff:ffff");
     	for (int i = 0; i < 10; i ++) {
     		ipString = NetUtils.getIp6FromRange(ipStart.toString() + "-" + ipEnd.toString());
     		s_logger.info("IP is " + ipString);
@@ -105,9 +111,12 @@ public class NetUtilsTest extends TestCase {
     	assertFalse(NetUtils.isIp6RangeOverlap("1234:5678::f-1234:5678::ffff", "1234:5678::2-1234:5678::e"));
     	assertFalse(NetUtils.isIp6RangeOverlap("1234:5678::f-1234:5678::f", "1234:5678::2-1234:5678::e"));
     	//Test getNextIp6InRange
-    	assertEquals(NetUtils.getNextIp6InRange("1234:5678::8000:0000", range), "1234:5678::1");
+    	String range = "1234:5678::1-1234:5678::8000:0000";
+    	assertEquals(NetUtils.getNextIp6InRange("1234:5678::8000:0", range), "1234:5678::1");
     	assertEquals(NetUtils.getNextIp6InRange("1234:5678::7fff:ffff", range), "1234:5678::8000:0");
     	assertEquals(NetUtils.getNextIp6InRange("1234:5678::1", range), "1234:5678::2");
+    	range = "1234:5678::1-1234:5678::ffff:ffff:ffff:ffff";
+    	assertEquals(NetUtils.getNextIp6InRange("1234:5678::ffff:ffff:ffff:ffff", range), "1234:5678::1");
     	//Test isIp6InNetwork
     	assertFalse(NetUtils.isIp6InNetwork("1234:5678:abcd::1", "1234:5678::/64"));
     	assertTrue(NetUtils.isIp6InNetwork("1234:5678::1", "1234:5678::/64"));
