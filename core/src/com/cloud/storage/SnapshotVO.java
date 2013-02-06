@@ -248,6 +248,7 @@ public class SnapshotVO implements Snapshot {
         return state;
     }
 
+
 	public void setState(State state) {
         this.state = state;
     }
