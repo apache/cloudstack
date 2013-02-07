@@ -1064,28 +1064,6 @@ ServerResource {
         return true;
     }
 
-    public static void main(String[] args) {
-        s_logger.addAppender(new org.apache.log4j.ConsoleAppender(
-                new org.apache.log4j.PatternLayout(), "System.out"));
-        LibvirtComputingResource test = new LibvirtComputingResource();
-        Map<String, Object> params = new HashMap<String, Object>();
-        try {
-            test.configure("test", params);
-        } catch (ConfigurationException e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-        }
-        String result = null;
-        // String result = test.startDomainRouter("domr1",
-        // "/var/lib/images/centos.5-4.x86-64/centos-small.img", 128, "0064",
-        // "02:00:30:00:01:01", "00:16:3e:77:e2:a1", "02:00:30:00:64:01");
-        boolean created = (result == null);
-        s_logger.info("Domain " + (created ? " " : " not ") + " created");
-
-        s_logger.info("Rule " + (created ? " " : " not ") + " created");
-        test.stop();
-    }
-
     @Override
     public Answer executeRequest(Command cmd) {
 
