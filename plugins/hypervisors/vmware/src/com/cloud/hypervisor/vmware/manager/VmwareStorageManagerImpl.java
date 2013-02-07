@@ -192,7 +192,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 						workerVMName = hostService.getWorkerName(context, cmd, 0);
 
 						// attach a volume to dummay wrapper VM for taking snapshot and exporting the VM for backup
-						if (!hyperHost.createBlankVm(workerVMName, 1, 512, 0, false, 4, 0, VirtualMachineGuestOsIdentifier.OTHER_GUEST.toString(), morDs, false)) {
+						if (!hyperHost.createBlankVm(workerVMName, 1, 512, 0, false, 4, 0, VirtualMachineGuestOsIdentifier.OTHER_GUEST.value(), morDs, false)) {
 							String msg = "Unable to create worker VM to execute BackupSnapshotCommand";
 							s_logger.error(msg);
 							throw new Exception(msg);
@@ -804,7 +804,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 vmConfig.setName(workerVmName);
                 vmConfig.setMemoryMB((long) 4);
                 vmConfig.setNumCPUs(1);
-                vmConfig.setGuestId(VirtualMachineGuestOsIdentifier.OTHER_GUEST.toString());
+                vmConfig.setGuestId(VirtualMachineGuestOsIdentifier.OTHER_GUEST.value());
                 VirtualMachineFileInfo fileInfo = new VirtualMachineFileInfo();
                 fileInfo.setVmPathName(String.format("[%s]", dsMo.getName()));
                 vmConfig.setFiles(fileInfo);

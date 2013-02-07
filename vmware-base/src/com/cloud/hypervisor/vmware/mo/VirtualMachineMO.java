@@ -571,14 +571,14 @@ public class VirtualMachineMO extends BaseMO {
                 VirtualMachineRelocateSpecDiskLocator loc = new VirtualMachineRelocateSpecDiskLocator();
             	loc.setDatastore(morDs);
             	loc.setDiskId(independentDisks[i].getKey());
-            	loc.setDiskMoveType(VirtualMachineRelocateDiskMoveOptions.MOVE_ALL_DISK_BACKINGS_AND_DISALLOW_SHARING.toString());
+            	loc.setDiskMoveType(VirtualMachineRelocateDiskMoveOptions.MOVE_ALL_DISK_BACKINGS_AND_DISALLOW_SHARING.value());
             	diskLocator.add(loc);
             }
 
-            rSpec.setDiskMoveType(VirtualMachineRelocateDiskMoveOptions.CREATE_NEW_CHILD_DISK_BACKING.toString());
+            rSpec.setDiskMoveType(VirtualMachineRelocateDiskMoveOptions.CREATE_NEW_CHILD_DISK_BACKING.value());
             rSpec.getDisk().addAll(diskLocator);
         } else {
-        	rSpec.setDiskMoveType(VirtualMachineRelocateDiskMoveOptions.CREATE_NEW_CHILD_DISK_BACKING.toString());
+        	rSpec.setDiskMoveType(VirtualMachineRelocateDiskMoveOptions.CREATE_NEW_CHILD_DISK_BACKING.value());
         }
         rSpec.setPool(morResourcePool);
 
@@ -868,7 +868,7 @@ public class VirtualMachineMO extends BaseMO {
 			|| diskType == VirtualDiskType.EAGER_ZEROED_THICK) {
 
 			VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
-	        backingInfo.setDiskMode(diskMode.PERSISTENT.toString());
+	        backingInfo.setDiskMode(diskMode.PERSISTENT.value());
 	        if(diskType == VirtualDiskType.THIN) {
                 backingInfo.setThinProvisioned(true);
             } else {
@@ -894,7 +894,7 @@ public class VirtualMachineMO extends BaseMO {
 	        }
 	        backingInfo.setDeviceName(rdmDeviceName);
 	        if(diskType == VirtualDiskType.RDM) {
-	        	backingInfo.setDiskMode(diskMode.PERSISTENT.toString());
+	        	backingInfo.setDiskMode(diskMode.PERSISTENT.value());
 	        }
 
 	        backingInfo.setDatastore(morDs);
@@ -1894,10 +1894,10 @@ public class VirtualMachineMO extends BaseMO {
 	}
 
 	public int tryGetIDEDeviceControllerKey() throws Exception {
-	    VirtualDevice[] devices = (VirtualDevice [])_context.getVimClient().
+	    List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
     		getDynamicProperty(_mor, "config.hardware.device");
 
-	    if(devices != null && devices.length > 0) {
+	    if(devices != null && devices.size() > 0) {
 	    	for(VirtualDevice device : devices) {
 	    		if(device instanceof VirtualIDEController) {
 	    			return ((VirtualIDEController)device).getKey();

@@ -169,7 +169,7 @@ public class VmwareHelper {
 		VirtualDisk disk = new VirtualDisk();
 
 		VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
-        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.toString());
+        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
     	backingInfo.setThinProvisioned(true);
     	backingInfo.setEagerlyScrub(false);
         backingInfo.setDatastore(morDs);
@@ -273,7 +273,7 @@ public class VmwareHelper {
 		VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
         backingInfo.setDatastore(morDs);
         backingInfo.setFileName(vmdkDatastorePathChain[0]);
-        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.toString());
+        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
         if(vmdkDatastorePathChain.length > 1) {
         	String[] parentDisks = new String[vmdkDatastorePathChain.length - 1];
         	for(int i = 0; i < vmdkDatastorePathChain.length - 1; i++)
@@ -313,7 +313,7 @@ public class VmwareHelper {
 		VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
         backingInfo.setDatastore(vmdkDatastorePathChain[0].second());
         backingInfo.setFileName(vmdkDatastorePathChain[0].first());
-        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.toString());
+        backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
         if(vmdkDatastorePathChain.length > 1) {
         	Pair<String, ManagedObjectReference>[] parentDisks = new Pair[vmdkDatastorePathChain.length - 1];
         	for(int i = 0; i < vmdkDatastorePathChain.length - 1; i++)
@@ -346,7 +346,7 @@ public class VmwareHelper {
 
 		VirtualDiskFlatVer2BackingInfo parentBacking = new VirtualDiskFlatVer2BackingInfo();
 		parentBacking.setDatastore(morDs);
-		parentBacking.setDiskMode(VirtualDiskMode.PERSISTENT.toString());
+		parentBacking.setDiskMode(VirtualDiskMode.PERSISTENT.value());
 
 		if(parentDatastorePathList.length > 1) {
 			String[] nextDatastorePathList = new String[parentDatastorePathList.length -1];
@@ -364,7 +364,7 @@ public class VmwareHelper {
 
 		VirtualDiskFlatVer2BackingInfo parentBacking = new VirtualDiskFlatVer2BackingInfo();
 		parentBacking.setDatastore(parentDatastorePathList[0].second());
-		parentBacking.setDiskMode(VirtualDiskMode.PERSISTENT.toString());
+		parentBacking.setDiskMode(VirtualDiskMode.PERSISTENT.value());
 
 		if(parentDatastorePathList.length > 1) {
 			Pair<String, ManagedObjectReference>[] nextDatastorePathList = new Pair[parentDatastorePathList.length -1];

@@ -2094,7 +2094,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     if (!hyperHost.createBlankVm(vmName, vmSpec.getCpus(), vmSpec.getSpeed().intValue(),
                             getReserveCpuMHz(vmSpec.getSpeed().intValue()), vmSpec.getLimitCpuUse(), ramMb, getReserveMemMB(ramMb),
-                            translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).toString(), rootDiskDataStoreDetails.first(), false)) {
+                            translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), rootDiskDataStoreDetails.first(), false)) {
                         throw new Exception("Failed to create VM. vmName: " + vmName);
                     }
                 }
@@ -2126,7 +2126,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             int ramMb = (int) (vmSpec.getMinRam() / (1024 * 1024));
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getSpeed().intValue(),
                     getReserveCpuMHz(vmSpec.getSpeed().intValue()), ramMb, getReserveMemMB(ramMb),
-                    translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).toString(), vmSpec.getLimitCpuUse());
+                    translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), vmSpec.getLimitCpuUse());
 
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
             int i = 0;
@@ -3935,7 +3935,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         vmConfig.setName(vmName);
         vmConfig.setMemoryMB((long) 4); // vmware request minimum of 4 MB
         vmConfig.setNumCPUs(1);
-        vmConfig.setGuestId(VirtualMachineGuestOsIdentifier.OTHER_GUEST.toString());
+        vmConfig.setGuestId(VirtualMachineGuestOsIdentifier.OTHER_GUEST.value());
         VirtualMachineFileInfo fileInfo = new VirtualMachineFileInfo();
         fileInfo.setVmPathName(String.format("[%s]", dsMo.getName()));
         vmConfig.setFiles(fileInfo);

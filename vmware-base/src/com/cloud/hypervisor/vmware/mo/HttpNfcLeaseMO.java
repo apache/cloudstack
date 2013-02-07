@@ -20,17 +20,23 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.rmi.RemoteException;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.w3c.dom.Element;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.HttpNfcLeaseInfo;
 import com.vmware.vim25.HttpNfcLeaseManifestEntry;
 import com.vmware.vim25.HttpNfcLeaseState;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.ObjectSpec;
 import com.vmware.vim25.OvfCreateImportSpecResult;
 import com.vmware.vim25.OvfFileItem;
+import com.vmware.vim25.PropertyFilterSpec;
+import com.vmware.vim25.PropertySpec;
 
 public class HttpNfcLeaseMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(HttpNfcLeaseMO.class);
@@ -44,7 +50,19 @@ public class HttpNfcLeaseMO extends BaseMO {
 	}
 
 	public HttpNfcLeaseState getState() throws Exception {
-		return (HttpNfcLeaseState)_context.getVimClient().getDynamicProperty(_mor, "state");
+        Object stateProp = _context.getVimClient().getDynamicProperty(_mor, "state");
+        // Due to some issue in JAX-WS De-serialization getting the information
+        // from the nodes
+        assert (stateProp.toString().contains("val: null"));
+        String stateVal = null;
+        Element stateElement = (Element) stateProp;
+        if (stateElement != null && stateElement.getFirstChild() != null) {
+            stateVal = stateElement.getFirstChild().getTextContent();
+        }
+        if (stateVal != null) {
+            return HttpNfcLeaseState.fromValue(stateVal);
+        }
+        return HttpNfcLeaseState.ERROR;
 	}
 
 	public HttpNfcLeaseState waitState(HttpNfcLeaseState[] states) throws Exception {
@@ -58,6 +76,8 @@ public class HttpNfcLeaseMO extends BaseMO {
 				return state;
 		}
 	}
+
+
 
 	public HttpNfcLeaseInfo getLeaseInfo() throws Exception {
 		return (HttpNfcLeaseInfo)_context.getVimClient().getDynamicProperty(_mor, "info");
