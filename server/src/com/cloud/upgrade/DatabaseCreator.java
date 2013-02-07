@@ -156,7 +156,10 @@ public class DatabaseCreator {
             System.exit(1);
         }
 
-        Transaction.initDataSource(dbPropsFile);
+        try {
+            Transaction.initDataSource(dbPropsFile);
+        } catch (NullPointerException e) {
+        }
         initDB(dbPropsFile, rootPassword, databases, dryRun);
 
         // Process sql files
