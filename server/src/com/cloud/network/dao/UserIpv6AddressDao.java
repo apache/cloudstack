@@ -36,4 +36,6 @@ public interface UserIpv6AddressDao extends GenericDao<UserIpv6AddressVO, Long> 
 	List<UserIpv6AddressVO> listByPhysicalNetworkId(long physicalNetworkId);
 
 	long countExistedIpsInNetwork(long networkId);
+
+	long countExistedIpsInVlan(long vlanId);
 }

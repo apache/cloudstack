@@ -3405,11 +3405,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     		if (nic.getIp6Address() == null) {
     			ipv6 = true;
     			UserIpv6Address ip = _ipv6Mgr.assignDirectIp6Address(dc.getId(), vm.getOwner(), network.getId(), requestedIpv6);
-    			Vlan vlan = _networkModel.getVlanForNetwork(network.getId());
-    			if (vlan == null) {
-    				s_logger.debug("Cannot find related vlan or too many vlan attached to network " + network.getId());
-    				return;
-    			}
+    			Vlan vlan = _vlanDao.findById(ip.getVlanId());
     			nic.setIp6Address(ip.getAddress().toString());
     			nic.setIp6Gateway(vlan.getIp6Gateway());
     			nic.setIp6Cidr(vlan.getIp6Cidr());

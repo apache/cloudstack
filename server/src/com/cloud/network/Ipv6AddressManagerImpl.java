@@ -17,6 +17,7 @@
 
 package com.cloud.network;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -30,6 +31,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -76,25 +78,34 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
 		if (network == null) {
 			return null;
 		}
-    	Vlan vlan = _networkModel.getVlanForNetwork(networkId);
-    	if (vlan == null) {
+    	List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+    	if (vlans == null) {
     		s_logger.debug("Cannot find related vlan or too many vlan attached to network " + networkId);
     		return null;
     	}
     	String ip = null; 
+    	Vlan ipVlan = null;
     	if (requestedIp6 == null) {
-    		if (!_networkModel.isIP6AddressAvailable(networkId)) {
+    		if (!_networkModel.isIP6AddressAvailableInNetwork(networkId)) {
     			throw new InsufficientAddressCapacityException("There is no more address available in the network " + network.getName(), DataCenter.class, network.getDataCenterId());
     		}
-    		ip = NetUtils.getIp6FromRange(vlan.getIp6Range());
-    		int count = 0;
-    		while (_ipv6Dao.findByNetworkIdAndIp(networkId, ip) != null) {
-    			ip = NetUtils.getNextIp6InRange(ip, vlan.getIp6Range());
-    			count ++;
-    			// It's an arbitrate number to prevent the infinite loop 
-    			if (count > _ipv6RetryMax) {
-    				ip = null;
-    				break;
+    		for (Vlan vlan : vlans) {
+    			if (!_networkModel.isIP6AddressAvailableInVlan(vlan.getId())) {
+    				continue;
+    			}
+    			ip = NetUtils.getIp6FromRange(vlan.getIp6Range());
+    			int count = 0;
+    			while (_ipv6Dao.findByNetworkIdAndIp(networkId, ip) != null) {
+    				ip = NetUtils.getNextIp6InRange(ip, vlan.getIp6Range());
+    				count ++;
+    				// It's an arbitrate number to prevent the infinite loop 
+    				if (count > _ipv6RetryMax) {
+    					ip = null;
+    					break;
+    				}
+    			}
+    			if (ip != null) {
+    				ipVlan = vlan;
     			}
     		}
     		if (ip == null) {
@@ -102,7 +113,13 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
     						DataCenter.class, network.getDataCenterId());
     		}
     	} else {
-    		if (!NetUtils.isIp6InRange(requestedIp6, vlan.getIp6Range())) {
+    		for (Vlan vlan : vlans) {
+    			if (NetUtils.isIp6InRange(requestedIp6, vlan.getIp6Range())) {
+    				ipVlan = vlan;
+    				break;
+    			}
+    		}
+    		if (ipVlan == null) {
     			throw new CloudRuntimeException("Requested IPv6 is not in the predefined range!");
     		}
     		ip = requestedIp6;
@@ -117,9 +134,9 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
         _dcDao.update(dc.getId(), dc);
         
     	String macAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(mac));
-    	UserIpv6AddressVO ipVO = new UserIpv6AddressVO(ip, dcId, macAddress, vlan.getId());
-    	ipVO.setPhysicalNetworkId(vlan.getPhysicalNetworkId());
-    	ipVO.setSourceNetworkId(vlan.getNetworkId());
+    	UserIpv6AddressVO ipVO = new UserIpv6AddressVO(ip, dcId, macAddress, ipVlan.getId());
+    	ipVO.setPhysicalNetworkId(network.getPhysicalNetworkId());
+    	ipVO.setSourceNetworkId(networkId);
     	ipVO.setState(UserIpv6Address.State.Allocated);
     	ipVO.setDomainId(owner.getDomainId());
     	ipVO.setAccountId(owner.getAccountId());

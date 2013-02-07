@@ -249,7 +249,7 @@ public interface NetworkModel {
     
     boolean isNetworkInlineMode(Network network);
 
-	Vlan getVlanForNetwork(long networkId);
+	boolean isIP6AddressAvailableInNetwork(long networkId);
 
-	boolean isIP6AddressAvailable(long networkId);
+	boolean isIP6AddressAvailableInVlan(long vlanId);
 }

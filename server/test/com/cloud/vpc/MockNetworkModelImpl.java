@@ -824,13 +824,13 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
 	@Override
-	public Vlan getVlanForNetwork(long networkId) {
+	public boolean isIP6AddressAvailableInNetwork(long networkId) {
 		// TODO Auto-generated method stub
-		return null;
+		return false;
 	}
 
 	@Override
-	public boolean isIP6AddressAvailable(long networkId) {
+	public boolean isIP6AddressAvailableInVlan(long vlanId) {
 		// TODO Auto-generated method stub
 		return false;
 	}
