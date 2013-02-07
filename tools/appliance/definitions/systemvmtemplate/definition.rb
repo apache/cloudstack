@@ -52,9 +52,7 @@ Veewee::Definition.declare({
   :sudo_cmd => "echo '%p'|sudo -S sh '%f'",
   :shutdown_cmd => "halt -p",
   :postinstall_files => [
-    "base.sh",
-    "cleanup.sh",
-    "zerodisk.sh"
+    "postinstall.sh",
   ],
   :postinstall_timeout => "10000"
 })
