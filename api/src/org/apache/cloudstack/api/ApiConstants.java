@@ -324,6 +324,7 @@ public class ApiConstants {
     public static final String LOAD_BALANCER_DEVICE_STATE = "lbdevicestate";
     public static final String LOAD_BALANCER_DEVICE_CAPACITY = "lbdevicecapacity";
     public static final String LOAD_BALANCER_DEVICE_DEDICATED = "lbdevicededicated";
+    public static final String LOAD_BALANCER_RULE_LIST = "loadbalancerrulelist";
     public static final String FIREWALL_DEVICE_ID = "fwdeviceid";
     public static final String FIREWALL_DEVICE_NAME = "fwdevicename";
     public static final String FIREWALL_DEVICE_STATE = "fwdevicestate";

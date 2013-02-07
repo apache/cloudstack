@@ -18,6 +18,7 @@ package com.cloud.async;
 
 import java.util.Date;
 
+import com.cloud.region.ha.GlobalLoadBalancer;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -48,7 +49,8 @@ public interface AsyncJob extends Identity, InternalIdentity {
         Condition,
         AutoScalePolicy,
         AutoScaleVmProfile,
-        AutoScaleVmGroup
+        AutoScaleVmGroup,
+        GlobalLoadBalancerRule
     }
 
     long getUserId();
