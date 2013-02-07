@@ -1859,11 +1859,14 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             	}
                 // Only Account specific Isolated network with sourceNat service disabled are allowed in security group
                 // enabled zone
-                boolean allowCreation = (ntwkOff.getGuestType() == GuestType.Isolated 
-                        && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat));
-                if (!allowCreation) {
-                    throw new InvalidParameterValueException("Only Account specific Isolated network with sourceNat " +
-                            "service disabled are allowed in security group enabled zone");
+                if ( ntwkOff.getGuestType() != GuestType.Shared ){
+                    throw new InvalidParameterValueException("Only shared guest network can be created in security group enabled zone");
+                }
+                if ( _networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)) {
+                    throw new InvalidParameterValueException("Service SourceNat is not allowed in security group enabled zone");
+                }
+                if ( ! _networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SecurityGroup)) {
+                    throw new InvalidParameterValueException("network must have SecurityGroup provider in security group enabled zone");
                 }
             }
 

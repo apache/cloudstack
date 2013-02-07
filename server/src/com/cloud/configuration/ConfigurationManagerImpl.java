@@ -1523,13 +1523,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // check if zone has necessary trafficTypes before enabling
                 try {
                     PhysicalNetwork mgmtPhyNetwork;
-                    if (NetworkType.Advanced == zone.getNetworkType()) {
-                        // zone should have a physical network with public and management traffiType
+                    // zone should have a physical network with management traffiType
+                    mgmtPhyNetwork = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
+                    if (NetworkType.Advanced == zone.getNetworkType() && ! zone.isSecurityGroupEnabled() ) {
+                        // advanced zone without SG should have a physical network with public Thpe
                         _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public);
-                        mgmtPhyNetwork = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
-                    } else {
-                        // zone should have a physical network with management traffiType
-                        mgmtPhyNetwork = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
                     }
 
                     try {

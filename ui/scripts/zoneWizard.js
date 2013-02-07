@@ -373,7 +373,6 @@
 									var nonSupportedHypervisors = {};									
 									if(args.context.zones[0]['network-model']	== "Advanced" && args.context.zones[0]['zone-advanced-sg-enabled'] ==	"on") {
 									  firstOption = "KVM";
-										nonSupportedHypervisors["XenServer"] = 1;  //to developers: comment this line if you need to test Advanced SG-enabled zone with XenServer hypervisor
 										nonSupportedHypervisors["VMware"] = 1;
 										nonSupportedHypervisors["BareMetal"] = 1;
 										nonSupportedHypervisors["Ovm"] = 1;

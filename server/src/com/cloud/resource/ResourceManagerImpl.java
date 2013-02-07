@@ -427,6 +427,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 					+ cmd.getHypervisor() + " to a supported ");
         }
 
+        if (zone.isSecurityGroupEnabled()) {
+            if( hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer ) {
+                throw new InvalidParameterValueException("Don't support hypervisor type " + hypervisorType + " in advanced security enabled zone");
+            }
+        }
+
         Cluster.ClusterType clusterType = null;
         if (cmd.getClusterType() != null && !cmd.getClusterType().isEmpty()) {
             clusterType = Cluster.ClusterType.valueOf(cmd.getClusterType());
