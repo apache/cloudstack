@@ -763,17 +763,14 @@
       //Multiple Vlan Ranges functionality
       $expand.click(function() {
 
-           var $vlanClone = $container.find('[rel=vlanRange]:first').clone().removeClass('field').insertBefore($container.find('.expand'));
-          //$vlan.appendTo($container.find('.content .select-container .physical-network-item form'));
-          $hide.clone().appendTo($vlanClone);
-       });
+        var $vlanClone = $container.find('[rel=vlanRange]:first').clone().removeClass('field').insertBefore($container.find('.expand'));
+        //$vlan.appendTo($container.find('.content .select-container .physical-network-item form'));
+        var $remove = $hide.clone().appendTo($vlanClone);
 
-         $hide.click(function() {
-         $hide.closest('[rel=vlanRange]').remove();           
-
-       });
-
-
+        $remove.click(function() {
+          $vlanClone.remove();
+        });
+      });
     },
 
     /**
