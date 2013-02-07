@@ -282,10 +282,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
     
     protected String cloneVolume(DataObject template, DataObject volume) {
-        
-        DiskOfferingVO offering = diskOfferingDao.findById(volume.getId());
-        VMTemplateStoragePoolVO  tmpltStoredOn =  templatePoolDao.findByPoolTemplate(template.getDataStore().getId(), template.getId());
         VolumeInfo volInfo = (VolumeInfo)volume;
+        DiskOfferingVO offering = diskOfferingDao.findById(volInfo.getDiskOfferingId());
+        VMTemplateStoragePoolVO  tmpltStoredOn =  templatePoolDao.findByPoolTemplate(template.getDataStore().getId(), template.getId());
+        
         DiskProfile diskProfile = new DiskProfile(volInfo, offering,
                 null);
         CreateCommand cmd = new CreateCommand(diskProfile,
