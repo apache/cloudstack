@@ -59,44 +59,46 @@ EOF
 install_packages() {
   DEBIAN_FRONTEND=noninteractive
   DEBIAN_PRIORITY=critical
-  DEBCONF_DB_OVERRIDE=’File{/root/config.dat}’
-  export DEBIAN_FRONTEND DEBIAN_PRIORITY DEBCONF_DB_OVERRIDE
 
   #basic stuff
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub-legacy e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diff grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent virt-what sudo
+   apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub-legacy e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diff grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent virt-what sudo
   #fix hostname in openssh-server generated keys
   sed -i "s/root@\(.*\)$/root@systemvm/g" etc/ssh/ssh_host_*.pub
 
   #sysstat
-  chroot . echo 'sysstat sysstat/enable boolean true' | chroot . debconf-set-selections
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install sysstat
+  echo 'sysstat sysstat/enable boolean true' | debconf-set-selections
+  apt-get --no-install-recommends -q -y --force-yes install sysstat
   #apache
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install apache2 ssl-cert
+  apt-get --no-install-recommends -q -y --force-yes install apache2 ssl-cert
   #haproxy
-  chroot . apt-get --no-install-recommends -q -y --force-yes install haproxy
+  apt-get --no-install-recommends -q -y --force-yes install haproxy
   #dnsmasq
-  chroot . apt-get --no-install-recommends -q -y --force-yes install dnsmasq
+  apt-get --no-install-recommends -q -y --force-yes install dnsmasq
   #nfs client
-  chroot . apt-get --no-install-recommends -q -y --force-yes install nfs-common
+  apt-get --no-install-recommends -q -y --force-yes install nfs-common
   #vpn stuff
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install xl2tpd openswan bcrelay ppp ipsec-tools tdb-tools
+  apt-get --no-install-recommends -q -y --force-yes install xl2tpd openswan bcrelay ppp ipsec-tools tdb-tools
   #vmware tools
-  chroot . apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
+  apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
   #xenstore utils
-  chroot . apt-get --no-install-recommends -q -y --force-yes install xenstore-utils libxenstore3.0
+  apt-get --no-install-recommends -q -y --force-yes install xenstore-utils libxenstore3.0
   #keepalived and conntrackd
-  chroot . apt-get --no-install-recommends -q -y --force-yes install keepalived conntrackd ipvsadm libnetfilter-conntrack3 libnl1
+  apt-get --no-install-recommends -q -y --force-yes install keepalived conntrackd ipvsadm libnetfilter-conntrack3 libnl1
   #ipcalc
-  chroot . apt-get --no-install-recommends -q -y --force-yes install ipcalc
+  apt-get --no-install-recommends -q -y --force-yes install ipcalc
+  #java
+  apt-get --no-install-recommends -q -y --force-yes install  default-jre-headless
 
-  echo "***** getting sun jre 6*********"
-  chroot . echo 'sun-java6-bin shared/accepted-sun-dlj-v1-1 boolean true
-    sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true
-    sun-java6-jre sun-java6-jre/stopthread boolean true
-    sun-java6-jre sun-java6-jre/jcepolicy note
-    sun-java6-bin shared/present-sun-dlj-v1-1 note
-    sun-java6-jre shared/present-sun-dlj-v1-1 note ' | chroot . debconf-set-selections
-  chroot .  apt-get --no-install-recommends -q -y install  sun-java6-jre
+  # Setup sudo to allow no-password sudo for "admin"
+  groupadd -r admin
+  usermod -a -G admin cloud
+  echo "root:password" | chpasswd
+  sed -i -e '/Defaults\s\+env_reset/a Defaults\texempt_group=admin' /etc/sudoers
+  sed -i -e 's/%admin ALL=(ALL) ALL/%admin ALL=NOPASSWD:ALL/g' /etc/sudoers
+  
+  mkdir /home/cloud/.ssh
+  chmod 700 /home/cloud/.ssh
+
 }
 
 cleanup() {
