@@ -382,6 +382,7 @@ fi
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.iso
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.zip
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.py
+%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.pyc
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudutils/*
 %doc LICENSE
 %doc NOTICE
