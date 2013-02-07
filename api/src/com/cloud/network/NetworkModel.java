@@ -247,7 +247,7 @@ public interface NetworkModel {
     
     PublicIpAddress getSourceNatIpAddressForGuestNetwork(Account owner, Network guestNetwork);
 
-	Vlan getVlanForNetwork(long networkId);
+	boolean isIP6AddressAvailableInNetwork(long networkId);
 
-	boolean isIP6AddressAvailable(long networkId);
+	boolean isIP6AddressAvailableInVlan(long vlanId);
 }

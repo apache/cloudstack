@@ -521,7 +521,7 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
         		return false;
         	}
         	if (network.getIp6Gateway() != null) {
-        		hasFreeIps = isIP6AddressAvailable(network.getId());
+        		hasFreeIps = isIP6AddressAvailableInNetwork(network.getId());
         	}
         } else {
             hasFreeIps = (getAvailableIps(network, null)).size() > 0;
@@ -531,17 +531,7 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
     }
 
     @Override
-    public Vlan getVlanForNetwork(long networkId) {
-    	List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
-    	if (vlans == null || vlans.size() > 1) {
-    		s_logger.debug("Cannot find related vlan or too many vlan attached to network " + networkId);
-    		return null;
-    	}
-    	return vlans.get(0);
-    }
-
-    @Override
-    public boolean isIP6AddressAvailable(long networkId) {
+    public boolean isIP6AddressAvailableInNetwork(long networkId) {
     	Network network = _networksDao.findById(networkId);
     	if (network == null) {
     		return false;
@@ -549,13 +539,24 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
     	if (network.getIp6Gateway() == null) {
     		return false;
     	}
-    	Vlan vlan = getVlanForNetwork(network.getId());
-    	long existedCount = _ipv6Dao.countExistedIpsInNetwork(network.getId());
+    	List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+    	for (Vlan vlan : vlans) {
+    		if (isIP6AddressAvailableInVlan(vlan.getId())) {
+    			return true;
+    		}
+    	}
+		return false;
+	}
+
+    @Override
+    public boolean isIP6AddressAvailableInVlan(long vlanId) {
+    	VlanVO vlan = _vlanDao.findById(vlanId);
+    	long existedCount = _ipv6Dao.countExistedIpsInVlan(vlanId);
     	BigInteger existedInt = BigInteger.valueOf(existedCount);
     	BigInteger rangeInt = NetUtils.countIp6InRange(vlan.getIp6Range());
 		return (existedInt.compareTo(rangeInt) < 0);
 	}
-
+    
 	@Override
     public Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId) {
     
