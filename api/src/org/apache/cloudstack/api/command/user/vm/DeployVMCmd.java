@@ -24,11 +24,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.api.*;
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
-
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -39,6 +41,8 @@ import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -51,6 +55,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
@@ -148,11 +153,14 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP,
             description = "ip to network mapping. Can't be specified with networkIds parameter." +
-                    " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].networkid=uuid - requests to use ip 10.10.10.11 in network id=uuid")
+                    " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].ipv6=fc00:1234:5678::abcd&iptonetworklist[0].networkid=uuid - requests to use ip 10.10.10.11 in network id=uuid")
     private Map ipToNetworkList;
 
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="the ip address for default vm's network")
     private String ipAddress;
+
+    @Parameter(name=ApiConstants.IP6_ADDRESS, type=CommandType.STRING, description="the ipv6 address for default vm's network")
+    private String ip6Address;
 
     @Parameter(name=ApiConstants.KEYBOARD, type=CommandType.STRING, description="an optional keyboard device type for the virtual machine. valid value can be one of de,de-ch,es,fi,fr,fr-be,fr-ch,is,it,jp,nl-be,no,pt,uk,us")
     private String keyboard;
@@ -244,7 +252,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     public List<Long> getNetworkIds() {
        if (ipToNetworkList != null) {
-           if (networkIds != null || ipAddress != null) {
+           if (networkIds != null || ipAddress != null || getIp6Address() != null) {
                throw new InvalidParameterValueException("ipToNetworkMap can't be specified along with networkIds or ipAddress");
            } else {
                List<Long> networks = new ArrayList<Long>();
@@ -271,13 +279,13 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         return startVm == null ? true : startVm;
     }
 
-    private Map<Long, String> getIpToNetworkMap() {
-        if ((networkIds != null || ipAddress != null) && ipToNetworkList != null) {
+    private Map<Long, IpAddresses> getIpToNetworkMap() {
+        if ((networkIds != null || ipAddress != null || getIp6Address() != null) && ipToNetworkList != null) {
             throw new InvalidParameterValueException("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter");
         }
-        LinkedHashMap<Long, String> ipToNetworkMap = null;
+        LinkedHashMap<Long, IpAddresses> ipToNetworkMap = null;
         if (ipToNetworkList != null && !ipToNetworkList.isEmpty()) {
-            ipToNetworkMap = new LinkedHashMap<Long, String>();
+            ipToNetworkMap = new LinkedHashMap<Long, IpAddresses>();
             Collection ipsCollection = ipToNetworkList.values();
             Iterator iter = ipsCollection.iterator();
             while (iter.hasNext()) {
@@ -294,12 +302,27 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                     }
                 }
                 String requestedIp = (String) ips.get("ip");
-                ipToNetworkMap.put(networkId, requestedIp);
+                String requestedIpv6 = (String) ips.get("ipv6");
+                if (requestedIpv6 != null) {
+                	requestedIpv6 = requestedIpv6.toLowerCase();
+                }
+                if (requestedIpv6 != null) {
+                	throw new InvalidParameterValueException("Cannot support specified IPv6 address!");
+                }
+                IpAddresses addrs = new IpAddresses(requestedIp, requestedIpv6);
+                ipToNetworkMap.put(networkId, addrs);
             }
         }
 
         return ipToNetworkMap;
     }
+
+	public String getIp6Address() {
+		if (ip6Address == null) {
+			return null;
+		}
+		return ip6Address.toLowerCase();
+	}
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -356,11 +379,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         if (getStartVm()) {
             try {
                 UserContext.current().setEventDetails("Vm Id: "+getEntityId());
-                if (getHypervisor() == HypervisorType.BareMetal) {
-                    result = _bareMetalVmService.startVirtualMachine(this);
-                } else {
-                    result = _userVmService.startVirtualMachine(this);
-                }
+                result = _userVmService.startVirtualMachine(this);
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Exception: ", ex);
                 throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
@@ -388,6 +407,10 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException{
         try {
+        	if (getIp6Address() != null) {
+        		throw new InvalidParameterValueException("Cannot support specified IPv6 address!");
+        	}
+        	
             //Verify that all objects exist before passing them to the service
             Account owner = _accountService.getActiveAccountById(getEntityOwnerId());
 
@@ -425,27 +448,24 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             }
 
             UserVm vm = null;
-            if (getHypervisor() == HypervisorType.BareMetal) {
-                vm = _bareMetalVmService.createVirtualMachine(this);
-            } else {
-                if (zone.getNetworkType() == NetworkType.Basic) {
-                    if (getNetworkIds() != null) {
-                        throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
-                    } else {
-                        vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
-                                displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
-                    }
+        	IpAddresses addrs = new IpAddresses(ipAddress, getIp6Address());
+            if (zone.getNetworkType() == NetworkType.Basic) {
+                if (getNetworkIds() != null) {
+                    throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
                 } else {
-                    if (zone.isSecurityGroupEnabled())  {
-                        vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
-                                owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
-                    } else {
-                        if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
-                            throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
-                        }
-                        vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
-                                diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
+                    vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
+                                displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard);
+                }
+            } else {
+                if (zone.isSecurityGroupEnabled())  {
+                    vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
+                                owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard);
+                } else {
+                    if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
+                        throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
                     }
+                    vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
+                                diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard);
                 }
             }
 
@@ -467,4 +487,5 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }
+
 }

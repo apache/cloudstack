@@ -18,6 +18,8 @@ package com.cloud.upgrade;
 
 import java.sql.SQLException;
 
+import javax.inject.Inject;
+
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
@@ -25,10 +27,12 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.cloud.upgrade.dao.VersionDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+
 
 public class AdvanceZone223To224UpgradeTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(AdvanceZone223To224UpgradeTest.class);
+    @Inject VersionDaoImpl dao;
+    @Inject DatabaseUpgradeChecker checker;
 
     @Override
     @Before
@@ -43,8 +47,6 @@ public class AdvanceZone223To224UpgradeTest extends TestCase {
 
     public void test223to224Upgrade() throws SQLException {
 
-        VersionDaoImpl dao = ComponentLocator.inject(VersionDaoImpl.class);
-        DatabaseUpgradeChecker checker = ComponentLocator.inject(DatabaseUpgradeChecker.class);
 
         String version = dao.getCurrentVersion();
         assert version.equals("2.2.3") : "Version returned is not 2.2.3 but " + version;

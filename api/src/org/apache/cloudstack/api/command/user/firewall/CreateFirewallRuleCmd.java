@@ -19,18 +19,17 @@ package org.apache.cloudstack.api.command.user.firewall;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.cloudstack.api.response.IPAddressResponse;
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -122,7 +121,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         FirewallRule rule = _entityMgr.findById(FirewallRule.class, getEntityId());
         try {
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
-            success = _firewallService.applyFirewallRules(rule.getSourceIpAddressId(), callerContext.getCaller());
+            success = _firewallService.applyIngressFirewallRules(rule.getSourceIpAddressId(), callerContext.getCaller());
 
             // State is different after the rule is applied, so get new object here
             rule = _entityMgr.findById(FirewallRule.class, getEntityId());
@@ -238,7 +237,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         }
 
         try {
-            FirewallRule result = _firewallService.createFirewallRule(this);
+            FirewallRule result = _firewallService.createIngressFirewallRule(this);
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException ex) {
@@ -325,7 +324,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
     @Override
     public TrafficType getTrafficType() {
-        return null;
+        return FirewallRule.TrafficType.Ingress;
     }
 
 }

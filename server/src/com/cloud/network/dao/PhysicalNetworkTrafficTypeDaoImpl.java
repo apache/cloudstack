@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.Pair;
@@ -30,6 +32,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+@Component
 @Local(value=PhysicalNetworkTrafficTypeDao.class) @DB(txn=false)
 public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNetworkTrafficTypeVO, Long> implements PhysicalNetworkTrafficTypeDao {
     final SearchBuilder<PhysicalNetworkTrafficTypeVO> physicalNetworkSearch;

@@ -249,4 +249,7 @@ public interface NetworkModel {
     
     boolean isNetworkInlineMode(Network network);
 
+	boolean isIP6AddressAvailableInNetwork(long networkId);
+
+	boolean isIP6AddressAvailableInVlan(long vlanId);
 }

@@ -18,6 +18,8 @@ package com.cloud.migration;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value={ServiceOffering20Dao.class})

@@ -17,42 +17,45 @@
 package com.cloud.network.guru;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
+import com.cloud.event.ActionEventUtils;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.ReservationContext;
 
+@Component
 @Local(value=NetworkGuru.class)
 public class OvsGuestNetworkGuru extends GuestNetworkGuru {
-	private static final Logger s_logger = Logger.getLogger(OvsGuestNetworkGuru.class);
-	
-	@Inject OvsTunnelManager _ovsTunnelMgr;
+    private static final Logger s_logger = Logger.getLogger(OvsGuestNetworkGuru.class);
+
+    @Inject OvsTunnelManager _ovsTunnelMgr;
 
     OvsGuestNetworkGuru() {
         super();
         _isolationMethods = new IsolationMethod[] { IsolationMethod.GRE, IsolationMethod.L3, IsolationMethod.VLAN };
     }
-    
+
+    @Override
     protected boolean canHandle(NetworkOffering offering,
             final NetworkType networkType, final PhysicalNetwork physicalNetwork) {
         // This guru handles only Guest Isolated network that supports Source
@@ -69,46 +72,47 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
             return false;
         }
     }    
-	
-	@Override
+
+    @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
-      
-		if (!_ovsTunnelMgr.isOvsTunnelEnabled()) {
-			return null;
-		}
-		
+
+        if (!_ovsTunnelMgr.isOvsTunnelEnabled()) {
+            return null;
+        }
+
         NetworkVO config = (NetworkVO) super.design(offering, plan, userSpecified, owner); 
         if (config == null) {
-        	return null;
+            return null;
         }
-        
+
         config.setBroadcastDomainType(BroadcastDomainType.Vswitch);
-        
+
         return config;
-	}
-	
+    }
+
+    @Override
     protected void allocateVnet(Network network, NetworkVO implemented, long dcId,
-    		long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
+            long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
         if (network.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId);
             if (vnet == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a part of network " + network + " implement ", DataCenter.class, dcId);
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vnet));
-            EventUtils.saveEvent(UserContext.current().getCallerUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: "+vnet+ " Network Id: "+network.getId(), 0);
+            ActionEventUtils.onCompletedActionEvent(UserContext.current().getCallerUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + network.getId(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }
     }
-	
-	@Override
-	public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
-		 assert (config.getState() == State.Implementing) : "Why are we implementing " + config;
-		 if (!_ovsTunnelMgr.isOvsTunnelEnabled()) {
-			 return null;
-		 }
-		 NetworkVO implemented = (NetworkVO)super.implement(config, offering, dest, context);		 
-         return implemented;
-	}
-	
+
+    @Override
+    public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
+        assert (config.getState() == State.Implementing) : "Why are we implementing " + config;
+        if (!_ovsTunnelMgr.isOvsTunnelEnabled()) {
+            return null;
+        }
+        NetworkVO implemented = (NetworkVO)super.implement(config, offering, dest, context);		 
+        return implemented;
+    }
+
 }

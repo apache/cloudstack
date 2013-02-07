@@ -16,11 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -109,11 +114,7 @@ public class StopVMCmd extends BaseAsyncCmd {
         UserContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result;
 
-        if (_userVmService.getHypervisorTypeOfUserVM(getId()) == HypervisorType.BareMetal) {
-            result = _bareMetalVmService.stopVirtualMachine(getId(), isForced());
-        } else {
-            result = _userVmService.stopVirtualMachine(getId(), isForced());
-        }
+        result = _userVmService.stopVirtualMachine(getId(), isForced());
 
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);

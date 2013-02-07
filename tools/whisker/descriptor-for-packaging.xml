@@ -404,7 +404,7 @@ of liability.
         </text>
         </license>
         <license
-            name='Mozilla Public License, Version 1.0'
+            name='Mozilla Public License, Version 1.1'
             id='MPL1'
             url='http://www.mozilla.org/MPL/1.1/' >
             <template>
@@ -2423,9 +2423,13 @@ Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
             id='adiscon.com'
             name='Adiscon GmbH'
             url='http://www.adiscon.com/' />
+        <organisation
+            id='vmware.com'
+            name='VMware, Inc'
+            url='http://www.vmware.com/' />
     </organisations>
     <primary-license id='ApacheLicenseVersion2'>
-        <copyright-notice>Copyright (c) 2012 The Apache Software Foundation</copyright-notice>
+        <copyright-notice>Copyright (c) 2013 The Apache Software Foundation</copyright-notice>
     </primary-license>
     <primary-notice id="foo">
 This product includes software developed at
@@ -2946,6 +2950,20 @@ Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
                </license-parameters>
                <by-organisation id='person:shigeru.chiba'>
                    <resource name='javassist-3.9.0.GA.jar' source='http://sourceforge.net/projects/jboss/files/Javassist/' />
+               </by-organisation>
+        </with-license>
+        <with-license id='MPL1'>
+            <copyright-notice>Copyright (c) 2007-2012 VMware, Inc.  All Rights Reserved.</copyright-notice>
+            <license-parameters>
+                <parameter><name>PROJECT</name><value>RabbitMQ</value></parameter>
+                <parameter><name>INITIAL_DEVELOPER</name><value>VMware, Ltd.</value></parameter>
+                <parameter><name>INITIAL_DEVELOPER_COPYRIGHT</name><value>2007-2012 VMware, Inc.</value></parameter>
+                <parameter><name>CONTRIBUTORS</name><value></value></parameter>
+                <parameter><name>ALT_LIC_NAME</name><value>GNU General Public License Version 2</value></parameter>
+                <parameter><name>ALT_LIC_SHORT</name><value>GPL</value></parameter>
+               </license-parameters>
+               <by-organisation id='vmware.com'>
+                   <resource name='rabbitmq-client.jar' source='http://www.rabbitmq.com/java-client.html' />
                </by-organisation>
         </with-license>
     </within>

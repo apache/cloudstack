@@ -34,6 +34,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
@@ -123,7 +125,7 @@ public interface NetworkManager  {
 
     Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr,
             String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork physicalNetwork,
-            long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId) 
+            long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr) 
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     /**
@@ -143,6 +145,8 @@ public interface NetworkManager  {
             ResourceUnavailableException, ResourceAllocationException;
 
     UserDataServiceProvider getPasswordResetProvider(Network network);
+
+    UserDataServiceProvider getSSHKeyResetProvider(Network network);
 
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
     
@@ -167,7 +171,7 @@ public interface NetworkManager  {
 
     void allocateDirectIp(NicProfile nic, DataCenter dc,
             VirtualMachineProfile<? extends VirtualMachine> vm,
-            Network network, String requestedIp)
+            Network network, String requestedIpv4, String requestedIpv6)
             throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException;
 
@@ -262,7 +266,7 @@ public interface NetworkManager  {
      * @throws InsufficientCapacityException
      * @throws ResourceUnavailableException
      */
-    NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfileImpl<VMInstanceVO> vmProfile, boolean prepare) throws InsufficientVirtualNetworkCapcityException,
+    NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean prepare) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
 
 

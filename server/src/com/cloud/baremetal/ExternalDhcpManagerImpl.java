@@ -21,9 +21,11 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -48,7 +50,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -60,10 +62,10 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
+@Component
 @Local(value = {ExternalDhcpManager.class})
-public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceStateAdapter {
+public class ExternalDhcpManagerImpl extends ManagerBase implements ExternalDhcpManager, ResourceStateAdapter {
 	private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalDhcpManagerImpl.class);
-	protected String _name;
 	@Inject DataCenterDao _dcDao;
 	@Inject HostDao _hostDao;
 	@Inject AgentManager _agentMgr;
@@ -71,7 +73,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 	@Inject UserVmDao _userVmDao;
 	@Inject ResourceManager _resourceMgr;
 	@Inject NicDao _nicDao;
-
+	
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		_resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
@@ -89,34 +91,29 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 		return true;
 	}
 
-	@Override
-	public String getName() {
-		return _name;
-	}
-
 	protected String getDhcpServerGuid(String zoneId, String name, String ip) {
 		return zoneId + "-" + name + "-" + ip;
 	}
-
-
+	
+	
 	@Override @DB
-	public Host addDhcpServer(Long zoneId, Long podId, String type, String url, String username, String password) {
+	public Host addDhcpServer(Long zoneId, Long podId, String type, String url, String username, String password) {	
 		DataCenterVO zone = _dcDao.findById(zoneId);
 		if (zone == null) {
 			throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
-		}
-
+		} 
+		
 		HostPodVO pod = _podDao.findById(podId);
 		if (pod == null) {
 			throw new InvalidParameterValueException("Could not find pod with ID: " + podId);
-		}
-
+		} 
+		
 		List<HostVO> dhcps = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.ExternalDhcp, null, podId, zoneId);
 		if (dhcps.size() != 0) {
 			throw new InvalidParameterValueException("Already had a DHCP server in Pod: " + podId + " zone: " + zoneId);
 		}
-
-
+		
+		
 		String ipAddress = url;
 		String guid = getDhcpServerGuid(Long.toString(zoneId) + "-" + Long.toString(podId), "ExternalDhcp", ipAddress);
 		Map params = new HashMap<String, String>();
@@ -134,7 +131,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 			dns = zone.getDns2();
 		}
 		params.put("dns", dns);
-
+		
 		ServerResource resource = null;
 		try {
 			if (type.equalsIgnoreCase(DhcpServerType.Dnsmasq.getName())) {
@@ -150,12 +147,12 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 			s_logger.debug(e);
 			throw new CloudRuntimeException(e.getMessage());
 		}
-
+		
 		Host dhcpServer = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalDhcp, params);
 		if (dhcpServer == null) {
 			throw new CloudRuntimeException("Cannot add external Dhcp server as a host");
 		}
-
+		
 		Transaction txn = Transaction.currentTxn();
         txn.start();
         pod.setExternalDhcp(true);
@@ -163,7 +160,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
         txn.commit();
 		return dhcpServer;
 	}
-
+	
 	@Override
 	public DhcpServerResponse getApiResponse(Host dhcpServer) {
 		DhcpServerResponse response = new DhcpServerResponse();
@@ -178,37 +175,37 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
 			s_logger.debug("VM " + vmId + " is not baremetal machine, skip preparing baremetal DHCP entry");
 			return;
 		}
-
-		List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.PxeServer, null, vm.getPodIdToDeployIn(), vm.getDataCenterIdToDeployIn());
+		
+		List<HostVO> servers = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.PxeServer, null, vm.getPodIdToDeployIn(), vm.getDataCenterId());
 		if (servers.size() != 1) {
-			throw new CloudRuntimeException("Wrong number of PXE server found in zone " + vm.getDataCenterIdToDeployIn()
+			throw new CloudRuntimeException("Wrong number of PXE server found in zone " + vm.getDataCenterId()
 					+ " Pod " + vm.getPodIdToDeployIn() + ", number is " + servers.size());
 		}
 		HostVO pxeServer = servers.get(0);
 		cmd.setNextServer(pxeServer.getPrivateIpAddress());
 		s_logger.debug("Set next-server to " + pxeServer.getPrivateIpAddress() + " for VM " + vm.getId());
 	}
-
+	
 	@Override
 	public boolean addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> profile, DeployDestination dest,
 			ReservationContext context) throws ResourceUnavailableException {
-		Long zoneId = profile.getVirtualMachine().getDataCenterIdToDeployIn();
+		Long zoneId = profile.getVirtualMachine().getDataCenterId();
 		Long podId = profile.getVirtualMachine().getPodIdToDeployIn();
 		List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Type.ExternalDhcp, null, podId, zoneId);
 		if (hosts.size() == 0) {
 			throw new CloudRuntimeException("No external Dhcp found in zone " + zoneId + " pod " + podId);
 		}
-
+		
 		if (hosts.size() > 1) {
 			throw new CloudRuntimeException("Something wrong, more than 1 external Dhcp found in zone " + zoneId + " pod " + podId);
 		}
-
+		
 		HostVO h = hosts.get(0);
 		String dns = nic.getDns1();
 		if (dns == null) {
 			dns = nic.getDns2();
 		}
-		DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), profile.getVirtualMachine().getHostName(), dns, nic.getGateway());
+		DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), profile.getVirtualMachine().getHostName(), null, dns, nic.getGateway(), null);
 		String errMsg = String.format("Set dhcp entry on external DHCP %1$s failed(ip=%2$s, mac=%3$s, vmname=%4$s)",
 				h.getPrivateIpAddress(), nic.getIp4Address(), nic.getMacAddress(), profile.getVirtualMachine().getHostName());
 		//prepareBareMetalDhcpEntry(nic, dhcpCommand);
@@ -240,7 +237,7 @@ public class ExternalDhcpManagerImpl implements ExternalDhcpManager, ResourceSta
         if (!(startup[0] instanceof StartupExternalDhcpCommand)) {
             return null;
         }
-
+        
         host.setType(Host.Type.ExternalDhcp);
         return host;
     }

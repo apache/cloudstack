@@ -18,13 +18,10 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -32,6 +29,8 @@ import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -245,7 +244,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
 
             if (getOpenFirewall()) {
-                success = success && _firewallService.applyFirewallRules(getSourceIpAddressId(), callerContext.getCaller());
+                success = success && _firewallService.applyIngressFirewallRules(getSourceIpAddressId(), callerContext.getCaller());
             }
 
             // State might be different after the rule is applied, so get new object here

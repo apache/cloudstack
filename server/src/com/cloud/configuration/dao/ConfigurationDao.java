@@ -63,4 +63,6 @@ public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {
     ConfigurationVO findByName(String name);
 
 	boolean update(String name, String category, String value);
+	
+	void invalidateCache();
 }

@@ -23,6 +23,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
@@ -37,7 +39,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkVO;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -46,13 +48,15 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
+@Component
 @Local(value = VirtualMachineManager.class)
-public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
+public class MockVirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -212,18 +216,18 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
         return null;
     }
 
-	@Override
-	public <T extends VMInstanceVO> T storageMigration(T vm,
-			StoragePool storagePoolId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public <T extends VMInstanceVO> T storageMigration(T vm,
+            StoragePool storagePoolId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public VMInstanceVO findById(long vmId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public VMInstanceVO findById(long vmId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
     /* (non-Javadoc)
      * @see com.cloud.vm.VirtualMachineManager#checkIfCanUpgrade(com.cloud.vm.VirtualMachine, long)
@@ -231,7 +235,7 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
     @Override
     public void checkIfCanUpgrade(VirtualMachine vmInstance, long newServiceOfferingId) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)
@@ -268,6 +272,15 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
     public NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.vm.VirtualMachineManager#removeVmFromNetwork(com.cloud.vm.VirtualMachine, com.cloud.network.Network, java.net.URI)
+     */
+    @Override
+    public boolean removeNicFromVm(VirtualMachine vm, NicVO nic) throws ConcurrentOperationException, ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
     }
 
     /* (non-Javadoc)

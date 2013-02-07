@@ -19,7 +19,7 @@ package com.cloud.network.lb.dao;
 import java.util.List;
 
 import com.cloud.network.ElasticLbVmMapVO;
-import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.DomainRouterVO;
 

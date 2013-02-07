@@ -32,8 +32,9 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.springframework.stereotype.Component;
 
-
+@Component
 @Local(value={DataCenterJoinDao.class})
 public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long> implements DataCenterJoinDao {
     public static final Logger s_logger = Logger.getLogger(DataCenterJoinDaoImpl.class);

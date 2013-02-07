@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.bridge.model.SMetaVO;
 import com.cloud.bridge.service.core.s3.S3MetaDataEntry;
 import com.cloud.utils.db.GenericDaoBase;
@@ -27,6 +29,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={SMetaDao.class})
 public class SMetaDaoImpl extends GenericDaoBase<SMetaVO, Long> implements SMetaDao {
 

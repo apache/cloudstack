@@ -23,20 +23,56 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.*;
-import com.cloud.agent.api.routing.*;
-import com.cloud.network.router.VirtualRouter;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.BumpUpPriorityCommand;
+import com.cloud.agent.api.CheckRouterAnswer;
+import com.cloud.agent.api.CheckRouterCommand;
+import com.cloud.agent.api.CheckVirtualMachineAnswer;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.GetDomRVersionAnswer;
+import com.cloud.agent.api.GetDomRVersionCmd;
+import com.cloud.agent.api.GetVmStatsAnswer;
+import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.GetVncPortAnswer;
+import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.MigrateAnswer;
+import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.NetworkUsageAnswer;
+import com.cloud.agent.api.NetworkUsageCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
+import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.RebootAnswer;
+import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.SecurityGroupRuleAnswer;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.StartAnswer;
+import com.cloud.agent.api.StartCommand;
+import com.cloud.agent.api.StopAnswer;
+import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
+import com.cloud.agent.api.routing.DhcpEntryCommand;
+import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockSecurityRulesVO;
 import com.cloud.simulator.MockVMVO;
@@ -46,55 +82,55 @@ import com.cloud.simulator.dao.MockSecurityRulesDao;
 import com.cloud.simulator.dao.MockVMDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value = { MockVmManager.class })
-public class MockVmManagerImpl implements MockVmManager {
+public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     private static final Logger s_logger = Logger.getLogger(MockVmManagerImpl.class);
 
-	@Inject MockVMDao _mockVmDao = null;
-	@Inject MockAgentManager _mockAgentMgr = null;
-	@Inject MockHostDao _mockHostDao = null;
-	@Inject MockSecurityRulesDao _mockSecurityDao = null;
-	private Map<String, Map<String, Ternary<String, Long, Long>>> _securityRules = new ConcurrentHashMap<String, Map<String, Ternary<String, Long, Long>>>();
+    @Inject MockVMDao _mockVmDao = null;
+    @Inject MockAgentManager _mockAgentMgr = null;
+    @Inject MockHostDao _mockHostDao = null;
+    @Inject MockSecurityRulesDao _mockSecurityDao = null;
+    private final Map<String, Map<String, Ternary<String, Long, Long>>> _securityRules = new ConcurrentHashMap<String, Map<String, Ternary<String, Long, Long>>>();
 
-	public MockVmManagerImpl() {
-	}
+    public MockVmManagerImpl() {
+    }
 
-	@Override
+    @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
 
-	    return true;
-	}
+        return true;
+    }
 
     public String startVM(String vmName, NicTO[] nics,
-		int cpuHz, long ramSize,
-		String bootArgs, String hostGuid) {
+            int cpuHz, long ramSize,
+            String bootArgs, String hostGuid) {
 
-		Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-		MockHost host = null;
-		MockVm vm = null;
-		try {
-			txn.start();
-			host = _mockHostDao.findByGuid(hostGuid);
-			if (host == null) {
-				return "can't find host";
-			}
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        MockHost host = null;
+        MockVm vm = null;
+        try {
+            txn.start();
+            host = _mockHostDao.findByGuid(hostGuid);
+            if (host == null) {
+                return "can't find host";
+            }
 
-			vm = _mockVmDao.findByVmName(vmName);
-			txn.commit();
-		} catch (Exception ex) {
-			txn.rollback();
-			throw new CloudRuntimeException("Unable to start VM " + vmName, ex);
-		} finally {
-			txn.close();
+            vm = _mockVmDao.findByVmName(vmName);
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("Unable to start VM " + vmName, ex);
+        } finally {
+            txn.close();
             txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
-		}
+        }
 
         if(vm == null) {
             int vncPort = 0;
@@ -109,43 +145,43 @@ public class MockVmManagerImpl implements MockVmManager {
             vm.setHostId(host.getId());
             vm.setBootargs(bootArgs);
             if(vmName.startsWith("s-")) {
-		vm.setType("SecondaryStorageVm");
+                vm.setType("SecondaryStorageVm");
             } else if (vmName.startsWith("v-")) {
-		vm.setType("ConsoleProxy");
+                vm.setType("ConsoleProxy");
             } else if (vmName.startsWith("r-")) {
-		vm.setType("DomainRouter");
+                vm.setType("DomainRouter");
             } else if (vmName.startsWith("i-")) {
-		vm.setType("User");
+                vm.setType("User");
             }
             txn = Transaction.open(Transaction.SIMULATOR_DB);
-			try {
-				txn.start();
-				vm = _mockVmDao.persist((MockVMVO) vm);
-				txn.commit();
-			} catch (Exception ex) {
-				txn.rollback();
-				throw new CloudRuntimeException("unable to save vm to db " + vm.getName(), ex);
-			} finally {
-				txn.close();
+            try {
+                txn.start();
+                vm = _mockVmDao.persist((MockVMVO) vm);
+                txn.commit();
+            } catch (Exception ex) {
+                txn.rollback();
+                throw new CloudRuntimeException("unable to save vm to db " + vm.getName(), ex);
+            } finally {
+                txn.close();
                 txn = Transaction.open(Transaction.CLOUD_DB);
                 txn.close();
-			}
+            }
         } else {
             if(vm.getState() == State.Stopped) {
                 vm.setState(State.Running);
                 txn = Transaction.open(Transaction.SIMULATOR_DB);
-			try {
-				txn.start();
-				_mockVmDao.update(vm.getId(), (MockVMVO)vm);
-				txn.commit();
-			} catch (Exception ex) {
-				txn.rollback();
-				throw new CloudRuntimeException("unable to update vm " + vm.getName(), ex);
-			} finally {
-				txn.close();
+                try {
+                    txn.start();
+                    _mockVmDao.update(vm.getId(), (MockVMVO)vm);
+                    txn.commit();
+                } catch (Exception ex) {
+                    txn.rollback();
+                    throw new CloudRuntimeException("unable to update vm " + vm.getName(), ex);
+                } finally {
+                    txn.close();
                     txn = Transaction.open(Transaction.CLOUD_DB);
                     txn.close();
-			}
+                }
             }
         }
 
@@ -192,49 +228,49 @@ public class MockVmManagerImpl implements MockVmManager {
         return null;
     }
 
-	public boolean rebootVM(String vmName) {
-		Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-		try {
-			txn.start();
-			MockVm vm = _mockVmDao.findByVmName(vmName);
-			if (vm != null) {
-				vm.setState(State.Running);
-				_mockVmDao.update(vm.getId(), (MockVMVO) vm);
+    public boolean rebootVM(String vmName) {
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        try {
+            txn.start();
+            MockVm vm = _mockVmDao.findByVmName(vmName);
+            if (vm != null) {
+                vm.setState(State.Running);
+                _mockVmDao.update(vm.getId(), (MockVMVO) vm);
 
-			}
-			txn.commit();
-		} catch (Exception ex) {
-			txn.rollback();
-			throw new CloudRuntimeException("unable to reboot vm " + vmName, ex);
-		} finally {
-			txn.close();
+            }
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("unable to reboot vm " + vmName, ex);
+        } finally {
+            txn.close();
             txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
-		}
-		return true;
-	}
+        }
+        return true;
+    }
 
-	@Override
-	public Map<String, MockVMVO> getVms(String hostGuid) {
-		Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-		try {
-			txn.start();
-			List<MockVMVO> vms = _mockVmDao.findByHostGuid(hostGuid);
-			Map<String, MockVMVO> vmMap = new HashMap<String, MockVMVO>();
-			for (MockVMVO vm : vms) {
-				vmMap.put(vm.getName(), vm);
-			}
-			txn.commit();
-			return vmMap;
-		} catch (Exception ex) {
-			txn.rollback();
-			throw new CloudRuntimeException("unable to fetch vms  from host " + hostGuid, ex);
-		} finally {
-			txn.close();
+    @Override
+    public Map<String, MockVMVO> getVms(String hostGuid) {
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        try {
+            txn.start();
+            List<MockVMVO> vms = _mockVmDao.findByHostGuid(hostGuid);
+            Map<String, MockVMVO> vmMap = new HashMap<String, MockVMVO>();
+            for (MockVMVO vm : vms) {
+                vmMap.put(vm.getName(), vm);
+            }
+            txn.commit();
+            return vmMap;
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("unable to fetch vms  from host " + hostGuid, ex);
+        } finally {
+            txn.close();
             txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
-		}
-	}
+        }
+    }
 
     @Override
     public CheckRouterAnswer checkRouter(CheckRouterCommand cmd) {
@@ -267,30 +303,30 @@ public class MockVmManagerImpl implements MockVmManager {
     }
 
     @Override
-	public Map<String, State> getVmStates(String hostGuid) {
-		Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-		try {
-			txn.start();
-			Map<String, State> states = new HashMap<String, State>();
-			List<MockVMVO> vms = _mockVmDao.findByHostGuid(hostGuid);
-			if (vms.isEmpty()) {
-				txn.commit();
-				return states;
-			}
-			for (MockVm vm : vms) {
-				states.put(vm.getName(), vm.getState());
-			}
-			txn.commit();
-			return states;
-		} catch (Exception ex) {
-			txn.rollback();
-			throw new CloudRuntimeException("unable to fetch vms  from host " + hostGuid, ex);
-		} finally {
-			txn.close();
+    public Map<String, State> getVmStates(String hostGuid) {
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        try {
+            txn.start();
+            Map<String, State> states = new HashMap<String, State>();
+            List<MockVMVO> vms = _mockVmDao.findByHostGuid(hostGuid);
+            if (vms.isEmpty()) {
+                txn.commit();
+                return states;
+            }
+            for (MockVm vm : vms) {
+                states.put(vm.getName(), vm.getState());
+            }
+            txn.commit();
+            return states;
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("unable to fetch vms  from host " + hostGuid, ex);
+        } finally {
+            txn.close();
             txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
-		}
-	}
+        }
+    }
 
     @Override
     public boolean start() {
@@ -323,26 +359,26 @@ public class MockVmManagerImpl implements MockVmManager {
     }
 
     @Override
-	public CheckVirtualMachineAnswer checkVmState(CheckVirtualMachineCommand cmd) {
-		Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-		try {
-			txn.start();
-			MockVMVO vm = _mockVmDao.findByVmName(cmd.getVmName());
-			if (vm == null) {
-				return new CheckVirtualMachineAnswer(cmd, "can't find vm:" + cmd.getVmName());
-			}
+    public CheckVirtualMachineAnswer checkVmState(CheckVirtualMachineCommand cmd) {
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        try {
+            txn.start();
+            MockVMVO vm = _mockVmDao.findByVmName(cmd.getVmName());
+            if (vm == null) {
+                return new CheckVirtualMachineAnswer(cmd, "can't find vm:" + cmd.getVmName());
+            }
 
-			txn.commit();
-			return new CheckVirtualMachineAnswer(cmd, vm.getState(), vm.getVncPort());
-		} catch (Exception ex) {
-			txn.rollback();
-			throw new CloudRuntimeException("unable to fetch vm state " + cmd.getVmName(), ex);
-		} finally {
-			txn.close();
+            txn.commit();
+            return new CheckVirtualMachineAnswer(cmd, vm.getState(), vm.getVncPort());
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("unable to fetch vm state " + cmd.getVmName(), ex);
+        } finally {
+            txn.close();
             txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
-		}
-	}
+        }
+    }
 
     @Override
     public Answer startVM(StartCommand cmd, SimulatorInfo info) {
@@ -372,7 +408,7 @@ public class MockVmManagerImpl implements MockVmManager {
 
     @Override
     public Answer SetFirewallRules(SetFirewallRulesCommand cmd) {
-	return new Answer(cmd);
+        return new Answer(cmd);
     }
 
 
@@ -382,38 +418,38 @@ public class MockVmManagerImpl implements MockVmManager {
     }
 
     @Override
-	public MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info) {
-		Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-		try {
-			txn.start();
-			String vmName = cmd.getVmName();
-			String destGuid = cmd.getHostGuid();
-			MockVMVO vm = _mockVmDao.findByVmNameAndHost(vmName, info.getHostUuid());
-			if (vm == null) {
-				return new MigrateAnswer(cmd, false, "can't find vm:" + vmName + " on host:" + info.getHostUuid(), null);
-			} else {
+    public MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info) {
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        try {
+            txn.start();
+            String vmName = cmd.getVmName();
+            String destGuid = cmd.getHostGuid();
+            MockVMVO vm = _mockVmDao.findByVmNameAndHost(vmName, info.getHostUuid());
+            if (vm == null) {
+                return new MigrateAnswer(cmd, false, "can't find vm:" + vmName + " on host:" + info.getHostUuid(), null);
+            } else {
                 if (vm.getState() == State.Migrating) {
                     vm.setState(State.Running);
                 }
             }
 
-			MockHost destHost = _mockHostDao.findByGuid(destGuid);
-			if (destHost == null) {
-				return new MigrateAnswer(cmd, false, "can;t find host:" + info.getHostUuid(), null);
-			}
-			vm.setHostId(destHost.getId());
-			_mockVmDao.update(vm.getId(), vm);
-			txn.commit();
-			return new MigrateAnswer(cmd, true, null, 0);
-		} catch (Exception ex) {
-			txn.rollback();
-			throw new CloudRuntimeException("unable to migrate vm " + cmd.getVmName(), ex);
-		} finally {
-			txn.close();
+            MockHost destHost = _mockHostDao.findByGuid(destGuid);
+            if (destHost == null) {
+                return new MigrateAnswer(cmd, false, "can;t find host:" + info.getHostUuid(), null);
+            }
+            vm.setHostId(destHost.getId());
+            _mockVmDao.update(vm.getId(), vm);
+            txn.commit();
+            return new MigrateAnswer(cmd, true, null, 0);
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("unable to migrate vm " + cmd.getVmName(), ex);
+        } finally {
+            txn.close();
             txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
-		}
-	}
+        }
+    }
 
     @Override
     public PrepareForMigrationAnswer prepareForMigrate(PrepareForMigrationCommand cmd) {
@@ -457,81 +493,81 @@ public class MockVmManagerImpl implements MockVmManager {
     }
 
     @Override
-	public Answer CleanupNetworkRules(CleanupNetworkRulesCmd cmd, SimulatorInfo info) {
-		Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-		try {
-			txn.start();
-			List<MockSecurityRulesVO> rules = _mockSecurityDao.findByHost(info.getHostUuid());
-			for (MockSecurityRulesVO rule : rules) {
-				MockVMVO vm = _mockVmDao.findByVmNameAndHost(rule.getVmName(), info.getHostUuid());
-				if (vm == null) {
-					_mockSecurityDao.remove(rule.getId());
-				}
-			}
-			txn.commit();
-			return new Answer(cmd);
-		} catch (Exception ex) {
-			txn.rollback();
-			throw new CloudRuntimeException("unable to clean up rules", ex);
-		} finally {
-			txn.close();
+    public Answer CleanupNetworkRules(CleanupNetworkRulesCmd cmd, SimulatorInfo info) {
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        try {
+            txn.start();
+            List<MockSecurityRulesVO> rules = _mockSecurityDao.findByHost(info.getHostUuid());
+            for (MockSecurityRulesVO rule : rules) {
+                MockVMVO vm = _mockVmDao.findByVmNameAndHost(rule.getVmName(), info.getHostUuid());
+                if (vm == null) {
+                    _mockSecurityDao.remove(rule.getId());
+                }
+            }
+            txn.commit();
+            return new Answer(cmd);
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("unable to clean up rules", ex);
+        } finally {
+            txn.close();
             txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
-		}
-	}
+        }
+    }
 
     @Override
-	public Answer stopVM(StopCommand cmd) {
-		Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-		try {
-			txn.start();
-			String vmName = cmd.getVmName();
-			MockVm vm = _mockVmDao.findByVmName(vmName);
-			if (vm != null) {
-				vm.setState(State.Stopped);
-				_mockVmDao.update(vm.getId(), (MockVMVO) vm);
-			}
+    public Answer stopVM(StopCommand cmd) {
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        try {
+            txn.start();
+            String vmName = cmd.getVmName();
+            MockVm vm = _mockVmDao.findByVmName(vmName);
+            if (vm != null) {
+                vm.setState(State.Stopped);
+                _mockVmDao.update(vm.getId(), (MockVMVO) vm);
+            }
 
-			if (vmName.startsWith("s-")) {
-				_mockAgentMgr.handleSystemVMStop(vm.getId());
-			}
-			txn.commit();
-			return new StopAnswer(cmd, null, new Integer(0), true);
-		} catch (Exception ex) {
-			txn.rollback();
-			throw new CloudRuntimeException("unable to stop vm " + cmd.getVmName(), ex);
-		} finally {
-			txn.close();
+            if (vmName.startsWith("s-")) {
+                _mockAgentMgr.handleSystemVMStop(vm.getId());
+            }
+            txn.commit();
+            return new StopAnswer(cmd, null, new Integer(0), true);
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("unable to stop vm " + cmd.getVmName(), ex);
+        } finally {
+            txn.close();
             txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
-		}
-	}
+        }
+    }
 
     @Override
-	public Answer rebootVM(RebootCommand cmd) {
-		Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-		try {
-			txn.start();
-			MockVm vm = _mockVmDao.findByVmName(cmd.getVmName());
-			if (vm != null) {
-				vm.setState(State.Running);
-				_mockVmDao.update(vm.getId(), (MockVMVO) vm);
-			}
-			txn.commit();
-			return new RebootAnswer(cmd, "Rebooted " + cmd.getVmName(), true);
-		} catch (Exception ex) {
-			txn.rollback();
-			throw new CloudRuntimeException("unable to stop vm " + cmd.getVmName(), ex);
-		} finally {
-			txn.close();
-			txn = Transaction.open(Transaction.CLOUD_DB);
-			txn.close();
-		}
-	}
+    public Answer rebootVM(RebootCommand cmd) {
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        try {
+            txn.start();
+            MockVm vm = _mockVmDao.findByVmName(cmd.getVmName());
+            if (vm != null) {
+                vm.setState(State.Running);
+                _mockVmDao.update(vm.getId(), (MockVMVO) vm);
+            }
+            txn.commit();
+            return new RebootAnswer(cmd, "Rebooted " + cmd.getVmName(), true);
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("unable to stop vm " + cmd.getVmName(), ex);
+        } finally {
+            txn.close();
+            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn.close();
+        }
+    }
 
     @Override
     public Answer getVncPort(GetVncPortCommand cmd) {
-          return new GetVncPortAnswer(cmd, 0);
+        return new GetVncPortAnswer(cmd, 0);
     }
 
     @Override
@@ -546,13 +582,13 @@ public class MockVmManagerImpl implements MockVmManager {
 
     @Override
     public GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd) {
-	return new GetDomRVersionAnswer(cmd, null, null, null);
+        return new GetDomRVersionAnswer(cmd, null, null, null);
     }
 
     @Override
     public SecurityGroupRuleAnswer AddSecurityGroupRules(SecurityGroupRulesCmd cmd, SimulatorInfo info) {
         if (!info.isEnabled()) {
-		return new SecurityGroupRuleAnswer(cmd, false, "Disabled", SecurityGroupRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
+            return new SecurityGroupRuleAnswer(cmd, false, "Disabled", SecurityGroupRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
         }
 
         Map<String, Ternary<String,Long, Long>> rules = _securityRules.get(info.getHostUuid());

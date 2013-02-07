@@ -22,12 +22,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.ConfigurationVO;
+import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -36,6 +39,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value={ConfigurationDao.class})
 public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String> implements ConfigurationDao {
     private static final Logger s_logger = Logger.getLogger(ConfigurationDaoImpl.class);
@@ -53,11 +57,26 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        setRunLevel(ComponentLifecycle.RUN_LEVEL_SYSTEM_BOOTSTRAP);
     }
 
     @Override
     public boolean isPremium() {
         return _premium;
+    }
+    
+    @PostConstruct
+    void initComponent() {
+    	try {
+			configure(this.getClass().getSimpleName(), this.getConfigParams());
+		} catch (ConfigurationException e) {
+			s_logger.warn("Self configuration failed", e);
+		}
+    }
+    
+    @Override
+    public void invalidateCache() {
+    	_configs = null;
     }
 
     @Override

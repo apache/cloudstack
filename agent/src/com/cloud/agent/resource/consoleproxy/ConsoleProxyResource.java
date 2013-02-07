@@ -77,7 +77,7 @@ import com.google.gson.Gson;
  * server.
  * 
  */
-public class ConsoleProxyResource extends ServerResourceBase implements
+public abstract class ConsoleProxyResource extends ServerResourceBase implements
         ServerResource {
     static final Logger s_logger = Logger.getLogger(ConsoleProxyResource.class);
 

@@ -1,0 +1,39 @@
+# 
+# AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Building DevCloud"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The DevCloud appliance can be downloaded from the wiki at <ulink url=\"https://cwiki.apache.org/confluence/display/CLOUDSTACK/DevCloud\" />. It can also be built from scratch. Code is being developed to provide this alternative build. It is based on <emphasis>veewee</emphasis>, <emphasis>Vagrant</emphasis> and <emphasis>Puppet</emphasis>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The goal is to automate the DevCloud build and make this automation capability available to all within the source release of &PRODUCT;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This is under heavy development. The code is located in the source tree under <emphasis>tools/devcloud</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A preliminary wiki page describes the build at <ulink url=\"https://cwiki.apache.org/CLOUDSTACK/building-devcloud.html\">https://cwiki.pache.org/CLOUDSTACK/building-devcloud.html</ulink>"
+msgstr ""
+

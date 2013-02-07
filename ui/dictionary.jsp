@@ -815,6 +815,7 @@ dictionary = {
 'label.lang.chinese': '<fmt:message key="label.lang.chinese" />',
 'label.lang.english': '<fmt:message key="label.lang.english" />',
 'label.lang.japanese': '<fmt:message key="label.lang.japanese" />',
+'label.lang.korean': '<fmt:message key="label.lang.korean" />',
 'label.lang.spanish': '<fmt:message key="label.lang.spanish" />',
 'label.last.disconnected': '<fmt:message key="label.last.disconnected" />',
 'label.last.name': '<fmt:message key="label.last.name" />',
@@ -889,6 +890,7 @@ dictionary = {
 'label.network.offering.name': '<fmt:message key="label.network.offering.name" />',
 'label.network.offering': '<fmt:message key="label.network.offering" />',
 'label.network.rate': '<fmt:message key="label.network.rate" />',
+'label.network.rate.megabytes': '<fmt:message key="label.network.rate.megabytes"/>',
 'label.network.read': '<fmt:message key="label.network.read" />',
 'label.network.type': '<fmt:message key="label.network.type" />',
 'label.network.write': '<fmt:message key="label.network.write" />',
@@ -1436,6 +1438,10 @@ dictionary = {
 'label.delete.NiciraNvp': '<fmt:message key="label.delete.NiciraNvp" />',
 'label.nicira.controller.address': '<fmt:message key="label.nicira.controller.address" />',
 'label.nicira.transportzoneuuid': '<fmt:message key="label.nicira.transportzoneuuid" />',
-'label.nicira.l3gatewayserviceuuid': '<fmt:message key="label.nicira.l3gatewayserviceuuid" />'
+'label.nicira.l3gatewayserviceuuid': '<fmt:message key="label.nicira.l3gatewayserviceuuid" />',
+'label.resize.new.size': '<fmt:message key="label.resize.new.size" />',
+'label.action.resize.volume': '<fmt:message key="label.action.resize.volume" />',
+'label.resize.new.offering.id': '<fmt:message key="label.resize.new.offering.id" />',
+'label.resize.shrink.ok': '<fmt:message key="label.resize.shrink.ok" />'
 };
 </script>

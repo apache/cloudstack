@@ -20,11 +20,14 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.InstanceGroupVO;
 
+@Component
 @Local (value={InstanceGroupDao.class})
 public class InstanceGroupDaoImpl extends GenericDaoBase<InstanceGroupVO, Long> implements InstanceGroupDao{
 	private SearchBuilder<InstanceGroupVO> AccountIdNameSearch;

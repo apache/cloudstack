@@ -35,113 +35,141 @@ import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;
 
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = {SystemIntegrityChecker.class})
-public class EncryptionSecretKeyChecker implements SystemIntegrityChecker {
-	
-	private static final Logger s_logger = Logger.getLogger(EncryptionSecretKeyChecker.class);
-	
-    private static final String s_keyFile = "/etc/cloud/management/key";
+public class EncryptionSecretKeyChecker extends AdapterBase implements SystemIntegrityChecker {
+
+    private static final Logger s_logger = Logger.getLogger(EncryptionSecretKeyChecker.class);
+
+    // Two possible locations with the new packaging naming
+    private static final String s_altKeyFile = "/etc/cloud/management/key";
+    private static final String s_keyFile = "/etc/cloudstack/management/key";
     private static final String s_envKey = "CLOUD_SECRET_KEY";
     private static StandardPBEStringEncryptor s_encryptor = new StandardPBEStringEncryptor();
     private static boolean s_useEncryption = false;
     
+    public EncryptionSecretKeyChecker() {
+    	setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
+    }
+
     @Override
     public void check() {
-    	//Get encryption type from db.properties
-    	final File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
+        //Get encryption type from db.properties
+        final File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
         final Properties dbProps = new Properties();
         try {
-        	dbProps.load(new FileInputStream(dbPropsFile));
+            dbProps.load(new FileInputStream(dbPropsFile));
 
-        	final String encryptionType = dbProps.getProperty("db.cloud.encryption.type");
-        	
-        	s_logger.debug("Encryption Type: "+ encryptionType);
+            final String encryptionType = dbProps.getProperty("db.cloud.encryption.type");
 
-        	if(encryptionType == null || encryptionType.equals("none")){
-        		return;
-        	}
-        	
-        	s_encryptor.setAlgorithm("PBEWithMD5AndDES");
-        	String secretKey = null;
-        	
-        	SimpleStringPBEConfig stringConfig = new SimpleStringPBEConfig(); 
-        	
-        	if(encryptionType.equals("file")){
-        		try {
-        			BufferedReader in = new BufferedReader(new FileReader(s_keyFile));
-        			secretKey = in.readLine();
-        			//Check for null or empty secret key
-        		} catch (FileNotFoundException e) {
-        			throw new CloudRuntimeException("File containing secret key not found: "+s_keyFile, e);
-        		} catch (IOException e) {
-        			throw new CloudRuntimeException("Error while reading secret key from: "+s_keyFile, e);
-        		}
-        		
-        		if(secretKey == null || secretKey.isEmpty()){
-        			throw new CloudRuntimeException("Secret key is null or empty in file "+s_keyFile);
-        		}
-        		
-        	} else if(encryptionType.equals("env")){
-        		secretKey = System.getenv(s_envKey);
-        		if(secretKey == null || secretKey.isEmpty()){
-        			throw new CloudRuntimeException("Environment variable "+s_envKey+" is not set or empty");
-        		}
-        	} else if(encryptionType.equals("web")){
-        		ServerSocket serverSocket = null;
-        		int port = 8097;
-        		try {
+            s_logger.debug("Encryption Type: "+ encryptionType);
+
+            if(encryptionType == null || encryptionType.equals("none")){
+                return;
+            }
+            
+            if (s_useEncryption) {
+            	s_logger.warn("Encryption already enabled, is check() called twice?");
+            	return;
+            }
+
+            s_encryptor.setAlgorithm("PBEWithMD5AndDES");
+            String secretKey = null;
+
+            SimpleStringPBEConfig stringConfig = new SimpleStringPBEConfig(); 
+
+            if(encryptionType.equals("file")){
+                File keyFile = new File(s_keyFile);
+                if (!keyFile.exists()) {
+                    keyFile = new File(s_altKeyFile);
+                }
+                try {
+                    BufferedReader in = new BufferedReader(new FileReader(keyFile));
+                    secretKey = in.readLine();
+                    //Check for null or empty secret key
+                } catch (FileNotFoundException e) {
+                    throw new CloudRuntimeException("File containing secret key not found: "+s_keyFile, e);
+                } catch (IOException e) {
+                    throw new CloudRuntimeException("Error while reading secret key from: "+s_keyFile, e);
+                }
+
+                if(secretKey == null || secretKey.isEmpty()){
+                    throw new CloudRuntimeException("Secret key is null or empty in file "+s_keyFile);
+                }
+
+            } else if(encryptionType.equals("env")){
+                secretKey = System.getenv(s_envKey);
+                if(secretKey == null || secretKey.isEmpty()){
+                    throw new CloudRuntimeException("Environment variable "+s_envKey+" is not set or empty");
+                }
+            } else if(encryptionType.equals("web")){
+                ServerSocket serverSocket = null;
+                int port = 8097;
+                try {
                     serverSocket = new ServerSocket(port);
                 } catch (IOException ioex) {
-                	throw new CloudRuntimeException("Error initializing secret key reciever", ioex);
+                    throw new CloudRuntimeException("Error initializing secret key reciever", ioex);
                 }
-        		s_logger.info("Waiting for admin to send secret key on port "+port);
-        		Socket clientSocket = null;
-        		try {
-        		    clientSocket = serverSocket.accept();
-        		} catch (IOException e) {
-        			throw new CloudRuntimeException("Accept failed on "+port);
-        		}
-        		PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-        		BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        		String inputLine, outputLine;
-        		if ((inputLine = in.readLine()) != null) {
-        			secretKey = inputLine;
-        		}
-        		out.close();
-        		in.close();
-        		clientSocket.close();
-        		serverSocket.close();
-        	} else {
-        		throw new CloudRuntimeException("Invalid encryption type: "+encryptionType);
-        	}
+                s_logger.info("Waiting for admin to send secret key on port "+port);
+                Socket clientSocket = null;
+                try {
+                    clientSocket = serverSocket.accept();
+                } catch (IOException e) {
+                    throw new CloudRuntimeException("Accept failed on "+port);
+                }
+                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                String inputLine;
+                if ((inputLine = in.readLine()) != null) {
+                    secretKey = inputLine;
+                }
+                out.close();
+                in.close();
+                clientSocket.close();
+                serverSocket.close();
+            } else {
+                throw new CloudRuntimeException("Invalid encryption type: "+encryptionType);
+            }
 
-        	stringConfig.setPassword(secretKey);
-			s_encryptor.setConfig(stringConfig);
-			s_useEncryption = true;
+            stringConfig.setPassword(secretKey);
+            s_encryptor.setConfig(stringConfig);
+            s_useEncryption = true;
         } catch (FileNotFoundException e) {
-        	throw new CloudRuntimeException("File db.properties not found", e);
+            throw new CloudRuntimeException("File db.properties not found", e);
         } catch (IOException e) {
-        	throw new CloudRuntimeException("Error while reading db.properties", e);
+            throw new CloudRuntimeException("Error while reading db.properties", e);
         }
     }
-    
+
     public static StandardPBEStringEncryptor getEncryptor() {
         return s_encryptor;
     }
-    
+
     public static boolean useEncryption(){
-    	return s_useEncryption;
+        return s_useEncryption;
     }
-    
+
     //Initialize encryptor for migration during secret key change
     public static void initEncryptorForMigration(String secretKey){
-    	s_encryptor.setAlgorithm("PBEWithMD5AndDES");
-    	SimpleStringPBEConfig stringConfig = new SimpleStringPBEConfig();
-    	stringConfig.setPassword(secretKey);
-		s_encryptor.setConfig(stringConfig);
-		s_useEncryption = true;
+        s_encryptor.setAlgorithm("PBEWithMD5AndDES");
+        SimpleStringPBEConfig stringConfig = new SimpleStringPBEConfig();
+        stringConfig.setPassword(secretKey);
+        s_encryptor.setConfig(stringConfig);
+        s_useEncryption = true;
+    }
+    
+    @Override
+    public boolean start() {
+    	try {
+    		check();
+    	} catch (Exception e) {
+			s_logger.error("System integrity check exception", e);
+			System.exit(1);
+    	}
+    	return true;
     }
 }

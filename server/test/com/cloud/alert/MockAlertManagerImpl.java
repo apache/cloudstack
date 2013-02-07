@@ -22,8 +22,10 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.component.ManagerBase;
+
 @Local(value = {AlertManager.class})
-public class MockAlertManagerImpl implements AlertManager {
+public class MockAlertManagerImpl extends ManagerBase implements AlertManager {
 
     /* (non-Javadoc)
      * @see com.cloud.utils.component.Manager#configure(java.lang.String, java.util.Map)

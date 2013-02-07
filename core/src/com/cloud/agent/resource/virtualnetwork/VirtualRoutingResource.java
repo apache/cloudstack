@@ -69,13 +69,16 @@ import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
+import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
@@ -214,11 +217,18 @@ public class VirtualRoutingResource implements Manager {
             return new SetFirewallRulesAnswer(cmd, false, results);
         }
 
+        FirewallRuleTO[] allrules = cmd.getRules();
+        FirewallRule.TrafficType trafficType = allrules[0].getTrafficType();
+
         String[][] rules = cmd.generateFwRules();
         final Script command = new Script(_firewallPath, _timeout, s_logger);
         command.add(routerIp);
         command.add("-F");
         
+        if (trafficType == FirewallRule.TrafficType.Egress){
+            command.add("-E");
+        }
+
         StringBuilder sb = new StringBuilder();
         String[] fwRules = rules[0];
         if (fwRules.length > 0) {
@@ -569,7 +579,9 @@ public class VirtualRoutingResource implements Manager {
     protected synchronized Answer execute (final DhcpEntryCommand cmd) {
         final Script command  = new Script(_dhcpEntryPath, _timeout, s_logger);
         command.add("-r", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
+        if (cmd.getVmIpAddress() != null) {
         command.add("-v", cmd.getVmIpAddress());
+        }
         command.add("-m", cmd.getVmMac());
         command.add("-n", cmd.getVmName());
         
@@ -582,6 +594,11 @@ public class VirtualRoutingResource implements Manager {
         
         if (cmd.getDefaultDns() != null) {
         	command.add("-N", cmd.getDefaultDns());
+        }
+
+        if (cmd.getVmIp6Address() != null) {
+        	command.add("-6", cmd.getVmIp6Address());
+        	command.add("-u", cmd.getDuid());
         }
 
         final String result = command.execute();
@@ -1152,7 +1169,11 @@ public class VirtualRoutingResource implements Manager {
     public String getName() {
         return _name;
     }
-
+    
+    @Override
+    public void setName(String name) {
+    	_name = name;
+    }
 
 
     @Override
@@ -1160,14 +1181,36 @@ public class VirtualRoutingResource implements Manager {
         return true;
     }
 
-
-
     @Override
     public boolean stop() {
         return true;
     }
 
+    @Override
+    public int getRunLevel() {
+    	return ComponentLifecycle.RUN_LEVEL_COMPONENT;
+    }
+    
+    public void setRunLevel() {
+    }
 
+	@Override
+	public void setConfigParams(Map<String, Object> params) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Map<String, Object> getConfigParams() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setRunLevel(int level) {
+		// TODO Auto-generated method stub
+		
+	}
 }
 
 

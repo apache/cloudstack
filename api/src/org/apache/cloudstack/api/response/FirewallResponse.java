@@ -19,9 +19,10 @@ package org.apache.cloudstack.api.response;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
 public class FirewallResponse extends BaseResponse {
@@ -39,6 +40,9 @@ public class FirewallResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the firewall rule")
     private Long publicIpAddressId;
+
+    @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the network id of the firewall rule")
+    private Long networkId;
 
     @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the firewall rule")
     private String publicIpAddress;
@@ -80,6 +84,10 @@ public class FirewallResponse extends BaseResponse {
 
     public void setPublicIpAddress(String publicIpAddress) {
         this.publicIpAddress = publicIpAddress;
+    }
+
+    public void setNetworkId(Long networkId) {
+        this.networkId = networkId;
     }
 
     public void setState(String state) {

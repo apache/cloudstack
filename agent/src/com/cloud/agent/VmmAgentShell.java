@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,19 +40,15 @@ import com.cloud.agent.dao.impl.PropertiesStorage;
 import com.cloud.agent.transport.Request;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.ProcessUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
-import com.cloud.utils.nio.Task.Type;
 
 /**
  * Implementation of agent shell to run the agents on System Center Virtual Machine manager
@@ -61,7 +56,7 @@ import com.cloud.utils.nio.Task.Type;
 
 public class VmmAgentShell implements IAgentShell, HandlerFactory {
 
-	private static final Logger s_logger = Logger.getLogger(VmmAgentShell.class.getName());
+    private static final Logger s_logger = Logger.getLogger(VmmAgentShell.class.getName());
     private final Properties _properties = new Properties();
     private final Map<String, Object> _cmdLineProperties = new HashMap<String, Object>();
     private StorageComponent _storage;
@@ -76,112 +71,112 @@ public class VmmAgentShell implements IAgentShell, HandlerFactory {
     private int _proxyPort;
     private int _workers;
     private String _guid;
-	static private NioServer _connection;
-	static private int _listenerPort=9000;    
+    static private NioServer _connection;
+    static private int _listenerPort=9000;    
     private int _nextAgentId = 1;
     private volatile boolean _exit = false;
     private int _pingRetries;
-    private Thread _consoleProxyMain = null;
+    private final Thread _consoleProxyMain = null;
     private final List<Agent> _agents = new ArrayList<Agent>();
 
     public VmmAgentShell() {
     }
-    
+
     @Override
     public Properties getProperties() {
-    	return _properties;
+        return _properties;
     }
-    
+
     @Override
     public BackoffAlgorithm getBackoffAlgorithm() {
-    	return _backoff;
+        return _backoff;
     }
-    
+
     @Override
     public int getPingRetries() {
-    	return _pingRetries;
+        return _pingRetries;
     }
-    
+
     @Override
     public String getZone() {
-    	return _zone;
+        return _zone;
     }
-    
+
     @Override
     public String getPod() {
-    	return _pod;
+        return _pod;
     }
-    
+
     @Override
     public String getHost() {
-    	return _host;
+        return _host;
     }
-    
+
     @Override
     public String getPrivateIp() {
-    	return _privateIp;
+        return _privateIp;
     }
-    
+
     @Override
     public int getPort() {
-    	return _port;
+        return _port;
     }
-    
+
     @Override
     public int getProxyPort() {
-    	return _proxyPort;
+        return _proxyPort;
     }
-    
+
     @Override
     public int getWorkers() {
-    	return _workers;
+        return _workers;
     }
-    
+
     @Override
     public String getGuid() {
-    	return _guid;
+        return _guid;
     }
 
-	@Override
-	public void upgradeAgent(String url) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void upgradeAgent(String url) {
+        // TODO Auto-generated method stub
 
-   @Override
+    }
+
+    @Override
     public String getVersion() {
-    	return _version;
+        return _version;
     }
 
-	@Override
-	public Map<String, Object> getCmdLineProperties() {
-		// TODO Auto-generated method stub
-		return _cmdLineProperties;
-	}
-
-	public String getProperty(String prefix, String name) {
-    	if(prefix != null)
-    		return _properties.getProperty(prefix + "." + name);
-    	
-    	return _properties.getProperty(name);
+    @Override
+    public Map<String, Object> getCmdLineProperties() {
+        // TODO Auto-generated method stub
+        return _cmdLineProperties;
     }
-	
-	@Override
-	public String getPersistentProperty(String prefix, String name) {
-    	if(prefix != null)
-    		return _storage.get(prefix + "." + name);
-    	return _storage.get(name);
-	}
 
-	@Override
-	public void setPersistentProperty(String prefix, String name, String value) {
-    	if(prefix != null)
-    		_storage.persist(prefix + "." + name, value);
-    	else
-    		_storage.persist(name, value);		
-	}
+    public String getProperty(String prefix, String name) {
+        if(prefix != null)
+            return _properties.getProperty(prefix + "." + name);
 
-   private void loadProperties() throws ConfigurationException {
+        return _properties.getProperty(name);
+    }
+
+    @Override
+    public String getPersistentProperty(String prefix, String name) {
+        if(prefix != null)
+            return _storage.get(prefix + "." + name);
+        return _storage.get(name);
+    }
+
+    @Override
+    public void setPersistentProperty(String prefix, String name, String value) {
+        if(prefix != null)
+            _storage.persist(prefix + "." + name, value);
+        else
+            _storage.persist(name, value);		
+    }
+
+    private void loadProperties() throws ConfigurationException {
         final File file = PropertiesUtil.findConfigFile("agent.properties");
         if (file == null) {
             throw new ConfigurationException("Unable to find agent.properties.");
@@ -197,7 +192,7 @@ public class VmmAgentShell implements IAgentShell, HandlerFactory {
             throw new CloudRuntimeException("IOException in reading " + file.getAbsolutePath(), ex);
         }
     }
-	
+
     protected boolean parseCommand(final String[] args) throws ConfigurationException {
         String host = null;
         String workers = null;
@@ -211,7 +206,7 @@ public class VmmAgentShell implements IAgentShell, HandlerFactory {
                 System.out.println("Invalid Parameter: " + args[i]);
                 continue;
             }
-            
+
             // save command line properties
             _cmdLineProperties.put(tokens[0], tokens[1]);
 
@@ -222,14 +217,14 @@ public class VmmAgentShell implements IAgentShell, HandlerFactory {
             } else if (tokens[0].equalsIgnoreCase("host")) {
                 host = tokens[1];
             } else if(tokens[0].equalsIgnoreCase("zone")) {
-            	zone = tokens[1];
+                zone = tokens[1];
             } else if(tokens[0].equalsIgnoreCase("pod")) {
-            	pod = tokens[1];
+                pod = tokens[1];
             } else if(tokens[0].equalsIgnoreCase("guid")) {
-            	guid = tokens[1];
-        	} else if(tokens[0].equalsIgnoreCase("eth1ip")) {
-        		_privateIp = tokens[1];
-        	}
+                guid = tokens[1];
+            } else if(tokens[0].equalsIgnoreCase("eth1ip")) {
+                _privateIp = tokens[1];
+            }
         }
 
         if (port == null) {
@@ -237,7 +232,7 @@ public class VmmAgentShell implements IAgentShell, HandlerFactory {
         }
 
         _port = NumbersUtil.parseInt(port, 8250);
-        
+
         _proxyPort = NumbersUtil.parseInt(getProperty(null, "consoleproxy.httpListenPort"), 443);
 
         if (workers == null) {
@@ -254,42 +249,42 @@ public class VmmAgentShell implements IAgentShell, HandlerFactory {
             host = "localhost";
         }
         _host = host;
-        
+
         if(zone != null)
-        	_zone = zone;
+            _zone = zone;
         else
-        	_zone = getProperty(null, "zone");
+            _zone = getProperty(null, "zone");
         if (_zone == null || (_zone.startsWith("@") && _zone.endsWith("@"))) {
-           _zone = "default";
+            _zone = "default";
         }
 
         if(pod != null)
-        	_pod = pod;
+            _pod = pod;
         else
-        	_pod = getProperty(null, "pod");
+            _pod = getProperty(null, "pod");
         if (_pod == null || (_pod.startsWith("@") && _pod.endsWith("@"))) {
-           _pod = "default";
+            _pod = "default";
         }
 
         if (_host == null || (_host.startsWith("@") && _host.endsWith("@"))) {
             throw new ConfigurationException("Host is not configured correctly: " + _host);
         }
-        
+
         final String retries = getProperty(null, "ping.retries");
         _pingRetries  = NumbersUtil.parseInt(retries, 5);
 
         String value = getProperty(null, "developer");
         boolean developer = Boolean.parseBoolean(value);
-        
+
         if(guid != null)
-        	_guid = guid;
+            _guid = guid;
         else
-        	_guid = getProperty(null, "guid");
+            _guid = getProperty(null, "guid");
         if (_guid == null) {
-        	if (!developer) {
-        		throw new ConfigurationException("Unable to find the guid");
-        	}
-	        _guid = MacAddress.getMacAddress().toString(":");
+            if (!developer) {
+                throw new ConfigurationException("Unable to find the guid");
+            }
+            _guid = MacAddress.getMacAddress().toString(":");
         }
 
         return true;
@@ -303,63 +298,46 @@ public class VmmAgentShell implements IAgentShell, HandlerFactory {
         }
         s_logger.trace("Launching agent based on type=" + typeInfo);
     }    
-    
+
     private void launchAgent() throws ConfigurationException {
         String resourceClassNames = getProperty(null, "resource");
         s_logger.trace("resource=" + resourceClassNames);
         if(resourceClassNames != null) {
-        	launchAgentFromClassInfo(resourceClassNames);
-        	return;
+            launchAgentFromClassInfo(resourceClassNames);
+            return;
         }
-        
+
         launchAgentFromTypeInfo();
     }    
-    
+
     private void init(String[] args) throws ConfigurationException{
-    	
-        final ComponentLocator locator = ComponentLocator.getLocator("agent");
-        
+
         final Class<?> c = this.getClass();
         _version = c.getPackage().getImplementationVersion();
         if (_version == null) {
             throw new CloudRuntimeException("Unable to find the implementation version of this agent");
         }
         s_logger.info("Implementation Version is " + _version);
-    	
+
         parseCommand(args);
-        
-        _storage = locator.getManager(StorageComponent.class);
-        if (_storage == null) {
-            s_logger.info("Defaulting to using properties file for storage");
-            _storage = new PropertiesStorage();
-            _storage.configure("Storage", new HashMap<String, Object>());
-        }
+
+        s_logger.info("Defaulting to using properties file for storage");
+        _storage = new PropertiesStorage();
+        _storage.configure("Storage", new HashMap<String, Object>());
 
         // merge with properties from command line to let resource access command line parameters
         for(Map.Entry<String, Object> cmdLineProp : getCmdLineProperties().entrySet()) {
-        	_properties.put(cmdLineProp.getKey(), cmdLineProp.getValue());
-        }
-        
-        final Adapters adapters = locator.getAdapters(BackoffAlgorithm.class);
-        final Enumeration en = adapters.enumeration();
-        while (en.hasMoreElements()) {
-            _backoff = (BackoffAlgorithm)en.nextElement();
-            break;
-        }
-        if (en.hasMoreElements()) {
-            s_logger.info("More than one backoff algorithm specified.  Using the first one ");
+            _properties.put(cmdLineProp.getKey(), cmdLineProp.getValue());
         }
 
-        if (_backoff == null) {
-            s_logger.info("Defaulting to the constant time backoff algorithm");
-            _backoff = new ConstantTimeBackoff();
-            _backoff.configure("ConstantTimeBackoff", new HashMap<String, Object>());
-        }
+        s_logger.info("Defaulting to the constant time backoff algorithm");
+        _backoff = new ConstantTimeBackoff();
+        _backoff.configure("ConstantTimeBackoff", new HashMap<String, Object>());
     }	
 
     private void launchAgentFromClassInfo(String resourceClassNames) throws ConfigurationException {
-    	String[] names = resourceClassNames.split("\\|");
-    	for(String name: names) {
+        String[] names = resourceClassNames.split("\\|");
+        for(String name: names) {
             Class<?> impl;
             try {
                 impl = Class.forName(name);
@@ -368,41 +346,41 @@ public class VmmAgentShell implements IAgentShell, HandlerFactory {
                 ServerResource resource = (ServerResource)constructor.newInstance();
                 launchAgent(getNextAgentId(), resource);
             } catch (final ClassNotFoundException e) {
-            	throw new ConfigurationException("Resource class not found: " + name);
+                throw new ConfigurationException("Resource class not found: " + name);
             } catch (final SecurityException e) {
-            	throw new ConfigurationException("Security excetion when loading resource: " + name);
+                throw new ConfigurationException("Security excetion when loading resource: " + name);
             } catch (final NoSuchMethodException e) {
-            	throw new ConfigurationException("Method not found excetion when loading resource: " + name);
+                throw new ConfigurationException("Method not found excetion when loading resource: " + name);
             } catch (final IllegalArgumentException e) {
-            	throw new ConfigurationException("Illegal argument excetion when loading resource: " + name);
+                throw new ConfigurationException("Illegal argument excetion when loading resource: " + name);
             } catch (final InstantiationException e) {
-            	throw new ConfigurationException("Instantiation excetion when loading resource: " + name);
+                throw new ConfigurationException("Instantiation excetion when loading resource: " + name);
             } catch (final IllegalAccessException e) {
-            	throw new ConfigurationException("Illegal access exception when loading resource: " + name);
+                throw new ConfigurationException("Illegal access exception when loading resource: " + name);
             } catch (final InvocationTargetException e) {
-            	throw new ConfigurationException("Invocation target exception when loading resource: " + name);
+                throw new ConfigurationException("Invocation target exception when loading resource: " + name);
             }
-    	}
+        }
     }
 
     private void launchAgent(int localAgentId, ServerResource resource) throws ConfigurationException {
-    	// we don't track agent after it is launched for now
-    	Agent agent = new Agent(this, localAgentId, resource);
-    	_agents.add(agent);
-    	agent.start();
+        // we don't track agent after it is launched for now
+        Agent agent = new Agent(this, localAgentId, resource);
+        _agents.add(agent);
+        agent.start();
     }
 
     public synchronized int getNextAgentId() {
-    	return _nextAgentId++;
+        return _nextAgentId++;
     }
-    
-	private void run(String[] args) {
-		
-		try {
+
+    private void run(String[] args) {
+
+        try {
             System.setProperty("java.net.preferIPv4Stack","true");			
-	        loadProperties();
-	        init(args);
-	
+            loadProperties();
+            init(args);
+
             String instance = getProperty(null, "instance");
             if (instance == null) {
                 instance = "";
@@ -413,22 +391,22 @@ public class VmmAgentShell implements IAgentShell, HandlerFactory {
             // TODO need to do this check. For Agentshell running on windows needs different approach
             //final String run = "agent." + instance + "pid";
             //s_logger.debug("Checking to see if " + run + "exists.");
-        	//ProcessUtil.pidCheck(run);	        
-	        
-            
+            //ProcessUtil.pidCheck(run);	        
+
+
             // TODO: For Hyper-V agent.properties need to be revamped to support multiple agents 
             // corresponding to multiple clusters but running on a SCVMM host
-			
+
             // read the persistent storage and launch the agents
-        	//launchAgent();
+            //launchAgent();
 
             // FIXME get rid of this approach of agent listening for boot strap commands from the management server
 
-			// now listen for bootstrap request from the management server and launch agents 
-			_connection = new NioServer("VmmAgentShell", _listenerPort, 1, this);
-			_connection.start();
-			s_logger.info("SCVMM agent is listening on port " +_listenerPort + " for bootstrap command from management server");
-			while(_connection.isRunning());
+            // now listen for bootstrap request from the management server and launch agents 
+            _connection = new NioServer("VmmAgentShell", _listenerPort, 1, this);
+            _connection.start();
+            s_logger.info("SCVMM agent is listening on port " +_listenerPort + " for bootstrap command from management server");
+            while(_connection.isRunning());
         } catch(final ConfigurationException e) {
             s_logger.error("Unable to start agent: " + e.getMessage());
             System.out.println("Unable to start agent: " + e.getMessage());
@@ -438,89 +416,89 @@ public class VmmAgentShell implements IAgentShell, HandlerFactory {
             System.out.println("Unable to start agent: " + e.getMessage());
             System.exit(ExitStatus.Error.value());
         }
-	 }
+    }
 
-	@Override
-	public Task create(com.cloud.utils.nio.Task.Type type, Link link,
-			byte[] data) {
-		return new AgentBootStrapHandler(type, link, data);
-	} 
+    @Override
+    public Task create(com.cloud.utils.nio.Task.Type type, Link link,
+            byte[] data) {
+        return new AgentBootStrapHandler(type, link, data);
+    } 
 
-   public void stop() {
-   	_exit = true;
-   	if(_consoleProxyMain != null) {
-   		_consoleProxyMain.interrupt();
-   	}
-   }	
-	
-	public static void main(String[] args) {
-		
-		VmmAgentShell shell = new VmmAgentShell();
-		Runtime.getRuntime().addShutdownHook(new ShutdownThread(shell));		
-		shell.run(args);
-	}   
+    public void stop() {
+        _exit = true;
+        if(_consoleProxyMain != null) {
+            _consoleProxyMain.interrupt();
+        }
+    }	
 
-	// class to handle the bootstrap command from the management server
-	private class AgentBootStrapHandler extends Task {
+    public static void main(String[] args) {
 
-		public AgentBootStrapHandler(Task.Type type, Link link, byte[] data) {
-			super(type, link, data);
-		}
+        VmmAgentShell shell = new VmmAgentShell();
+        Runtime.getRuntime().addShutdownHook(new ShutdownThread(shell));		
+        shell.run(args);
+    }   
 
-		@Override
-		protected void doTask(Task task) throws Exception {
-			final Type type = task.getType();
-			s_logger.info("recieved task of type "+ type.toString() +" to handle in BootStrapTakHandler");
-			if (type == Task.Type.DATA)
-			{
-				final byte[] data = task.getData();
-				final Request request = Request.parse(data);
-				final Command cmd = request.getCommand();
-				
-				if (cmd instanceof StartupVMMAgentCommand) {
+    // class to handle the bootstrap command from the management server
+    private class AgentBootStrapHandler extends Task {
 
-					StartupVMMAgentCommand vmmCmd = (StartupVMMAgentCommand) cmd;
+        public AgentBootStrapHandler(Task.Type type, Link link, byte[] data) {
+            super(type, link, data);
+        }
 
-					_zone = Long.toString(vmmCmd.getDataCenter());
-					_cmdLineProperties.put("zone", _zone);
+        @Override
+        protected void doTask(Task task) throws Exception {
+            final Type type = task.getType();
+            s_logger.info("recieved task of type "+ type.toString() +" to handle in BootStrapTakHandler");
+            if (type == Task.Type.DATA)
+            {
+                final byte[] data = task.getData();
+                final Request request = Request.parse(data);
+                final Command cmd = request.getCommand();
 
-					_pod = Long.toString(vmmCmd.getPod());
-					_cmdLineProperties.put("pod", _pod);
+                if (cmd instanceof StartupVMMAgentCommand) {
 
-					_cluster = vmmCmd.getClusterName();
-					_cmdLineProperties.put("cluster", _cluster);
+                    StartupVMMAgentCommand vmmCmd = (StartupVMMAgentCommand) cmd;
 
-					_guid = vmmCmd.getGuid();
-					_cmdLineProperties.put("guid", _guid);
+                    _zone = Long.toString(vmmCmd.getDataCenter());
+                    _cmdLineProperties.put("zone", _zone);
 
-					_host = vmmCmd.getManagementServerIP();
-					_port =  NumbersUtil.parseInt(vmmCmd.getport(), 8250);
+                    _pod = Long.toString(vmmCmd.getPod());
+                    _cmdLineProperties.put("pod", _pod);
 
-					s_logger.info("Recieved boot strap command from management server with parameters " +
-							" Zone:"+  _zone + " "+
-							" Cluster:"+ _cluster + " "+
-							" pod:"+_pod + " "+
-							" host:"+ _host +" "+
-							" port:"+_port);
+                    _cluster = vmmCmd.getClusterName();
+                    _cmdLineProperties.put("cluster", _cluster);
 
-					launchAgentFromClassInfo("com.cloud.hypervisor.hyperv.resource.HypervResource");
-					
-					// TODO: persist the info in agent.properties for agent restarts
-				}
-			}
-		}
-	}
+                    _guid = vmmCmd.getGuid();
+                    _cmdLineProperties.put("guid", _guid);
+
+                    _host = vmmCmd.getManagementServerIP();
+                    _port =  NumbersUtil.parseInt(vmmCmd.getport(), 8250);
+
+                    s_logger.info("Recieved boot strap command from management server with parameters " +
+                            " Zone:"+  _zone + " "+
+                            " Cluster:"+ _cluster + " "+
+                            " pod:"+_pod + " "+
+                            " host:"+ _host +" "+
+                            " port:"+_port);
+
+                    launchAgentFromClassInfo("com.cloud.hypervisor.hyperv.resource.HypervResource");
+
+                    // TODO: persist the info in agent.properties for agent restarts
+                }
+            }
+        }
+    }
 
     private static class ShutdownThread extends Thread {
-    	VmmAgentShell _shell;
+        VmmAgentShell _shell;
         public ShutdownThread(VmmAgentShell shell) {
             this._shell = shell;
         }
-        
+
         @Override
         public void run() {
             _shell.stop();
         }
     }	
-	
+
 }

@@ -827,9 +827,15 @@
                   data: cloudStack.serializeForm($form)
                 });
 
-                if (!advSGFilter) {
+                if (advSGFilter == 0) { //when total number of selected sg networks is 0, then 'Select Security Group' is skipped, go to step 6 directly
                   showStep(6);
                 }
+								else { //when total number of selected sg networks > 0
+								  if($activeStep.find('input[type=checkbox]:checked').size() > 1) {  //when total number of selected networks > 1
+									  cloudStack.dialog.notice({ message: "Can't create a vm with multiple networks one of which is Security Group enabled" });
+                    return false;
+									}									  
+								}								
               }
             }
 						
@@ -868,6 +874,9 @@
 
             if (index) {
               if (index == $steps.size() - 1 && $networkStep.hasClass('next-use-security-groups')) {
+                showStep(5);
+              } else if ($activeStep.find('.select-security-group:visible').size() &&
+                         $activeStep.find('.select-network.no-add-network').size()) {
                 showStep(5);
               } else {
                 showStep(index);

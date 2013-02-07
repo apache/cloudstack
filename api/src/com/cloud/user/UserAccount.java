@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.user;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 public interface UserAccount extends InternalIdentity {
     long getId();

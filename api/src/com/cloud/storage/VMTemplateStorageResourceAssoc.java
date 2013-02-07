@@ -16,14 +16,13 @@
 // under the License.
 package com.cloud.storage;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 public interface VMTemplateStorageResourceAssoc extends InternalIdentity {
     public static enum Status {
-        UNKNOWN, DOWNLOAD_ERROR, NOT_DOWNLOADED, DOWNLOAD_IN_PROGRESS, DOWNLOADED, ABANDONED, UPLOADED, NOT_UPLOADED, UPLOAD_ERROR, UPLOAD_IN_PROGRESS
+        UNKNOWN, DOWNLOAD_ERROR, NOT_DOWNLOADED, DOWNLOAD_IN_PROGRESS, DOWNLOADED, ABANDONED, UPLOADED, NOT_UPLOADED, UPLOAD_ERROR, UPLOAD_IN_PROGRESS, CREATING, CREATED
     }
 
     String getInstallPath();

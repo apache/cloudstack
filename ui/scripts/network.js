@@ -867,9 +867,9 @@
                 hiddenTabs.push("addloadBalancer");
               }
 
-             // if (isVPC || isAdvancedSGZone || hasSRXFirewall) {
+              if (isVPC || isAdvancedSGZone || hasSRXFirewall) {
                 hiddenTabs.push('egressRules');
-             // }
+               }
               
               return hiddenTabs;
             },
@@ -940,6 +940,12 @@
                     state: {
                       label: 'label.state'
                     },
+
+                    ispersistent:{
+                      label:'Persistent ',
+                      converter:cloudStack.converters.toBooleanText
+
+                     },
                     restartrequired: {
                       label: 'label.restart.required',
                       converter: function(booleanValue) {

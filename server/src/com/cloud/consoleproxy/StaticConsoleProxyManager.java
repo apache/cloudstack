@@ -20,15 +20,16 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.resource.ResourceManager;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
 
@@ -37,34 +38,32 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
     String _ip = null;
     @Inject ConsoleProxyDao _proxyDao;
     @Inject ResourceManager _resourceMgr;
-    
+    @Inject ConfigurationDao _configDao;
+
     @Override
     protected HostVO findHost(VMInstanceVO vm) {
-        
-        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Type.ConsoleProxy, vm.getDataCenterIdToDeployIn());
-        
+
+        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Type.ConsoleProxy, vm.getDataCenterId());
+
         return hosts.isEmpty() ? null : hosts.get(0);
     }
-    
+
     @Override
     public ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId) {
         return new ConsoleProxyInfo(false, _ip, _consoleProxyPort, _consoleProxyUrlPort, _consoleProxyUrlDomain);
     }
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> dbParams = configDao.getConfiguration("ManagementServer", params);
-        
+
+        Map<String, String> dbParams = _configDao.getConfiguration("ManagementServer", params);
+
         _ip = dbParams.get("public.ip");
         if (_ip == null) {
             _ip = "127.0.0.1";
         }
-        
+
         return true;
     }
 }

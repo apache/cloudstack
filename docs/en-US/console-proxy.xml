@@ -3,7 +3,6 @@
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
-
 <!-- Licensed to the Apache Software Foundation (ASF) under one
  or more contributor license agreements.  See the NOTICE file
  distributed with this work for additional information
@@ -11,9 +10,7 @@
  to you under the Apache License, Version 2.0 (the
  "License"); you may not use this file except in compliance
  with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
+ http://www.apache.org/licenses/LICENSE-2.0
  Unless required by applicable law or agreed to in writing,
  software distributed under the License is distributed on an
  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,15 +18,123 @@
  specific language governing permissions and limitations
  under the License.
 -->
-
 <section id="console-proxy">
-    <title>Console Proxy</title>
-    <para>The Console Proxy is a type of System Virtual Machine that has a role in presenting a console view via the web UI. It connects the user’s browser to the VNC port made available via the hypervisor for the console of the guest. Both the administrator and end user web UIs offer a console connection.</para>
-    <para>Clicking on a console icon brings up a new window. The AJAX code downloaded into that window refers to the public IP address of a console proxy VM. There is exactly one public IP address allocated per console proxy VM. The AJAX application connects to this IP. The console proxy then proxies the connection to the VNC port for the requested VM on the Host hosting the guest. .</para>
-    <note><para>The hypervisors will have many ports assigned to VNC usage so that multiple VNC sessions can occur simultaneously.</para></note>
-    <para>There is never any traffic to the guest virtual IP, and there is no need to enable VNC within the guest.</para>
-    <para>The console proxy VM will periodically report its active session count to the Management Server. The default reporting interval is five seconds. This can be changed through standard Management Server configuration with the parameter consoleproxy.loadscan.interval.</para>
-    <para>Assignment of guest VM to console proxy is determined by first determining if the guest VM has a previous session associated with a console proxy. If it does, the Management Server will assign the guest VM to the target Console Proxy VM regardless of the load on the proxy VM. Failing that, the first available running Console Proxy VM that has the capacity to handle new sessions is used.</para>
-    <para>Console proxies can be restarted by administrators but this will interrupt existing console sessions for users.</para>
-    <para>The console viewing functionality uses a dynamic DNS service under the domain name realhostip.com to assist in providing SSL security to console sessions.  The console proxy is assigned a public IP address.  In order to avoid browser warnings for mismatched SSL certificates, the URL for the new console window is set to the form of https://aaa-bbb-ccc-ddd.realhostip.com. Customers will see this URL during console session creation.  &PRODUCT; includes the realhostip.com SSL certificate in the console proxy VM.  Of course, &PRODUCT; cannot know about DNS A records for our customers' public IPs prior to shipping the software.  &PRODUCT; therefore runs a dynamic DNS server that is authoritative for the realhostip.com domain.  It maps the aaa-bbb-ccc-ddd part of the DNS name to the IP address aaa.bbb.ccc.ddd on lookups.  This allows the browser to correctly connect to the console proxy's public IP, where it then expects and receives a SSL certificate for realhostip.com, and SSL is set up without browser warnings.</para>
-   </section>
+  <title>Console Proxy</title>
+  <para>The Console Proxy is a type of System Virtual Machine that has a role in presenting a
+    console view via the web UI. It connects the user’s browser to the VNC port made available via
+    the hypervisor for the console of the guest. Both the administrator and end user web UIs offer a
+    console connection.</para>
+  <para>Clicking on a console icon brings up a new window. The AJAX code downloaded into that window
+    refers to the public IP address of a console proxy VM. There is exactly one public IP address
+    allocated per console proxy VM. The AJAX application connects to this IP. The console proxy then
+    proxies the connection to the VNC port for the requested VM on the Host hosting the guest.
+    .</para>
+  <note>
+    <para>The hypervisors will have many ports assigned to VNC usage so that multiple VNC sessions
+      can occur simultaneously.</para>
+  </note>
+  <para>There is never any traffic to the guest virtual IP, and there is no need to enable VNC
+    within the guest.</para>
+  <para>The console proxy VM will periodically report its active session count to the Management
+    Server. The default reporting interval is five seconds. This can be changed through standard
+    Management Server configuration with the parameter consoleproxy.loadscan.interval.</para>
+  <para>Assignment of guest VM to console proxy is determined by first determining if the guest VM
+    has a previous session associated with a console proxy. If it does, the Management Server will
+    assign the guest VM to the target Console Proxy VM regardless of the load on the proxy VM.
+    Failing that, the first available running Console Proxy VM that has the capacity to handle new
+    sessions is used.</para>
+  <para>Console proxies can be restarted by administrators but this will interrupt existing console
+    sessions for users.</para>
+  <section id="use-cert">
+    <title>Using a SSL Certificate for the Console Proxy</title>
+    <para>The console viewing functionality uses a dynamic DNS service under the domain name
+      realhostip.com to assist in providing SSL security to console sessions. The console proxy is
+      assigned a public IP address. In order to avoid browser warnings for mismatched SSL
+      certificates, the URL for the new console window is set to the form of
+      https://aaa-bbb-ccc-ddd.realhostip.com. You will see this URL during console session creation.
+      &PRODUCT; includes the realhostip.com SSL certificate in the console proxy VM. Of course,
+      &PRODUCT; cannot know about the DNS A records for our customers' public IPs prior to shipping
+      the software. &PRODUCT; therefore runs a dynamic DNS server that is authoritative for the
+      realhostip.com domain. It maps the aaa-bbb-ccc-ddd part of the DNS name to the IP address
+      aaa.bbb.ccc.ddd on lookups. This allows the browser to correctly connect to the console
+      proxy's public IP, where it then expects and receives a SSL certificate for realhostip.com,
+      and SSL is set up without browser warnings.</para>
+  </section>
+  <section id="change-console-proxy-ssl-certificate-domain">
+    <title>Changing the Console Proxy SSL Certificate and Domain</title>
+    <para>If the administrator prefers, it is possible for the URL of the customer's console session
+      to show a domain other than realhostip.com. The administrator can customize the displayed
+      domain by selecting a different domain and uploading a new SSL certificate and private key.
+      The domain must run a DNS service that is capable of resolving queries for addresses of the
+      form aaa-bbb-ccc-ddd.your.domain to an IPv4 IP address in the form aaa.bbb.ccc.ddd, for
+      example, 202.8.44.1. To change the console proxy domain, SSL certificate, and private
+      key:</para>
+    <orderedlist>
+      <listitem>
+        <para>Set up dynamic name resolution or populate all possible DNS names in your public IP
+          range into your existing DNS server with the format aaa-bbb-ccc-ddd.company.com ->
+          aaa.bbb.ccc.ddd.</para>
+      </listitem>
+      <listitem>
+        <para>Generate the private key and certificate signing request (CSR). When you are using
+          openssl to generate private/public key pairs and CSRs, for the private key that you are
+          going to paste into the &PRODUCT; UI, be sure to convert it into PKCS#8 format.</para>
+        <orderedlist numeration="loweralpha">
+          <listitem>
+            <para>Generate a new 2048-bit private key</para>
+            <programlisting>openssl genrsa -des3 -out yourprivate.key 2048</programlisting>
+          </listitem>
+          <listitem>
+            <para>Generate a new certificate CSR</para>
+            <programlisting>openssl req -new -key yourprivate.key -out yourcertificate.csr</programlisting>
+          </listitem>
+          <listitem>
+            <para>Head to the website of your favorite trusted Certificate Authority, purchase an
+              SSL certificate, and submit the CSR. You should receive a valid certificate in
+              return</para>
+          </listitem>
+          <listitem>
+            <para>Convert your private key format into PKCS#8 encrypted format.</para>
+            <programlisting>openssl pkcs8 -topk8 -in yourprivate.key -out yourprivate.pkcs8.encryped.key</programlisting>
+          </listitem>
+          <listitem>
+            <para>Convert your PKCS#8 encrypted private key into the PKCS#8 format that is compliant
+              with &PRODUCT;</para>
+            <programlisting>openssl pkcs8 -in yourprivate.pkcs8.encrypted.key -out yourprivate.pkcs8.key</programlisting>
+          </listitem>
+        </orderedlist>
+      </listitem>
+      <listitem>
+        <para>In the Update SSL Certificate screen of the &PRODUCT; UI, paste the following:</para>
+        <itemizedlist>
+          <listitem>
+            <para>Certificate from step 1(c).</para>
+          </listitem>
+          <listitem>
+            <para>Private key from step 1(e).</para>
+          </listitem>
+          <listitem>
+            <para>The desired new domain name; for example, company.com</para>
+          </listitem>
+        </itemizedlist>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="./images/update-ssl.png"/>
+          </imageobject>
+          <textobject>
+            <phrase>updatessl.png: Updating Console Proxy SSL Certificate</phrase>
+          </textobject>
+        </mediaobject>
+      </listitem>
+      <listitem>
+        <para>The desired new domain name; for example, company.com</para>
+        <para>This stops all currently running console proxy VMs, then restarts them with the new
+          certificate and key. Users might notice a brief interruption in console
+          availability.</para>
+      </listitem>
+    </orderedlist>
+    <para>The Management Server generates URLs of the form "aaa-bbb-ccc-ddd.company.com" after this
+      change is made. The new console requests will be served with the new DNS domain name,
+      certificate, and key.</para>
+  </section>
+</section>

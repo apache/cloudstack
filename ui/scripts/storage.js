@@ -1005,6 +1005,102 @@
                     args.complete();
                   }
                 }
+              },
+              
+              resize: {
+                label: 'label.action.resize.volume',
+                messages: {
+                  notification: function(args) {
+                    return 'label.action.resize.volume';
+                  }
+                },
+                createForm: {
+                  title: 'label.action.resize.volume',
+                  fields: {
+                    newdiskoffering: {
+                      label: 'label.resize.new.offering.id',
+                      select: function(args) {
+                        $.ajax({
+                          url: createURL("listDiskOfferings"),
+                          dataType: "json",
+                          async: false,
+                          success: function(json) {
+                            diskofferingObjs = json.listdiskofferingsresponse.diskoffering;
+                            var items = [];
+                            $(diskofferingObjs).each(function(){
+                              items.push({id: this.id, description: this.displaytext});
+                            });
+                            args.response.success({data: items});
+                          }
+                        });
+
+                        args.$select.change(function() {
+                          var diskOfferingId = $(this).val();
+                          $(diskofferingObjs).each(function(){
+                            if(this.id == diskOfferingId) {
+                              selectedDiskOfferingObj = this;
+                              return false; //break the $.each() loop
+                            }
+                          });
+                          if(selectedDiskOfferingObj == null)
+                            return;
+
+                          var $form = $(this).closest('form');
+                          var $newsize = $form.find('.form-item[rel=newsize]');
+                          if (selectedDiskOfferingObj.iscustomized == true) {
+                            $newsize.css('display', 'inline-block');
+                          }
+                          else {
+                            $newsize.hide();
+                          }
+                        });
+                      }
+                    },
+                    newsize: {
+                      label: 'label.resize.new.size',
+                      validation: { required: true, number: true },
+                      isHidden: true
+                    },
+                    shrinkok: {label: 'label.resize.shrink.ok', isBoolean: true, isChecked: false}
+                  }
+                },
+                action: function(args){
+                  var array1 = [];
+                  array1.push("&shrinkok=" + (args.data.shrinkok == "on"));
+                  var newDiskOffering = args.data.newdiskoffering;
+                  var newSize;
+                  if (selectedDiskOfferingObj.iscustomized == true) {
+                    newSize = args.data.newsize;
+                  }
+                  if (newDiskOffering != null && newDiskOffering.length > 0){
+                    array1.push("&diskofferingid=" + todb(newDiskOffering));
+                  }
+                  if (newSize != null && newSize.length > 0){
+                    array1.push("&size=" + todb(newSize));
+                  }
+                  $.ajax({
+                    url: createURL("resizeVolume&id=" + args.context.volumes[0].id + array1.join("")),
+                    dataType: "json",
+                    async: true,
+                    success: function(json){
+                    var jid = json.resizevolumeresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {jobId: jid,
+                            getUpdatedItem: function(json) {
+                              return json.queryasyncjobresultresponse.jobresult.volume;
+                            },
+                            getActionFilter: function() {
+                              return volumeActionfilter;
+                            }
+                          }
+                        });
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
               }
             },
             tabs: {
@@ -1430,6 +1526,9 @@
     if(jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {
       allowedActions.push("takeSnapshot");
       allowedActions.push("recurringSnapshot");
+      if((jsonObj.hypervisor == "XenServer" || jsonObj.hypervisor == "KVM" || jsonObj.hypervisor == "VMware") && jsonObj.type == "DATADISK") {
+    	  allowedActions.push("resize");
+      }
     }
     if(jsonObj.state != "Allocated") {
       if((jsonObj.vmstate == "Stopped" || jsonObj.virtualmachineid == null) && jsonObj.state == "Ready") {

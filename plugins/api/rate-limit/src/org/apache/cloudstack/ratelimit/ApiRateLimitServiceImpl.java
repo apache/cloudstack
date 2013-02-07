@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import net.sf.ehcache.Cache;
@@ -38,8 +39,9 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
+import org.springframework.stereotype.Component;
 
+@Component
 @Local(value = APIChecker.class)
 public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, ApiRateLimitService {
 	private static final Logger s_logger = Logger.getLogger(ApiRateLimitServiceImpl.class);
@@ -54,12 +56,10 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
 	 */
 	private int maxAllowed = 30;
 
-	private LimitStore _store = null;
+	private static LimitStore _store = null;
 
 	@Inject
 	AccountService _accountService;
-
-
 
 	@Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -95,10 +95,7 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
         }
 
         return true;
-
     }
-
-
 
     @Override
     public ApiLimitResponse searchApiLimit(Account caller) {

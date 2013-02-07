@@ -21,12 +21,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.Mode;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Nic represents one nic on the VM.
@@ -144,4 +145,10 @@ public interface Nic extends Identity, InternalIdentity {
     VirtualMachine.Type getVmType();
 
     AddressFormat getAddressFormat();
+
+	String getIp6Gateway();
+
+	String getIp6Cidr();
+
+	String getIp6Address();
 }

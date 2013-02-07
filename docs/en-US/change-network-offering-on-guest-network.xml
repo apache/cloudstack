@@ -5,40 +5,49 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
--->
-
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->	
 <section id="change-network-offering-on-guest-network">
-    <title>Changing the Network Offering on a Guest Network</title>
-    <para>A user or administrator can change the network offering that is associated with an existing guest network.</para>
-    <itemizedlist>
-        <listitem><para>Log in to the &PRODUCT; UI as an administrator or end user. </para></listitem>
-        <listitem><para>If you are changing from a network offering that uses the &PRODUCT; virtual router to one that uses external devices as network service providers, you must first stop all the VMs on the network. See Stopping and Starting VMs. Then return here and continue to the next step</para></listitem>
-        <listitem><para>In the left navigation, choose Network</para></listitem>
-        <listitem><para>Click the name of the network you want to modify <inlinemediaobject>
-            <imageobject>
-                <imagedata fileref="./images/edit-icon.png" />
-            </imageobject>
-            <textobject><phrase>AttachDiskButton.png: button to attach a volume</phrase></textobject>
-        </inlinemediaobject>.</para></listitem>
-        <listitem><para>In Network Offering, choose the new network offering, then click Apply.</para></listitem>
-        <listitem><para>A prompt appears asking whether you want to keep the existing CIDR. This is to let you know that if you change the network offering, the CIDR will be affected. Choose No to proceed with the change.</para></listitem>
-        <listitem><para>Wait for the update to complete. Don’t try to restart VMs until after the network change is complete.</para></listitem>
-        <listitem><para>If you stopped any VMs in step 2, restart them.</para></listitem>
-    </itemizedlist>
+	<title>Changing the Network Offering on a Guest Network</title>
+	<para>A user or administrator can change the network offering that is associated with an existing guest network.</para>
+	<itemizedlist>
+		<listitem><para>Log in to the &PRODUCT; UI as an administrator or end user. </para></listitem>
+		<listitem><para>If you are changing from a network offering that uses the &PRODUCT; virtual router to one
+				that uses external devices as network service providers, you must first stop all the
+				VMs on the network. 
+			<phrase condition="install">See "Stopping and Starting Virtual Machines" in the Administrator's Guide.</phrase>
+			<phrase condition="admin">See <xref linkend="stopping-and-starting-vms"/>.</phrase></para></listitem>
+		<listitem><para>In the left navigation, choose Network.</para></listitem>
+		<listitem><para>Click the name of the network you want to modify.</para></listitem>
+		<listitem><para>In the Details tab, click Edit.<inlinemediaobject>
+			<imageobject>
+				<imagedata fileref="./images/edit-icon.png"/>
+			</imageobject>
+			<textobject>
+				<phrase>EditButton.png: button to edit a network</phrase>
+			</textobject>
+		</inlinemediaobject></para></listitem>
+		<listitem><para>In Network Offering, choose the new network offering, then click Apply.</para></listitem>
+		<listitem><para>A prompt is displayed asking whether you want to keep the existing CIDR. This is to let you
+				know that if you change the network offering, the CIDR will be affected. Choose No
+				to proceed with the change.</para></listitem>
+		<listitem><para>Wait for the update to complete. Don’t try to restart VMs until the network change is
+				complete.</para></listitem>
+		<listitem><para>If you stopped any VMs, restart them.</para></listitem>
+	</itemizedlist>
+	</section>
 
-    </section>

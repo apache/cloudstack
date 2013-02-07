@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import org.omg.CORBA.PUBLIC_MEMBER;
 
 public class ApiConstants {
     public static final String ACCOUNT = "account";
@@ -38,6 +37,7 @@ public class ApiConstants {
     public static final String DOMAIN_SUFFIX = "domainsuffix";
     public static final String DNS_SEARCH_ORDER = "dnssearchorder";
     public static final String CIDR = "cidr";
+    public static final String IP6_CIDR = "ip6cidr";
     public static final String CIDR_LIST = "cidrlist";
     public static final String CLEANUP = "cleanup";
     public static final String CLUSTER_ID = "clusterid";
@@ -64,6 +64,7 @@ public class ApiConstants {
     public static final String EMAIL = "email";
     public static final String END_DATE = "enddate";
     public static final String END_IP = "endip";
+    public static final String END_IPV6 = "endipv6";
     public static final String END_PORT = "endport";
     public static final String ENTRY_TIME = "entrytime";
     public static final String FETCH_LATEST = "fetchlatest";
@@ -73,6 +74,7 @@ public class ApiConstants {
     public static final String FORMAT = "format";
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
     public static final String GATEWAY = "gateway";
+    public static final String IP6_GATEWAY = "ip6gateway";
     public static final String GROUP = "group";
     public static final String GROUP_ID = "groupid";
     public static final String GUEST_CIDR_ADDRESS = "guestcidraddress";
@@ -90,6 +92,7 @@ public class ApiConstants {
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERVAL_TYPE = "intervaltype";
     public static final String IP_ADDRESS = "ipaddress";
+    public static final String IP6_ADDRESS = "ip6address";
     public static final String IP_ADDRESS_ID = "ipaddressid";
     public static final String IS_ASYNC = "isasync";
     public static final String IP_AVAILABLE = "ipavailable";
@@ -99,6 +102,7 @@ public class ApiConstants {
     public static final String IS_EXTRACTABLE = "isextractable";
     public static final String IS_FEATURED = "isfeatured";
     public static final String IS_PUBLIC = "ispublic";
+    public static final String IS_PERSISTENT = "ispersistent";
     public static final String IS_READY = "isready";
     public static final String IS_RECURSIVE = "isrecursive";
     public static final String ISO_FILTER = "isofilter";
@@ -181,6 +185,7 @@ public class ApiConstants {
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String START_DATE = "startdate";
     public static final String START_IP = "startip";
+    public static final String START_IPV6 = "startipv6";
     public static final String START_PORT = "startport";
     public static final String STATE = "state";
     public static final String STATUS = "status";
@@ -224,6 +229,7 @@ public class ApiConstants {
     public static final String NETWORK_OFFERING_ID = "networkofferingid";
     public static final String NETWORK_IDS = "networkids";
     public static final String NETWORK_ID = "networkid";
+    public static final String NIC_ID = "nicid";
     public static final String SPECIFY_VLAN = "specifyvlan";
     public static final String IS_DEFAULT = "isdefault";
     public static final String IS_SYSTEM = "issystem";
@@ -368,6 +374,9 @@ public class ApiConstants {
     public static final String VSM_CONFIG_STATE = "vsmconfigstate";
     public static final String VSM_DEVICE_STATE = "vsmdevicestate";
     public static final String ADD_VSM_FLAG = "addvsmflag";
+	public static final String END_POINT = "endpoint";
+	public static final String REGION_ID = "regionid";
+	public static final String IS_PROPAGATE = "ispropagate";
     public static final String VPC_OFF_ID = "vpcofferingid";
     public static final String NETWORK = "network";
     public static final String VPC_ID = "vpcid";
@@ -427,6 +436,8 @@ public class ApiConstants {
     public static final String CONDITION_IDS = "conditionids";
     public static final String COUNTERPARAM_LIST = "counterparam";
     public static final String AUTOSCALE_USER_ID = "autoscaleuserid";
+    public static final String BAREMETAL_DISCOVER_NAME = "baremetaldiscovername";
+    public static final String UCS_DN = "ucsdn";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

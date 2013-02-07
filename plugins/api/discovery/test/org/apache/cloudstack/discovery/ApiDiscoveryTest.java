@@ -18,11 +18,11 @@ package org.apache.cloudstack.discovery;
 
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
-import com.cloud.utils.component.Adapters;
 
 import java.util.*;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.command.user.discovery.ListApisCmd;
@@ -36,9 +36,9 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class ApiDiscoveryTest {
-
-    private static ApiDiscoveryServiceImpl _discoveryService = new ApiDiscoveryServiceImpl();
     private static APIChecker _apiChecker = mock(APIChecker.class);
+    private static PluggableService _pluggableService = mock(PluggableService.class);
+    private static ApiDiscoveryServiceImpl _discoveryService = new ApiDiscoveryServiceImpl();
 
     private static Class<?> testCmdClass = ListApisCmd.class;
     private static User testUser;
@@ -55,13 +55,18 @@ public class ApiDiscoveryTest {
         testApiAsync = false;
         testUser = new UserVO();
 
-        Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
-        cmdClasses.add(ListApisCmd.class);
-        _discoveryService.cacheResponseMap(cmdClasses);
-        _discoveryService.s_apiAccessCheckers =  (Adapters<APIChecker>) mock(Adapters.class);
+        _discoveryService._apiAccessCheckers =  (List<APIChecker>) mock(List.class);
+        _discoveryService._services = (List<PluggableService>) mock(List.class);
 
         when(_apiChecker.checkAccess(any(User.class), anyString())).thenReturn(true);
-        when(_discoveryService.s_apiAccessCheckers.iterator()).thenReturn(Arrays.asList(_apiChecker).iterator());
+        when(_pluggableService.getCommands()).thenReturn(new ArrayList<Class<?>>());
+        when(_discoveryService._apiAccessCheckers.iterator()).thenReturn(Arrays.asList(_apiChecker).iterator());
+        when(_discoveryService._services.iterator()).thenReturn(Arrays.asList(_pluggableService).iterator());
+
+        Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
+        cmdClasses.add(ListApisCmd.class);
+        _discoveryService.init();
+        _discoveryService.cacheResponseMap(cmdClasses);
     }
 
     @Test

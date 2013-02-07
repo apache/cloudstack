@@ -11,12 +11,11 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
+// KIND, either express or implied.  See the License for the 
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.element;
 
-import java.lang.Class;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,9 +25,12 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
-import com.cloud.utils.PropertiesUtil;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -37,8 +39,6 @@ import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
-import org.apache.cloudstack.api.ApiConstants;
-
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;
@@ -67,31 +67,30 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.ExternalLoadBalancerDeviceManager;
 import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
-import com.cloud.network.ExternalLoadBalancerDeviceVO;
-import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.IpAddress;
 import com.cloud.network.NetScalerPodVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkExternalLoadBalancerVO;
 import com.cloud.network.NetworkModel;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.as.AutoScaleCounter;
 import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterType;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDao;
+import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.dao.NetScalerPodDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
+import com.cloud.network.dao.NetworkExternalLoadBalancerVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.NetscalerResource;
@@ -102,7 +101,6 @@ import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -179,7 +177,7 @@ StaticNatServiceProvider {
         }
 
         if (_ntwkSrvcDao.canProviderSupportServiceInNetwork(guestConfig.getId(), Service.StaticNat, Network.Provider.Netscaler) && !isBasicZoneNetwok(guestConfig)) {
-            s_logger.error("NetScaler provider can not be Static Nat service provider for the network " + guestConfig.getGuestType() +
+            s_logger.error("NetScaler provider can not be Static Nat service provider for the network " + guestConfig.getGuestType() + 
                     " and traffic type " + guestConfig.getTrafficType());
             return false;
         }
@@ -617,13 +615,13 @@ StaticNatServiceProvider {
         // NetScaler can only act as Lb and Static Nat service provider
         if (services != null && !services.isEmpty() && !netscalerServices.containsAll(services)) {
             s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination "
-                + services + " is not supported.");
+                    + services + " is not supported.");
             String servicesList = "";
             for (Service service : services) {
                 servicesList += service.getName() + " ";
             }
-            s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination "
-                + servicesList + " is not supported.");
+            s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination " 
+                    + servicesList + " is not supported.");
             s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination "
                     + services + " is not supported.");
             return false;
@@ -769,7 +767,7 @@ StaticNatServiceProvider {
             } else {
                 if (rules != null) {
                     for (StaticNat rule : rules) {
-                        // validate if EIP rule can be configured.
+                        // validate if EIP rule can be configured. 
                         ExternalLoadBalancerDeviceVO lbDevice = getNetScalerForEIP(rule);
                         if (lbDevice == null) {
                             String errMsg = "There is no NetScaler device configured to perform EIP to guest IP address: " + rule.getDestIpAddress();

@@ -31,12 +31,13 @@ import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.NetworkOffering.State;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value = NetworkOfferingDao.class)
 @DB(txn = false)
-public class MockNetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Long> implements NetworkOfferingDao {
+public class MockNetworkOfferingDaoImpl extends NetworkOfferingDaoImpl implements NetworkOfferingDao{
     private static final Logger s_logger = Logger.getLogger(MockNetworkOfferingDaoImpl.class);
 
     /* (non-Javadoc)
@@ -100,28 +101,28 @@ public class MockNetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO
         if (id.longValue() == 1) {
             //network offering valid for vpc
             vo = new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false,
-                    Availability.Optional, null, Network.GuestType.Isolated, false, false);
+                    Availability.Optional, null, Network.GuestType.Isolated, false, false, false);
         } else if (id.longValue() == 2) {
             //invalid offering - source nat is not included
             vo = new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false,
-                    Availability.Optional, null, Network.GuestType.Isolated, false, false);
+                    Availability.Optional, null, Network.GuestType.Isolated, false, false, false);
         } else if (id.longValue() == 3) {
             //network offering invalid for vpc (conserve mode off)
             vo = new NetworkOfferingVO("non vpc", "non vpc", TrafficType.Guest, false, true, null, null, false,
-                    Availability.Optional, null, Network.GuestType.Isolated, true, false);
+                    Availability.Optional, null, Network.GuestType.Isolated, true, false, false);
         } else if (id.longValue() == 4) {
             //network offering invalid for vpc (Shared)
             vo = new NetworkOfferingVO("non vpc", "non vpc", TrafficType.Guest, false, true, null, null, false,
-                    Availability.Optional, null, Network.GuestType.Shared, false, false);
+                    Availability.Optional, null, Network.GuestType.Shared, false, false, false);
         } else if (id.longValue() == 5) {
             //network offering invalid for vpc (has redundant router)
             vo = new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false,
-                    Availability.Optional, null, Network.GuestType.Isolated, false, false);
+                    Availability.Optional, null, Network.GuestType.Isolated, false, false, false);
             vo.setRedundantRouter(true);
         } else if (id.longValue() == 6) {
             //network offering invalid for vpc (has lb service)   
             vo = new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false,
-                    Availability.Optional, null, Network.GuestType.Isolated, false, false);
+                    Availability.Optional, null, Network.GuestType.Isolated, false, false, false);
         }
         
         if (vo != null) {

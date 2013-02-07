@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.alert;
 
+import java.util.Date;
+
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
-
-import java.util.Date;
 
 public interface Alert extends Identity, InternalIdentity {
     short getType();

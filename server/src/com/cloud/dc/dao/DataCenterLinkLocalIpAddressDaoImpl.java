@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
 import com.cloud.utils.db.DB;
@@ -39,6 +40,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
+@Component
 @Local(value={DataCenterLinkLocalIpAddressDaoImpl.class}) @DB(txn=false)
 public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCenterLinkLocalIpAddressVO, Long> implements GenericDao<DataCenterLinkLocalIpAddressVO, Long> {
     private static final Logger s_logger = Logger.getLogger(DataCenterLinkLocalIpAddressDaoImpl.class);
@@ -149,7 +151,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         return count.get(0);
 	}
     
-    protected DataCenterLinkLocalIpAddressDaoImpl() {
+    public DataCenterLinkLocalIpAddressDaoImpl() {
         super();
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("ip", AllFieldsSearch.entity().getIpAddress(), SearchCriteria.Op.EQ);

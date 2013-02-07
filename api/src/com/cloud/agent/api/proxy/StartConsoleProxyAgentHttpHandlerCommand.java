@@ -17,8 +17,8 @@
 package com.cloud.agent.api.proxy;
 
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.LogLevel;
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 
 public class StartConsoleProxyAgentHttpHandlerCommand extends Command {
     @LogLevel(Log4jLevel.Off)

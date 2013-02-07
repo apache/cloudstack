@@ -16,33 +16,88 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import com.cloud.agent.api.*;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AttachIsoCommand;
+import com.cloud.agent.api.AttachVolumeCommand;
+import com.cloud.agent.api.BackupSnapshotCommand;
+import com.cloud.agent.api.BumpUpPriorityCommand;
+import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.agent.api.CheckRouterCommand;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.ClusterSyncCommand;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.ComputeChecksumCommand;
+import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
+import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
+import com.cloud.agent.api.CreateStoragePoolCommand;
+import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
+import com.cloud.agent.api.DeleteSnapshotBackupCommand;
+import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.GetDomRVersionCmd;
+import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.MaintainCommand;
+import com.cloud.agent.api.ManageSnapshotCommand;
+import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.NetworkUsageCommand;
+import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.SecStorageSetupCommand;
+import com.cloud.agent.api.SecStorageVMSetupCommand;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.StartCommand;
+import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
-import com.cloud.agent.api.routing.*;
-import com.cloud.agent.api.storage.*;
+import com.cloud.agent.api.routing.DhcpEntryCommand;
+import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
+import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateCommand;
+import com.cloud.agent.api.storage.DeleteTemplateCommand;
+import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.storage.DownloadCommand;
+import com.cloud.agent.api.storage.DownloadProgressCommand;
+import com.cloud.agent.api.storage.ListTemplateCommand;
+import com.cloud.agent.api.storage.ListVolumeCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockVMVO;
 import com.cloud.simulator.dao.MockConfigurationDao;
 import com.cloud.simulator.dao.MockHostDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.ConnectionConcierge;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Local(value = { SimulatorManager.class })
-public class SimulatorManagerImpl implements SimulatorManager {
+public class SimulatorManagerImpl extends ManagerBase implements SimulatorManager {
     private static final Logger s_logger = Logger.getLogger(SimulatorManagerImpl.class);
     @Inject
     MockVmManager _mockVmMgr = null;
@@ -57,7 +112,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
     private ConnectionConcierge _concierge;
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-    /*
+        /*
         try {
             Connection conn = Transaction.getStandaloneSimulatorConnection();
             conn.setAutoCommit(true);
@@ -65,7 +120,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to get a db connection to simulator", e);
         }
-	*/
+         */
         return true;
     }
 
@@ -146,7 +201,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
             } else if (cmd instanceof PingTestCommand) {
                 return _mockAgentMgr.pingTest((PingTestCommand) cmd);
             } else if (cmd instanceof PrepareForMigrationCommand) {
-			return _mockVmMgr.prepareForMigrate((PrepareForMigrationCommand) cmd);
+                return _mockVmMgr.prepareForMigrate((PrepareForMigrationCommand) cmd);
             } else if (cmd instanceof MigrateCommand) {
                 return _mockVmMgr.Migrate((MigrateCommand) cmd, info);
             } else if (cmd instanceof StartCommand) {
@@ -154,11 +209,11 @@ public class SimulatorManagerImpl implements SimulatorManager {
             } else if (cmd instanceof CheckSshCommand) {
                 return _mockVmMgr.checkSshCommand((CheckSshCommand) cmd);
             } else if (cmd instanceof CheckVirtualMachineCommand) {
-			return _mockVmMgr.checkVmState((CheckVirtualMachineCommand) cmd);
+                return _mockVmMgr.checkVmState((CheckVirtualMachineCommand) cmd);
             } else if (cmd instanceof SetStaticNatRulesCommand) {
                 return _mockVmMgr.SetStaticNatRules((SetStaticNatRulesCommand) cmd);
             } else if (cmd instanceof SetFirewallRulesCommand) {
-			return _mockVmMgr.SetFirewallRules((SetFirewallRulesCommand) cmd);
+                return _mockVmMgr.SetFirewallRules((SetFirewallRulesCommand) cmd);
             } else if (cmd instanceof SetPortForwardingRulesCommand) {
                 return _mockVmMgr.SetPortForwardingRules((SetPortForwardingRulesCommand) cmd);
             } else if (cmd instanceof NetworkUsageCommand) {
@@ -174,7 +229,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
             } else if (cmd instanceof CleanupNetworkRulesCmd) {
                 return _mockVmMgr.CleanupNetworkRules((CleanupNetworkRulesCmd) cmd, info);
             } else if (cmd instanceof CheckNetworkCommand) {
-        		return _mockAgentMgr.checkNetworkCommand((CheckNetworkCommand) cmd);
+                return _mockAgentMgr.checkNetworkCommand((CheckNetworkCommand) cmd);
             }else if (cmd instanceof StopCommand) {
                 return _mockVmMgr.stopVM((StopCommand)cmd);
             } else if (cmd instanceof RebootCommand) {
@@ -244,11 +299,11 @@ public class SimulatorManagerImpl implements SimulatorManager {
             } else if (cmd instanceof BumpUpPriorityCommand) {
                 return _mockVmMgr.bumpPriority((BumpUpPriorityCommand) cmd);
             } else if (cmd instanceof GetDomRVersionCmd) {
-		        return _mockVmMgr.getDomRVersion((GetDomRVersionCmd) cmd);
+                return _mockVmMgr.getDomRVersion((GetDomRVersionCmd) cmd);
             } else if (cmd instanceof ClusterSyncCommand) {
-        		return new Answer(cmd);
+                return new Answer(cmd);
             } else if (cmd instanceof CopyVolumeCommand) {
-	        	return _mockStorageMgr.CopyVolume((CopyVolumeCommand) cmd);
+                return _mockStorageMgr.CopyVolume((CopyVolumeCommand) cmd);
             } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -270,49 +325,49 @@ public class SimulatorManagerImpl implements SimulatorManager {
 
     @Override
     public Map<String, State> getVmStates(String hostGuid) {
-	return _mockVmMgr.getVmStates(hostGuid);
+        return _mockVmMgr.getVmStates(hostGuid);
     }
 
     @Override
     public Map<String, MockVMVO> getVms(String hostGuid) {
-	return _mockVmMgr.getVms(hostGuid);
+        return _mockVmMgr.getVms(hostGuid);
     }
 
     @Override
     public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid) {
-	SimulatorInfo info = new SimulatorInfo();
-	info.setHostUuid(hostGuid);
-	return _mockVmMgr.syncNetworkGroups(info);
+        SimulatorInfo info = new SimulatorInfo();
+        info.setHostUuid(hostGuid);
+        return _mockVmMgr.syncNetworkGroups(info);
     }
 
     @Override
-	public boolean configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command,
-			String values) {
-		Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
-		try {
-			txn.start();
-			MockConfigurationVO config = _mockConfigDao.findByCommand(zoneId, podId, clusterId, hostId, command);
-			if (config == null) {
-				config = new MockConfigurationVO();
-				config.setClusterId(clusterId);
-				config.setDataCenterId(zoneId);
-				config.setPodId(podId);
-				config.setHostId(hostId);
-				config.setName(command);
-				config.setValues(values);
-				_mockConfigDao.persist(config);
-				txn.commit();
-			} else {
-				config.setValues(values);
-				_mockConfigDao.update(config.getId(), config);
-				txn.commit();
-			}
-		} catch (Exception ex) {
-			txn.rollback();
-			throw new CloudRuntimeException("Unable to configure simulator because of " + ex.getMessage(), ex);
-		} finally {
-			txn.close();
-		}
-		return true;
-	}
+    public boolean configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command,
+            String values) {
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+        try {
+            txn.start();
+            MockConfigurationVO config = _mockConfigDao.findByCommand(zoneId, podId, clusterId, hostId, command);
+            if (config == null) {
+                config = new MockConfigurationVO();
+                config.setClusterId(clusterId);
+                config.setDataCenterId(zoneId);
+                config.setPodId(podId);
+                config.setHostId(hostId);
+                config.setName(command);
+                config.setValues(values);
+                _mockConfigDao.persist(config);
+                txn.commit();
+            } else {
+                config.setValues(values);
+                _mockConfigDao.update(config.getId(), config);
+                txn.commit();
+            }
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("Unable to configure simulator because of " + ex.getMessage(), ex);
+        } finally {
+            txn.close();
+        }
+        return true;
+    }
 }

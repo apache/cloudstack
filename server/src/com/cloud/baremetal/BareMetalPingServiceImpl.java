@@ -22,8 +22,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.baremetal.PreparePxeServerAnswer;
@@ -39,7 +41,6 @@ import com.cloud.host.HostVO;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -47,6 +48,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
 
+@Component
 @Local(value=PxeServerService.class)
 public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements PxeServerService {
 	private static final Logger s_logger = Logger.getLogger(BareMetalPingServiceImpl.class);

@@ -18,10 +18,12 @@ package com.cloud.network.dao;
 
 import javax.ejb.Local;
 
-import com.cloud.network.InlineLoadBalancerNicMapVO;
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 @Local(value={InlineLoadBalancerNicMapDao.class})
 public class InlineLoadBalancerNicMapDaoImpl extends GenericDaoBase<InlineLoadBalancerNicMapVO, Long> implements InlineLoadBalancerNicMapDao {
 

@@ -24,6 +24,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.user.Account;
 import com.cloud.user.Account.State;
@@ -38,6 +39,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={AccountDao.class})
 public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements AccountDao {
     private static final Logger s_logger = Logger.getLogger(AccountDaoImpl.class);
@@ -53,7 +55,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     protected final SearchBuilder<AccountVO> CleanupForDisabledAccountsSearch;
     protected final SearchBuilder<AccountVO> NonProjectAccountSearch;
     
-    protected AccountDaoImpl() {
+    public AccountDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("accountName", AllFieldsSearch.entity().getAccountName(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("domainId", AllFieldsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
@@ -261,4 +263,5 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         	}
 		}
 	}
+	
 }

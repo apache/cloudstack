@@ -28,10 +28,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
@@ -55,7 +57,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -64,14 +65,15 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.element.VpcProvider;
@@ -99,9 +101,9 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -119,8 +121,9 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.dao.DomainRouterDao;
 
 
+@Component
 @Local(value = { VpcManager.class, VpcService.class })
-public class VpcManagerImpl implements VpcManager, Manager{
+public class VpcManagerImpl extends ManagerBase implements VpcManager{
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
     @Inject
     VpcOfferingDao _vpcOffDao;
@@ -176,7 +179,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
     private VpcProvider vpcElement = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
  
-    String _name;
     int _cleanupInterval;
     int _maxNetworks;
     SearchBuilder<IPAddressVO> IpAddressSearch;
@@ -184,8 +186,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Override
     @DB
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        
         //configure default vpc offering
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -211,9 +211,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 
         txn.commit();
         
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> configs = configDao.getConfiguration(params);
+        Map<String, String> configs = _configDao.getConfiguration(params);
         String value = configs.get(Config.VpcCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60); // 1 hour
 
@@ -243,11 +241,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Override
     public boolean stop() {
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override
@@ -631,7 +624,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         //verify permissions
         _accountMgr.checkAccess(ctx.getCaller(), null, false, vpc);
-
+        
         return destroyVpc(vpc, ctx.getCaller(), ctx.getCallerUserId());
     }
 
@@ -989,7 +982,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 } else {
                     if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
                         throw new InvalidParameterValueException("LB service is already supported " +
-                                "by network " + network + " in VPC " + vpc);
+                        		"by network " + network + " in VPC " + vpc);
                     }
                 }
             }
@@ -1076,7 +1069,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
             //5) network domain should be the same as VPC's
             if (!networkDomain.equalsIgnoreCase(vpc.getNetworkDomain())) {
                 throw new InvalidParameterValueException("Network domain of the new network should match network" +
-                        " domain of vpc " + vpc);
+                		" domain of vpc " + vpc);
             }
             
             //6) gateway should never be equal to the cidr subnet
@@ -1448,13 +1441,13 @@ public class VpcManagerImpl implements VpcManager, Manager{
         if (vlan != null) {
             sc.setJoinParameters("networkSearch", "vlan", BroadcastDomainType.Vlan.toUri(vlan));
         }
-
+       
         Pair<List<VpcGatewayVO>, Integer> vos = _vpcGatewayDao.searchAndCount(sc, searchFilter);
         List<PrivateGateway> privateGtws = new ArrayList<PrivateGateway>(vos.first().size());
         for (VpcGateway vo : vos.first()) {
             privateGtws.add(getPrivateGatewayProfile(vo));
         }
-
+        
         return new Pair<List<PrivateGateway>, Integer>(privateGtws, vos.second());
     }
     
@@ -1680,11 +1673,11 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 count++;
             }   
         }
-
+        
         Pair<List<StaticRouteVO>, Integer> result = _staticRouteDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends StaticRoute>, Integer>(result.first(), result.second());
     }
-
+    
     protected void detectRoutesConflict(StaticRoute newRoute) throws NetworkRuleConflictException {
         List<? extends StaticRoute> routes = _staticRouteDao.listByGatewayIdAndNotRevoked(newRoute.getVpcGatewayId());
         assert (routes.size() >= 1) : "For static routes, we now always first persist the route and then check for " +
@@ -1884,7 +1877,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
         //2) Create network
         Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, 
-                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId);
+                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, null, null);
 
         return guestNetwork;
     }

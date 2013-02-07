@@ -20,30 +20,34 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.Event;
+import com.cloud.storage.Snapshot.State;
 import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.*;
 import com.cloud.utils.db.JoinBuilder.JoinType;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
+@Component
 @Local (value={SnapshotDao.class})
 public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements SnapshotDao {
     public static final Logger s_logger = Logger.getLogger(SnapshotDaoImpl.class.getName());
@@ -52,20 +56,20 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private static final String GET_SECHOST_ID = "SELECT sechost_id FROM snapshots where volume_id = ? AND backup_snap_id IS NOT NULL AND sechost_id IS NOT NULL LIMIT 1";
     private static final String UPDATE_SECHOST_ID = "UPDATE snapshots SET sechost_id = ? WHERE data_center_id = ?";
     
-    private final SearchBuilder<SnapshotVO> VolumeIdSearch;
-    private final SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
-    private final SearchBuilder<SnapshotVO> ParentIdSearch;
-    private final SearchBuilder<SnapshotVO> backupUuidSearch;   
-    private final SearchBuilder<SnapshotVO> VolumeIdVersionSearch;
-    private final SearchBuilder<SnapshotVO> HostIdSearch;
-    private final SearchBuilder<SnapshotVO> AccountIdSearch;
-    private final SearchBuilder<SnapshotVO> InstanceIdSearch;
-    private final SearchBuilder<SnapshotVO> StatusSearch;
-    private final GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
-    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
+    private SearchBuilder<SnapshotVO> VolumeIdSearch;
+    private SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
+    private SearchBuilder<SnapshotVO> ParentIdSearch;
+    private SearchBuilder<SnapshotVO> backupUuidSearch;   
+    private SearchBuilder<SnapshotVO> VolumeIdVersionSearch;
+    private SearchBuilder<SnapshotVO> HostIdSearch;
+    private SearchBuilder<SnapshotVO> AccountIdSearch;
+    private SearchBuilder<SnapshotVO> InstanceIdSearch;
+    private SearchBuilder<SnapshotVO> StatusSearch;
+    private GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
+    @Inject ResourceTagsDaoImpl _tagsDao;
     
-    protected final VMInstanceDaoImpl _instanceDao = ComponentLocator.inject(VMInstanceDaoImpl.class);
-    protected final VolumeDaoImpl _volumeDao = ComponentLocator.inject(VolumeDaoImpl.class);
+    @Inject protected VMInstanceDaoImpl _instanceDao;
+    @Inject protected VolumeDaoImpl _volumeDao;
 
     @Override
     public SnapshotVO findNextSnapshot(long snapshotId) {
@@ -113,7 +117,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     public List<SnapshotVO> listByHostId(Filter filter, long hostId ) {
         SearchCriteria<SnapshotVO> sc = HostIdSearch.create();
         sc.setParameters("hostId", hostId);
-        sc.setParameters("status", Snapshot.Status.BackedUp);
+        sc.setParameters("status", Snapshot.State.BackedUp);
         return listBy(sc, filter);
     }
         
@@ -138,14 +142,18 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         return listBy(sc, filter);
     }
 
-    protected SnapshotDaoImpl() {
+    public SnapshotDaoImpl() {
+    }
+    
+    @PostConstruct
+    protected void init() {
         VolumeIdSearch = createSearchBuilder();
         VolumeIdSearch.and("volumeId", VolumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdSearch.done();
         
         HostIdSearch = createSearchBuilder();
         HostIdSearch.and("hostId", HostIdSearch.entity().getSecHostId(), SearchCriteria.Op.EQ);
-        HostIdSearch.and("status", HostIdSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        HostIdSearch.and("status", HostIdSearch.entity().getState(), SearchCriteria.Op.EQ);
         HostIdSearch.done();
         
         VolumeIdTypeSearch = createSearchBuilder();
@@ -172,7 +180,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         
         StatusSearch = createSearchBuilder();
         StatusSearch.and("volumeId", StatusSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        StatusSearch.and("status", StatusSearch.entity().getStatus(), SearchCriteria.Op.IN);
+        StatusSearch.and("status", StatusSearch.entity().getState(), SearchCriteria.Op.IN);
         StatusSearch.done();
         
         CountSnapshotsByAccount = createSearchBuilder(Long.class);
@@ -182,7 +190,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         CountSnapshotsByAccount.done();
         
     	InstanceIdSearch = createSearchBuilder();
-    	InstanceIdSearch.and("status", InstanceIdSearch.entity().getStatus(), SearchCriteria.Op.IN);
+        InstanceIdSearch.and("status", InstanceIdSearch.entity().getState(), SearchCriteria.Op.IN);
     	
     	SearchBuilder<VMInstanceVO> instanceSearch = _instanceDao.createSearchBuilder();
     	instanceSearch.and("instanceId", instanceSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -274,7 +282,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     }
     
     @Override
-	public List<SnapshotVO> listByInstanceId(long instanceId, Snapshot.Status... status) {
+	public List<SnapshotVO> listByInstanceId(long instanceId, Snapshot.State... status) {
     	SearchCriteria<SnapshotVO> sc = this.InstanceIdSearch.create();
     	
     	if (status != null && status.length != 0) {
@@ -287,7 +295,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     }
     
     @Override
-    public List<SnapshotVO> listByStatus(long volumeId, Snapshot.Status... status) {
+    public List<SnapshotVO> listByStatus(long volumeId, Snapshot.State... status) {
     	SearchCriteria<SnapshotVO> sc = this.StatusSearch.create();
     	sc.setParameters("volumeId", volumeId);
     	sc.setParameters("status", (Object[])status);
@@ -309,9 +317,20 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     }
     
     @Override
-    public List<SnapshotVO> listAllByStatus(Snapshot.Status... status) {
+    public List<SnapshotVO> listAllByStatus(Snapshot.State... status) {
         SearchCriteria<SnapshotVO> sc = this.StatusSearch.create();
         sc.setParameters("status", (Object[])status);
         return listBy(sc, null);
+    }
+
+    @Override
+    public boolean updateState(State currentState, Event event, State nextState, Snapshot snapshot, Object data) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        SnapshotVO snapshotVO = (SnapshotVO)snapshot;
+        snapshotVO.setState(nextState);
+        super.update(snapshotVO.getId(), snapshotVO);
+        txn.commit();
+        return true;
     }
 }

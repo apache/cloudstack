@@ -17,6 +17,8 @@
 
 package com.cloud.api.commands;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.log4j.Logger;
@@ -32,19 +34,19 @@ import com.cloud.user.Account;
 public class DeleteExternalLoadBalancerCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteExternalLoadBalancerCmd.class.getName());
     private static final String s_name = "deleteexternalloadbalancerresponse";
-
+    
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
+    
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = HostResponse.class,
             required = true, description="Id of the external loadbalancer appliance.")
     private Long id;
-
+    
     ///////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
+     
     public Long getId() {
         return id;
     }
@@ -53,19 +55,19 @@ public class DeleteExternalLoadBalancerCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @PlugService
+    @Inject
     F5ExternalLoadBalancerElementService _f5DeviceManagerService;
 
     @Override
     public String getCommandName() {
         return s_name;
     }
-
+    
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-
+     
     @Override
     public void execute(){
         try {

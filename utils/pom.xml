@@ -24,6 +24,7 @@
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
     <version>4.1.0-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <dependencies>
     <dependency>
@@ -129,6 +130,11 @@
       <version>${cs.ejb.version}</version>
     </dependency>
     <dependency>
+        <groupId>com.googlecode.java-ipv6</groupId>
+        <artifactId>java-ipv6</artifactId>
+        <version>${cs.java-ipv6.version}</version>
+    </dependency>
+    <dependency>
       <groupId>commons-configuration</groupId>
       <artifactId>commons-configuration</artifactId>
       <version>${cs.configuration.version}</version>
@@ -158,12 +164,18 @@
     <testSourceDirectory>test</testSourceDirectory>
     <testResources>
       <testResource>
+        <directory>${project.basedir}/test/resources</directory>
+      </testResource>
+    </testResources>
+    <!-- 
+    <testResources>
+      <testResource>
         <directory>test/resources</directory>
       </testResource>
       <testResource>
         <directory>conf</directory>
       </testResource>
-    </testResources>    
+    </testResources> -->    
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

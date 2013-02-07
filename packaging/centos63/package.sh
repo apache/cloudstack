@@ -34,11 +34,11 @@ else
 fi
 
 mkdir -p $RPMDIR/SPECS
-mkdir -p $RPMDIR/SOURCES/cloud-$VERSION
+mkdir -p $RPMDIR/SOURCES/cloudstack-$VERSION
 
 
-(cd ../../; tar -c --exclude .git --exclude dist  .  | tar -C $RPMDIR/SOURCES/cloud-$VERSION -x )
-(cd $RPMDIR/SOURCES/; tar -czf cloud-$VERSION.tgz cloud-$VERSION)
+(cd ../../; tar -c --exclude .git --exclude dist  .  | tar -C $RPMDIR/SOURCES/cloudstack-$VERSION -x )
+(cd $RPMDIR/SOURCES/; tar -czf cloudstack-$VERSION.tgz cloudstack-$VERSION)
 
 cp cloud.spec $RPMDIR/SPECS
 

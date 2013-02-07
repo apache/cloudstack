@@ -18,6 +18,7 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import com.cloud.host.HostVO;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.utils.db.GenericDao;
@@ -56,6 +57,9 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
     long countRulesByIpId(long sourceIpId);
     
     List<FirewallRuleVO> listByNetworkPurposeTrafficTypeAndNotRevoked(long networkId, FirewallRule.Purpose purpose, FirewallRule.TrafficType trafficType);
+    List<FirewallRuleVO> listByNetworkPurposeTrafficType(long networkId, FirewallRule.Purpose purpose, FirewallRule.TrafficType trafficType);
     
     List<FirewallRuleVO> listByIpAndPurposeWithState(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
+        
+    void loadSourceCidrs(FirewallRuleVO rule);
 }

@@ -24,9 +24,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -66,7 +68,7 @@ import com.cloud.storage.swift.SwiftManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
@@ -78,10 +80,10 @@ import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
+@Component
 @Local(value = CapacityManager.class)
-public class CapacityManagerImpl implements CapacityManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Listener, ResourceListener {
+public class CapacityManagerImpl extends ManagerBase implements CapacityManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Listener, ResourceListener {
     private static final Logger s_logger = Logger.getLogger(CapacityManagerImpl.class);
-    String _name;
     @Inject
     CapacityDao _capacityDao;
     @Inject
@@ -118,7 +120,6 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
         _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
         _storageOverProvisioningFactor = NumbersUtil.parseFloat(_configDao.getValue(Config.StorageOverprovisioningFactor.key()), 1.0f);
         _cpuOverProvisioningFactor = NumbersUtil.parseFloat(_configDao.getValue(Config.CPUOverprovisioningFactor.key()), 1.0f);
@@ -146,11 +147,6 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
         _executor.shutdownNow();
         _stopped = true;
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @DB

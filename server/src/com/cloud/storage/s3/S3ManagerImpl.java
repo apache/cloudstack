@@ -41,11 +41,15 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
+import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -53,7 +57,6 @@ import com.cloud.agent.api.DeleteTemplateFromS3Command;
 import com.cloud.agent.api.DownloadTemplateFromS3ToSecondaryStorageCommand;
 import com.cloud.agent.api.UploadTemplateToS3FromSecondaryStorageCommand;
 import com.cloud.agent.api.to.S3TO;
-import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -75,19 +78,18 @@ import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.S3Utils.ClientOptions;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value = { S3Manager.class })
-public class S3ManagerImpl implements S3Manager {
+public class S3ManagerImpl extends ManagerBase implements S3Manager {
 
     private static final Logger LOGGER = Logger.getLogger(S3ManagerImpl.class);
 
-    private String name;
-
-    @Inject
+    @Inject 
     private AgentManager agentManager;
 
     @Inject
@@ -117,10 +119,9 @@ public class S3ManagerImpl implements S3Manager {
     @Inject
     private SecondaryStorageVmManager secondaryStorageVMManager;
 
-    protected S3ManagerImpl() {
-        super();
+    public S3ManagerImpl() {
     }
-
+    
     private void verifyConnection(final S3TO s3) throws DiscoveryException {
 
         if (!canConnect(s3)) {
@@ -285,32 +286,32 @@ public class S3ManagerImpl implements S3Manager {
             executeWithNoWaitLock(determineLockId(accountId, templateId),
                     new Callable<Void>() {
 
-                        @Override
-                        public Void call() throws Exception {
+                @Override
+                public Void call() throws Exception {
 
-                            final Answer answer = agentManager.sendToSSVM(null,
-                                    new DeleteTemplateFromS3Command(s3,
-                                            accountId, templateId));
-                            if (answer == null || !answer.getResult()) {
-                                final String errorMessage = format(
-                                        "Delete Template Failed: Unable to delete template id %1$s from S3 due to following error: %2$s",
-                                        templateId,
-                                        ((answer == null) ? "answer is null"
-                                                : answer.getDetails()));
-                                LOGGER.error(errorMessage);
-                                throw new CloudRuntimeException(errorMessage);
-                            }
+                    final Answer answer = agentManager.sendToSSVM(null,
+                            new DeleteTemplateFromS3Command(s3,
+                                    accountId, templateId));
+                    if (answer == null || !answer.getResult()) {
+                        final String errorMessage = format(
+                                "Delete Template Failed: Unable to delete template id %1$s from S3 due to following error: %2$s",
+                                templateId,
+                                ((answer == null) ? "answer is null"
+                                        : answer.getDetails()));
+                        LOGGER.error(errorMessage);
+                        throw new CloudRuntimeException(errorMessage);
+                    }
 
-                            vmTemplateS3Dao.remove(vmTemplateS3VO.getId());
-                            LOGGER.debug(format(
-                                    "Deleted template %1$s from S3.",
-                                    templateId));
+                    vmTemplateS3Dao.remove(vmTemplateS3VO.getId());
+                    LOGGER.debug(format(
+                            "Deleted template %1$s from S3.",
+                            templateId));
 
-                            return null;
+                    return null;
 
-                        }
+                }
 
-                    });
+            });
 
         } catch (Exception e) {
 
@@ -381,38 +382,38 @@ public class S3ManagerImpl implements S3Manager {
             executeWithNoWaitLock(determineLockId(accountId, templateId),
                     new Callable<Void>() {
 
-                        @Override
-                        public Void call() throws Exception {
+                @Override
+                public Void call() throws Exception {
 
-                            final Answer answer = agentManager.sendToSSVM(
-                                    dataCenterId, cmd);
+                    final Answer answer = agentManager.sendToSSVM(
+                            dataCenterId, cmd);
 
-                            if (answer == null || !answer.getResult()) {
-                                final String errMsg = String
-                                        .format("Failed to download template from S3 to secondary storage due to %1$s",
-                                                (answer == null ? "answer is null"
-                                                        : answer.getDetails()));
-                                LOGGER.error(errMsg);
-                                throw new CloudRuntimeException(errMsg);
-                            }
+                    if (answer == null || !answer.getResult()) {
+                        final String errMsg = String
+                                .format("Failed to download template from S3 to secondary storage due to %1$s",
+                                        (answer == null ? "answer is null"
+                                                : answer.getDetails()));
+                        LOGGER.error(errMsg);
+                        throw new CloudRuntimeException(errMsg);
+                    }
 
-                            final String installPath = join(
-                                    asList("template", "tmpl", accountId,
-                                            templateId), File.separator);
-                            final VMTemplateHostVO tmpltHost = new VMTemplateHostVO(
-                                    secondaryStorageHost.getId(), templateId,
-                                    now(), 100, Status.DOWNLOADED, null, null,
-                                    null, installPath, template.getUrl());
-                            tmpltHost.setSize(templateS3VO.getSize());
-                            tmpltHost.setPhysicalSize(templateS3VO
-                                    .getPhysicalSize());
-                            vmTemplateHostDao.persist(tmpltHost);
+                    final String installPath = join(
+                            asList("template", "tmpl", accountId,
+                                    templateId), File.separator);
+                    final VMTemplateHostVO tmpltHost = new VMTemplateHostVO(
+                            secondaryStorageHost.getId(), templateId,
+                            now(), 100, Status.DOWNLOADED, null, null,
+                            null, installPath, template.getUrl());
+                    tmpltHost.setSize(templateS3VO.getSize());
+                    tmpltHost.setPhysicalSize(templateS3VO
+                            .getPhysicalSize());
+                    vmTemplateHostDao.persist(tmpltHost);
 
-                            return null;
+                    return null;
 
-                        }
+                }
 
-                    });
+            });
 
         } catch (Exception e) {
             final String errMsg = "Failed to download template from S3 to secondary storage due to "
@@ -472,10 +473,7 @@ public class S3ManagerImpl implements S3Manager {
             LOGGER.info(format("Configuring S3 Manager %1$s", name));
         }
 
-        this.name = name;
-
         return true;
-
     }
 
     @Override
@@ -488,11 +486,6 @@ public class S3ManagerImpl implements S3Manager {
     public boolean stop() {
         LOGGER.info("Stopping S3 Manager");
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return this.name;
     }
 
     @Override
@@ -605,50 +598,50 @@ public class S3ManagerImpl implements S3Manager {
             executeWithNoWaitLock(determineLockId(accountId, templateId),
                     new Callable<Void>() {
 
-                        @Override
-                        public Void call() throws Exception {
+                @Override
+                public Void call() throws Exception {
 
-                            final UploadTemplateToS3FromSecondaryStorageCommand cmd = new UploadTemplateToS3FromSecondaryStorageCommand(
-                                    s3, secondaryHost.getStorageUrl(),
-                                    dataCenterId, accountId, templateId);
+                    final UploadTemplateToS3FromSecondaryStorageCommand cmd = new UploadTemplateToS3FromSecondaryStorageCommand(
+                            s3, secondaryHost.getStorageUrl(),
+                            dataCenterId, accountId, templateId);
 
-                            final Answer answer = agentManager.sendToSSVM(
-                                    dataCenterId, cmd);
-                            if (answer == null || !answer.getResult()) {
+                    final Answer answer = agentManager.sendToSSVM(
+                            dataCenterId, cmd);
+                    if (answer == null || !answer.getResult()) {
 
-                                final String reason = answer != null ? answer
-                                        .getDetails()
-                                        : "S3 template sync failed due to an unspecified error.";
+                        final String reason = answer != null ? answer
+                                .getDetails()
+                                : "S3 template sync failed due to an unspecified error.";
                                 throw new CloudRuntimeException(
                                         format("Failed to upload template id %1$s to S3 from secondary storage due to %2$s.",
                                                 templateId, reason));
 
-                            }
+                    }
 
-                            if (LOGGER.isDebugEnabled()) {
-                                LOGGER.debug(format(
-                                        "Creating VMTemplateS3VO instance using template id %1s.",
-                                        templateId));
-                            }
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(format(
+                                "Creating VMTemplateS3VO instance using template id %1s.",
+                                templateId));
+                    }
 
-                            final VMTemplateS3VO vmTemplateS3VO = new VMTemplateS3VO(
-                                    s3.getId(), templateId, now(),
-                                    templateHostRef.getSize(), templateHostRef
-                                            .getPhysicalSize());
+                    final VMTemplateS3VO vmTemplateS3VO = new VMTemplateS3VO(
+                            s3.getId(), templateId, now(),
+                            templateHostRef.getSize(), templateHostRef
+                            .getPhysicalSize());
 
-                            if (LOGGER.isDebugEnabled()) {
-                                LOGGER.debug(format("Persisting %1$s",
-                                        vmTemplateS3VO));
-                            }
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(format("Persisting %1$s",
+                                vmTemplateS3VO));
+                    }
 
-                            vmTemplateS3Dao.persist(vmTemplateS3VO);
-                            propagateTemplateToAllZones(vmTemplateS3VO);
+                    vmTemplateS3Dao.persist(vmTemplateS3VO);
+                    propagateTemplateToAllZones(vmTemplateS3VO);
 
-                            return null;
+                    return null;
 
-                        }
+                }
 
-                    });
+            });
 
         } catch (Exception e) {
 

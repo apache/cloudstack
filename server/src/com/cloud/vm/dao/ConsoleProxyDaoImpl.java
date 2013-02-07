@@ -26,6 +26,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.info.ConsoleProxyLoadInfo;
 import com.cloud.utils.Pair;
@@ -38,6 +39,7 @@ import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.VirtualMachine.State;
 
+@Component
 @Local(value={ConsoleProxyDao.class})
 public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> implements ConsoleProxyDao {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyDaoImpl.class);
@@ -115,7 +117,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     
     public ConsoleProxyDaoImpl() {
         DataCenterStatusSearch = createSearchBuilder();
-        DataCenterStatusSearch.and("dc", DataCenterStatusSearch.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
+        DataCenterStatusSearch.and("dc", DataCenterStatusSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         DataCenterStatusSearch.and("states", DataCenterStatusSearch.entity().getState(), SearchCriteria.Op.IN);
         DataCenterStatusSearch.done();
         

@@ -20,11 +20,14 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.alert.AlertVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 @Local(value = { AlertDao.class })
 public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements AlertDao {
     @Override

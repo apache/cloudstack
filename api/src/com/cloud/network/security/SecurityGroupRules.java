@@ -15,8 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.security;
-import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.network.security.SecurityRule.SecurityRuleType;
 
 public interface SecurityGroupRules extends InternalIdentity {
 

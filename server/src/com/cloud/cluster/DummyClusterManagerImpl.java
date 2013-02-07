@@ -22,24 +22,24 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
-import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Status.Event;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 
 @Local(value={ClusterManager.class})
-public class DummyClusterManagerImpl implements ClusterManager {
+public class DummyClusterManagerImpl extends ManagerBase implements ClusterManager {
     private static final Logger s_logger = Logger.getLogger(DummyClusterManagerImpl.class);
 	
     protected long _id = MacAddress.getMacAddress().toLong();
     protected long _runId = System.currentTimeMillis();
     
-    private String _name;
     private final String _clusterNodeIP = "127.0.0.1";
 
     @Override
@@ -140,11 +140,6 @@ public class DummyClusterManagerImpl implements ClusterManager {
 	
 	@Override
 	public void broadcast(long hostId, Command[] cmds) {
-	}
-
-	@Override
-	public String getName() {
-        return _name;
 	}
 
 	@Override

@@ -20,8 +20,9 @@ package com.cloud.network.as;
 import java.util.List;
 
 import org.apache.cloudstack.acl.ControlledEntity;
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.Pair;
 
 /**
  * AutoScaleVmProfile

@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.dao;
 
-import com.cloud.network.InlineLoadBalancerNicMapVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface InlineLoadBalancerNicMapDao extends GenericDao<InlineLoadBalancerNicMapVO, Long> {

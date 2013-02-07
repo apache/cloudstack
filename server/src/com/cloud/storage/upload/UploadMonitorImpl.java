@@ -29,9 +29,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -63,7 +65,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -75,8 +77,9 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 /**
  * Monitors the progress of upload.
  */
+@Component
 @Local(value={UploadMonitor.class})
-public class UploadMonitorImpl implements UploadMonitor {
+public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
 	static final Logger s_logger = Logger.getLogger(UploadMonitorImpl.class);
 	
@@ -341,7 +344,6 @@ public class UploadMonitorImpl implements UploadMonitor {
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
-		_name = name;
         final Map<String, String> configs = _configDao.getConfiguration("ManagementServer", params);
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
         
@@ -361,11 +363,6 @@ public class UploadMonitorImpl implements UploadMonitor {
         int wrks = NumbersUtil.parseInt(workers, 1);
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UploadMonitor-Scavenger"));
 		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
 	}
 
 	@Override

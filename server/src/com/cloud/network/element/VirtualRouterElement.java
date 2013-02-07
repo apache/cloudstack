@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import com.cloud.utils.PropertiesUtil;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
@@ -74,7 +75,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
@@ -565,6 +565,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+        firewallCapabilities.put(Capability.SupportedEgressProtocols, "tcp,udp,icmp, all");
+        firewallCapabilities.put(Capability.SupportedTrafficDirection, "ingress, egress");
         firewallCapabilities.put(Capability.MultipleIps, "true");
         capabilities.put(Service.Firewall, firewallCapabilities);
 
@@ -662,6 +664,24 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
 
         return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
+    }
+
+    @Override
+    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String SSHPublicKey)
+            throws ResourceUnavailableException {
+        if (!canHandle(network, null)) {
+            return false;
+        }
+        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+        if (routers == null || routers.isEmpty()) {
+            s_logger.debug("Can't find virtual router element in network " + network.getId());
+            return true;
+        }
+
+        @SuppressWarnings("unchecked")
+        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
+
+        return _routerMgr.saveSSHPublicKeyToRouter(network, nic, uservm, routers, SSHPublicKey);
     }
 
     @Override
@@ -822,6 +842,11 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 return false;
             }
 
+            if (network.getIp6Gateway() != null) {
+            	s_logger.info("Skip password and userdata service setup for IPv6 VM");
+            	return true;
+            }
+
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
 
@@ -860,8 +885,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
         // for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when
         // network.dns.basiczone.updates is set to "all"
-        Long podId = dest.getPod().getId();
         if (isPodBased && _routerMgr.getDnsBasicZoneUpdate().equalsIgnoreCase("all")) {
+            Long podId = dest.getPod().getId();
             List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(network.getId(),
                     podId, State.Running, Role.VIRTUAL_ROUTER);
             routers.addAll(allRunningRoutersOutsideThePod);

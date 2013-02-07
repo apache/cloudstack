@@ -20,19 +20,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkAccountDaoImpl;
-import com.cloud.network.NetworkAccountVO;
-import com.cloud.network.NetworkDomainVO;
-import com.cloud.network.NetworkServiceMapVO;
-import com.cloud.network.NetworkVO;
+import com.cloud.network.Network.State;
+import com.cloud.network.Network.Event;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -41,54 +42,58 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.*;
 import com.cloud.utils.db.JoinBuilder.JoinType;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.SequenceFetcher;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
 
+@Component
 @Local(value = NetworkDao.class)
 @DB(txn = false)
 public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements NetworkDao {
-    final SearchBuilder<NetworkVO> AllFieldsSearch;
-    final SearchBuilder<NetworkVO> AccountSearch;
-    final SearchBuilder<NetworkVO> RelatedConfigSearch;
-    final SearchBuilder<NetworkVO> AccountNetworkSearch;
-    final SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
-    final SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
-    final GenericSearchBuilder<NetworkVO, Integer> CountBy;
-    final SearchBuilder<NetworkVO> PhysicalNetworkSearch;
-    final SearchBuilder<NetworkVO> SecurityGroupSearch;
-    final GenericSearchBuilder<NetworkVO, Long> NetworksRegularUserCanCreateSearch;
-    private final GenericSearchBuilder<NetworkVO, Integer> NetworksCount;
-    final SearchBuilder<NetworkVO> SourceNATSearch;
-    final GenericSearchBuilder<NetworkVO, Long>  CountByZoneAndURI;
-    final GenericSearchBuilder<NetworkVO, Long> VpcNetworksCount;
-    final SearchBuilder<NetworkVO> OfferingAccountNetworkSearch;
+    SearchBuilder<NetworkVO> AllFieldsSearch;
+    SearchBuilder<NetworkVO> AccountSearch;
+    SearchBuilder<NetworkVO> RelatedConfigSearch;
+    SearchBuilder<NetworkVO> AccountNetworkSearch;
+    SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
+    SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
+    GenericSearchBuilder<NetworkVO, Integer> CountBy;
+    SearchBuilder<NetworkVO> PhysicalNetworkSearch;
+    SearchBuilder<NetworkVO> SecurityGroupSearch;
+    GenericSearchBuilder<NetworkVO, Long> NetworksRegularUserCanCreateSearch;
+    GenericSearchBuilder<NetworkVO, Integer> NetworksCount;
+    SearchBuilder<NetworkVO> SourceNATSearch;
+    GenericSearchBuilder<NetworkVO, Long>  CountByZoneAndURI;
+    GenericSearchBuilder<NetworkVO, Long> VpcNetworksCount;
+    SearchBuilder<NetworkVO> OfferingAccountNetworkSearch;
 
-    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
-    NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
-    NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
-    NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
-    NetworkServiceMapDaoImpl _ntwkSvcMap = ComponentLocator.inject(NetworkServiceMapDaoImpl.class);
-    NetworkOfferingDaoImpl _ntwkOffDao = ComponentLocator.inject(NetworkOfferingDaoImpl.class);
+    GenericSearchBuilder<NetworkVO, Long> GarbageCollectedSearch;
+    
+    
+    
+    @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject NetworkAccountDaoImpl _accountsDao;
+    @Inject NetworkDomainDaoImpl _domainsDao;
+    @Inject NetworkOpDaoImpl _opDao;
+    @Inject NetworkServiceMapDaoImpl _ntwkSvcMap;
+    @Inject NetworkOfferingDaoImpl _ntwkOffDao;
+    @Inject NetworkOpDaoImpl _ntwkOpDao;
 
+    TableGenerator _tgMacAddress;
 
-    final TableGenerator _tgMacAddress;
     Random _rand = new Random(System.currentTimeMillis());
     long _prefix = 0x2;
 
-    protected NetworkDaoImpl() {
-        super();
+    public NetworkDaoImpl() {
+    }
 
+    @PostConstruct
+    protected void init() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("trafficType", AllFieldsSearch.entity().getTrafficType(), Op.EQ);
         AllFieldsSearch.and("cidr", AllFieldsSearch.entity().getCidr(), Op.EQ);
@@ -214,6 +219,19 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         OfferingAccountNetworkSearch.and("zoneId", OfferingAccountNetworkSearch.entity().getDataCenterId(), Op.EQ);
         OfferingAccountNetworkSearch.and("type", OfferingAccountNetworkSearch.entity().getGuestType(), Op.EQ);
         OfferingAccountNetworkSearch.done();
+
+        GarbageCollectedSearch = createSearchBuilder(Long.class);
+        GarbageCollectedSearch.selectField(GarbageCollectedSearch.entity().getId());
+        SearchBuilder<NetworkOpVO> join7 = _ntwkOpDao.createSearchBuilder();
+        join7.and("activenics", join7.entity().getActiveNicsCount(), Op.EQ);
+        join7.and("gc", join7.entity().isGarbageCollected(), Op.EQ);
+        join7.and("check", join7.entity().isCheckForGc(), Op.EQ);
+        GarbageCollectedSearch.join("ntwkOpGC", join7, GarbageCollectedSearch.entity().getId(), join7.entity().getId(), JoinBuilder.JoinType.INNER);
+        SearchBuilder<NetworkOfferingVO> join8 = _ntwkOffDao.createSearchBuilder();
+        join8.and("isPersistent", join8.entity().getIsPersistent(), Op.EQ);
+        GarbageCollectedSearch.join("ntwkOffGC", join8, GarbageCollectedSearch.entity().getNetworkOfferingId(), join8.entity().getId(), JoinBuilder.JoinType.INNER);
+        GarbageCollectedSearch.done();
+
     }
 
     @Override
@@ -397,7 +415,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
 
     @Override
     public List<Long> findNetworksToGarbageCollect() {
-        return _opDao.getNetworksToGarbageCollect();
+        SearchCriteria<Long> sc = GarbageCollectedSearch.create();
+        sc.setJoinParameters("ntwkOffGC", "isPersistent", false);
+        sc.setJoinParameters("ntwkOpGC", "activenics", 0);
+        sc.setJoinParameters("ntwkOpGC", "gc", true);
+        sc.setJoinParameters("ntwkOpGC", "check", true);
+        return customSearch(sc, null);
     }
 
     @Override
@@ -544,6 +567,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         return findOneBy(sc);
     }
 
+    @Override
     @DB
     public boolean remove(Long id) {
         Transaction txn = Transaction.currentTxn();
@@ -565,6 +589,20 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
+    public boolean updateState(State currentState, Event event, State nextState, Network vo, Object data) {
+       // TODO: ensure this update is correct
+       Transaction txn = Transaction.currentTxn();
+       txn.start();
+
+       NetworkVO networkVo = (NetworkVO) vo;
+       networkVo.setState(nextState);
+       super.update(networkVo.getId(), networkVo);
+
+       txn.commit();
+       return true;
+    }
+
+    @Override
     public List<NetworkVO> listNetworksByAccount(long accountId, long zoneId, Network.GuestType type, boolean isSystem) {
         SearchCriteria<NetworkVO> sc = OfferingAccountNetworkSearch.create();
         sc.setJoinParameters("ntwkOfferingSearch", "isSystem", isSystem);
@@ -580,7 +618,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     public List<NetworkVO> listRedundantNetworks() {
         SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setJoinParameters("offerings", "isRedundant", true);
-        
         return listBy(sc, null);
     }
 }

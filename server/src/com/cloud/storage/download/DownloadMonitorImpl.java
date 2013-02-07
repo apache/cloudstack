@@ -28,24 +28,19 @@ import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.storage.DeleteTemplateCommand;
-import com.cloud.agent.api.storage.DeleteVolumeCommand;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.ListVolumeAnswer;
-import com.cloud.agent.api.storage.ListVolumeCommand;
+import com.cloud.agent.api.storage.*;
 import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
-import com.cloud.agent.api.storage.ListTemplateAnswer;
-import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
@@ -54,8 +49,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
-import com.cloud.event.dao.UsageEventDao;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageUnavailableException;
@@ -65,40 +59,22 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.SwiftVO;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeHostVO;
-import com.cloud.storage.VolumeVO;
+import com.cloud.storage.*;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.Volume.Event;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.SwiftDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.dao.VMTemplateSwiftDao;
-import com.cloud.storage.dao.VMTemplateZoneDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeHostDao;
+import com.cloud.storage.dao.*;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmManager;
@@ -107,8 +83,9 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import edu.emory.mathcs.backport.java.util.Collections;
 
 
+@Component
 @Local(value={DownloadMonitor.class})
-public class DownloadMonitorImpl implements  DownloadMonitor {
+public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor {
     static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);
 	
     @Inject 
@@ -147,11 +124,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     ConfigurationDao _configDao;
     @Inject
     UserVmManager _vmMgr;
-
-    
-    @Inject 
-    private UsageEventDao _usageEventDao;
-    
     @Inject
     private ClusterDao _clusterDao;
     @Inject
@@ -163,7 +135,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     @Inject
     protected ResourceLimitService _resourceLimitMgr;
 
-	private String _name;
 	private Boolean _sslCopy = new Boolean(false);
 	private String _copyAuthPasswd;
 	private String _proxy = null;
@@ -181,7 +152,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 
 	@Override
 	public boolean configure(String name, Map<String, Object> params) {
-		_name = name;
         final Map<String, String> configs = _configDao.getConfiguration("ManagementServer", params);
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
         _proxy = configs.get(Config.SecStorageProxy.key());
@@ -209,11 +179,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         ReadyTemplateStatesSearch.done();
                
 		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
 	}
 
 	@Override
@@ -517,8 +482,9 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                 eventType = EventTypes.EVENT_ISO_CREATE;
             }
             if(template.getAccountId() != Account.ACCOUNT_ID_SYSTEM){
-                UsageEventVO usageEvent = new UsageEventVO(eventType, template.getAccountId(), host.getDataCenterId(), template.getId(), template.getName(), null, template.getSourceTemplateId() , size);
-                _usageEventDao.persist(usageEvent);
+                UsageEventUtils.publishUsageEvent(eventType, template.getAccountId(), host.getDataCenterId(),
+                        template.getId(), template.getName(), null, template.getSourceTemplateId(), size,
+                        template.getClass().getName(), template.getUuid());
             }
         }
         txn.commit();
@@ -550,8 +516,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             }
             String eventType = EventTypes.EVENT_VOLUME_UPLOAD;            
             if(volume.getAccountId() != Account.ACCOUNT_ID_SYSTEM){
-               UsageEventVO usageEvent = new UsageEventVO(eventType, volume.getAccountId(), host.getDataCenterId(), volume.getId(), volume.getName(), null, 0l , size);
-               _usageEventDao.persist(usageEvent);
+                UsageEventUtils.publishUsageEvent(eventType, volume.getAccountId(), host.getDataCenterId(),
+                        volume.getId(), volume.getName(), null, 0l, size, volume.getClass().getName(), volume.getUuid());
             }
         }else if (dnldStatus == Status.DOWNLOAD_ERROR || dnldStatus == Status.ABANDONED || dnldStatus == Status.UNKNOWN){
             //Decrement the volume count

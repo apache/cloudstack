@@ -27,8 +27,12 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 import javax.ejb.Local;
+
+import org.springframework.stereotype.Component;
+
 import java.util.List;
 
+@Component
 @Local(VMTemplateS3Dao.class)
 public class VMTemplateS3DaoImpl extends GenericDaoBase<VMTemplateS3VO, Long>
         implements VMTemplateS3Dao {

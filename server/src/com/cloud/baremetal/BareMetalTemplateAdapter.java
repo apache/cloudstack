@@ -20,16 +20,18 @@ import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -37,16 +39,16 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateAdapterBase;
-import com.cloud.template.TemplateProfile;
 import com.cloud.user.Account;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value=TemplateAdapter.class)
 public class BareMetalTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
 	private final static Logger s_logger = Logger.getLogger(BareMetalTemplateAdapter.class);
@@ -82,9 +84,9 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 	
 	private void templateCreateUsage(VMTemplateVO template, HostVO host) {
 		if (template.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-			UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, template.getAccountId(), host.getDataCenterId(),
-					template.getId(), template.getName(), null, template.getSourceTemplateId(), 0L);
-			_usageEventDao.persist(usageEvent);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_TEMPLATE_CREATE, template.getAccountId(), host.getDataCenterId(),
+                    template.getId(), template.getName(), null, template.getSourceTemplateId(), 0L,
+                    template.getClass().getName(), template.getUuid());
 		}
 	}
 	
@@ -131,7 +133,7 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 	
 	@Override @DB
 	public boolean delete(TemplateProfile profile) {
-		VMTemplateVO template = profile.getTemplate();
+		VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
     	Long templateId = template.getId();
     	boolean success = true;
     	String zoneName;
@@ -172,8 +174,8 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 					_tmpltZoneDao.remove(templateZone.getId());
 				}
 
-				UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), pxeServer.getDataCenterId(), templateId, null);
-				_usageEventDao.persist(usageEvent);
+                UsageEventUtils.publishUsageEvent(eventType, account.getId(), pxeServer.getDataCenterId(),
+                        templateId, null, template.getClass().getName(), template.getUuid());
 			} finally {
 				if (lock != null) {
 					_tmpltHostDao.releaseFromLockTable(lock.getId());

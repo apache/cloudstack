@@ -18,19 +18,18 @@ package org.apache.cloudstack.api.command.user.nat;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.response.IPAddressResponse;
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -115,7 +114,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
             UserContext.current().setEventDetails("Rule Id: "+ getEntityId());
 
             if (getOpenFirewall()) {
-                result = result && _firewallService.applyFirewallRules(ipAddressId, UserContext.current().getCaller());
+                result = result && _firewallService.applyIngressFirewallRules(ipAddressId, UserContext.current().getCaller());
             }
 
             result = result && _rulesService.applyStaticNatRules(ipAddressId, UserContext.current().getCaller());

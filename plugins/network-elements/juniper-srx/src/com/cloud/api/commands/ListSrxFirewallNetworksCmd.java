@@ -11,13 +11,15 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
+// KIND, either express or implied.  See the License for the 
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.inject.Inject;
 
 import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
@@ -40,7 +42,7 @@ public class ListSrxFirewallNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListSrxFirewallNetworksCmd.class.getName());
     private static final String s_name = "listsrxfirewallnetworksresponse";
-    @PlugService JuniperSRXFirewallElementService _srxFwService;
+    @Inject JuniperSRXFirewallElementService _srxFwService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

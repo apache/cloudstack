@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Random;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -48,7 +49,7 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.storage.resource.LocalSecondaryStorageResource;
 import com.cloud.storage.resource.NfsSecondaryStorageResource;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.net.NfsUtils;
 import com.cloud.utils.script.Script;
 
@@ -204,6 +205,8 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         Map<LocalSecondaryStorageResource, Map<String, String>> srs = new HashMap<LocalSecondaryStorageResource, Map<String, String>>();
         
         LocalSecondaryStorageResource storage = new LocalSecondaryStorageResource();
+        storage = ComponentContext.inject(storage);
+        
         Map<String, String> details = new HashMap<String, String>();
         
         File file = new File(uri);
@@ -233,6 +236,7 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         Map<ServerResource, Map<String, String>> srs = new HashMap<ServerResource, Map<String, String>>();
         
         DummySecondaryStorageResource storage = new DummySecondaryStorageResource(_useServiceVM);
+        storage = ComponentContext.inject(storage);
         
         Map<String, String> details = new HashMap<String, String>();
         

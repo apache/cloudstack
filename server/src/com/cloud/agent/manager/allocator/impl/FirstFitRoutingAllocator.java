@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.ejb.Local;
 import org.apache.log4j.NDC;
+
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;

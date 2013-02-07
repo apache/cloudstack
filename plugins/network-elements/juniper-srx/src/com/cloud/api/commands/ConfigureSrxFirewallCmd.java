@@ -11,10 +11,12 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
+// KIND, either express or implied.  See the License for the 
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.api.commands;
+
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
@@ -24,7 +26,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.SrxFirewallResponse;
 import com.cloud.event.EventTypes;
@@ -33,7 +34,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.ExternalFirewallDeviceVO;
+import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -43,7 +44,7 @@ public class ConfigureSrxFirewallCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigureSrxFirewallCmd.class.getName());
     private static final String s_name = "configuresrxfirewallresponse";
-    @PlugService JuniperSRXFirewallElementService _srxFwService;
+    @Inject JuniperSRXFirewallElementService _srxFwService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

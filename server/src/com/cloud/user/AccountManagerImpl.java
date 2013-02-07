@@ -20,8 +20,8 @@ import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -34,24 +34,29 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.vo.ControlledViewEntity;
 
 
-import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
-import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.region.RegionManager;
+
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceLimit;
@@ -64,7 +69,6 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -72,16 +76,16 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkVO;
-import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
@@ -114,10 +118,9 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -140,11 +143,11 @@ import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+@Component
 @Local(value = { AccountManager.class, AccountService.class })
-public class AccountManagerImpl implements AccountManager, AccountService, Manager {
+public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
     public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
 
-    private String _name;
     @Inject
     private AccountDao _accountDao;
     @Inject
@@ -214,6 +217,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Inject
     private IPAddressDao _ipAddressDao;
     @Inject
+    private RegionManager _regionMgr;
+    
     private VpcManager _vpcMgr;
     @Inject
     private DomainRouterDao _routerDao;
@@ -222,7 +227,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Inject
     private AutoScaleManager _autoscaleMgr;
 
-    private Adapters<UserAuthenticator> _userAuthenticators;
+    @Inject
+    private List<UserAuthenticator> _userAuthenticators;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 
@@ -230,14 +236,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     UserVO _systemUser;
     AccountVO _systemAccount;
-    @Inject(adapter = SecurityChecker.class)
-    Adapters<SecurityChecker> _securityCheckers;
+
+    @Inject
+    List<SecurityChecker> _securityCheckers;
     int _cleanupInterval;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
         _systemAccount = _accountDao.findById(AccountVO.ACCOUNT_ID_SYSTEM);
         if (_systemAccount == null) {
             throw new ConfigurationException("Unable to find the system account using " + Account.ACCOUNT_ID_SYSTEM);
@@ -248,9 +253,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new ConfigurationException("Unable to find the system user using " + User.UID_SYSTEM);
         }
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> configs = configDao.getConfiguration(params);
+        Map<String, String> configs = _configDao.getConfiguration(params);
 
         String loginAttempts = configs.get(Config.IncorrectLoginAttemptsAllowed.key());
         _allowedLoginAttempts = NumbersUtil.parseInt(loginAttempts, 5);
@@ -258,22 +261,15 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         String value = configs.get(Config.AccountCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
 
-        _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
-        if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
-            s_logger.error("Unable to find an user authenticator.");
-        }
-
         return true;
     }
 
     @Override
     public UserVO getSystemUser() {
-        return _systemUser;
+        if (_systemUser == null) {
+            _systemUser = _userDao.findById(User.UID_SYSTEM);
     }
-
-    @Override
-    public String getName() {
-        return _name;
+        return _systemUser;
     }
 
     @Override
@@ -287,6 +283,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return true;
     }
 
+    @Override
     public AccountVO getSystemAccount() {
         if (_systemAccount == null) {
             _systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
@@ -766,7 +763,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account")
     public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
-            Map<String, String> details) {
+            Map<String, String> details, String accountUUID, String userUUID, Integer regionId) {
 
         if (accountName == null) {
             accountName = userName;
@@ -808,29 +805,55 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        if(regionId == null){
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
 
-        // create account
-        Account account = createAccount(accountName, accountType, domainId, networkDomain, details);
-        long accountId = account.getId();
+        	// create account
+        	AccountVO account = createAccount(accountName, accountType, domainId, networkDomain, details, UUID.randomUUID().toString(), _regionMgr.getId());
+        	long accountId = account.getId();
 
-        // create the first user for the account
-        UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone);
+        	// create the first user for the account
+        	UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone);
 
-        if (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            // set registration token
-            byte[] bytes = (domainId + accountName + userName + System.currentTimeMillis()).getBytes();
-            String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
-            user.setRegistrationToken(registrationToken);
+        	if (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+        		// set registration token
+        		byte[] bytes = (domainId + accountName + userName + System.currentTimeMillis()).getBytes();
+        		String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
+        		user.setRegistrationToken(registrationToken);
+        	}
+        	txn.commit();
+        	//Propagate Add account to other Regions
+        	_regionMgr.propagateAddAccount(userName, password, firstName, lastName, email, timezone, accountName, accountType, domainId, 
+        			networkDomain, details, account.getUuid(), user.getUuid());
+        	//check success
+            return _userAccountDao.findById(user.getId());
+        } else {
+        	// Account is propagated from another Region
+
+        	Transaction txn = Transaction.currentTxn();
+            txn.start();
+
+            // create account
+            AccountVO account = createAccount(accountName, accountType, domainId, networkDomain, details, accountUUID, regionId);
+            long accountId = account.getId();
+
+            // create the first user for the account
+            UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone, userUUID, regionId);
+
+            if (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                // set registration token
+                byte[] bytes = (domainId + accountName + userName + System.currentTimeMillis()).getBytes();
+                String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
+                user.setRegistrationToken(registrationToken);
+            }
+            txn.commit();
+            return _userAccountDao.findById(user.getId());
         }
-
-        txn.commit();
-        return _userAccountDao.findById(user.getId());
     }
 
     @Override
-    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId) {
+    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID, Integer regionId) {
 
         // default domain to ROOT if not specified
         if (domainId == null) {
@@ -858,9 +881,14 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
         }
-
-        UserVO user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone);
-
+        UserVO user = null;
+        if(regionId == null){
+        	user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone);
+        	//Propagate Add user to peer Regions
+        	_regionMgr.propagateAddUser(userName, password, firstName, lastName, email, timeZone, accountName, domain.getUuid(), user.getUuid());
+        } else {
+        	user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone, userUUID, regionId);
+        }
         return user;
     }
 
@@ -938,8 +966,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         if (password != null) {
             String encodedPassword = null;
-            for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
-                UserAuthenticator authenticator = en.nextElement();
+            for (Iterator<UserAuthenticator> en = _userAuthenticators.iterator(); en.hasNext();) {
+                UserAuthenticator authenticator = en.next();
                 encodedPassword = authenticator.encode(password);
                 if (encodedPassword != null) {
                     break;
@@ -1167,7 +1195,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
             throw new InvalidParameterValueException("The account id=" + accountId + " manages project(s) with ids " + projectIds + "and can't be removed");
         }
-
         return deleteAccount(account, callerUserId, caller);
     }
 
@@ -1269,7 +1296,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         String newAccountName = cmd.getNewName();
         String networkDomain = cmd.getNetworkDomain();
         Map<String, String> details = cmd.getDetails();
-
+        
         boolean success = false;
         Account account = null;
         if (accountId != null) {
@@ -1649,7 +1676,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @DB
-    public Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details) {
+    public AccountVO createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details, String uuid, int regionId) {
         // Validate domain
         Domain domain = _domainMgr.getDomain(domainId);
         if (domain == null) {
@@ -1693,7 +1720,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        Account account = _accountDao.persist(new AccountVO(accountName, domainId, networkDomain, accountType));
+        AccountVO account = _accountDao.persist(new AccountVO(accountName, domainId, networkDomain, accountType, uuid, regionId));
 
         if (account == null) {
             throw new CloudRuntimeException("Failed to create account name " + accountName + " in domain id=" + domainId);
@@ -1710,7 +1737,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         // Create default security group
         _networkGroupMgr.createDefaultSecurityGroup(accountId);
-
         txn.commit();
 
         return account;
@@ -1722,10 +1748,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
-
+        
         String encodedPassword = null;
-        for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
-            UserAuthenticator authenticator = en.nextElement();
+        for (UserAuthenticator  authenticator : _userAuthenticators) {
             encodedPassword = authenticator.encode(password);
             if (encodedPassword != null) {
                 break;
@@ -1734,8 +1759,31 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (encodedPassword == null) {
         	throw new CloudRuntimeException("Failed to encode password");
         }
+        
+        UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone, UUID.randomUUID().toString(), _regionMgr.getId()));
 
-        UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone));
+        return user;
+    }
+
+    //ToDo Add events??
+    public UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String uuid, int regionId) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
+        }
+
+        String encodedPassword = null;
+        for (Iterator<UserAuthenticator> en = _userAuthenticators.iterator(); en.hasNext();) {
+            UserAuthenticator authenticator = en.next();
+            encodedPassword = authenticator.encode(password);
+            if (encodedPassword != null) {
+                break;
+            }
+        }
+        if (encodedPassword == null) {
+        	throw new CloudRuntimeException("Failed to encode password");
+        }
+        
+        UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone, uuid, regionId));
 
         return user;
     }
@@ -1744,7 +1792,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public void logoutUser(Long userId) {
         UserAccount userAcct = _userAccountDao.findById(userId);
         if (userAcct != null) {
-            EventUtils.saveEvent(userId, userAcct.getAccountId(), userAcct.getDomainId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out");
+            ActionEventUtils.onActionEvent(userId, userAcct.getAccountId(), userAcct.getDomainId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out");
         } // else log some kind of error event? This likely means the user doesn't exist, or has been deleted...
     }
 
@@ -1875,10 +1923,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
             if (NetUtils.isValidIp(loginIpAddress)) {
-                EventUtils.saveEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
+                ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
                         "user has logged in from IP Address " + loginIpAddress);
             } else {
-                EventUtils.saveEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
+                ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
                         "user has logged in. The IP Address cannot be determined");
             }
             return user;
@@ -1896,8 +1944,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         boolean authenticated = false;
-        for (Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration(); en.hasMoreElements();) {
-            UserAuthenticator authenticator = en.nextElement();
+        for(UserAuthenticator authenticator : _userAuthenticators) {
             if (authenticator.authenticate(username, password, domainId, requestParameters)) {
                 authenticated = true;
                 break;
@@ -1966,6 +2013,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override @DB
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
+    	//Send keys to other Regions
         Long userId = cmd.getId();
 
         User user = getUserIncludingRemoved(userId);
@@ -2194,7 +2242,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
 
-    @Override
+	@Override
     public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
             boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
 

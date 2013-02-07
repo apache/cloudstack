@@ -21,14 +21,14 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.server.ManagementServer;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 
 
@@ -36,7 +36,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class PlainTextUserAuthenticator extends DefaultUserAuthenticator {
 	public static final Logger s_logger = Logger.getLogger(PlainTextUserAuthenticator.class);
 	
-	private UserAccountDao _userAccountDao;
+	@Inject private UserAccountDao _userAccountDao;
 	
 	@Override
 	public boolean authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters ) {
@@ -83,8 +83,6 @@ public class PlainTextUserAuthenticator extends DefaultUserAuthenticator {
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
 		super.configure(name, params);
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-		_userAccountDao = locator.getDao(UserAccountDao.class);
 		return true;
 	}
 

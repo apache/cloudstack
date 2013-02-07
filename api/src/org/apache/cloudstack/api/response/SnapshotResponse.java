@@ -20,11 +20,21 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
+
 import com.cloud.serializer.Param;
 import com.cloud.storage.Snapshot;
 import com.google.gson.annotations.SerializedName;
+import com.cloud.serializer.Param;
+import com.cloud.storage.Snapshot;
+import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+
+import java.util.Date;
+import java.util.List;
 
 @EntityReference(value=Snapshot.class)
 @SuppressWarnings("unused")
@@ -81,7 +91,7 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
 
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the snapshot. BackedUp means that snapshot is ready to be used; Creating - the snapshot is being allocated on the primary storage; BackingUp - the snapshot is being backed up on secondary storage")
-    private Snapshot.Status state;
+    private Snapshot.State state;
 
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with snapshot", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
@@ -149,7 +159,7 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
         this.intervalType = intervalType;
     }
 
-    public void setState(Snapshot.Status state) {
+    public void setState(Snapshot.State state) {
         this.state = state;
     }
 

@@ -25,6 +25,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.upgrade.dao.VersionVO.Step;
 import com.cloud.utils.db.DB;
@@ -37,6 +38,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value = VersionDao.class)
 @DB(txn = false)
 public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements VersionDao {

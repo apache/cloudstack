@@ -16,24 +16,36 @@
 // under the License.
 package com.cloud.network;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.utils.fsm.FiniteState;
-import com.cloud.utils.fsm.StateMachine;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.Mode;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.utils.fsm.StateObject;
+
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * owned by an account.
  */
-public interface Network extends ControlledEntity, InternalIdentity, Identity {
+public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity {
 
     public enum GuestType {
         Shared,
@@ -48,7 +60,7 @@ public interface Network extends ControlledEntity, InternalIdentity, Identity {
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
         public static final Service Gateway = new Service("Gateway");
         public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols,
-                Capability.MultipleIps, Capability.TrafficStatistics);
+                Capability.MultipleIps, Capability.TrafficStatistics, Capability.SupportedTrafficDirection, Capability.SupportedEgressProtocols);
         public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation,
                 Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps,
                 Capability.SupportedStickinessMethods, Capability.ElasticLb);
@@ -123,7 +135,8 @@ public interface Network extends ControlledEntity, InternalIdentity, Identity {
         public static final Provider SecurityGroupProvider = new Provider("SecurityGroupProvider", false);
         public static final Provider VPCVirtualRouter = new Provider("VpcVirtualRouter", false);
         public static final Provider None = new Provider("None", false);
-        public static final Provider NiciraNvp = new Provider("NiciraNvp", true);
+        // NiciraNvp is not an "External" provider, otherwise we get in trouble with NetworkServiceImpl.providersConfiguredForExternalNetworking 
+        public static final Provider NiciraNvp = new Provider("NiciraNvp", false);  
         public static final Provider MidokuraMidonet = new Provider("MidokuraMidonet", true);
 
         private String name;
@@ -173,6 +186,8 @@ public interface Network extends ControlledEntity, InternalIdentity, Identity {
         public static final Capability ElasticLb = new Capability("ElasticLb");
         public static final Capability AutoScaleCounters = new Capability("AutoScaleCounters");
         public static final Capability InlineMode = new Capability("InlineMode");
+        public static final Capability SupportedTrafficDirection = new Capability("SupportedTrafficDirection");
+        public static final Capability SupportedEgressProtocols = new Capability("SupportedEgressProtocols");
 
         private String name;
 
@@ -202,7 +217,8 @@ public interface Network extends ControlledEntity, InternalIdentity, Identity {
         OperationFailed;
     }
 
-    enum State implements FiniteState<State, Event> {
+    public enum State {
+
         Allocated("Indicates the network configuration is in allocated but not setup"),
         Setup("Indicates the network configuration is setup"),
         Implementing("Indicates the network configuration is being implemented"),
@@ -210,39 +226,8 @@ public interface Network extends ControlledEntity, InternalIdentity, Identity {
         Shutdown("Indicates the network configuration is being destroyed"),
         Destroy("Indicates that the network is destroyed");
 
+        protected static final StateMachine2<State, Network.Event, Network> s_fsm = new StateMachine2<State, Network.Event, Network>();
 
-        @Override
-        public StateMachine<State, Event> getStateMachine() {
-            return s_fsm;
-        }
-
-        @Override
-        public State getNextState(Event event) {
-            return s_fsm.getNextState(this, event);
-        }
-
-        @Override
-        public List<State> getFromStates(Event event) {
-            return s_fsm.getFromStates(this, event);
-        }
-
-        @Override
-        public Set<Event> getPossibleEvents() {
-            return s_fsm.getPossibleEvents(this);
-        }
-
-        String _description;
-
-        @Override
-        public String getDescription() {
-            return _description;
-        }
-
-        private State(String description) {
-            _description = description;
-        }
-
-        private static StateMachine<State, Event> s_fsm = new StateMachine<State, Event>();
         static {
             s_fsm.addTransition(State.Allocated, Event.ImplementNetwork, State.Implementing);
             s_fsm.addTransition(State.Implementing, Event.OperationSucceeded, State.Implemented);
@@ -251,8 +236,43 @@ public interface Network extends ControlledEntity, InternalIdentity, Identity {
             s_fsm.addTransition(State.Shutdown, Event.OperationSucceeded, State.Allocated);
             s_fsm.addTransition(State.Shutdown, Event.OperationFailed, State.Implemented);
         }
+
+        public static StateMachine2<State, Network.Event, Network> getStateMachine() {
+            return s_fsm;
+        }
+
+        String _description;
+        private State(String description) {
+            _description = description;
+        }
     }
 
+    public class IpAddresses {
+    	private String ip4Address;
+    	private String ip6Address;
+    	
+    	public IpAddresses(String ip4Address, String ip6Address) {
+    		this.setIp4Address(ip4Address);
+    		this.setIp6Address(ip6Address);
+    	}
+
+		public String getIp4Address() {
+			return ip4Address;
+		}
+
+		public void setIp4Address(String ip4Address) {
+			this.ip4Address = ip4Address;
+		}
+
+		public String getIp6Address() {
+			return ip6Address;
+		}
+
+		public void setIp6Address(String ip6Address) {
+			this.ip6Address = ip6Address;
+		}
+    }
+    
     String getName();
 
     Mode getMode();
@@ -265,6 +285,10 @@ public interface Network extends ControlledEntity, InternalIdentity, Identity {
 
     String getCidr();
 
+    String getIp6Gateway();
+    
+    String getIp6Cidr();
+    
     long getDataCenterId();
 
     long getNetworkOfferingId();
@@ -286,6 +310,8 @@ public interface Network extends ControlledEntity, InternalIdentity, Identity {
     Long getPhysicalNetworkId();
 
     void setPhysicalNetworkId(Long physicalNetworkId);
+
+    public void setTrafficType(TrafficType type);
 
     ACLType getAclType();
 

@@ -20,6 +20,8 @@ package com.cloud.api.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
@@ -57,7 +59,7 @@ public class ListExternalLoadBalancersCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @PlugService
+    @Inject
     F5ExternalLoadBalancerElementService _f5DeviceManagerService;
 
     @Override

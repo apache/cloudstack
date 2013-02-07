@@ -177,7 +177,7 @@ resizeqcow2() {
   fi
   ##### end sanity #####
 
-  $actualsize=`qemu-img info $path | grep "virtual size" | sed -re  's/^.*\(([0-9]+).*$/\1/g'`
+  actualsize=`qemu-img info $path | grep "virtual size" | sed -re  's/^.*\(([0-9]+).*$/\1/g'`
 
   if [ $actualsize -ne $currentsize ]
   then

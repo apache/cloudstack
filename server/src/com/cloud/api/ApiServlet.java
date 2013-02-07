@@ -23,6 +23,9 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -32,51 +35,40 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
-import com.cloud.cluster.StackMaid;
 import com.cloud.exception.CloudAuthenticationException;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component("apiServlet")
 @SuppressWarnings("serial")
 public class ApiServlet extends HttpServlet {
     public static final Logger s_logger = Logger.getLogger(ApiServlet.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
-    private ApiServer _apiServer = null;
-    private AccountService _accountMgr = null;
+    @Inject ApiServer _apiServer;
+    @Inject AccountService _accountMgr;
 
     public ApiServlet() {
-        super();
-        _apiServer = ApiServer.getInstance();
-        if (_apiServer == null) {
-            throw new CloudRuntimeException("ApiServer not initialized");
-        }
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _accountMgr = locator.getManager(AccountService.class);
     }
 
     @Override
+    public void init(ServletConfig config) throws ServletException {
+    	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
+    }
+    
+    @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        try {
-            processRequest(req, resp);
-        } finally {
-            StackMaid.current().exitCleanup();
-        }
+        processRequest(req, resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
-        try {
-            processRequest(req, resp);
-        } finally {
-            StackMaid.current().exitCleanup();
-        }
+        processRequest(req, resp);
     }
 
     private void utf8Fixup(HttpServletRequest req, Map<String, Object[]> params) {
@@ -299,7 +291,7 @@ public class ApiServlet extends HttpServlet {
                  * params.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { accountObj }); } else {
                  * params.put(BaseCmd.Properties.USER_ID.getName(), new String[] { userId });
                  * params.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { accountObj }); } }
-                 *
+                 * 
                  * // update user context info here so that we can take information if the request is authenticated // via api
                  * key mechanism updateUserContext(params, session != null ? session.getId() : null);
                  */
@@ -307,8 +299,8 @@ public class ApiServlet extends HttpServlet {
                 auditTrailSb.insert(0, "(userId=" + UserContext.current().getCallerUserId() + " accountId="
                         + UserContext.current().getCaller().getId() + " sessionId=" + (session != null ? session.getId() : null) + ")");
 
-                String response = _apiServer.handleRequest(params, false, responseType, auditTrailSb);
-                writeResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType);
+                    String response = _apiServer.handleRequest(params, responseType, auditTrailSb);
+                    writeResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType);
             } else {
                 if (session != null) {
                     try {
@@ -324,12 +316,12 @@ public class ApiServlet extends HttpServlet {
             }
         } catch (ServerApiException se) {
             String serializedResponseText = _apiServer.getSerializedApiError(se, params, responseType);
-            resp.setHeader("X-Description", se.getDescription());
+                resp.setHeader("X-Description", se.getDescription());
             writeResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType);
-            auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
+                auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
         } catch (Exception ex) {
-            s_logger.error("unknown exception writing api response", ex);
-            auditTrailSb.append(" unknown exception writing api response");
+                s_logger.error("unknown exception writing api response", ex);
+                auditTrailSb.append(" unknown exception writing api response");
         } finally {
             s_accessLogger.info(auditTrailSb.toString());
             if (s_logger.isDebugEnabled()) {
@@ -344,9 +336,9 @@ public class ApiServlet extends HttpServlet {
      * private void updateUserContext(Map<String, Object[]> requestParameters, String sessionId) { String userIdStr =
      * (String)(requestParameters.get(BaseCmd.Properties.USER_ID.getName())[0]); Account accountObj =
      * (Account)(requestParameters.get(BaseCmd.Properties.ACCOUNT_OBJ.getName())[0]);
-     *
+     * 
      * Long userId = null; Long accountId = null; if(userIdStr != null) userId = Long.parseLong(userIdStr);
-     *
+     * 
      * if(accountObj != null) accountId = accountObj.getId(); UserContext.updateContext(userId, accountId, sessionId); }
      */
 
@@ -402,13 +394,10 @@ public class ApiServlet extends HttpServlet {
                     }
                 }
             }
-            sb.append(" }");
-            sb.append(", \"cloudstack-version\": \"");
-            sb.append(ApiDBUtils.getVersion());
-            sb.append("\" }");
+            sb.append(" } }");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<loginresponse cloudstack-version=\"" + ApiDBUtils.getVersion() + "\">");
+            sb.append("<loginresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
             sb.append("<timeout>" + inactiveInterval + "</timeout>");
             Enumeration attrNames = session.getAttributeNames();
             if (attrNames != null) {
@@ -435,13 +424,10 @@ public class ApiServlet extends HttpServlet {
     private String getLogoutSuccessResponse(String responseType) {
         StringBuffer sb = new StringBuffer();
         if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            sb.append("{ \"logoutresponse\" : { \"description\" : \"success\" }");
-            sb.append(", \"cloudstack-version\": \"");
-            sb.append(ApiDBUtils.getVersion());
-            sb.append("\" }");
+            sb.append("{ \"logoutresponse\" : { \"description\" : \"success\" } }");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<logoutresponse cloudstack-version=\"" + ApiDBUtils.getVersion() + "\">");
+            sb.append("<logoutresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
             sb.append("<description>success</description>");
             sb.append("</logoutresponse>");
         }

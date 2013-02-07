@@ -1385,15 +1385,28 @@
 											args.$select.change(function() {											  
 												var $form = $(this).closest("form");
                         
-												if ($(this).val() == "Shared") {                          
-													$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').attr("disabled", "disabled"); //make it read-only
-													$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').attr('checked', true);	//make it checked
-												} else {  //$(this).val() == "Isolated" 
-													$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').removeAttr("disabled"); //make it editable													
+										if ($(this).val() == "Shared") {                          
+											 $form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').attr("disabled", "disabled"); //make it read-only
+											 $form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').attr('checked', true);	//make it checked
+											 $form.find('.form-item[rel=isPersistent]').find('input[type=checkbox]').attr("disabled","disabled");
+
+
+                                                                                } else {  //$(this).val() == "Isolated" 
+											$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').removeAttr("disabled"); //make it editable													
+                                                                                         $form.find('.form-item[rel=isPersistent]').find('input[type=checkbox]').removeAttr("disabled");
+
 												}												
 											});
                     }
                   },
+
+                 isPersistent:{
+                   label:'Persistent ',
+                   isBoolean:true,
+                   isChecked:false
+
+                 },
+
 
                   specifyVlan: { label: 'label.specify.vlan', isBoolean: true, docID: 'helpNetworkOfferingSpecifyVLAN' },
 
@@ -1757,18 +1770,31 @@
 
 								
 								if(inputData['guestIpType'] == "Shared"){ //specifyVlan checkbox is disabled, so inputData won't include specifyVlan
-								  inputData['specifyVlan'] = true;  //hardcode inputData['specifyVlan'] 
+								  inputData['specifyVlan'] = true;  //hardcode inputData['specifyVlan']
 									inputData['specifyIpRanges'] = true;
+                                                                        inputData['isPersistent'] = false;
 								}
 								else if (inputData['guestIpType'] == "Isolated") { //specifyVlan checkbox is shown
 									if (inputData['specifyVlan'] == 'on') { //specifyVlan checkbox is checked
 										inputData['specifyVlan'] = true;	
-                    inputData['specifyIpRanges'] = true;										
+                                                                                inputData['specifyIpRanges'] = true;							
+
+                    
+
+			
 									}
 									else { //specifyVlan checkbox is unchecked
 										inputData['specifyVlan'] = false;
 										inputData['specifyIpRanges'] = false;
-									}					
+									}	
+                                                                        
+                                                                        if(inputData['isPersistent'] == 'on') {  //It is a persistent network
+                                                                               inputData['isPersistent'] = true;
+                                                                        }
+                                                                        else {    //Isolated Network with Non-persistent network
+                                                                               inputData['isPersistent'] = false;
+                                                                                              }
+				
 								}			
 								
 																
@@ -1788,7 +1814,7 @@
                 });      
 												
 								if(args.$form.find('.form-item[rel=availability]').css("display") == "none")
-                  inputData['availability'] = 'Optional';		
+                  inputData['availability'] = 'Optional';
 								
                 if(args.$form.find('.form-item[rel=serviceOfferingId]').css("display") == "none")									
 									delete inputData.serviceOfferingId;
@@ -1992,6 +2018,12 @@
                     guestiptype: {
                       label: 'label.guest.type'
                     },
+
+                    ispersistent:{
+                      label:'Persistent ',
+                      converter:cloudStack.converters.toBooleanText
+                     },
+
                     availability: {
                       label: 'label.availability',
                       isEditable: true,

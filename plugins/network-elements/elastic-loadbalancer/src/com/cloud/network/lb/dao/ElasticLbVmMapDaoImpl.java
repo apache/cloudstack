@@ -18,15 +18,19 @@ package com.cloud.network.lb.dao;
 
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
 
 import com.cloud.network.ElasticLbVmMapVO;
-import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
@@ -35,22 +39,27 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.DomainRouterDaoImpl;
 
+@Component
 @Local(value={ElasticLbVmMapDao.class})
 public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long> implements ElasticLbVmMapDao {
-    protected final DomainRouterDao _routerDao = ComponentLocator.inject(DomainRouterDaoImpl.class);
-    protected final LoadBalancerDao _loadbalancerDao = ComponentLocator.inject(LoadBalancerDaoImpl.class);
+    @Inject protected DomainRouterDao _routerDao;
+    @Inject protected LoadBalancerDao _loadbalancerDao;
 
     
-    protected final SearchBuilder<ElasticLbVmMapVO> AllFieldsSearch;
-    protected final SearchBuilder<ElasticLbVmMapVO> UnusedVmSearch;
-    protected final SearchBuilder<ElasticLbVmMapVO> LoadBalancersForElbVmSearch;
+    protected SearchBuilder<ElasticLbVmMapVO> AllFieldsSearch;
+    protected SearchBuilder<ElasticLbVmMapVO> UnusedVmSearch;
+    protected SearchBuilder<ElasticLbVmMapVO> LoadBalancersForElbVmSearch;
 
 
-    protected final SearchBuilder<DomainRouterVO> ElbVmSearch;
+    protected SearchBuilder<DomainRouterVO> ElbVmSearch;
     
-    protected final SearchBuilder<LoadBalancerVO> LoadBalancerSearch;
+    protected SearchBuilder<LoadBalancerVO> LoadBalancerSearch;
    
-    protected ElasticLbVmMapDaoImpl() {
+    public ElasticLbVmMapDaoImpl() {
+    }
+    
+    @PostConstruct
+    protected void init() {
         AllFieldsSearch  = createSearchBuilder();
         AllFieldsSearch.and("ipId", AllFieldsSearch.entity().getIpAddressId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("lbId", AllFieldsSearch.entity().getLbId(), SearchCriteria.Op.EQ);

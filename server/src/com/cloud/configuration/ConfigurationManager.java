@@ -173,6 +173,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param trafficType
      * @param tags
      * @param specifyVlan
+     * @param isPersistent
      *            ;
      * @param networkRate
      *            TODO
@@ -196,9 +197,9 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 
     NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap,
             boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap,
-            boolean specifyIpRanges);
+            boolean specifyIpRanges, boolean isPersistent);
 
-    Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, String vlanId, Account vlanOwner) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
+    Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, String vlanId, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
 
     void createDefaultSystemNetworks(long zoneId) throws ConcurrentOperationException;
 

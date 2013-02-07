@@ -18,7 +18,6 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.storage.StoragePool;
 
 public class ResizeVolumeCommand extends Command {
     private String path;

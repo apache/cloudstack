@@ -20,21 +20,26 @@ import junit.framework.TestCase;
 
 import org.apache.log4j.*;
 
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.spi.RootLogger;
 import org.apache.log4j.spi.ThrowableRenderer;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.CharArrayWriter;
 import java.io.Writer;
 
-
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations="classpath:/testContext.xml")
 public class CglibThrowableRendererTest extends TestCase {
     static Logger another = Logger.getLogger("TEST");
 
     private final static Logger s_logger = Logger.getLogger(CglibThrowableRendererTest.class);
-    public static class Test {
+    public static class TestClass {
         @DB
         public void exception1() {
             throw new IllegalArgumentException("What a bad exception");
@@ -65,12 +70,13 @@ public class CglibThrowableRendererTest extends TestCase {
         alternateRoot.addAppender(new WriterAppender(new SimpleLayout(), writer));
         return alternateRoot;
     }
-    
+
+    @Test
     public void testException() {
         Writer w = new CharArrayWriter();
         Logger alt = getAlternateLogger(w, null);
 
-        Test test = ComponentLocator.inject(Test.class);
+        TestClass test = ComponentContext.inject(TestClass.class);
         try {
             test.exception();
         } catch (Exception e) {

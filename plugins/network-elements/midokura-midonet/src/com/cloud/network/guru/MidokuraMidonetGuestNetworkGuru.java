@@ -23,6 +23,7 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.offering.NetworkOffering;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
 
@@ -32,6 +33,7 @@ import javax.ejb.Local;
  * Time: 10:46 AM
  */
 
+@Component
 @Local(value = NetworkGuru.class)
 public class MidokuraMidonetGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(MidokuraMidonetGuestNetworkGuru.class);

@@ -34,8 +34,9 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import org.springframework.stereotype.Component;
 
-
+@Component
 @Local(value={DiskOfferingJoinDao.class})
 public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, Long> implements DiskOfferingJoinDao {
     public static final Logger s_logger = Logger.getLogger(DiskOfferingJoinDaoImpl.class);

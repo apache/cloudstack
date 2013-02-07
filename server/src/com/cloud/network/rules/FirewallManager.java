@@ -20,7 +20,7 @@ import java.util.List;
 
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IPAddressVO;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -45,7 +45,7 @@ public interface FirewallManager extends FirewallService {
     void detectRulesConflict(FirewallRule newRule) throws NetworkRuleConflictException;
 
     void validateFirewallRule(Account caller, IPAddressVO ipAddress, Integer portStart, Integer portEnd, String proto,
-            Purpose purpose, FirewallRuleType type);
+            Purpose purpose, FirewallRuleType type, Long networkid, FirewallRule.TrafficType trafficType);
 
     boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError, boolean updateRulesInDB) throws ResourceUnavailableException;
 
@@ -68,8 +68,8 @@ public interface FirewallManager extends FirewallService {
      */
     boolean revokeFirewallRule(long ruleId, boolean apply, Account caller, long userId);
 
-    FirewallRule createFirewallRule(long ipAddrId, Account caller, String xId, Integer portStart, Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType, Long relatedRuleId,
-            FirewallRule.FirewallRuleType type, long networkId)
+    FirewallRule createFirewallRule(Long ipAddrId, Account caller, String xId, Integer portStart, Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType, Long relatedRuleId,
+            FirewallRule.FirewallRuleType type, Long networkId, FirewallRule.TrafficType traffictype)
             throws NetworkRuleConflictException;
 
     FirewallRule createRuleForAllCidrs(long ipAddrId, Account caller, Integer startPort, Integer endPort, String protocol, Integer icmpCode, Integer icmpType, Long relatedRuleId, long networkId) throws NetworkRuleConflictException;

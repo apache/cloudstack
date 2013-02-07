@@ -30,10 +30,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="storage_pool")
@@ -78,6 +76,15 @@ public class StoragePoolVO implements StoragePool {
     @Column(name="status",  updatable=true, nullable=false)
     @Enumerated(value=EnumType.STRING)
     private StoragePoolStatus status;
+    
+    // TODO, disable persisency of storageProvider and storageType, javelin new code not
+    // sync with the schema!
+    
+    // @Column(name="storage_provider", updatable=true, nullable=false)
+    @Transient private String storageProvider;
+    
+    // Column(name="storage_type", nullable=false)
+    @Transient private String storageType;
     
 	@Override
     public long getId() {
@@ -132,6 +139,24 @@ public class StoragePoolVO implements StoragePool {
 		return availableBytes;
 	}
 
+	@Override
+	public String getStorageProvider() {
+		return storageProvider;
+	}
+	
+	public void setStorageProvider(String provider) {
+		storageProvider = provider;
+	}
+	
+	@Override
+	public String getStorageType() {
+		return storageType;
+	}
+	
+	public void setStorageType(String type) {
+		storageType = type;
+	}
+	
 	@Override
     public long getCapacityBytes() {
 		return capacityBytes;
@@ -198,7 +223,7 @@ public class StoragePoolVO implements StoragePool {
         this.path = hostPath;
         this.port = port;
         this.podId = podId;
-        this.setStatus(StoragePoolStatus.Up);
+        this.setStatus(StoragePoolStatus.Creating);
     }
     
     public StoragePoolVO(StoragePoolVO that) {
@@ -210,7 +235,7 @@ public class StoragePoolVO implements StoragePool {
         this.hostAddress = hostAddress;
         this.port = port;
         this.path = path;
-        this.setStatus(StoragePoolStatus.Up);
+        this.setStatus(StoragePoolStatus.Creating);
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -220,7 +245,7 @@ public class StoragePoolVO implements StoragePool {
         this.port = port;
         this.path = path;
         this.userInfo = userInfo;
-        this.setStatus(StoragePoolStatus.Up);
+        this.setStatus(StoragePoolStatus.Creating);
         this.uuid = UUID.randomUUID().toString();
     }
     

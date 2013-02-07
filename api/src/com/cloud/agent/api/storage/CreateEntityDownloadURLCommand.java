@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent.api.storage;
 
-import com.cloud.agent.api.Command;
 
 public class CreateEntityDownloadURLCommand extends AbstractDownloadCommand {
 

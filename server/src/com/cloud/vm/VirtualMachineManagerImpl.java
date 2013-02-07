@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,9 +33,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -70,7 +71,6 @@ import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ClusterManager;
-import com.cloud.cluster.StackMaid;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -110,8 +110,8 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkModel;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
@@ -140,9 +140,7 @@ import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -162,10 +160,9 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = VirtualMachineManager.class)
-public class VirtualMachineManagerImpl implements VirtualMachineManager, Listener {
+public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, Listener {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineManagerImpl.class);
 
-    String _name;
     @Inject
     protected StorageManager _storageMgr;
     @Inject
@@ -231,14 +228,17 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     @Inject
     protected NetworkDao _networkDao;
 
-    @Inject(adapter = DeploymentPlanner.class)
-    protected Adapters<DeploymentPlanner> _planners;
+    @Inject
+    protected List<DeploymentPlanner> _planners;
 
-    @Inject(adapter = HostAllocator.class)
-    protected Adapters<HostAllocator> _hostAllocators;
+    @Inject
+    protected List<HostAllocator> _hostAllocators;
 
     @Inject
     protected ResourceManager _resourceMgr;
+
+    @Inject
+    protected ConfigurationDao _configDao;
 
     Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
@@ -289,7 +289,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocating nics for " + vm);
         }
-        
+
         try {
             _networkMgr.allocate(vmProfile, networks);
         } catch (ConcurrentOperationException e) {
@@ -427,11 +427,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public boolean configure(String name, Map<String, Object> xmlParams) throws ConfigurationException {
-        _name = name;
-
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> params = configDao.getConfiguration(xmlParams);
+        Map<String, String> params = _configDao.getConfiguration(xmlParams);
 
         _retry = NumbersUtil.parseInt(params.get(Config.StartRetry.key()), 10);
 
@@ -452,11 +448,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         _agentMgr.registerForHostEvents(this, true, true, true);
 
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     protected VirtualMachineManagerImpl() {
@@ -626,9 +617,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Trying to deploy VM, vm has dcId: " + vm.getDataCenterIdToDeployIn() + " and podId: " + vm.getPodIdToDeployIn());
+            s_logger.debug("Trying to deploy VM, vm has dcId: " + vm.getDataCenterId() + " and podId: " + vm.getPodIdToDeployIn());
         }
-        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), null, null, null, null, ctx);
+        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null, ctx);
         if(planToDeploy != null && planToDeploy.getDataCenterId() != 0){
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("advanceStart: DeploymentPlan is provided, using dcId:" + planToDeploy.getDataCenterId() + ", podId: " + planToDeploy.getPodId() + ", clusterId: "
@@ -676,7 +667,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                             }
                             continue;
                         }
-    
+
                         StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
                         if (!pool.isInMaintenance()) {
                             if (s_logger.isDebugEnabled()) {
@@ -710,7 +701,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         }
                     }
                 }
-                
+
                 VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, account, params);
                 DeployDestination dest = null;
                 for (DeploymentPlanner planner : _planners) {
@@ -760,7 +751,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     if(!reuseVolume){
                         reuseVolume = true;
                     }
-                    
+
                     Commands cmds = null;
                     vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
 
@@ -779,10 +770,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     _workDao.updateStep(work, Step.Starting);
 
                     _agentMgr.send(destHostId, cmds);
-                    
+
                     _workDao.updateStep(work, Step.Started);
-                    
-                    
+
+
                     StartAnswer startAnswer = cmds.getAnswer(StartAnswer.class);
                     if (startAnswer != null && startAnswer.getResult()) {
                         String host_guid = startAnswer.getHost_guid();
@@ -806,7 +797,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
-                           
+
                             StopCommand cmd = new StopCommand(vm.getInstanceName());
                             StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
                             if (answer == null || !answer.getResult()) {
@@ -818,7 +809,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         }
                     }
                     s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + (startAnswer == null ? " no start answer" : startAnswer.getDetails()));
-                    
+
                 } catch (OperationTimedoutException e) {
                     s_logger.debug("Unable to send the start command to host " + dest.getHost());
                     if (e.isActive()) {
@@ -1074,7 +1065,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
 
         vmGuru.prepareStop(profile);
-        
+
         StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null);
         boolean stopped = false;
         StopAnswer answer = null;
@@ -1232,7 +1223,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 //if the vm is migrated to different pod in basic mode, need to reallocate ip
 
                 if (vm.getPodIdToDeployIn() != destPool.getPodId()) {
-                    DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterIdToDeployIn(), destPool.getPodId(), null, null, null, null);
+                    DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), destPool.getPodId(), null, null, null, null);
                     VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, null, null, null, null);
                     _networkMgr.reallocate(vmProfile, plan);
                 }
@@ -1561,11 +1552,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     public boolean isVirtualMachineUpgradable(VirtualMachine vm, ServiceOffering offering) {
-        Enumeration<HostAllocator> en = _hostAllocators.enumeration();
-        boolean isMachineUpgradable = true;
-        while (isMachineUpgradable && en.hasMoreElements()) {
-            final HostAllocator allocator = en.nextElement();
+        boolean isMachineUpgradable = true;    	
+        for(HostAllocator allocator : _hostAllocators) {
             isMachineUpgradable = allocator.isVirtualMachineUpgradable(vm, offering);
+            if(isMachineUpgradable)
+                continue;
+            else
+                break;
         }
 
         return isMachineUpgradable;
@@ -1585,7 +1578,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     ConcurrentOperationException, ResourceUnavailableException {
         T rebootedVm = null;
 
-        DataCenter dc = _configMgr.getZone(vm.getDataCenterIdToDeployIn());
+        DataCenter dc = _configMgr.getZone(vm.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId());
         Cluster cluster = null;
         if (host != null) {
@@ -1645,7 +1638,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 commands.addCommand(command);
             }
         }
-        
+
         for (final AgentVmInfo left : infos.values()) {
             boolean found = false;
             for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : _vmGurus.values()) {
@@ -1741,7 +1734,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
 
     public void fullSync(final long clusterId, Map<String, Pair<String, State>> newStates) {
-    	if (newStates==null)return;
+        if (newStates==null)return;
         Map<Long, AgentVmInfo> infos = convertToInfos(newStates);
         Set<VMInstanceVO> set_vms = Collections.synchronizedSet(new HashSet<VMInstanceVO>());
         set_vms.addAll(_vmDao.listByClusterId(clusterId));
@@ -1751,11 +1744,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             AgentVmInfo info =  infos.remove(vm.getId());
             VMInstanceVO castedVm = null;
             if ((info == null && (vm.getState() == State.Running || vm.getState() == State.Starting))  
-            		||  (info != null && (info.state == State.Running && vm.getState() == State.Starting))) 
+                    ||  (info != null && (info.state == State.Running && vm.getState() == State.Starting))) 
             {
-            	s_logger.info("Found vm " + vm.getInstanceName() + " in inconsistent state. " + vm.getState() + " on CS while " +  (info == null ? "Stopped" : "Running") + " on agent");
+                s_logger.info("Found vm " + vm.getInstanceName() + " in inconsistent state. " + vm.getState() + " on CS while " +  (info == null ? "Stopped" : "Running") + " on agent");
                 info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
-           		
+
                 // Bug 13850- grab outstanding work item if any for this VM state so that we mark it as DONE after we change VM state, else it will remain pending
                 ItWorkVO work = _workDao.findByOutstandingWork(vm.getId(), vm.getState());
                 if (work != null) {
@@ -1764,8 +1757,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     }
                 }
                 vm.setState(State.Running); // set it as running and let HA take care of it
-           		_vmDao.persist(vm);
-           		
+                _vmDao.persist(vm);
+
                 if (work != null) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Updating outstanding work item to Done, id:" + work.getId());
@@ -1773,7 +1766,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     work.setStep(Step.Done);
                     _workDao.update(work.getId(), work);
                 }
-           		
+
                 castedVm = info.guru.findById(vm.getId());
                 try {
                     Host host = _hostDao.findByGuid(info.getHostUuid());
@@ -1813,20 +1806,20 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 }
             }
             else
-            // host id can change
-	        if (info != null && vm.getState() == State.Running){
-	           // check for host id changes
-	           Host host = _hostDao.findByGuid(info.getHostUuid());
-	            if (host != null && (vm.getHostId() == null || host.getId() != vm.getHostId())){
-    	        	s_logger.info("Found vm " + vm.getInstanceName() + " with inconsistent host in db, new host is " +  host.getId());
-        			try {
-						stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, host.getId());
-					} catch (NoTransitionException e) {
-						s_logger.warn(e.getMessage());
-					}
-        		}
-            }
-             /* else if(info == null && vm.getState() == State.Stopping) { //Handling CS-13376
+                // host id can change
+                if (info != null && vm.getState() == State.Running){
+                    // check for host id changes
+                    Host host = _hostDao.findByGuid(info.getHostUuid());
+                    if (host != null && (vm.getHostId() == null || host.getId() != vm.getHostId())){
+                        s_logger.info("Found vm " + vm.getInstanceName() + " with inconsistent host in db, new host is " +  host.getId());
+                        try {
+                            stateTransitTo(vm, VirtualMachine.Event.AgentReportMigrated, host.getId());
+                        } catch (NoTransitionException e) {
+                            s_logger.warn(e.getMessage());
+                        }
+                    }
+                }
+            /* else if(info == null && vm.getState() == State.Stopping) { //Handling CS-13376
                         s_logger.warn("Marking the VM as Stopped as it was still stopping on the CS" +vm.getName());
                         vm.setState(State.Stopped); // Setting the VM as stopped on the DB and clearing it from the host
                         vm.setLastHostId(vm.getHostId());
@@ -1864,7 +1857,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         boolean is_alien_vm = true;
         long alien_vm_count = -1;
         for (Map.Entry<String, Pair<String, State>> entry : newStates.entrySet()) {
-        	is_alien_vm = true;
+            is_alien_vm = true;
             for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : vmGurus) {
                 String name = entry.getKey();
                 VMInstanceVO vm = vmGuru.findByName(name);
@@ -1882,8 +1875,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
             // alien VMs
             if (is_alien_vm){
-            	map.put(alien_vm_count--, new AgentVmInfo(entry.getKey(), null, null, entry.getValue().second(), entry.getValue().first()));
-            	s_logger.warn("Found an alien VM " + entry.getKey());
+                map.put(alien_vm_count--, new AgentVmInfo(entry.getKey(), null, null, entry.getValue().second(), entry.getValue().first()));
+                s_logger.warn("Found an alien VM " + entry.getKey());
             }
         }
         return map;
@@ -1980,11 +1973,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             }
 
             HostPodVO podVO = _podDao.findById(vm.getPodIdToDeployIn());
-            DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterIdToDeployIn());
+            DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterId());
             HostVO hostVO = _hostDao.findById(vm.getHostId());
 
             String hostDesc = "name: " + hostVO.getName() + " (id:" + hostVO.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
-            _alertMgr.sendAlert(alertType, vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getInstanceName() + ", id: " + vm.getId() + ") stopped on host " + hostDesc
+            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getInstanceName() + ", id: " + vm.getId() + ") stopped on host " + hostDesc
                     + " due to storage failure", "Virtual Machine " + vm.getInstanceName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() + "] stopped due to storage failure.");
         }
 
@@ -2268,13 +2261,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         Long clusterId = agent.getClusterId();
         long agentId = agent.getId();
         if (agent.getHypervisorType() == HypervisorType.XenServer) { // only for Xen
-        	StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
-        	HashMap<String, Pair<String, State>> allStates = startup.getClusterVMStateChanges();
-        	if (allStates != null){
-        		this.fullSync(clusterId, allStates);
-        	}
-        	
-        	// initiate the cron job
+            StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
+            HashMap<String, Pair<String, State>> allStates = startup.getClusterVMStateChanges();
+            if (allStates != null){
+                this.fullSync(clusterId, allStates);
+            }
+
+            // initiate the cron job
             ClusterSyncCommand syncCmd = new ClusterSyncCommand(Integer.parseInt(Config.ClusterDeltaSyncInterval.getDefaultValue()), clusterId);
             try {
                 long seq_no = _agentMgr.send(agentId, new Commands(syncCmd), this);
@@ -2341,7 +2334,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             } catch (Exception e) {
                 s_logger.warn("Caught the following exception on transition checking", e);
             } finally {
-                StackMaid.current().exitCleanup();
                 lock.unlock();
             }
         }
@@ -2376,7 +2368,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     public VMInstanceVO findById(long vmId) {
         return _vmDao.findById(vmId);
     }
-    
+
     @Override
     public void checkIfCanUpgrade(VirtualMachine vmInstance, long newServiceOfferingId) {
         ServiceOfferingVO newServiceOffering = _offeringDao.findById(newServiceOfferingId);
@@ -2388,7 +2380,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (!vmInstance.getState().equals(State.Stopped)) {
             s_logger.warn("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
             throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + " " +
-            		"in state " + vmInstance.getState()
+                    "in state " + vmInstance.getState()
                     + "; make sure the virtual machine is stopped and not in an error state before upgrading.");
         }
 
@@ -2396,11 +2388,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (vmInstance.getServiceOfferingId() == newServiceOffering.getId()) {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Not upgrading vm " + vmInstance.toString() + " since it already has the requested " +
-                		"service offering (" + newServiceOffering.getName() + ")");
+                        "service offering (" + newServiceOffering.getName() + ")");
             }
 
             throw new InvalidParameterValueException("Not upgrading vm " + vmInstance.toString() + " since it already " +
-            		"has the requested service offering (" + newServiceOffering.getName() + ")");
+                    "has the requested service offering (" + newServiceOffering.getName() + ")");
         }
 
         ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
@@ -2422,7 +2414,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     "useLocalStorage=" + currentServiceOffering.getUseLocalStorage()
                     + ", target offering useLocalStorage=" + newServiceOffering.getUseLocalStorage());
         }
-        
+
         // if vm is a system vm, check if it is a system service offering, if yes return with error as it cannot be used for user vms
         if (currentServiceOffering.getSystemUse() != newServiceOffering.getSystemUse()) {
             throw new InvalidParameterValueException("isSystem property is different for current service offering and new service offering");
@@ -2431,7 +2423,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         // Check that there are enough resources to upgrade the service offering
         if (!isVirtualMachineUpgradable(vmInstance, newServiceOffering)) {
             throw new InvalidParameterValueException("Unable to upgrade virtual machine, not enough resources available " +
-            		"for an offering of " + newServiceOffering.getCpu() + " cpu(s) at "
+                    "for an offering of " + newServiceOffering.getCpu() + " cpu(s) at "
                     + newServiceOffering.getSpeed() + " Mhz, and " + newServiceOffering.getRamSize() + " MB of memory");
         }
 
@@ -2440,12 +2432,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         List<String> newTags = _configMgr.csvTagsToList(newServiceOffering.getTags());
         if (!newTags.containsAll(currentTags)) {
             throw new InvalidParameterValueException("Unable to upgrade virtual machine; the new service offering " +
-            		"does not have all the tags of the "
+                    "does not have all the tags of the "
                     + "current service offering. Current service offering tags: " + currentTags + "; " + "new service " +
-                    		"offering tags: " + newTags);
+                    "offering tags: " + newTags);
         }
     }
-    
+
     @Override
     public boolean upgradeVmDb(long vmId, long serviceOfferingId) {
         VMInstanceVO vmForUpdate = _vmDao.createForUpdate();
@@ -2456,38 +2448,43 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         vmForUpdate.setServiceOfferingId(newSvcOff.getId());
         return _vmDao.update(vmId, vmForUpdate);
     }
-    
+
     @Override
     public NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException, 
-                                                    ResourceUnavailableException, InsufficientCapacityException {
-        
+    ResourceUnavailableException, InsufficientCapacityException {
+
         s_logger.debug("Adding vm " + vm + " to network " + network + "; requested nic profile " + requested);
-        VMInstanceVO vmVO = _vmDao.findById(vm.getId());
+        VMInstanceVO vmVO;
+        if (vm.getType() == VirtualMachine.Type.User) {
+            vmVO = _userVmDao.findById(vm.getId());
+        } else {
+            vmVO = _vmDao.findById(vm.getId());
+        }
         ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
                 _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
-        
+
         VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null, 
                 null, null, null);
-        
+
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId()); 
         DeployDestination dest = new DeployDestination(dc, null, null, host);
-        
+
         //check vm state
         if (vm.getState() == State.Running) {
             //1) allocate and prepare nic
             NicProfile nic = _networkMgr.createNicForVm(network, requested, context, vmProfile, true);
-            
+
             //2) Convert vmProfile to vmTO
             HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
             VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
-            
+
             //3) Convert nicProfile to NicTO
             NicTO nicTO = toNicTO(nic, vmProfile.getVirtualMachine().getHypervisorType());
-            
+
             //4) plug the nic to the vm
             VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
-            
+
             s_logger.debug("Plugging nic for vm " + vm + " in network " + network);
             if (vmGuru.plugNic(network, nicTO, vmTO, context, dest)) {
                 s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
@@ -2502,49 +2499,115 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         } else {
             s_logger.warn("Unable to add vm " + vm + " to network  " + network);
             throw new ResourceUnavailableException("Unable to add vm " + vm + " to network, is not in the right state",
-                    DataCenter.class, vm.getDataCenterIdToDeployIn());
+                    DataCenter.class, vm.getDataCenterId());
         }
     }
-
 
     @Override
     public NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType) {
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(hypervisorType);
-        
+
         NicTO nicTO = hvGuru.toNicTO(nic);
         return nicTO;
     }
-    
+
     @Override
-    public boolean removeVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean removeNicFromVm(VirtualMachine vm, NicVO nic) throws ConcurrentOperationException, ResourceUnavailableException {
         VMInstanceVO vmVO = _vmDao.findById(vm.getId());
+        NetworkVO network = _networkDao.findById(nic.getNetworkId());
         ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
                 _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
-        
+
         VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null, 
                 null, null, null);
-        
+
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId()); 
         DeployDestination dest = new DeployDestination(dc, null, null, host);
         VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
         VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
-        
-        Nic nic = null;
-        
-        if (broadcastUri != null) {
-            nic = _nicsDao.findByNetworkIdInstanceIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri.toString());
-        } else {
-            nic = _networkModel.getNicInNetwork(vm.getId(), network.getId());
+
+        // don't delete default NIC on a user VM
+        if (nic.isDefaultNic() && vm.getType() == VirtualMachine.Type.User ) {
+            s_logger.warn("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
+            throw new CloudRuntimeException("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
         }
-        
+
         NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
                 _networkModel.getNetworkRate(network.getId(), vm.getId()), 
                 _networkModel.isSecurityGroupSupportedInNetwork(network), 
                 _networkModel.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
         
         //1) Unplug the nic
+        if (vm.getState() == State.Running) {
+            NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
+            s_logger.debug("Un-plugging nic " + nic + " for vm " + vm + " from network " + network);
+            boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
+            if (result) {
+                s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
+            } else {
+                s_logger.warn("Failed to unplug nic for the vm " + vm + " from network " + network);
+                return false;
+            }
+        } else if (vm.getState() != State.Stopped) {
+            s_logger.warn("Unable to remove vm " + vm + " from network  " + network);
+            throw new ResourceUnavailableException("Unable to remove vm " + vm + " from network, is not in the right state",
+                    DataCenter.class, vm.getDataCenterId());
+        }
+        
+        //2) Release the nic
+        _networkMgr.releaseNic(vmProfile, nic);
+        s_logger.debug("Successfully released nic " + nic +  "for vm " + vm);
+        
+        //3) Remove the nic
+        _networkMgr.removeNic(vmProfile, nic);
+        _nicsDao.expunge(nic.getId());
+        return true;
+    }
+
+    @Override
+    public boolean removeVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException {
+        VMInstanceVO vmVO = _vmDao.findById(vm.getId());
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
+                _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
+
+        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null, 
+                null, null, null);
+
+        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+        Host host = _hostDao.findById(vm.getHostId()); 
+        DeployDestination dest = new DeployDestination(dc, null, null, host);
+        VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
+        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
+        VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
+
+        Nic nic = null;
+
+        if (broadcastUri != null) {
+            nic = _nicsDao.findByNetworkIdInstanceIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri.toString());
+        } else {
+            nic = _networkModel.getNicInNetwork(vm.getId(), network.getId());
+        }
+
+        if (nic == null){
+            s_logger.warn("Could not get a nic with " + network);
+            return false;
+        }
+        
+        // don't delete default NIC on a user VM
+        if (nic.isDefaultNic() && vm.getType() == VirtualMachine.Type.User ) {
+            s_logger.warn("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
+            throw new CloudRuntimeException("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
+        }
+
+        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
+                _networkModel.getNetworkRate(network.getId(), vm.getId()), 
+                _networkModel.isSecurityGroupSupportedInNetwork(network), 
+                _networkModel.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
+
+        //1) Unplug the nic
+        if (vm.getState() == State.Running) {
         NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
         s_logger.debug("Un-plugging nic for vm " + vm + " from network " + network);
         boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
@@ -2554,14 +2617,19 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             s_logger.warn("Failed to unplug nic for the vm " + vm + " from network " + network);
             return false;
         }
-        
+        } else if (vm.getState() != State.Stopped) {
+            s_logger.warn("Unable to remove vm " + vm + " from network  " + network);
+            throw new ResourceUnavailableException("Unable to remove vm " + vm + " from network, is not in the right state",
+                    DataCenter.class, vm.getDataCenterId());
+        }
+
         //2) Release the nic
         _networkMgr.releaseNic(vmProfile, nic);
         s_logger.debug("Successfully released nic " + nic +  "for vm " + vm);
-        
+
         //3) Remove the nic
         _networkMgr.removeNic(vmProfile, nic);
-        return result;
+        return true;
     }
-   
+
 }

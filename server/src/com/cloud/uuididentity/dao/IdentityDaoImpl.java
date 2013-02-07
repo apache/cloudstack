@@ -26,6 +26,7 @@ import java.util.UUID;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceTag.TaggedResourceType;
@@ -34,6 +35,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={IdentityDao.class})
 public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements IdentityDao {
     private static final Logger s_logger = Logger.getLogger(IdentityDaoImpl.class);

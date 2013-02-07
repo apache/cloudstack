@@ -19,12 +19,15 @@ package com.cloud.network.vpc.dao;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
 
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -34,14 +37,14 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
-
+@Component
 @Local(value = VpcDao.class)
 @DB(txn = false)
 public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     final GenericSearchBuilder<VpcVO, Integer> CountByOfferingId;
     final SearchBuilder<VpcVO> AllFieldsSearch;
     final GenericSearchBuilder<VpcVO, Long> CountByAccountId;
-    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
+    @Inject ResourceTagsDaoImpl _tagsDao;
 
     protected VpcDaoImpl() {
         super();

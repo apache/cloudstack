@@ -5,31 +5,31 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
 -->
 
 <chapter id="troubleshooting">
-  <title>Troubleshooting</title>
-  <xi:include href="events.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-  <xi:include href="troubleshooting-working-with-server-logs.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <title>Troubleshooting</title>
+    <xi:include href="events.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="troubleshooting-working-with-server-logs.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="troublesht-dataloss-on-exp-primary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="troubleshooting-recover-lost-virtual-router.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="troublesht-mtn-mode-not-working-on-vCenter.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-  <xi:include href="troubleshooting-unable-to-deploy-vms.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-  <xi:include href="troubleshooting-unable-to-power-on-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-  <xi:include href="troubleshooting-lb-rules-fails.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="troubleshooting-unable-to-deploy-vms.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="troubleshooting-unable-to-power-on-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="troubleshooting-lb-rules-fails.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>

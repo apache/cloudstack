@@ -5,45 +5,47 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
 -->
-
 <section id="port-forwarding">
-    <title>Port Forwarding</title>
-    <para>A port forward service is a set of port forwarding rules that define a policy. A port forward service is then applied to one or more guest VMs. The guest VM then has its inbound network access managed according to the policy defined by the port forwarding service. You can optionally specify one or more CIDRs to filter the source IPs. This is useful when you want to allow only incoming requests from certain IP addresses to be forwarded.</para>
-    <para>A guest VM can be in any number of port forward services. Port forward services can be defined but have no members. If a guest VM is part of more than one network, port forwarding rules will function only if they are defined on the default network</para>
-    <para>You cannot use port forwarding to open ports for an elastic IP address. When elastic IP is used, outside access is instead controlled through the use of security groups. See Security Groups.</para>
-    <para>To set up port forwarding:</para>
-    <orderedlist>
-        <listitem><para>Log in to the &PRODUCT; UI as an administrator or end user.</para></listitem>
-        <listitem><para>If you have not already done so, add a public IP address range to a zone in &PRODUCT;. See Adding a Zone and Pod in the Installation Guide.</para></listitem>
-        <listitem><para>Add one or more VM instances to &PRODUCT;.</para></listitem>
-        <listitem><para>In the left navigation bar, click Network.</para></listitem>
-        <listitem><para>Click the name of the guest network where the VMs are running.</para>
-        </listitem>
-        <listitem><para>Choose an existing IP address or acquire a new IP address. (See Acquiring a New IP Address on page 73.) Click the name of the IP address in the list.</para></listitem>
-        <listitem><para>Click the Configuration tab.</para></listitem>
-        <listitem><para>In the Port Forwarding node of the diagram, click View All.</para></listitem>
-        <listitem><para>Fill in the following:</para>
-        <itemizedlist>
-            <listitem><para><emphasis role="bold">Public Port</emphasis>. The port to which public traffic will be addressed on the IP address you acquired in the previous step.</para></listitem>
-            <listitem><para><emphasis role="bold">Private Port</emphasis>. The port on which the instance is listening for forwarded public traffic.</para></listitem>
-            <listitem><para><emphasis role="bold">Protocol</emphasis>. The communication protocol in use between the two ports.</para></listitem>
-        </itemizedlist></listitem>
-        <listitem><para>Click Add.</para></listitem>
-    </orderedlist>
+	<title>Port Forwarding</title>
+	<para>A port forward service is a set of port forwarding rules that define a policy. A port forward service is then applied to one or more guest VMs. The guest VM then has its inbound network access managed according to the policy defined by the port forwarding service.  You can optionally specify one or more CIDRs to filter the source IPs. This is useful when you want to allow only incoming requests from certain IP addresses to be forwarded.</para>
+	<para>A guest VM can be in any number of port forward services. Port forward services can be defined but have no members. If a guest VM is part of more than one network, port forwarding rules will function only if they are defined on the default network</para>
+	<para>You cannot use port forwarding to open ports for an elastic IP address. When elastic IP is used, outside access is instead controlled through the use of security groups. See Security Groups.</para>
+	<para>To set up port forwarding:</para>
+	<orderedlist>
+		<listitem><para>Log in to the &PRODUCT; UI as an administrator or end user.</para></listitem>
+		<listitem><para>If you have not already done so, add a public IP address range to a zone in &PRODUCT;. See Adding a Zone and Pod in the Installation Guide.</para></listitem>
+		<listitem><para>Add one or more VM instances to &PRODUCT;.</para></listitem>
+		<listitem><para>In the left navigation bar, click Network.</para></listitem>
+		<listitem><para>Click the name of the guest network where the VMs are running.</para>
+		</listitem>
+		<listitem><para>Choose an existing IP address or acquire a new IP address. See <xref linkend="acquire-new-ip-address"/>. Click the name of the IP address in the list.</para></listitem>
+		<listitem><para>Click the Configuration tab.</para></listitem>
+		<listitem><para>In the Port Forwarding node of the diagram, click View All.</para></listitem>
+		<listitem><para>Fill in the following:</para>
+		<itemizedlist>
+			<listitem><para><emphasis role="bold">Public Port</emphasis>. The port to which public traffic will be
+						addressed on the IP address you acquired in the previous step.</para></listitem>
+			<listitem><para><emphasis role="bold">Private Port</emphasis>. The port on which the instance is listening for
+						forwarded public traffic.</para></listitem>
+			<listitem><para><emphasis role="bold">Protocol</emphasis>. The communication protocol in use between the two
+						ports</para></listitem>
+		</itemizedlist></listitem>
+		<listitem><para>Click Add.</para></listitem>		
+	</orderedlist>
 </section>

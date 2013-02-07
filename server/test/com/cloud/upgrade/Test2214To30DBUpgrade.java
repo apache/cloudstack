@@ -23,21 +23,26 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.DbTestUtils;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 
 public class Test2214To30DBUpgrade extends TestCase {
     private static final Logger s_logger = Logger
             .getLogger(Test2214To30DBUpgrade.class);
 
+    @Inject DatabaseUpgradeChecker checker;
+    
     @Override
     @Before
     public void setUp() throws Exception {
@@ -55,9 +60,6 @@ public class Test2214To30DBUpgrade extends TestCase {
         DbTestUtils.executeScript(
                 "fake.sql", false,
                 true);
-
-        DatabaseUpgradeChecker checker = ComponentLocator
-                .inject(DatabaseUpgradeChecker.class);
 
         checker.upgrade("2.2.14", "3.0.0");
 

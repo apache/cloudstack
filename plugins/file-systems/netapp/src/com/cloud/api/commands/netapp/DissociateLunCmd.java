@@ -18,6 +18,8 @@ package com.cloud.api.commands.netapp;
 
 import java.rmi.ServerException;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
@@ -30,7 +32,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DissociateLunCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "dissociateLun", description="Dissociate a LUN", responseObject = DissociateLunCmdResponse.class)
 public class DissociateLunCmd extends BaseCmd {
@@ -39,16 +41,15 @@ public class DissociateLunCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.PATH, type=CommandType.STRING, required = true, description="LUN path.")
 	private String path;
-
+    
     @Parameter(name=ApiConstants.IQN, type=CommandType.STRING, required = true, description="Guest IQN.")
 	private String guestIQN;
-
+    
+    @Inject NetappManager netappMgr;
 	@Override
 	public void execute() throws ResourceUnavailableException,
 			InsufficientCapacityException, ServerApiException,
 			ConcurrentOperationException, ResourceAllocationException {
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
     	try {
     		netappMgr.disassociateLun(guestIQN, path);
     		DissociateLunCmdResponse response = new DissociateLunCmdResponse();

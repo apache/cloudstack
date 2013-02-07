@@ -31,6 +31,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.AdapterBase;
 
 /**
  * VhdProcessor processes the downloaded template for VHD.  It
@@ -39,10 +40,9 @@ import com.cloud.utils.NumbersUtil;
  *
  */
 @Local(value=Processor.class)
-public class VhdProcessor implements Processor {
+public class VhdProcessor extends AdapterBase implements Processor {
     
     private static final Logger s_logger = Logger.getLogger(VhdProcessor.class);
-    String _name;
     StorageLayer _storage;
     private int vhd_footer_size = 512;
     private int vhd_footer_creator_app_offset = 28;
@@ -108,21 +108,6 @@ public class VhdProcessor implements Processor {
             throw new ConfigurationException("Unable to get storage implementation");
         }
         
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
         return true;
     }
     

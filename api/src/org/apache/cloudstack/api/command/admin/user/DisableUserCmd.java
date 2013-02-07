@@ -16,16 +16,19 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.user;
 
-import org.apache.log4j.Logger;
+import javax.inject.Inject;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.region.RegionService;
+import org.apache.log4j.Logger;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
@@ -46,6 +49,11 @@ public class DisableUserCmd extends BaseAsyncCmd {
             required=true, description="Disables user by user ID.")
     private Long id;
 
+    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
+    private Boolean isPropagate;
+    
+    @Inject RegionService _regionService;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -54,6 +62,10 @@ public class DisableUserCmd extends BaseAsyncCmd {
         return id;
     }
 
+	public Boolean getIsPropagate() {
+		return isPropagate;
+	}
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -87,7 +99,8 @@ public class DisableUserCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
-        UserAccount user = _accountService.disableUser(getId());
+        UserAccount user = _regionService.disableUser(this);
+        
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());

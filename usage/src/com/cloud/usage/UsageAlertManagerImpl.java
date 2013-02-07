@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.mail.Authenticator;
 import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
@@ -32,37 +33,31 @@ import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.ManagerBase;
+
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
 
+@Component
 @Local(value={AlertManager.class})
-public class UsageAlertManagerImpl implements AlertManager {
+public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
     private static final Logger s_logger = Logger.getLogger(UsageAlertManagerImpl.class.getName());
 
-    private String _name = null;
     private EmailAlert _emailAlert;
-    private AlertDao _alertDao;
+    @Inject private AlertDao _alertDao;
+    @Inject private ConfigurationDao _configDao;
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            s_logger.error("Unable to get the configuration dao.");
-            return false;
-        }
-
-        Map<String, String> configs = configDao.getConfiguration("management-server", params);
+         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
         // set up the email system for alerts
         String emailAddressList = configs.get("alert.email.addresses");
@@ -85,29 +80,7 @@ public class UsageAlertManagerImpl implements AlertManager {
         }
 
         _emailAlert = new EmailAlert(emailAddresses, smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
-
-        _alertDao = locator.getDao(AlertDao.class);
-        if (_alertDao == null) {
-            s_logger.error("Unable to get the alert dao.");
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
+         return true;
     }
 
     @Override

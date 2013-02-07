@@ -18,6 +18,7 @@ package com.cloud.utils.db;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -82,6 +83,7 @@ public class Transaction {
     public static final short AWSAPI_DB = 2;
     public static final short SIMULATOR_DB = 3;
     public static final short CONNECTED_DB = -1;
+    public static int s_region_id;
 
     private static AtomicLong s_id = new AtomicLong();
     private static final TransactionMBeanImpl s_mbean = new TransactionMBeanImpl();
@@ -91,6 +93,12 @@ public class Transaction {
         } catch (Exception e) {
             s_logger.error("Unable to register mbean for transaction", e);
         }
+        
+        /* FIXME: We need a better solution for this
+         * Initialize encryption if we need it for db.properties
+         */ 
+        EncryptionSecretKeyChecker enc = new EncryptionSecretKeyChecker();
+        enc.check();        
     }
 
     private final LinkedList<StackElement> _stack;
@@ -996,19 +1004,32 @@ public class Transaction {
     private static DataSource s_usageDS;
     private static DataSource s_awsapiDS;
     private static DataSource s_simulatorDS;
+
     static {
+        // Initialize with assumed db.properties file
+        initDataSource("db.properties");
+    }
+
+    public static void initDataSource(String propsFileName) {
         try {
-            final File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
-            final Properties dbProps; 
-            
-            if(EncryptionSecretKeyChecker.useEncryption()){
-            	StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();
-            	dbProps = new EncryptableProperties(encryptor);
+            File dbPropsFile = PropertiesUtil.findConfigFile(propsFileName);
+            final Properties dbProps;
+            if (EncryptionSecretKeyChecker.useEncryption()) {
+                StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();
+                dbProps = new EncryptableProperties(encryptor);
             } else {
-            	dbProps = new Properties();
+                dbProps = new Properties();
             }
-            dbProps.load(new FileInputStream(dbPropsFile));
-            
+            try {
+                dbProps.load(new FileInputStream(dbPropsFile));
+            } catch (IOException e) {
+                s_logger.fatal("Unable to load db properties file, pl. check the classpath and file path configuration", e);
+                return;
+            } catch (NullPointerException e) {
+                s_logger.fatal("Unable to locate db properties file within classpath or absolute path: " + propsFileName);
+                return;
+            }
+
             // FIXME:  If params are missing...default them????
             final int cloudMaxActive = Integer.parseInt(dbProps.getProperty("db.cloud.maxActive"));
             final int cloudMaxIdle = Integer.parseInt(dbProps.getProperty("db.cloud.maxIdle"));
@@ -1021,6 +1042,7 @@ public class Transaction {
             final boolean cloudAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.cloud.autoReconnect"));
             final String cloudValidationQuery = dbProps.getProperty("db.cloud.validationQuery");
             final String cloudIsolationLevel = dbProps.getProperty("db.cloud.isolation.level");
+
             int isolationLevel = Connection.TRANSACTION_READ_COMMITTED;
             if (cloudIsolationLevel == null) {
                 isolationLevel = Connection.TRANSACTION_READ_COMMITTED;
@@ -1035,30 +1057,43 @@ public class Transaction {
             } else {
                 s_logger.warn("Unknown isolation level " + cloudIsolationLevel + ".  Using read uncommitted");
             }
+
             final boolean cloudTestOnBorrow = Boolean.parseBoolean(dbProps.getProperty("db.cloud.testOnBorrow"));
             final boolean cloudTestWhileIdle = Boolean.parseBoolean(dbProps.getProperty("db.cloud.testWhileIdle"));
             final long cloudTimeBtwEvictionRunsMillis = Long.parseLong(dbProps.getProperty("db.cloud.timeBetweenEvictionRunsMillis"));
             final long cloudMinEvcitableIdleTimeMillis = Long.parseLong(dbProps.getProperty("db.cloud.minEvictableIdleTimeMillis"));
             final boolean cloudPoolPreparedStatements = Boolean.parseBoolean(dbProps.getProperty("db.cloud.poolPreparedStatements"));
             final String url = dbProps.getProperty("db.cloud.url.params");
+
             final boolean useSSL = Boolean.parseBoolean(dbProps.getProperty("db.cloud.useSSL"));
-            if(useSSL){
+            if (useSSL) {
                 System.setProperty("javax.net.ssl.keyStore", dbProps.getProperty("db.cloud.keyStore"));
                 System.setProperty("javax.net.ssl.keyStorePassword", dbProps.getProperty("db.cloud.keyStorePassword"));
                 System.setProperty("javax.net.ssl.trustStore", dbProps.getProperty("db.cloud.trustStore"));
                 System.setProperty("javax.net.ssl.trustStorePassword", dbProps.getProperty("db.cloud.trustStorePassword"));
             }
 
+            String regionId = dbProps.getProperty("region.id");
+            if(regionId == null){
+            	s_region_id = 1;
+            } else {
+            	s_region_id = Integer.parseInt(regionId);
+            }
             final GenericObjectPool cloudConnectionPool = new GenericObjectPool(null, cloudMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
                     cloudMaxWait, cloudMaxIdle, cloudTestOnBorrow, false, cloudTimeBtwEvictionRunsMillis, 1, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle);
-            final ConnectionFactory cloudConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://"+cloudHost + ":" + cloudPort + "/" + cloudDbName +
-                    "?autoReconnect="+cloudAutoReconnect + (url != null ? "&" + url : "")+ (useSSL ? "&useSSL=true" : ""), cloudUsername, cloudPassword);
+
+            final ConnectionFactory cloudConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + ":" + cloudPort + "/" + cloudDbName +
+                    "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : ""), cloudUsername, cloudPassword);
+
             final KeyedObjectPoolFactory poolableObjFactory = (cloudPoolPreparedStatements ? new StackKeyedObjectPoolFactory() : null);
+
             final PoolableConnectionFactory cloudPoolableConnectionFactory = new PoolableConnectionFactory(cloudConnectionFactory, cloudConnectionPool, poolableObjFactory,
                     cloudValidationQuery, false, false, isolationLevel);
+
+            // Default Data Source for CloudStack
             s_ds = new PoolingDataSource(cloudPoolableConnectionFactory.getPool());
 
-            // configure the usage db
+            // Configure the usage db
             final int usageMaxActive = Integer.parseInt(dbProps.getProperty("db.usage.maxActive"));
             final int usageMaxIdle = Integer.parseInt(dbProps.getProperty("db.usage.maxIdle"));
             final long usageMaxWait = Long.parseLong(dbProps.getProperty("db.usage.maxWait"));
@@ -1068,61 +1103,71 @@ public class Transaction {
             final int usagePort = Integer.parseInt(dbProps.getProperty("db.usage.port"));
             final String usageDbName = dbProps.getProperty("db.usage.name");
             final boolean usageAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.usage.autoReconnect"));
+
             final GenericObjectPool usageConnectionPool = new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
                     usageMaxWait, usageMaxIdle);
-            final ConnectionFactory usageConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://"+usageHost + ":" + usagePort + "/" + usageDbName +
-                    "?autoReconnect="+usageAutoReconnect, usageUsername, usagePassword);
+
+            final ConnectionFactory usageConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + usageHost + ":" + usagePort + "/" + usageDbName +
+                    "?autoReconnect=" + usageAutoReconnect, usageUsername, usagePassword);
+
             final PoolableConnectionFactory usagePoolableConnectionFactory = new PoolableConnectionFactory(usageConnectionFactory, usageConnectionPool,
                     new StackKeyedObjectPoolFactory(), null, false, false);
+
+            // Data Source for usage server
             s_usageDS = new PoolingDataSource(usagePoolableConnectionFactory.getPool());
-            
-            //configure awsapi db
+
+            // Configure awsapi db
             final String awsapiDbName = dbProps.getProperty("db.awsapi.name");
             final GenericObjectPool awsapiConnectionPool = new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
-            usageMaxWait, usageMaxIdle);
-            final ConnectionFactory awsapiConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://"+cloudHost + ":" + cloudPort + "/" + awsapiDbName +
-            "?autoReconnect="+usageAutoReconnect, cloudUsername, cloudPassword);
+                    usageMaxWait, usageMaxIdle);
+            final ConnectionFactory awsapiConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + ":" + cloudPort + "/" + awsapiDbName +
+                    "?autoReconnect=" + usageAutoReconnect, cloudUsername, cloudPassword);
             final PoolableConnectionFactory awsapiPoolableConnectionFactory = new PoolableConnectionFactory(awsapiConnectionFactory, awsapiConnectionPool,
-            new StackKeyedObjectPoolFactory(), null, false, false);
+                    new StackKeyedObjectPoolFactory(), null, false, false);
+
+            // Data Source for awsapi
             s_awsapiDS = new PoolingDataSource(awsapiPoolableConnectionFactory.getPool());
-            
-            try{
-            	// configure the simulator db
-            	final int simulatorMaxActive = Integer.parseInt(dbProps.getProperty("db.simulator.maxActive"));
-            	final int simulatorMaxIdle = Integer.parseInt(dbProps.getProperty("db.simulator.maxIdle"));
-            	final long simulatorMaxWait = Long.parseLong(dbProps.getProperty("db.simulator.maxWait"));
-            	final String simulatorUsername = dbProps.getProperty("db.simulator.username");
-            	final String simulatorPassword = dbProps.getProperty("db.simulator.password");
-            	final String simulatorHost = dbProps.getProperty("db.simulator.host");
-            	final int simulatorPort = Integer.parseInt(dbProps.getProperty("db.simulator.port"));
-            	final String simulatorDbName = dbProps.getProperty("db.simulator.name");
-            	final boolean simulatorAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.simulator.autoReconnect"));
-            	final GenericObjectPool simulatorConnectionPool = new GenericObjectPool(null, simulatorMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
-            			simulatorMaxWait, simulatorMaxIdle);
-            	final ConnectionFactory simulatorConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://"+simulatorHost + ":" + simulatorPort + "/" + simulatorDbName +
-            			"?autoReconnect="+simulatorAutoReconnect, simulatorUsername, simulatorPassword);
-            	final PoolableConnectionFactory simulatorPoolableConnectionFactory = new PoolableConnectionFactory(simulatorConnectionFactory, simulatorConnectionPool,
-            			new StackKeyedObjectPoolFactory(), null, false, false);
-            	s_simulatorDS = new PoolingDataSource(simulatorPoolableConnectionFactory.getPool());
-            } catch (Exception e){
-            	s_logger.debug("Simulator DB properties are not available. Not initializing simulator DS");
+
+            try {
+                // Configure the simulator db
+                final int simulatorMaxActive = Integer.parseInt(dbProps.getProperty("db.simulator.maxActive"));
+                final int simulatorMaxIdle = Integer.parseInt(dbProps.getProperty("db.simulator.maxIdle"));
+                final long simulatorMaxWait = Long.parseLong(dbProps.getProperty("db.simulator.maxWait"));
+                final String simulatorUsername = dbProps.getProperty("db.simulator.username");
+                final String simulatorPassword = dbProps.getProperty("db.simulator.password");
+                final String simulatorHost = dbProps.getProperty("db.simulator.host");
+                final int simulatorPort = Integer.parseInt(dbProps.getProperty("db.simulator.port"));
+                final String simulatorDbName = dbProps.getProperty("db.simulator.name");
+                final boolean simulatorAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.simulator.autoReconnect"));
+
+                final GenericObjectPool simulatorConnectionPool = new GenericObjectPool(null, simulatorMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
+                        simulatorMaxWait, simulatorMaxIdle);
+
+                final ConnectionFactory simulatorConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://" + simulatorHost + ":" + simulatorPort + "/" + simulatorDbName +
+                        "?autoReconnect=" + simulatorAutoReconnect, simulatorUsername, simulatorPassword);
+
+                final PoolableConnectionFactory simulatorPoolableConnectionFactory = new PoolableConnectionFactory(simulatorConnectionFactory, simulatorConnectionPool,
+                        new StackKeyedObjectPoolFactory(), null, false, false);
+                s_simulatorDS = new PoolingDataSource(simulatorPoolableConnectionFactory.getPool());
+            } catch (Exception e) {
+                s_logger.debug("Simulator DB properties are not available. Not initializing simulator DS");
             }
         } catch (final Exception e) {
             s_ds = getDefaultDataSource("cloud");
             s_usageDS = getDefaultDataSource("cloud_usage");
             s_simulatorDS = getDefaultDataSource("cloud_simulator");
-            s_logger.warn("Unable to load db configuration, using defaults with 5 connections.  Please check your configuration", e);
+            s_logger.warn("Unable to load db configuration, using defaults with 5 connections. Falling back on assumed datasource on localhost:3306 using username:password=cloud:cloud. Please check your configuration", e);
         }
     }
 
     private static DataSource getDefaultDataSource(final String database) {
-   final GenericObjectPool connectionPool = new GenericObjectPool(null, 5);
-   final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(
-       "jdbc:mysql://localhost:3306/" + database, "cloud", "cloud");
-   final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(
-       connectionFactory, connectionPool, null, null, false, true);
-   return new PoolingDataSource(
-       /* connectionPool */poolableConnectionFactory.getPool());
+        final GenericObjectPool connectionPool = new GenericObjectPool(null, 5);
+        final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(
+           "jdbc:mysql://localhost:3306/" + database, "cloud", "cloud");
+        final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(
+           connectionFactory, connectionPool, null, null, false, true);
+        return new PoolingDataSource(
+           /* connectionPool */poolableConnectionFactory.getPool());
     }
     
 }

@@ -102,4 +102,11 @@ KfEEuzcCUIxtJYTahJ1pvlFkQ8anpuxjSEDp8x/18bq3
             <programlisting>ssh -i ~/.ssh/keypair-doc &lt;ip address&gt;</programlisting>
         <para>The -i parameter tells the ssh client to use a ssh key found at ~/.ssh/keypair-doc.</para>
         </section>
+    <section id="reset-ssh">
+        <title>Resetting SSH Keys</title>
+        <para>With the API command resetSSHKeyForVirtualMachine, a user can set or reset the SSH keypair
+            assigned to a virtual machine. A lost or compromised SSH keypair
+            can be changed, and the user can access the VM by using the new keypair. Just create or register a
+            new keypair, then call resetSSHKeyForVirtualMachine.</para>
+    </section>
 </section>

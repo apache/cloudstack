@@ -32,6 +32,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
@@ -39,18 +40,17 @@ import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.*;
 import org.apache.cloudstack.api.command.user.template.*;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.downloadTemplateFromSwiftToSecondaryStorageCommand;
-import com.cloud.agent.api.uploadTemplateToSwiftFromSecondaryStorageCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.SwiftTO;
-import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
-import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import com.cloud.agent.api.uploadTemplateToSwiftFromSecondaryStorageCommand;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.Config;
@@ -63,7 +63,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -77,9 +77,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
-import com.cloud.storage.LaunchPermissionVO;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage;
+import com.cloud.storage.*;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
@@ -87,57 +85,28 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Type;
-import com.cloud.storage.UploadVO;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateSwiftVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.LaunchPermissionDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.StoragePoolDao;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.UploadDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.dao.VMTemplateS3Dao;
-import com.cloud.storage.dao.VMTemplateSwiftDao;
-import com.cloud.storage.dao.VMTemplateZoneDao;
-import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.*;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountService;
-import com.cloud.user.AccountVO;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserContext;
+import com.cloud.user.*;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
-import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ManagerBase;
+
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.*;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -146,11 +115,10 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-
+@Component
 @Local(value={TemplateManager.class, TemplateService.class})
-public class TemplateManagerImpl implements TemplateManager, Manager, TemplateService {
+public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateService {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
-    String _name;
     @Inject VMTemplateDao _tmpltDao;
     @Inject VMTemplateHostDao _tmpltHostDao;
     @Inject VMTemplatePoolDao _tmpltPoolDao;
@@ -208,16 +176,16 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     
     private ScheduledExecutorService _s3TemplateSyncExecutor = null;
 
-    @Inject (adapter=TemplateAdapter.class)
-    protected Adapters<TemplateAdapter> _adapters;
+    @Inject
+    protected List<TemplateAdapter> _adapters;
     
     private TemplateAdapter getAdapter(HypervisorType type) {
     	TemplateAdapter adapter = null;
     	if (type == HypervisorType.BareMetal) {
-    		adapter = _adapters.get(TemplateAdapterType.BareMetal.getName());
+    		adapter = AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.BareMetal.getName());
     	} else {
     		// see HyervisorTemplateAdapter
-    		adapter =  _adapters.get(TemplateAdapterType.Hypervisor.getName());
+    		adapter =  AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.Hypervisor.getName());
     	}
     	
     	if (adapter == null) {
@@ -823,8 +791,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 _tmpltDao.addTemplateToZone(template, dstZoneId);
             	
             	if(account.getId() != Account.ACCOUNT_ID_SYSTEM){
-            	    UsageEventVO usageEvent = new UsageEventVO(copyEventType, account.getId(), dstZoneId, tmpltId, null, null, null, srcTmpltHost.getSize());
-            	    _usageEventDao.persist(usageEvent);
+                    UsageEventUtils.publishUsageEvent(copyEventType, account.getId(), dstZoneId, tmpltId, null, null, null, srcTmpltHost.getSize(),
+                            template.getClass().getName(), template.getUuid());
             	}
             	return true;
             }
@@ -1008,11 +976,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }
     }
 
-    @Override
-    public String getName() {
-        return _name;
-    }
-
     private Runnable getSwiftTemplateSyncTask() {
         return new Runnable() {
             @Override
@@ -1062,9 +1025,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
         
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
         _routerTemplateId = NumbersUtil.parseInt(configs.get("router.template.id"), 1);
@@ -1098,7 +1058,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             s_logger.info("S3 secondary storage synchronization is disabled.");
         }
 
-      return false;
+        return true;
     }
     
     protected TemplateManagerImpl() {

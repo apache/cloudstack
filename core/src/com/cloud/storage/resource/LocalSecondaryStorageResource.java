@@ -19,7 +19,6 @@ package com.cloud.storage.resource;
 import java.util.HashMap;
 import java.util.Map;
 
-
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -36,11 +35,11 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
+import com.cloud.agent.api.storage.DownloadCommand;
+import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ssCommand;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResourceBase;
@@ -50,39 +49,38 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.TemplateInfo;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.component.ComponentContext;
 
 public class LocalSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
     private static final Logger s_logger = Logger.getLogger(LocalSecondaryStorageResource.class);
     int _timeout;
-    
+
     String _instance;
     String _parent;
-    
+
     String _dc;
     String _pod;
     String _guid;
-    
+
     StorageLayer _storage;
-    
+
     DownloadManager _dlMgr;
-    
+
     @Override
     public void disconnected() {
     }
 
-    
+
     @Override
     public String getRootDir(ssCommand cmd){
         return getRootDir();
-        
+
     }
-    
+
     public String getRootDir() {
         return _parent;
     }
-    
+
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof DownloadProgressCommand) {
@@ -103,7 +101,7 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
-    
+
     private Answer execute(ComputeChecksumCommand cmd) {
         return new Answer(cmd, false, null);   
     }
@@ -119,13 +117,13 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
     public Type getType() {
         return Host.Type.LocalSecondaryStorage;
     }
-    
+
     @Override
     public PingCommand getCurrentStatus(final long id) {
         return new PingStorageCommand(Host.Type.Storage, id, new HashMap<String, Boolean>());
     }
-    
-   
+
+
     @Override
     @SuppressWarnings("unchecked")
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -135,30 +133,30 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
         if (_guid == null) {
             throw new ConfigurationException("Unable to find the guid");
         }
-        
+
         _dc = (String)params.get("zone");
         if (_dc == null) {
             throw new ConfigurationException("Unable to find the zone");
         }
         _pod = (String)params.get("pod");
-        
+
         _instance = (String)params.get("instance");
 
         _parent = (String)params.get("mount.path");
         if (_parent == null) {
             throw new ConfigurationException("No directory specified.");
         }
-        
+
         _storage = (StorageLayer)params.get(StorageLayer.InstanceConfigKey);
         if (_storage == null) {
             String value = (String)params.get(StorageLayer.ClassConfigKey);
             if (value == null) {
                 value = "com.cloud.storage.JavaStorageLayer";
             }
-            
+
             try {
                 Class<StorageLayer> clazz = (Class<StorageLayer>)Class.forName(value);
-                _storage = ComponentLocator.inject(clazz);
+                _storage = ComponentContext.inject(clazz);
             } catch (ClassNotFoundException e) {
                 throw new ConfigurationException("Unable to find class " + value);
             }
@@ -168,15 +166,15 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
             s_logger.warn("Unable to create the directory " + _parent);
             throw new ConfigurationException("Unable to create the directory " + _parent);
         }
-     
+
         s_logger.info("Mount point established at " + _parent);
 
         params.put("template.parent", _parent);
         params.put(StorageLayer.InstanceConfigKey, _storage);
-        
+
         _dlMgr = new DownloadManagerImpl();
         _dlMgr.configure("DownloadManager", params);
-        
+
         return true;
     }
 
@@ -192,7 +190,7 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
 
     @Override
     public StartupCommand[] initialize() {
-        
+
         final StartupStorageCommand cmd = new StartupStorageCommand(_parent, StoragePoolType.Filesystem, 1024l*1024l*1024l*1024l, _dlMgr.gatherTemplateInfo(_parent));
         cmd.setResourceType(Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE);
         cmd.setIqn("local://");
@@ -202,12 +200,47 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
         cmd.setGuid(_guid);
         cmd.setName(_guid);
         cmd.setVersion(LocalSecondaryStorageResource.class.getPackage().getImplementationVersion());
-              
+
         return new StartupCommand [] {cmd};
     }
-    
+
     @Override
     protected String getDefaultScriptsDir() {
         return "scripts/storage/secondary";
     }
+
+
+	@Override
+	public void setName(String name) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void setConfigParams(Map<String, Object> params) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public Map<String, Object> getConfigParams() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	@Override
+	public int getRunLevel() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+
+	@Override
+	public void setRunLevel(int level) {
+		// TODO Auto-generated method stub
+		
+	}
 }

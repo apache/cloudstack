@@ -28,38 +28,22 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.template.Processor.FormatInfo;
+import com.cloud.utils.component.AdapterBase;
 
 @Local(value=Processor.class)
-public class RawImageProcessor implements Processor {
+public class RawImageProcessor extends AdapterBase implements Processor {
     private static final Logger s_logger = Logger.getLogger(RawImageProcessor.class);
-    String _name;
     StorageLayer _storage;
     
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
-        _name = name;
         _storage = (StorageLayer)params.get(StorageLayer.InstanceConfigKey);
         if (_storage == null) {
             throw new ConfigurationException("Unable to get storage implementation");
         }
         
         return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
-	}
-
-	@Override
-	public boolean start() {
-		return true;
-	}
-
-	@Override
-	public boolean stop() {
-		return true;
 	}
 
 	@Override

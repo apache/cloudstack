@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.bridge.model.SAcl;
 import com.cloud.bridge.model.SAclVO;
 import com.cloud.bridge.service.core.s3.S3AccessControlList;
@@ -31,6 +33,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={SAclDao.class})
 public class SAclDaoImpl extends GenericDaoBase<SAclVO, Long> implements SAclDao {
 

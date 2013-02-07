@@ -21,18 +21,17 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 public class NfsUtils {
-    
+
     public static String url2Mount(String urlStr) throws URISyntaxException {
         URI url;
         url = new URI(urlStr);
-        int port = url.getPort();
         return url.getHost() + ":" + url.getPath();
     }
-    
+
     public static String uri2Mount(URI uri) {
         return uri.getHost() + ":" + uri.getPath();
     }
-    
+
     public static String url2PathSafeString(String urlStr) {
         String safe = urlStr.replace(File.separatorChar, '-');
         safe = safe.replace("?", "");
@@ -41,13 +40,13 @@ public class NfsUtils {
         safe = safe.replace("/", "");
         return safe;
     }
-    
+
     public static String getHostPart(String nfsPath)  {
-    	String toks[] = nfsPath.split(":");
-    	if (toks != null && toks.length == 2) {
-    		return toks[0];
-    	}
-    	return null;
+        String toks[] = nfsPath.split(":");
+        if (toks != null && toks.length == 2) {
+            return toks[0];
+        }
+        return null;
     }
 
 }

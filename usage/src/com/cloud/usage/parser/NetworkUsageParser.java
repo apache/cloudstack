@@ -21,26 +21,35 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.usage.UsageNetworkVO;
-import com.cloud.usage.UsageServer;
-import com.cloud.usage.UsageTypes;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageNetworkDao;
 import com.cloud.user.AccountVO;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.SearchCriteria;
 
 public class NetworkUsageParser {
 public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.getName());
 
-    private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
-    private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
-    private static UsageNetworkDao m_usageNetworkDao = _locator.getDao(UsageNetworkDao.class);
+    private static UsageDao m_usageDao;
+    private static UsageNetworkDao m_usageNetworkDao;
 
+    @Inject private UsageDao _usageDao;
+    @Inject private UsageNetworkDao _usageNetworkDao;
+
+    @PostConstruct
+    void init() {
+    	m_usageDao = _usageDao;
+    	m_usageNetworkDao = _usageNetworkDao;
+    }
+    
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Parsing all Network usage events for account: " + account.getId());

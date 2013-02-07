@@ -5,37 +5,59 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
--->
-
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->	
 <section id="creating-new-volumes">
-    <title>Creating a New Volume</title>
-    <para>You can add more data disk volumes to a guest VM at any time, up to the limits of your storage capacity. Both &PRODUCT; administrators and users can add volumes to VM instances. When you create a new volume, it is stored as an entity in &PRODUCT;, but the actual storage resources are not allocated on the physical storage device until you attach the volume. This optimization allows the &PRODUCT; to provision the volume nearest to the guest that will use it when the first attachment is made.</para>
-                <orderedlist>
-                <listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
-                <listitem><para>In the left navigation bar, click Storage.</para></listitem>
-                <listitem><para>In Select View, choose Volumes.</para></listitem>
-                <listitem><para>To create a new volume, click Add Volume, provide the following details, and click OK.</para>
-                <itemizedlist>
-                    <listitem><para>Name. Give the volume a unique name so you can find it later.</para></listitem>
-                    <listitem><para>Availability Zone. Where do you want the storage to reside? This should be close to the VM that will use the volume.</para></listitem>
-                    <listitem><para>Disk Offering. Choose the characteristics of the storage.</para></listitem>
-                </itemizedlist>
-                <para>The new volume appears in the list of volumes with the state “Allocated.” The volume data is stored in &PRODUCT;, but the volume is not yet ready for use</para></listitem>
-                <listitem><para>To start using the volume, continue to Attaching a Volume </para></listitem>
-            </orderedlist>
-    </section>
+	<title>Creating a New Volume</title>
+	<para>You can add more data disk volumes to a guest VM at any time, up to the limits of your storage capacity. Both &PRODUCT; administrators and users can add volumes to VM instances. When you create a new volume, it is stored as an entity in &PRODUCT;, but the actual storage resources are not allocated on the physical storage device until you attach the volume. This optimization allows the &PRODUCT; to provision the volume nearest to the guest that will use it when the first attachment is made.</para>
+	<section id="local-storage-data-volumes">
+		<title>Using Local Storage for Data Volumes</title>
+	    <para>You can  create data volumes on local storage (supported with XenServer, KVM, and VMware).
+		    The data volume is placed on the same
+			host as the VM instance that is attached to the data volume. These
+			local data volumes can be attached to virtual machines, detached, re-attached,
+			and deleted just as with the other types of data volume.</para>
+		<para>Local storage is ideal for scenarios where persistence of data volumes and HA
+			is not required. Some of the benefits include reduced disk I/O latency and cost
+			reduction from using inexpensive local disks.</para>
+		<para>In order for local volumes to be used, the feature must be enabled for the
+			zone.</para>
+		<para>You can create a data disk offering for local storage. When a user creates a
+			new VM, they can select this disk offering in order to cause the data disk
+			volume to be placed in local storage.</para>
+		<para>You can not migrate a VM that has a volume in local storage to a different
+			host, nor migrate the volume itself away to a different host. If you want to put
+			a host into maintenance mode, you must first stop any VMs with local data
+			volumes on that host.</para>
+	</section>
+	<section id="creating-new-volume-steps">
+		<title>To Create a New Volume</title>
+				<orderedlist>
+				<listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
+				<listitem><para>In the left navigation bar, click Storage.</para></listitem>
+				<listitem><para>In Select View, choose Volumes.</para></listitem>
+				<listitem><para>To create a new volume, click Add Volume, provide the following details, and click OK.</para>
+				<itemizedlist>
+					<listitem><para>Name. Give the volume a unique name so you can find it later.</para></listitem>
+					<listitem><para>Availability Zone. Where do you want the storage to reside? This should be close to the VM that will use the volume.</para></listitem>
+					<listitem><para>Disk Offering. Choose the characteristics of the storage.</para></listitem>
+				</itemizedlist>
+				<para>The new volume appears in the list of volumes with the state “Allocated.” The volume data is stored in &PRODUCT;, but the volume is not yet ready for use</para></listitem>
+				<listitem><para>To start using the volume, continue to Attaching a Volume </para></listitem>
+			</orderedlist>
+	</section>
+</section>

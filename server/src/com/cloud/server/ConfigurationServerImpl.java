@@ -16,6 +16,36 @@
 // under the License.
 package com.cloud.server;
 
+import java.io.DataInputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.regex.Pattern;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.Resource;
@@ -40,12 +70,16 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.guru.*;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.guru.ControlNetworkGuru;
+import com.cloud.network.guru.DirectPodBasedNetworkGuru;
+import com.cloud.network.guru.PodBasedNetworkGuru;
+import com.cloud.network.guru.PublicNetworkGuru;
+import com.cloud.network.guru.StorageNetworkGuru;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -63,61 +97,55 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.ComponentLifecycle;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
+import com.cloud.uuididentity.dao.IdentityDao;
+import org.apache.cloudstack.region.RegionVO;
+import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import java.io.*;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.security.NoSuchAlgorithmException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.regex.Pattern;
-
-public class ConfigurationServerImpl implements ConfigurationServer {
+@Component
+public class ConfigurationServerImpl extends ManagerBase implements ConfigurationServer {
     public static final Logger s_logger = Logger.getLogger(ConfigurationServerImpl.class.getName());
 
-    private final ConfigurationDao _configDao;
-    private final DataCenterDao _zoneDao;
-    private final HostPodDao _podDao;
-    private final DiskOfferingDao _diskOfferingDao;
-    private final ServiceOfferingDao _serviceOfferingDao;
-    private final NetworkOfferingDao _networkOfferingDao;
-    private final DataCenterDao _dataCenterDao;
-    private final NetworkDao _networkDao;
-    private final VlanDao _vlanDao;
+    @Inject private ConfigurationDao _configDao;
+    @Inject private DataCenterDao _zoneDao;
+    @Inject private HostPodDao _podDao;
+    @Inject private DiskOfferingDao _diskOfferingDao;
+    @Inject private ServiceOfferingDao _serviceOfferingDao;
+    @Inject private NetworkOfferingDao _networkOfferingDao;
+    @Inject private DataCenterDao _dataCenterDao;
+    @Inject private NetworkDao _networkDao;
+    @Inject private VlanDao _vlanDao;    
     private String _domainSuffix;
-    private final DomainDao _domainDao;
-    private final AccountDao _accountDao;
-    private final ResourceCountDao _resourceCountDao;
-    private final NetworkOfferingServiceMapDao _ntwkOfferingServiceMapDao;
+    @Inject private DomainDao _domainDao;
+    @Inject private AccountDao _accountDao;
+    @Inject private ResourceCountDao _resourceCountDao;
+    @Inject private NetworkOfferingServiceMapDao _ntwkOfferingServiceMapDao;
+    @Inject private IdentityDao _identityDao;
+    @Inject private RegionDao _regionDao;
 
     public ConfigurationServerImpl() {
-        ComponentLocator locator = ComponentLocator.getLocator(Name);
-        _configDao = locator.getDao(ConfigurationDao.class);
-        _zoneDao = locator.getDao(DataCenterDao.class);
-        _podDao = locator.getDao(HostPodDao.class);
-        _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
-        _serviceOfferingDao = locator.getDao(ServiceOfferingDao.class);
-        _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
-        _dataCenterDao = locator.getDao(DataCenterDao.class);
-        _networkDao = locator.getDao(NetworkDao.class);
-        _vlanDao = locator.getDao(VlanDao.class);
-        _domainDao = locator.getDao(DomainDao.class);
-        _accountDao = locator.getDao(AccountDao.class);
-        _resourceCountDao = locator.getDao(ResourceCountDao.class);
-        _ntwkOfferingServiceMapDao = locator.getDao(NetworkOfferingServiceMapDao.class);
+    	setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
+    }
+    
+	@Override
+	public boolean configure(String name, Map<String, Object> params)
+			throws ConfigurationException {
+		
+		try {
+			persistDefaultValues();
+		} catch (InternalErrorException e) {
+			throw new RuntimeException("Unhandled configuration exception", e);
+		}
+		return true;
     }
 
     @Override
@@ -206,6 +234,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             // Create default networks
             createDefaultNetworks();
 
+            createDefaultRegion();
+            
             // Create userIpAddress ranges
 
             // Update existing vlans with networkId
@@ -253,9 +283,11 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         // We should not update seed data UUID column here since this will be invoked in upgrade case as well.
         //updateUuids();
-
         // Set init to true
         _configDao.update("init", "Hidden", "true");
+
+        // invalidate cache in DAO as we have changed DB status
+        _configDao.invalidateCache();
     }
 
     /*
@@ -306,8 +338,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
     @DB
     protected void saveUser() {
+    	//ToDo: Add regionId to default users and accounts
         // insert system account
-        String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id) VALUES (1, UUID(), 'system', '1', '1')";
+        String insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, region_id) VALUES (1, UUID(), 'system', '1', '1', '1')";
         Transaction txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -315,8 +348,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         } catch (SQLException ex) {
         }
         // insert system user
-        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created)" +
-                " VALUES (1, UUID(), 'system', RAND(), 1, 'system', 'cloud', now())";
+        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, region_id)" +
+                " VALUES (1, UUID(), 'system', RAND(), 1, 'system', 'cloud', now(), '1')";
         txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -332,7 +365,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         String lastname = "cloud";
 
         // create an account for the admin user first
-        insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id) VALUES (" + id + ", UUID(), '" + username + "', '1', '1')";
+        insertSql = "INSERT INTO `cloud`.`account` (id, uuid, account_name, type, domain_id, region_id) VALUES (" + id + ", UUID(), '" + username + "', '1', '1', '1')";
         txn = Transaction.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -341,8 +374,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
         // now insert the user
-        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created, state) " +
-                "VALUES (" + id + ",'" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled')";
+        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created, state, region_id) " +
+                "VALUES (" + id + ",'" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled', '1')";
 
         txn = Transaction.currentTxn();
         try {
@@ -529,7 +562,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             try {
                 String rpassword = PasswordGenerator.generatePresharedKey(8);
                 String wSql = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) "
-                        + "VALUES ('Hidden','DEFAULT', 'management-server','system.vm.password', '" + rpassword
+                        + "VALUES ('Secure','DEFAULT', 'management-server','system.vm.password', '" + DBEncryptionUtil.encrypt(rpassword)
                         + "','randmon password generated each management server starts for system vm')";
                 PreparedStatement stmt = txn.prepareAutoCloseStatement(wSql);
                 stmt.executeUpdate(wSql);
@@ -901,7 +934,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Shared Security group enabled networks",
                 TrafficType.Guest,
                 false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Shared, true, true);
+                null, Network.GuestType.Shared, true, true, false);
 
         defaultSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedSGNetworkOffering);
@@ -918,7 +951,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Shared networks",
                 TrafficType.Guest,
                 false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Shared, true, true);
+                null, Network.GuestType.Shared, true, true, false);
 
         defaultSharedNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultSharedNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultSharedNetworkOffering);
@@ -935,7 +968,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Isolated networks with Source Nat service enabled",
                 TrafficType.Guest,
                 false, false, null, null, true, Availability.Required,
-                null, Network.GuestType.Isolated, true, false);
+                null, Network.GuestType.Isolated, true, false, false);
 
         defaultIsolatedSourceNatEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedSourceNatEnabledNetworkOffering);
@@ -953,7 +986,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Isolated networks with no Source Nat service",
                 TrafficType.Guest,
                 false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Isolated, true, true);
+                null, Network.GuestType.Isolated, true, true, false);
 
         defaultIsolatedEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultIsolatedEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedEnabledNetworkOffering);
@@ -970,7 +1003,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Shared networks with Elastic IP and Elastic LB capabilities",
                 TrafficType.Guest,
                 false, true, null, null, true, Availability.Optional,
-                null, Network.GuestType.Shared, true, false, false, false, true, true, true, false);
+                null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false);
 
         defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);
@@ -987,7 +1020,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Isolated Vpc networks with Source Nat service enabled",
                 TrafficType.Guest,
                 false, false, null, null, true, Availability.Optional,
-                null, Network.GuestType.Isolated, false, false);
+                null, Network.GuestType.Isolated, false, false, false);
 
         defaultNetworkOfferingForVpcNetworks.setState(NetworkOffering.State.Enabled);
         defaultNetworkOfferingForVpcNetworks = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworks);
@@ -1017,7 +1050,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 "Offering for Isolated Vpc networks with Source Nat service enabled and LB service Disabled",
                 TrafficType.Guest,
                 false, false, null, null, true, Availability.Optional,
-                null, Network.GuestType.Isolated, false, false);
+                null, Network.GuestType.Isolated, false, false, false);
 
         defaultNetworkOfferingForVpcNetworksNoLB.setState(NetworkOffering.State.Enabled);
         defaultNetworkOfferingForVpcNetworksNoLB = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworksNoLB);
@@ -1237,6 +1270,11 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
         return svcProviders;
+    }
+    
+    private void createDefaultRegion(){
+    	//Get Region name and URL from db.properties    	
+    	_regionDao.persist(new RegionVO(_regionDao.getRegionId(), "Local", "http://localhost:8080/client/api", "", ""));
     }
 
 }

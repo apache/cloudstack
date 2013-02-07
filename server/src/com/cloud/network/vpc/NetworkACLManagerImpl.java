@@ -21,10 +21,12 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.event.ActionEvent;
@@ -53,8 +55,8 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
@@ -66,9 +68,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 
+@Component
 @Local(value = { NetworkACLService.class, NetworkACLManager.class})
-public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
-    String _name;
+public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLManager{
     private static final Logger s_logger = Logger.getLogger(NetworkACLManagerImpl.class);
 
     @Inject
@@ -85,29 +87,6 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
     ResourceTagDao _resourceTagDao;
 
     @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        return true;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
     public boolean applyNetworkACLs(long networkId, Account caller) throws ResourceUnavailableException {
         List<FirewallRuleVO> rules = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.NetworkACL);
         return _firewallMgr.applyFirewallRules(rules, false, caller);
@@ -115,6 +94,9 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
 
     @Override
     public FirewallRule createNetworkACL(FirewallRule acl) throws NetworkRuleConflictException {
+        if (acl.getSourceCidrList() == null && (acl.getPurpose() == Purpose.Firewall || acl.getPurpose() == Purpose.NetworkACL)) {
+            _firewallDao.loadSourceCidrs((FirewallRuleVO)acl);
+        }
         return createNetworkACL(UserContext.current().getCaller(), acl.getXid(), acl.getSourcePortStart(), 
                 acl.getSourcePortEnd(), acl.getProtocol(), acl.getSourceCidrList(), acl.getIcmpCode(),
                 acl.getIcmpType(), null, acl.getType(), acl.getNetworkId(), acl.getTrafficType());
@@ -247,6 +229,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
             // if one cidr overlaps another, do port veirficatino
             boolean duplicatedCidrs = false;
             // Verify that the rules have different cidrs
+            _firewallDao.loadSourceCidrs(rule);
             List<String> ruleCidrList = rule.getSourceCidrList();
             List<String> newRuleCidrList = newRule.getSourceCidrList();
 

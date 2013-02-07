@@ -19,12 +19,12 @@ package com.cloud.api.query;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
@@ -66,6 +66,7 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
@@ -125,9 +126,6 @@ import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -137,8 +135,8 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -150,18 +148,13 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
-/**
- * @author minc
- *
- */
+@Component
 @Local(value = {QueryService.class })
-public class QueryManagerImpl implements QueryService, Manager {
+public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     public static final Logger s_logger = Logger.getLogger(QueryManagerImpl.class);
 
-    private String _name;
-
-   // public static ViewResponseHelper _responseGenerator;
+    // public static ViewResponseHelper _responseGenerator;
 
     @Inject
     private AccountManager _accountMgr;
@@ -252,28 +245,6 @@ public class QueryManagerImpl implements QueryService, Manager {
 
     @Inject
     private HighAvailabilityManager _haMgr;
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-       // _responseGenerator = new ViewResponseHelper();
-        return false;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.api.query.QueryService#searchForUsers(org.apache.cloudstack.api.command.admin.user.ListUsersCmd)
@@ -759,7 +730,7 @@ public class QueryManagerImpl implements QueryService, Manager {
 
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
-             for (String key : tags.keySet()) {
+            for (String key : tags.keySet()) {
                 sc.setParameters("key" + String.valueOf(count), key);
                 sc.setParameters("value" + String.valueOf(count), tags.get(key));
                 count++;
@@ -925,10 +896,10 @@ public class QueryManagerImpl implements QueryService, Manager {
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
             for (String key : tags.keySet()) {
-               sc.setParameters("key" + String.valueOf(count), key);
-               sc.setParameters("value" + String.valueOf(count), tags.get(key));
-               count++;
-           }
+                sc.setParameters("key" + String.valueOf(count), key);
+                sc.setParameters("value" + String.valueOf(count), tags.get(key));
+                count++;
+            }
         }
 
         if (securityGroup != null) {
@@ -1016,10 +987,10 @@ public class QueryManagerImpl implements QueryService, Manager {
         //Filter searchFilter = new Filter(DomainRouterJoinVO.class, null, true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<DomainRouterJoinVO> sb = _routerJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
-                                                             // ids to get
-                                                             // number of
-                                                             // records with
-                                                             // pagination
+        // ids to get
+        // number of
+        // records with
+        // pagination
         _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
@@ -1137,7 +1108,7 @@ public class QueryManagerImpl implements QueryService, Manager {
         Filter searchFilter = new Filter(ProjectJoinVO.class, "id", false, startIndex, pageSize);
         SearchBuilder<ProjectJoinVO> sb = _projectJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
-                                                             // ids
+        // ids
 
         if (_accountMgr.isAdmin(caller.getType())) {
             if (domainId != null) {
@@ -1344,7 +1315,7 @@ public class QueryManagerImpl implements QueryService, Manager {
         Long startIndex = cmd.getStartIndex();
         Long pageSizeVal = cmd.getPageSizeVal();
 
-            //long projectId, String accountName, String role, Long startIndex, Long pageSizeVal) {
+        //long projectId, String accountName, String role, Long startIndex, Long pageSizeVal) {
         Account caller = UserContext.current().getCaller();
 
         //check that the project exists
@@ -1588,7 +1559,7 @@ public class QueryManagerImpl implements QueryService, Manager {
 
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
-             for (String key : tags.keySet()) {
+            for (String key : tags.keySet()) {
                 sc.setParameters("key" + String.valueOf(count), key);
                 sc.setParameters("value" + String.valueOf(count), tags.get(key));
                 count++;
@@ -1893,23 +1864,23 @@ public class QueryManagerImpl implements QueryService, Manager {
         }
 
         if (name != null) {
-            sc.setParameters("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+            sc.setParameters("name", "%" + name + "%");
         }
 
         if (path != null) {
-            sc.setParameters("path", SearchCriteria.Op.EQ, path);
+            sc.setParameters("path", path);
         }
         if (zoneId != null) {
-            sc.setParameters("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+            sc.setParameters("dataCenterId", zoneId);
         }
         if (pod != null) {
-            sc.setParameters("podId", SearchCriteria.Op.EQ, pod);
+            sc.setParameters("podId", pod);
         }
         if (address != null) {
-            sc.setParameters("hostAddress", SearchCriteria.Op.EQ, address);
+            sc.setParameters("hostAddress", address);
         }
         if (cluster != null) {
-            sc.setParameters("clusterId", SearchCriteria.Op.EQ, cluster);
+            sc.setParameters("clusterId", cluster);
         }
 
         // search Pool details by ids
@@ -2306,7 +2277,7 @@ public class QueryManagerImpl implements QueryService, Manager {
                     Set<Long> dcIds = new HashSet<Long>(); //data centers with at least one VM running
                     List<DomainRouterVO> routers = _routerDao.listBy(account.getId());
                     for (DomainRouterVO router : routers){
-                        dcIds.add(router.getDataCenterIdToDeployIn());
+                        dcIds.add(router.getDataCenterId());
                     }
                     if ( dcIds.size() == 0) {
                         return new Pair<List<DataCenterJoinVO>, Integer>(new ArrayList<DataCenterJoinVO>(), 0);

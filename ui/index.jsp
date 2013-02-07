@@ -75,6 +75,7 @@ under the License.
                 <option value="ru_RU"><fmt:message key="label.lang.russian"/></option>
                 <option value="fr_FR"><fmt:message key="label.lang.french"/></option>
                 <option value="pt_BR"><fmt:message key="label.lang.brportugese"/></option>
+                <option value="ko_KR"><fmt:message key="label.lang.korean"/></option>
               </select>
             </div>
           </div>

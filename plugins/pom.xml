@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements. See the NOTICE file
@@ -15,8 +16,7 @@
   KIND, either express or implied. See the License for the
   specific language governing permissions and limitations
   under the License.
--->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+--><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>cloudstack-plugins</artifactId>
   <name>Apache CloudStack Plugin POM</name>
@@ -41,16 +41,22 @@
     <module>hypervisors/ovm</module>
     <module>hypervisors/xen</module>
     <module>hypervisors/kvm</module>
+    <module>event-bus/rabbitmq</module>
     <module>hypervisors/simulator</module>
+    <module>hypervisors/baremetal</module>
+    <module>hypervisors/ucs</module>
     <module>network-elements/elastic-loadbalancer</module>
     <module>network-elements/ovs</module>
     <module>network-elements/nicira-nvp</module>
+    <module>network-elements/bigswitch-vns</module>
     <module>storage-allocators/random</module>
     <module>user-authenticators/ldap</module>
     <module>user-authenticators/md5</module>
     <module>user-authenticators/plain-text</module>
     <module>user-authenticators/sha256salted</module>
     <module>network-elements/dns-notifier</module>
+    <module>storage/image/s3</module>
+    <module>storage/volume/solidfire</module>
   </modules>
 
   <dependencies>

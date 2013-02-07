@@ -19,7 +19,6 @@ package com.cloud.network.dao;
 import java.util.List;
 
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.network.IPAddressVO;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.Ip;
 

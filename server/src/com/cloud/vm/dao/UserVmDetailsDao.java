@@ -18,9 +18,12 @@ package com.cloud.vm.dao;
 
 import java.util.Map;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.UserVmDetailVO;
 
+@Component
 public interface UserVmDetailsDao extends GenericDao<UserVmDetailVO, Long> {
     Map<String, String> findDetails(long vmId);
     
