@@ -218,8 +218,8 @@ cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-
 cp -r client/target/cloud-client-ui-4.1.0-SNAPSHOT/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client
 
 # Don't package the scripts in the management webapp
-rm -rf {RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/WEB-INF/classes/scripts
-rm -rf {RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/WEB-INF/classes/vms
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
 for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf server-ssl.xml server-nonssl.xml \
             catalina.policy catalina.properties db-enc.properties classpath.conf tomcat-users.xml web.xml ; do
