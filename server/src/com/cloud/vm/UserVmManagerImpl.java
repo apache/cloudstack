@@ -3358,9 +3358,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         _vmDao.persist(vm);
         _vmDao.saveDetails(vm);
-        txn.commit();
 
-        
         s_logger.debug("Allocating in the DB for vm");
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
 
@@ -3395,7 +3393,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         _resourceLimitMgr.incrementResourceCount(accountId,
                 ResourceType.user_vm);
+
         txn.commit();
+
         // Assign instance to the group
         try {
             if (group != null) {
