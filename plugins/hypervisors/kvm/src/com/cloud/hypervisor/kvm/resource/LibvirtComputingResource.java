@@ -975,7 +975,7 @@ ServerResource {
         }
     }
 
-    protected String startDomain(Connect conn, String vmName, String domainXML)
+    protected String startVM(Connect conn, String vmName, String domainXML)
             throws LibvirtException, InternalErrorException {
         Domain dm = null;
         try {
@@ -3006,7 +3006,7 @@ ServerResource {
             createVifs(vmSpec, vm);
 
             s_logger.debug("starting " + vmName + ": " + vm.toString());
-            startDomain(conn, vmName, vm.toString());
+            startVM(conn, vmName, vm.toString());
 
             NicTO[] nics = vmSpec.getNics();
             for (NicTO nic : nics) {
@@ -3832,7 +3832,7 @@ ServerResource {
             String vmDef = dm.getXMLDesc(0);
             s_logger.debug(vmDef);
             msg = stopVM(conn, vmName);
-            msg = startDomain(conn, vmName, vmDef);
+            msg = startVM(conn, vmName, vmDef);
             return null;
         } catch (LibvirtException e) {
             s_logger.warn("Failed to create vm", e);
