@@ -38,6 +38,7 @@ Veewee::Definition.declare({
      'debconf/frontend=noninteractive ',
      'console-setup/ask_detect=false ',
      'console-keymaps-at/keymap=us ',
+     'keyboard-configuration/xkb-keymap=us ',
      '<Enter>'
   ],
   :kickstart_port => "7122",
@@ -45,14 +46,17 @@ Veewee::Definition.declare({
   :kickstart_file => "preseed.cfg",
   :ssh_login_timeout => "10000",
   :ssh_user => "root",
-  :ssh_password => "password",
+  :ssh_password => "vagrant",
   :ssh_key => "",
   :ssh_host_port => "7222",
   :ssh_guest_port => "22",
   :sudo_cmd => "echo '%p'|sudo -S sh '%f'",
   :shutdown_cmd => "halt -p",
   :postinstall_files => [
-    "postinstall.sh",
+    "base.sh",
+    "cloudstack-packages.sh",
+    "cleanup.sh",
+    "zerodisk.sh"
   ],
-  :postinstall_timeout => "10000"
+  :postinstall_timeout => "100000"
 })
