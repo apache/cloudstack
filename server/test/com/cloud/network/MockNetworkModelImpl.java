@@ -27,6 +27,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
@@ -819,5 +820,13 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
 	public boolean isIP6AddressAvailableInVlan(long vlanId) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public void checkIp6Parameters(String startIPv6, String endIPv6,
+			String ip6Gateway, String ip6Cidr)
+			throws InvalidParameterValueException {
+		// TODO Auto-generated method stub
+		
 	}
 }

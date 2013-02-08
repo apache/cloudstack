@@ -761,43 +761,11 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
         
         if (ipv6) {
-        	if (!NetUtils.isValidIpv6(startIPv6)) {
-        		throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
-        	}
         	if (endIPv6 == null) {
         		endIPv6 = startIPv6;
-        	} else if (!NetUtils.isValidIpv6(endIPv6)) {
-        		throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
         	}
+        	_networkModel.checkIp6Parameters(startIPv6, endIPv6, ip6Gateway, ip6Cidr);
         	
-        	if (!(ip6Gateway != null && ip6Cidr != null)) {
-        		throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in");
-        	}
-        	
-        	if (!NetUtils.isValidIpv6(ip6Gateway)) {
-        		throw new InvalidParameterValueException("Invalid ip6Gateway");
-        	}
-        	if (!NetUtils.isValidIp6Cidr(ip6Cidr)) {
-        		throw new InvalidParameterValueException("Invalid ip6cidr");
-        	}
-        	if (!NetUtils.isIp6InNetwork(startIPv6, ip6Cidr)) {
-        		throw new InvalidParameterValueException("startIPv6 is not in ip6cidr indicated network!");
-        	}
-        	if (!NetUtils.isIp6InNetwork(endIPv6, ip6Cidr)) {
-        		throw new InvalidParameterValueException("endIPv6 is not in ip6cidr indicated network!");
-        	}
-        	if (!NetUtils.isIp6InNetwork(ip6Gateway, ip6Cidr)) {
-        		throw new InvalidParameterValueException("ip6Gateway is not in ip6cidr indicated network!");
-        	}
-        	
-        	int cidrSize = NetUtils.getIp6CidrSize(ip6Cidr);
-        	// Ipv6 cidr limit should be at least /64
-        	if (cidrSize < 64) {
-        		throw new InvalidParameterValueException("The cidr size of IPv6 network must be no less than 64 bits!");
-        	}
-        }
-
-        if (ipv6) {
         	if (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() != Network.GuestType.Shared) {
         		throw new InvalidParameterValueException("Can only support create IPv6 network with advance shared network!");
         	}
@@ -2942,10 +2910,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         return null;
     }
 
-
     @Override
     public Network getNetwork(String networkUuid) {
        return _networksDao.findByUuid(networkUuid);
     }
-
 }
