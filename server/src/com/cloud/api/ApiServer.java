@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -160,7 +160,7 @@ public class ApiServer implements HttpRequestHandler {
     private Account _systemAccount = null;
     private User _systemUser = null;
     @Inject private RegionManager _regionMgr = null;
-    
+
     private static int _workerCount = 0;
     private static ApiServer s_instance = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
@@ -590,13 +590,13 @@ public class ApiServer implements HttpRequestHandler {
                 try{
                     checkCommandAvailable(user, commandName);
                 }
-                catch (PermissionDeniedException ex){
-                    s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
-                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
-                }
                 catch (RequestLimitException ex){
                     s_logger.debug(ex.getMessage());
                     throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
+                }
+                catch (PermissionDeniedException ex){
+                    s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
+                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
                 return true;
             } else {
@@ -999,7 +999,7 @@ public class ApiServer implements HttpRequestHandler {
 
         } catch (Exception e) {
             s_logger.error("Exception responding to http request", e);
-        }            				
+        }
         return responseText;
     }
 
@@ -1011,7 +1011,7 @@ public class ApiServer implements HttpRequestHandler {
         if (ex == null){
             // this call should not be invoked with null exception
             return getSerializedApiError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Some internal error happened", apiCommandParams, responseType);
-        }            				
+        }
         try {
             if (ex.getErrorCode() == ApiErrorCode.UNSUPPORTED_ACTION_ERROR || apiCommandParams == null || apiCommandParams.isEmpty()) {
                 responseName = "errorresponse";
@@ -1037,7 +1037,7 @@ public class ApiServer implements HttpRequestHandler {
             if (idList != null) {
                 for (int i=0; i < idList.size(); i++) {
                     apiResponse.addProxyObject(idList.get(i));
-                }            				
+                }
             }
             // Also copy over the cserror code and the function/layer in which
             // it was thrown.
@@ -1047,7 +1047,7 @@ public class ApiServer implements HttpRequestHandler {
             responseText = ApiResponseSerializer.toSerializedString(apiResponse, responseType);
 
         } catch (Exception e) {
-            s_logger.error("Exception responding to http request", e);            
+            s_logger.error("Exception responding to http request", e);
         }
         return responseText;
     }
