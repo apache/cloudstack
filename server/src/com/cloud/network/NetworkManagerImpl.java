@@ -1854,6 +1854,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         } else if (zone.getNetworkType() == NetworkType.Advanced) {
             if (zone.isSecurityGroupEnabled()) {
+<<<<<<< HEAD
             	if (ipv6) {
             		throw new InvalidParameterValueException("IPv6 is not supported with security group!");
             	}
@@ -1867,6 +1868,15 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 }
                 if ( ! _networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SecurityGroup)) {
                     throw new InvalidParameterValueException("network must have SecurityGroup provider in security group enabled zone");
+=======
+                // Only Account specific Isolated network with sourceNat service disabled are allowed in security group
+                // enabled zone
+                boolean allowCreation = (ntwkOff.getGuestType() == GuestType.Isolated 
+                        && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat));
+                if (!allowCreation) {
+                    throw new InvalidParameterValueException("Only Account specific Isolated network with sourceNat " +
+                            "service disabled are allowed in security group enabled zone");
+>>>>>>> parent of d7201df... CLOUDSTACK-737
                 }
             }
 
