@@ -24,8 +24,9 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.PluggableService;
 
-public interface NetappManager  extends Manager {
+public interface NetappManager  extends Manager, PluggableService {
 	enum AlgorithmType {
 		RoundRobin,
 		LeastFull
