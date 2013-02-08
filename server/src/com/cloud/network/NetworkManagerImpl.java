@@ -1856,7 +1856,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             if (zone.isSecurityGroupEnabled()) {
 <<<<<<< HEAD
 <<<<<<< HEAD
-<<<<<<< HEAD
             	if (ipv6) {
             		throw new InvalidParameterValueException("IPv6 is not supported with security group!");
             	}
@@ -1877,19 +1876,12 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 // Only Account specific Isolated network with sourceNat service disabled are allowed in security group
                 // enabled zone
 >>>>>>> parent of d7201df... CLOUDSTACK-737
-=======
-                // Only Account specific Isolated network with sourceNat service disabled are allowed in security group
-                // enabled zone
->>>>>>> parent of d7201df... CLOUDSTACK-737
                 boolean allowCreation = (ntwkOff.getGuestType() == GuestType.Isolated 
                         && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat));
                 if (!allowCreation) {
                     throw new InvalidParameterValueException("Only Account specific Isolated network with sourceNat " +
                             "service disabled are allowed in security group enabled zone");
 <<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> parent of d7201df... CLOUDSTACK-737
-=======
 >>>>>>> parent of d7201df... CLOUDSTACK-737
 =======
 >>>>>>> parent of d7201df... CLOUDSTACK-737
