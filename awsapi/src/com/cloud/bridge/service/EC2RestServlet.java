@@ -107,6 +107,7 @@ import com.cloud.bridge.persist.dao.UserCredentialsDaoImpl;
 import com.cloud.bridge.service.controller.s3.ServiceProvider;
 import com.cloud.bridge.service.core.ec2.EC2AssociateAddress;
 import com.cloud.bridge.service.core.ec2.EC2AuthorizeRevokeSecurityGroup;
+import com.cloud.bridge.service.core.ec2.EC2AvailabilityZonesFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2CreateImage;
 import com.cloud.bridge.service.core.ec2.EC2CreateKeyPair;
 import com.cloud.bridge.service.core.ec2.EC2CreateVolume;
@@ -1286,6 +1287,17 @@ public class EC2RestServlet extends HttpServlet {
                 if (null != value && 0 < value.length) EC2request.addZone( value[0] );
             }
         }		
+
+        // add filters
+        EC2Filter[] filterSet = extractFilters( request );
+        if ( filterSet != null ) {
+            EC2AvailabilityZonesFilterSet afs = new EC2AvailabilityZonesFilterSet();
+            for( int i=0; i < filterSet.length; i++ ) {
+                afs.addFilter(filterSet[i]);
+            }
+            EC2request.setFilterSet( afs );
+        }
+
         // -> execute the request
         DescribeAvailabilityZonesResponse EC2response = EC2SoapServiceImpl.toDescribeAvailabilityZonesResponse( ServiceProvider.getInstance().getEC2Engine().handleRequest( EC2request ));
         serializeResponse(response, EC2response);
