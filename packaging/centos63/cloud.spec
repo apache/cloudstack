@@ -185,7 +185,7 @@ install -D console-proxy/dist/systemvm.iso ${RPM_BUILD_ROOT}%{_datadir}/%{name}-
 install -D console-proxy/dist/systemvm.zip ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.zip
 install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloud_utils.py
 cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/
-python -m compileall ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloud_utils.py
+python -m py_compile ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloud_utils.py
 python -m compileall ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloudutils
 
 # Management
