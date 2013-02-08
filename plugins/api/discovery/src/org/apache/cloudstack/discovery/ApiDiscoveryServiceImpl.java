@@ -68,9 +68,7 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
         if (s_apiNameDiscoveryResponseMap == null) {
             long startTime = System.nanoTime();
             s_apiNameDiscoveryResponseMap = new HashMap<String, ApiDiscoveryResponse>();
-            //TODO: Fix and use PluggableService to get the classes
-            Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
-                    new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
+            Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
             for(PluggableService service: _services)
                 cmdClasses.addAll(service.getCommands());
             cacheResponseMap(cmdClasses);
