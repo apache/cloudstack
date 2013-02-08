@@ -258,8 +258,8 @@ public enum Config {
     VmwareAdditionalVncPortRangeSize("Advanced", ManagementServer.class, Integer.class, "vmware.additional.vnc.portrange.size", "1000", "Start port number of additional VNC port range", null),
     //VmwareGuestNicDeviceType("Advanced", ManagementServer.class, String.class, "vmware.guest.nic.device.type", "E1000", "Ethernet card type used in guest VM, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3", null),
     VmwarePerClusterHostMax("Advanced", ManagementServer.class, Integer.class, "vmware.percluster.host.max", "8", "maxmium hosts per vCenter cluster(do not let it grow over 8)", "1-8"),
-    VmwareReserveCpu("Advanced", ManagementServer.class, Boolean.class, "vmware.reserve.cpu", "false", "Specify whether or not to reserve CPU based on CPU overprovisioning factor", null),
-    VmwareReserveMem("Advanced", ManagementServer.class, Boolean.class, "vmware.reserve.mem", "false", "Specify whether or not to reserve memory based on memory overprovisioning factor", null),
+    VmwareReserveCpu("Advanced", ManagementServer.class, Boolean.class, "vmware.reserve.cpu", "true", "Specify whether or not to reserve CPU based on CPU overprovisioning factor", null),
+    VmwareReserveMem("Advanced", ManagementServer.class, Boolean.class, "vmware.reserve.mem", "true", "Specify whether or not to reserve memory based on memory overprovisioning factor", null),
     VmwareRootDiskControllerType("Advanced", ManagementServer.class, String.class, "vmware.root.disk.controller", "ide", "Specify the default disk controller for root volumes, valid values are scsi, ide", null),
     VmwareSystemVmNicDeviceType("Advanced", ManagementServer.class, String.class, "vmware.systemvm.nic.device.type", "E1000", "Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3", null),
     VmwareRecycleHungWorker("Advanced", ManagementServer.class, Boolean.class, "vmware.recycle.hung.wokervm", "false", "Specify whether or not to recycle hung worker VMs", null),
@@ -358,7 +358,7 @@ public enum Config {
 	ConcurrentSnapshotsThresholdPerHost("Advanced", ManagementServer.class, Long.class, "concurrent.snapshots.threshold.perhost",
 	                null, "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited", null),
 	NetworkIPv6SearchRetryMax("Network", ManagementServer.class, Integer.class, "network.ipv6.search.retry.max", "10000", "The maximum number of retrying times to search for an available IPv6 address in the table", null),
-	
+
 	ExternalBaremetalSystemUrl("Advanced", ManagementServer.class, String.class, "external.baremetal.system.url", null, "url of external baremetal system that CloudStack will talk to", null),
 	ExternalBaremetalResourceClassName("Advanced", ManagementServer.class, String.class, "external,baremetal.resource.classname", null, "class name for handling external baremetal resource", null),
 	EnableBaremetalSecurityGroupAgentEcho("Advanced", ManagementServer.class, Boolean.class, "enable.baremetal.securitygroup.agent.echo", "false", "After starting provision process, periodcially echo security agent installed in the template. Treat provisioning as success only if echo successfully", null),

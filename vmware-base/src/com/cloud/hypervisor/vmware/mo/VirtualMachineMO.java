@@ -1663,10 +1663,10 @@ public class VirtualMachineMO extends BaseMO {
 	}
 
 	public int getScsiDeviceControllerKey() throws Exception {
-	    VirtualDevice[] devices = (VirtualDevice [])_context.getVimClient().
+	    List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
 	    	getDynamicProperty(_mor, "config.hardware.device");
 
-	    if(devices != null && devices.length > 0) {
+	    if(devices != null && devices.size() > 0) {
 	    	for(VirtualDevice device : devices) {
                 if(device instanceof VirtualLsiLogicController) {
                     return device.getKey();
@@ -1679,10 +1679,10 @@ public class VirtualMachineMO extends BaseMO {
 	}
 
 	public int getScsiDeviceControllerKeyNoException() throws Exception {
-	    VirtualDevice[] devices = (VirtualDevice [])_context.getVimClient().
+	    List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
 	    	getDynamicProperty(_mor, "config.hardware.device");
 
-	    if(devices != null && devices.length > 0) {
+	    if(devices != null && devices.size() > 0) {
 	    	for(VirtualDevice device : devices) {
                 if(device instanceof VirtualLsiLogicController) {
                     return device.getKey();
@@ -1909,10 +1909,10 @@ public class VirtualMachineMO extends BaseMO {
 	}
 
 	public int getIDEDeviceControllerKey() throws Exception {
-	    VirtualDevice[] devices = (VirtualDevice [])_context.getVimClient().
+	    List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
 	    	getDynamicProperty(_mor, "config.hardware.device");
 
-	    if(devices != null && devices.length > 0) {
+	    if(devices != null && devices.size() > 0) {
 	    	for(VirtualDevice device : devices) {
 	    		if(device instanceof VirtualIDEController) {
 	    			return ((VirtualIDEController)device).getKey();
@@ -1930,9 +1930,9 @@ public class VirtualMachineMO extends BaseMO {
 	}
 
 	public VirtualDevice getIsoDevice() throws Exception {
-		VirtualDevice[] devices = (VirtualDevice[])_context.getVimClient().
+		List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
 			getDynamicProperty(_mor, "config.hardware.device");
-		if(devices != null && devices.length > 0) {
+		if(devices != null && devices.size() > 0) {
 			for(VirtualDevice device : devices) {
 				if(device instanceof VirtualCdrom) {
 					return device;
@@ -1943,10 +1943,10 @@ public class VirtualMachineMO extends BaseMO {
 	}
 
 	public int getPCIDeviceControllerKey() throws Exception {
-	    VirtualDevice[] devices = (VirtualDevice [])_context.getVimClient().
+	    List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
 	        getDynamicProperty(_mor, "config.hardware.device");
 
-	    if(devices != null && devices.length > 0) {
+	    if(devices != null && devices.size() > 0) {
 	    	for(VirtualDevice device : devices) {
 	    		if(device instanceof VirtualPCIController) {
 	    			return ((VirtualPCIController)device).getKey();
@@ -1964,11 +1964,11 @@ public class VirtualMachineMO extends BaseMO {
 	}
 
 	public int getNextDeviceNumber(int controllerKey) throws Exception {
-		VirtualDevice[] devices = (VirtualDevice[])_context.getVimClient().
+		List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
 			getDynamicProperty(_mor, "config.hardware.device");
 
 		int deviceNumber = -1;
-		if(devices != null && devices.length > 0) {
+		if(devices != null && devices.size() > 0) {
 			for(VirtualDevice device : devices) {
 				if(device.getControllerKey() != null && device.getControllerKey().intValue() == controllerKey) {
 					if(device.getUnitNumber() != null && device.getUnitNumber().intValue() > deviceNumber) {
@@ -1981,7 +1981,7 @@ public class VirtualMachineMO extends BaseMO {
 	}
 
 	public VirtualDevice[] getNicDevices() throws Exception {
-		VirtualDevice[] devices = (VirtualDevice[])_context.getVimClient().
+		List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
 			getDynamicProperty(_mor, "config.hardware.device");
 
 		List<VirtualDevice> nics = new ArrayList<VirtualDevice>();
@@ -1997,7 +1997,7 @@ public class VirtualMachineMO extends BaseMO {
 	}
 
 	public Pair<Integer, VirtualDevice> getNicDeviceIndex(String networkNamePrefix) throws Exception {
-        VirtualDevice[] devices = (VirtualDevice[])_context.getVimClient().
+        List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
         getDynamicProperty(_mor, "config.hardware.device");
 
         List<VirtualDevice> nics = new ArrayList<VirtualDevice>();
@@ -2057,7 +2057,7 @@ public class VirtualMachineMO extends BaseMO {
 
 		List<VirtualDevice> returnList = new ArrayList<VirtualDevice>();
 
-		VirtualDevice[] devices = (VirtualDevice[])_context.getVimClient().
+		List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
 			getDynamicProperty(_mor, "config.hardware.device");
 
 		if(devices != null) {
