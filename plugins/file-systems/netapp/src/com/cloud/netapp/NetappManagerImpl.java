@@ -17,6 +17,7 @@
 package com.cloud.netapp;
 
 import java.io.IOException;
+import java.lang.Override;
 import java.net.UnknownHostException;
 import java.rmi.ServerException;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ import netapp.manage.NaServer;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.api.commands.netapp.*;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
@@ -123,7 +125,25 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager
     	
 		return s;
     }
-    
+
+    @Override
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(CreateLunCmd.class);
+        cmdList.add(ListLunsCmd.class);
+        cmdList.add(DissociateLunCmd.class);
+        cmdList.add(CreateVolumeOnFilerCmd.class);
+        cmdList.add(ModifyVolumePoolCmd.class);
+        cmdList.add(ListVolumesOnFilerCmd.class);
+        cmdList.add(ListVolumePoolsCmd.class);
+        cmdList.add(DestroyLunCmd.class);
+        cmdList.add(CreateVolumePoolCmd.class);
+        cmdList.add(DeleteVolumePoolCmd.class);
+        cmdList.add(AssociateLunCmd.class);
+        cmdList.add(DestroyVolumeOnFilerCmd.class);
+        return cmdList;
+    }
+
     @Override
     public void modifyPool(String poolName, String algorithm) throws InvalidParameterValueException
     {	
