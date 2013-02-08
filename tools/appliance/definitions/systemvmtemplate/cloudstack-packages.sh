@@ -57,7 +57,7 @@ accounts() {
   # Setup sudo to allow no-password sudo for "admin"
   groupadd -r admin
   #create a 'cloud' user
-  usermod -a -G admin cloud
+  useradd -G admin cloud
   echo "root:password" | chpasswd
   echo "cloud:password" | chpasswd
   sed -i -e '/Defaults\s\+env_reset/a Defaults\texempt_group=admin' /etc/sudoers
@@ -70,7 +70,7 @@ accounts() {
 
 do_fixes() {
   #fix hostname in openssh-server generated keys
-  sed -i "s/root@\(.*\)$/root@systemvm/g" etc/ssh/ssh_host_*.pub
+  sed -i "s/root@\(.*\)$/root@systemvm/g" /etc/ssh/ssh_host_*.pub
 }
 
 signature() {
