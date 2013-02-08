@@ -368,10 +368,6 @@ ServerResource {
         NATIVE, OPENVSWITCH
     }
 
-    protected enum defineOps {
-        UNDEFINE_VM, DEFINE_VM
-    }
-
     protected BridgeType _bridgeType;
 
     private String getEndIpFromStartIp(String startIp, int numIps) {
@@ -979,77 +975,24 @@ ServerResource {
         }
     }
 
-    protected String startDomain(Connect conn, String vmName, String domainXML)
+    protected String startVM(Connect conn, String vmName, String domainXML)
             throws LibvirtException, InternalErrorException {
-        /* No duplicated vm, we will success, or failed */
-        boolean failed = false;
         Domain dm = null;
         try {
-            dm = conn.domainDefineXML(domainXML);
+            /*
+                We create a transient domain here. When this method gets
+                called we receive a full XML specification of the guest,
+                so no need to define it persistent.
+
+                This also makes sure we never have any old "garbage" defined
+                in libvirt which might haunt us.
+            */
+            dm = conn.domainCreateXML(domainXML, 0);
         } catch (final LibvirtException e) {
-            /* Duplicated defined vm */
-            s_logger.warn("Failed to define domain " + vmName + ": "
+            s_logger.warn("Failed to start domain " + vmName + ": "
                     + e.getMessage());
-            failed = true;
-        } finally {
-            try {
-                if (dm != null) {
-                    dm.free();
-                }
-            } catch (final LibvirtException e) {
-
-            }
         }
 
-        /* If failed, undefine the vm */
-        Domain dmOld = null;
-        Domain dmNew = null;
-        try {
-            if (failed) {
-                dmOld = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                        .getBytes()));
-                dmOld.undefine();
-                dmNew = conn.domainDefineXML(domainXML);
-            }
-        } catch (final LibvirtException e) {
-            s_logger.warn("Failed to define domain (second time) " + vmName
-                    + ": " + e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            s_logger.warn("Failed to define domain (second time) " + vmName
-                    + ": " + e.getMessage());
-            throw new InternalErrorException(e.toString());
-        } finally {
-            try {
-                if (dmOld != null) {
-                    dmOld.free();
-                }
-                if (dmNew != null) {
-                    dmNew.free();
-                }
-            } catch (final LibvirtException e) {
-
-            }
-        }
-
-        /* Start the VM */
-        try {
-            dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                    .getBytes()));
-            dm.create();
-        } catch (LibvirtException e) {
-            s_logger.warn("Failed to start domain: " + vmName + ": "
-                    + e.getMessage());
-            throw e;
-        } finally {
-            try {
-                if (dm != null) {
-                    dm.free();
-                }
-            } catch (final LibvirtException e) {
-
-            }
-        }
         return null;
     }
 
@@ -1062,28 +1005,6 @@ ServerResource {
         }
 
         return true;
-    }
-
-    public static void main(String[] args) {
-        s_logger.addAppender(new org.apache.log4j.ConsoleAppender(
-                new org.apache.log4j.PatternLayout(), "System.out"));
-        LibvirtComputingResource test = new LibvirtComputingResource();
-        Map<String, Object> params = new HashMap<String, Object>();
-        try {
-            test.configure("test", params);
-        } catch (ConfigurationException e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-        }
-        String result = null;
-        // String result = test.startDomainRouter("domr1",
-        // "/var/lib/images/centos.5-4.x86-64/centos-small.img", 128, "0064",
-        // "02:00:30:00:01:01", "00:16:3e:77:e2:a1", "02:00:30:00:64:01");
-        boolean created = (result == null);
-        s_logger.info("Domain " + (created ? " " : " not ") + " created");
-
-        s_logger.info("Rule " + (created ? " " : " not ") + " created");
-        test.stop();
     }
 
     @Override
@@ -2867,7 +2788,7 @@ ServerResource {
             List<InterfaceDef> ifaces = getInterfaces(conn, vmName);
 
             destroy_network_rules_for_vm(conn, vmName);
-            String result = stopVM(conn, vmName, defineOps.UNDEFINE_VM);
+            String result = stopVM(conn, vmName);
             if (result == null) {
                 for (DiskDef disk : disks) {
                     if (disk.getDeviceType() == DiskDef.deviceType.CDROM
@@ -3085,7 +3006,7 @@ ServerResource {
             createVifs(vmSpec, vm);
 
             s_logger.debug("starting " + vmName + ": " + vm.toString());
-            startDomain(conn, vmName, vm.toString());
+            startVM(conn, vmName, vm.toString());
 
             NicTO[] nics = vmSpec.getNics();
             for (NicTO nic : nics) {
@@ -3910,8 +3831,8 @@ ServerResource {
                     .getBytes()));
             String vmDef = dm.getXMLDesc(0);
             s_logger.debug(vmDef);
-            msg = stopVM(conn, vmName, defineOps.UNDEFINE_VM);
-            msg = startDomain(conn, vmName, vmDef);
+            msg = stopVM(conn, vmName);
+            msg = startVM(conn, vmName, vmDef);
             return null;
         } catch (LibvirtException e) {
             s_logger.warn("Failed to create vm", e);
@@ -3932,7 +3853,7 @@ ServerResource {
         return msg;
     }
 
-    protected String stopVM(Connect conn, String vmName, defineOps df) {
+    protected String stopVM(Connect conn, String vmName) {
         DomainInfo.DomainState state = null;
         Domain dm = null;
 
@@ -3982,23 +3903,6 @@ ServerResource {
             }
         }
 
-        if (df == defineOps.UNDEFINE_VM) {
-            try {
-                dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName
-                        .getBytes()));
-                dm.undefine();
-            } catch (LibvirtException e) {
-
-            } finally {
-                try {
-                    if (dm != null) {
-                        dm.free();
-                    }
-                } catch (LibvirtException l) {
-
-                }
-            }
-        }
         return null;
     }
 

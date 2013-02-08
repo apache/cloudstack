@@ -20,7 +20,7 @@
 
 
 usage() {
-  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-h <hypervisor name: kvm|vmware|xenserver> ] [ -s <mgmt server secret key, if you specified any when running cloud-setup-database, default is password>][-u <Url to system vm template>] [-F <clean up system templates of specified hypervisor>] [-e <Template suffix, e.g vhd, ova, qcow2>] [-o <Database server hostname or ip, e.g localhost>] [-r <Database user name, e.g root>] [-d <Database password. Fllowed by nothing if the password is empty>]\n" $(basename $0) >&2
+  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-h <hypervisor name: kvm|vmware|xenserver> ] [ -s <mgmt server secret key, if you specified any when running cloudstack-setup-database, default is password>][-u <Url to system vm template>] [-F <clean up system templates of specified hypervisor>] [-e <Template suffix, e.g vhd, ova, qcow2>] [-o <Database server hostname or ip, e.g localhost>] [-r <Database user name, e.g root>] [-d <Database password. Fllowed by nothing if the password is empty>]\n" $(basename $0) >&2
   printf "or\n" >&2
   printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-h <hypervisor name: kvm|vmware|xenserver> ] [ -s <mgmt server secret key>]\n" $(basename $0) >&2
 }
@@ -104,17 +104,17 @@ fi
 
 
 if [ "$oflag" != 1 ]; then
-    dbHost=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.host'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    dbHost=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.host'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 fi
 if [ "$rflag" != 1 ]; then
-    dbUser=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.username'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    dbUser=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.username'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 fi
 
-if [ -f /etc/cloud/management/db.properties ]; then
-    encType=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.encryption.type'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+if [ -f /etc/cloudstack/management/db.properties ]; then
+    encType=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.encryption.type'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     if [ "$encType" == "file" ]
     then
-        msKey=$(cat /etc/cloud/management/key)
+        msKey=$(cat /etc/cloudstack/management/key)
     elif [ "$encType" == "web" ]
     then
         if [ ! "$sflag" == "1" ]
@@ -127,7 +127,7 @@ fi
 
 if [[ "$encType" == "file" || "$encType" == "web" ]]
 then
-	encPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i | sed 's/^ENC(\(.*\))/\1/')
+	encPassword=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i | sed 's/^ENC(\(.*\))/\1/')
 	if [ ! $encPassword == "" ]
 	then
 		dbPassword=(`java -classpath $jasypt org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
@@ -139,7 +139,7 @@ then
 	fi
 else
     if [ "$dflag" != 1 ]; then
-        dbPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i )
+        dbPassword=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i )
     fi
 fi
 

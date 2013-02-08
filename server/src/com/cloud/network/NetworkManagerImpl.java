@@ -1859,11 +1859,14 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             	}
                 // Only Account specific Isolated network with sourceNat service disabled are allowed in security group
                 // enabled zone
-                boolean allowCreation = (ntwkOff.getGuestType() == GuestType.Isolated 
-                        && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat));
-                if (!allowCreation) {
-                    throw new InvalidParameterValueException("Only Account specific Isolated network with sourceNat " +
-                            "service disabled are allowed in security group enabled zone");
+                if ( ntwkOff.getGuestType() != GuestType.Shared ){
+                    throw new InvalidParameterValueException("Only shared guest network can be created in security group enabled zone");
+                }
+                if ( _networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)) {
+                    throw new InvalidParameterValueException("Service SourceNat is not allowed in security group enabled zone");
+                }
+                if ( _networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SecurityGroup)) {
+                    throw new InvalidParameterValueException("network must have SecurityGroup provider in security group enabled zone");
                 }
             }
 
@@ -2991,6 +2994,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     private boolean shutdownNetworkResources(long networkId, Account caller, long callerUserId) {
         // This method cleans up network rules on the backend w/o touching them in the DB
         boolean success = true;
+        Network network = _networksDao.findById(networkId);
 
         // Mark all PF rules as revoked and apply them on the backend (not in the DB)
         List<PortForwardingRuleVO> pfRules = _portForwardingRulesDao.listByNetwork(networkId);
@@ -3063,7 +3067,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         try {
-            if (!_firewallMgr.applyRules(lbRules, true, false)) {
+            if (!_lbMgr.applyRules(network, Purpose.LoadBalancing, lbs)) {
                 s_logger.warn("Failed to cleanup lb rules as a part of shutdownNetworkRules");
                 success = false;
             }
@@ -3142,7 +3146,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         // Get all ip addresses, mark as releasing and release them on the backend
-        Network network = _networksDao.findById(networkId);
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(networkId, null);
         List<PublicIp> publicIpsToRelease = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
