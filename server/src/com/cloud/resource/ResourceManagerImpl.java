@@ -429,6 +429,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 =======
             s_logger.error("Unable to resolve " + cmd.getHypervisor() + " to a valid supported hypervisor type");
             throw new InvalidParameterValueException("Unable to resolve " + cmd.getHypervisor() + " to a supported ");
+<<<<<<< HEAD
+>>>>>>> parent of d7201df... CLOUDSTACK-737
+=======
 >>>>>>> parent of d7201df... CLOUDSTACK-737
         }
 
