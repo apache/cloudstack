@@ -56,7 +56,7 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
 	 */
 	private int maxAllowed = 30;
 
-	private static LimitStore _store = null;
+	private LimitStore _store = null;
 
 	@Inject
 	AccountService _accountService;
