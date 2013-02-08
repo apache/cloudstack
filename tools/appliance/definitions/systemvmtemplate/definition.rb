@@ -46,7 +46,7 @@ Veewee::Definition.declare({
   :kickstart_file => "preseed.cfg",
   :ssh_login_timeout => "10000",
   :ssh_user => "root",
-  :ssh_password => "vagrant",
+  :ssh_password => "password",
   :ssh_key => "",
   :ssh_host_port => "7222",
   :ssh_guest_port => "22",

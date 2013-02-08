@@ -77,6 +77,7 @@ do_fixes() {
 }
 
 signature() {
+  mkdir -p /var/cache/cloud/
   touch /var/cache/cloud/cloud-scripts-signature
   echo "Cloudstack Release $CLOUDSTACK_RELEASE $(date)" > /etc/cloudstack-release
 }
