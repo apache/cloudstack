@@ -123,7 +123,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     @Inject private NetworkOfferingDao _networkOfferingDao;
     @Inject private DataCenterDao _dataCenterDao;
     @Inject private NetworkDao _networkDao;
-    @Inject private VlanDao _vlanDao;    
+    @Inject private VlanDao _vlanDao;
     private String _domainSuffix;
     @Inject private DomainDao _domainDao;
     @Inject private AccountDao _accountDao;
@@ -135,11 +135,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     public ConfigurationServerImpl() {
     	setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
     }
-    
+
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
-		
+
 		try {
 			persistDefaultValues();
 		} catch (InternalErrorException e) {
@@ -235,7 +235,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             createDefaultNetworks();
 
             createDefaultRegion();
-            
+
             // Create userIpAddress ranges
 
             // Update existing vlans with networkId
@@ -374,8 +374,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
 
         // now insert the user
-        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created, state, region_id) " +
-                "VALUES (" + id + ",'" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled', '1')";
+        insertSql = "INSERT INTO `cloud`.`user` (id, uuid, username, password, account_id, firstname, lastname, created, state, region_id) " +
+                "VALUES (" + id + ", UUID(), '" + username + "', RAND(), 2, '" + firstname + "','" + lastname + "',now(), 'disabled', '1')";
 
         txn = Transaction.currentTxn();
         try {
@@ -1271,9 +1271,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
         return svcProviders;
     }
-    
+
     private void createDefaultRegion(){
-    	//Get Region name and URL from db.properties    	
+    	//Get Region name and URL from db.properties
     	_regionDao.persist(new RegionVO(_regionDao.getRegionId(), "Local", "http://localhost:8080/client/api", "", ""));
     }
 
