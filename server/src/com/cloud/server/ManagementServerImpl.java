@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -375,7 +375,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     S3Manager _s3Mgr;
 
-/*   
+/*
     @Inject
     ComponentContext _forceContextRef;			// create a dependency to ComponentContext so that it can be loaded beforehead
 
@@ -417,14 +417,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         for (String id : availableIds) {
             _availableIdsMap.put(id, true);
         }
-		
+
 		return true;
 	}
-   
+
     @Override
     public boolean start() {
         s_logger.info("Startup CloudStack management server...");
-    	
+
         enableAdminUser("password");
         return true;
     }
@@ -2187,6 +2187,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         String userPublicTemplateEnabled = _configs.get(Config.AllowPublicUserTemplates.key());
 
+        // add some parameters UI needs to handle API throttling
+        Integer apiLimitInterval = Integer.valueOf(_configDao.getValue(Config.ApiLimitInterval.key()));
+        Integer apiLimitMax = Integer.valueOf(_configDao.getValue(Config.ApiLimitMax.key()));
+
         capabilities.put("securityGroupsEnabled", securityGroupsEnabled);
         capabilities
         .put("userPublicTemplateEnabled", (userPublicTemplateEnabled == null || userPublicTemplateEnabled.equals("false") ? false : true));
@@ -2195,6 +2199,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("projectInviteRequired", _projectMgr.projectInviteRequired());
         capabilities.put("allowusercreateprojects", _projectMgr.allowUserToCreateProject());
         capabilities.put("customDiskOffMaxSize", diskOffMaxSize);
+        capabilities.put("apiLimitInterval", apiLimitInterval);
+        capabilities.put("apiLimitMax", apiLimitMax);
 
         return capabilities;
     }
