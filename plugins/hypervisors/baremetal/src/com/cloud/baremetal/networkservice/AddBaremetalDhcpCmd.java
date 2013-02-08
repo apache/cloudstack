@@ -20,6 +20,7 @@ package com.cloud.baremetal.networkservice;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -37,7 +38,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.UserContext;
-
+@APICommand(name="addBaremetalDhcp", description="adds a baremetal dhcp server", responseObject = BaremetalDhcpResponse.class)
 public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
     private static final String s_name = "addexternaldhcpresponse";
     public static final Logger s_logger = Logger.getLogger(AddBaremetalDhcpCmd.class);
