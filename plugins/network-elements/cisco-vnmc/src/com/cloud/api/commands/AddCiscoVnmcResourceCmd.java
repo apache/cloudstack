@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
-
 import com.cloud.api.response.CiscoVnmcResourceResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -38,12 +37,12 @@ import com.cloud.network.element.CiscoVnmcElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(responseObject=CiscoVnmcResourceResponse.class, description="Adds a Cisco Vnmc Controller")
+@APICommand(name="addCiscoVnmcResource", responseObject=CiscoVnmcResourceResponse.class, description="Adds a Cisco Vnmc Controller")
 public class AddCiscoVnmcResourceCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(AddCiscoVnmcResourceCmd.class.getName());
     private static final String s_name = "addCiscoVnmcResource";
     @PlugService CiscoVnmcElementService _ciscoVnmcElementService;
-    
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -51,16 +50,15 @@ public class AddCiscoVnmcResourceCmd extends BaseCmd {
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class, required=true, description="the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.HOST_NAME, type=CommandType.STRING, required = true, description="Hostname of ip address of the Cisco VNMC Controller.")
+    @Parameter(name=ApiConstants.HOST_NAME, type=CommandType.STRING, required = true, description="Hostname or ip address of the Cisco VNMC Controller.")
     private String host;
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to access the Cisco VNMC Controller API")
     private String username;
-    
+
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to access the Cisco VNMC Controller API")
     private String password;
-   
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -80,7 +78,6 @@ public class AddCiscoVnmcResourceCmd extends BaseCmd {
     public String getPassword() {
         return password;
     }
-    
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -104,7 +101,7 @@ public class AddCiscoVnmcResourceCmd extends BaseCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
- 
+
     @Override
     public String getCommandName() {
         return s_name;

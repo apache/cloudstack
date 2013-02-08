@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
-
 import com.cloud.api.response.CiscoVnmcResourceResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -42,20 +41,20 @@ import com.cloud.network.cisco.CiscoVnmcControllerVO;
 import com.cloud.network.element.CiscoVnmcElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(responseObject=CiscoVnmcResourceResponse.class, description="Lists Cisco VNMC controllers")
+@APICommand(name="listCiscoVnmcResources", responseObject=CiscoVnmcResourceResponse.class, description="Lists Cisco VNMC controllers")
 public class ListCiscoVnmcResourcesCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListCiscoVnmcResourcesCmd.class.getName());
     private static final String s_name = "listCiscoVnmcResources";
     @PlugService CiscoVnmcElementService _ciscoVnmcElementService;
 
-   /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class, description="the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.UUID,  entityType=CiscoVnmcResourceResponse.class, description="Cisco VNMC  resource ID")
+    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.UUID,  entityType=CiscoVnmcResourceResponse.class, description="Cisco VNMC resource ID")
     private Long ciscoVnmcResourceId;
 
     /////////////////////////////////////////////////////

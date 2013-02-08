@@ -35,10 +35,10 @@ import com.cloud.network.element.CiscoVnmcElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(responseObject=SuccessResponse.class, description=" delete a Cisco Vnmc Resource")
+@APICommand(name="deleteCiscoVnmcResource", responseObject=SuccessResponse.class, description="Deletes a Cisco Vnmc controller")
 public class DeleteCiscoVnmcResourceCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(DeleteCiscoVnmcResourceCmd.class.getName());
-    private static final String s_name = "addCiscoVnmcResource";
+    private static final String s_name = "deleteCiscoVnmcResource";
     @PlugService CiscoVnmcElementService _ciscoVnmcElementService;
 
     /////////////////////////////////////////////////////
