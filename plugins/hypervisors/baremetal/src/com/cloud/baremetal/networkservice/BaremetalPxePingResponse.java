@@ -19,10 +19,12 @@
 package com.cloud.baremetal.networkservice;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.EntityReference;
 
+import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-
+@EntityReference(value=BaremetalPxeVO.class)
 public class BaremetalPxePingResponse extends BaremetalPxeResponse {
     @SerializedName(ApiConstants.PING_STORAGE_SERVER_IP) @Param(description="PING storage server ip")
     private String pingStorageServerIp;
