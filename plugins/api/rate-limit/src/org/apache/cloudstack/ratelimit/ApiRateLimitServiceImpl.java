@@ -139,7 +139,7 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
 
 
     @Override
-    public boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException, RequestLimitException {
+    public boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException {
         Long accountId = user.getAccountId();
         Account account = _accountService.getAccount(accountId);
         if ( _accountService.isRootAdmin(account.getType())){
