@@ -2875,13 +2875,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         // If no network is specified, find system security group enabled network
         if (networkIdList == null || networkIdList.isEmpty()) {
-<<<<<<< HEAD
-            throw new InvalidParameterValueException("need to specify networkIDs");
-        }
-        // Verify that all the networks are Shared/Guest; can't create combination of SG enabled and disabled networks 
-        for (Long networkId : networkIdList) {
-            NetworkVO network = _networkDao.findById(networkId);
-=======
             Network networkWithSecurityGroup = _networkModel.getNetworkWithSecurityGroupEnabled(zone.getId());
             if (networkWithSecurityGroup == null) {
                 throw new InvalidParameterValueException("No network with security enabled is found in zone id=" + zone.getId());
@@ -2901,7 +2894,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
             NetworkVO network = _networkDao.findById(networkIdList.get(0).longValue());
 
->>>>>>> parent of 65210f4...  CLOUDSTACK-737
             if (network == null) {
                 throw new InvalidParameterValueException(
                         "Unable to find network by id "
