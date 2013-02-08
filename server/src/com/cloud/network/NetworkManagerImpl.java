@@ -1868,7 +1868,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                 if ( _networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)) {
                     throw new InvalidParameterValueException("Service SourceNat is not allowed in security group enabled zone");
                 }
-                if ( ! _networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SecurityGroup)) {
+                if ( _networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SecurityGroup)) {
                     throw new InvalidParameterValueException("network must have SecurityGroup provider in security group enabled zone");
 =======
                 // Only Account specific Isolated network with sourceNat service disabled are allowed in security group

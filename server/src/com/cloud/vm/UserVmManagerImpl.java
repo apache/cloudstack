@@ -2867,14 +2867,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         Account caller = UserContext.current().getCaller();
         List<NetworkVO> networkList = new ArrayList<NetworkVO>();
+        boolean isSecurityGroupEnabledNetworkUsed = false;
         boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware || (hypervisor != null && hypervisor == HypervisorType.VMware));
-        if (isVmWare) {
-            throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
-        }
 
         // Verify that caller can perform actions in behalf of vm owner
         _accountMgr.checkAccess(caller, null, true, owner);
+
+        // If no network is specified, find system security group enabled network
         if (networkIdList == null || networkIdList.isEmpty()) {
+<<<<<<< HEAD
             throw new InvalidParameterValueException("need to specify networkIDs");
         }
         if (networkIdList.size() > 1 ) {
@@ -2883,30 +2884,76 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         // Verify that all the networks are Shared/Guest; can't create combination of SG enabled and disabled networks 
         for (Long networkId : networkIdList) {
             NetworkVO network = _networkDao.findById(networkId);
+=======
+            Network networkWithSecurityGroup = _networkModel.getNetworkWithSecurityGroupEnabled(zone.getId());
+            if (networkWithSecurityGroup == null) {
+                throw new InvalidParameterValueException("No network with security enabled is found in zone id=" + zone.getId());
+            }
+
+            networkList.add(_networkDao.findById(networkWithSecurityGroup.getId()));
+            isSecurityGroupEnabledNetworkUsed = true;
+
+        } else if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
+            if (isVmWare) {
+                throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+            }
+            // Only one network can be specified, and it should be security group enabled
+            if (networkIdList.size() > 1) {
+                throw new InvalidParameterValueException("Only support one network per VM if security group enabled");
+            }
+
+            NetworkVO network = _networkDao.findById(networkIdList.get(0).longValue());
+
+>>>>>>> parent of 65210f4...  CLOUDSTACK-737
             if (network == null) {
                 throw new InvalidParameterValueException(
                         "Unable to find network by id "
                                 + networkIdList.get(0).longValue());
             }
 
-            boolean isSecurityGroupEnabled = _networkModel.isSecurityGroupSupportedInNetwork(network);
-            if ( ! isSecurityGroupEnabled) {
-                 throw new InvalidParameterValueException("Only support Security Group enabled networks in Security enabled zone, network " + network.getUuid() + " doesn't support security group ");
-            }            
-
-            if (!(network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Shared)) {
-                 throw new InvalidParameterValueException("Can specify only Shared Guest networks when" +
-                    		" deploy vm in Advance Security Group enabled zone");
+            if (!_networkModel.isSecurityGroupSupportedInNetwork(network)) {
+                throw new InvalidParameterValueException("Network is not security group enabled: " + network.getId());
             }
 
-            // Perform account permission check
-            if (network.getAclType() == ACLType.Account) {
-                _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
-            }
             networkList.add(network);
+            isSecurityGroupEnabledNetworkUsed = true;
+
+        } else {
+            // Verify that all the networks are Shared/Guest; can't create combination of SG enabled and disabled networks 
+            for (Long networkId : networkIdList) {
+                NetworkVO network = _networkDao.findById(networkId);
+
+                if (network == null) {
+                    throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
+                }
+
+                boolean isSecurityGroupEnabled = _networkModel.isSecurityGroupSupportedInNetwork(network);
+                if (isSecurityGroupEnabled) {
+                    if (networkIdList.size() > 1) {
+                        throw new InvalidParameterValueException("Can't create a vm with multiple networks one of" +
+                        		" which is Security Group enabled");
+                    }
+
+                    isSecurityGroupEnabledNetworkUsed = true;
+                }            
+
+                if (!(network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Shared)) {
+                    throw new InvalidParameterValueException("Can specify only Shared Guest networks when" +
+                    		" deploy vm in Advance Security Group enabled zone");
+                }
+
+                // Perform account permission check
+                if (network.getAclType() == ACLType.Account) {
+                    _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
+                }
+                networkList.add(network);
+            }
         }
+
         // if network is security group enabled, and no security group is specified, then add the default security group automatically
-        if ( _networkModel.canAddDefaultSecurityGroup()) {           
+        if (isSecurityGroupEnabledNetworkUsed && !isVmWare && _networkModel.canAddDefaultSecurityGroup()) {
+            
+          //add the default securityGroup only if no security group is specified
             if(securityGroupIdList == null || securityGroupIdList.isEmpty()){
                 if (securityGroupIdList == null) {
                     securityGroupIdList = new ArrayList<Long>();
@@ -2931,6 +2978,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 }
             }
         }
+
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId,
                 diskSize, networkList, securityGroupIdList, group, userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIps, keyboard);
     }
