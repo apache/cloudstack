@@ -2078,8 +2078,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String accountName = cmd.getAccountName();
         Long projectId = cmd.getProjectId();
         Long domainId = cmd.getDomainId();
+        String startIPv6 = cmd.getStartIpv6();
+        String endIPv6 = cmd.getEndIpv6();
+        String ip6Gateway = cmd.getIp6Gateway();
+        String ip6Cidr = cmd.getIp6Cidr();
+        
         Account vlanOwner = null;
+        
+        boolean ipv4 = (startIP != null);
+        boolean ipv6 = (startIPv6 != null);
 
+        if (!ipv4 && !ipv6) {
+        	throw new InvalidParameterValueException("StartIP or StartIPv6 is missing in the parameters!");
+        }
+        
         if (projectId != null) {
             if (accountName != null) {
                 throw new InvalidParameterValueException("Account and projectId are mutually exclusive");
@@ -2109,6 +2121,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 zoneId = network.getDataCenterId();
                 physicalNetworkId = network.getPhysicalNetworkId();
             }
+        } else if (ipv6) {
+        	throw new InvalidParameterValueException("Only support IPv6 on extending existed network");
         }
         
         // Verify that zone exists
@@ -2117,6 +2131,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
         }
 
+        if (ipv6) {
+        	if (network.getGuestType() != GuestType.Shared || zone.isSecurityGroupEnabled()) {
+        		throw new InvalidParameterValueException("Only support IPv6 on extending existed share network without SG");
+        	}
+        }
         // verify that physical network exists
         PhysicalNetworkVO pNtwk = null;
         if (physicalNetworkId != null) {
@@ -2163,7 +2182,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (zone.isSecurityGroupEnabled() && zone.getNetworkType() != DataCenter.NetworkType.Basic && forVirtualNetwork) {
             throw new InvalidParameterValueException("Can't add virtual ip range into a zone with security group enabled");
         }
-
+        
         // If networkId is not specified, and vlan is Virtual or Direct Untagged, try to locate default networks
         if (forVirtualNetwork) {
             if (network == null) {
@@ -2195,37 +2214,55 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Network " + network + " doesn't support adding ip ranges");
         }
 
-        // if end ip is not specified, default it to startIp
-        if (endIP == null && startIP != null) {
-            endIP = startIP;
+        if (ipv4) {
+        	// if end ip is not specified, default it to startIp
+        	if (endIP == null && startIP != null) {
+        		endIP = startIP;
+        	}
         }
-
+        
         if (forVirtualNetwork || zone.getNetworkType() == DataCenter.NetworkType.Basic || zone.isSecurityGroupEnabled()) {
             if (vlanGateway == null || vlanNetmask == null || zoneId == null) {
                 throw new InvalidParameterValueException("Gateway, netmask and zoneId have to be passed in for virtual and direct untagged networks");
             }
         } else {
-            // check if startIp and endIp belong to network Cidr
-            String networkCidr = network.getCidr();
-            String networkGateway = network.getGateway();
-            Long networkZoneId = network.getDataCenterId();
-            String networkNetmask = NetUtils.getCidrNetmask(networkCidr);
+        	if (ipv4) {
+        		// check if startIp and endIp belong to network Cidr
+        		String networkCidr = network.getCidr();
+        		String networkGateway = network.getGateway();
+        		Long networkZoneId = network.getDataCenterId();
+        		String networkNetmask = NetUtils.getCidrNetmask(networkCidr);
 
-            // Check if ip addresses are in network range
-            if (!NetUtils.sameSubnet(startIP, networkGateway, networkNetmask)) {
-                throw new InvalidParameterValueException("Start ip is not in network cidr: " + networkCidr);
-            }
+        		// Check if ip addresses are in network range
+        		if (!NetUtils.sameSubnet(startIP, networkGateway, networkNetmask)) {
+        			throw new InvalidParameterValueException("Start ip is not in network cidr: " + networkCidr);
+        		}
 
-            if (endIP != null) {
-                if (!NetUtils.sameSubnet(endIP, networkGateway, networkNetmask)) {
-                    throw new InvalidParameterValueException("End ip is not in network cidr: " + networkCidr);
-                }
-            }
+        		if (endIP != null) {
+        			if (!NetUtils.sameSubnet(endIP, networkGateway, networkNetmask)) {
+        				throw new InvalidParameterValueException("End ip is not in network cidr: " + networkCidr);
+        			}
+        		}
 
-            // set gateway, netmask, zone from network object
-            vlanGateway = networkGateway;
-            vlanNetmask = networkNetmask;
-            zoneId = networkZoneId;
+        		// set gateway, netmask, zone from network object
+        		vlanGateway = networkGateway;
+        		vlanNetmask = networkNetmask;
+        		zoneId = networkZoneId;
+        	}
+        	if (ipv6) {
+        		if (endIPv6 == null) {
+        			endIPv6 = startIPv6;
+        		}
+        		if (ip6Gateway != null && !ip6Gateway.equals(network.getIp6Gateway())) {
+        			throw new InvalidParameterValueException("The input gateway " + ip6Gateway + " is not same as network gateway " + network.getIp6Gateway());
+        		}
+        		if (ip6Cidr != null && !ip6Cidr.equals(network.getIp6Cidr())) {
+        			throw new InvalidParameterValueException("The input cidr " + ip6Cidr + " is not same as network ciddr " + network.getIp6Cidr());
+        		}
+        		ip6Gateway = network.getIp6Gateway();
+        		ip6Cidr = network.getIp6Cidr();
+        		_networkModel.checkIp6Parameters(startIPv6, endIPv6, ip6Gateway, ip6Cidr);
+        	}
         }
 
         // if it's an account specific range, associate ip address list to the account
@@ -2244,12 +2281,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         // Check if the IP range overlaps with the private ip
-        checkOverlapPrivateIpRange(zoneId, startIP, endIP);
+        if (ipv4) {
+        	checkOverlapPrivateIpRange(zoneId, startIP, endIP);
+        }
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
         Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, 
-                endIP, vlanGateway, vlanNetmask, vlanId, vlanOwner, null, null, null, null);
+                endIP, vlanGateway, vlanNetmask, vlanId, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
 
         if (associateIpRangeToAccount) {
             _networkMgr.associateIpAddressListToAccount(userId, vlanOwner.getId(), zoneId, vlan.getId(), null);
