@@ -2994,6 +2994,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     private boolean shutdownNetworkResources(long networkId, Account caller, long callerUserId) {
         // This method cleans up network rules on the backend w/o touching them in the DB
         boolean success = true;
+        Network network = _networksDao.findById(networkId);
 
         // Mark all PF rules as revoked and apply them on the backend (not in the DB)
         List<PortForwardingRuleVO> pfRules = _portForwardingRulesDao.listByNetwork(networkId);
@@ -3066,7 +3067,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         try {
-            if (!_firewallMgr.applyRules(lbRules, true, false)) {
+            if (!_lbMgr.applyRules(network, Purpose.LoadBalancing, lbs)) {
                 s_logger.warn("Failed to cleanup lb rules as a part of shutdownNetworkRules");
                 success = false;
             }
@@ -3145,7 +3146,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         // Get all ip addresses, mark as releasing and release them on the backend
-        Network network = _networksDao.findById(networkId);
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(networkId, null);
         List<PublicIp> publicIpsToRelease = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
