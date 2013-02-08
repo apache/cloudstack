@@ -125,7 +125,8 @@ public interface Network extends ControlledEntity, InternalIdentity, Identity {
         public static final Provider None = new Provider("None", false);
         public static final Provider NiciraNvp = new Provider("NiciraNvp", true);
         public static final Provider MidokuraMidonet = new Provider("MidokuraMidonet", true);
-
+        public static final Provider CiscoVnmc = new Provider("CiscoVnmc", true);
+        
         private String name;
         private boolean isExternal;
 
