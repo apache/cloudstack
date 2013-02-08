@@ -52,9 +52,8 @@
   <bean id="randomlyIncreasingVMInstanceDaoImpl" class="com.cloud.vm.dao.RandomlyIncreasingVMInstanceDaoImpl" />
 
   <bean id="ipv6AddressManagerImpl" class="com.cloud.network.Ipv6AddressManagerImpl" />
-  <bean id="ApiRateLimitService" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl">
-    <property name="name" value="ApiRateLimitService"/>
-  </bean>
+
+  <bean id="apiRateLimitServiceImpl" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
 
   <!-- bean id="bareMetalVmManagerImpl" class="com.cloud.baremetal.BareMetalVmManagerImpl" / -->
   <bean id="VmwareManager" class="com.cloud.hypervisor.vmware.manager.VmwareManagerImpl"/>
@@ -124,8 +123,6 @@
   </bean>
 
   <bean id="StaticRoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.StaticRoleBasedAPIAccessChecker"/>
-
-  <bean id="ApiRateLimitServiceImpl" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
 
   <bean id="ExteralIpAddressAllocator" class="com.cloud.network.ExteralIpAddressAllocator">
     <property name="name" value="Basic"/>

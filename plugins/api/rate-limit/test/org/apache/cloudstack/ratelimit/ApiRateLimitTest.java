@@ -29,6 +29,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.RequestLimitException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -43,11 +45,17 @@ public class ApiRateLimitTest {
 
 	static ApiRateLimitServiceImpl _limitService = new ApiRateLimitServiceImpl();
 	static AccountService _accountService = mock(AccountService.class);
+	static ConfigurationDao _configDao = mock(ConfigurationDao.class);
 	private static long acctIdSeq = 5L;
 	private static Account testAccount;
 
 	@BeforeClass
 	public static void setUp() throws ConfigurationException {
+
+	    when(_configDao.getValue(Config.ApiLimitInterval.key())).thenReturn(null);
+	    when(_configDao.getValue(Config.ApiLimitMax.key())).thenReturn(null);
+	    when(_configDao.getValue(Config.ApiLimitCacheSize.key())).thenReturn(null);
+	    _limitService._configDao = _configDao;
 
 		_limitService.configure("ApiRateLimitTest", Collections.<String, Object> emptyMap());
 

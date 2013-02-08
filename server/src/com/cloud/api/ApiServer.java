@@ -29,15 +29,7 @@ import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -64,7 +56,6 @@ import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import com.cloud.event.ActionEventUtils;
-import com.cloud.utils.ReflectUtil;
 import org.apache.cloudstack.acl.APILimitChecker;
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
@@ -149,7 +140,6 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
-
 @Component
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
@@ -165,7 +155,6 @@ public class ApiServer implements HttpRequestHandler {
     @Inject private ConfigurationDao _configDao;
 
     @Inject List<PluggableService> _pluggableServices;
-
     @Inject List<APIChecker> _apiAccessCheckers;
 
     private Account _systemAccount = null;
@@ -219,9 +208,7 @@ public class ApiServer implements HttpRequestHandler {
             }
         }
 
-        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
-                new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
-
+        Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
         for(PluggableService pluggableService: _pluggableServices)
             cmdClasses.addAll(pluggableService.getCommands());
 

@@ -83,7 +83,7 @@ public class ApiDiscoveryTest {
     @Test
     public void verifyListApis() throws Exception {
         ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>) _discoveryService.listApis(testUser, null);
-        assertTrue("No. of response items > 1", responses.getCount() > 1);
+        assertTrue("No. of response items > 1", responses.getCount() == 1);
         for (ApiDiscoveryResponse response: responses.getResponses()) {
             assertFalse("API name is empty", response.getName().isEmpty());
             assertFalse("API description is empty", response.getDescription().isEmpty());

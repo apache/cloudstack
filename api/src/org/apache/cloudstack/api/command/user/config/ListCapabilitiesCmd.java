@@ -52,6 +52,8 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setProjectInviteRequired((Boolean)capabilities.get("projectInviteRequired"));
         response.setAllowUsersCreateProjects((Boolean)capabilities.get("allowusercreateprojects"));
         response.setDiskOffMaxSize((Long)capabilities.get("customDiskOffMaxSize"));
+        response.setApiLimitInterval((Integer)capabilities.get("apiLimitInterval"));
+        response.setApiLimitMax((Integer)capabilities.get("apiLimitMax"));
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
