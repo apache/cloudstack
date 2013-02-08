@@ -2878,9 +2878,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 <<<<<<< HEAD
             throw new InvalidParameterValueException("need to specify networkIDs");
         }
-        if (networkIdList.size() > 1 ) {
-            throw new InvalidParameterValueException("VM can only be on one network in Zone with Security group enabled zone");
-        }
         // Verify that all the networks are Shared/Guest; can't create combination of SG enabled and disabled networks 
         for (Long networkId : networkIdList) {
             NetworkVO network = _networkDao.findById(networkId);
