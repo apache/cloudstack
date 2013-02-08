@@ -756,27 +756,18 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
 
-        NetworkVO defaultNetwork = null;
-        if (dc.getNetworkType() == NetworkType.Advanced && dc.isSecurityGroupEnabled()) {
-            List<NetworkVO> networks = _networkDao.listByZoneSecurityGroup(dataCenterId);
-            if (networks == null || networks.size() == 0) {
-                throw new CloudRuntimeException("Can not found security enabled network in SG Zone " + dc);
-            }
-            defaultNetwork = networks.get(0);
-        } else {
-            TrafficType defaultTrafficType = TrafficType.Public;
-            if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
-                defaultTrafficType = TrafficType.Guest;
-            }
-            List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dataCenterId, defaultTrafficType);
-
-            // api should never allow this situation to happen
-            if (defaultNetworks.size() != 1) {
-                throw new CloudRuntimeException("Found " + defaultNetworks.size() + " networks of type "
-                      + defaultTrafficType + " when expect to find 1");
-            }
-             defaultNetwork = defaultNetworks.get(0);
+        TrafficType defaultTrafficType = TrafficType.Public;
+        if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
+            defaultTrafficType = TrafficType.Guest;
         }
+
+        List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dataCenterId, defaultTrafficType);
+
+        if (defaultNetworks.size() != 1) {
+            throw new CloudRuntimeException("Found " + defaultNetworks.size() + " networks of type " + defaultTrafficType + " when expect to find 1");
+        }
+
+        NetworkVO defaultNetwork = defaultNetworks.get(0);
 
         List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork, NetworkOffering.SystemManagementNetwork);
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(offerings.size() + 1);
