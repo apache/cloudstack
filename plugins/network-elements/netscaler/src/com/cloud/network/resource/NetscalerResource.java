@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the 
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.network.resource;
 
 import java.util.Formatter;
@@ -396,6 +397,8 @@ public class NetscalerResource implements ServerResource {
             return execute((DestroyLoadBalancerApplianceCommand) cmd, numRetries);
         } else if (cmd instanceof SetStaticNatRulesCommand) {
             return execute((SetStaticNatRulesCommand) cmd, numRetries);
+        } else if (cmd instanceof GlobalLoadBalancerConfigCommand) {
+            return execute((GlobalLoadBalancerConfigCommand) cmd, numRetries);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -786,6 +789,101 @@ public class NetscalerResource implements ServerResource {
             return new CreateLoadBalancerApplianceAnswer(cmd, false, "failed to provisioned VPX instance due to " + e.getMessage(), null, null, null, null, null, null, null);
         }
     }
+
+    private void execute(GlobalLoadBalancerConfigCommand cmd, numRetries) {
+        /*
+         *  1. domain name for which NetScale will act as authoritative DNS server
+         *  2. DNS record type
+         *  3. service type, virtual server name
+         *  4. Configure GSLB method
+         *  5. Configure Persistence
+         *  6.
+         */
+        return new GlobalLoadBalancerConfigAnswer();
+    }
+
+    /*
+     * convineance class for GSLB functionality that includes methods to
+     *   - create, delete, update, get the GSLB sites
+     *   - create, delete, update, get the GSLB services
+     *   - create, delete, update, get the GSLB virtual servers
+     *   - create, delete GSLB virtual server and GSLB service bindings
+     */
+    private static class GSLB {
+
+        private void createSite() {
+
+        }
+
+        private void deleteSite() {
+
+        }
+
+        private gslbsite getSite() {
+
+        }
+
+        private boolean checkSiteExists() {
+            return true;
+        }
+
+        private void createService() {
+
+        }
+
+        private void deleteService() {
+
+        }
+
+        private void getService() {
+
+        }
+
+        private boolean checkServiceExists() {
+            return true;
+        }
+
+        private void createVirtualServer() {
+
+        }
+
+        private void deleteVirtualServer() {
+
+        }
+
+        private void enableVirtualServer() {
+
+        }
+
+        private void disableVirtualServer() {
+
+        }
+
+        private void createVserverServiceBinding() {
+
+        }
+
+        private void deleteVserverServiceBinding() {
+
+        }
+
+        private void updateVserverServiceBinding() {
+
+        }
+
+        private void createVserverDomainBinding() {
+
+        }
+
+        private void deleteVserverDomainBinding() {
+
+        }
+
+        private void updateVserverDomainBinding() {
+
+        }
+    }
+
 
     private void enableVPXInterfaces(String publicIf, String privateIf, ns ns_obj) {
         // enable VPX to use 10 gigabit Ethernet interfaces if public/private interface
