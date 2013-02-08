@@ -113,6 +113,7 @@ import com.cloud.bridge.service.core.ec2.EC2CreateVolume;
 import com.cloud.bridge.service.core.ec2.EC2DeleteKeyPair;
 import com.cloud.bridge.service.core.ec2.EC2DescribeAddresses;
 import com.cloud.bridge.service.core.ec2.EC2DescribeAvailabilityZones;
+import com.cloud.bridge.service.core.ec2.EC2DescribeImageAttribute;
 import com.cloud.bridge.service.core.ec2.EC2DescribeImages;
 import com.cloud.bridge.service.core.ec2.EC2DescribeInstances;
 import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairs;
@@ -1311,24 +1312,34 @@ public class EC2RestServlet extends HttpServlet {
 
     private void describeImageAttribute( HttpServletRequest request, HttpServletResponse response ) 
             throws ADBException, XMLStreamException, IOException {
-        EC2DescribeImages EC2request = new EC2DescribeImages();
+        EC2DescribeImageAttribute ec2request = new EC2DescribeImageAttribute();
 
-        // -> only works for queries about descriptions
-        String[] descriptions = request.getParameterValues( "Description" );
-        if ( null != descriptions && 0 < descriptions.length ) {
-            String[] value = request.getParameterValues( "ImageId" );
-            EC2request.addImageSet( value[0] );
-        }	
+        String[] imageId = request.getParameterValues( "ImageId" );
+        if (imageId != null && imageId.length > 0)
+            ec2request.setImageId(imageId[0]);
         else {
-            response.sendError(501, "Unsupported - only description supported" ); 
+            response.sendError(530, "Missing ImageId parameter");
             return;
         }
 
-        // -> execute the request
-        DescribeImageAttributeResponse EC2response = EC2SoapServiceImpl.toDescribeImageAttributeResponse( ServiceProvider.getInstance().getEC2Engine().describeImages( EC2request ));
+        String[] attribute = request.getParameterValues( "Attribute" );
+        if (attribute != null && attribute.length > 0) {
+            if (attribute[0].equalsIgnoreCase("description"))
+                ec2request.setAttribute(ImageAttribute.description);
+            else if (attribute[0].equalsIgnoreCase("launchPermission"))
+                ec2request.setAttribute(ImageAttribute.launchPermission);
+            else {
+                response.sendError(501, "Unsupported Attribute - description and launchPermission supported" );
+                return;
+            }
+        } else {
+            response.sendError(530, "Missing Attribute parameter");
+            return;
+        }
+
+        DescribeImageAttributeResponse EC2response = EC2SoapServiceImpl.toDescribeImageAttributeResponse( ServiceProvider.getInstance().getEC2Engine().describeImageAttribute( ec2request ));
         serializeResponse(response, EC2response);
     }
-
 
     private void describeInstances( HttpServletRequest request, HttpServletResponse response ) 
             throws ADBException, XMLStreamException, IOException 
