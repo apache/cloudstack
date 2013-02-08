@@ -46,6 +46,12 @@ public class CapabilitiesResponse extends BaseResponse {
             "create disk from disk offering with custom size")
     private Long diskOffMaxSize;
 
+    @SerializedName("apilimitinterval") @Param(description="time interval (in seconds) to reset api count")
+    private Integer apiLimitInterval;
+
+    @SerializedName("apilimitmax") @Param(description="Max allowed number of api requests within the specified interval")
+    private Integer apiLimitMax;
+
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
@@ -74,5 +80,14 @@ public class CapabilitiesResponse extends BaseResponse {
     public void setDiskOffMaxSize(Long diskOffMaxSize) {
         this.diskOffMaxSize = diskOffMaxSize;
     }
+
+    public void setApiLimitInterval(Integer apiLimitInterval) {
+        this.apiLimitInterval = apiLimitInterval;
+    }
+
+    public void setApiLimitMax(Integer apiLimitMax) {
+        this.apiLimitMax = apiLimitMax;
+    }
+
 
 }
