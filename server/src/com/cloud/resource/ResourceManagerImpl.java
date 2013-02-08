@@ -421,15 +421,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 		Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType
 				.getType(cmd.getHypervisor());
         if (hypervisorType == null) {
-<<<<<<< HEAD
 			s_logger.error("Unable to resolve " + cmd.getHypervisor()
 					+ " to a valid supported hypervisor type");
 			throw new InvalidParameterValueException("Unable to resolve "
 					+ cmd.getHypervisor() + " to a supported ");
-=======
-            s_logger.error("Unable to resolve " + cmd.getHypervisor() + " to a valid supported hypervisor type");
-            throw new InvalidParameterValueException("Unable to resolve " + cmd.getHypervisor() + " to a supported ");
->>>>>>> parent of d7201df... CLOUDSTACK-737
         }
 
         Cluster.ClusterType clusterType = null;
