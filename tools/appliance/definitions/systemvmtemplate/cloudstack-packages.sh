@@ -39,7 +39,10 @@ install_packages() {
   #nfs client
   apt-get --no-install-recommends -q -y --force-yes install nfs-common
   #vpn stuff
-  apt-get --no-install-recommends -q -y --force-yes install xl2tpd openswan bcrelay ppp ipsec-tools tdb-tools
+  apt-get --no-install-recommends -q -y --force-yes install xl2tpd bcrelay ppp ipsec-tools tdb-tools
+  echo "openswan openswan/install_x509_certificate boolean false" | debconf-set-selections
+  echo "openswan openswan/install_x509_certificate seen true" | debconf-set-selections
+  chroot .  apt-get --no-install-recommends -q -y --force-yes install openswan
   #vmware tools
   apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
   #xenstore utils
