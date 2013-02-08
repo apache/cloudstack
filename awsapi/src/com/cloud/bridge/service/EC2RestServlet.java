@@ -105,6 +105,7 @@ import com.cloud.bridge.persist.dao.CloudStackUserDaoImpl;
 import com.cloud.bridge.persist.dao.OfferingDaoImpl;
 import com.cloud.bridge.persist.dao.UserCredentialsDaoImpl;
 import com.cloud.bridge.service.controller.s3.ServiceProvider;
+import com.cloud.bridge.service.core.ec2.EC2AddressFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2AssociateAddress;
 import com.cloud.bridge.service.core.ec2.EC2AuthorizeRevokeSecurityGroup;
 import com.cloud.bridge.service.core.ec2.EC2AvailabilityZonesFilterSet;
@@ -1396,6 +1397,15 @@ public class EC2RestServlet extends HttpServlet {
                 String[] value = request.getParameterValues( key );
                 if (null != value && 0 < value.length) ec2Request.addPublicIp( value[0] );
             }
+        }
+
+        // add filters
+        EC2Filter[] filterSet = extractFilters( request );
+        if ( filterSet != null ) {
+            EC2AddressFilterSet afs = new EC2AddressFilterSet();
+            for ( int i=0; i < filterSet.length; i++ )
+                afs.addFilter( filterSet[i] );
+            ec2Request.setFilterSet( afs );
         }
         // -> execute the request
         EC2Engine engine = ServiceProvider.getInstance().getEC2Engine();
