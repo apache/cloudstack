@@ -45,12 +45,14 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -420,14 +422,105 @@ public class VolumeServiceImpl implements VolumeService {
     @Override
     public AsyncCallFuture<VolumeApiResult> createVolumeFromSnapshot(
             VolumeInfo volume, DataStore store, SnapshotInfo snapshot) {
-        // TODO Auto-generated method stub
+        AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
+        VolumeApiResult result = new VolumeApiResult(volume);
         return null;
     }
+    
+    protected VolumeVO duplicateVolumeOnAnotherStorage(Volume volume, StoragePool pool) {
+        Long lastPoolId = volume.getPoolId();
+        VolumeVO newVol = new VolumeVO(volume);
+        newVol.setPoolId(pool.getId());
+        newVol.setFolder(pool.getPath());
+        newVol.setPodId(pool.getPodId());
+        newVol.setPoolId(pool.getId());
+        newVol.setLastPoolId(lastPoolId);
+        newVol.setPodId(pool.getPodId());
+        return this.volDao.persist(newVol);
+    }
+    
 
+    private class CopyVolumeContext<T> extends AsyncRpcConext<T> {
+        final VolumeInfo srcVolume;
+        final VolumeInfo destVolume;
+        final DataStore destStore;
+        final AsyncCallFuture<VolumeApiResult> future;
+        /**
+         * @param callback
+         */
+        public CopyVolumeContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<VolumeApiResult> future, VolumeInfo srcVolume, VolumeInfo destVolume,
+                DataStore destStore) {
+            super(callback);
+            this.srcVolume = srcVolume;
+            this.destVolume = destVolume;
+            this.destStore = destStore;
+            this.future = future;
+        }
+        
+    }
     @Override
     public AsyncCallFuture<VolumeApiResult> copyVolume(VolumeInfo srcVolume,
             DataStore destStore) {
-        // TODO Auto-generated method stub
+        AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
+        VolumeApiResult res = new VolumeApiResult(srcVolume);
+        try {
+            if (!this.snapshotMgr.canOperateOnVolume(srcVolume)) {
+                s_logger.debug(
+                        "There are snapshots creating on this volume, can not move this volume");
+                
+                res.setResult("There are snapshots creating on this volume, can not move this volume");
+                future.complete(res);
+                return future;
+            }
+
+            VolumeVO destVol = duplicateVolumeOnAnotherStorage(srcVolume, (StoragePool)destStore);
+            VolumeInfo destVolume = this.volFactory.getVolume(destVol.getId(), destStore);
+            destVolume.processEvent(Event.CreateOnlyRequested);
+            srcVolume.processEvent(Event.CopyingRequested);
+
+            CopyVolumeContext<VolumeApiResult> context = new CopyVolumeContext<VolumeApiResult>(null, future, srcVolume, 
+                    destVolume,
+                    destStore);
+            AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().copyVolumeCallBack(null, null))
+            .setContext(context);
+            this.motionSrv.copyAsync(srcVolume, destVolume, caller);
+        } catch (Exception e) {
+            s_logger.debug("Failed to copy volume", e);
+            res.setResult(e.toString());
+            future.complete(res);
+        }
+        return future;
+    }
+    
+    protected Void copyVolumeCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyVolumeContext<VolumeApiResult> context) {
+        VolumeInfo srcVolume = context.srcVolume;
+        VolumeInfo destVolume = context.destVolume;
+        CopyCommandResult result = callback.getResult();
+        AsyncCallFuture<VolumeApiResult> future = context.future;
+        VolumeApiResult res = new VolumeApiResult(destVolume);
+        try {
+            if (result.isFailed()) {
+                res.setResult(result.getResult());
+                destVolume.processEvent(Event.OperationFailed);
+                srcVolume.processEvent(Event.OperationFailed);
+                AsyncCallFuture<VolumeApiResult> destroyFuture = this.expungeVolumeAsync(destVolume);
+                destroyFuture.get();
+                future.complete(res);
+                return null;
+            }
+            srcVolume.processEvent(Event.OperationSuccessed);
+            destVolume.processEvent(Event.OperationSuccessed);
+            AsyncCallFuture<VolumeApiResult> destroyFuture = this.expungeVolumeAsync(srcVolume);
+            destroyFuture.get();
+            future.complete(res);
+            return null;
+        } catch (Exception e) {
+            s_logger.debug("Failed to process copy volume callback",e);
+            res.setResult(e.toString());
+            future.complete(res);
+        }
+        
         return null;
     }
     
