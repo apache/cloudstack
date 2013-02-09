@@ -173,18 +173,13 @@ then
 
   tag=$(echo $ipv4 | tr '.' '_')
   sed -i /$tag/d $DHCP_OPTS
-  if [ "$dflt" != "0.0.0.0" ]
+  if [ "$dflt" == "0.0.0.0" ]
   then
-      logger -t cloud "$0: setting default router for $ipv4 to $dflt"
-      echo "$tag,3,$dflt" >> $DHCP_OPTS
-  else
-      logger -t cloud "$0: unset default router for $ipv4"
-      echo "$tag,3," >> $DHCP_OPTS
-  fi
-  if [ "$dns" != "" ] 
-  then
+    logger -t cloud "$0: unset default router for $ipv4"
+    echo "$tag,3" >> $DHCP_OPTS
     logger -t cloud "$0: setting dns server for $ipv4 to $dns"
-    echo "$tag,6,$dns" >> $DHCP_OPTS
+    echo "$tag,6" >> $DHCP_OPTS
+    echo "$tag,15" >> $DHCP_OPTS
   fi
   [ "$routes" != "" ] && echo "$tag,121,$routes" >> $DHCP_OPTS
   #delete entry we just put in because we need a tag
