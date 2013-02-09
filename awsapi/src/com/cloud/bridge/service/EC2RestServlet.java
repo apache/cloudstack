@@ -1678,13 +1678,16 @@ public class EC2RestServlet extends HttpServlet {
             throws ADBException, XMLStreamException, IOException {
         EC2DescribeKeyPairs ec2Request = new EC2DescribeKeyPairs();
 
-
-        String[] keyNames = request.getParameterValues( "KeyName" );
-        if (keyNames != null) { 
-            for (String keyName : keyNames) {
-                ec2Request.addKeyName(keyName);
+        Enumeration<?> names = request.getParameterNames();
+        while( names.hasMoreElements()) {
+            String key = (String)names.nextElement();
+            if (key.startsWith("KeyName")) {
+                String[] value = request.getParameterValues( key );
+                if (null != value && 0 < value.length)
+                    ec2Request.addKeyName(value[0]);
             }
         }
+
         EC2Filter[] filterSet = extractFilters( request );
         if (null != filterSet){
             EC2KeyPairFilterSet vfs = new EC2KeyPairFilterSet();
