@@ -1578,7 +1578,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     }
     
     @Override
-    public boolean canOperateOnVolume(VolumeVO volume) {
+    public boolean canOperateOnVolume(Volume volume) {
         List<SnapshotVO> snapshots = _snapshotDao.listByStatus(volume.getId(), Snapshot.State.Creating,
                 Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
     	if (snapshots.size() > 0) {

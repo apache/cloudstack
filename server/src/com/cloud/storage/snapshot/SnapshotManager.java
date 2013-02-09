@@ -22,6 +22,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.db.Filter;
 
@@ -138,5 +139,5 @@ public interface SnapshotManager {
 
     void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId);
 
-	boolean canOperateOnVolume(VolumeVO volume);
+	boolean canOperateOnVolume(Volume volume);
 }

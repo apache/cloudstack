@@ -1226,7 +1226,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
         boolean migrationResult = false;
         try {
-            migrationResult = this.volumeMgr.StorageMigration(profile, destPool);
+            migrationResult = this.volumeMgr.storageMigration(profile, destPool);
 
             if (migrationResult) {
                 //if the vm is migrated to different pod in basic mode, need to reallocate ip

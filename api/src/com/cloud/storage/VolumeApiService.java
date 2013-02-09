@@ -21,6 +21,7 @@ package com.cloud.storage;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 
@@ -61,7 +62,7 @@ public interface VolumeApiService {
      */
     Volume resizeVolume(ResizeVolumeCmd cmd);
     
-    Volume migrateVolume(Long volumeId, Long storagePoolId) throws ConcurrentOperationException;
+    Volume migrateVolume(MigrateVolumeCmd cmd) throws ConcurrentOperationException;
 
     /**
      * Uploads the volume to secondary storage

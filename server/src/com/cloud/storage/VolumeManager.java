@@ -21,6 +21,7 @@ package com.cloud.storage;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -76,12 +77,11 @@ public interface VolumeManager extends VolumeApiService {
 
     void cleanupVolumes(long vmId) throws ConcurrentOperationException;
 
-    Volume migrateVolume(Long volumeId, Long storagePoolId)
-            throws ConcurrentOperationException;
+    Volume migrateVolume(MigrateVolumeCmd cmd);
 
-    boolean StorageMigration(
+    boolean storageMigration(
             VirtualMachineProfile<? extends VirtualMachine> vm,
-            StoragePool destPool) throws ConcurrentOperationException;
+            StoragePool destPool);
 
     void prepareForMigration(
             VirtualMachineProfile<? extends VirtualMachine> vm,

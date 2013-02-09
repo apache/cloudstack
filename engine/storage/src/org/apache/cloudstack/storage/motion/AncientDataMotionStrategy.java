@@ -329,6 +329,59 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         
         return errMsg;
     }
+    
+    protected String copyVolumeBetweenPools(DataObject srcData, DataObject destData) {
+        VolumeInfo volume = (VolumeInfo)srcData;
+        VolumeInfo destVolume = (VolumeInfo)destData;
+        String secondaryStorageURL = this.templateMgr.getSecondaryStorageURL(volume
+                .getDataCenterId());
+        StoragePool srcPool = (StoragePool)this.dataStoreMgr.getDataStore(volume
+                .getPoolId(), DataStoreRole.Primary);
+        
+        StoragePool destPool = (StoragePool)this.dataStoreMgr.getDataStore(destVolume.getPoolId(), DataStoreRole.Primary);
+        
+        String value = this.configDao.getValue(Config.CopyVolumeWait.toString());
+        int _copyvolumewait = NumbersUtil.parseInt(value,
+                Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
+        CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(),
+                volume.getPath(), srcPool, secondaryStorageURL, true,
+                _copyvolumewait);
+        CopyVolumeAnswer cvAnswer;
+        try {
+            cvAnswer = (CopyVolumeAnswer) this.storagMgr.sendToPool(srcPool, cvCmd);
+        } catch (StorageUnavailableException e1) {
+            throw new CloudRuntimeException(
+                    "Failed to copy the volume from the source primary storage pool to secondary storage.",
+                    e1);
+        }
+
+        if (cvAnswer == null || !cvAnswer.getResult()) {
+            throw new CloudRuntimeException(
+                    "Failed to copy the volume from the source primary storage pool to secondary storage.");
+        }
+
+        String secondaryStorageVolumePath = cvAnswer.getVolumePath();
+        
+        cvCmd = new CopyVolumeCommand(volume.getId(),
+                secondaryStorageVolumePath, destPool,
+                secondaryStorageURL, false, _copyvolumewait);
+        try {
+            cvAnswer = (CopyVolumeAnswer) this.storagMgr.sendToPool(destPool, cvCmd);
+        } catch (StorageUnavailableException e1) {
+            throw new CloudRuntimeException(
+                    "Failed to copy the volume from secondary storage to the destination primary storage pool.");
+        }
+
+        if (cvAnswer == null || !cvAnswer.getResult()) {
+            throw new CloudRuntimeException(
+                    "Failed to copy the volume from secondary storage to the destination primary storage pool.");
+        }
+        
+        VolumeVO destVol = this.volDao.findById(destVolume.getId());
+        destVol.setPath(cvAnswer.getVolumePath());
+        this.volDao.update(destVol.getId(), destVol);
+        return null;
+    }
 
     @Override
     public Void copyAsync(DataObject srcData, DataObject destData,
@@ -336,7 +389,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         String errMsg = null;
         try {
             if (destData.getType() == DataObjectType.VOLUME
-                    && srcData.getType() == DataObjectType.VOLUME) {
+                    && srcData.getType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.Image) {
                 errMsg = copyVolumeFromImage(srcData, destData);
             } else if (destData.getType() == DataObjectType.TEMPLATE
                     && srcData.getType() == DataObjectType.TEMPLATE) {
@@ -353,6 +406,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             } else if (srcData.getType() == DataObjectType.TEMPLATE 
                     && destData.getType() == DataObjectType.VOLUME) {
                 errMsg = cloneVolume(srcData, destData);
+            } else if (destData.getType() == DataObjectType.VOLUME
+                    && srcData.getType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
+                errMsg = copyVolumeBetweenPools(srcData, destData);
             }
         } catch (Exception e) {
             s_logger.debug("copy failed", e);
