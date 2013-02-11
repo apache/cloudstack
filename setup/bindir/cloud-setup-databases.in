@@ -212,7 +212,7 @@ for full help
                     ""),
             )
 
-        for f in ["create-database","create-schema", "create-database-premium","create-schema-premium", "create-schema-view"]:
+        for f in ["create-database","create-schema", "create-database-premium","create-schema-premium", "create-schema-view", "4.1-new-db-schema.sql"]:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             if not os.path.exists(p): continue
             text = file(p).read()
