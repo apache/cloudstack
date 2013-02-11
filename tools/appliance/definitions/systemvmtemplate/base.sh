@@ -14,10 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
+
 # Update the box
 apt-get -y update
-apt-get -y install linux-headers-$(uname -r) build-essential
-apt-get -y install zlib1g-dev libssl-dev libreadline-gplv2-dev
+#below are needed for ruby perhaps
+#apt-get -y install linux-headers-$(uname -r) build-essential
+#apt-get -y install zlib1g-dev libssl-dev libreadline-gplv2-dev
 apt-get -y install curl unzip
 apt-get clean
 

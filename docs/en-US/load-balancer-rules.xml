@@ -22,11 +22,19 @@
     under the License.
 -->
 <section id="load-balancer-rules">
-    <title>Load Balancer Rules</title>
-    <para>A &PRODUCT; user or administrator may create load balancing rules that balance traffic received at a public IP to one or more VMs. A user creates a rule, specifies an algorithm, and assigns the rule to a set of VMs.</para>
-    <note><para>If you create load balancing rules while using a network service offering that includes an external load balancer device such as NetScaler, and later change the network service offering to one that uses the &PRODUCT; virtual router, you must create a firewall rule on the virtual router for each of your existing load balancing rules so that they continue to function.</para>
-    </note>
-    <para></para>
-    <xi:include href="add-load-balancer-rule.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="sticky-session-policies-for-lb-rules.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <title>Load Balancer Rules</title>
+  <para>A &PRODUCT; user or administrator may create load balancing rules that balance traffic
+    received at a public IP to one or more VMs. A user creates a rule, specifies an algorithm, and
+    assigns the rule to a set of VMs.</para>
+  <note>
+    <para>If you create load balancing rules while using a network service offering that includes an
+      external load balancer device such as NetScaler, and later change the network service offering
+      to one that uses the &PRODUCT; virtual router, you must create a firewall rule on the virtual
+      router for each of your existing load balancing rules so that they continue to
+      function.</para>
+  </note>
+  <para/>
+  <xi:include href="add-load-balancer-rule.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  <xi:include href="sticky-session-policies-for-lb-rules.xml"
+    xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </section>

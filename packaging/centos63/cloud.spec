@@ -185,7 +185,7 @@ install -D console-proxy/dist/systemvm.iso ${RPM_BUILD_ROOT}%{_datadir}/%{name}-
 install -D console-proxy/dist/systemvm.zip ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.zip
 install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloud_utils.py
 cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/
-python -m compileall ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloud_utils.py
+python -m py_compile ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloud_utils.py
 python -m compileall ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloudutils
 
 # Management
@@ -216,6 +216,10 @@ install -D client/target/utilities/bin/cloud-update-xenserver-licenses ${RPM_BUI
 
 cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 cp -r client/target/cloud-client-ui-4.1.0-SNAPSHOT/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client
+
+# Don't package the scripts in the management webapp
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
 for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf server-ssl.xml server-nonssl.xml \
             catalina.policy catalina.properties db-enc.properties classpath.conf tomcat-users.xml web.xml ; do
@@ -319,11 +323,19 @@ fi
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/agent
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/awsapi
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-management
-%config(noreplace) %{_sysconfdir}/%{name}/management
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf
+%config(noreplace) %{_sysconfdir}/%{name}/management/Catalina/localhost/client/context.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
+%config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
+%config(noreplace) %{_sysconfdir}/%{name}/management/db-enc.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/web.xml
 %attr(0755,root,root) %{_initrddir}/%{name}-management
 %attr(0755,root,root) %{_bindir}/%{name}-setup-management
 %attr(0755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
@@ -364,10 +376,14 @@ fi
 %doc NOTICE
 
 %files common
+%dir %attr(0755,root,root) %{_libdir}/python2.6/site-packages/cloudutils
+%dir %attr(0755,root,root) %{_datadir}/%{name}-common/vms
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts
-%attr(0644,root,root) %{_datadir}/%{name}-common/vms
+%attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.iso
+%attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.zip
 %attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.py
-%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudutils
+%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloud_utils.pyc
+%attr(0644,root,root) %{_libdir}/python2.6/site-packages/cloudutils/*
 %doc LICENSE
 %doc NOTICE
 

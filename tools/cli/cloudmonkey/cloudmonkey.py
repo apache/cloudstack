@@ -246,13 +246,13 @@ class CloudMonkeyShell(cmd.Cmd, object):
                                   map(lambda x: x.strip(),
                                       args_dict.pop('filter').split(',')))
 
-        missing_args = []
+        missing = []
         if verb in self.apicache and subject in self.apicache[verb]:
-            missing_args = filter(lambda x: x not in args_dict.keys(),
-                           self.apicache[verb][subject]['requiredparams'])
+            missing = filter(lambda x: x not in args_dict.keys(),
+                             self.apicache[verb][subject]['requiredparams'])
 
-        if len(missing_args) > 0:
-            self.monkeyprint("Missing arguments: ", ' '.join(missing_args))
+        if len(missing) > 0:
+            self.monkeyprint("Missing arguments: ", ' '.join(missing))
             return
 
         isasync = False
@@ -293,11 +293,32 @@ class CloudMonkeyShell(cmd.Cmd, object):
                                   map(lambda x: x['name'],
                                       self.apicache[verb][subject]['params']))
             search_string = text
+            if self.paramcompletion == 'true':
+                param = line.split(" ")[-1]
+                idx = param.find("=")
+                value = param[idx + 1:]
+                param = param[:idx]
+                if len(value) < 36 and idx != -1:
+                    params = self.apicache[verb][subject]['params']
+                    related = filter(lambda x: x['name'] == param,
+                                     params)[0]['related']
+                    api = min(filter(lambda x: 'list' in x, related), key=len)
+                    response = self.make_request(api, args={'listall': 'true'})
+                    responsekey = filter(lambda x: 'response' in x,
+                                         response.keys())[0]
+                    result = response[responsekey]
+                    uuids = []
+                    for key in result.keys():
+                        if isinstance(result[key], list):
+                            for element in result[key]:
+                                if 'id' in element.keys():
+                                    uuids.append(element['id'])
+                    autocompletions = uuids
+                    search_string = value
 
         if self.tabularize == "true" and subject != "":
             autocompletions.append("filter=")
         return [s for s in autocompletions if s.startswith(search_string)]
-
 
     def do_sync(self, args):
         """
@@ -396,7 +417,8 @@ class CloudMonkeyShell(cmd.Cmd, object):
                     helpdoc += "\nRequired params are %s" % ' '.join(required)
                 helpdoc += "\nParameters\n" + "=" * 10
                 for param in api['params']:
-                    helpdoc += "\n%s = (%s) %s" % (param['name'], param['type'], param['description'])
+                    helpdoc += "\n%s = (%s) %s" % (param['name'],
+                               param['type'], param['description'])
                 self.monkeyprint(helpdoc)
             else:
                 self.monkeyprint("Error: no such api (%s) on %s" %

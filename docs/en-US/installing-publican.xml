@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="installing-publican">
+    <title>Installing Publican</title>
+    <para>&PRODUCT; documentation is built using publican. This section describes how to install publican on your own machine so that you can build the documentation guides.</para>
+    <note>
+        <para>The &PRODUCT; documentation source code is located under <emphasis>/docs</emphasis></para>
+        <para>Publican documentation itself is also very <ulink url="http://docs.fedoraproject.org/en-US/Fedora_Contributor_Documentation/1/html/Users_Guide/chap-Users_Guide-Installing_Publican.html">useful</ulink>.</para>
+    </note>
+    <para>On RHEL and RHEL derivatives, install publican with the following command:</para>
+    <programlisting>yum install publican publican-doc</programlisting>
+    <para>On Ubuntu, install publican with the following command:</para>
+    <programlisting>apt-get install publican publican-doc</programlisting>
+    <para>For other distribution refer to the publican documentation listed above. For latest versions of OSX you may have to install from <ulink url="https://fedorahosted.org/publican/wiki/Installing_OSX">source</ulink> and tweak it to your own setup.</para>
+    <para>Once publican is installed, you need to setup the so-called &PRODUCT; brand defined in the <emphasis>docs/publican-&PRODUCT;</emphasis> directory.</para>
+    <para>To do so, enter the following commands:</para>
+    <programlisting>
+        sudo cp -R publican-cloudstack /usr/share/publican/Common_Content/cloudstack
+    </programlisting>
+    <para>If this fails or you later face errors related to the brand files, see the publican <ulink url="http://docs.fedoraproject.org/en-US/Fedora_Contributor_Documentation/1/html/Users_Guide/chap-Users_Guide-Branding.html#sect-Users_Guide-Installing_a_brand">documentation</ulink>.</para>
+    <para>With publican installed and the &PRODUCT; brand files in place, you should be able to build any documentation guide.</para>
+
+
+</section>

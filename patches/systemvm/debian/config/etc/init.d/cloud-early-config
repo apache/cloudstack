@@ -440,12 +440,30 @@ setup_dnsmasq() {
 
   if [ "$RROUTER" == "1" ]
   then
-      sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
-      echo "dhcp-option=option:router,$GUEST_GW" >> /etc/dnsmasq.conf
-      sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
-      echo "dhcp-option=6,$GUEST_GW" >> /etc/dnsmasq.conf
+    DEFAULT_GW=$GUEST_GW
+    INTERNAL_DNS=$GUEST_GW
+  else
+    if [ "$TYPE" == "dhcpsrvr" ]
+    then
+      DEFAULT_GW=$GW
+    else
+      DEFAULT_GW=$ETH0_IP
+    fi
+    INTERNAL_DNS=$ETH0_IP
   fi
-
+  sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
+  [ $DEFAULT_GW ] && echo "dhcp-option=option:router,$DEFAULT_GW" >> /etc/dnsmasq.conf
+  NS=$NS1
+  [ -n "$NS2" ] && NS=$NS1,$NS2
+    #for now set up ourself as the dns server as well
+  sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
+  if [ "$USE_EXTERNAL_DNS" == "true" ]
+  then
+    [ $ETH0_IP ] && echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
+  else
+    [ $ETH0_IP ] && echo "dhcp-option=6,$INTERNAL_DNS,$NS" >> /etc/dnsmasq.conf
+  fi
+  [ $ETH0_IP6 ] && echo "dhcp-option=option6:dns-server,[::]" >> /etc/dnsmasq.conf
 }
 
 setup_sshd(){
@@ -606,14 +624,6 @@ setup_router() {
   
   setup_dnsmasq
   
-  NS=$NS1
-  [ -n "$NS2" ] && NS=$NS1,$NS2
-  if [ "$USE_EXTERNAL_DNS" == "true" ]
-  then
-      sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
-      echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
-  fi
-  
   setup_apache2 $ETH0_IP
 
   sed -i  /gateway/d /etc/hosts
@@ -714,28 +724,6 @@ setup_dhcpsrvr() {
   setup_common eth0 eth1
   setup_dnsmasq
   setup_apache2 $ETH0_IP
-
-  NS=$NS1
-  [ -n "$NS2" ] && NS=$NS1,$NS2
-  if [ "$DEFAULTROUTE" != "false" ]
-  then
-    sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
-    [ $GW ] && echo "dhcp-option=option:router,$GW" >> /etc/dnsmasq.conf
-    #for now set up ourself as the dns server as well
-    sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
-    if [ "$USE_EXTERNAL_DNS" == "true" ]
-    then
-        echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
-    else
-        [ $ETH0_IP ] && echo "dhcp-option=6,$ETH0_IP,$NS" >> /etc/dnsmasq.conf
-        [ $ETH0_IP6 ] && echo "dhcp-option=option6:dns-server,[::]" >> /etc/dnsmasq.conf
-    fi
-  else
-    sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
-    echo "dhcp-option=option:router" >> /etc/dnsmasq.conf
-    sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
-    echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
-  fi
 
   sed -i  /gateway/d /etc/hosts
   [ $ETH0_IP ] && echo "$ETH0_IP $NAME" >> /etc/hosts

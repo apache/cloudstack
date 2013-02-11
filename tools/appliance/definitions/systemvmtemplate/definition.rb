@@ -38,6 +38,7 @@ Veewee::Definition.declare({
      'debconf/frontend=noninteractive ',
      'console-setup/ask_detect=false ',
      'console-keymaps-at/keymap=us ',
+     'keyboard-configuration/xkb-keymap=us ',
      '<Enter>'
   ],
   :kickstart_port => "7122",
@@ -53,6 +54,7 @@ Veewee::Definition.declare({
   :shutdown_cmd => "halt -p",
   :postinstall_files => [
     "base.sh",
+    "cloudstack-packages.sh",
     "cleanup.sh",
     "zerodisk.sh"
   ],

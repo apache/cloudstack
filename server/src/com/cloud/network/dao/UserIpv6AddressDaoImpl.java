@@ -59,6 +59,7 @@ public class UserIpv6AddressDaoImpl extends GenericDaoBase<UserIpv6AddressVO, Lo
         CountFreePublicIps = createSearchBuilder(Long.class);
         CountFreePublicIps.select(null, Func.COUNT, null);
         CountFreePublicIps.and("networkId", CountFreePublicIps.entity().getSourceNetworkId(), SearchCriteria.Op.EQ);
+        CountFreePublicIps.and("vlanId", CountFreePublicIps.entity().getVlanId(), SearchCriteria.Op.EQ);
         CountFreePublicIps.done();
     }
 
@@ -109,6 +110,13 @@ public class UserIpv6AddressDaoImpl extends GenericDaoBase<UserIpv6AddressVO, Lo
 	public long countExistedIpsInNetwork(long networkId) {
         SearchCriteria<Long> sc = CountFreePublicIps.create();
         sc.setParameters("networkId", networkId);
+        return customSearch(sc, null).get(0);       
+	}
+
+	@Override
+	public long countExistedIpsInVlan(long vlanId) {
+        SearchCriteria<Long> sc = CountFreePublicIps.create();
+        sc.setParameters("vlanId", vlanId);
         return customSearch(sc, null).get(0);       
 	}
 }

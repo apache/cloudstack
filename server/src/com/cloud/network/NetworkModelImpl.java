@@ -527,7 +527,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         		return false;
         	}
         	if (network.getIp6Gateway() != null) {
-        		hasFreeIps = isIP6AddressAvailable(network.getId());
+        		hasFreeIps = isIP6AddressAvailableInNetwork(network.getId());
         	}
         } else {
             hasFreeIps = (getAvailableIps(network, null)).size() > 0;
@@ -537,17 +537,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public Vlan getVlanForNetwork(long networkId) {
-    	List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
-    	if (vlans == null || vlans.size() > 1) {
-    		s_logger.debug("Cannot find related vlan or too many vlan attached to network " + networkId);
-    		return null;
-    	}
-    	return vlans.get(0);
-    }
-
-    @Override
-    public boolean isIP6AddressAvailable(long networkId) {
+    public boolean isIP6AddressAvailableInNetwork(long networkId) {
     	Network network = _networksDao.findById(networkId);
     	if (network == null) {
     		return false;
@@ -555,8 +545,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     	if (network.getIp6Gateway() == null) {
     		return false;
     	}
-    	Vlan vlan = getVlanForNetwork(network.getId());
-    	long existedCount = _ipv6Dao.countExistedIpsInNetwork(network.getId());
+    	List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+    	for (Vlan vlan : vlans) {
+    		if (isIP6AddressAvailableInVlan(vlan.getId())) {
+    			return true;
+    		}
+    	}
+		return false;
+	}
+
+    @Override
+    public boolean isIP6AddressAvailableInVlan(long vlanId) {
+    	VlanVO vlan = _vlanDao.findById(vlanId);
+    	long existedCount = _ipv6Dao.countExistedIpsInVlan(vlanId);
     	BigInteger existedInt = BigInteger.valueOf(existedCount);
     	BigInteger rangeInt = NetUtils.countIp6InRange(vlan.getIp6Range());
 		return (existedInt.compareTo(rangeInt) < 0);
@@ -1875,4 +1876,40 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         return offering.isInline();
     }
 
+    @Override
+    public void checkIp6Parameters(String startIPv6, String endIPv6,
+            String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException {
+        if (!NetUtils.isValidIpv6(startIPv6)) {
+            throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
+        }
+        if (!NetUtils.isValidIpv6(endIPv6)) {
+            throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
+        }
+
+        if (!(ip6Gateway != null && ip6Cidr != null)) {
+            throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in");
+        }
+
+        if (!NetUtils.isValidIpv6(ip6Gateway)) {
+            throw new InvalidParameterValueException("Invalid ip6Gateway");
+        }
+        if (!NetUtils.isValidIp6Cidr(ip6Cidr)) {
+            throw new InvalidParameterValueException("Invalid ip6cidr");
+        }
+        if (!NetUtils.isIp6InNetwork(startIPv6, ip6Cidr)) {
+            throw new InvalidParameterValueException("startIPv6 is not in ip6cidr indicated network!");
+        }
+        if (!NetUtils.isIp6InNetwork(endIPv6, ip6Cidr)) {
+            throw new InvalidParameterValueException("endIPv6 is not in ip6cidr indicated network!");
+        }
+        if (!NetUtils.isIp6InNetwork(ip6Gateway, ip6Cidr)) {
+            throw new InvalidParameterValueException("ip6Gateway is not in ip6cidr indicated network!");
+        }
+
+        int cidrSize = NetUtils.getIp6CidrSize(ip6Cidr);
+        // Ipv6 cidr limit should be at least /64
+        if (cidrSize < 64) {
+            throw new InvalidParameterValueException("The cidr size of IPv6 network must be no less than 64 bits!");
+        }
+    }
 }

@@ -31,7 +31,7 @@ public class SnapshotVO implements Snapshot {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private final long id = -1;
+    private long id;
 
     @Column(name="data_center_id")
     long dataCenterId;
@@ -248,7 +248,7 @@ public class SnapshotVO implements Snapshot {
         return state;
     }
 
-	public void setStatus(State state) {
+	public void setState(State state) {
         this.state = state;
     }
 

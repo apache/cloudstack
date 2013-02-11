@@ -208,9 +208,10 @@ public class ComponentContext implements ApplicationContextAware {
         return (T)instance;
     }
 
-    public static <T> T inject(Class<T> clz) {
-        T instance = s_appContext.getAutowireCapableBeanFactory().createBean(clz);
-        return inject(instance);
+    @SuppressWarnings("unchecked")
+	public static <T> T inject(Class<T> clz) {
+        Object instance = s_appContext.getAutowireCapableBeanFactory().createBean(clz);
+        return (T)inject(instance);
     }
 
     public static <T> T inject(Object instance) {

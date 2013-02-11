@@ -2873,34 +2873,26 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         // Verify that caller can perform actions in behalf of vm owner
         _accountMgr.checkAccess(caller, null, true, owner);
 
-        // If no network is specified, find system security group enabled
-        // network
+        // If no network is specified, find system security group enabled network
         if (networkIdList == null || networkIdList.isEmpty()) {
             Network networkWithSecurityGroup = _networkModel.getNetworkWithSecurityGroupEnabled(zone.getId());
             if (networkWithSecurityGroup == null) {
-                throw new InvalidParameterValueException(
-                        "No network with security enabled is found in zone id="
-                                + zone.getId());
+                throw new InvalidParameterValueException("No network with security enabled is found in zone id=" + zone.getId());
             }
 
             networkList.add(_networkDao.findById(networkWithSecurityGroup.getId()));
             isSecurityGroupEnabledNetworkUsed = true;
 
-        } else if (securityGroupIdList != null
-                && !securityGroupIdList.isEmpty()) {
+        } else if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
             if (isVmWare) {
-                throw new InvalidParameterValueException(
-                        "Security group feature is not supported for vmWare hypervisor");
+                throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
             }
-            // Only one network can be specified, and it should be security
-            // group enabled
+            // Only one network can be specified, and it should be security group enabled
             if (networkIdList.size() > 1) {
-                throw new InvalidParameterValueException(
-                        "Only support one network per VM if security group enabled");
+                throw new InvalidParameterValueException("Only support one network per VM if security group enabled");
             }
 
-            NetworkVO network = _networkDao.findById(networkIdList.get(0)
-                    .longValue());
+            NetworkVO network = _networkDao.findById(networkIdList.get(0).longValue());
 
             if (network == null) {
                 throw new InvalidParameterValueException(
@@ -2921,9 +2913,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 NetworkVO network = _networkDao.findById(networkId);
 
                 if (network == null) {
-                    throw new InvalidParameterValueException(
-                            "Unable to find network by id "
-                                    + networkIdList.get(0).longValue());
+                    throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
                 }
 
                 boolean isSecurityGroupEnabled = _networkModel.isSecurityGroupSupportedInNetwork(network);
@@ -2952,9 +2942,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         // if network is security group enabled, and no security group is specified, then add the default security group automatically
         if (isSecurityGroupEnabledNetworkUsed && !isVmWare && _networkModel.canAddDefaultSecurityGroup()) {
             
-            // add the default securityGroup only if no security group is
-            // specified
-            if (securityGroupIdList == null || securityGroupIdList.isEmpty()) {
+          //add the default securityGroup only if no security group is specified
+            if(securityGroupIdList == null || securityGroupIdList.isEmpty()){
                 if (securityGroupIdList == null) {
                     securityGroupIdList = new ArrayList<Long>();
                 }
@@ -3358,9 +3347,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         _vmDao.persist(vm);
         _vmDao.saveDetails(vm);
-        txn.commit();
 
-        
         s_logger.debug("Allocating in the DB for vm");
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
 
@@ -3395,7 +3382,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         _resourceLimitMgr.incrementResourceCount(accountId,
                 ResourceType.user_vm);
+
         txn.commit();
+
         // Assign instance to the group
         try {
             if (group != null) {

@@ -328,7 +328,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         Transaction txn = Transaction.currentTxn();
         txn.start();
         SnapshotVO snapshotVO = (SnapshotVO)snapshot;
-        snapshotVO.setStatus(nextState);
+        snapshotVO.setState(nextState);
         super.update(snapshotVO.getId(), snapshotVO);
         txn.commit();
         return true;
