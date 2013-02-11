@@ -1,5 +1,5 @@
 (function($, cloudStack) {
   cloudStack.plugins = [
-    'testPlugin'
+    // 'testPlugin'
   ];
 }(jQuery, cloudStack));
