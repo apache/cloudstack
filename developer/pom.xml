@@ -177,6 +177,12 @@
                 <!-- Do dry run using -d or dash-dash-dry -->
                 <!-- Enable verbosity by -v or dash-dash-verbose -->
               </arguments>
+              <systemProperties>
+                <systemProperty>
+                  <key>CATALINA_HOME</key>
+                  <value>${project.parent.basedir}/utils/</value>
+                </systemProperty>
+              </systemProperties>
             </configuration>
           </plugin>
         </plugins>
