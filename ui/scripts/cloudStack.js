@@ -19,18 +19,26 @@
     home: 'dashboard',
 
     sectionPreFilter: function(args) {
+      var sections = [];
+
       if(isAdmin()) {
-        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects", "plugins"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects"];
       }
       else if(isDomainAdmin()) {
-        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "projects"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "projects"];
       }
       else if (g_userProjectsEnabled) {
-        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "projects"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "projects"];
       }
       else { //normal user
-        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "events"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events"];
       }
+
+      if (cloudStack.plugins.length) {
+        sections.push('plugins');
+      }
+
+      return sections;
     },
     sections: {
       /**
