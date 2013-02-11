@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -212,7 +211,7 @@ for full help
                     ""),
             )
 
-        for f in ["create-database","create-schema", "create-database-premium","create-schema-premium", "create-schema-view", "4.1-new-db-schema.sql"]:
+        for f in ["create-database","create-schema", "create-database-premium","create-schema-premium", "create-schema-view", "4.1-new-db-schema"]:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             if not os.path.exists(p): continue
             text = file(p).read()
@@ -603,4 +602,3 @@ for example:
 if __name__ == "__main__":
    o = DBDeployer()
    o.run()
-
