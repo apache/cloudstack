@@ -37,6 +37,7 @@ import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Provider;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.CiscoVnmcDao;
@@ -76,7 +77,7 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
    
 	@Override
 	public CiscoVnmcController addCiscoVnmcResource(AddCiscoVnmcResourceCmd cmd) {
-        String deviceName = CiscoVnmc.getName();
+        String deviceName = Provider.CiscoVnmc.getName();
         NetworkDevice networkDevice = NetworkDevice.getNetworkDevice(deviceName);
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
         CiscoVnmcController CiscoVnmcResource = null;
@@ -113,7 +114,7 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
         Map<String, Object> hostdetails = new HashMap<String,Object>();
         hostdetails.putAll(params);
         
-		ServerResource resource = new CiscoVnmcResource(cmd.getHost(), cmd.getUsername(), cmd.getPassword());
+		ServerResource resource = new CiscoVnmcResource();
 
         Transaction txn = Transaction.currentTxn();
         try {
