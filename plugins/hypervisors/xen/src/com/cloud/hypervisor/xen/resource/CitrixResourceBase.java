@@ -4713,6 +4713,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     throw new CloudRuntimeException("Unable to authenticate");
                 }
 
+                com.trilead.ssh2.Session session = sshConnection.openSession();
                 SCPClient scp = new SCPClient(sshConnection);
 
                 List<File> files = getPatchFiles();
@@ -4760,6 +4761,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         }
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Copying " + f + " to " + d + " on " + hr.address + " with permission " + p);
+                        }
+                        try {
+                            session.execCommand("mkdir -p " + d);
+                        } catch (IOException e) {
+                            s_logger.debug("Unable to create destination path: " + d + " on " + hr.address + " but trying anyway");
+
                         }
                         scp.put(f, d, p);
 
