@@ -179,8 +179,8 @@
               </arguments>
               <systemProperties>
                 <systemProperty>
-                  <key>CATALINA_HOME</key>
-                  <value>${project.parent.basedir}/utils/</value>
+                  <key>catalina.home</key>
+                  <value>${project.parent.basedir}/utils</value>
                 </systemProperty>
               </systemProperties>
             </configuration>
@@ -287,6 +287,12 @@
                 <argument>--rootpassword=${db.root.password}</argument>
                 <!-- enable verbosity by -v or dash-dash-verbose -->
               </arguments>
+              <systemProperties>
+                <systemProperty>
+                  <key>catalina.home</key>
+                  <value>${project.parent.basedir}/utils</value>
+                </systemProperty>
+              </systemProperties>
             </configuration>
           </plugin>
         </plugins>
