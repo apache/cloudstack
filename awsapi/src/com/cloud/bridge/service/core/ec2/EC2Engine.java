@@ -767,7 +767,10 @@ public class EC2Engine extends ManagerBase {
      */
     public boolean releaseAddress(EC2ReleaseAddress request) {
         try {
-            CloudStackIpAddress cloudIp = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null).get(0);
+            List<CloudStackIpAddress> cloudIps = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null);
+            if (cloudIps == null)
+                throw new EC2ServiceException(ServerError.InternalError, "Specified ipAddress doesn't exist");
+            CloudStackIpAddress cloudIp = cloudIps.get(0);
             CloudStackInfoResponse resp = getApi().disassociateIpAddress(cloudIp.getId());
             if (resp != null) {
                 return resp.getSuccess();
@@ -787,8 +790,17 @@ public class EC2Engine extends ManagerBase {
      */
     public boolean associateAddress( EC2AssociateAddress request ) {
         try {
-            CloudStackIpAddress cloudIp = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null).get(0);
-            CloudStackUserVm cloudVm = getApi().listVirtualMachines(null, null, true, null, null, null, null, request.getInstanceId(), null, null, null, null, null, null, null, null, null).get(0);
+            List<CloudStackIpAddress> cloudIps = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null);
+            if (cloudIps == null)
+                throw new EC2ServiceException(ServerError.InternalError, "Specified ipAddress doesn't exist");
+            CloudStackIpAddress cloudIp = cloudIps.get(0);
+
+            List<CloudStackUserVm> vmList = getApi().listVirtualMachines(null, null, true, null, null, null, null,
+                    request.getInstanceId(), null, null, null, null, null, null, null, null, null);
+            if (vmList == null || vmList.size() == 0) {
+                throw new EC2ServiceException(ServerError.InternalError, "Specified instance-id doesn't exist");
+            }
+            CloudStackUserVm cloudVm = vmList.get(0);
 
             CloudStackInfoResponse resp = getApi().enableStaticNat(cloudIp.getId(), cloudVm.getId());
             if (resp != null) {
@@ -809,7 +821,11 @@ public class EC2Engine extends ManagerBase {
      */
     public boolean disassociateAddress( EC2DisassociateAddress request ) {
         try {
-            CloudStackIpAddress cloudIp = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null).get(0);
+            List<CloudStackIpAddress> cloudIps = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null);
+            if (cloudIps == null)
+                throw new EC2ServiceException(ServerError.InternalError, "Specified ipAddress doesn't exist");
+            CloudStackIpAddress cloudIp = cloudIps.get(0);
+
             CloudStackInfoResponse resp = getApi().disableStaticNat(cloudIp.getId());
             if (resp != null) {
                 return resp.getSuccess();
