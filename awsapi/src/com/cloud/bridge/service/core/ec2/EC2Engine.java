@@ -625,59 +625,6 @@ public class EC2Engine extends ManagerBase {
         return imageAtts;
     }
 
-
-
-    /**
-     * If given a specific list of snapshots of interest, then only values from those snapshots are returned.
-     * 
-     * @param interestedShots - can be null, should be a subset of all snapshots
-     */
-    private EC2DescribeSnapshotsResponse listSnapshots( String[] interestedShots, List<CloudStackKeyValue> resourceTagSet ) throws Exception {
-        EC2DescribeSnapshotsResponse snapshots = new EC2DescribeSnapshotsResponse();
-
-        List<CloudStackSnapshot> cloudSnaps;
-        if (interestedShots == null || interestedShots.length == 0) {
-            cloudSnaps = getApi().listSnapshots(null, null, null, null, null, null, null, null, null, resourceTagSet);
-        } else {
-            cloudSnaps = new ArrayList<CloudStackSnapshot>();
-
-            for(String id : interestedShots) {
-                List<CloudStackSnapshot> tmpList = getApi().listSnapshots(null, null, id, null, null, null, null,
-                        null, null, resourceTagSet);
-                cloudSnaps.addAll(tmpList);
-            }
-        }
-
-        if (cloudSnaps == null) { 
-            return null;
-        }
-
-        for(CloudStackSnapshot cloudSnapshot : cloudSnaps) {
-            EC2Snapshot shot  = new EC2Snapshot();
-            shot.setId(cloudSnapshot.getId());
-            shot.setName(cloudSnapshot.getName());
-            shot.setVolumeId(cloudSnapshot.getVolumeId());
-            shot.setType(cloudSnapshot.getSnapshotType());
-            shot.setState(cloudSnapshot.getState());
-            shot.setCreated(cloudSnapshot.getCreated());
-            shot.setAccountName(cloudSnapshot.getAccountName());
-            shot.setDomainId(cloudSnapshot.getDomainId());
-
-            List<CloudStackKeyValue> resourceTags = cloudSnapshot.getTags();
-            for(CloudStackKeyValue resourceTag : resourceTags) {
-                EC2TagKeyValue param = new EC2TagKeyValue();
-                param.setKey(resourceTag.getKey());
-                if (resourceTag.getValue() != null)
-                    param.setValue(resourceTag.getValue());
-                shot.addResourceTag(param);
-            }
-
-            snapshots.addSnapshot(shot);
-        }
-        return snapshots;
-    }
-
-
     // handlers
     /**
      * return password data from the instance
@@ -2088,6 +2035,53 @@ public class EC2Engine extends ManagerBase {
             return addressSet;
         } catch(Exception e) {
             logger.error( "List Addresses - ", e);
+            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+        }
+    }
+
+    private EC2DescribeSnapshotsResponse listSnapshots( String[] snapshotIds, List<CloudStackKeyValue> resourceTagSet) throws Exception {
+        try {
+            EC2DescribeSnapshotsResponse snapshotSet = new EC2DescribeSnapshotsResponse();
+
+            List<CloudStackSnapshot> snapshots = getApi().listSnapshots(null, null, null, null, null, null, null, null, null, resourceTagSet);
+            if ( snapshots != null && snapshots.size() > 0) {
+                for ( CloudStackSnapshot snapshot : snapshots) {
+                    boolean matched = false;
+                    if ( snapshotIds.length > 0) {
+                        for ( String snapshotId : snapshotIds) {
+                            if (snapshot.getId().equalsIgnoreCase(snapshotId)) {
+                                matched = true;
+                                break;
+                            }
+                        }
+                    } else matched = true;
+
+                    if (!matched) continue ;
+
+                    EC2Snapshot ec2Snapshot = new EC2Snapshot();
+                    ec2Snapshot.setId(snapshot.getId());
+                    ec2Snapshot.setName(snapshot.getName());
+                    ec2Snapshot.setVolumeId(snapshot.getVolumeId());
+                    ec2Snapshot.setType(snapshot.getSnapshotType());
+                    ec2Snapshot.setState(snapshot.getState());
+                    ec2Snapshot.setCreated(snapshot.getCreated());
+                    ec2Snapshot.setAccountName(snapshot.getAccountName());
+                    ec2Snapshot.setDomainId(snapshot.getDomainId());
+
+                    List<CloudStackKeyValue> resourceTags = snapshot.getTags();
+                    for( CloudStackKeyValue resourceTag : resourceTags) {
+                        EC2TagKeyValue param = new EC2TagKeyValue();
+                        param.setKey(resourceTag.getKey());
+                        if ( resourceTag.getValue() != null)
+                            param.setValue(resourceTag.getValue());
+                        ec2Snapshot.addResourceTag(param);
+                    }
+                    snapshotSet.addSnapshot(ec2Snapshot);
+                }
+            }
+            return snapshotSet;
+        } catch(Exception e) {
+            logger.error( "List Snapshots - ", e);
             throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
         }
     }
