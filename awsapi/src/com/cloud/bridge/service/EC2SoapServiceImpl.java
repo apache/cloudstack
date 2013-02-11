@@ -1354,15 +1354,15 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 			GroupSetType  param4 = new GroupSetType();
 			
 	        
-            String[] groups = inst.getGroupSet();
+            EC2SecurityGroup[] groups = inst.getGroupSet();
             if (null == groups || 0 == groups.length) {
                 GroupItemType param5 = new GroupItemType();
                 param5.setGroupId("");
                 param4.addItem( param5 );
             } else {
-                for (String group : groups) {
+                for (EC2SecurityGroup group : groups) {
                     GroupItemType param5 = new GroupItemType();
-                    param5.setGroupId(group);
+                    param5.setGroupId(group.getId());
                     param4.addItem( param5 );
                 }
             }
@@ -1681,16 +1681,16 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		
 	        param1.setOwnerId(ownerId);
 			
-            String[] groups = inst.getGroupSet();
+	        EC2SecurityGroup[] groups = inst.getGroupSet();
             GroupSetType  param2 = new GroupSetType();
             if (null == groups || 0 == groups.length) {
                 GroupItemType param3 = new GroupItemType();
                 param3.setGroupId("");
                 param2.addItem( param3 );
             } else {
-                for (String group : groups) {
+                for (EC2SecurityGroup group : groups) {
                     GroupItemType param3 = new GroupItemType();
-                    param3.setGroupId(group);
+                    param3.setGroupId(group.getId());
                     param2.addItem( param3 );   
                 }
             }

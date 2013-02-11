@@ -1459,10 +1459,12 @@ public class EC2Engine extends ManagerBase {
                 vm.setZoneName(resp.getZoneName());
                 vm.setTemplateId(resp.getTemplateId().toString());
                 if (resp.getSecurityGroupList() != null && resp.getSecurityGroupList().size() > 0) {
-                    // TODO, we have a list of security groups, just return the first one?
                     List<CloudStackSecurityGroup> securityGroupList = resp.getSecurityGroupList();
                     for (CloudStackSecurityGroup securityGroup : securityGroupList) {
-                        vm.addGroupName(securityGroup.getName());
+                        EC2SecurityGroup param = new EC2SecurityGroup();
+                        param.setId(securityGroup.getId());
+                        param.setName(securityGroup.getName());
+                        vm.addGroupName(param);
                     }
                 }
                 vm.setState(resp.getState());
@@ -1883,10 +1885,12 @@ public class EC2Engine extends ManagerBase {
                 }
 
                 if (cloudVm.getSecurityGroupList() != null && cloudVm.getSecurityGroupList().size() > 0) {
-                    // TODO, we have a list of security groups, just return the first one?
                     List<CloudStackSecurityGroup> securityGroupList = cloudVm.getSecurityGroupList();
                     for (CloudStackSecurityGroup securityGroup : securityGroupList) {
-                        ec2Vm.addGroupName(securityGroup.getName());
+                        EC2SecurityGroup param = new EC2SecurityGroup();
+                        param.setId(securityGroup.getId());
+                        param.setName(securityGroup.getName());
+                        ec2Vm.addGroupName(param);
                     }
                 }
 
