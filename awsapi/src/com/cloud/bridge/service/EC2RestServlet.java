@@ -1169,6 +1169,11 @@ public class EC2RestServlet extends HttpServlet {
             EC2request.setKeyName(keyName[0]);
         }
 
+        String[] userData = request.getParameterValues("UserData");
+        if ( userData != null) {
+            EC2request.setUserData( userData[0]);
+        }
+
         Enumeration<?> names = request.getParameterNames();
         while( names.hasMoreElements()) {
             String key = (String)names.nextElement();
