@@ -15,6 +15,8 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
+use cloud;
+
 alter table vm_template add image_data_store_id bigint unsigned;
 alter table vm_template add size bigint unsigned;
 alter table vm_template add state varchar(255);

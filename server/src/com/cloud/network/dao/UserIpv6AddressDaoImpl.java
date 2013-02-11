@@ -59,7 +59,7 @@ public class UserIpv6AddressDaoImpl extends GenericDaoBase<UserIpv6AddressVO, Lo
         CountFreePublicIps = createSearchBuilder(Long.class);
         CountFreePublicIps.select(null, Func.COUNT, null);
         CountFreePublicIps.and("networkId", CountFreePublicIps.entity().getSourceNetworkId(), SearchCriteria.Op.EQ);
-        CountFreePublicIps.and("vlanId", CountFreePublicIps.entity().getSourceNetworkId(), SearchCriteria.Op.EQ);
+        CountFreePublicIps.and("vlanId", CountFreePublicIps.entity().getVlanId(), SearchCriteria.Op.EQ);
         CountFreePublicIps.done();
     }
 

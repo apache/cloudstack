@@ -58,5 +58,5 @@ Veewee::Definition.declare({
     "cleanup.sh",
     "zerodisk.sh"
   ],
-  :postinstall_timeout => "100000"
+  :postinstall_timeout => "10000"
 })

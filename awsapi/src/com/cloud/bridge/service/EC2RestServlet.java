@@ -86,6 +86,7 @@ import com.amazon.ec2.DescribeVolumesResponse;
 import com.amazon.ec2.DetachVolumeResponse;
 import com.amazon.ec2.DisassociateAddressResponse;
 import com.amazon.ec2.GetPasswordDataResponse;
+import com.amazon.ec2.GroupItemType;
 import com.amazon.ec2.ImportKeyPairResponse;
 import com.amazon.ec2.LaunchPermissionItemType;
 import com.amazon.ec2.ModifyImageAttributeResponse;
@@ -1168,6 +1169,16 @@ public class EC2RestServlet extends HttpServlet {
             EC2request.setKeyName(keyName[0]);
         }
 
+        Enumeration<?> names = request.getParameterNames();
+        while( names.hasMoreElements()) {
+            String key = (String)names.nextElement();
+            if ( key.startsWith("SecurityGroup")) {
+                String[] value = request.getParameterValues(key);
+                if (null != value && 0 < value.length)
+                    EC2request.addGroupName( value[0]);
+            }
+        }
+
         // -> execute the request
         EC2Engine engine = ServiceProvider.getInstance().getEC2Engine();
         RunInstancesResponse EC2response = EC2SoapServiceImpl.toRunInstancesResponse( engine.runInstances( EC2request ), engine);
@@ -1678,13 +1689,16 @@ public class EC2RestServlet extends HttpServlet {
             throws ADBException, XMLStreamException, IOException {
         EC2DescribeKeyPairs ec2Request = new EC2DescribeKeyPairs();
 
-
-        String[] keyNames = request.getParameterValues( "KeyName" );
-        if (keyNames != null) { 
-            for (String keyName : keyNames) {
-                ec2Request.addKeyName(keyName);
+        Enumeration<?> names = request.getParameterNames();
+        while( names.hasMoreElements()) {
+            String key = (String)names.nextElement();
+            if ( key.startsWith("KeyName")) {
+                String[] value = request.getParameterValues( key);
+                if (null != value && 0 < value.length)
+                    ec2Request.addKeyName( value[0]);
             }
         }
+
         EC2Filter[] filterSet = extractFilters( request );
         if (null != filterSet){
             EC2KeyPairFilterSet vfs = new EC2KeyPairFilterSet();

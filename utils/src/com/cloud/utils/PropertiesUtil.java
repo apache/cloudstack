@@ -70,14 +70,14 @@ public class PropertiesUtil {
         if (file.exists()) {
             return file;
         }
-        
-        newPath = System.getenv("CATALINA_HOME");
+
+        newPath = System.getProperty("catalina.home");
         if (newPath == null) {
-        	newPath = System.getenv("CATALINA_BASE");
+            newPath = System.getenv("CATALINA_HOME");
         }
         
         if (newPath == null) {
-        	newPath = System.getProperty("catalina.home");
+            newPath = System.getenv("CATALINA_BASE");
         }
         
         if (newPath == null) {
