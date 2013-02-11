@@ -122,16 +122,17 @@ services() {
   #Fix haproxy directory issue
   mkdir -p /var/lib/haproxy
   
-  #FIXME: need a way to copy from git repo (perhaps wget from git-wip-us.apache.org?)
-  #/bin/cp -r ${scriptdir}/config/* ./
-  chkconfig xl2tpd off
-  #chkconfig --add cloud-early-config
-  #chkconfig cloud-early-config on
-  #chkconfig --add cloud-passwd-srvr 
-  #chkconfig cloud-passwd-srvr off
-  #chkconfig --add cloud
-  #chkconfig cloud off
+  wget 'https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=patches/systemvm/debian/config/etc/init.d/cloud-early-config;hb=HEAD' -O /etc/init.d/cloud-early-config 
+  chkconfig --add cloud-early-config
+  chkconfig cloud-early-config on
+  wget 'https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=patches/systemvm/debian/config/etc/init.d/cloud-passwd-srvr;hb=HEAD' -O /etc/init.d/cloud-passwd-srvr
+  chkconfig --add cloud-passwd-srvr 
+  chkconfig cloud-passwd-srvr off
+  wget 'https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=patches/systemvm/debian/config/etc/init.d/cloud;hb=HEAD' -O /etc/init.d/cloud
+  chkconfig --add cloud
+  chkconfig cloud off
   chkconfig monit off
+  chkconfig xl2tpd off
 }
 
 signature() {
