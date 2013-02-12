@@ -742,35 +742,74 @@
       var $physicalNetworks = physicalNetwork.getNetworks($wizard);
       var $tabs = guestTraffic.makeTabs($physicalNetworks, args);
       var $container = guestTraffic.getMainContainer($wizard);
-      var $expand = $('<div title="Add multiple VLAN Ranges">').addClass('expand');
-      var $expandlabel = $('<div>').addClass('expand-label').html('Add VLAN Range');
+      var $expand = $('<div title="Add multiple VLAN Ranges">').addClass('expand').append(
+        $('<span>').addClass('icon').html('&nbsp;'),
+        $('<span>Add VLAN range</span>')
+      );
       var $hide = $('<div title="Hide VLAN Range">').addClass('hide');
       var $hidelabel = $('<div>').addClass('hide-label').html('Hide VLAN Range');
+      var data = getData($wizard, { all: true });
+      var $vlanRanges, $vlanRangeFirst, $subnav;
 
       // Cleanup
       guestTraffic.remove($wizard);
 
       $container.find('.content form').hide();
       $tabs.appendTo($container.find('.content .select-container'));
-      var $subnav = $container.find('ul.subnav').remove(); // Fix to avoid subnav becoming tab ul
+      $subnav = $container.find('ul.subnav').remove(); // Fix to avoid subnav becoming tab ul
       $container.tabs();
       $container.prepend($subnav);
       $container.find('.field').hide();
       $container.find('[rel=vlanRange]').show();
-      $expand.appendTo($container.find('.content .select-container .physical-network-item form [rel=vlanRange]'));
-      $expandlabel.appendTo($container.find('.content .select-container .physical-network-item form .expand'));
+      $vlanRanges = $container.find('.field[rel=vlanRange]:visible');
+      $vlanRangeFirst = $vlanRanges.filter(':first');
 
-      //Multiple Vlan Ranges functionality
-      $expand.click(function() {
+      //
+      // Multiple Vlan Ranges functionality
+      //
+      var addVlan = function(options) {
+        var $vlanClone = $vlanRangeFirst.clone()
+          .insertAfter($container.find('.field[rel=vlanRange]:visible').filter(':last'));
 
-        var $vlanClone = $container.find('[rel=vlanRange]:first').clone().removeClass('field').insertBefore($container.find('.expand'));
-        //$vlan.appendTo($container.find('.content .select-container .physical-network-item form'));
-        var $remove = $hide.clone().appendTo($vlanClone);
+        var $remove = $hide.clone()
+          .appendTo($vlanClone);
+
+        if (options) {
+          if (options.start)
+            $vlanClone.find('input:first').val(options.start);
+
+          if (options.end)
+            $vlanClone.find('input:last').val(options.end);
+        }
 
         $remove.click(function() {
           $vlanClone.remove();
         });
+      };
+
+      $expand.insertAfter($container.find('form [rel=vlanRange]')).click(function() {
+        addVlan();
       });
+
+      if (data.vlanRangeStart || data.vlanRangeEnd) {
+        if (($.isArray(data.vlanRangeStart) || $.isArray(data.vlanRangeEnd)) &&
+            (data.vlanRangeStart.length > 1 || data.vlanRangeEnd.length > 1)) {
+          $(data.vlanRangeStart).map(function(index) {
+            if (index) {
+              addVlan({
+                start: data.vlanRangeStart[index],
+                end: data.vlanRangeEnd[index]
+              });
+            }
+          });
+
+          $vlanRangeFirst.find('input:first').val(data.vlanRangeStart[0]);
+          $vlanRangeFirst.find('input:last').val(data.vlanRangeEnd[0]);
+        } else { // Only 1 vlan range
+          $vlanRangeFirst.find('input:first').val(data.vlanRangeStart);
+          $vlanRangeFirst.find('input:last').val(data.vlanRangeEnd);
+        }
+      }
     },
 
     /**
