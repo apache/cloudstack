@@ -12,6 +12,15 @@
   };
 
   var pluginAPI = {
+    apiCall: function(command, args) {
+      $.ajax({
+        url: createURL(command),
+        success: args.success,
+        error: function(json) {
+          args.error(parseXMLHttpResponse(json));
+        }
+      })
+    },
     addSection: function(section) {
       cloudStack.sections[section.id] = $.extend(section, {
         customIcon: 'plugins/' + section.id + '/icon.png'
