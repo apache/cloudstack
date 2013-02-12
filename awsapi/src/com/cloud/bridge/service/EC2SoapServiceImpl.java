@@ -41,6 +41,7 @@ import com.cloud.bridge.service.core.ec2.EC2DescribeAvailabilityZones;
 import com.cloud.bridge.service.core.ec2.EC2DescribeAvailabilityZonesResponse;
 import com.cloud.bridge.service.core.ec2.EC2DescribeImageAttribute;
 
+import com.cloud.bridge.service.core.ec2.EC2AvailabilityZone;
 import com.cloud.bridge.service.core.ec2.EC2DescribeImages;
 import com.cloud.bridge.service.core.ec2.EC2DescribeImagesResponse;
 import com.cloud.bridge.service.core.ec2.EC2DescribeInstances;
@@ -1775,14 +1776,18 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		DescribeAvailabilityZonesResponse response = new DescribeAvailabilityZonesResponse();
 		DescribeAvailabilityZonesResponseType param1 = new DescribeAvailabilityZonesResponseType();
         AvailabilityZoneSetType param2 = new AvailabilityZoneSetType();
-        
-		String[] zones = engineResponse.getZoneSet();
-		for (String zone : zones) {
+
+        EC2AvailabilityZone[] zones = engineResponse.getAvailabilityZoneSet();
+        for (EC2AvailabilityZone zone : zones) {
             AvailabilityZoneItemType param3 = new AvailabilityZoneItemType(); 
-            AvailabilityZoneMessageSetType param4 = new AvailabilityZoneMessageSetType();
-            param3.setZoneName( zone );
+            param3.setZoneName( zone.getName() );
             param3.setZoneState( "available" );
             param3.setRegionName( "" );
+
+            AvailabilityZoneMessageSetType param4 = new AvailabilityZoneMessageSetType();
+            AvailabilityZoneMessageType param5 = new AvailabilityZoneMessageType();
+            param5.setMessage(zone.getMessage());
+            param4.addItem(param5);
             param3.setMessageSet( param4 );
             param2.addItem( param3 );
 		}

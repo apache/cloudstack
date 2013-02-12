@@ -16,21 +16,40 @@
 // under the License.
 package com.cloud.bridge.service.core.ec2;
 
-import java.util.ArrayList;
-import java.util.List;
+public class EC2AvailabilityZone {
 
-public class EC2DescribeAvailabilityZonesResponse {
-    private List<EC2AvailabilityZone> availabilityZoneSet = new ArrayList<EC2AvailabilityZone>();
+    private String   id;
+    private String   name;
+    private String   message;
 
-    public EC2DescribeAvailabilityZonesResponse() {
+    public EC2AvailabilityZone() {
+        id      = null;
+        name    = null;
+        message = null;
+	}
+
+    public void setId( String id ) {
+        this.id = id;
     }
 
-    public void addAvailabilityZone( EC2AvailabilityZone param ) {
-        availabilityZoneSet.add( param );
+    public String getId() {
+        return this.id;
     }
 
-    public EC2AvailabilityZone[] getAvailabilityZoneSet() {
-        return availabilityZoneSet.toArray(new EC2AvailabilityZone[0]);
+    public void setName( String name ) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void setMessage( String message ) {
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return this.message;
     }
 
 }
