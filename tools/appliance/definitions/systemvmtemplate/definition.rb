@@ -37,7 +37,7 @@ Veewee::Definition.declare({
   :shutdown_cmd => "halt -p",
   :postinstall_files => [
     "base.sh",
-    "cloudstack-packages.sh",
+    "postinstall.sh",
     "cleanup.sh",
     "zerodisk.sh"
   ],

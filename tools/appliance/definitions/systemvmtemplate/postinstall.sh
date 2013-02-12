@@ -15,55 +15,21 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set -e
 set -x
 
-IMAGENAME=systemvm
-LOCATION=/var/lib/images/systemvm
-PASSWORD=password
+ROOTPW=password
 HOSTNAME=systemvm
-SIZE=2048
-DEBIAN_MIRROR=ftp.us.debian.org/debian
-MINIMIZE=true
-CLOUDSTACK_RELEASE=4.1.0
-
-init() {
-    # Update the box
-    apt-get -y update
-    apt-get -y install linux-headers-$(uname -r) build-essential
-    apt-get -y install zlib1g-dev libssl-dev libreadline-gplv2-dev
-    apt-get -y install curl unzip
-    apt-get clean
-
-    # Set up sudo
-    echo 'vagrant ALL=NOPASSWD:ALL' > /etc/sudoers.d/vagrant
-
-    # Tweak sshd to prevent DNS resolution (speed up logins)
-    echo 'UseDNS no' >> /etc/ssh/sshd_config
-
-    # Remove 5s grub timeout to speed up booting
-    echo <<EOF > /etc/default/grub
-# If you change this file, run 'update-grub' afterwards to update
-# /boot/grub/grub.cfg.
-
-GRUB_DEFAULT=0
-GRUB_TIMEOUT=0
-GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
-GRUB_CMDLINE_LINUX_DEFAULT="quiet"
-GRUB_CMDLINE_LINUX="debian-installer=en_US"
-EOF
-
-    update-grub
-}
+CLOUDSTACK_RELEASE=4.2.0
 
 install_packages() {
   DEBIAN_FRONTEND=noninteractive
   DEBIAN_PRIORITY=critical
 
   #basic stuff
-   apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub-legacy e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diff grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent virt-what sudo
-  #fix hostname in openssh-server generated keys
-  sed -i "s/root@\(.*\)$/root@systemvm/g" etc/ssh/ssh_host_*.pub
+   apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables
+   apt-get --no-install-recommends -q -y --force-yes install openssh-server openssl grub-legacy e2fsprogs dhcp3-client dnsmasq tcpdump socat wget
+   apt-get --no-install-recommends -q -y --force-yes install python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping
+   apt-get --no-install-recommends -q -y --force-yes install dnsutils zip unzip ethtool uuid file iproute acpid virt-what sudo
 
   #sysstat
   echo 'sysstat sysstat/enable boolean true' | debconf-set-selections
@@ -76,72 +42,115 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install dnsmasq
   #nfs client
   apt-get --no-install-recommends -q -y --force-yes install nfs-common
+
   #vpn stuff
-  apt-get --no-install-recommends -q -y --force-yes install xl2tpd openswan bcrelay ppp ipsec-tools tdb-tools
+  apt-get --no-install-recommends -q -y --force-yes install xl2tpd bcrelay ppp ipsec-tools tdb-tools
+  echo "openswan openswan/install_x509_certificate boolean false" | debconf-set-selections
+  echo "openswan openswan/install_x509_certificate seen true" | debconf-set-selections
+  apt-get --no-install-recommends -q -y --force-yes install openswan
+
   #vmware tools
   apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
   #xenstore utils
   apt-get --no-install-recommends -q -y --force-yes install xenstore-utils libxenstore3.0
-  #keepalived and conntrackd
+  #keepalived and conntrackd for redundant router
   apt-get --no-install-recommends -q -y --force-yes install keepalived conntrackd ipvsadm libnetfilter-conntrack3 libnl1
   #ipcalc
   apt-get --no-install-recommends -q -y --force-yes install ipcalc
   #java
   apt-get --no-install-recommends -q -y --force-yes install  default-jre-headless
 
+  echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
+  echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
+  apt-get --no-install-recommends -q -y --force-yes install iptables-persistent
+}
+
+setup_accounts() {
   # Setup sudo to allow no-password sudo for "admin"
   groupadd -r admin
-  usermod -a -G admin cloud
-  echo "root:password" | chpasswd
+  #create a 'cloud' user
+  useradd -G admin cloud
+  echo "root:$ROOTPW" | chpasswd
+  echo "cloud:`openssl rand -base64 32`" | chpasswd
   sed -i -e '/Defaults\s\+env_reset/a Defaults\texempt_group=admin' /etc/sudoers
   sed -i -e 's/%admin ALL=(ALL) ALL/%admin ALL=NOPASSWD:ALL/g' /etc/sudoers
-  
-  mkdir /home/cloud/.ssh
+  # Disable password based authentication via ssh, this will take effect on next reboot
+  sed -i -e 's/^.*PasswordAuthentication .*$/PasswordAuthentication no/g' /etc/ssh/sshd_config
+  # Secure ~/.ssh
+  mkdir -p /home/cloud/.ssh
   chmod 700 /home/cloud/.ssh
+}
+
+fix_nameserver() {
+  #replace /etc/resolv.conf also
+  cat > /etc/resolv.conf << EOF
+nameserver 8.8.8.8
+nameserver 4.4.4.4
+EOF
 
 }
 
-cleanup() {
-    # Clean up
-    apt-get -y remove linux-headers-$(uname -r) build-essential
-    apt-get -y autoremove
+do_fixes() {
+  #fix hostname in openssh-server generated keys
+  sed -i "s/root@\(.*\)$/root@$HOSTNAME/g" /etc/ssh/ssh_host_*.pub
+  #fix hostname to override one provided by dhcp during vm build
+  echo "$HOSTNAME" > /etc/hostname
+  hostname $HOSTNAME
+  #delete entry in /etc/hosts derived from dhcp
+  sed -i '/127.0.1.1/d' /etc/hosts
 
-    # Removing leftover leases and persistent rules
-    echo "cleaning up dhcp leases"
-    rm /var/lib/dhcp/*
-
-    # Make sure Udev doesn't block our network
-    echo "cleaning up udev rules"
-    rm /etc/udev/rules.d/70-persistent-net.rules
-    mkdir /etc/udev/rules.d/70-persistent-net.rules
-    rm -rf /dev/.udev/
-    rm /lib/udev/rules.d/75-persistent-net-generator.rules
-
-    echo "Adding a 2 sec delay to the interface up, to make the dhclient happy"
-    echo "pre-up sleep 2" >> /etc/network/interfaces
+  fix_nameserver
 }
 
-finalize() {
-    # Zero out the free space to save space in the final image:
-    dd if=/dev/zero of=/EMPTY bs=1M
-    rm -f /EMPTY
+configure_apache2() {
+   #enable ssl, rewrite and auth
+   a2enmod ssl rewrite auth_basic auth_digest
+   a2ensite default-ssl
+   #backup stock apache configuration since we may modify it in Secondary Storage VM
+   cp /etc/apache2/sites-available/default /etc/apache2/sites-available/default.orig
+   cp /etc/apache2/sites-available/default-ssl /etc/apache2/sites-available/default-ssl.orig
 }
 
+configure_services() {
+  mkdir -p /var/www/html
+  mkdir -p /opt/cloud/bin
+  mkdir -p /var/cache/cloud
+  mkdir -p /usr/share/cloud
+  mkdir -p /usr/local/cloud
+  mkdir -p /root/.ssh
+  #Fix haproxy directory issue
+  mkdir -p /var/lib/haproxy
 
-echo "*************STARTING POSTINST SCRIPT********************"
+  wget 'https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=patches/systemvm/debian/config/etc/init.d/cloud-early-config;hb=HEAD' -O /etc/init.d/cloud-early-config
+  chkconfig --add cloud-early-config
+  chkconfig cloud-early-config on
+  wget 'https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=patches/systemvm/debian/config/etc/init.d/cloud-passwd-srvr;hb=HEAD' -O /etc/init.d/cloud-passwd-srvr
+  chkconfig --add cloud-passwd-srvr
+  chkconfig cloud-passwd-srvr off
+  wget 'https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=patches/systemvm/debian/config/etc/init.d/cloud;hb=HEAD' -O /etc/init.d/cloud
+  chkconfig --add cloud
+  chkconfig cloud off
+  chkconfig monit off
+  chkconfig xl2tpd off
+}
+
+do_signature() {
+  mkdir -p /var/cache/cloud/
+  touch /var/cache/cloud/cloud-scripts-signature
+  #FIXME: signature should be generated from scripts package that can get updated
+  echo "Cloudstack Release $CLOUDSTACK_RELEASE $(date)" > /etc/cloudstack-release
+}
+
 begin=$(date +%s)
-
-echo "*************INITIALIZING BASE SYSTEM********************"
-init
 
 echo "*************INSTALLING PACKAGES********************"
 install_packages
-
-echo "*************CLEANING UP********************"
-cleanup
-
-echo "*************FINALIZING IMAGE********************"
-finalize
+echo "*************DONE INSTALLING PACKAGES********************"
+setup_accounts
+configure_apache2
+configure_services
+do_fixes
+do_signature
 
 fin=$(date +%s)
 t=$((fin-begin))
