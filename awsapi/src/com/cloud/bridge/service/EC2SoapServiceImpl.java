@@ -731,8 +731,17 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		EC2RunInstances request = new EC2RunInstances();
 		
 		request.setTemplateId(rit.getImageId());
-		request.setMinCount(rit.getMinCount());
-		request.setMaxCount(rit.getMaxCount());
+
+        if (rit.getMinCount() < 1) {
+            throw new EC2ServiceException(ClientError.InvalidParameterValue,
+                    "Value of parameter MinCount should be greater than 0");
+        } else request.setMinCount( rit.getMinCount() );
+
+        if (rit.getMaxCount() < 1) {
+            throw new EC2ServiceException(ClientError.InvalidParameterValue,
+                    "Value of parameter MaxCount should be greater than 0");
+        } else request.setMaxCount(rit.getMaxCount());
+
 		if (null != type) request.setInstanceType(type);
 		if (null != prt) request.setZoneName(prt.getAvailabilityZone());
 		if (null != userData) request.setUserData(userData.getData());

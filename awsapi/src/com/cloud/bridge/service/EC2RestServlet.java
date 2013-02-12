@@ -1142,14 +1142,26 @@ public class EC2RestServlet extends HttpServlet {
         else { response.sendError(530, "Missing ImageId parameter" ); return; }
 
         String[] minCount = request.getParameterValues( "MinCount" );
-        if ( null != minCount && 0 < minCount.length ) 
-            EC2request.setMinCount( Integer.parseInt( minCount[0] ));
-        else { response.sendError(530, "Missing MinCount parameter" ); return; }
+        if ( minCount == null || minCount.length < 1) {
+            response.sendError(530, "Missing MinCount parameter" );
+            return;
+        } else if ( Integer.parseInt(minCount[0]) < 1) {
+            throw new EC2ServiceException(ClientError.InvalidParameterValue,
+                    "Value of parameter MinCount should be greater than 0");
+        } else {
+            EC2request.setMinCount( Integer.parseInt( minCount[0]) );
+        }
 
         String[] maxCount = request.getParameterValues( "MaxCount" );
-        if ( null != maxCount && 0 < maxCount.length ) 
-            EC2request.setMaxCount( Integer.parseInt( maxCount[0] ));
-        else { response.sendError(530, "Missing MaxCount parameter" ); return; }
+        if ( maxCount == null || maxCount.length < 1) {
+            response.sendError(530, "Missing MaxCount parameter" );
+            return;
+        } else if ( Integer.parseInt(maxCount[0]) < 1) {
+            throw new EC2ServiceException(ClientError.InvalidParameterValue,
+                    "Value of parameter MaxCount should be greater than 0");
+        } else {
+            EC2request.setMaxCount( Integer.parseInt( maxCount[0]) );
+        }
 
         String[] instanceType = request.getParameterValues( "InstanceType" );
         if ( null != instanceType && 0 < instanceType.length ) 
