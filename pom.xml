@@ -156,7 +156,6 @@
   <modules>
     <module>api</module>
     <module>agent</module>
-    <module>console-proxy</module>
     <module>core</module>
     <module>server</module>
     <module>usage</module>
@@ -168,6 +167,7 @@
     <module>test</module>
     <module>engine</module>
     <module>framework</module>
+	<module>services</module>
   </modules>
 
   <dependencyManagement>
