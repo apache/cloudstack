@@ -1269,6 +1269,11 @@ public class EC2RestServlet extends HttpServlet {
         }	
         if (0 == count) { response.sendError(530, "Missing InstanceId parameter" ); return; }
 
+        String[] force = request.getParameterValues("Force");
+        if ( force != null) {
+            EC2request.setForce( Boolean.parseBoolean(force[0]));
+        }
+
         // -> execute the request
         StopInstancesResponse EC2response = EC2SoapServiceImpl.toStopInstancesResponse( ServiceProvider.getInstance().getEC2Engine().stopInstances( EC2request ));
         serializeResponse(response, EC2response);

@@ -1512,6 +1512,7 @@ public class EC2Engine extends ManagerBase {
         // -> first determine the current state of each VM (becomes it previous state)
         try {   
             String[] instanceSet = request.getInstancesSet();
+            Boolean forced = request.getForce();
 
             EC2DescribeInstancesResponse previousState = listVirtualMachines( instanceSet, null, null );
             virtualMachines = previousState.getInstanceSet();
@@ -1533,7 +1534,7 @@ public class EC2Engine extends ManagerBase {
                         instances.addInstance(vm);
                         continue;
                     }
-                    resp = getApi().stopVirtualMachine(vm.getId(), false);
+                    resp = getApi().stopVirtualMachine(vm.getId(), forced);
                     if(logger.isDebugEnabled())
                         logger.debug("Stopping VM " + vm.getId() + " job " + resp.getJobId());
                 }
