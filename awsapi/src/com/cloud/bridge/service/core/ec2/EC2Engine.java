@@ -1125,6 +1125,7 @@ public class EC2Engine extends ManagerBase {
                 resp.setState(vol.getState());
                 resp.setType(vol.getVolumeType());
                 resp.setVMState(vol.getVirtualMachineState());
+                resp.setAttachmentState(mapToAmazonVolumeAttachmentState(vol.getVirtualMachineState()));
                 resp.setZoneName(vol.getZoneName());
                 return resp;
             }
@@ -1211,6 +1212,7 @@ public class EC2Engine extends ManagerBase {
                 resp.setState(vol.getState());
                 resp.setType(vol.getVolumeType());
                 resp.setVMState(vol.getVirtualMachineState());
+                resp.setAttachmentState("detached");
                 resp.setZoneName(vol.getZoneName());
                 return resp;
             }
@@ -1639,11 +1641,16 @@ public class EC2Engine extends ManagerBase {
                 ec2Vol.setSize(vol.getSize());
                 ec2Vol.setType(vol.getVolumeType());
 
-                if(vol.getVirtualMachineId() != null)
+                if(vol.getVirtualMachineId() != null) {
                     ec2Vol.setInstanceId(vol.getVirtualMachineId());
+                    if (vol.getVirtualMachineState() != null) {
+                        ec2Vol.setVMState(vol.getVirtualMachineState());
+                        ec2Vol.setAttachmentState(mapToAmazonVolumeAttachmentState(vol.getVirtualMachineState()));
+                    }
+                } else {
+                    ec2Vol.setAttachmentState("detached");
+                }
 
-                if(vol.getVirtualMachineState() != null)
-                    ec2Vol.setVMState(vol.getVirtualMachineState());
                 ec2Vol.setZoneName(vol.getZoneName());
 
                 List<CloudStackKeyValue> resourceTags = vol.getTags();
@@ -2402,6 +2409,25 @@ public class EC2Engine extends ManagerBase {
         if (state.equalsIgnoreCase( "Destroy"   )) return "deleting";
 
         return "error"; 
+    }
+
+    /**
+     * Map CloudStack VM state to Amazon volume attachment state
+     *
+     * @param CloudStack VM state
+     * @return Amazon Volume attachment state
+     */
+    private String mapToAmazonVolumeAttachmentState (String vmState) {
+        if ( vmState.equalsIgnoreCase("Running") || vmState.equalsIgnoreCase("Stopping") ||
+                vmState.equalsIgnoreCase("Stopped") ) {
+            return "attached";
+        }
+        else if (vmState.equalsIgnoreCase("Starting")) {
+            return "attaching";
+        }
+        else { // VM state is 'destroyed' or 'error' or other
+            return "detached";
+        }
     }
 
     /**
