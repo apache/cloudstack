@@ -6879,7 +6879,7 @@ label.error {
 
 /*** Select container fields*/
 .multi-wizard.zone-wizard .select-container .field {
-  width: 100%;
+  width: 682px;
   padding-bottom: 13px;
   float: left;
 }
@@ -6901,7 +6901,6 @@ label.error {
   width: 344px;
   float: left;
 }
-
 
 .multi-wizard.zone-wizard .select-container .field .value {
   float: left;
@@ -10433,9 +10432,6 @@ div.ui-dialog div.acl div.multi-edit div.data div.data-body div.data-item table 
   width: 65px;
 }
 
-
-
-
 /*Autoscaler*/
 .ui-dialog div.autoscaler {
   overflow: auto;
@@ -10642,43 +10638,54 @@ div.ui-dialog div.autoscaler div.scale-up-policy div.hide {
   width: 14px;
 }
 
-/* Multiple Vlan Ranges */
-
-div.ui-dialog div.multi-wizard div.steps div.setup-guest-traffic div.content div.select-container div.physical-network-item [rel=vlanRange] div.expand {
-  background: #FFFFFF url("../images/sprites.png") repeat -541px -499px;
-  border: 1px solid #D0D0D0;
-  border-radius: 9px 9px 9px 9px;
+/*Multiple Vlan Ranges*/
+div.ui-dialog div.multi-wizard div.steps div.setup-guest-traffic div.content div.select-container div.physical-network-item [rel=vlanRange] div.hide {
+  background: url("../images/sprites.png") no-repeat -8px -98px;
   cursor: pointer;
-  float: right;
+  float: left;
   height: 15px;
-  margin: 16px 320px 0 11px;
+  margin-left: 28px;
+  margin-top: 17px;
   width: 14px;
 }
 
-div.ui-dialog div.multi-wizard div.steps div.setup-guest-traffic div.content div.select-container div.physical-network-item [rel=vlanRange]  div.hide {
-  background: url("../images/minus.png") no-repeat scroll 38% 59% #FFFFFF;
-  border: 1px solid #D0D0D0;
-  border-radius: 9px 9px 9px 9px;
+div.ui-dialog div.multi-wizard div.steps div.setup-guest-traffic div.content div.select-container div.physical-network-item [rel=vlanRange] div.hide:hover {
+  background-position: -8px -680px;
+}
+
+div.ui-dialog div.multi-wizard div.physical-network-item div.expand {
+  padding: 11px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  border: 1px solid #CCC;
+  background: url(../images/bg-gradients.png) 0px -33px;
+  float: left;
+  font-size: 11px;
+  margin-left: 9px;
   cursor: pointer;
-  float: right;
-  height: 15px;
-  margin-right:-5px;
-  margin-top:17px;
-  width: 14px;
+  margin-top: 9px;
+  width: 112px;
 }
 
- div.ui-dialog div.multi-wizard div.steps div.setup-guest-traffic div.content div.select-container div.physical-network-item div.expand div.expand-label{
-
-    float: left;
-    font-size: 11px;
-    margin-left: 18px;
-    margin-top: 2px;
-    width: 100px;
-
+div.ui-dialog div.multi-wizard div.physical-network-item div.expand .icon {
+  padding: 1px 12px 1px 0px;
+  background: url("../images/sprites.png") repeat -541px -499px;
+  /*+placement:shift -10px -1px;*/
+  position: relative;
+  left: -10px;
+  top: -1px;
 }
 
-
-
+div.ui-dialog div.multi-wizard div.physical-network-item div.expand:hover {
+  /*+box-shadow:inset 0px 1px 6px #828282;*/
+  -moz-box-shadow: inset 0px 1px 6px #828282;
+  -webkit-box-shadow: inset 0px 1px 6px #828282;
+  -o-box-shadow: inset 0px 1px 6px #828282;
+  box-shadow: inset 0px 1px 6px #828282;
+}
 
 div.ui-dialog div.autoscaler div.scale-down-policy div.hide {
   background: #FFFFFF url("../images/minus.png") no-repeat 31% 54%;
@@ -10712,10 +10719,6 @@ div.ui-dialog div.autoscaler div.scale-down-policy div.expand {
   margin: -20px 45px 0 11px;
   width: 14px;
 }
-
-
-
-
 
 div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-item div.name label {
   font-size: 11px;
