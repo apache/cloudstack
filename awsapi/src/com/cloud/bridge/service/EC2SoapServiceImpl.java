@@ -773,6 +773,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	public StopInstancesResponse stopInstances(StopInstances stopInstances) {
 		EC2StopInstances request = new EC2StopInstances();
 		StopInstancesType sit = stopInstances.getStopInstances();
+        Boolean force = sit.getForce();
 		
 		// -> toEC2StopInstances
 		InstanceIdSetType iist  = sit.getInstancesSet();
@@ -780,6 +781,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		if (null != items) {  // -> should not be empty
 			for( int i=0; i < items.length; i++ ) request.addInstanceId( items[i].getInstanceId());
 		}
+
+        if (force) request.setForce(sit.getForce());
 		return toStopInstancesResponse( engine.stopInstances( request ));
 	}
 	
