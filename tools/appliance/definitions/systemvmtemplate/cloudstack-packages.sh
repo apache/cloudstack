@@ -26,10 +26,10 @@ install_packages() {
   DEBIAN_PRIORITY=critical
 
   #basic stuff
-   apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables 
-   apt-get --no-install-recommends -q -y --force-yes install openssh-server grub-legacy e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  
-   apt-get --no-install-recommends -q -y --force-yes install python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping 
-   apt-get --no-install-recommends -q -y --force-yes install dnsutils zip unzip ethtool uuid file iproute acpid virt-what sudo 
+   apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables
+   apt-get --no-install-recommends -q -y --force-yes install openssh-server openssl grub-legacy e2fsprogs dhcp3-client dnsmasq tcpdump socat wget
+   apt-get --no-install-recommends -q -y --force-yes install python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping
+   apt-get --no-install-recommends -q -y --force-yes install dnsutils zip unzip ethtool uuid file iproute acpid virt-what sudo
 
   #sysstat
   echo 'sysstat sysstat/enable boolean true' | debconf-set-selections
@@ -65,21 +65,20 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install iptables-persistent
 }
 
-accounts() {
+setup_accounts() {
   # Setup sudo to allow no-password sudo for "admin"
   groupadd -r admin
   #create a 'cloud' user
   useradd -G admin cloud
-  echo "root:$PASSWORD" | chpasswd
-  #FIXME: create random password for cloud
-  #FIXME: disable password auth in sshd (final step, after veewee is done) 
+  echo "root:$ROOTPW" | chpasswd
+  echo "cloud:`openssl rand -base64 32`" | chpasswd
+  #FIXME: disable password auth in sshd (final step, after veewee is done)
   #echo "cloud:password" | chpasswd
   sed -i -e '/Defaults\s\+env_reset/a Defaults\texempt_group=admin' /etc/sudoers
   sed -i -e 's/%admin ALL=(ALL) ALL/%admin ALL=NOPASSWD:ALL/g' /etc/sudoers
-  
+
   mkdir -p /home/cloud/.ssh
   chmod 700 /home/cloud/.ssh
-
 }
 
 fix_nameserver() {
@@ -98,7 +97,7 @@ do_fixes() {
   echo "$HOSTNAME" > /etc/hostname
   hostname $HOSTNAME
   #delete entry in /etc/hosts derived from dhcp
-  sed -i '/127.0.1.1/d' /etc/hosts 
+  sed -i '/127.0.1.1/d' /etc/hosts
 
   #fix_nameserver FIXME needed after veewee finishes
 }
@@ -112,7 +111,7 @@ configure_apache2() {
    cp /etc/apache2/sites-available/default-ssl /etc/apache2/sites-available/default-ssl.orig
 }
 
-services() {
+configure_services() {
   mkdir -p /var/www/html
   mkdir -p /opt/cloud/bin
   mkdir -p /var/cache/cloud
@@ -121,12 +120,12 @@ services() {
   mkdir -p /root/.ssh
   #Fix haproxy directory issue
   mkdir -p /var/lib/haproxy
-  
-  wget 'https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=patches/systemvm/debian/config/etc/init.d/cloud-early-config;hb=HEAD' -O /etc/init.d/cloud-early-config 
+
+  wget 'https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=patches/systemvm/debian/config/etc/init.d/cloud-early-config;hb=HEAD' -O /etc/init.d/cloud-early-config
   chkconfig --add cloud-early-config
   chkconfig cloud-early-config on
   wget 'https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=patches/systemvm/debian/config/etc/init.d/cloud-passwd-srvr;hb=HEAD' -O /etc/init.d/cloud-passwd-srvr
-  chkconfig --add cloud-passwd-srvr 
+  chkconfig --add cloud-passwd-srvr
   chkconfig cloud-passwd-srvr off
   wget 'https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=patches/systemvm/debian/config/etc/init.d/cloud;hb=HEAD' -O /etc/init.d/cloud
   chkconfig --add cloud
@@ -135,18 +134,25 @@ services() {
   chkconfig xl2tpd off
 }
 
-signature() {
+do_signature() {
   mkdir -p /var/cache/cloud/
   touch /var/cache/cloud/cloud-scripts-signature
   #FIXME: signature should be generated from scripts package that can get updated
   echo "Cloudstack Release $CLOUDSTACK_RELEASE $(date)" > /etc/cloudstack-release
 }
 
+begin=$(date +%s)
+
 echo "*************INSTALLING PACKAGES********************"
 install_packages
 echo "*************DONE INSTALLING PACKAGES********************"
-accounts
-do_fixes
+setup_accounts
 configure_apache2
-services
-signature
+configure_services
+do_fixes
+do_signature
+
+fin=$(date +%s)
+t=$((fin-begin))
+
+echo "Finished building systemvm appliance in $t seconds"
