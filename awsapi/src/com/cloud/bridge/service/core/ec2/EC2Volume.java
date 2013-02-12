@@ -35,6 +35,7 @@ public class EC2Volume {
 	private String   hypervisor;
     private String created;
 	private String attached;
+    private String attachmentState;
     private List<EC2TagKeyValue>    tagsSet;
     
 	public EC2Volume() {
@@ -50,6 +51,7 @@ public class EC2Volume {
 		hypervisor = null;
 		created    = null;
 		attached   = null;
+        attachmentState = null;
 		tagsSet    = new ArrayList<EC2TagKeyValue>();
 	}
 	
@@ -235,6 +237,20 @@ public class EC2Volume {
 	public void setAttached(String attached) {
 		this.attached = attached;
 	}
+
+    /**
+     * @param state of the attached VM to set
+     */
+    public void setAttachmentState(String attachedState) {
+        this.attachmentState = attachedState;
+    }
+
+    /**
+     * @return state of the vm
+     */
+    public String getAttachmentState() {
+        return attachmentState;
+    }
 
     public void addResourceTag( EC2TagKeyValue param ) {
         tagsSet.add( param );
