@@ -42,7 +42,11 @@ getLockFile() {
 
     psline=`ps u $$`
     echo $psline > $__LOCKFILE
-
+    if [ ! -e $__LOCKFILE ]
+    then
+        return
+    fi
+    
     for i in `seq 1 $(($__TIMEOUT * 10))`
     do
         currlock=`ls -tr /tmp/$1-*.lock | head -n1`
