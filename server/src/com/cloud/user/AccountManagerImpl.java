@@ -218,7 +218,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private IPAddressDao _ipAddressDao;
     @Inject
     private RegionManager _regionMgr;
-    
+    @Inject
     private VpcManager _vpcMgr;
     @Inject
     private DomainRouterDao _routerDao;
