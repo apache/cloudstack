@@ -1,0 +1,139 @@
+/*
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+ 
+  http://www.apache.org/licenses/LICENSE-2.0
+ 
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+*/
+
+@charset "UTF-8";
+.logwin {
+      position: absolute;
+
+      z-index:2147483648;
+      width: 800px;
+      border: 1px solid gray;
+      background: white;
+      text-align: left;
+}
+
+.logwin_title{
+	width:auto;
+	  height: 23px;
+	  background:url(../images/grid_headerbg.gif) repeat-x top left;
+	  border: 1px sold #737373;
+}
+
+.logwin_title_actionbox{
+	width:175px;
+	height:16px;
+	float:left;
+	margin:4px 0 0 7px;
+	display:inline;
+}
+
+
+.logwin_title_actionbox .select {
+	background: #424242; 
+	font: normal 10px Arial, Helvetica, sans-serif; 
+	float:left; 
+	border: 1px solid #6e6e6e; 
+	height: 16px; 
+	width: 100px; 
+	margin-left:3px; 
+	padding:0 0 0 3px; 
+	color:#CCC;
+}
+
+.logwin_title_rgtactionbox{
+	width:49px;
+	height:15px;
+	float:right;
+	margin:4px 0 0 7px;
+	display:inline;
+}
+
+
+a.logwin_playbutton {
+	width:18px;
+	height:15px;
+	float:left;
+	background:url(../images/play_button.gif) no-repeat top left;
+	margin-right:2px;
+	padding:0;
+}
+
+a:hover.logwin_playbutton {
+	background:url(../images/play_button_hover.gif) no-repeat top left;
+}
+
+a.logwin_stopbutton {
+	width:18px;
+	height:15px;
+	float:left;
+	background:url(../images/stop_button.gif) no-repeat top left;
+	margin-right:2px;
+	padding:0;
+}
+
+a:hover.logwin_stopbutton {
+	background:url(../images/stop_button_hover.gif) no-repeat top left;
+}
+
+a.logwin_clrbutton {
+	width:28px;
+	height:15px;
+	float:left;
+	background:url(../images/clr_button.gif) no-repeat top left;
+	margin:0;
+	padding:0;
+}
+
+a:hover.logwin_clrbutton {
+	background:url(../images/clr_button_hover.gif) no-repeat top left;
+}
+
+a.logwin_shrinkbutton {
+	width:18px;
+	height:15px;
+	float:right;
+	background:url(../images/shrink_button.gif) no-repeat top left;
+	margin-right:7px;
+	margin-top:4px;
+	padding:0;
+}
+
+a:hover.logwin_shrinkbutton {
+	background:url(../images/shrink_button_hover.gif) no-repeat top left;
+}
+
+a.logwin_minimizebutton {
+	width:18px;
+	height:15px;
+	float:left;
+	background:url(../images/minimize_button.gif) no-repeat top left;
+	margin-right:2px;
+	padding:0;
+}
+
+a:hover.logwin_minimizebutton {
+	background:url(../images/minimize_button_hover.gif) no-repeat top left;
+}
+
+.logwin_content {
+    overflow:scroll;
+    height: 477px;
+    background: white;
+}
+

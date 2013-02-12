@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+
+#run.sh runs the agent client.
+
+cd `dirname "$0"`
+
+SYSTEMJARS="@SYSTEMJARS@"
+SCP=$(build-classpath $SYSTEMJARS) ; if [ $? != 0 ] ; then SCP="@SYSTEMCLASSPATH@" ; fi
+DCP="@DEPSCLASSPATH@"
+ACP="@AGENTCLASSPATH@"
+export CLASSPATH=$SCP:$DCP:$ACP:@CPSYSCONFDIR@
+for jarfile in "@PREMIUMJAVADIR@"/* ; do
+	if [ ! -e "$jarfile" ] ; then continue ; fi
+	CLASSPATH=$jarfile:$CLASSPATH
+done
+for plugin in "@PLUGINJAVADIR@"/* ; do
+	if [ ! -e "$plugin" ] ; then continue ; fi
+	CLASSPATH=$plugin:$CLASSPATH
+done
+export CLASSPATH
+
+set -e
+cd "@CPLIBDIR@"
+echo Current directory is "$PWD"
+echo CLASSPATH to run the console proxy: "$CLASSPATH"
+
+export PATH=/sbin:/usr/sbin:"$PATH"
+SERVICEARGS=
+for x in private public ; do
+	configuration=`grep -q "^$x.network.device" "@CPSYSCONFDIR@"/agent.properties || true`
+	if [ -n "$CONFIGURATION" ] ; then
+		echo "Using manually-configured network device $CONFIGURATION"
+	else
+		defaultroute=`ip route | grep ^default | cut -d ' ' -f 5`
+		test -n "$defaultroute"
+		echo "Using auto-discovered network device $defaultroute which is the default route"
+		SERVICEARGS="$SERVICEARGS $x.network.device="$defaultroute
+	fi
+done
+
+function termagent() {
+    if [ "$agentpid" != "" ] ; then
+	echo Killing VMOps Console Proxy "(PID $agentpid)" with SIGTERM >&2
+	kill -TERM $agentpid
+	echo Waiting for agent to exit >&2
+	wait $agentpid
+	ex=$?
+	echo Agent exited with return code $ex >&2	
+    else
+	echo Agent PID is unknown >&2
+    fi
+}
+
+trap termagent TERM
+while true ; do
+	java -Xms128M -Xmx384M -cp "$CLASSPATH" "$@" com.cloud.agent.AgentShell $SERVICEARGS &
+	agentpid=$!
+	echo "Console Proxy started.  PID: $!" >&2
+	wait $agentpid
+	ex=$?
+	if [ $ex -gt 128 ]; then
+		echo "wait on console proxy process interrupted by SIGTERM" >&2
+		exit $ex
+	fi
+	echo "Console proxy exited with return code $ex" >&2
+	if [ $ex -eq 0 ] || [ $ex -eq 1 ] || [ $ex -eq 66 ] || [ $ex -gt 128 ]; then
+		echo "Exiting..." > /dev/stderr
+		exit $ex
+	fi
+	echo "Restarting console proxy..." > /dev/stderr
+	sleep 1
+done

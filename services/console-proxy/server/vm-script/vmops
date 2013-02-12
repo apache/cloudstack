@@ -1,0 +1,119 @@
+#!/bin/bash
+#
+# vmops		Script to start and stop the VMOps Agent.
+#
+# Author:       Chiradeep Vittal <chiradeep@vmops.com>
+# chkconfig: 2345 99 01
+# description: 	Start up the VMOps agent
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+
+# Source function library.
+if [ -f /etc/init.d/functions ]
+then
+  . /etc/init.d/functions
+fi
+
+_success() {
+  if [ -f /etc/init.d/functions ]
+  then
+    success
+  else
+    echo "Success"
+  fi
+}
+
+_failure() {
+  if [ -f /etc/init.d/functions ]
+  then
+    failure
+  else
+    echo "Failed"
+  fi
+}
+RETVAL=$?
+VMOPS_HOME="/usr/local/vmops"
+
+mkdir -p /var/log/vmops
+
+get_pids() {
+  local i
+  for i in $(ps -ef| grep java | grep -v grep | awk '{print $2}'); 
+  do 
+    echo $(pwdx $i) | grep "$VMOPS_HOME" | grep -i console | awk -F: '{print $1}'; 
+  done
+}
+
+start() {
+   local pid=$(get_pids)
+   echo -n "Starting VMOps Console Proxy: "
+   if [ -f $VMOPS_HOME/consoleproxy/run.sh ];
+   then
+     if [ "$pid" == "" ]
+     then
+       (cd $VMOPS_HOME/consoleproxy; nohup ./run.sh > /var/log/vmops/vmops.out 2>&1 & )
+       pid=$(get_pids)
+       echo $pid > /var/run/vmops.pid 
+     fi
+     _success
+   else
+     _failure
+   fi
+   echo
+}
+
+stop() {
+  local pid
+  echo -n  "Stopping VMOps agent: "
+  for pid in $(get_pids)
+  do
+    kill $pid
+  done
+  _success
+  echo
+}
+
+status() {
+  local pids=$(get_pids)
+  if [ "$pids" == "" ]
+  then
+    echo "VMOps agent is not running"
+    return 1
+  fi
+  echo "VMOps agent is running: process id: $pids"
+  return 0
+}
+
+
+case "$1" in
+   start) start
+	  ;;
+    stop) stop
+ 	  ;;
+    status) status
+ 	  ;;
+ restart) stop
+          start
+ 	  ;;
+       *) echo $"Usage: $0 {start|stop|status|restart}"
+	  exit 1
+	  ;;
+esac
+
+exit $RETVAL

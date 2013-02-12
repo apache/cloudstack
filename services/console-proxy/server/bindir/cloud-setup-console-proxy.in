@@ -1,0 +1,220 @@
+#!/usr/bin/env python
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+
+import sys, os, subprocess, errno, re, getopt
+
+# ---- This snippet of code adds the sources path and the waf configured PYTHONDIR to the Python path ----
+# ---- We do this so cloud_utils can be looked up in the following order:
+# ---- 1) Sources directory
+# ---- 2) waf configured PYTHONDIR
+# ---- 3) System Python path
+for pythonpath in (
+		"@PYTHONDIR@",
+		os.path.join(os.path.dirname(__file__),os.path.pardir,os.path.pardir,"python","lib"),
+	):
+		if os.path.isdir(pythonpath): sys.path.insert(0,pythonpath)
+# ---- End snippet of code ----
+import cloud_utils
+from cloud_utils import stderr
+
+E_GENERIC= 1
+E_NOKVM = 2
+E_NODEFROUTE = 3
+E_DHCP = 4
+E_NOPERSISTENTNET = 5
+E_NETRECONFIGFAILED = 6
+E_VIRTRECONFIGFAILED = 7
+E_FWRECONFIGFAILED = 8
+E_CPRECONFIGFAILED = 9
+E_CPFAILEDTOSTART = 10
+E_NOFQDN = 11
+
+def bail(errno=E_GENERIC,message=None,*args):
+	if message: stderr(message,*args)
+	stderr("Cloud Console Proxy setup aborted")
+	sys.exit(errno)
+
+
+#---------------- boilerplate for python 2.4 support 
+
+
+# CENTOS does not have this -- we have to put this here
+try:
+	from subprocess import check_call
+	from subprocess import CalledProcessError
+except ImportError:
+	def check_call(*popenargs, **kwargs):
+		import subprocess
+		retcode = subprocess.call(*popenargs, **kwargs)
+		cmd = kwargs.get("args")
+		if cmd is None: cmd = popenargs[0]
+		if retcode: raise CalledProcessError(retcode, cmd)
+		return retcode
+
+	class CalledProcessError(Exception):
+		def __init__(self, returncode, cmd):
+			self.returncode = returncode ; self.cmd = cmd
+		def __str__(self): return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
+
+# ------------ end boilerplate -------------------------
+
+def check_hostname(): return check_call(["hostname",'--fqdn'])
+
+class Command:
+	def __init__(self,name,parent=None):
+		self.__name = name
+		self.__parent = parent
+	def __getattr__(self,name):
+		if name == "_print": name = "print"
+		return Command(name,self)
+	def __call__(self,*args):
+		cmd = self.__get_recursive_name() + list(args)
+		#print "	",cmd
+		popen = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		m = popen.communicate()
+		ret = popen.wait()
+		if ret:
+			e = CalledProcessError(ret,cmd)
+			e.stdout,e.stderr = m
+			raise e
+		class CommandOutput:
+			def __init__(self,stdout,stderr):
+				self.stdout = stdout
+				self.stderr = stderr
+		return CommandOutput(*m)
+	def __lt__(self,other):
+		cmd = self.__get_recursive_name()
+		#print "	",cmd,"<",other
+		popen = subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		m = popen.communicate(other)
+		ret = popen.wait()
+		if ret:
+			e = CalledProcessError(ret,cmd)
+			e.stdout,e.stderr = m
+			raise e
+		class CommandOutput:
+			def __init__(self,stdout,stderr):
+				self.stdout = stdout
+				self.stderr = stderr
+		return CommandOutput(*m)
+		
+	def __get_recursive_name(self,sep=None):
+		m = self
+		l = []
+		while m is not None:
+			l.append(m.__name)
+			m = m.__parent
+		l.reverse()
+		if sep: return sep.join(l)
+		else: return l
+	def __str__(self):
+		return '<Command %r>'%self.__get_recursive_name(sep=" ")
+		
+	def __repr__(self): return self.__str__()
+
+ip = Command("ip")
+service = Command("service")
+chkconfig = Command("chkconfig")
+ufw = Command("ufw")
+iptables = Command("iptables")
+augtool = Command("augtool")
+ifconfig = Command("ifconfig")
+uuidgen = Command("uuidgen")
+
+Fedora = os.path.exists("/etc/fedora-release")
+CentOS = os.path.exists("/etc/centos-release") or ( os.path.exists("/etc/redhat-release") and not os.path.exists("/etc/fedora-release") )
+
+#--------------- procedure starts here ------------
+
+def main():
+	# parse cmd line	
+	opts, args = getopt.getopt(sys.argv[1:], "a", ["host=", "zone=", "pod="])
+	host=None
+	zone=None
+	pod=None
+    	autoMode=False
+	do_check_kvm = True	
+	for opt, arg in opts:
+		if opt == "--host":
+			if arg != "":
+				host = arg
+		elif opt == "--zone":
+			if arg != "":
+				zone = arg
+		elif opt == "--pod":
+		        if arg != "":
+				pod = arg
+        	elif opt == "-a":
+            		autoMode=True
+	servicename = "@PACKAGE@-console-proxy"
+	
+	if autoMode:
+		cloud_utils.setLogFile("/var/log/cloud/setupConsoleProxy.log")
+
+	stderr("Welcome to the Cloud Console Proxy setup")
+	stderr("")
+
+	try:
+		check_hostname()
+		stderr("The hostname of this machine is properly set up")
+	except CalledProcessError,e:
+		bail(E_NOFQDN,"This machine does not have an FQDN (fully-qualified domain name) for a hostname")
+
+	stderr("Stopping the Cloud Console Proxy")
+	cloud_utils.stop_service(servicename)
+	stderr("Cloud Console Proxy stopped")
+
+	ports = "8002".split()
+	if Fedora or CentOS:
+		try:
+			o = chkconfig("--list","iptables")
+			if ":on" in o.stdout and os.path.exists("/etc/sysconfig/iptables"):
+				stderr("Setting up firewall rules to permit traffic to Cloud services")
+				service.iptables.start() ; print o.stdout + o.stderr
+				for p in ports: iptables("-I","INPUT","1","-p","tcp","--dport",p,'-j','ACCEPT')
+				o = service.iptables.save() ; print o.stdout + o.stderr
+		except CalledProcessError,e:
+			print e.stdout+e.stderr
+			bail(E_FWRECONFIGFAILED,"Firewall rules could not be set")
+	else:
+		stderr("Setting up firewall rules to permit traffic to Cloud services")
+		try:
+			for p in ports: ufw.allow(p)
+			stderr("Rules set")
+		except CalledProcessError,e:
+			print e.stdout+e.stderr
+			bail(E_FWRECONFIGFAILED,"Firewall rules could not be set")
+
+		stderr("We are going to enable ufw now.  This may disrupt network connectivity and service availability.  See the ufw documentation for information on how to manage ufw firewall policies.")
+		try:
+			o = ufw.enable < "y\n" ; print o.stdout + o.stderr
+		except CalledProcessError,e:
+			print e.stdout+e.stderr
+			bail(E_FWRECONFIGFAILED,"Firewall could not be enabled")
+
+	cloud_utils.setup_consoleproxy_config("@CPSYSCONFDIR@/agent.properties", host, zone, pod)
+	stderr("Enabling and starting the Cloud Console Proxy")
+	cloud_utils.enable_service(servicename)
+	stderr("Cloud Console Proxy restarted")
+
+if __name__ == "__main__":
+	main()
+
+# FIXMES: 1) nullify networkmanager on ubuntu (asking the user first) and enable the networking service permanently
