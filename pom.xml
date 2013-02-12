@@ -372,6 +372,13 @@
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate/base.sh</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate/cleanup.sh</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate/definition.rb</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate/preseed.cfg</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate/zerodisk.sh</exclude>
+              <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
+              <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>
@@ -406,16 +413,13 @@
               <exclude>patches/systemvm/debian/config/etc/dnsmasq.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/vpcdnsmasq.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/ssh/sshd_config</exclude>
-              <!-- Pending resolution of CLOUDSTACK-145 -->
               <exclude>patches/systemvm/debian/config/etc/rsyslog.conf</exclude>
-              <!-- Pending resolution of CLOUDSTACK-147 -->
               <exclude>patches/systemvm/debian/config/etc/logrotate.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/logrotate.d/*</exclude>
               <exclude>patches/systemvm/debian/config/etc/sysctl.conf</exclude>
               <exclude>patches/systemvm/debian/config/root/redundant_router/keepalived.conf.templ</exclude>
               <exclude>patches/systemvm/debian/config/root/redundant_router/arping_gateways.sh.templ</exclude>
               <exclude>patches/systemvm/debian/config/root/redundant_router/conntrackd.conf.templ</exclude>
-              <!-- Pending resolution of CLOUDSTACK-166 -->
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.conf</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ppp/options.xl2tpd</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/xl2tpd/xl2tpd.conf</exclude>

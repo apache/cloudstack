@@ -180,7 +180,6 @@ Copyright (c) 2013 The Apache Software Foundation
             
 
 This distribution contains third party resources.
-
 Within the . directory
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
 
@@ -209,10 +208,9 @@ Within the . directory
               CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
               ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
               THE POSSIBILITY OF SUCH DAMAGE.
-                            
+                        
         from Thomas Nagy  http://code.google.com/p/waf/ 
-            waf             
-
+            waf 
 
 Within the awsapi directory
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
@@ -242,10 +240,9 @@ Within the awsapi directory
               CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
               ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
               THE POSSIBILITY OF SUCH DAMAGE.
-                            
+                        
         from Thomas Nagy  http://code.google.com/p/waf/ 
-            waf             
-
+            waf 
 
 Within the console-proxy/js directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
@@ -270,10 +267,9 @@ Within the console-proxy/js directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                            
+                        
         from John Resig   
-            jquery.js             
-
+            jquery.js 
 
 Within the deps directory
     licensed under the BSD (2-clause) for XenServerJava http://www.opensource.org/licenses/BSD-2-Clause  (as follows)
@@ -304,28 +300,27 @@ Within the deps directory
             THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
             (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
             OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-                            
+                        
         from Citrix Systems, Inc  http://www.citrix.com/ 
-            XenServerJava  http://community.citrix.com/cdn/xs/sdks/             
-
+            XenServerJava  from http://community.citrix.com/cdn/xs/sdks/
 
 Within the patches/systemvm/debian/config/etc directory
     placed in the public domain
+        by Adiscon GmbH  http://www.adiscon.com/ 
+            rsyslog.conf 
         by Simon Kelley   
-            dnsmasq.conf
-            vpcdnsmasq.conf
-
+            dnsmasq.conf 
+            vpcdnsmasq.conf 
 
 Within the patches/systemvm/debian/config/etc/apache2 directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2012 The Apache Software Foundation
         from The Apache Software Foundation  http://www.apache.org/ 
-            httpd.conf             
-            ports.conf             
-            sites-available/default             
-            sites-available/default-ssl             
-            vhostexample.conf             
-
+            httpd.conf 
+            ports.conf 
+            sites-available/default 
+            sites-available/default-ssl 
+            vhostexample.conf 
 
 Within the patches/systemvm/debian/config/etc/ssh/ directory
     licensed under the BSD (2-clause) http://www.opensource.org/licenses/BSD-2-Clause  (as follows)
@@ -354,40 +349,95 @@ Within the patches/systemvm/debian/config/etc/ssh/ directory
             ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
             (INCLUDING  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
             SOFTWARE, EVEN IF ADVISED  OF THE POSSIBILITY OF SUCH DAMAGE.
-                            
+                        
         from OpenSSH Project  http://www.openssh.org/ 
-            sshd_config             
-
+            sshd_config 
 
 Within the patches/systemvm/debian/config/root/redundant_router directory
     placed in the public domain
         by The netfilter.org project  http://www.netfilter.org/ 
-            conntrackd.conf.templ
-
+            conntrackd.conf.templ 
 
 Within the scripts/storage/secondary directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2010-2011 OpenStack, LLC.
         from OpenStack, LLC  http://www.openstack.org 
-            swift             
-
+            swift 
 
 Within the scripts/vm/hypervisor/xenserver directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2010-2011 OpenStack, LLC.
         from OpenStack, LLC  http://www.openstack.org 
-            swift             
+            swift 
 
+Within the tools/appliance/definitions/systemvmtemplate directory
+    licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
+
+            Copyright (c) 2010-2012 Patrick Debois 
+            
+            Permission is hereby granted, free  of charge, to any person obtaining
+            a  copy  of this  software  and  associated  documentation files  (the
+            "Software"), to  deal in  the Software without  restriction, including
+            without limitation  the rights to  use, copy, modify,  merge, publish,
+            distribute,  sublicense, and/or sell  copies of  the Software,  and to
+            permit persons to whom the Software  is furnished to do so, subject to
+            the following conditions:
+            
+            The  above  copyright  notice  and  this permission  notice  shall  be
+            included in all copies or substantial portions of the Software.
+            
+            THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
+            EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
+            MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
+            NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+            LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+            OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
+            WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+                        
+        from Patrick Debois  http://www.jedi.be/blog/ 
+            base.sh  from https://github.com/jedi4ever/veewee
+            cleanup.sh  from https://github.com/jedi4ever/veewee
+            definition.rb  from https://github.com/jedi4ever/veewee
+            preseed.cfg  from https://github.com/jedi4ever/veewee
+            zerodisk.sh  from https://github.com/jedi4ever/veewee
+
+Within the tools/devcloud/src/deps/boxes/basebox-build directory
+    licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
+
+            Copyright (c) 2010-2012 Patrick Debois 
+            
+            Permission is hereby granted, free  of charge, to any person obtaining
+            a  copy  of this  software  and  associated  documentation files  (the
+            "Software"), to  deal in  the Software without  restriction, including
+            without limitation  the rights to  use, copy, modify,  merge, publish,
+            distribute,  sublicense, and/or sell  copies of  the Software,  and to
+            permit persons to whom the Software  is furnished to do so, subject to
+            the following conditions:
+            
+            The  above  copyright  notice  and  this permission  notice  shall  be
+            included in all copies or substantial portions of the Software.
+            
+            THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
+            EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
+            MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
+            NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+            LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+            OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
+            WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+                        
+        from Patrick Debois  http://www.jedi.be/blog/ 
+            definition.rb  from https://github.com/jedi4ever/veewee
+            preseed.cfg  from https://github.com/jedi4ever/veewee
 
 Within the ui/lib directory
     placed in the public domain
         by Eric Meyer  http://meyerweb.com/eric/ 
-            reset.css
+            reset.css  from http://meyerweb.com/eric/tools/css/reset/
 
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2006 Google Inc.
         from Google Inc.  http://google.com 
-            excanvas.js  http://code.google.com/p/explorercanvas/             
+            excanvas.js  from http://code.google.com/p/explorercanvas/
 
     licensed under the BSD (2-clause) http://www.opensource.org/licenses/BSD-2-Clause  (as follows)
 
@@ -417,9 +467,9 @@ Within the ui/lib directory
             ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
             (INCLUDING  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
             SOFTWARE, EVEN IF ADVISED  OF THE POSSIBILITY OF SUCH DAMAGE.
-                            
+                        
         from George McGinley Smith   
-            jquery.easing.js             
+            jquery.easing.js 
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
@@ -443,9 +493,9 @@ Within the ui/lib directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                            
+                        
         from John Resig   
-            jquery.js             
+            jquery.js 
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
@@ -469,9 +519,9 @@ Within the ui/lib directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                            
+                        
         from Jorn Zaefferer   
-            jquery.validate.js             
+            jquery.validate.js 
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
@@ -495,9 +545,9 @@ Within the ui/lib directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                            
+                        
         from Sebastian Tschan  https://blueimp.net 
-            jquery.md5.js             
+            jquery.md5.js 
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
@@ -521,10 +571,9 @@ Within the ui/lib directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                            
+                        
         from Klaus Hartl  http://stilbuero.de 
-            jquery.cookies.js             
-
+            jquery.cookies.js 
 
 Within the ui/lib/flot directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
@@ -549,18 +598,18 @@ Within the ui/lib/flot directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                            
+                        
         from IOLA  http://www.iola.dk/ 
-            jquery.flot.crosshair.js             
-            jquery.flot.fillbetween.js             
-            jquery.flot.image.js             
-            jquery.flot.js             
-            jquery.flot.navigate.js             
-            jquery.flot.resize.js             
-            jquery.flot.selection.js             
-            jquery.flot.stack.js             
-            jquery.flot.symbol.js             
-            jquery.flot.threshold.js             
+            jquery.flot.crosshair.js 
+            jquery.flot.fillbetween.js 
+            jquery.flot.image.js 
+            jquery.flot.js 
+            jquery.flot.navigate.js 
+            jquery.flot.resize.js 
+            jquery.flot.selection.js 
+            jquery.flot.stack.js 
+            jquery.flot.symbol.js 
+            jquery.flot.threshold.js 
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
 
@@ -585,9 +634,9 @@ Within the ui/lib/flot directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                            
+                        
         from Brian Medendorp   
-            jquery.pie.js             
+            jquery.pie.js 
 
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
  
@@ -610,10 +659,9 @@ Within the ui/lib/flot directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                            
+                        
         from Ole Laursen   
-            jquery.colorhelpers.js             
-
+            jquery.colorhelpers.js 
 
 Within the ui/lib/jquery-ui directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
@@ -637,12 +685,11 @@ Within the ui/lib/jquery-ui directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                            
+                        
         from jQuery UI Developers  http://jqueryui.com/about 
-            css/jquery-ui.css             
-            index.html             
-            js/jquery-ui.js             
-
+            css/jquery-ui.css 
+            index.html 
+            js/jquery-ui.js 
 
 Within the ui/lib/qunit directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
@@ -667,14 +714,14 @@ Within the ui/lib/qunit directory
             LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
             OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
             WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                            
+                        
         from Jorn Zaefferer   
-            qunit.css  http://docs.jquery.com/QUnit             
-            qunit.js  http://docs.jquery.com/QUnit             
-
+            qunit.css  from http://docs.jquery.com/QUnit
+            qunit.js  from http://docs.jquery.com/QUnit
 
 Within the utils/src/com/cloud/utils/db directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2004 Clinton Begin
         from Clinton Begin  http://code.google.com/p/mybatis/ 
-            ScriptRunner.java  http://code.google.com/p/mybatis/
+            ScriptRunner.java  from http://code.google.com/p/mybatis/
+
