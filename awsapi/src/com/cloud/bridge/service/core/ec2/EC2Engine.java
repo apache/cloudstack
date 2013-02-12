@@ -1060,12 +1060,8 @@ public class EC2Engine extends ManagerBase {
             EC2AvailabilityZonesFilterSet azfs = request.getFilterSet();
             if ( null == azfs )
                 return availableZones;
-            else {
-                List<String> matchedAvailableZones = azfs.evaluate(availableZones);
-                if (matchedAvailableZones.isEmpty())
-                    return new EC2DescribeAvailabilityZonesResponse();
-                return listZones(matchedAvailableZones.toArray(new String[0]), null);
-            }
+            else
+                return azfs.evaluate(availableZones);
         } catch( EC2ServiceException error ) {
             logger.error( "EC2 DescribeAvailabilityZones - ", error);
             throw error;
@@ -1691,9 +1687,11 @@ public class EC2Engine extends ManagerBase {
 
         zones = listZones(interestedZones, domainId);
 
-        if (zones == null || zones.getZoneIdAt( 0 ) == null) 
+        if (zones == null || zones.getAvailabilityZoneSet().length == 0)
             throw new EC2ServiceException(ClientError.InvalidParameterValue, "Unknown zoneName value - " + zoneName);
-        return zones.getZoneIdAt(0);
+
+        EC2AvailabilityZone[] zoneSet = zones.getAvailabilityZoneSet();
+        return zoneSet[0].getId();
     }
 
 
@@ -1768,24 +1766,31 @@ public class EC2Engine extends ManagerBase {
      * 
      * @return EC2DescribeAvailabilityZonesResponse
      */
-    private EC2DescribeAvailabilityZonesResponse listZones(String[] interestedZones, String domainId) throws Exception 
-    {    
+    private EC2DescribeAvailabilityZonesResponse listZones(String[] interestedZones, String domainId)
+            throws Exception  {
         EC2DescribeAvailabilityZonesResponse zones = new EC2DescribeAvailabilityZonesResponse();
 
         List<CloudStackZone> cloudZones = getApi().listZones(true, domainId, null, null);
-
-        if(cloudZones != null) {
+        if(cloudZones != null && cloudZones.size() > 0) {
             for(CloudStackZone cloudZone : cloudZones) {
-                if ( null != interestedZones && 0 < interestedZones.length ) {
-                    for( int j=0; j < interestedZones.length; j++ ) {
-                        if (interestedZones[j].equalsIgnoreCase( cloudZone.getName())) {
-                            zones.addZone(cloudZone.getId().toString(), cloudZone.getName());
+                boolean matched = false;
+                if (interestedZones.length > 0) {
+                    for (String zoneName : interestedZones){
+                        if (zoneName.equalsIgnoreCase( cloudZone.getName())) {
+                            matched = true;
                             break;
                         }
                     }
-                } else { 
-                    zones.addZone(cloudZone.getId().toString(), cloudZone.getName());
+                } else {
+                    matched = true;
                 }
+                if (!matched) continue;
+                EC2AvailabilityZone ec2Zone = new EC2AvailabilityZone();
+                ec2Zone.setId(cloudZone.getId().toString());
+                ec2Zone.setMessage(cloudZone.getAllocationState());
+                ec2Zone.setName(cloudZone.getName());
+
+                zones.addAvailabilityZone(ec2Zone);
             }
         }
         return zones;
@@ -1952,7 +1957,7 @@ public class EC2Engine extends ManagerBase {
      * @throws ParserConfigurationException
      * @throws ParseException
      */
-    public EC2DescribeSecurityGroupsResponse listSecurityGroups( String[] interestedGroups ) throws Exception {
+    private EC2DescribeSecurityGroupsResponse listSecurityGroups( String[] interestedGroups ) throws Exception {
         try {
             EC2DescribeSecurityGroupsResponse groupSet = new EC2DescribeSecurityGroupsResponse();
 
