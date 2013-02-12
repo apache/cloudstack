@@ -130,7 +130,7 @@
             </dependencies>
             <executions>
               <execution>
-                <phase>process-test-resources</phase>
+                <phase>process-resources</phase>
                 <id>create-schema</id>
                 <goals>
                   <goal>java</goal>
@@ -259,7 +259,7 @@
             </dependencies>
             <executions>
               <execution>
-                <phase>process-test-resources</phase>
+                <phase>process-resources</phase>
                 <id>create-schema</id>
                 <goals>
                   <goal>java</goal>
