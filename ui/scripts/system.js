@@ -3165,7 +3165,7 @@
                               alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
                             }
                           });
-                        }, 3000); 		
+                        }, g_queryAsyncJobResultInterval); 		
                       }
                     });
                   }
@@ -3406,7 +3406,7 @@
                               alert("addNetworkServiceProvider&name=F5BigIpfailed. Error: " + errorMsg);
                             }
                           });
-                        }, 3000); 		
+                        }, g_queryAsyncJobResultInterval); 		
                       }
                     });
                   }
@@ -3669,7 +3669,7 @@
                               alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + errorMsg);
                             }
                           });
-                        }, 3000); 		
+                        }, g_queryAsyncJobResultInterval); 		
                       }
                     });
                   }
@@ -3988,7 +3988,7 @@
                               alert("addNetworkServiceProvider&name=NiciraNvp failed. Error: " + errorMsg);
                             }
                           });
-                        }, 3000);       
+                        }, g_queryAsyncJobResultInterval);       
                       }
                     });
                   }
@@ -6240,7 +6240,7 @@
                             alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
                           }
                         });
-                      }, 3000); 		
+                      }, g_queryAsyncJobResultInterval); 		
                     }
                   });
                 }
@@ -6435,7 +6435,7 @@
                             alert("addNetworkServiceProvider&name=F5BigIpfailed. Error: " + errorMsg);
                           }
                         });
-                      }, 3000); 		
+                      }, g_queryAsyncJobResultInterval); 		
                     }
                   });
                 }
@@ -6646,7 +6646,7 @@
                             alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + errorMsg);
                           }
                         });
-                      }, 3000); 		
+                      }, g_queryAsyncJobResultInterval); 		
                     }
                   });
                 }
@@ -6812,7 +6812,7 @@
                               alert("addNetworkServiceProvider&name=NiciraNvp failed. Error: " + errorMsg);
                             }
                           });
-                        }, 3000);       
+                        }, g_queryAsyncJobResultInterval);       
                       }
                     });
                   }
@@ -10222,7 +10222,7 @@
 																														alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
 																													}
 																												});
-																											}, 3000); 		
+																											}, g_queryAsyncJobResultInterval); 		
 																										}
 																									});
 																								}
@@ -10303,7 +10303,7 @@
 																					alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
 																				}
 																			});
-																		}, 3000); 		
+																		}, g_queryAsyncJobResultInterval); 		
 																	}
 																});
 															}
@@ -10317,7 +10317,7 @@
 														alert("configureVirtualRouterElement failed. Error: " + errorMsg);
 													}
 												});
-											}, 3000); 		
+											}, g_queryAsyncJobResultInterval); 		
 										}
 									});
 								}
@@ -10331,7 +10331,7 @@
 							alert("updatePhysicalNetwork failed. Error: " + errorMsg);
 						}
 					});
-				}, 3000); 		
+				}, g_queryAsyncJobResultInterval); 		
 			}
 		});
 	};
