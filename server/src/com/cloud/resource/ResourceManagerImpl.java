@@ -2361,7 +2361,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 					ResourceState.Event.AdminCancelMaintenance, _nodeId);
             _agentMgr.pullAgentOutMaintenance(hostId);
 
-			// for kvm, need to log into kvm host, restart cloud-agent
+			// for kvm, need to log into kvm host, restart cloudstack-agent
             if (host.getHypervisorType() == HypervisorType.KVM) {
                 _hostDao.loadDetails(host);
                 String password = host.getDetail("password");
@@ -2382,7 +2382,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
                 try {
 					SSHCmdHelper.sshExecuteCmdOneShot(connection,
-							"service cloud-agent restart");
+							"service cloudstack-agent restart");
                 } catch (sshException e) {
                     return false;
                 }
