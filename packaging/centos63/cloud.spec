@@ -284,7 +284,7 @@ fi
 
 %pre management
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
-     -r -s /bin/sh -d %{_localstatedir}/cloud/management cloud|| true
+     -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
 # set max file descriptors for cloud user to 4096
 sed -i /"cloud hard nofile"/d /etc/security/limits.conf
