@@ -55,3 +55,7 @@ awsapi/modules/*
 .project
 .settings.xml
 .settings/
+docs/tmp
+docs/publish
+docs/runbook/tmp
+docs/runbook/publish
