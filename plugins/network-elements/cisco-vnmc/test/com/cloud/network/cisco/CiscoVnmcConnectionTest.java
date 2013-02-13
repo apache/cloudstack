@@ -18,7 +18,7 @@ package com.cloud.network.cisco;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.List;
+import java.util.Map;
 
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -32,7 +32,7 @@ import com.cloud.utils.exception.ExecutionException;
 public class CiscoVnmcConnectionTest {
 	static CiscoVnmcConnectionImpl connection;
 	static String tenantName = "TenantE";
-	static List<String> fwDns = null;
+	static Map<String, String> fwDns = null;
 	
 	@BeforeClass
 	public static void setUpClass() throws Exception {
@@ -235,7 +235,7 @@ public class CiscoVnmcConnectionTest {
 	@Test
 	public void testListUnassocAsa1000v() {
 		try {
-			List<String> response = connection.listUnAssocAsa1000v(); 
+			Map<String, String> response = connection.listUnAssocAsa1000v(); 
 			assertTrue(response.size() >=0);
 			fwDns = response;
 		} catch (ExecutionException e) {
