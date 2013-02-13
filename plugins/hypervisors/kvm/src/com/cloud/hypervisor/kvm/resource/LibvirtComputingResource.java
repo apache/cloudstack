@@ -858,7 +858,7 @@ ServerResource {
 
     private String getPif(String bridge) {
         String pif = matchPifFileInDirectory(bridge);
-        File vlanfile = new File("/proc/net/vlan" + pif);
+        File vlanfile = new File("/proc/net/vlan/" + pif);
 
         if (vlanfile.isFile()) {
                 pif = Script.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/"
