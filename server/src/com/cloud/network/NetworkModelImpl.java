@@ -75,6 +75,8 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.UserIpv6AddressDao;
+import com.cloud.network.element.IpDeployer;
+import com.cloud.network.element.IpDeployingRequester;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -390,9 +392,18 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             throw new InvalidParameterException("There is no new provider for IP " + publicIp.getAddress() + " of service " + service.getName() + "!");
         }
         Provider newProvider = (Provider) newProviders.toArray()[0];
-        if (!oldProvider.equals(newProvider)) {
-            throw new InvalidParameterException("There would be multiple providers for IP " + publicIp.getAddress() + "!");
-        }
+        Network network = _networksDao.findById(networkId);
+        NetworkElement oldElement = getElementImplementingProvider(oldProvider.getName());
+        NetworkElement newElement = getElementImplementingProvider(newProvider.getName());
+        if (oldElement instanceof IpDeployingRequester && newElement instanceof IpDeployingRequester) {
+        	IpDeployer oldIpDeployer = ((IpDeployingRequester)oldElement).getIpDeployer(network);
+        	IpDeployer newIpDeployer = ((IpDeployingRequester)newElement).getIpDeployer(network);
+        	if (!oldIpDeployer.getProvider().getName().equals(newIpDeployer.getProvider().getName())) {
+        		throw new InvalidParameterException("There would be multiple providers for IP " + publicIp.getAddress() + "!");
+        	}
+        } else {
+        	throw new InvalidParameterException("Ip cannot be applied for new provider!");
+         }
         return true;
     }
     
