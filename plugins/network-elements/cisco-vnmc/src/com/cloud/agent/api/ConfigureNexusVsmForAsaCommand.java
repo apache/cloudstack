@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.agent.api;
 
-/*
+/**
  * Command for configuring n1kv VSM for asa1kv device. It does the following in VSM:
  * a. creating vservice node for asa1kv
  * b. updating vlan of inside port profile associated with asa1kv

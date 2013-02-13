@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AssociateAsaWithLogicalEdgeFirewallCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ConfigureNexusVsmForAsaCommand;
 import com.cloud.agent.api.CreateLogicalEdgeFirewallCommand;
@@ -88,6 +89,8 @@ public class CiscoVnmcResource implements ServerResource{
             return execute((CreateLogicalEdgeFirewallCommand)cmd);
         } else if (cmd instanceof ConfigureNexusVsmForAsaCommand) {
         	return execute((ConfigureNexusVsmForAsaCommand)cmd);
+        } else if (cmd instanceof AssociateAsaWithLogicalEdgeFirewallCommand) {
+        	return execute((AssociateAsaWithLogicalEdgeFirewallCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -332,8 +335,43 @@ public class CiscoVnmcResource implements ServerResource{
             String msg = "ConfigureVSMForASACommand failed due to " + e.getMessage();
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
+        } finally {
+            helper.disconnect();
         }
 
         return new Answer(cmd, true, "Success");
     }
+
+    /*
+     * Associates ASA 1000v with logical edge firewall in VNMC
+     */
+    private synchronized Answer execute(AssociateAsaWithLogicalEdgeFirewallCommand cmd) {
+        return execute(cmd, _numRetries);
+    }
+
+    private Answer execute(AssociateAsaWithLogicalEdgeFirewallCommand cmd, int numRetries) {
+        String tenant = "vlan-" + cmd.getVlanId();
+        try {
+            Map<String, String> availableAsaAppliances = _connection.listUnAssocAsa1000v();
+            if (availableAsaAppliances.isEmpty()) {
+                throw new Exception("No ASA 1000v available to associate with logical edge firewall for guest vlan " + cmd.getVlanId());
+            }
+
+            String asaInstanceDn = availableAsaAppliances.get(cmd.getAsaMgmtIp());
+            if (asaInstanceDn == null) {
+                throw new Exception("Requested ASA 1000v (" + cmd.getAsaMgmtIp() + ") is not available");
+            }
+
+            if (!_connection.assocAsa1000v(tenant, asaInstanceDn)) {
+                throw new Exception("Failed to associate ASA 1000v (" + cmd.getAsaMgmtIp() + ") with logical edge firewall for guest vlan " + cmd.getVlanId());
+            }
+        } catch (Throwable e) {
+            String msg = "AssociateAsaWithLogicalEdgeFirewallCommand failed due to " + e.getMessage();
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, msg);
+        }
+
+        return new Answer(cmd, true, "Success");
+    }
+
 }

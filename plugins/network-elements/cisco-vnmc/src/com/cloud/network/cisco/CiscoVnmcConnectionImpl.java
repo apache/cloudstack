@@ -624,26 +624,24 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 	 * @see com.cloud.network.resource.CiscoVnmcConnection#listUnAssocAsa1000v()
 	 */
     @Override
-	public List<String> listUnAssocAsa1000v() throws ExecutionException {
-    	
-    	String xml = VnmcXml.LIST_UNASSOC_ASA1000V.getXml();
-    	String service = VnmcXml.LIST_UNASSOC_ASA1000V.getService();
-    	xml = replaceXmlValue(xml, "cookie", _cookie);
-    	
-    	
-    	String response =  sendRequest(service, xml);
+	public Map<String, String> listUnAssocAsa1000v() throws ExecutionException {
 
-    	List<String> result = new ArrayList<String>();
-    	
-    	Document xmlDoc = getDocument(response);
-    	xmlDoc.normalize();
-    	NodeList fwList = xmlDoc.getElementsByTagName("fwInstance");
-    	for (int j=0; j < fwList.getLength(); j++) {
-			Node fwNode = fwList.item(j);
-			result.add (fwNode.getAttributes().getNamedItem("dn").getNodeValue());
-			
-		}
-        
+        String xml = VnmcXml.LIST_UNASSOC_ASA1000V.getXml();
+        String service = VnmcXml.LIST_UNASSOC_ASA1000V.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+
+        String response =  sendRequest(service, xml);
+
+        Map<String, String> result = new HashMap<String, String>();
+        Document xmlDoc = getDocument(response);
+        xmlDoc.normalize();
+        NodeList fwList = xmlDoc.getElementsByTagName("fwInstance");
+        for (int j=0; j < fwList.getLength(); j++) {
+            Node fwNode = fwList.item(j);
+            result.put(fwNode.getAttributes().getNamedItem("mgmtIp").getNodeValue(),
+                    fwNode.getAttributes().getNamedItem("dn").getNodeValue());
+        }
+
         return result;
 
     }
@@ -653,16 +651,16 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 	 */
     @Override
 	public boolean assocAsa1000v(String tenantName, String firewallDn) throws ExecutionException {
-    	
-    	String xml = VnmcXml.ASSIGN_ASA1000V.getXml();
-    	String service = VnmcXml.ASSIGN_ASA1000V.getService();
-    	xml = replaceXmlValue(xml, "cookie", _cookie);
-    	xml = replaceXmlValue(xml, "binddn", getDnForEdgeFirewall(tenantName) + "/binding");
-    	xml = replaceXmlValue(xml, "fwdn", firewallDn);
-    	
-    	String response =  sendRequest(service, xml);
 
-    	return verifySuccess(response);
+        String xml = VnmcXml.ASSIGN_ASA1000V.getXml();
+        String service = VnmcXml.ASSIGN_ASA1000V.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "binddn", getDnForEdgeFirewall(tenantName) + "/binding");
+        xml = replaceXmlValue(xml, "fwdn", firewallDn);
+
+        String response =  sendRequest(service, xml);
+
+        return verifySuccess(response);
 
     }
     

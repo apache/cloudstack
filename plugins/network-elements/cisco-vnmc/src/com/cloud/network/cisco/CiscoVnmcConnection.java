@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.network.cisco;
 
-import java.util.List;
+import java.util.Map;
 
 import com.cloud.utils.exception.ExecutionException;
 
@@ -68,7 +68,7 @@ public interface CiscoVnmcConnection {
 			String insideIp, String insideSubnet, String outsideSubnet)
 			throws ExecutionException;
 
-	public List<String> listUnAssocAsa1000v() throws ExecutionException;
+	public Map<String, String> listUnAssocAsa1000v() throws ExecutionException;
 
 	public boolean assocAsa1000v(String tenantName, String firewallDn)
 			throws ExecutionException;

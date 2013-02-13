@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.agent.api;
 
-/*
+/**
  * Command for creating a logical edge firewall in VNMC
  */
 public class CreateLogicalEdgeFirewallCommand extends Command {

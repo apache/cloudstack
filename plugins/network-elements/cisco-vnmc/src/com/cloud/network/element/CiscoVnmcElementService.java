@@ -22,8 +22,6 @@ import com.cloud.api.commands.AddCiscoVnmcResourceCmd;
 import com.cloud.api.commands.DeleteCiscoVnmcResourceCmd;
 import com.cloud.api.commands.ListCiscoVnmcResourcesCmd;
 import com.cloud.api.response.CiscoVnmcResourceResponse;
-import com.cloud.network.Network;
-import com.cloud.network.Network.Provider;
 import com.cloud.network.cisco.CiscoVnmcController;
 import com.cloud.network.cisco.CiscoVnmcControllerVO;
 import com.cloud.utils.component.PluggableService;
@@ -40,7 +38,5 @@ public interface CiscoVnmcElementService extends PluggableService {
     boolean deleteCiscoVnmcResource(DeleteCiscoVnmcResourceCmd cmd);
 
     List<CiscoVnmcControllerVO> listCiscoVnmcResources(ListCiscoVnmcResourcesCmd cmd);
-    
-    void assignAsa1000vToNetwork(Network network);
 
 }

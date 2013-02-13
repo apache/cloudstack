@@ -32,13 +32,18 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AssociateAsaWithLogicalEdgeFirewallCommand;
 import com.cloud.agent.api.ConfigureNexusVsmForAsaCommand;
 import com.cloud.agent.api.CreateLogicalEdgeFirewallCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupExternalFirewallCommand;
+import com.cloud.api.commands.AddCiscoAsa1000vResourceCmd;
 import com.cloud.api.commands.AddCiscoVnmcResourceCmd;
+import com.cloud.api.commands.DeleteCiscoAsa1000vResourceCmd;
 import com.cloud.api.commands.DeleteCiscoVnmcResourceCmd;
+import com.cloud.api.commands.ListCiscoAsa1000vResourcesCmd;
 import com.cloud.api.commands.ListCiscoVnmcResourcesCmd;
+import com.cloud.api.response.CiscoAsa1000vResourceResponse;
 import com.cloud.api.response.CiscoVnmcResourceResponse;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterVO;
@@ -68,11 +73,15 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.cisco.CiscoVnmcConnection;
+import com.cloud.network.cisco.CiscoAsa1000vDevice;
+import com.cloud.network.cisco.CiscoAsa1000vDeviceVO;
 import com.cloud.network.cisco.CiscoVnmcController;
 import com.cloud.network.cisco.CiscoVnmcControllerVO;
+import com.cloud.network.cisco.NetworkAsa1000vMapVO;
+import com.cloud.network.dao.CiscoAsa1000vDao;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.network.dao.CiscoVnmcDao;
+import com.cloud.network.dao.NetworkAsa1000vMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
@@ -98,7 +107,8 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkElement.class)
 public class CiscoVnmcElement extends AdapterBase implements SourceNatServiceProvider, FirewallServiceProvider,
-    PortForwardingServiceProvider, IpDeployer, StaticNatServiceProvider, ResourceStateAdapter, NetworkElement, CiscoVnmcElementService {
+    PortForwardingServiceProvider, IpDeployer, StaticNatServiceProvider, ResourceStateAdapter, NetworkElement,
+    CiscoVnmcElementService, CiscoAsa1000vService {
 	private static final Logger s_logger = Logger.getLogger(CiscoVnmcElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
@@ -129,8 +139,11 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     CiscoNexusVSMDeviceDao _vsmDeviceDao;
     @Inject
     CiscoVnmcDao _ciscoVnmcDao;
-
-    CiscoVnmcConnection _vnmcConnection;
+    @Inject
+    CiscoAsa1000vDao _ciscoAsa1000vDao;
+    @Inject
+    NetworkAsa1000vMapDao _networkAsa1000vMapDao;
+    
 
     private boolean canHandle(Network network) {
         if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
@@ -193,6 +206,14 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         return answer.getResult();
     }
 
+    private boolean associateAsaWithLogicalEdgeFirewall(long vlanId,
+    		String asaMgmtIp, long hostId) {
+        AssociateAsaWithLogicalEdgeFirewallCommand cmd = 
+                new AssociateAsaWithLogicalEdgeFirewallCommand(vlanId, asaMgmtIp);
+        Answer answer = _agentMgr.easySend(hostId, cmd);
+        return answer.getResult();
+    }
+
     @Override
     public boolean implement(Network network, NetworkOffering offering,
     	    DeployDestination dest, ReservationContext context)
@@ -229,39 +250,77 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
         List<CiscoVnmcControllerVO> devices = _ciscoVnmcDao.listByPhysicalNetwork(network.getPhysicalNetworkId());
         if (devices.isEmpty()) {
-            s_logger.error("No Cisco Vnmc device on network " + network.getDisplayText());
+            s_logger.error("No Cisco Vnmc device on network " + network.getName());
             return false;
+        }
+
+        List<CiscoAsa1000vDeviceVO> asaList = _ciscoAsa1000vDao.listByPhysicalNetwork(network.getPhysicalNetworkId());
+        if (asaList.isEmpty()) {
+            s_logger.debug("No Cisco ASA 1000v device on network " + network.getName());
+        	return false;
+        }
+
+        NetworkAsa1000vMapVO asaForNetwork = _networkAsa1000vMapDao.findByNetworkId(network.getId());
+        if (asaForNetwork != null) {
+            s_logger.debug("Cisco ASA 1000v device already associated with network " + network.getName());
+        	return true;
         }
 
         if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.CiscoVnmc)) {
-            s_logger.error("SourceNat service is not provided by Cisco Vnmc device on network " + network.getDisplayText());
+            s_logger.error("SourceNat service is not provided by Cisco Vnmc device on network " + network.getName());
             return false;
         }
 
-        CiscoVnmcControllerVO ciscoVnmcDevice = devices.get(0);
-        HostVO ciscoVnmcHost = _hostDao.findById(ciscoVnmcDevice.getHostId());
-        _hostDao.loadDetails(ciscoVnmcHost);
-        Account owner = context.getAccount();
-        PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
-        String vlan = network.getBroadcastUri().getHost();
-        long vlanId = Long.parseLong(vlan);
+		Transaction txn = Transaction.currentTxn();
+		boolean status = false;
+        try {
+        	txn.start();
 
-        // create logical edge firewall in VNMC
-        if (!createLogicalEdgeFirewall(vlanId, network.getGateway(), sourceNatIp.getAddress().addr(), ciscoVnmcHost.getId())) {
-            s_logger.error("Failed to create logical edge firewall in Cisco Vnmc device for network " + network.getDisplayText());
-            return false;
+            // ensure that there is an ASA 1000v assigned to this network
+        	CiscoAsa1000vDevice assignedAsa = assignAsa1000vToNetwork(network);
+            if (assignedAsa == null) {
+                s_logger.error("Unable to assign ASA 1000v device to network " + network.getName());
+                return false;
+            }
+
+            CiscoVnmcControllerVO ciscoVnmcDevice = devices.get(0);
+            HostVO ciscoVnmcHost = _hostDao.findById(ciscoVnmcDevice.getHostId());
+            _hostDao.loadDetails(ciscoVnmcHost);
+            Account owner = context.getAccount();
+            PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
+            String vlan = network.getBroadcastUri().getHost();
+            long vlanId = Long.parseLong(vlan);
+
+            // create logical edge firewall in VNMC
+            if (!createLogicalEdgeFirewall(vlanId, network.getGateway(), sourceNatIp.getAddress().addr(), ciscoVnmcHost.getId())) {
+                s_logger.error("Failed to create logical edge firewall in Cisco Vnmc device for network " + network.getName());
+                return false;
+            }
+
+            // create stuff in VSM for ASA device
+            if (!configureNexusVsmForAsa(vlanId, network.getGateway(),
+                    vsmDevice.getUserName(), vsmDevice.getPassword(), vsmDevice.getipaddr(),
+                    assignedAsa.getInPortProfile(), ciscoVnmcHost.getId())) {
+                s_logger.error("Failed to configure Cisco Nexus VSM " + vsmDevice.getipaddr() +
+                        " for ASA device for network " + network.getName());
+                return false;
+            }
+
+            // associate Asa 1000v instance with logical edge firewall
+            if (!associateAsaWithLogicalEdgeFirewall(vlanId, assignedAsa.getManagementIp(), ciscoVnmcHost.getId())) {
+                s_logger.error("Failed to associate Cisco ASA 1000v (" + assignedAsa.getManagementIp() +
+                        ") with logical edge firewall in VNMC for network " + network.getName());
+                return false;
+            }
+
+            status = true;
+            txn.commit();
+        } finally {
+            if (!status) {
+                txn.rollback();
+            }
         }
 
-        // create stuff in VSM for ASA device
-        if (!configureNexusVsmForAsa(vlanId, network.getGateway(),
-                vsmDevice.getUserName(), vsmDevice.getPassword(), vsmDevice.getipaddr(),
-                "insidePortProfile" /*FIXME: read it from asa1kv device table*/, ciscoVnmcHost.getId())) {
-            s_logger.error("Failed to configure Cisco Nexus VSM " + vsmDevice.getipaddr() + " for ASA device for network " + network.getDisplayText());
-            return false;
-        }
-
-        // ensure that there is an ASA 1000v assigned to this network
-        assignAsa1000vToNetwork(network);
         return true;
     }
 
@@ -454,12 +513,6 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
 		return responseList;
 	}
-
-
-	@Override
-	public void assignAsa1000vToNetwork(Network network) {
-		// TODO Auto-generated method stub
-	}
 	
 	@Override
 	public IpDeployer getIpDeployer(Network network) {
@@ -516,5 +569,82 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         }
         return new DeleteHostAnswer(true);
 	}
+
+	@Override
+	public CiscoAsa1000vDevice addCiscoAsa1000vResource(
+			AddCiscoAsa1000vResourceCmd cmd) {
+        Long physicalNetworkId = cmd.getPhysicalNetworkId();
+        CiscoAsa1000vDevice ciscoAsa1000vResource = null;
+
+        PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+        if (physicalNetwork == null) {
+            throw new InvalidParameterValueException("Could not find phyical network with ID: " + physicalNetworkId);
+        }
+
+        ciscoAsa1000vResource = new CiscoAsa1000vDeviceVO(physicalNetworkId, cmd.getManagementIp(), cmd.getInPortProfile());
+        _ciscoAsa1000vDao.persist((CiscoAsa1000vDeviceVO)ciscoAsa1000vResource);
+                
+        return ciscoAsa1000vResource;
+	}
+
+	@Override
+	public CiscoAsa1000vResourceResponse createCiscoAsa1000vResourceResponse(
+			CiscoAsa1000vDevice ciscoAsa1000vDeviceVO) {
+		CiscoAsa1000vResourceResponse response = new CiscoAsa1000vResourceResponse();
+		response.setId(ciscoAsa1000vDeviceVO.getUuid());
+		response.setManagementIp(ciscoAsa1000vDeviceVO.getManagementIp());
+		response.setInPortProfile(ciscoAsa1000vDeviceVO.getInPortProfile());
+
+		return response;
+	}
+
+	@Override
+	public boolean deleteCiscoAsa1000vResource(
+			DeleteCiscoAsa1000vResourceCmd cmd) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public List<CiscoAsa1000vDeviceVO> listCiscoAsa1000vResources(
+			ListCiscoAsa1000vResourcesCmd cmd) {
+		Long physicalNetworkId = cmd.getPhysicalNetworkId();
+		Long ciscoAsa1000vResourceId = cmd.getCiscoAsa1000vResourceId();
+		List<CiscoAsa1000vDeviceVO> responseList = new ArrayList<CiscoAsa1000vDeviceVO>();
+
+		if (physicalNetworkId == null && ciscoAsa1000vResourceId == null) {
+			throw new InvalidParameterValueException("Either physical network Id or Asa 1000v device Id must be specified");
+		}
+
+		if (ciscoAsa1000vResourceId != null) {
+			CiscoAsa1000vDeviceVO ciscoAsa1000vResource = _ciscoAsa1000vDao.findById(ciscoAsa1000vResourceId);
+			if (ciscoAsa1000vResource == null) {
+				throw new InvalidParameterValueException("Could not find Cisco Asa 1000v device with id: " + ciscoAsa1000vResourceId);
+			}
+			responseList.add(ciscoAsa1000vResource);
+		} else {
+			PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+			if (physicalNetwork == null) {
+				throw new InvalidParameterValueException("Could not find a physical network with id: " + physicalNetworkId);
+			}
+			responseList = _ciscoAsa1000vDao.listByPhysicalNetwork(physicalNetworkId);
+		}
+
+		return responseList;
+	}
+
+	@Override
+	public CiscoAsa1000vDevice assignAsa1000vToNetwork(Network network) {
+        List<CiscoAsa1000vDeviceVO> asaList = _ciscoAsa1000vDao.listByPhysicalNetwork(network.getPhysicalNetworkId());
+        for (CiscoAsa1000vDeviceVO asa : asaList) {
+            NetworkAsa1000vMapVO assignedToNetwork = _networkAsa1000vMapDao.findByAsa1000vId(asa.getId());
+            if (assignedToNetwork == null) {
+                NetworkAsa1000vMapVO networkAsaMap = new NetworkAsa1000vMapVO(network.getId(), asa.getId());
+                _networkAsa1000vMapDao.persist(networkAsaMap);
+                return asa;
+        	}
+        }
+        return null;
+    }
 
 }

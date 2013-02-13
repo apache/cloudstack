@@ -36,7 +36,6 @@ import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
@@ -208,12 +207,6 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
 	public String getName() {
 		// TODO Auto-generated method stub
 		return null;
-	}
-
-	@Override
-	public void assignAsa1000vToNetwork(Network network) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
