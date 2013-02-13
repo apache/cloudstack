@@ -163,11 +163,11 @@
     <module>deps/XenServerJava</module>
     <module>plugins</module>
     <module>patches</module>
-    <module>client</module>
-    <module>test</module>
     <module>engine</module>
     <module>framework</module>
-	<module>services</module>
+    <module>services</module>
+    <module>test</module>
+    <module>client</module>
   </modules>
 
   <dependencyManagement>
