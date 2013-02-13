@@ -56,9 +56,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
-//1. change volume state
-//2. orchestrator of volume, control most of the information of volume, storage pool id, voluem state, scope etc.
-
 @Component
 public class VolumeServiceImpl implements VolumeService {
     private static final Logger s_logger = Logger
@@ -423,8 +420,49 @@ public class VolumeServiceImpl implements VolumeService {
     public AsyncCallFuture<VolumeApiResult> createVolumeFromSnapshot(
             VolumeInfo volume, DataStore store, SnapshotInfo snapshot) {
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
-        VolumeApiResult result = new VolumeApiResult(volume);
-        return null;
+        
+        try {
+        	DataObject volumeOnStore = store.create(volume);
+        	volume.processEvent(Event.CreateOnlyRequested);
+        	 CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, 
+        			 (VolumeObject)volume, store, volumeOnStore, future);
+             AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller =  AsyncCallbackDispatcher.create(this);
+             caller.setCallback(caller.getTarget().createVolumeFromSnapshotCallback(null, null))
+             .setContext(context);
+        	this.motionSrv.copyAsync(snapshot, volumeOnStore, caller);
+        } catch (Exception e) {
+        	s_logger.debug("create volume from snapshot failed", e);
+        	VolumeApiResult result = new VolumeApiResult(volume);
+        	result.setResult(e.toString());
+        	future.complete(result);
+        }
+        
+        return future;
+    }
+    
+    protected Void createVolumeFromSnapshotCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, 
+    		CreateVolumeFromBaseImageContext<VolumeApiResult> context) {
+    	CopyCommandResult result = callback.getResult();
+    	VolumeInfo volume = context.vo;
+    	VolumeApiResult apiResult = new VolumeApiResult(volume);
+    	Event event = null;
+    	if (result.isFailed()) {
+    		apiResult.setResult(result.getResult());
+    		event = Event.OperationFailed;
+    	} else {
+    		event = Event.OperationSuccessed;
+    	}
+    	
+    	try {
+    		volume.processEvent(event);
+    	} catch (Exception e) {
+    		s_logger.debug("create volume from snapshot failed", e);
+    		apiResult.setResult(e.toString());
+    	}
+    	
+    	AsyncCallFuture<VolumeApiResult> future = context.future;
+    	future.complete(apiResult);
+    	return null;
     }
     
     protected VolumeVO duplicateVolumeOnAnotherStorage(Volume volume, StoragePool pool) {
@@ -552,5 +590,61 @@ public class VolumeServiceImpl implements VolumeService {
         context.future.complete(res);
         return null;
     }
+    
+
+	@Override
+	public AsyncCallFuture<VolumeApiResult> resize(VolumeInfo volume) {
+		AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
+		VolumeApiResult result = new VolumeApiResult(volume);
+		try {
+			volume.processEvent(Event.ResizeRequested);
+		} catch (Exception e) {
+			s_logger.debug("Failed to change state to resize", e);
+			result.setResult(e.toString());
+			future.complete(result);
+			return future;
+		}
+		 CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(null, volume, future);
+	        AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
+	        caller.setCallback(caller.getTarget().registerVolumeCallback(null, null))
+	        .setContext(context);
+		volume.getDataStore().getDriver().resize(volume, caller);
+		return future;
+	}
+	
+	protected Void resizeVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
+		CreateCmdResult result = callback.getResult();
+		AsyncCallFuture<VolumeApiResult> future  = context.future;
+		VolumeInfo volume = (VolumeInfo)context.volume;
+		
+		if (result.isFailed()) {
+			try {
+				volume.processEvent(Event.OperationFailed);
+			} catch (Exception e) {
+				s_logger.debug("Failed to change state", e);
+			}
+			VolumeApiResult res = new VolumeApiResult(volume);
+			res.setResult(result.getResult());
+			future.complete(res);
+			return null;
+		}
+		
+		try {
+			volume.processEvent(Event.OperationSuccessed);
+		} catch(Exception e) {
+			s_logger.debug("Failed to change state", e);
+			VolumeApiResult res = new VolumeApiResult(volume);
+			res.setResult(result.getResult());
+			future.complete(res);
+			return null;
+		}
+		
+		VolumeApiResult res = new VolumeApiResult(volume);
+		future.complete(res);
+		
+		return null;
+	}
+	
+	
 
 }

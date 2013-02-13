@@ -74,5 +74,7 @@ public interface VolumeService {
     boolean destroyVolume(long volumeId) throws ConcurrentOperationException;
 
     AsyncCallFuture<VolumeApiResult> registerVolume(VolumeInfo volume, DataStore store);
+    
+    AsyncCallFuture<VolumeApiResult> resize(VolumeInfo volume);
 
 }

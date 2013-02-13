@@ -24,9 +24,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
 
 public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
@@ -73,16 +73,24 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
     public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback) {
         // TODO Auto-generated method stub
         
     }
+
+	@Override
+	public void resize(DataObject data,
+			AsyncCompletionCallback<CreateCmdResult> callback) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void takeSnapshot(SnapshotInfo snapshot,
+			AsyncCompletionCallback<CreateCmdResult> callback) {
+		// TODO Auto-generated method stub
+		
+	}
 
 
 }

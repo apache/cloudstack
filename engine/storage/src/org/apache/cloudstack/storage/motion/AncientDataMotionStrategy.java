@@ -28,6 +28,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -36,6 +37,8 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.BackupSnapshotAnswer;
+import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
@@ -47,7 +50,9 @@ import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
+import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.StorageUnavailableException;
@@ -72,7 +77,9 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
+import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.storage.swift.SwiftManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
@@ -112,6 +119,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     @Inject VMTemplatePoolDao templatePoolDao;
     @Inject
     VolumeManager volumeMgr;
+    @Inject
+    private SwiftManager _swiftMgr;
+    @Inject 
+    private S3Manager _s3Mgr;
 
     @Override
     public boolean canHandle(DataObject srcData, DataObject destData) {
@@ -120,7 +131,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     @DB
-    protected String copyVolumeFromImage(DataObject srcData, DataObject destData) {
+    protected Answer copyVolumeFromImage(DataObject srcData, DataObject destData) {
         String value = configDao.getValue(Config.RecreateSystemVmEnabled.key());
         int _copyvolumewait = NumbersUtil.parseInt(value,
                 Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
@@ -162,16 +173,17 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         this.volDao.update(vol.getId(), vol);
         volumeHostDao.remove(volumeHostVO.getId());
         txn.commit();
-        return errMsg;
+        return cvAnswer;
     }
 
-    private void copyTemplate(DataObject srcData, DataObject destData) {
+    private Answer copyTemplate(DataObject srcData, DataObject destData) {
         VMTemplateVO template = this.templateDao.findById(srcData.getId());
         templateMgr.prepareTemplateForCreate(template,
                 (StoragePool) destData.getDataStore());
+        return null;
     }
 
-    protected String copyFromSnapshot(DataObject snapObj, DataObject volObj) {
+    protected Answer copyFromSnapshot(DataObject snapObj, DataObject volObj) {
         SnapshotVO snapshot = this.snapshotDao.findById(snapObj.getId());
         StoragePool pool = (StoragePool) volObj.getDataStore();
         String vdiUUID = null;
@@ -227,8 +239,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 if ((answer != null) && answer.getResult()) {
                     snapshotDao.updateSnapshotVersion(volumeId, "2.1", "2.2");
                 } else {
-                    return "Unable to upgrade snapshot from 2.1 to 2.2 for "
-                            + snapshot.getId();
+                    throw new CloudRuntimeException("Unable to upgrade snapshot from 2.1 to 2.2 for "
+                            + snapshot.getId());
                 }
             }
         }
@@ -277,11 +289,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 snapshotMgr.deleteSnapshotsDirForVolume(
                         secondaryStoragePoolUrl, dcId, accountId, volumeId);
             }
-            snapshotDao.unlockFromLockTable(snapshotId.toString());
         }
     }
     
-    protected String cloneVolume(DataObject template, DataObject volume) {
+    protected Answer cloneVolume(DataObject template, DataObject volume) {
         VolumeInfo volInfo = (VolumeInfo)volume;
         DiskOfferingVO offering = diskOfferingDao.findById(volInfo.getDiskOfferingId());
         VMTemplateStoragePoolVO  tmpltStoredOn =  templatePoolDao.findByPoolTemplate(template.getDataStore().getId(), template.getId());
@@ -298,8 +309,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             answer = storagMgr.sendToPool(pool, null, cmd);
         } catch (StorageUnavailableException e) {
             s_logger.debug("Failed to send to storage pool", e);
-            errMsg = e.toString();
-            return errMsg;
+            throw new CloudRuntimeException("Failed to send to storage pool", e);
         }
         
         if (answer.getResult()) {
@@ -327,10 +337,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             errMsg = answer.getDetails();
         }
         
-        return errMsg;
+        return answer;
     }
     
-    protected String copyVolumeBetweenPools(DataObject srcData, DataObject destData) {
+    protected Answer copyVolumeBetweenPools(DataObject srcData, DataObject destData) {
         VolumeInfo volume = (VolumeInfo)srcData;
         VolumeInfo destVolume = (VolumeInfo)destData;
         String secondaryStorageURL = this.templateMgr.getSecondaryStorageURL(volume
@@ -380,41 +390,45 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         VolumeVO destVol = this.volDao.findById(destVolume.getId());
         destVol.setPath(cvAnswer.getVolumePath());
         this.volDao.update(destVol.getId(), destVol);
-        return null;
+        return cvAnswer;
     }
 
     @Override
     public Void copyAsync(DataObject srcData, DataObject destData,
             AsyncCompletionCallback<CopyCommandResult> callback) {
+        Answer answer = null;
         String errMsg = null;
         try {
             if (destData.getType() == DataObjectType.VOLUME
                     && srcData.getType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.Image) {
-                errMsg = copyVolumeFromImage(srcData, destData);
+            	answer = copyVolumeFromImage(srcData, destData);
             } else if (destData.getType() == DataObjectType.TEMPLATE
                     && srcData.getType() == DataObjectType.TEMPLATE) {
-                copyTemplate(srcData, destData);
+            	answer = copyTemplate(srcData, destData);
             } else if (srcData.getType() == DataObjectType.SNAPSHOT
                     && destData.getType() == DataObjectType.VOLUME) {
-                errMsg = copyFromSnapshot(srcData, destData);
+            	answer = copyFromSnapshot(srcData, destData);
             } else if (srcData.getType() == DataObjectType.SNAPSHOT
                     && destData.getType() == DataObjectType.TEMPLATE) {
-                errMsg = createTemplateFromSnashot(srcData, destData);
+            	answer = createTemplateFromSnashot(srcData, destData);
             } else if (srcData.getType() == DataObjectType.VOLUME
                     && destData.getType() == DataObjectType.TEMPLATE) {
-                errMsg = createTemplateFromVolume(srcData, destData);
+            	answer = createTemplateFromVolume(srcData, destData);
             } else if (srcData.getType() == DataObjectType.TEMPLATE 
                     && destData.getType() == DataObjectType.VOLUME) {
-                errMsg = cloneVolume(srcData, destData);
+            	answer = cloneVolume(srcData, destData);
             } else if (destData.getType() == DataObjectType.VOLUME
                     && srcData.getType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
-                errMsg = copyVolumeBetweenPools(srcData, destData);
+            	answer = copyVolumeBetweenPools(srcData, destData);
+            } else if (srcData.getType() == DataObjectType.SNAPSHOT &&
+            		destData.getType() == DataObjectType.SNAPSHOT) {
+            	answer = copySnapshot(srcData, destData);
             }
         } catch (Exception e) {
             s_logger.debug("copy failed", e);
             errMsg = e.toString();
         }
-        CopyCommandResult result = new CopyCommandResult(null);
+        CopyCommandResult result = new CopyCommandResult(null, answer);
         result.setResult(errMsg);
         callback.complete(result);
 
@@ -422,7 +436,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     @DB
-    protected String createTemplateFromSnashot(DataObject srcData,
+    protected Answer createTemplateFromSnashot(DataObject srcData,
             DataObject destData) {
         long snapshotId = srcData.getId();
         SnapshotVO snapshot = snapshotDao.findById(snapshotId);
@@ -538,7 +552,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     @DB
-    protected String sendCommand(Command cmd, StoragePool pool,
+    protected Answer sendCommand(Command cmd, StoragePool pool,
             long templateId, long zoneId, long hostId) {
 
         CreatePrivateTemplateAnswer answer = null;
@@ -551,11 +565,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     e);
         }
 
-        if (answer == null) {
-            return "Failed to execute CreatePrivateTemplateFromSnapshotCommand";
-        } else if (!answer.getResult()) {
-            return "Failed to execute CreatePrivateTemplateFromSnapshotCommand"
-                    + answer.getDetails();
+        if (answer == null || !answer.getResult()) {
+        	return answer;
         }
 
         VMTemplateVO privateTemplate = templateDao.findById(templateId);
@@ -594,10 +605,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         templateHostVO.setPhysicalSize(answer.getphysicalSize());
         templateHostDao.persist(templateHostVO);
         txn.close();
-        return null;
+        return answer;
     }
 
-    private String createTemplateFromVolume(DataObject srcObj,
+    private Answer createTemplateFromVolume(DataObject srcObj,
             DataObject destObj) {
         long volumeId = srcObj.getId();
         VolumeVO volume = this.volDao.findById(volumeId);
@@ -632,6 +643,83 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
         return sendCommand(cmd, pool, template.getId(), zoneId,
                 secondaryStorageHost.getId());
+    }
+    
+    private HostVO getSecHost(long volumeId, long dcId) {
+        Long id = snapshotDao.getSecHostId(volumeId);
+        if ( id != null) { 
+            return hostDao.findById(id);
+        }
+        return this.templateMgr.getSecondaryStorageHost(dcId);
+    }
+    
+    protected Answer copySnapshot(DataObject srcObject, DataObject destObject) {
+    	SnapshotInfo srcSnapshot = (SnapshotInfo)srcObject;
+    	VolumeInfo baseVolume = srcSnapshot.getBaseVolume();
+    	 Long dcId = baseVolume.getDataCenterId();
+         Long accountId = baseVolume.getAccountId();
+         
+         HostVO secHost = getSecHost(baseVolume.getId(), baseVolume.getDataCenterId());
+         
+         String secondaryStoragePoolUrl = secHost.getStorageUrl();
+         String snapshotUuid = srcSnapshot.getPath();
+         // In order to verify that the snapshot is not empty,
+         // we check if the parent of the snapshot is not the same as the parent of the previous snapshot.
+         // We pass the uuid of the previous snapshot to the plugin to verify this.
+         SnapshotVO prevSnapshot = null;
+         String prevSnapshotUuid = null;
+         String prevBackupUuid = null;
+
+
+         SwiftTO swift = _swiftMgr.getSwiftTO();
+         S3TO s3 = _s3Mgr.getS3TO();
+         
+         long prevSnapshotId = srcSnapshot.getPrevSnapshotId();
+         if (prevSnapshotId > 0) {
+             prevSnapshot = snapshotDao.findByIdIncludingRemoved(prevSnapshotId);
+             if ( prevSnapshot.getBackupSnapshotId() != null && swift == null) {
+                 if (prevSnapshot.getVersion() != null && prevSnapshot.getVersion().equals("2.2")) {                   
+                     prevBackupUuid = prevSnapshot.getBackupSnapshotId();
+                     prevSnapshotUuid = prevSnapshot.getPath();
+                 }
+             } else if ((prevSnapshot.getSwiftId() != null && swift != null)
+                     || (prevSnapshot.getS3Id() != null && s3 != null)) {
+                 prevBackupUuid = prevSnapshot.getBackupSnapshotId();
+                 prevSnapshotUuid = prevSnapshot.getPath();
+             }
+         }
+         boolean isVolumeInactive = this.volumeMgr.volumeInactive(baseVolume);
+         String vmName = this.volumeMgr.getVmNameOnVolume(baseVolume);
+         StoragePool srcPool = (StoragePool)dataStoreMgr.getPrimaryDataStore(baseVolume.getPoolId());
+         String value = configDao.getValue(Config.BackupSnapshotWait.toString());
+         int _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
+         BackupSnapshotCommand backupSnapshotCommand = new BackupSnapshotCommand(secondaryStoragePoolUrl, dcId, accountId, baseVolume.getId(), srcSnapshot.getId(), baseVolume.getPath(), srcPool, snapshotUuid,
+        		 srcSnapshot.getName(), prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName, _backupsnapshotwait);
+
+         if ( swift != null ) {
+             backupSnapshotCommand.setSwift(swift);
+         } else if (s3 != null) {
+             backupSnapshotCommand.setS3(s3);
+         }
+         BackupSnapshotAnswer answer = (BackupSnapshotAnswer) this.snapshotMgr.sendToPool(baseVolume, backupSnapshotCommand);
+         if (answer != null && answer.getResult()) {
+        	 SnapshotVO snapshotVO = this.snapshotDao.findById(srcSnapshot.getId());
+        	 if (backupSnapshotCommand.getSwift() != null ) {
+        		 snapshotVO.setSwiftId(swift.getId());
+        		 snapshotVO.setBackupSnapshotId(answer.getBackupSnapshotName());
+        	 } else if (backupSnapshotCommand.getS3() != null) {
+        		 snapshotVO.setS3Id(s3.getId());
+        		 snapshotVO.setBackupSnapshotId(answer.getBackupSnapshotName());
+        	 } else {
+        		 snapshotVO.setSecHostId(secHost.getId());
+        		 snapshotVO.setBackupSnapshotId(answer.getBackupSnapshotName());
+        	 }
+ 			if (answer.isFull()) {
+ 				snapshotVO.setPrevSnapshotId(0L);
+			}
+        	 this.snapshotDao.update(srcSnapshot.getId(), snapshotVO);
+         }
+         return answer;
     }
 
 }

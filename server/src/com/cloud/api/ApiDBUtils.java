@@ -618,7 +618,7 @@ public class ApiDBUtils {
 
     public static String getSnapshotIntervalTypes(long snapshotId) {
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-        return snapshot.getType().name();
+        return snapshot.getRecurringType().name();
     }
 
     public static String getStoragePoolTags(long poolId) {

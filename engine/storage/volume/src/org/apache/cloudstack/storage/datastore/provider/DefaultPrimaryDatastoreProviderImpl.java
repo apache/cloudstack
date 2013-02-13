@@ -22,10 +22,10 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.driver.DefaultPrimaryDataStoreDriverImpl;
 import org.apache.cloudstack.storage.datastore.lifecycle.DefaultPrimaryDataStoreLifeCycleImpl;
-import org.apache.cloudstack.storage.volume.PrimaryDataStoreDriver;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.ComponentContext;

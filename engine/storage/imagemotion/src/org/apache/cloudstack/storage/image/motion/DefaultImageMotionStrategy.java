@@ -101,7 +101,7 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
         DataStore destStore = destData.getDataStore();
         DataStore srcStore = srcData.getDataStore();
         EndPoint ep = selector.select(srcData, destData);
-        CopyCommandResult result = new CopyCommandResult("");
+        CopyCommandResult result = new CopyCommandResult("", null);
         if (ep == null) {
             result.setResult("can't find end point");
             callback.complete(result);
@@ -125,12 +125,12 @@ public class DefaultImageMotionStrategy implements ImageMotionStrategy {
         AsyncCompletionCallback<CopyCommandResult> parentCall = context.getParentCallback();
         Answer answer = (Answer)callback.getResult();
         if (!answer.getResult()) {
-            CopyCommandResult result = new CopyCommandResult("");
+            CopyCommandResult result = new CopyCommandResult("", null);
             result.setResult(answer.getDetails());
             parentCall.complete(result);
         } else {
             CopyCmdAnswer ans = (CopyCmdAnswer)answer;
-            CopyCommandResult result = new CopyCommandResult(ans.getPath());
+            CopyCommandResult result = new CopyCommandResult(ans.getPath(), null);
             parentCall.complete(result);
         }
         return null;

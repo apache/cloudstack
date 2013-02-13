@@ -25,39 +25,55 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
-import org.apache.cloudstack.storage.snapshot.db.SnapshotDao2;
-import org.apache.cloudstack.storage.snapshot.db.SnapshotVO;
 import org.springframework.stereotype.Component;
+
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     @Inject
-    SnapshotDao2 snapshotDao;
+    SnapshotDao snapshotDao;
     @Inject
     ObjectInDataStoreManager objMap;
     @Inject
     DataStoreManager storeMgr;
+    @Inject
+    VolumeDataFactory volumeFactory;
     @Override
     public SnapshotInfo getSnapshot(long snapshotId, DataStore store) {
-        SnapshotVO snapshot = snapshotDao.findById(snapshotId);
+        SnapshotVO snapshot = snapshotDao.findByIdIncludingRemoved(snapshotId);
         DataObjectInStore obj = objMap.findObject(snapshot.getUuid(), DataObjectType.SNAPSHOT, store.getUuid(), store.getRole());
         if (obj == null) {
             return null;
         }
-        SnapshotObject so = new SnapshotObject(snapshot, store);
+        SnapshotObject so =  SnapshotObject.getSnapshotObject(snapshot, store);
         return so;
     }
     @Override
     public SnapshotInfo getSnapshot(long snapshotId) {
-        // TODO Auto-generated method stub
-        return null;
+    	SnapshotVO snapshot = snapshotDao.findByIdIncludingRemoved(snapshotId);
+    	SnapshotObject so = null;
+    	if (snapshot.getState() == Snapshot.State.BackedUp) {
+    		DataStore store = objMap.findStore(snapshot.getUuid(), DataObjectType.SNAPSHOT, DataStoreRole.Image);
+    		so =  SnapshotObject.getSnapshotObject(snapshot, store);
+    	} else {
+    		VolumeInfo volume = this.volumeFactory.getVolume(snapshot.getVolumeId());
+    		so = SnapshotObject.getSnapshotObject(snapshot, volume.getDataStore());
+    	}
+    	return so;
     }
+    
     @Override
     public SnapshotInfo getSnapshot(DataObject obj, DataStore store) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new CloudRuntimeException("not implemented yet");
     }
 }

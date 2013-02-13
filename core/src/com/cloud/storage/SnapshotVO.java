@@ -175,7 +175,7 @@ public class SnapshotVO implements Snapshot {
     }
 
     @Override
-    public Type getType() {
+    public Type getRecurringType() {
         if (snapshotType < 0 || snapshotType >= Type.values().length) {
             return null;
         }

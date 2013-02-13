@@ -61,22 +61,6 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
         BackedUp,
         Error;
 
-        private final static StateMachine2<State, Event, Snapshot> s_fsm = new StateMachine2<State, Event, Snapshot>();
-
-        public static StateMachine2<State, Event, Snapshot> getStateMachine() {
-            return s_fsm;
-        }
-
-        static {
-            s_fsm.addTransition(null, Event.CreateRequested, Creating);
-            s_fsm.addTransition(Creating, Event.OperationSucceeded, CreatedOnPrimary);
-            s_fsm.addTransition(Creating, Event.OperationNotPerformed, BackedUp);
-            s_fsm.addTransition(Creating, Event.OperationFailed, Error);
-            s_fsm.addTransition(CreatedOnPrimary, Event.BackupToSecondary, BackingUp);
-            s_fsm.addTransition(BackingUp, Event.OperationSucceeded, BackedUp);
-            s_fsm.addTransition(BackingUp, Event.OperationFailed, Error);
-        }
-
         public String toString() {
             return this.name();
         }
@@ -107,7 +91,7 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
 
     Date getCreated();
 
-    Type getType();
+    Type getRecurringType();
 
     State getState();
 

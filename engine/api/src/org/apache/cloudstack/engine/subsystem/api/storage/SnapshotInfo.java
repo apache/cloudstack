@@ -16,9 +16,13 @@
 // under the License.
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import com.cloud.storage.Snapshot;
 
-public interface SnapshotInfo extends DataObject {
+
+public interface SnapshotInfo extends DataObject, Snapshot {
 	public SnapshotInfo getParent();
 	public SnapshotInfo getChild();
 	public VolumeInfo getBaseVolume();
+    Long getDataCenterId();
+    public Long getPrevSnapshotId();
 }
