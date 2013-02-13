@@ -770,19 +770,21 @@
       var addVlan = function(options) {
         var evenOdd = function() {
           cloudStack.evenOdd($container, '.field[rel=vlanRange]:visible', {
-            even: function($elem) { $elem.addClass('even') },
-            odd: function($elem) { $elem.addClass('odd') }
+            even: function($elem) { $elem.removeClass('odd'); $elem.addClass('even'); },
+            odd: function($elem) { $elem.removeClass('even'); $elem.addClass('odd'); }
           });
         };
 
-        var $vlanClone = $vlanRangeFirst.clone()
-          .insertAfter($container.find('.field[rel=vlanRange]:visible').filter(':last'));
-        var $remove = $hide.clone()
-          .appendTo($vlanClone);
+        var $vlanClone = $vlanRangeFirst.clone();
+        var $remove = $hide.clone();
+
+        $vlanClone.find('input').val('');
+        $vlanClone.insertAfter($container.find('.field[rel=vlanRange]:visible').filter(':last'));
+        $remove.appendTo($vlanClone);
 
         if (options) {
           if (options.start)
-            $vlanClone.find('inpunt:first').val(options.start);
+            $vlanClone.find('input:first').val(options.start);
 
           if (options.end)
             $vlanClone.find('input:last').val(options.end);
@@ -790,6 +792,7 @@
 
         $remove.click(function() {
           $vlanClone.remove();
+
           evenOdd();
         });
 
