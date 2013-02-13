@@ -4763,7 +4763,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                             s_logger.debug("Copying " + f + " to " + d + " on " + hr.address + " with permission " + p);
                         }
                         try {
-                            session.execCommand("mkdir -p " + d);
+                            session.execCommand("mkdir -m 700 -p " + d);
                         } catch (IOException e) {
                             s_logger.debug("Unable to create destination path: " + d + " on " + hr.address + " but trying anyway");
 
