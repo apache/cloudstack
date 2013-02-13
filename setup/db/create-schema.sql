@@ -2433,6 +2433,25 @@ CREATE TABLE `cloud`.`external_cisco_vnmc_devices` (
   CONSTRAINT `fk_external_cisco_vnmc_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`external_cisco_asa1000v_devices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which cisco asa1kv device is added',
+  `management_ip` varchar(255) UNIQUE NOT NULL COMMENT 'mgmt. ip of cisco asa1kv device',
+  `in_port_profile` varchar(255) NOT NULL COMMENT 'inside port profile name of cisco asa1kv device',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_external_cisco_asa1000v_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`network_asa1000v_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `network_id` bigint unsigned NOT NULL UNIQUE COMMENT 'id of guest network',
+  `asa1000v_id` bigint unsigned NOT NULL UNIQUE COMMENT 'id of asa1000v device',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_network_asa1000v_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_network_asa1000v_map__asa1000v_id` FOREIGN KEY (`asa1000v_id`) REFERENCES `external_cisco_asa1000v_devices`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`counter` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40),
