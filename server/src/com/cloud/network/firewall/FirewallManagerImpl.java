@@ -545,6 +545,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 if (handled)
                     break;
             }
+            break;
         case PortForwarding:
             for (PortForwardingServiceProvider element: _pfElements) {
                 Network.Provider provider = element.getProvider();
