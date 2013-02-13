@@ -73,7 +73,7 @@ class cloudManagementConfig(serviceCfgBase):
                 bash("iptables -A PREROUTING -t nat -p tcp --dport 443 -j REDIRECT --to-port 8250 ")
              
             #generate keystore
-            keyPath = "/var/lib/cloud/management/web.keystore"
+            keyPath = "/var/cloudstack/management/web.keystore"
             if not os.path.exists(keyPath):
                 cmd = bash("keytool -genkey -keystore %s -storepass \"cloud.com\" -keypass \"cloud.com\" -validity 3650 -dname cn=\"Cloudstack User\",ou=\"mycloud.cloud.com\",o=\"mycloud.cloud.com\",c=\"Unknown\""%keyPath)
                
