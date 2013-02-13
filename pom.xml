@@ -361,7 +361,7 @@
               <exclude>**/target/**</exclude>
               <exclude>**/.vagrant</exclude>
               <exclude>build/build.number</exclude>
-              <exclude>console-proxy/js/jquery.js</exclude>
+              <exclude>services/console-proxy/server/js/jquery.js</exclude>
               <exclude>debian/compat</exclude>
               <exclude>debian/control</exclude>
               <exclude>debian/dirs</exclude>

@@ -111,7 +111,7 @@
                   </includes>
                 </resource>
                 <resource>
-                  <directory>../patches/systemvm/debian/config/root/.ssh</directory>
+                  <directory>../../../patches/systemvm/debian/config/root/.ssh</directory>
                   <includes>
                     <include>authorized_keys</include>
                   </includes>
