@@ -68,8 +68,11 @@
   <bean id="ExternalDhcpServer" class="com.cloud.network.element.ExternalDhcpElement">
     <property name="name" value="ExternalDhcpServer"/>
   </bean>
-  <bean id="BareMetal" class="com.cloud.network.element.BareMetalElement">
-    <property name="name" value="BareMetal"/>
+  <bean id="BareMetalDhcp" class="com.cloud.baremetal.networkservice.BaremetalDhcpElement">
+    <property name="name" value="BareMetalDhcp"/>
+  </bean>
+  <bean id="BareMetalPxe" class="com.cloud.baremetal.networkservice.BaremetalPxeElement">
+    <property name="name" value="BareMetalPxe"/>
   </bean>
   <bean id="SecurityGroupProvider" class="com.cloud.network.element.SecurityGroupElement">
     <property name="name" value="SecurityGroupProvider"/>

@@ -23,6 +23,7 @@
 package com.cloud.baremetal.networkservice;
 
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -236,7 +237,10 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
 
 	@Override
 	public List<Class<?>> getCommands() {
-		// TODO Auto-generated method stub
-		return null;
+	    List<Class<?>> cmds = new ArrayList<Class<?>>();
+	    cmds.add(AddBaremetalKickStartPxeCmd.class);
+	    cmds.add(AddBaremetalPxePingServerCmd.class);
+	    cmds.add(ListBaremetalPxePingServersCmd.class);
+		return cmds;
 	}
 }

@@ -139,6 +139,7 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class ApiServer implements HttpRequestHandler {
@@ -208,7 +209,11 @@ public class ApiServer implements HttpRequestHandler {
             cmdClasses.addAll(pluggableService.getCommands());
 
         for(Class<?> cmdClass: cmdClasses) {
-            String apiName = cmdClass.getAnnotation(APICommand.class).name();
+            APICommand at = cmdClass.getAnnotation(APICommand.class);
+            if (at == null) {
+                throw new CloudRuntimeException(String.format("%s is claimed as a API command, but it doesn't have @APICommand annotation", cmdClass.getName()));
+            }
+            String apiName = at.name();
             if (_apiNameCmdClassMap.containsKey(apiName)) {
                 s_logger.error("API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
                 continue;
