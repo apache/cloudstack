@@ -3,40 +3,45 @@
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
-
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
 -->
-
 <chapter id="whats-new">
-    <title>What's New in the API?</title>
-    <para>The following describes any new major features of each &PRODUCT; version as it applies to API usage.</para>
-    <section id="whats-new-in-api-4.0">
-        <title>What's New in the API for 4.0</title>
-        <xi:include href="changed-apicommands-4-0.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-        <xi:include href="added-API-commands-4-0.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    </section>
-    <section id="whats-new-in-api-3.0">
-        <title>What's New in the API for 3.0</title>
-        <xi:include href="enabling-port-8096.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-        <xi:include href="stopped-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-        <xi:include href="change-to-behavior-of-list-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-        <xi:include href="removed-API-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-        <xi:include href="added-API-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-        <xi:include href="added-error-codes.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    </section>
+  <title>What's New in the API?</title>
+  <para>The following describes any new major features of each &PRODUCT; version as it applies to
+    API usage.</para>
+  <section id="whats-new-in-api-4.1">
+    <title>What's New in the API for 4.1</title>
+    <xi:include href="vmx-settings-dev.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="reset-ssh-key-dev.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="changed-apicommands-4.1.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="added-API-commands-4-1.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  </section>
+  <section id="whats-new-in-api-4.0">
+    <title>What's New in the API for 4.0</title>
+    <xi:include href="changed-apicommands-4-0.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="added-API-commands-4-0.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  </section>
+  <section id="whats-new-in-api-3.0">
+    <title>What's New in the API for 3.0</title>
+    <xi:include href="enabling-port-8096.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="stopped-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="change-to-behavior-of-list-commands.xml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="removed-API-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="added-API-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="added-error-codes.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+  </section>
 </chapter>
