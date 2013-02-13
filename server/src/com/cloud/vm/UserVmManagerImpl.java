@@ -249,12 +249,37 @@ import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.*;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
+import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
+import org.apache.cloudstack.api.command.user.vm.*;
+import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
+import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotManager;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, UserVmService {
@@ -392,7 +417,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     protected GuestOSCategoryDao _guestOSCategoryDao;
     @Inject
     UsageEventDao _usageEventDao;
-
+    @Inject
+    protected VMSnapshotDao _vmSnapshotDao;
+    @Inject 
+    protected VMSnapshotManager _vmSnapshotMgr;
+    
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
     protected int _expungeDelay;
@@ -416,6 +445,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Override
     public List<? extends UserVm> getVirtualMachines(long hostId) {
         return _vmDao.listByHostId(hostId);
+    }
+
+    protected void resourceLimitCheck (Account owner, Long cpu, Long memory) throws ResourceAllocationException {
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.user_vm);
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.cpu, cpu);
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, memory);
+    }
+
+    protected void resourceCountIncrement (long accountId, Long cpu, Long memory) {
+        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.user_vm);
+        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.cpu, cpu);
+        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.memory, memory);
+    }
+
+    protected void resourceCountDecrement (long accountId, Long cpu, Long memory) {
+        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.user_vm);
+        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.cpu, cpu);
+        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.memory, memory);
     }
 
     @Override
@@ -795,7 +842,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         // permission check
         _accountMgr.checkAccess(caller, null, true, volume, vm);
 
-        // Check if volume is stored on secondary Storage.
+        //check if vm has snapshot, if true: can't attache volume
+        boolean attach = true;
+        checkVMSnapshots(vm, volumeId, attach);
+
+        // Check if volume is stored on secondary Storage.  
+        //Check if volume is stored on secondary Storage.
         boolean isVolumeOnSec = false;
         VolumeHostVO  volHostVO = _volumeHostDao.findByVolumeId(volume.getId());
         if (volHostVO != null) {
@@ -1088,8 +1140,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
     }
 
+    private void checkVMSnapshots(UserVmVO vm, Long volumeId, boolean attach) {
+        // Check that if vm has any VM snapshot
+        Long vmId = vm.getId();
+        List<VMSnapshotVO> listSnapshot = _vmSnapshotDao.listByInstanceId(vmId,
+                VMSnapshot.State.Ready, VMSnapshot.State.Creating, VMSnapshot.State.Reverting, VMSnapshot.State.Expunging);
+        if (listSnapshot != null && listSnapshot.size() != 0) {
+            throw new InvalidParameterValueException(
+                        "The VM has VM snapshots, do not allowed to attach volume. Please delete the VM snapshots first.");
+        }
+    }
+
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume",  async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "event_detaching_volume1", async = true)
     public Volume detachVolumeFromVM(DetachVolumeCmd cmmd) {
         Account caller = UserContext.current().getCaller();
         if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd
@@ -1149,8 +1212,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     "Please specify a VM that is either running or stopped.");
         }
 
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor
-                .getCurrentExecutor();
+        // Check that if the volume has snapshot
+        boolean attach = false;
+        checkVMSnapshots(vm, volumeId, attach);
+        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if (asyncExecutor != null) {
             AsyncJobVO job = asyncExecutor.getJob();
 
@@ -1296,12 +1361,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             throw new InvalidParameterValueException(
                     "unable to find a virtual machine with id " + vmId);
         }
-
+        
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
         // Check that the specified service offering ID is valid
         _itMgr.checkIfCanUpgrade(vmInstance, svcOffId);
 
+        // remove diskAndMemory VM snapshots
+        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+        for (VMSnapshotVO vmSnapshotVO : vmSnapshots) {
+            if(vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory){
+                if(!_vmSnapshotMgr.deleteAllVMSnapshots(vmId, VMSnapshot.Type.DiskAndMemory)){
+                    String errMsg = "Failed to remove VM snapshot during upgrading, snapshot id " + vmSnapshotVO.getId();
+                    s_logger.debug(errMsg);
+                    throw new CloudRuntimeException(errMsg);
+                }
+                    
+            }
+        }
+        
         _itMgr.upgradeVmDb(vmId, svcOffId);
 
         return _vmDao.findById(vmInstance.getId());
@@ -1629,9 +1707,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     "Unable to recover VM as the account is deleted");
         }
 
-        // First check that the maximum number of UserVMs for the given
+        // Get serviceOffering for Virtual Machine
+        ServiceOfferingVO serviceOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+
+        // First check that the maximum number of UserVMs, CPU and Memory limit for the given
         // accountId will not be exceeded
-        _resourceLimitMgr.checkResourceLimit(account, ResourceType.user_vm);
+        resourceLimitCheck(account, new Long(serviceOffering.getCpu()), new Long(serviceOffering.getRamSize()));
 
         _haMgr.cancelDestroy(vm, vm.getHostId());
 
@@ -1672,12 +1753,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
         }
 
+        //Update Resource Count for the given account
         _resourceLimitMgr.incrementResourceCount(account.getId(),
                 ResourceType.volume, new Long(volumes.size()));
-
-        _resourceLimitMgr.incrementResourceCount(account.getId(),
-                ResourceType.user_vm);
-
+        resourceCountIncrement(account.getId(), new Long(serviceOffering.getCpu()),
+                new Long(serviceOffering.getRamSize()));
         txn.commit();
 
         return _vmDao.findById(vmId);
@@ -1977,8 +2057,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
 
             volume = _volsDao.findById(snapshot.getVolumeId());
-            VolumeVO snapshotVolume = _volsDao
-                    .findByIdIncludingRemoved(snapshot.getVolumeId());
 
             // check permissions
             _accountMgr.checkAccess(caller, null, true, snapshot);
@@ -2384,8 +2462,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 String msg = "Failed to deploy Vm with Id: " + vmId + ", on Host with Id: " + hostId;
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
 
-                _resourceLimitMgr.decrementResourceCount(vm.getAccountId(),
-                        ResourceType.user_vm);
+                // Get serviceOffering for Virtual Machine
+                ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+
+                // Update Resource Count for the given account
+                resourceCountDecrement(vm.getAccountId(), new Long(offering.getCpu()),
+                        new Long(offering.getRamSize()));
             }
         }
     }
@@ -3120,9 +3202,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             _configMgr.checkZoneAccess(owner, zone);
         }
 
+        ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOffering.getId());
+
         // check if account/domain is with in resource limits to create a new vm
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.user_vm);
+        resourceLimitCheck(owner, new Long(offering.getCpu()), new Long(offering.getRamSize()));
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso
                 || diskOfferingId == null ? 1 : 2));
 
@@ -3149,9 +3233,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     "There are no available pools in the UP state for vm deployment",
                     -1);
         }
-
-        ServiceOfferingVO offering = _serviceOfferingDao
-                .findById(serviceOffering.getId());
 
         if (template.getTemplateType().equals(TemplateType.SYSTEM)) {
             throw new InvalidParameterValueException(
@@ -3380,8 +3461,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 vm.getHostName(), offering.getId(), template.getId(), hypervisorType.toString(),
                 VirtualMachine.class.getName(), vm.getUuid());
 
-        _resourceLimitMgr.incrementResourceCount(accountId,
-                ResourceType.user_vm);
+        //Update Resource Count for the given account
+        resourceCountIncrement(accountId, new Long(offering.getCpu()),
+                new Long(offering.getRamSize()));
 
         txn.commit();
 
@@ -3915,10 +3997,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
 
             if (vmState != State.Error) {
-                _resourceLimitMgr.decrementResourceCount(vm.getAccountId(),
-                        ResourceType.user_vm);
-            }
+                // Get serviceOffering for Virtual Machine
+                ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
 
+                //Update Resource Count for the given account
+                resourceCountDecrement(vm.getAccountId(), new Long(offering.getCpu()),
+                        new Long(offering.getRamSize()));
+            }
             return _vmDao.findById(vmId);
         } else {
             CloudRuntimeException ex = new CloudRuntimeException(
@@ -4414,12 +4499,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
 
-        // Remove vm from instance group
+        // Get serviceOffering for Virtual Machine
+        ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
+
+        //Remove vm from instance group
         removeInstanceFromInstanceGroup(cmd.getVmId());
 
-        // VV 2: check if account/domain is with in resource limits to create a
-        // new vm
-        _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.user_vm);
+        // VV 2: check if account/domain is with in resource limits to create a new vm
+        resourceLimitCheck(newAccount, new Long(offering.getCpu()), new Long(offering.getRamSize()));
 
         // VV 3: check if volumes are with in resource limits
         _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.volume,
@@ -4444,9 +4531,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
                 vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString(),
                 VirtualMachine.class.getName(), vm.getUuid());
-        // update resource counts
-        _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(),
-                ResourceType.user_vm);
+
+        // update resource counts for old account
+        resourceCountDecrement(oldAccount.getAccountId(), new Long(offering.getCpu()),
+                new Long(offering.getRamSize()));
 
         // OWNERSHIP STEP 1: update the vm owner
         vm.setAccountId(newAccount.getAccountId());
@@ -4473,7 +4561,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
         }
 
-        _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.user_vm);
+        //update resource count of new account
+        resourceCountIncrement(newAccount.getAccountId(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+
         //generate usage events to account for this change
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
                 vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString(),

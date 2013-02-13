@@ -62,9 +62,11 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.swift.SwiftManager;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -78,7 +80,11 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
 @Local(value = CapacityManager.class)
@@ -110,7 +116,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     ConfigurationManager _configMgr;   
     @Inject
     HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
-
+    @Inject
+    protected VMSnapshotDao _vmSnapshotDao;
+    @Inject
+    protected UserVmDao _userVMDao;
+    
     private int _vmCapacityReleaseInterval;
     private ScheduledExecutorService _executor;
     private boolean _stopped;
@@ -437,12 +447,43 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     }
     
+    private long getVMSnapshotAllocatedCapacity(StoragePoolVO pool){
+        List<VolumeVO> volumes = _volumeDao.findByPoolId(pool.getId());
+        long totalSize = 0;
+        for (VolumeVO volume : volumes) {
+            if(volume.getInstanceId() == null)
+                continue;
+            Long vmId = volume.getInstanceId();
+            UserVm vm = _userVMDao.findById(vmId);
+            if(vm == null)
+                continue;
+            ServiceOffering offering = _offeringsDao.findById(vm.getServiceOfferingId());
+            List<VMSnapshotVO> vmSnapshots =  _vmSnapshotDao.findByVm(vmId);
+            long pathCount = 0;
+            long memorySnapshotSize = 0;
+            for (VMSnapshotVO vmSnapshotVO : vmSnapshots) {
+                if(_vmSnapshotDao.listByParent(vmSnapshotVO.getId()).size() == 0)
+                    pathCount++;
+                if(vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory)
+                    memorySnapshotSize += (offering.getRamSize() * 1024 * 1024);
+            }
+            if(pathCount <= 1)
+                totalSize = totalSize + memorySnapshotSize;
+            else
+                totalSize = totalSize + volume.getSize() * (pathCount - 1) + memorySnapshotSize;
+        }
+        return totalSize;
+    }
+    
     @Override
     public long getAllocatedPoolCapacity(StoragePoolVO pool, VMTemplateVO templateForVmCreation){
       
         // Get size for all the volumes
         Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
         long totalAllocatedSize = sizes.second() + sizes.first() * _extraBytesPerVolume;
+        
+        // Get size for VM Snapshots 
+        totalAllocatedSize = totalAllocatedSize + getVMSnapshotAllocatedCapacity(pool);
 
         // Iterate through all templates on this storage pool
         boolean tmpinstalled = false;

@@ -273,7 +273,7 @@
                 </copy>
                 <copy
                   todir="${basedir}/target/generated-webapp/WEB-INF/classes/vms">
-                  <fileset dir="${basedir}/../console-proxy/dist">
+                  <fileset dir="${basedir}/../services/console-proxy/server/dist">
                     <include name="systemvm.zip" />
                     <include name="systemvm.iso" />
                   </fileset>

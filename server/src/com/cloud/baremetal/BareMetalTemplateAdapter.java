@@ -54,7 +54,12 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 	private final static Logger s_logger = Logger.getLogger(BareMetalTemplateAdapter.class);
 	@Inject HostDao _hostDao;
 	@Inject ResourceManager _resourceMgr;
-	
+
+    @Override
+    public String getName() {
+        return TemplateAdapterType.BareMetal.getName();
+    }
+
 	@Override
 	public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
 		TemplateProfile profile = super.prepare(cmd);

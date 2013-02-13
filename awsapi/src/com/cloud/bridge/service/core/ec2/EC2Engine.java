@@ -767,7 +767,10 @@ public class EC2Engine extends ManagerBase {
      */
     public boolean releaseAddress(EC2ReleaseAddress request) {
         try {
-            CloudStackIpAddress cloudIp = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null).get(0);
+            List<CloudStackIpAddress> cloudIps = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null);
+            if (cloudIps == null)
+                throw new EC2ServiceException(ServerError.InternalError, "Specified ipAddress doesn't exist");
+            CloudStackIpAddress cloudIp = cloudIps.get(0);
             CloudStackInfoResponse resp = getApi().disassociateIpAddress(cloudIp.getId());
             if (resp != null) {
                 return resp.getSuccess();
@@ -787,8 +790,17 @@ public class EC2Engine extends ManagerBase {
      */
     public boolean associateAddress( EC2AssociateAddress request ) {
         try {
-            CloudStackIpAddress cloudIp = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null).get(0);
-            CloudStackUserVm cloudVm = getApi().listVirtualMachines(null, null, true, null, null, null, null, request.getInstanceId(), null, null, null, null, null, null, null, null, null).get(0);
+            List<CloudStackIpAddress> cloudIps = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null);
+            if (cloudIps == null)
+                throw new EC2ServiceException(ServerError.InternalError, "Specified ipAddress doesn't exist");
+            CloudStackIpAddress cloudIp = cloudIps.get(0);
+
+            List<CloudStackUserVm> vmList = getApi().listVirtualMachines(null, null, true, null, null, null, null,
+                    request.getInstanceId(), null, null, null, null, null, null, null, null, null);
+            if (vmList == null || vmList.size() == 0) {
+                throw new EC2ServiceException(ServerError.InternalError, "Specified instance-id doesn't exist");
+            }
+            CloudStackUserVm cloudVm = vmList.get(0);
 
             CloudStackInfoResponse resp = getApi().enableStaticNat(cloudIp.getId(), cloudVm.getId());
             if (resp != null) {
@@ -809,7 +821,11 @@ public class EC2Engine extends ManagerBase {
      */
     public boolean disassociateAddress( EC2DisassociateAddress request ) {
         try {
-            CloudStackIpAddress cloudIp = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null).get(0);
+            List<CloudStackIpAddress> cloudIps = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null);
+            if (cloudIps == null)
+                throw new EC2ServiceException(ServerError.InternalError, "Specified ipAddress doesn't exist");
+            CloudStackIpAddress cloudIp = cloudIps.get(0);
+
             CloudStackInfoResponse resp = getApi().disableStaticNat(cloudIp.getId());
             if (resp != null) {
                 return resp.getSuccess();
@@ -1044,12 +1060,8 @@ public class EC2Engine extends ManagerBase {
             EC2AvailabilityZonesFilterSet azfs = request.getFilterSet();
             if ( null == azfs )
                 return availableZones;
-            else {
-                List<String> matchedAvailableZones = azfs.evaluate(availableZones);
-                if (matchedAvailableZones.isEmpty())
-                    return new EC2DescribeAvailabilityZonesResponse();
-                return listZones(matchedAvailableZones.toArray(new String[0]), null);
-            }
+            else
+                return azfs.evaluate(availableZones);
         } catch( EC2ServiceException error ) {
             logger.error( "EC2 DescribeAvailabilityZones - ", error);
             throw error;
@@ -1113,6 +1125,7 @@ public class EC2Engine extends ManagerBase {
                 resp.setState(vol.getState());
                 resp.setType(vol.getVolumeType());
                 resp.setVMState(vol.getVirtualMachineState());
+                resp.setAttachmentState(mapToAmazonVolumeAttachmentState(vol.getVirtualMachineState()));
                 resp.setZoneName(vol.getZoneName());
                 return resp;
             }
@@ -1199,6 +1212,7 @@ public class EC2Engine extends ManagerBase {
                 resp.setState(vol.getState());
                 resp.setType(vol.getVolumeType());
                 resp.setVMState(vol.getVirtualMachineState());
+                resp.setAttachmentState("detached");
                 resp.setZoneName(vol.getZoneName());
                 return resp;
             }
@@ -1498,6 +1512,7 @@ public class EC2Engine extends ManagerBase {
         // -> first determine the current state of each VM (becomes it previous state)
         try {   
             String[] instanceSet = request.getInstancesSet();
+            Boolean forced = request.getForce();
 
             EC2DescribeInstancesResponse previousState = listVirtualMachines( instanceSet, null, null );
             virtualMachines = previousState.getInstanceSet();
@@ -1519,7 +1534,7 @@ public class EC2Engine extends ManagerBase {
                         instances.addInstance(vm);
                         continue;
                     }
-                    resp = getApi().stopVirtualMachine(vm.getId(), false);
+                    resp = getApi().stopVirtualMachine(vm.getId(), forced);
                     if(logger.isDebugEnabled())
                         logger.debug("Stopping VM " + vm.getId() + " job " + resp.getJobId());
                 }
@@ -1627,11 +1642,16 @@ public class EC2Engine extends ManagerBase {
                 ec2Vol.setSize(vol.getSize());
                 ec2Vol.setType(vol.getVolumeType());
 
-                if(vol.getVirtualMachineId() != null)
+                if(vol.getVirtualMachineId() != null) {
                     ec2Vol.setInstanceId(vol.getVirtualMachineId());
+                    if (vol.getVirtualMachineState() != null) {
+                        ec2Vol.setVMState(vol.getVirtualMachineState());
+                        ec2Vol.setAttachmentState(mapToAmazonVolumeAttachmentState(vol.getVirtualMachineState()));
+                    }
+                } else {
+                    ec2Vol.setAttachmentState("detached");
+                }
 
-                if(vol.getVirtualMachineState() != null)
-                    ec2Vol.setVMState(vol.getVirtualMachineState());
                 ec2Vol.setZoneName(vol.getZoneName());
 
                 List<CloudStackKeyValue> resourceTags = vol.getTags();
@@ -1675,9 +1695,11 @@ public class EC2Engine extends ManagerBase {
 
         zones = listZones(interestedZones, domainId);
 
-        if (zones == null || zones.getZoneIdAt( 0 ) == null) 
+        if (zones == null || zones.getAvailabilityZoneSet().length == 0)
             throw new EC2ServiceException(ClientError.InvalidParameterValue, "Unknown zoneName value - " + zoneName);
-        return zones.getZoneIdAt(0);
+
+        EC2AvailabilityZone[] zoneSet = zones.getAvailabilityZoneSet();
+        return zoneSet[0].getId();
     }
 
 
@@ -1752,24 +1774,31 @@ public class EC2Engine extends ManagerBase {
      * 
      * @return EC2DescribeAvailabilityZonesResponse
      */
-    private EC2DescribeAvailabilityZonesResponse listZones(String[] interestedZones, String domainId) throws Exception 
-    {    
+    private EC2DescribeAvailabilityZonesResponse listZones(String[] interestedZones, String domainId)
+            throws Exception  {
         EC2DescribeAvailabilityZonesResponse zones = new EC2DescribeAvailabilityZonesResponse();
 
         List<CloudStackZone> cloudZones = getApi().listZones(true, domainId, null, null);
-
-        if(cloudZones != null) {
+        if(cloudZones != null && cloudZones.size() > 0) {
             for(CloudStackZone cloudZone : cloudZones) {
-                if ( null != interestedZones && 0 < interestedZones.length ) {
-                    for( int j=0; j < interestedZones.length; j++ ) {
-                        if (interestedZones[j].equalsIgnoreCase( cloudZone.getName())) {
-                            zones.addZone(cloudZone.getId().toString(), cloudZone.getName());
+                boolean matched = false;
+                if (interestedZones.length > 0) {
+                    for (String zoneName : interestedZones){
+                        if (zoneName.equalsIgnoreCase( cloudZone.getName())) {
+                            matched = true;
                             break;
                         }
                     }
-                } else { 
-                    zones.addZone(cloudZone.getId().toString(), cloudZone.getName());
+                } else {
+                    matched = true;
                 }
+                if (!matched) continue;
+                EC2AvailabilityZone ec2Zone = new EC2AvailabilityZone();
+                ec2Zone.setId(cloudZone.getId().toString());
+                ec2Zone.setMessage(cloudZone.getAllocationState());
+                ec2Zone.setName(cloudZone.getName());
+
+                zones.addAvailabilityZone(ec2Zone);
             }
         }
         return zones;
@@ -1936,7 +1965,7 @@ public class EC2Engine extends ManagerBase {
      * @throws ParserConfigurationException
      * @throws ParseException
      */
-    public EC2DescribeSecurityGroupsResponse listSecurityGroups( String[] interestedGroups ) throws Exception {
+    private EC2DescribeSecurityGroupsResponse listSecurityGroups( String[] interestedGroups ) throws Exception {
         try {
             EC2DescribeSecurityGroupsResponse groupSet = new EC2DescribeSecurityGroupsResponse();
 
@@ -2381,6 +2410,25 @@ public class EC2Engine extends ManagerBase {
         if (state.equalsIgnoreCase( "Destroy"   )) return "deleting";
 
         return "error"; 
+    }
+
+    /**
+     * Map CloudStack VM state to Amazon volume attachment state
+     *
+     * @param CloudStack VM state
+     * @return Amazon Volume attachment state
+     */
+    private String mapToAmazonVolumeAttachmentState (String vmState) {
+        if ( vmState.equalsIgnoreCase("Running") || vmState.equalsIgnoreCase("Stopping") ||
+                vmState.equalsIgnoreCase("Stopped") ) {
+            return "attached";
+        }
+        else if (vmState.equalsIgnoreCase("Starting")) {
+            return "attaching";
+        }
+        else { // VM state is 'destroyed' or 'error' or other
+            return "detached";
+        }
     }
 
     /**

@@ -48,7 +48,7 @@
 				displayname: { label: 'label.display.name' },
         zonename: { label: 'label.zone.name' },
         state: {
-          label: 'label.state',         
+          label: 'label.state',
           indicator: {
             'Running': 'on',
             'Stopped': 'off',
@@ -153,6 +153,194 @@
           notification: {
             poll: pollAsyncJobResult
           }
+        },
+        start: {
+          label: 'label.action.start.instance' ,
+          action: function(args) {
+            $.ajax({
+              url: createURL("startVirtualMachine&id=" + args.context.instances[0].id),
+              dataType: "json",
+              async: true,
+              success: function(json) {
+                var jid = json.startvirtualmachineresponse.jobid;
+                args.response.success(
+                  {_custom:
+                   {jobId: jid,
+                    getUpdatedItem: function(json) {
+                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                    },
+                    getActionFilter: function() {
+                      return vmActionfilter;
+                    }
+                   }
+                  }
+                );
+              }
+            });
+          },
+          messages: {
+            confirm: function(args) {
+              return 'message.action.start.instance';
+            },
+            notification: function(args) {
+              return 'label.action.start.instance';
+            },
+						complete: function(args) {						  
+							if(args.password != null) {
+								alert('Password of the VM is ' + args.password);
+							}
+							return 'label.action.start.instance';
+						}			
+          },
+          notification: {
+            poll: pollAsyncJobResult
+          }
+        },
+        stop: {
+          label: 'label.action.stop.instance',
+          addRow: 'false',
+          createForm: {
+            title: 'label.action.stop.instance',
+            desc: 'message.action.stop.instance',
+            fields: {
+              forced: {
+                label: 'force.stop',
+                isBoolean: true,
+                isChecked: false
+              }
+            }
+          },
+          action: function(args) {
+            var array1 = [];
+            array1.push("&forced=" + (args.data.forced == "on"));
+            $.ajax({
+              url: createURL("stopVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
+              dataType: "json",
+              async: true,
+              success: function(json) {
+                var jid = json.stopvirtualmachineresponse.jobid;
+                args.response.success(
+                  {_custom:
+                   {jobId: jid,
+                    getUpdatedItem: function(json) {
+                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                    },
+                    getActionFilter: function() {
+                      return vmActionfilter;
+                    }
+                   }
+                  }
+                );
+              }
+            });
+          },
+          messages: {
+            confirm: function(args) {
+              return 'message.action.stop.instance';
+            },
+
+            notification: function(args) {
+              return 'label.action.stop.instance';
+            }
+          },
+          notification: {
+            poll: pollAsyncJobResult
+          }
+        },
+        restart: {
+          label: 'instances.actions.reboot.label',
+          action: function(args) {
+            $.ajax({
+              url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
+              dataType: "json",
+              async: true,
+              success: function(json) {
+                var jid = json.rebootvirtualmachineresponse.jobid;
+                args.response.success(
+                  {_custom:
+                   {jobId: jid,
+                    getUpdatedItem: function(json) {
+                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                    },
+                    getActionFilter: function() {
+                      return vmActionfilter;
+                    }
+                   }
+                  }
+                );
+              }
+            });
+          },
+          messages: {
+            confirm: function(args) {
+              return 'message.action.reboot.instance';
+            },
+            notification: function(args) {
+              return 'instances.actions.reboot.label';
+            }
+          },
+          notification: {
+            poll: pollAsyncJobResult
+          }
+        },
+
+        destroy: {
+          label: 'label.action.destroy.instance',
+          messages: {
+            confirm: function(args) {
+              return 'message.action.destroy.instance';
+            },            
+            notification: function(args) {
+              return 'label.action.destroy.instance';
+            }
+          },
+          action: function(args) {
+            $.ajax({
+              url: createURL("destroyVirtualMachine&id=" + args.context.instances[0].id),
+              dataType: "json",
+              async: true,
+              success: function(json) {
+                var jid = json.destroyvirtualmachineresponse.jobid;
+                args.response.success(
+                  {_custom:
+                   {jobId: jid,
+                    getUpdatedItem: function(json) {
+                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                    },
+                    getActionFilter: function() {
+                      return vmActionfilter;
+                    }
+                   }
+                  }
+                );
+              }
+            });
+          },
+          notification: {
+            poll: pollAsyncJobResult
+          }
+        },
+        restore: {     
+					label: 'label.action.restore.instance',
+					messages: {
+						confirm: function(args) {
+							return 'message.action.restore.instance';
+						},
+						notification: function(args) {
+							return 'label.action.restore.instance';
+						}
+					},					
+          action: function(args) {
+            $.ajax({
+              url: createURL("recoverVirtualMachine&id=" + args.context.instances[0].id),
+              dataType: "json",
+              async: true,
+              success: function(json) {
+                var item = json.recovervirtualmachineresponse.virtualmachine;
+                args.response.success({data:item});
+              }
+            });
+          }
         }
       },
 
@@ -231,7 +419,7 @@
 
       detailView: {
         name: 'Instance details',
-        viewAll: { path: 'storage.volumes', label: 'label.volumes' },
+        viewAll: [{ path: 'storage.volumes', label: 'label.volumes' }, { path: 'vmsnapshots', label: 'Snapshots' } ],
         tabFilter: function(args) {
           var hiddenTabs = [];
 					
@@ -409,6 +597,70 @@
               poll: pollAsyncJobResult
             }
           },
+
+          snapshot: {
+            messages: {
+              notification: function(args) {
+                return 'label.action.vmsnapshot.create';
+              }
+            },
+            label: 'label.action.vmsnapshot.create',
+            addRow: 'false',
+            createForm: {
+              title: 'label.action.vmsnapshot.create',
+              fields: {
+                name: {
+                  label: 'label.name',
+                  isInput: true
+                },
+                description: {
+                  label: 'label.description',
+                  isTextarea: true
+                },
+                snapshotMemory: {
+                  label: 'label.vmsnapshot.memory',
+                  isBoolean: true,
+                  isChecked: false
+                }
+              }
+            },
+            action: function(args) {
+              var array1 = [];
+              array1.push("&snapshotmemory=" + (args.data.snapshotMemory == "on"));
+              var displayname = args.data.name;
+              if (displayname != null && displayname.length > 0) {
+                array1.push("&name=" + todb(displayname));
+              }
+              var description = args.data.description;
+              if (description != null && description.length > 0) {
+                array1.push("&description=" + todb(description));
+              }
+              $.ajax({
+                url: createURL("createVMSnapshot&virtualmachineid=" + args.context.instances[0].id + array1.join("")),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var jid = json.createvmsnapshotresponse.jobid;
+                  args.response.success({
+                    _custom: {
+                      jobId: jid,
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                      },
+                      getActionFilter: function() {
+                        return vmActionfilter;
+                      }
+                    }
+                  });
+                }
+              });
+          
+            },
+            notification: {
+              pool: pollAsyncJobResult
+            }
+          },          
+
           destroy: {
             label: 'label.action.destroy.instance',
             compactLabel: 'label.destroy',
@@ -1232,6 +1484,7 @@
     else if (jsonObj.state == 'Running') {     
       allowedActions.push("stop");
       allowedActions.push("restart");
+      allowedActions.push("snapshot");
       allowedActions.push("destroy");
       allowedActions.push("changeService");
       allowedActions.push("reset");
@@ -1257,7 +1510,7 @@
       allowedActions.push("start");
       allowedActions.push("destroy");
       allowedActions.push("reset");
-
+      allowedActions.push("snapshot");
       if(isAdmin())
         allowedActions.push("migrateToAnotherStorage");
 

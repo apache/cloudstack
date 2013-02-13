@@ -94,7 +94,7 @@
             <executions>
               <execution>
                 <id>create-schema</id>
-                <phase>process-test-resources</phase>
+                <phase>process-resources</phase>
                 <goals>
                   <goal>execute</goal>
                 </goals>

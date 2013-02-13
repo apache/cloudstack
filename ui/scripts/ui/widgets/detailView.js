@@ -901,14 +901,20 @@
         $actions.prependTo($firstRow.closest('div.detail-group').closest('.details'));
       }
       if (detailViewArgs.viewAll && showViewAll) {
+       
+      if( !(detailViewArgs.viewAll instanceof Array)){
+       	detailViewArgs.viewAll = [detailViewArgs.viewAll];
+      }
+      $.each(detailViewArgs.viewAll, function(n, view){
         $('<div>')
           .addClass('view-all')
           .append(
             $('<a>')
               .attr({ href: '#' })
-              .data('detail-view-link-view-all', detailViewArgs.viewAll)
+              .css('padding','0 1px')
+              .data('detail-view-link-view-all', view)
               .append(
-                $('<span>').html(_l('label.view') + ' ' + _l(detailViewArgs.viewAll.label))
+                $('<span>').html(_l('label.view') + ' ' + _l(view.label))
               )
           )
           .append(
@@ -917,9 +923,10 @@
           .appendTo(
             $('<td>')
               .addClass('view-all')
+              .css('padding','9px 3px 8px 0')
               .appendTo($actions.find('tr'))
           );
-
+        });
       }
     }
 

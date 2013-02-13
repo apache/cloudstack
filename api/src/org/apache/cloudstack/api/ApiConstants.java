@@ -438,6 +438,11 @@ public class ApiConstants {
     public static final String AUTOSCALE_USER_ID = "autoscaleuserid";
     public static final String BAREMETAL_DISCOVER_NAME = "baremetaldiscovername";
     public static final String UCS_DN = "ucsdn";
+    public static final String VM_SNAPSHOT_DESCRIPTION = "description";
+    public static final String VM_SNAPSHOT_DISPLAYNAME = "name";
+    public static final String VM_SNAPSHOT_ID = "vmsnapshotid";
+    public static final String VM_SNAPSHOT_DISK_IDS = "vmsnapshotdiskids";
+    public static final String VM_SNAPSHOT_MEMORY = "snapshotmemory";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

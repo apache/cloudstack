@@ -111,7 +111,7 @@
                       $loading.remove();
                     }
                   });
-                }, 3000); 		
+                }, g_queryAsyncJobResultInterval); 		
               },
               error: function(XMLHttpResponse) {
                 cloudStack.dialog.notice({ message: 'Failed to update SSL Certificate. ' + parseXMLHttpResponse(XMLHttpResponse) });

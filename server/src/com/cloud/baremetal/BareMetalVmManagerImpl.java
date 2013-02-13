@@ -239,14 +239,14 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 			_configMgr.checkZoneAccess(owner, dc);
 		}
 
-		// check if account/domain is with in resource limits to create a new vm
-		_resourceLimitMgr.checkResourceLimit(owner, ResourceType.user_vm);
-		
 		ServiceOfferingVO offering = _serviceOfferingDao.findById(cmd.getServiceOfferingId());
         if (offering == null || offering.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find service offering: " + cmd.getServiceOfferingId());
         }
-		
+
+        // check if account/domain is with in resource limits to create a new vm
+        resourceLimitCheck(owner, new Long(offering.getCpu()), new Long(offering.getRamSize()));
+
 		VMTemplateVO template = _templateDao.findById(cmd.getTemplateId());
         // Make sure a valid template ID was specified
         if (template == null || template.getRemoved() != null) {
@@ -362,7 +362,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
                 vm.getHostName(), offering.getId(), template.getId(), HypervisorType.BareMetal.toString(),
                 VirtualMachine.class.getName(), vm.getUuid());
 
-		_resourceLimitMgr.incrementResourceCount(accountId, ResourceType.user_vm);
+        resourceCountIncrement(accountId, new Long(offering.getCpu()), new Long(offering.getRamSize()));
 
 		// Assign instance to the group
 		try {

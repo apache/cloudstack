@@ -209,6 +209,8 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
 public class ApiDBUtils {
@@ -309,6 +311,7 @@ public class ApiDBUtils {
     static SnapshotPolicyDao _snapshotPolicyDao;
     static AsyncJobDao _asyncJobDao;
     static HostDetailsDao _hostDetailsDao;
+    static VMSnapshotDao _vmSnapshotDao;
 
     @Inject private ManagementServer ms;
     @Inject public AsyncJobManager asyncMgr;
@@ -407,7 +410,7 @@ public class ApiDBUtils {
     @Inject private SnapshotPolicyDao snapshotPolicyDao;
     @Inject private AsyncJobDao asyncJobDao;
     @Inject private HostDetailsDao hostDetailsDao;
-
+    @Inject private VMSnapshotDao vmSnapshotDao;
     @PostConstruct
     void init() {
         _ms = ms;
@@ -505,7 +508,7 @@ public class ApiDBUtils {
         _snapshotPolicyDao = snapshotPolicyDao;
         _asyncJobDao = asyncJobDao;
         _hostDetailsDao = hostDetailsDao;
-
+        _vmSnapshotDao = vmSnapshotDao;
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
     }
@@ -1052,6 +1055,11 @@ public class ApiDBUtils {
 
     public static boolean canUseForDeploy(Network network) {
         return _networkModel.canUseForDeploy(network);
+    }
+
+    public static VMSnapshot getVMSnapshotById(Long vmSnapshotId) {
+        VMSnapshot vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
+        return vmSnapshot;
     }
 
     public static String getUuid(String resourceId, TaggedResourceType resourceType) {

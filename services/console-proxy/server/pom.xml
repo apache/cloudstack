@@ -22,8 +22,9 @@
   <name>Apache CloudStack Console Proxy</name>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloudstack</artifactId>
+    <artifactId>cloud-service-console-proxy</artifactId>
     <version>4.1.0-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <properties>
     <mkisofs>mkisofs</mkisofs>
@@ -110,7 +111,7 @@
                   </includes>
                 </resource>
                 <resource>
-                  <directory>../patches/systemvm/debian/config/root/.ssh</directory>
+                  <directory>../../../patches/systemvm/debian/config/root/.ssh</directory>
                   <includes>
                     <include>authorized_keys</include>
                   </includes>
@@ -132,7 +133,7 @@
             </goals>
             <configuration>
               <target>
-                <copy overwrite="true" file="../patches/target/cloud-scripts.tgz" tofile="${basedir}/dist/cloud-scripts.tgz"/>  
+                <copy overwrite="true" file="../../../patches/target/cloud-scripts.tgz" tofile="${basedir}/dist/cloud-scripts.tgz"/>  
               </target>
             </configuration>
           </execution>

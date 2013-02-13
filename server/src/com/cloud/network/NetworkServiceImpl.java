@@ -333,6 +333,18 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     private boolean canIpsUseOffering(List<PublicIp> publicIps, long offeringId) {
         Map<PublicIp, Set<Service>> ipToServices = getIpToServices(publicIps, false, true);
         Map<Service, Set<Provider>> serviceToProviders = _networkModel.getNetworkOfferingServiceProvidersMap(offeringId);
+        NetworkOfferingVO offering = _networkOfferingDao.findById(offeringId);
+        //For inline mode checking, using firewall provider for LB instead, because public ip would apply on firewall provider
+        if (offering.isInline()) {
+            Provider firewallProvider = null;
+            if (serviceToProviders.containsKey(Service.Firewall)) {
+                firewallProvider = (Provider)serviceToProviders.get(Service.Firewall).toArray()[0];
+            }
+            Set<Provider> p = new HashSet<Provider>();
+            p.add(firewallProvider);
+            serviceToProviders.remove(Service.Lb);
+            serviceToProviders.put(Service.Lb, p);
+        }
         for (PublicIp ip : ipToServices.keySet()) {
             Set<Service> services = ipToServices.get(ip);
             Provider provider = null;

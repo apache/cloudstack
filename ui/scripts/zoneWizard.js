@@ -1433,7 +1433,7 @@
                                     alert("Failed to add Guest traffic type to basic zone. Error: " + errorMsg);
                                   }
                                 });                              
-															}, 3000); 																
+															}, g_queryAsyncJobResultInterval); 																
                             }
                           });
 
@@ -1479,7 +1479,7 @@
                                     alert("Failed to add Management traffic type to basic zone. Error: " + errorMsg);
                                   }
                                 });                              
-															}, 3000); 	
+															}, g_queryAsyncJobResultInterval); 	
                             }
                           });
 
@@ -1527,7 +1527,7 @@
                                       alert("Failed to add Management traffic type to basic zone. Error: " + errorMsg);
                                     }
                                   });                                
-																}, 3000); 	
+																}, g_queryAsyncJobResultInterval); 	
                               }
                             });
                           }
@@ -1574,7 +1574,7 @@
                                       alert("Failed to add Public traffic type to basic zone. Error: " + errorMsg);
                                     }
                                   });                                
-																}, 3000); 	
+																}, g_queryAsyncJobResultInterval); 	
                               }
                             });
                           }
@@ -1589,7 +1589,7 @@
                       alert("createPhysicalNetwork failed. Error: " + errorMsg);
                     }
                   });                
-								}, 3000); 	
+								}, g_queryAsyncJobResultInterval); 	
 								
               }
             });
@@ -1687,7 +1687,7 @@
                                         alert(apiCmd + " failed. Error: " + errorMsg);
                                       }
                                     });                                  
-																	}, 3000); 																		
+																	}, g_queryAsyncJobResultInterval); 																		
                                 }
                               });
                             });
@@ -1702,7 +1702,7 @@
                         alert("createPhysicalNetwork failed. Error: " + errorMsg);
                       }
                     });                  
-									}, 3000); 	
+									}, g_queryAsyncJobResultInterval); 	
                 }
               });
             });
@@ -1864,7 +1864,7 @@
                                                                   alert("failed to enable security group provider. Error: " + errorMsg);
                                                                 }
                                                               });                                                            
-																														}, 3000); 	
+																														}, g_queryAsyncJobResultInterval); 	
                                                           }
                                                         });
                                                       }
@@ -1884,7 +1884,7 @@
                                                   alert("failed to enable Virtual Router Provider. Error: " + errorMsg);
                                                 }
                                               });                                            
-																						}, 3000); 	
+																						}, g_queryAsyncJobResultInterval); 	
                                           }
                                         });
                                       }
@@ -1898,7 +1898,7 @@
                                     alert("configureVirtualRouterElement failed. Error: " + errorMsg);
                                   }
                                 });                              
-															}, 3000); 	
+															}, g_queryAsyncJobResultInterval); 	
                             }
                           });
                         }
@@ -1912,7 +1912,7 @@
                       alert("updatePhysicalNetwork failed. Error: " + errorMsg);
                     }
                   });                
-								}, 3000); 	
+								}, g_queryAsyncJobResultInterval); 	
               }
             });
           }
@@ -2037,7 +2037,7 @@
                                                     alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
                                                   }
                                                 });                                              
-																							}, 3000); 	
+																							}, g_queryAsyncJobResultInterval); 	
                                             }
                                           });
                                         }
@@ -2051,7 +2051,7 @@
                                       alert("configureVirtualRouterElement failed. Error: " + errorMsg);
                                     }
                                   });                                
-																}, 3000); 	
+																}, g_queryAsyncJobResultInterval); 	
                               }
                             });
 														// ***** Virtual Router ***** (end) *****
@@ -2142,7 +2142,7 @@
 																											alert("failed to enable VPC Virtual Router Provider. Error: " + errorMsg);
 																										}
 																									});                                              
-																								}, 3000); 	
+																								}, g_queryAsyncJobResultInterval); 	
 																							}
 																						});
 																					}
@@ -2156,7 +2156,7 @@
 																				alert("configureVirtualRouterElement failed. Error: " + errorMsg);
 																			}
 																		});                                
-																	}, 3000); 	
+																	}, g_queryAsyncJobResultInterval); 	
 																}
 															});
 															// ***** VPC Virtual Router ***** (end) *****
@@ -2212,7 +2212,7 @@
 																				alert("failed to enable security group provider. Error: " + errorMsg);
 																			}
 																		});                                                            
-																	}, 3000); 	
+																	}, g_queryAsyncJobResultInterval); 	
 																}
 															});		
 														}
@@ -2226,7 +2226,7 @@
                         alert("failed to enable physical network. Error: " + parseXMLHttpResponse(XMLHttpResponse));
                       }
                     });                  
-									}, 3000); 		
+									}, g_queryAsyncJobResultInterval); 		
                 }
               });
             });
@@ -2270,7 +2270,7 @@
 											alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
 										}
 									});							
-								}, 3000); 
+								}, g_queryAsyncJobResultInterval); 
 							}		
             });		
 						//add netscaler provider (end)
@@ -2421,7 +2421,7 @@
                                   }
                                 }
                               });                            
-														}, 3000); 															
+														}, g_queryAsyncJobResultInterval); 															
                           },
                           error: function(XMLHttpResponse) {
                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -2435,7 +2435,7 @@
                     }
                   }
                 });              
-							}, 3000); 								
+							}, g_queryAsyncJobResultInterval); 								
             },
             error: function(XMLHttpResponse) {
               var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -2735,9 +2735,17 @@
               dataType: "json",
               success: function(json) {
                 args.data.returnedGuestNetwork.returnedVlanIpRange = json.createvlaniprangeresponse.vlan;
-                stepFns.addCluster({
-                  data: args.data
-                });
+                
+								//when hypervisor is BareMetal (begin)   						
+								if(args.data.cluster.hypervisor == "BareMetal") {
+								  alert('Zone creation is completed. Please refresh this page.');
+								}								
+								else {
+									stepFns.addCluster({
+										data: args.data
+									});
+								}
+								//when hypervisor is BareMetal (end)   
               },
               error: function(XMLHttpResponse) {
                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -2811,7 +2819,7 @@
                           error('configureGuestTraffic', errorMsg, { fn: 'configureGuestTraffic', args: args });
                         }
                       });                    
-										}, 3000); 	
+										}, g_queryAsyncJobResultInterval); 	
                   }
                 });
               });

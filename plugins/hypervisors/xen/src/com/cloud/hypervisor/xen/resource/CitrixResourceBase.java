@@ -90,9 +90,13 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
+import com.cloud.agent.api.CreateVMSnapshotAnswer;
+import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.DeleteVMSnapshotAnswer;
+import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetHostStatsAnswer;
@@ -129,6 +133,8 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.RevertToVMSnapshotAnswer;
+import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.SecurityGroupRuleAnswer;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SetupAnswer;
@@ -237,6 +243,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.snapshot.VMSnapshot;
 import com.trilead.ssh2.SCPClient;
 import com.xensource.xenapi.Bond;
 import com.xensource.xenapi.Connection;
@@ -256,6 +263,10 @@ import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.ConsoleProtocol;
 import com.xensource.xenapi.Types.IpConfigurationMode;
+import com.xensource.xenapi.Types.OperationNotAllowed;
+import com.xensource.xenapi.Types.SrFull;
+import com.xensource.xenapi.Types.VbdType;
+import com.xensource.xenapi.Types.VmBadPowerState;
 import com.xensource.xenapi.Types.VmPowerState;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
@@ -579,9 +590,107 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((CheckS2SVpnConnectionsCommand) cmd);
         } else if (cmd instanceof StorageSubSystemCommand) {
             return this.storageResource.handleStorageCommands((StorageSubSystemCommand)cmd);
+        } else if (clazz == CreateVMSnapshotCommand.class) {
+            return execute((CreateVMSnapshotCommand)cmd);
+        } else if (clazz == DeleteVMSnapshotCommand.class) {
+            return execute((DeleteVMSnapshotCommand)cmd);
+        } else if (clazz == RevertToVMSnapshotCommand.class) {
+            return execute((RevertToVMSnapshotCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
+    }
+
+
+
+    private Answer execute(RevertToVMSnapshotCommand cmd) {
+        String vmName = cmd.getVmName();
+        List<VolumeTO> listVolumeTo = cmd.getVolumeTOs();
+        VMSnapshot.Type vmSnapshotType = cmd.getTarget().getType();
+        Boolean snapshotMemory = vmSnapshotType == VMSnapshot.Type.DiskAndMemory;
+        Connection conn = getConnection();
+        VirtualMachine.State vmState = null;
+        VM vm = null;
+        try {
+
+            // remove vm from s_vms, for delta sync
+            s_vms.remove(_cluster, _name, vmName);
+
+            Set<VM> vmSnapshots = VM.getByNameLabel(conn, cmd.getTarget().getSnapshotName());
+            if(vmSnapshots.size() == 0)
+                return new RevertToVMSnapshotAnswer(cmd, false, "Cannot find vmSnapshot with name: " + cmd.getTarget().getSnapshotName());
+            
+            VM vmSnapshot = vmSnapshots.iterator().next();
+            
+            // find target VM or creating a work VM
+            try {
+                vm = getVM(conn, vmName);
+            } catch (Exception e) {
+                vm = createWorkingVM(conn, vmName, cmd.getGuestOSType(), listVolumeTo);
+            }
+
+            if (vm == null) {
+                return new RevertToVMSnapshotAnswer(cmd, false,
+                        "Revert to VM Snapshot Failed due to can not find vm: " + vmName);
+            }
+            
+            // call plugin to execute revert
+            revertToSnapshot(conn, vmSnapshot, vmName, vm.getUuid(conn), snapshotMemory, _host.uuid);
+            vm = getVM(conn, vmName);
+            Set<VBD> vbds = vm.getVBDs(conn);
+            Map<String, VDI> vdiMap = new HashMap<String, VDI>();
+            // get vdi:vbdr to a map
+            for (VBD vbd : vbds) {
+                VBD.Record vbdr = vbd.getRecord(conn);
+                if (vbdr.type == Types.VbdType.DISK) {
+                    VDI vdi = vbdr.VDI;
+                    vdiMap.put(vbdr.userdevice, vdi);
+                }
+            }
+
+            if (!snapshotMemory) {
+                vm.destroy(conn);
+                vmState = VirtualMachine.State.Stopped;
+            } else {
+                s_vms.put(_cluster, _name, vmName, State.Running);
+                vmState = VirtualMachine.State.Running;
+            }
+
+            // after revert, VM's volumes path have been changed, need to report to manager
+            for (VolumeTO volumeTo : listVolumeTo) {
+                Long deviceId = volumeTo.getDeviceId();
+                VDI vdi = vdiMap.get(deviceId.toString());
+                volumeTo.setPath(vdi.getUuid(conn));
+            }
+
+            return new RevertToVMSnapshotAnswer(cmd, listVolumeTo,vmState);
+        } catch (Exception e) {
+            s_logger.error("revert vm " + vmName
+                    + " to snapshot " + cmd.getTarget().getSnapshotName() + " failed due to " + e.getMessage());
+            return new RevertToVMSnapshotAnswer(cmd, false, e.getMessage());
+        } 
+    }
+
+    private String revertToSnapshot(Connection conn, VM vmSnapshot,
+            String vmName, String oldVmUuid, Boolean snapshotMemory, String hostUUID)
+            throws XenAPIException, XmlRpcException {
+ 
+        String results = callHostPluginAsync(conn, "vmopsSnapshot",
+                "revert_memory_snapshot", 10 * 60 * 1000, "snapshotUUID",
+                vmSnapshot.getUuid(conn), "vmName", vmName, "oldVmUuid",
+                oldVmUuid, "snapshotMemory", snapshotMemory.toString(), "hostUUID", hostUUID);
+        String errMsg = null;
+        if (results == null || results.isEmpty()) {
+            errMsg = "revert_memory_snapshot return null";
+        } else {
+            if (results.equals("0")) {
+                return results;
+            } else {
+                errMsg = "revert_memory_snapshot exception";
+            }
+        }
+        s_logger.warn(errMsg);
+        throw new CloudRuntimeException(errMsg);
     }
 
     protected XsLocalNetwork getNativeNetworkForTraffic(Connection conn, TrafficType type, String name) throws XenAPIException, XmlRpcException {
@@ -4763,7 +4872,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                             s_logger.debug("Copying " + f + " to " + d + " on " + hr.address + " with permission " + p);
                         }
                         try {
-                            session.execCommand("mkdir -p " + d);
+                            session.execCommand("mkdir -m 700 -p " + d);
                         } catch (IOException e) {
                             s_logger.debug("Unable to create destination path: " + d + " on " + hr.address + " but trying anyway");
 
@@ -6167,6 +6276,199 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     }
 
+    protected Answer execute(final CreateVMSnapshotCommand cmd) {
+        String vmName = cmd.getVmName();
+        String vmSnapshotName = cmd.getTarget().getSnapshotName();
+        List<VolumeTO> listVolumeTo = cmd.getVolumeTOs();
+        VirtualMachine.State vmState = cmd.getVmState();
+        String guestOSType = cmd.getGuestOSType();
+
+        boolean snapshotMemory = cmd.getTarget().getType() == VMSnapshot.Type.DiskAndMemory;
+        long timeout = 600;
+
+        Connection conn = getConnection();
+        VM vm = null;
+        VM vmSnapshot = null;
+        boolean success = false;
+
+        try {
+            // check if VM snapshot already exists
+            Set<VM> vmSnapshots = VM.getByNameLabel(conn, cmd.getTarget().getSnapshotName());
+            if(vmSnapshots.size() > 0)
+                return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), cmd.getVolumeTOs());
+            
+            // check if there is already a task for this VM snapshot
+            Task task = null;
+            Set<Task> tasks = Task.getByNameLabel(conn, "Async.VM.snapshot");
+            tasks.addAll(Task.getByNameLabel(conn, "Async.VM.checkpoint"));
+            for (Task taskItem : tasks) {
+                if(taskItem.getOtherConfig(conn).containsKey("CS_VM_SNAPSHOT_KEY")){
+                    String vmSnapshotTaskName = taskItem.getOtherConfig(conn).get("CS_VM_SNAPSHOT_KEY");
+                    if(vmSnapshotTaskName != null && vmSnapshotTaskName.equals(cmd.getTarget().getSnapshotName())){
+                        task = taskItem;
+                    }
+                }
+            }
+            
+            // create a new task if there is no existing task for this VM snapshot
+            if(task == null){
+                try {
+                    vm = getVM(conn, vmName);
+                } catch (Exception e) {
+                    if (!snapshotMemory) {
+                        vm = createWorkingVM(conn, vmName, guestOSType, listVolumeTo);
+                    }
+                }
+    
+                if (vm == null) {
+                    return new CreateVMSnapshotAnswer(cmd, false,
+                            "Creating VM Snapshot Failed due to can not find vm: "
+                                    + vmName);
+                }
+                
+                // call Xenserver API
+                if (!snapshotMemory) {
+                    task = vm.snapshotAsync(conn, vmSnapshotName);
+                } else {
+                    Set<VBD> vbds = vm.getVBDs(conn);
+                    Pool pool = Pool.getByUuid(conn, _host.pool);
+                    for (VBD vbd: vbds){
+                        VBD.Record vbdr = vbd.getRecord(conn);
+                        if (vbdr.userdevice.equals("0")){
+                            VDI vdi = vbdr.VDI;
+                            SR sr = vdi.getSR(conn);
+                            // store memory image on the same SR with ROOT volume
+                            pool.setSuspendImageSR(conn, sr);
+                        }
+                    }
+                    task = vm.checkpointAsync(conn, vmSnapshotName);
+                }
+                task.addToOtherConfig(conn, "CS_VM_SNAPSHOT_KEY", vmSnapshotName);
+            }
+            
+            waitForTask(conn, task, 1000, timeout * 1000);
+            checkForSuccess(conn, task);
+            String result = task.getResult(conn);
+            
+            // extract VM snapshot ref from result 
+            String ref = result.substring("<value>".length(), result.length() - "</value>".length());
+            vmSnapshot = Types.toVM(ref);
+            
+            success = true;
+            return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), cmd.getVolumeTOs());
+        } catch (Exception e) {
+            String msg = e.getMessage();
+            s_logger.error("Creating VM Snapshot " + cmd.getTarget().getSnapshotName() + " failed due to: " + msg);
+            return new CreateVMSnapshotAnswer(cmd, false, msg);
+        } finally {
+            try {
+                if (!success) {
+                    if (vmSnapshot != null) {
+                        s_logger.debug("Delete exsisting VM Snapshot "
+                                + vmSnapshotName
+                                + " after making VolumeTO failed");
+                        Set<VBD> vbds = vmSnapshot.getVBDs(conn);
+                        for (VBD vbd : vbds) {
+                            VBD.Record vbdr = vbd.getRecord(conn);
+                            if (vbdr.type == VbdType.DISK) {
+                                VDI vdi = vbdr.VDI;
+                                vdi.destroy(conn);
+                            }
+                        }
+                        vmSnapshot.destroy(conn);
+                    }
+                }
+                if (vmState == VirtualMachine.State.Stopped) {
+                    if (vm != null) {
+                        vm.destroy(conn);
+                    }
+                }
+            } catch (Exception e2) {
+                s_logger.error("delete snapshot error due to "
+                        + e2.getMessage());
+            }
+        }
+    }
+    
+    private VM createWorkingVM(Connection conn, String vmName,
+            String guestOSType, List<VolumeTO> listVolumeTo)
+            throws BadServerResponse, VmBadPowerState, SrFull,
+            OperationNotAllowed, XenAPIException, XmlRpcException {
+        String guestOsTypeName = getGuestOsType(guestOSType, false);
+        if (guestOsTypeName == null) {
+            String msg = " Hypervisor " + this.getClass().getName()
+                    + " doesn't support guest OS type " + guestOSType
+                    + ". you can choose 'Other install media' to run it as HVM";
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        VM template = getVM(conn, guestOsTypeName);
+        VM vm = template.createClone(conn, vmName);
+        vm.setIsATemplate(conn, false);
+        Map<VDI, VolumeTO> vdiMap = new HashMap<VDI, VolumeTO>();
+        for (VolumeTO volume : listVolumeTo) {
+            String vdiUuid = volume.getPath();
+            try {
+                VDI vdi = VDI.getByUuid(conn, vdiUuid);
+                vdiMap.put(vdi, volume);
+            } catch (Types.UuidInvalid e) {
+                s_logger.warn("Unable to find vdi by uuid: " + vdiUuid
+                        + ", skip it");
+            }
+        }
+        for (VDI vdi : vdiMap.keySet()) {
+            VolumeTO volumeTO = vdiMap.get(vdi);
+            VBD.Record vbdr = new VBD.Record();
+            vbdr.VM = vm;
+            vbdr.VDI = vdi;
+            if (volumeTO.getType() == Volume.Type.ROOT) {
+                vbdr.bootable = true;
+                vbdr.unpluggable = false;
+            } else {
+                vbdr.bootable = false;
+                vbdr.unpluggable = true;
+            }
+            vbdr.userdevice = new Long(volumeTO.getDeviceId()).toString();
+            vbdr.mode = Types.VbdMode.RW;
+            vbdr.type = Types.VbdType.DISK;
+            VBD.create(conn, vbdr);
+        }
+        return vm;
+    }
+
+    protected Answer execute(final DeleteVMSnapshotCommand cmd) {
+        String snapshotName = cmd.getTarget().getSnapshotName();
+        Connection conn = getConnection();
+                
+        try {
+            List<VDI> vdiList = new ArrayList<VDI>();
+            Set<VM> snapshots = VM.getByNameLabel(conn, snapshotName);
+            if(snapshots.size() == 0){
+                s_logger.warn("VM snapshot with name " + snapshotName + " does not exist, assume it is already deleted");
+                return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());
+            }
+            VM snapshot = snapshots.iterator().next();
+            Set<VBD> vbds = snapshot.getVBDs(conn);
+            for (VBD vbd : vbds) {
+                if (vbd.getType(conn) == VbdType.DISK) {
+                    VDI vdi = vbd.getVDI(conn);
+                    vdiList.add(vdi);
+                }
+            }
+            if(cmd.getTarget().getType() == VMSnapshot.Type.DiskAndMemory)
+                vdiList.add(snapshot.getSuspendVDI(conn));
+            snapshot.destroy(conn);
+            for (VDI vdi : vdiList) {
+                vdi.destroy(conn);
+            }
+            return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());
+        } catch (Exception e) {
+            s_logger.warn("Catch Exception: " + e.getClass().toString()
+                    + " due to " + e.toString(), e);
+            return new DeleteVMSnapshotAnswer(cmd, false, e.getMessage());
+        }
+    }
+    
     protected Answer execute(final AttachIsoCommand cmd) {
         Connection conn = getConnection();
         boolean attach = cmd.isAttach();

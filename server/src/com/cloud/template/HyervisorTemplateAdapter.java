@@ -70,6 +70,11 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 	@Inject DownloadMonitor _downloadMonitor;
 	@Inject SecondaryStorageVmManager _ssvmMgr;
 	@Inject AgentManager _agentMgr;
+
+    @Override
+    public String getName() {
+        return TemplateAdapterType.Hypervisor.getName();
+    }
 	
 	private String validateUrl(String url) {
 		try {
