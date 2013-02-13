@@ -166,8 +166,8 @@
               <arguments/>
               <systemProperties>
                 <systemProperty>
-                  <key>pid</key>
-                  <value>$$</value>
+                  <key>catalina.home</key>
+                  <value>${project.parent.basedir}/utils</value>
                 </systemProperty>
               </systemProperties>
             </configuration>
