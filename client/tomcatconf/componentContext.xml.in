@@ -95,6 +95,14 @@
     <property name="name" value="FirstFitRouting"/>
   </bean>
   
+  <bean id="hypervisorTemplateAdapter" class="com.cloud.template.HypervisorTemplateAdapter">
+    <property name="name" value="HypervisorAdapter"/>
+  </bean> 
+  
+   <bean id="bareMetalTemplateAdapter" class="com.cloud.baremetal.BareMetalTemplateAdapter">
+    <property name="name" value="BareMetalAdapter"/>
+  </bean> 
+  
   <!--
     Storage pool allocators
   -->

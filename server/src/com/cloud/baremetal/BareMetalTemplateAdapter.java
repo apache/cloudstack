@@ -48,17 +48,16 @@ import com.cloud.user.Account;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Component
 @Local(value=TemplateAdapter.class)
 public class BareMetalTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
 	private final static Logger s_logger = Logger.getLogger(BareMetalTemplateAdapter.class);
 	@Inject HostDao _hostDao;
 	@Inject ResourceManager _resourceMgr;
-	
+
 	@Override
 	public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
 		TemplateProfile profile = super.prepare(cmd);
-		
+
 		if (profile.getZoneId() == null || profile.getZoneId() == -1) {
 			List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
 			for (DataCenterVO dc : dcs) {
@@ -73,15 +72,15 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 				throw new CloudRuntimeException("Please add PXE server before adding baremetal template in zone " + profile.getZoneId());
 			}
 		}
-		
+
 		return profile;
 	}
-	
+
 	@Override
 	public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
 		throw new CloudRuntimeException("Baremetal doesn't support ISO template");
 	}
-	
+
 	private void templateCreateUsage(VMTemplateVO template, HostVO host) {
 		if (template.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_TEMPLATE_CREATE, template.getAccountId(), host.getDataCenterId(),
@@ -89,12 +88,12 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
                     template.getClass().getName(), template.getUuid());
 		}
 	}
-	
+
 	@Override
 	public VMTemplateVO create(TemplateProfile profile) {
 		VMTemplateVO template = persistTemplate(profile);
 		Long zoneId = profile.getZoneId();
-		
+
 		/* There is no secondary storage vm for baremetal, we use pxe server id.
 		 * Tempalte is not bound to pxeserver right now, and we assume the pxeserver
 		 * cannot be removed once it was added. so we use host id of first found pxe
@@ -122,7 +121,7 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 			_tmpltHostDao.persist(vmTemplateHost);
 			templateCreateUsage(template, pxe);
 		}
-		
+
 		_resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
 		return template;
 	}
@@ -130,7 +129,7 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 	public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
 		throw new CloudRuntimeException("Baremetal doesn't support ISO, how the delete get here???");
 	}
-	
+
 	@Override @DB
 	public boolean delete(TemplateProfile profile) {
 		VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
@@ -138,7 +137,7 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
     	boolean success = true;
     	String zoneName;
     	boolean isAllZone;
-    	
+
     	if (!template.isCrossZones() && profile.getZoneId() != null) {
     		isAllZone = false;
     		zoneName = profile.getZoneId().toString();
@@ -146,12 +145,12 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
     		zoneName = "all zones";
     		isAllZone = true;
     	}
-    	
+
     	s_logger.debug("Attempting to mark template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);
     	Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
     	String eventType = EventTypes.EVENT_TEMPLATE_DELETE;
     	List<VMTemplateHostVO> templateHostVOs = _tmpltHostDao.listByTemplateId(templateId);
-    	
+
 		for (VMTemplateHostVO vo : templateHostVOs) {
 			VMTemplateHostVO lock = null;
 			try {
@@ -182,13 +181,13 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 				}
 			}
 		}
-    	
+
     	s_logger.debug("Successfully marked template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);
-	
+
     	// If there are no more non-destroyed template host entries for this template, delete it
 		if (success && (_tmpltHostDao.listByTemplateId(templateId).size() == 0)) {
 			long accountId = template.getAccountId();
-			
+
 			VMTemplateVO lock = _tmpltDao.acquireInLockTable(templateId);
 
 			try {
@@ -207,7 +206,7 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 			}
 			s_logger.debug("Removed template: " + template.getName() + " because all of its template host refs were marked as destroyed.");
 		}
-		
+
     	return success;
 	}
 }
