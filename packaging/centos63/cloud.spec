@@ -300,9 +300,9 @@ if [ "$1" == "1" ] ; then
     /sbin/chkconfig --level 345 cloud-management on > /dev/null 2>&1 || true
 fi
 
-if [ ! -f %{_datadir}/cloud/management/webapps/client/WEB-INF/classes/scripts/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
+if [ ! -f %{_datadir}/cloudstack/management/webapps/client/WEB-INF/classes/scripts/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
-    echo %{_datadir}/cloud/management/webapps/client/WEB-INF/classes/scripts/vm/hypervisor/xenserver/
+    echo %{_datadir}/cloudstack/management/webapps/client/WEB-INF/classes/scripts/vm/hypervisor/xenserver/
 fi
 
 #No default permission as the permission setup is complex
