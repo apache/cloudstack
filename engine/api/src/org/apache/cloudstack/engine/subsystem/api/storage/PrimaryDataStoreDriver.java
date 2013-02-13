@@ -16,14 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.volume;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
-    public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback);
+    public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback);
     public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback);
 }

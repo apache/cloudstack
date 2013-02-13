@@ -38,22 +38,30 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
+import com.cloud.agent.api.to.S3TO;
+import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.storage.s3.S3Manager;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.storage.swift.SwiftManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class AncientImageDataStoreDriverImpl implements ImageDataStoreDriver {
@@ -69,7 +77,13 @@ public class AncientImageDataStoreDriverImpl implements ImageDataStoreDriver {
     @Inject VolumeDao volumeDao;
     @Inject VolumeHostDao volumeHostDao;
     @Inject HostDao hostDao;
+    @Inject SnapshotDao snapshotDao;
     @Inject AgentManager agentMgr;
+    @Inject SnapshotManager snapshotMgr;
+	@Inject
+    private SwiftManager _swiftMgr;
+    @Inject 
+    private S3Manager _s3Mgr; 
     @Override
     public String grantAccess(DataObject data, EndPoint ep) {
         // TODO Auto-generated method stub
@@ -158,6 +172,49 @@ public class AncientImageDataStoreDriverImpl implements ImageDataStoreDriver {
         
     }
     
+    private void deleteSnapshot(DataObject data, AsyncCompletionCallback<CommandResult> callback) {
+    	Long snapshotId = data.getId();
+    	SnapshotVO snapshot = this.snapshotDao.findByIdIncludingRemoved(snapshotId);
+    	CommandResult result = new CommandResult();
+    	if (snapshot == null) {
+    		s_logger.debug("Destroying snapshot " + snapshotId + " backup failed due to unable to find snapshot ");
+    		result.setResult("Unable to find snapshot: " + snapshotId);
+    		callback.complete(result);
+    		return;
+    	}
+
+    	try {
+    		String secondaryStoragePoolUrl = this.snapshotMgr.getSecondaryStorageURL(snapshot);
+    		Long dcId = snapshot.getDataCenterId();
+    		Long accountId = snapshot.getAccountId();
+    		Long volumeId = snapshot.getVolumeId();
+
+    		String backupOfSnapshot = snapshot.getBackupSnapshotId();
+    		if (backupOfSnapshot == null) {
+    			callback.complete(result);
+    			return;
+    		}
+    		SwiftTO swift = _swiftMgr.getSwiftTO(snapshot.getSwiftId());
+    		S3TO s3 = _s3Mgr.getS3TO();
+
+    		DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
+    				swift, s3, secondaryStoragePoolUrl, dcId, accountId, volumeId,
+    				backupOfSnapshot, false);
+    		Answer answer = agentMgr.sendToSSVM(dcId, cmd);
+
+    		if ((answer != null) && answer.getResult()) {
+    			snapshot.setBackupSnapshotId(null);
+    			snapshotDao.update(snapshotId, snapshot);
+    		} else if (answer != null) {
+    			result.setResult(answer.getDetails());
+    		}
+    	} catch (Exception e) {
+    		s_logger.debug("failed to delete snapshot: " + snapshotId + ": " + e.toString());
+    		result.setResult(e.toString());
+    	}
+    	callback.complete(result);
+    }
+    
     @Override
     public void deleteAsync(DataObject data,
             AsyncCompletionCallback<CommandResult> callback) {
@@ -165,10 +222,9 @@ public class AncientImageDataStoreDriverImpl implements ImageDataStoreDriver {
             deleteVolume(data, callback);
         } else if (data.getType() == DataObjectType.TEMPLATE) {
             deleteTemplate(data, callback);
+        } else if (data.getType() == DataObjectType.SNAPSHOT) {
+        	deleteSnapshot(data, callback);
         }
-       
-
-       
     }
 
     @Override
@@ -183,5 +239,12 @@ public class AncientImageDataStoreDriverImpl implements ImageDataStoreDriver {
         // TODO Auto-generated method stub
         return false;
     }
+
+	@Override
+	public void resize(DataObject data,
+			AsyncCompletionCallback<CreateCmdResult> callback) {
+		// TODO Auto-generated method stub
+		
+	}
 
 }

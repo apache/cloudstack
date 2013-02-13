@@ -22,6 +22,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class SnapshotServiceImpl implements SnapshotService {
+	
+	public SnapshotServiceImpl() {
+		
+	}
 
 	@Override
 	public SnapshotEntity getSnapshotEntity(long snapshotId) {
@@ -46,5 +50,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 		// TODO Auto-generated method stub
 		return false;
 	}
+	
+	
 
 }

@@ -116,4 +116,11 @@ public class DefaultImageDataStoreDriverImpl implements ImageDataStoreDriver {
         // TODO Auto-generated method stub
         
     }
+
+	@Override
+	public void resize(DataObject data,
+			AsyncCompletionCallback<CreateCmdResult> callback) {
+		// TODO Auto-generated method stub
+		
+	}
 }

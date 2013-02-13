@@ -52,9 +52,9 @@ public interface VolumeManager extends VolumeApiService {
 
     boolean volumeOnSharedStoragePool(VolumeVO volume);
 
-    boolean volumeInactive(VolumeVO volume);
+    boolean volumeInactive(Volume volume);
 
-    String getVmNameOnVolume(VolumeVO volume);
+    String getVmNameOnVolume(Volume volume);
 
     VolumeVO allocVolume(CreateVolumeCmd cmd)
             throws ResourceAllocationException;

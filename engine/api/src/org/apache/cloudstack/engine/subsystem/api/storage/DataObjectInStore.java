@@ -23,4 +23,5 @@ import com.cloud.utils.fsm.StateObject;
 
 public interface DataObjectInStore extends StateObject<ObjectInDataStoreStateMachine.State> {
     public String getInstallPath();
+    public void setInstallPath(String path);
 }

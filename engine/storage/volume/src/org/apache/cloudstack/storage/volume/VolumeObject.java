@@ -30,6 +30,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.log4j.Logger;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -72,6 +73,10 @@ public class VolumeObject implements VolumeInfo {
 
     public void setPath(String uuid) {
         volumeVO.setPath(uuid);
+    }
+    
+    public void setSize(Long size) {
+    	volumeVO.setSize(size);
     }
 
     public Volume.State getState() {
@@ -182,6 +187,8 @@ public class VolumeObject implements VolumeInfo {
                 volEvent = Volume.Event.OperationSucceeded;
             } else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
                 volEvent = Volume.Event.OperationFailed;
+            } else if (event == ObjectInDataStoreStateMachine.Event.ResizeRequested) {
+            	volEvent = Volume.Event.ResizeRequested;
             }
             this.stateTransit(volEvent);
         } catch (Exception e) {
@@ -310,4 +317,14 @@ public class VolumeObject implements VolumeInfo {
     public Object getpayload() {
        return this.payload;
     }
+
+	@Override
+	public HypervisorType getHypervisorType() {
+		return this.volumeDao.getHypervisorType(this.volumeVO.getId());
+	}
+
+	@Override
+	public Long getLastPoolId() {
+		return this.volumeVO.getLastPoolId();
+	}
 }
