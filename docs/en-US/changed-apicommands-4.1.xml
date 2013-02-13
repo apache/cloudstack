@@ -1,0 +1,106 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="changed-apicommands-4.1">
+  <title>Changed API Commands in 4.1-incubating</title>
+  <informaltable>
+    <tgroup cols="2" align="left" colsep="1" rowsep="1">
+      <colspec colwidth="1.0*" colname="1" colnum="1"/>
+      <colspec colwidth="4.37*" colname="2" colnum="2"/>
+      <thead>
+        <row>
+          <entry><para>API Commands</para></entry>
+          <entry><para>Description</para></entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry>
+            <para>createNetworkOffering</para>
+            <para>listNetworkOfferings</para>
+            <para>listNetworks</para>
+          </entry>
+          <entry>
+            <para>The following request parameters is added: isPersistent.</para>
+            <para>This parameter determines if the network or network offering created or listed by
+              using this offering are persistent or not.</para>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>addF5LoadBalancer</para>
+            <para>configureNetscalerLoadBalancer</para>
+            <para>addNetscalerLoadBalancer</para>
+            <para>listF5LoadBalancers</para>
+            <para>configureF5LoadBalancer</para>
+            <para>listNetscalerLoadBalancers</para>
+          </entry>
+          <entry>
+            <para>The following response parameter is removed: inline.</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>listFirewallRules</para>
+            <para>createFirewallRule</para></entry>
+          <entry>
+            <para>The following request parameter is added: traffictype (optional).</para>
+          </entry>
+        </row>
+        <row>
+          <entry><para>listUsageRecords</para></entry>
+          <entry><para>The following response parameter is added: virtualsize.</para>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>deleteIso</para>
+          </entry>
+          <entry>
+            <para>The following request parameter is added: forced (optional).</para>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>createStoragePool</para>
+          </entry>
+          <entry>
+            <para>The following request parameters are made mandatory:</para>
+            <itemizedlist>
+              <listitem>
+                <para>podid</para>
+              </listitem>
+              <listitem>
+                <para>clusterid</para>
+              </listitem>
+            </itemizedlist>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>listZones</para>
+          </entry>
+          <entry>
+            <para>The following request parameters is added: securitygroupenabled</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </informaltable>
+</section>
