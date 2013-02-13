@@ -69,8 +69,10 @@ public class ApiDiscoveryServiceImpl implements ApiDiscoveryService {
             long startTime = System.nanoTime();
             s_apiNameDiscoveryResponseMap = new HashMap<String, ApiDiscoveryResponse>();
             Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
-            for(PluggableService service: _services)
+            for(PluggableService service: _services) {
+                s_logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
                 cmdClasses.addAll(service.getCommands());
+            }
             cacheResponseMap(cmdClasses);
             long endTime = System.nanoTime();
             s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
