@@ -6,7 +6,7 @@
     delaycompress
     sharedscripts
     postrotate
-        [ ! -f /var/run/dnsmasq.pid ] || kill -USR2 `cat /var/run/dnsmasq.pid`
+        [ ! -f /var/run/dnsmasq/dnsmasq.pid ] || kill -USR2 `cat /var/run/dnsmasq/dnsmasq.pid`
     endscript
     create 0640 nobody root
 }
