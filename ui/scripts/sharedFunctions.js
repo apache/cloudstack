@@ -26,7 +26,7 @@ var g_timezone = null;
 var g_supportELB = null;
 var g_userPublicTemplateEnabled = "true";
 var g_cloudstackversion = null;
-var g_queryAsyncJobResultInterval = 6000;
+var g_queryAsyncJobResultInterval = 3000;
 
 //keyboard keycode
 var keycode_Enter = 13;
