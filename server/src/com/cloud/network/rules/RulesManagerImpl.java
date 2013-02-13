@@ -412,7 +412,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         // Verify input parameters
         boolean performedIpAssoc = false;
-        boolean result = false;
+        boolean isOneToOneNat = ipAddress.isOneToOneNat();
+        Long associatedWithVmId = ipAddress.getAssociatedWithVmId();
         try {
             Network network = _networkModel.getNetwork(networkId);
             if (network == null) {
@@ -476,28 +477,26 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 // enable static nat on the backend
                 s_logger.trace("Enabling static nat for ip address " + ipAddress + " and vm id=" + vmId + " on the backend");
                 if (applyStaticNatForIp(ipId, false, caller, false)) {
-                    result = true;
+                    performedIpAssoc = false; // ignor unassignIPFromVpcNetwork in finally block
+                    return true;
                 } else {
                     s_logger.warn("Failed to enable static nat rule for ip address " + ipId + " on the backend");
+                    ipAddress.setOneToOneNat(isOneToOneNat);
+                    ipAddress.setAssociatedWithVmId(associatedWithVmId);
+                    _ipAddressDao.update(ipAddress.getId(), ipAddress);
                 }
             } else {
                 s_logger.warn("Failed to update ip address " + ipAddress + " in the DB as a part of enableStaticNat");
 
             }
         } finally {
-            if (!result) {
-                ipAddress.setOneToOneNat(false);
-                ipAddress.setAssociatedWithVmId(null);
-                _ipAddressDao.update(ipAddress.getId(), ipAddress);  
-
-                if (performedIpAssoc) {
-                    //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
-                    IpAddress ip = _ipAddressDao.findById(ipAddress.getId());
-                    _vpcMgr.unassignIPFromVpcNetwork(ip.getId(), networkId);
-                }
+            if (performedIpAssoc) {
+                //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
+                IpAddress ip = _ipAddressDao.findById(ipAddress.getId());
+                _vpcMgr.unassignIPFromVpcNetwork(ip.getId(), networkId);
             }
         }
-        return result;
+        return false;
     }
 
     protected void isIpReadyForStaticNat(long vmId, IPAddressVO ipAddress, Account caller, long callerUserId) 
