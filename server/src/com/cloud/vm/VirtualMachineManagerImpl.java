@@ -37,7 +37,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
@@ -69,12 +68,10 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
-import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -152,10 +149,7 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.ItWorkVO.Step;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
@@ -194,12 +188,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected UserVmDao _userVmDao;
     @Inject
-    protected DomainRouterDao _routerDao;
-    @Inject
-    protected ConsoleProxyDao _consoleDao;
-    @Inject
-    protected SecondaryStorageVmDao _secondaryDao;
-    @Inject
     protected NicDao _nicsDao;
     @Inject
     protected AccountManager _accountMgr;
@@ -214,11 +202,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected VolumeDao _volsDao;
     @Inject
-    protected ConsoleProxyManager _consoleProxyMgr;
-    @Inject
     protected ConfigurationManager _configMgr;
-    @Inject
-    protected CapacityManager _capacityMgr;
     @Inject
     protected HighAvailabilityManager _haMgr;
     @Inject
@@ -2591,7 +2575,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _networkModel.getNetworkRate(network.getId(), vm.getId()), 
                 _networkModel.isSecurityGroupSupportedInNetwork(network), 
                 _networkModel.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
-        
+
         //1) Unplug the nic
         if (vm.getState() == State.Running) {
             NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
@@ -2608,11 +2592,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new ResourceUnavailableException("Unable to remove vm " + vm + " from network, is not in the right state",
                     DataCenter.class, vm.getDataCenterId());
         }
-        
+
         //2) Release the nic
         _networkMgr.releaseNic(vmProfile, nic);
         s_logger.debug("Successfully released nic " + nic +  "for vm " + vm);
-        
+
         //3) Remove the nic
         _networkMgr.removeNic(vmProfile, nic);
         _nicsDao.expunge(nic.getId());
@@ -2647,7 +2631,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.warn("Could not get a nic with " + network);
             return false;
         }
-        
+
         // don't delete default NIC on a user VM
         if (nic.isDefaultNic() && vm.getType() == VirtualMachine.Type.User ) {
             s_logger.warn("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
@@ -2661,15 +2645,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         //1) Unplug the nic
         if (vm.getState() == State.Running) {
-        NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
-        s_logger.debug("Un-plugging nic for vm " + vm + " from network " + network);
-        boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
-        if (result) {
-            s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
-        } else {
-            s_logger.warn("Failed to unplug nic for the vm " + vm + " from network " + network);
-            return false;
-        }
+            NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
+            s_logger.debug("Un-plugging nic for vm " + vm + " from network " + network);
+            boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
+            if (result) {
+                s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
+            } else {
+                s_logger.warn("Failed to unplug nic for the vm " + vm + " from network " + network);
+                return false;
+            }
         } else if (vm.getState() != State.Stopped) {
             s_logger.warn("Unable to remove vm " + vm + " from network  " + network);
             throw new ResourceUnavailableException("Unable to remove vm " + vm + " from network, is not in the right state",
