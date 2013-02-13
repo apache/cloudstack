@@ -12,9 +12,11 @@
   };
 
   var pluginAPI = {
+    pollAsyncJob: pollAsyncJobResult,
     apiCall: function(command, args) {
       $.ajax({
         url: createURL(command),
+        data: args.data,
         success: args.success,
         error: function(json) {
           args.error(parseXMLHttpResponse(json));
