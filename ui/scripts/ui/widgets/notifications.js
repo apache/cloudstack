@@ -93,7 +93,7 @@
       $total.parent().addClass('pending');
       $item.addClass('pending');
 
-      // Setup timer
+      // Setup timer			
       var pollTimer = setInterval(function() {
         args.poll({
           _custom: _custom,
@@ -281,7 +281,7 @@
         cloudStack.ui.event.call('addNotification', {
           section: notification.section,
           desc: notification.desc,
-          interval: notification.interval ? notification.interval : 5000,
+          interval: notification.interval ? notification.interval : g_queryAsyncJobResultInterval,
           _custom: notification._custom,
           poll: function(args) {
             var complete = args.complete;

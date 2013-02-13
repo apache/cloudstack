@@ -157,6 +157,13 @@
 			
             g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
 						
+            if(json.listcapabilitiesresponse.capability.apilimitinterval != null && json.listcapabilitiesresponse.capability.apilimitmax != null) {						
+							var intervalLimit = ((json.listcapabilitiesresponse.capability.apilimitinterval * 1000) / json.listcapabilitiesresponse.capability.apilimitmax ) * 3; //multiply 3 to be on safe side
+							//intervalLimit = 9999; //this line is for testing only, comment it before check in
+							if(intervalLimit > g_queryAsyncJobResultInterval)
+								g_queryAsyncJobResultInterval = intervalLimit;						
+						}
+						
             userValid = true;
           },
           error: function(xmlHTTP) {
@@ -283,7 +290,14 @@
                 $.cookie('userProjectsEnabled', g_userProjectsEnabled, { expires: 1 });
 				
                 g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
-
+								
+								if(json.listcapabilitiesresponse.capability.apilimitinterval != null && json.listcapabilitiesresponse.capability.apilimitmax != null) {
+									var intervalLimit = ((json.listcapabilitiesresponse.capability.apilimitinterval * 1000) / json.listcapabilitiesresponse.capability.apilimitmax ) * 3; //multiply 3 to be on safe side
+									//intervalLimit = 8888; //this line is for testing only, comment it before check in
+									if(intervalLimit > g_queryAsyncJobResultInterval)
+										g_queryAsyncJobResultInterval = intervalLimit;		
+								}
+								
                 args.response.success({
                   data: {
                     user: $.extend(true, {}, loginresponse, {
