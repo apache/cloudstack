@@ -1437,6 +1437,16 @@ dictionary = {
 'label.resize.new.size': '<fmt:message key="label.resize.new.size" />',
 'label.action.resize.volume': '<fmt:message key="label.action.resize.volume" />',
 'label.resize.new.offering.id': '<fmt:message key="label.resize.new.offering.id" />',
-'label.resize.shrink.ok': '<fmt:message key="label.resize.shrink.ok" />'
+'label.resize.shrink.ok': '<fmt:message key="label.resize.shrink.ok" />',
+'label.vmsnapshot.current': '<fmt:message key="label.vmsnapshot.current" />',
+'label.vmsnapshot.parentname': '<fmt:message key="label.vmsnapshot.parentname" />',
+'label.vmsnapshot.type': '<fmt:message key="label.vmsnapshot.type" />',
+'label.vmsnapshot.memory': '<fmt:message key="label.vmsnapshot.memory" />',
+'label.vmsnapshot': '<fmt:message key="label.vmsnapshot" />',
+'label.action.vmsnapshot.create': '<fmt:message key="label.action.vmsnapshot.create" />',
+'label.action.vmsnapshot.delete': '<fmt:message key="label.action.vmsnapshot.delete" />',
+'label.action.vmsnapshot.revert': '<fmt:message key="label.action.vmsnapshot.revert" />',
+'message.action.vmsnapshot.delete': '<fmt:message key="message.action.vmsnapshot.delete" />',
+'message.action.vmsnapshot.revert': '<fmt:message key="message.action.vmsnapshot.revert" />'
 };
 </script>

@@ -249,12 +249,37 @@ import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.*;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
+import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
+import org.apache.cloudstack.api.command.user.vm.*;
+import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
+import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
+import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotManager;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, UserVmService {
@@ -392,7 +417,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     protected GuestOSCategoryDao _guestOSCategoryDao;
     @Inject
     UsageEventDao _usageEventDao;
-
+    @Inject
+    protected VMSnapshotDao _vmSnapshotDao;
+    @Inject 
+    protected VMSnapshotManager _vmSnapshotMgr;
+    
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
     protected int _expungeDelay;
@@ -813,7 +842,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         // permission check
         _accountMgr.checkAccess(caller, null, true, volume, vm);
 
-        // Check if volume is stored on secondary Storage.
+        //check if vm has snapshot, if true: can't attache volume
+        boolean attach = true;
+        checkVMSnapshots(vm, volumeId, attach);
+
+        // Check if volume is stored on secondary Storage.  
+        //Check if volume is stored on secondary Storage.
         boolean isVolumeOnSec = false;
         VolumeHostVO  volHostVO = _volumeHostDao.findByVolumeId(volume.getId());
         if (volHostVO != null) {
@@ -1106,8 +1140,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
     }
 
+    private void checkVMSnapshots(UserVmVO vm, Long volumeId, boolean attach) {
+        // Check that if vm has any VM snapshot
+        Long vmId = vm.getId();
+        List<VMSnapshotVO> listSnapshot = _vmSnapshotDao.listByInstanceId(vmId,
+                VMSnapshot.State.Ready, VMSnapshot.State.Creating, VMSnapshot.State.Reverting, VMSnapshot.State.Expunging);
+        if (listSnapshot != null && listSnapshot.size() != 0) {
+            throw new InvalidParameterValueException(
+                        "The VM has VM snapshots, do not allowed to attach volume. Please delete the VM snapshots first.");
+        }
+    }
+
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume",  async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "event_detaching_volume1", async = true)
     public Volume detachVolumeFromVM(DetachVolumeCmd cmmd) {
         Account caller = UserContext.current().getCaller();
         if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd
@@ -1167,8 +1212,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                     "Please specify a VM that is either running or stopped.");
         }
 
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor
-                .getCurrentExecutor();
+        // Check that if the volume has snapshot
+        boolean attach = false;
+        checkVMSnapshots(vm, volumeId, attach);
+        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if (asyncExecutor != null) {
             AsyncJobVO job = asyncExecutor.getJob();
 
@@ -1314,12 +1361,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             throw new InvalidParameterValueException(
                     "unable to find a virtual machine with id " + vmId);
         }
-
+        
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
         // Check that the specified service offering ID is valid
         _itMgr.checkIfCanUpgrade(vmInstance, svcOffId);
 
+        // remove diskAndMemory VM snapshots
+        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+        for (VMSnapshotVO vmSnapshotVO : vmSnapshots) {
+            if(vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory){
+                if(!_vmSnapshotMgr.deleteAllVMSnapshots(vmId, VMSnapshot.Type.DiskAndMemory)){
+                    String errMsg = "Failed to remove VM snapshot during upgrading, snapshot id " + vmSnapshotVO.getId();
+                    s_logger.debug(errMsg);
+                    throw new CloudRuntimeException(errMsg);
+                }
+                    
+            }
+        }
+        
         _itMgr.upgradeVmDb(vmId, svcOffId);
 
         return _vmDao.findById(vmInstance.getId());
@@ -1997,8 +2057,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
 
             volume = _volsDao.findById(snapshot.getVolumeId());
-            VolumeVO snapshotVolume = _volsDao
-                    .findByIdIncludingRemoved(snapshot.getVolumeId());
 
             // check permissions
             _accountMgr.checkAccess(caller, null, true, snapshot);

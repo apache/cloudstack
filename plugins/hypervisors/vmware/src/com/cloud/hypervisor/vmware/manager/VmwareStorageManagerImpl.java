@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.rmi.RemoteException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -32,18 +33,27 @@ import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
+import com.cloud.agent.api.CreateVMSnapshotAnswer;
+import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
+import com.cloud.agent.api.DeleteVMSnapshotAnswer;
+import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.RevertToVMSnapshotAnswer;
+import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
+import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
+import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -57,7 +67,11 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.script.Script;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.snapshot.VMSnapshot;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.TaskEvent;
+import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualDisk;
@@ -222,8 +236,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 }
 				
 			} finally {
-                if(vmMo != null)
-                    vmMo.removeAllSnapshots();
+                if(vmMo != null){
+                    ManagedObjectReference snapshotMor = vmMo.getSnapshotMor(snapshotUuid);
+                    if (snapshotMor != null){
+                        vmMo.removeSnapshot(snapshotUuid, false);
+                    }
+                }
 			    
 				try {
 		            if (workerVm != null) {
@@ -377,47 +395,47 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 	}
     
     @Override
-	public Answer execute(VmwareHostService hostService, CreateVolumeFromSnapshotCommand cmd) {
+    public Answer execute(VmwareHostService hostService, CreateVolumeFromSnapshotCommand cmd) {
 
-		String primaryStorageNameLabel = cmd.getPrimaryStoragePoolNameLabel();
-		Long accountId = cmd.getAccountId();
-		Long volumeId = cmd.getVolumeId();
-        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
-		String backedUpSnapshotUuid = cmd.getSnapshotUuid();
+            String primaryStorageNameLabel = cmd.getPrimaryStoragePoolNameLabel();
+            Long accountId = cmd.getAccountId();
+            Long volumeId = cmd.getVolumeId();
+            String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
+            String backedUpSnapshotUuid = cmd.getSnapshotUuid();
 
-		String details = null;
-		boolean success = false;
-		String newVolumeName = UUID.randomUUID().toString().replaceAll("-", "");
+            String details = null;
+            boolean success = false;
+            String newVolumeName = UUID.randomUUID().toString().replaceAll("-", "");
 
-		VmwareContext context = hostService.getServiceContext(cmd);
-		try {
-			VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
-			
-			ManagedObjectReference morPrimaryDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStorageNameLabel);
-			if (morPrimaryDs == null) {
-				String msg = "Unable to find datastore: " + primaryStorageNameLabel;
-				s_logger.error(msg);
-				throw new Exception(msg);
-			}
+            VmwareContext context = hostService.getServiceContext(cmd);
+            try {
+                    VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
+                    ManagedObjectReference morPrimaryDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost,
+                            primaryStorageNameLabel);
+                    if (morPrimaryDs == null) {
+                        String msg = "Unable to find datastore: " + primaryStorageNameLabel;
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
 
-			DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
-			details = createVolumeFromSnapshot(hyperHost, primaryDsMo,
-					newVolumeName, accountId, volumeId, secondaryStorageUrl, backedUpSnapshotUuid);
-			if (details == null) {
-				success = true;
-			}
-		} catch (Throwable e) {
-			if (e instanceof RemoteException) {
-				hostService.invalidateServiceContext(context);
-			}
+                    DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
+                    details = createVolumeFromSnapshot(hyperHost, primaryDsMo,
+                            newVolumeName, accountId, volumeId, secondaryStorageUrl, backedUpSnapshotUuid);
+                    if (details == null) {
+                        success = true;
+                    }
+            } catch (Throwable e) {
+                if (e instanceof RemoteException) {
+                    hostService.invalidateServiceContext(context);
+                }
+                
+                s_logger.error("Unexpecpted exception ", e);
+                details = "CreateVolumeFromSnapshotCommand exception: " + StringUtils.getExceptionStackInfo(e);
+            }
 
-			s_logger.error("Unexpecpted exception ", e);
-			details = "CreateVolumeFromSnapshotCommand exception: " + StringUtils.getExceptionStackInfo(e);
-		}
+            return new CreateVolumeFromSnapshotAnswer(cmd, success, details, newVolumeName);
+    }
 
-		return new CreateVolumeFromSnapshotAnswer(cmd, success, details, newVolumeName);
-	}
-	
     // templateName: name in secondary storage
     // templateUuid: will be used at hypervisor layer
     private void copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
@@ -880,5 +898,245 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     
     private static String getSnapshotRelativeDirInSecStorage(long accountId, long volumeId) {
         return "snapshots/" + accountId + "/" + volumeId;
+    }
+
+    @Override
+    public CreateVMSnapshotAnswer execute(VmwareHostService hostService, CreateVMSnapshotCommand cmd) {
+        List<VolumeTO> volumeTOs = cmd.getVolumeTOs();
+        String vmName = cmd.getVmName();
+        String vmSnapshotName = cmd.getTarget().getSnapshotName();
+        String vmSnapshotDesc = cmd.getTarget().getDescription();
+        boolean snapshotMemory = cmd.getTarget().getType() == VMSnapshot.Type.DiskAndMemory;
+        VirtualMachineMO vmMo = null;
+        VmwareContext context = hostService.getServiceContext(cmd);
+        Map<String, String> mapNewDisk = new HashMap<String, String>();
+        try {
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
+            
+            // wait if there are already VM snapshot task running
+            ManagedObjectReference taskmgr = context.getServiceContent().getTaskManager();
+            ManagedObjectReference[] tasks =  (ManagedObjectReference[]) context.getServiceUtil().getDynamicProperty(taskmgr, "recentTask");
+            for (ManagedObjectReference taskMor : tasks) {
+                TaskInfo info = (TaskInfo) (context.getServiceUtil().getDynamicProperty(taskMor, "info"));
+                if(info.getEntityName().equals(cmd.getVmName()) && info.getName().equalsIgnoreCase("CreateSnapshot_Task")){
+                    s_logger.debug("There is already a VM snapshot task running, wait for it");
+                    context.getServiceUtil().waitForTask(taskMor);
+                }
+            }
+            
+            vmMo = hyperHost.findVmOnHyperHost(vmName);
+            if(vmMo == null)
+                vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+            if (vmMo == null) {
+                String msg = "Unable to find VM for CreateVMSnapshotCommand";
+                s_logger.debug(msg);
+                return new CreateVMSnapshotAnswer(cmd, false, msg);
+            } else {
+                if (vmMo.getSnapshotMor(vmSnapshotName) != null){
+                    s_logger.debug("VM snapshot " + vmSnapshotName + " already exists");
+                }else if (!vmMo.createSnapshot(vmSnapshotName, vmSnapshotDesc, snapshotMemory, true)) {
+                    return new CreateVMSnapshotAnswer(cmd, false,
+                            "Unable to create snapshot due to esxi internal failed");
+                }
+                // find VM disk file path after creating snapshot
+                VirtualDisk[] vdisks = vmMo.getAllDiskDevice();
+                for (int i = 0; i < vdisks.length; i ++){
+                    @SuppressWarnings("deprecation")
+                    List<Pair<String, ManagedObjectReference>> vmdkFiles = vmMo.getDiskDatastorePathChain(vdisks[i], false);
+                    for(Pair<String, ManagedObjectReference> fileItem : vmdkFiles) {
+                        String vmdkName = fileItem.first().split(" ")[1];
+                        if ( vmdkName.endsWith(".vmdk")){
+                            vmdkName = vmdkName.substring(0, vmdkName.length() - (".vmdk").length());
+                        }
+                        String[] s = vmdkName.split("-");
+                        mapNewDisk.put(s[0], vmdkName);
+                    }
+                }
+                
+                // update volume path using maps
+                for (VolumeTO volumeTO : volumeTOs) {
+                    String parentUUID = volumeTO.getPath();
+                    String[] s = parentUUID.split("-");
+                    String key = s[0];
+                    volumeTO.setPath(mapNewDisk.get(key));
+                }
+                return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), volumeTOs);
+            }
+        } catch (Exception e) {
+            String msg = e.getMessage();
+            s_logger.error("failed to create snapshot for vm:" + vmName + " due to " + msg);
+            try {
+                if (vmMo.getSnapshotMor(vmSnapshotName) != null) {
+                    vmMo.removeSnapshot(vmSnapshotName, false);
+                }
+            } catch (Exception e1) {
+            }
+            return new CreateVMSnapshotAnswer(cmd, false, e.getMessage());
+        }
+    }
+
+	@Override
+    public DeleteVMSnapshotAnswer execute(VmwareHostService hostService, DeleteVMSnapshotCommand cmd) {
+        List<VolumeTO> listVolumeTo = cmd.getVolumeTOs();
+        VirtualMachineMO vmMo = null;
+        VmwareContext context = hostService.getServiceContext(cmd);
+        Map<String, String> mapNewDisk = new HashMap<String, String>();
+        String vmName = cmd.getVmName();
+        String vmSnapshotName = cmd.getTarget().getSnapshotName();
+        try {
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
+            vmMo = hyperHost.findVmOnHyperHost(vmName);
+            if(vmMo == null)
+                vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+            if (vmMo == null) {
+                String msg = "Unable to find VM for RevertToVMSnapshotCommand";
+                s_logger.debug(msg);
+                return new DeleteVMSnapshotAnswer(cmd, false, msg);
+            } else {
+                if (vmMo.getSnapshotMor(vmSnapshotName) == null) {
+                    s_logger.debug("can not find the snapshot " + vmSnapshotName + ", assume it is already removed");
+                } else {
+                    if (!vmMo.removeSnapshot(vmSnapshotName, false)) {
+                        String msg = "delete vm snapshot " + vmSnapshotName + " due to error occured in vmware";
+                        s_logger.error(msg);
+                        return new DeleteVMSnapshotAnswer(cmd, false, msg);
+                    }
+                }
+                s_logger.debug("snapshot: " + vmSnapshotName + " is removed");
+                // after removed snapshot, the volumes' paths have been changed for the VM, needs to report new paths to manager 
+                VirtualDisk[] vdisks = vmMo.getAllDiskDevice();
+                for (int i = 0; i < vdisks.length; i++) {
+                    @SuppressWarnings("deprecation")
+                    List<Pair<String, ManagedObjectReference>> vmdkFiles = vmMo.getDiskDatastorePathChain(vdisks[i], false);
+                    for (Pair<String, ManagedObjectReference> fileItem : vmdkFiles) {
+                        String vmdkName = fileItem.first().split(" ")[1];
+                        if (vmdkName.endsWith(".vmdk")) {
+                            vmdkName = vmdkName.substring(0, vmdkName.length() - (".vmdk").length());
+                        }
+                        String[] s = vmdkName.split("-");
+                        mapNewDisk.put(s[0], vmdkName);
+                    }
+                }
+                for (VolumeTO volumeTo : listVolumeTo) {
+                    String key = null;
+                    String parentUUID = volumeTo.getPath();
+                    String[] s = parentUUID.split("-");
+                    key = s[0];
+                    volumeTo.setPath(mapNewDisk.get(key));
+                }
+                return new DeleteVMSnapshotAnswer(cmd, listVolumeTo);
+            }
+        } catch (Exception e) {
+            String msg = e.getMessage();
+            s_logger.error("failed to delete vm snapshot " + vmSnapshotName + " of vm " + vmName + " due to " + msg);
+            return new DeleteVMSnapshotAnswer(cmd, false, msg);
+        }
+    }
+
+	@Override
+    public RevertToVMSnapshotAnswer execute(VmwareHostService hostService, RevertToVMSnapshotCommand cmd) {
+        String snapshotName = cmd.getTarget().getSnapshotName();
+        String vmName = cmd.getVmName();
+        Boolean snapshotMemory = cmd.getTarget().getType() == VMSnapshot.Type.DiskAndMemory;
+        List<VolumeTO> listVolumeTo = cmd.getVolumeTOs();
+        VirtualMachine.State vmState = VirtualMachine.State.Running;
+        VirtualMachineMO vmMo = null;
+        VmwareContext context = hostService.getServiceContext(cmd);
+        Map<String, String> mapNewDisk = new HashMap<String, String>();
+        try {
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
+            
+            // wait if there are already VM revert task running
+            ManagedObjectReference taskmgr = context.getServiceContent().getTaskManager();
+            ManagedObjectReference[] tasks =  (ManagedObjectReference[]) context.getServiceUtil().getDynamicProperty(taskmgr, "recentTask");
+            for (ManagedObjectReference taskMor : tasks) {
+                TaskInfo info = (TaskInfo) (context.getServiceUtil().getDynamicProperty(taskMor, "info"));
+                if(info.getEntityName().equals(cmd.getVmName()) && info.getName().equalsIgnoreCase("RevertToSnapshot_Task")){
+                    s_logger.debug("There is already a VM snapshot task running, wait for it");
+                    context.getServiceUtil().waitForTask(taskMor);
+                }
+            }
+            
+            HostMO hostMo = (HostMO) hyperHost;
+            vmMo = hyperHost.findVmOnHyperHost(vmName);
+            if(vmMo == null)
+                vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+            if (vmMo == null) {
+                String msg = "Unable to find VM for RevertToVMSnapshotCommand";
+                s_logger.debug(msg);
+                return new RevertToVMSnapshotAnswer(cmd, false, msg);
+            } else {
+                boolean result = false;
+                if (snapshotName != null) {
+                    ManagedObjectReference morSnapshot = vmMo.getSnapshotMor(snapshotName);
+                    result = hostMo.revertToSnapshot(morSnapshot);
+                } else {
+                    return new RevertToVMSnapshotAnswer(cmd, false, "Unable to find the snapshot by name " + snapshotName);
+                }
+
+                if (result) {
+                    VirtualDisk[] vdisks = vmMo.getAllDiskDevice();
+                    // build a map<volumeName, vmdk>
+                    for (int i = 0; i < vdisks.length; i++) {
+                        @SuppressWarnings("deprecation")
+                        List<Pair<String, ManagedObjectReference>> vmdkFiles = vmMo.getDiskDatastorePathChain(
+                                vdisks[i], false);
+                        for (Pair<String, ManagedObjectReference> fileItem : vmdkFiles) {
+                            String vmdkName = fileItem.first().split(" ")[1];
+                            if (vmdkName.endsWith(".vmdk")) {
+                                vmdkName = vmdkName.substring(0, vmdkName.length() - (".vmdk").length());
+                            }
+                            String[] s = vmdkName.split("-");
+                            mapNewDisk.put(s[0], vmdkName);
+                        }
+                    }
+                    String key = null;
+                    for (VolumeTO volumeTo : listVolumeTo) {
+                        String parentUUID = volumeTo.getPath();
+                        String[] s = parentUUID.split("-");
+                        key = s[0];
+                        volumeTo.setPath(mapNewDisk.get(key));
+                    }
+                    if (!snapshotMemory) {
+                        vmState = VirtualMachine.State.Stopped;
+                    }
+                    return new RevertToVMSnapshotAnswer(cmd, listVolumeTo, vmState);
+                } else {
+                    return new RevertToVMSnapshotAnswer(cmd, false,
+                            "Error while reverting to snapshot due to execute in esxi");
+                }
+            }
+        } catch (Exception e) {
+            String msg = "revert vm " + vmName + " to snapshot " + snapshotName + " failed due to " + e.getMessage();
+            s_logger.error(msg);
+            return new RevertToVMSnapshotAnswer(cmd, false, msg);
+        }
+    }
+
+ 
+    private VirtualMachineMO createWorkingVM(DatastoreMO dsMo, VmwareHypervisorHost hyperHost) throws Exception {
+        String uniqueName = UUID.randomUUID().toString();
+        VirtualMachineMO workingVM = null;
+        VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
+        vmConfig.setName(uniqueName);
+        vmConfig.setMemoryMB((long) 4);
+        vmConfig.setNumCPUs(1);
+        vmConfig.setGuestId(VirtualMachineGuestOsIdentifier._otherGuest.toString());
+        VirtualMachineFileInfo fileInfo = new VirtualMachineFileInfo();
+        fileInfo.setVmPathName(String.format("[%s]", dsMo.getName()));
+        vmConfig.setFiles(fileInfo);
+
+        VirtualLsiLogicController scsiController = new VirtualLsiLogicController();
+        scsiController.setSharedBus(VirtualSCSISharing.noSharing);
+        scsiController.setBusNumber(0);
+        scsiController.setKey(1);
+        VirtualDeviceConfigSpec scsiControllerSpec = new VirtualDeviceConfigSpec();
+        scsiControllerSpec.setDevice(scsiController);
+        scsiControllerSpec.setOperation(VirtualDeviceConfigSpecOperation.add);
+
+        vmConfig.setDeviceChange(new VirtualDeviceConfigSpec[] { scsiControllerSpec });
+        hyperHost.createVm(vmConfig);
+        workingVM = hyperHost.findVmOnHyperHost(uniqueName);
+        return workingVM;
     }
 }

@@ -65,9 +65,13 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
+import com.cloud.agent.api.CreateVMSnapshotAnswer;
+import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.DeleteVMSnapshotAnswer;
+import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetHostStatsAnswer;
@@ -103,6 +107,8 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.RevertToVMSnapshotAnswer;
+import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.SetupGuestNetworkAnswer;
@@ -445,7 +451,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((SetSourceNatCommand) cmd);
             } else if (clz == SetNetworkACLCommand.class) {
                 answer = execute((SetNetworkACLCommand) cmd);
-            } else if (clz == SetPortForwardingRulesVpcCommand.class) {
+            } else if (cmd instanceof CreateVMSnapshotCommand) {
+            	return execute((CreateVMSnapshotCommand)cmd);
+            } else if(cmd instanceof DeleteVMSnapshotCommand){
+            	return execute((DeleteVMSnapshotCommand)cmd);
+            } else if(cmd instanceof RevertToVMSnapshotCommand){
+            	return execute((RevertToVMSnapshotCommand)cmd);
+        	}else if (clz == SetPortForwardingRulesVpcCommand.class) {
                 answer = execute((SetPortForwardingRulesVpcCommand) cmd);
             } else if (clz == Site2SiteVpnCfgCommand.class) {
                 answer = execute((Site2SiteVpnCfgCommand) cmd);
@@ -2799,7 +2811,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         // before we stop VM, remove all possible snapshots on the VM to let
                         // disk chain be collapsed
                         s_logger.info("Remove all snapshot before stopping VM " + cmd.getVmName());
-                        vmMo.removeAllSnapshots();
                         if (vmMo.safePowerOff(_shutdown_waitMs)) {
                             state = State.Stopped;
                             return new StopAnswer(cmd, "Stop VM " + cmd.getVmName() + " Succeed", 0, true);
@@ -3351,7 +3362,42 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    protected Answer execute(CreateVMSnapshotCommand cmd) {
+        try {
+            VmwareContext context = getServiceContext();
+            VmwareManager mgr = context
+                    .getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
+            return mgr.getStorageManager().execute(this, cmd);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new CreateVMSnapshotAnswer(cmd, false, "");
+        }
+    }
+    
+    protected Answer execute(DeleteVMSnapshotCommand cmd) {
+        try {
+            VmwareContext context = getServiceContext();
+            VmwareManager mgr = context
+                    .getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+
+            return mgr.getStorageManager().execute(this, cmd);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new DeleteVMSnapshotAnswer(cmd, false, "");
+        }
+    }
+    
+    protected Answer execute(RevertToVMSnapshotCommand cmd){
+    	try{
+    		VmwareContext context = getServiceContext();
+			VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+			return mgr.getStorageManager().execute(this, cmd);
+    	}catch (Exception e){
+    		e.printStackTrace();
+    		return new RevertToVMSnapshotAnswer(cmd,false,"");
+    	}
+    }
     protected Answer execute(CreateVolumeFromSnapshotCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource CreateVolumeFromSnapshotCommand: " + _gson.toJson(cmd));

@@ -537,3 +537,9 @@ addRegion=1
 updateRegion=1
 removeRegion=1
 listRegions=15
+
+### VM Snapshot commands
+listVMSnapshot=15
+createVMSnapshot=15
+deleteVMSnapshot=15
+revertToSnapshot=15

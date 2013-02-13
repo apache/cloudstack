@@ -88,6 +88,7 @@ import org.apache.cloudstack.api.response.TrafficTypeResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VMSnapshotResponse;
 import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
 import org.apache.cloudstack.api.response.VlanIpRangeResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -163,6 +164,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.snapshot.VMSnapshot;
 
 public interface ResponseGenerator {
     UserResponse createUserResponse(UserAccount user);
@@ -381,5 +383,6 @@ public interface ResponseGenerator {
     
     UsageRecordResponse createUsageResponse(Usage usageRecord);
 
-	TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor);
+    TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor);
+    VMSnapshotResponse createVMSnapshotResponse(VMSnapshot vmSnapshot);
 }

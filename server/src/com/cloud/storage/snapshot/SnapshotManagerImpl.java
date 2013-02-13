@@ -104,6 +104,9 @@ import org.apache.log4j.Logger;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import java.util.*;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
 @Local(value = { SnapshotManager.class, SnapshotService.class })
@@ -167,7 +170,9 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     private ResourceTagDao _resourceTagDao;
     @Inject
     private ConfigurationDao _configDao;
-    
+    @Inject 
+    private VMSnapshotDao _vmSnapshotDao;
+    String _name;
     private int _totalRetries;
     private int _pauseInterval;
     private int _deltaSnapshotMax;
@@ -395,6 +400,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             }
 
             // if volume is attached to a vm in destroyed or expunging state; disallow
+            // if volume is attached to a vm in taking vm snapshot; disallow
             if (volume.getInstanceId() != null) {
                 UserVmVO userVm = _vmDao.findById(volume.getInstanceId());
                 if (userVm != null) {
@@ -408,6 +414,12 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                         if(activeSnapshots.size() > 1)
                             throw new CloudRuntimeException("There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
                     }
+                    List<VMSnapshotVO> activeVMSnapshots = _vmSnapshotDao.listByInstanceId(userVm.getId(),
+                            VMSnapshot.State.Creating, VMSnapshot.State.Reverting, VMSnapshot.State.Expunging);
+                    if (activeVMSnapshots.size() > 0) {
+                        throw new CloudRuntimeException(
+                                "There is other active vm snapshot tasks on the instance to which the volume is attached, please try again later");
+                    }			
                 }
             }
 
