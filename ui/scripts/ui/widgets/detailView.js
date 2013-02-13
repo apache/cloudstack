@@ -823,7 +823,16 @@
 				 */
 				
         $name.html(_l(value.label));
-        $value.html(_s(content));
+
+        if (!value.isExternalLink) {
+          $value.html(_s(content));
+        } else {
+          $value.html('').append(
+            $('<a>').attr({
+              href: _s(content)
+            }).html(_s(content))
+          );
+        }
 
         // Set up validation metadata
         $value.data('validation-rules', value.validation);

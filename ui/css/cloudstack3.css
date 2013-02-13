@@ -2336,6 +2336,28 @@ div.detail-group.actions td {
   top: 18px;
 }
 
+#navigation ul li.custom-icon span.icon {
+  display: block;
+  width: 50px;
+  height: 50px;
+  position: relative;
+  float: left;
+  margin-right: -47px;
+  background: none;
+}
+
+#navigation ul li.custom-icon span.icon img {
+  width: 50px;
+  height: 50px;
+  float: left;
+  /*+placement:shift -6px -17px;*/
+  position: relative;
+  left: -6px;
+  top: -17px;
+  position: absolute;
+  margin-right: -14px;
+}
+
 #navigation ul li.last.active,
 #navigation ul li.last:hover {
   height: 52px;
@@ -2390,6 +2412,10 @@ div.detail-group.actions td {
 
 #navigation ul li.domains span.icon {
   background-position: -519px -24px;
+}
+
+#navigation ul li.plugins span.icon {
+  background: url(../images/sprites.png) no-repeat -140px -291px;
 }
 
 /*Browser*/
@@ -10927,6 +10953,73 @@ div.ui-dialog div.autoscaler div.scale-down-policy div.expand {
 
 div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-item div.name label {
   font-size: 11px;
+}
+
+/*Plugins listing*/
+.plugins-listing {
+}
+
+.plugins-listing ul {
+  width: 100%;
+}
+
+.plugins-listing ul li {
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  /*+box-shadow:0px 2px 6px #D3D3D3;*/
+  -moz-box-shadow: 0px 2px 6px #D3D3D3;
+  -webkit-box-shadow: 0px 2px 6px #D3D3D3;
+  -o-box-shadow: 0px 2px 6px #D3D3D3;
+  box-shadow: 0px 2px 6px #D3D3D3;
+  border: 1px solid #A8A3A3;
+  background: url(../images/bg-gradients.png) 0px -29px;
+  width: 98%;
+  height: 66px;
+  margin: 9px auto 12px;
+  cursor: pointer;
+}
+
+.plugins-listing ul li:hover {
+  /*+box-shadow:inset 0px 2px 4px #B9B9B9;*/
+  -moz-box-shadow: inset 0px 2px 4px #B9B9B9;
+  -webkit-box-shadow: inset 0px 2px 4px #B9B9B9;
+  -o-box-shadow: inset 0px 2px 4px #B9B9B9;
+  box-shadow: inset 0px 2px 4px #B9B9B9;
+}
+
+.plugins-listing ul li .title {
+  display: block;
+  float: left;
+  width: 90%;
+  font-weight: bold;
+  /*+text-shadow:0px 1px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px 1px #FFFFFF;
+  text-shadow: 0px 1px 1px #FFFFFF;
+  color: #4A5A6A;
+  margin: 13px 0 7px;
+}
+
+.plugins-listing ul li .desc {
+  color: #524E4E;
+  font-size: 13px;
+}
+
+.plugins-listing ul li .icon {
+  display: block;
+  width: 50px;
+  height: 50px;
+  float: left;
+  margin: 8px 13px 13px 11px;
+}
+
+.plugins-listing ul li .icon img {
+  width: 100%;
+  height: 100%;
 }
 
 /*Action icons*/

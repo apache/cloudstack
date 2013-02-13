@@ -25,6 +25,11 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.plugins': '<fmt:message key="label.plugins"/>',
+'label.plugin.details': '<fmt:message key="label.plugin.details"/>',
+'label.author.name': '<fmt:message key="label.author.name"/>',
+'label.author.email': '<fmt:message key="label.author.email"/>',
+'label.external.link': '<fmt:message key="label.external.link"/>',
 'label.enable.s3': '<fmt:message key="label.enable.s3"/>',
 'confirm.enable.s3': '<fmt:message key="confirm.enable.s3"/>',
 'message.after.enable.s3': '<fmt:message key="message.after.enable.s3"/>',
