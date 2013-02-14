@@ -288,22 +288,31 @@ public class AncientPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 	@Override
 	public void takeSnapshot(SnapshotInfo snapshot,
 			AsyncCompletionCallback<CreateCmdResult> callback) {
-		VolumeInfo volume = snapshot.getBaseVolume();
-        String vmName = this.volumeMgr.getVmNameOnVolume(volume);
-        SnapshotVO preSnapshotVO = this.snapshotMgr.getParentSnapshot(volume, snapshot);
-        StoragePool srcPool = (StoragePool)volume.getDataStore();
+	    CreateCmdResult result = null;
+	    try {
+	        VolumeInfo volume = snapshot.getBaseVolume();
+	        String vmName = this.volumeMgr.getVmNameOnVolume(volume);
+	        SnapshotVO preSnapshotVO = this.snapshotMgr.getParentSnapshot(volume, snapshot);
+	        String parentSnapshotPath = null;
+	        if (preSnapshotVO != null) {
+	            parentSnapshotPath = preSnapshotVO.getPath();
+	        }
+	        StoragePool srcPool = (StoragePool)volume.getDataStore();
+	        
+	        ManageSnapshotCommand cmd = new ManageSnapshotCommand(snapshot.getId(), volume.getPath(), srcPool, parentSnapshotPath, snapshot.getName(), vmName);
 
-        ManageSnapshotCommand cmd = new ManageSnapshotCommand(snapshot.getId(), volume.getPath(), srcPool, preSnapshotVO.getPath(), snapshot.getName(), vmName);
-      
-        ManageSnapshotAnswer answer = (ManageSnapshotAnswer) this.snapshotMgr.sendToPool(volume, cmd);
-        
-        CreateCmdResult result = null;
-        if ((answer != null) && answer.getResult()) {
-        	result = new CreateCmdResult(answer.getSnapshotPath(), null);
-        } else {
-        	result = new CreateCmdResult(null, null);
-        }
-        
+	        ManageSnapshotAnswer answer = (ManageSnapshotAnswer) this.snapshotMgr.sendToPool(volume, cmd);
+	        
+	        if ((answer != null) && answer.getResult()) {
+	            result = new CreateCmdResult(answer.getSnapshotPath(), null);
+	        } else {
+	            result = new CreateCmdResult(null, null);
+	        }
+	    } catch (Exception e) {
+	        s_logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
+	        result = new CreateCmdResult(null, null);
+	        result.setResult(e.toString());
+	    }
         callback.complete(result);
 	}
 

@@ -180,7 +180,10 @@ public class AncientSnasphotStrategy implements SnapshotStrategy {
 
 		try {
 			SnapshotVO preSnapshotVO = this.snapshotMgr.getParentSnapshot(volume, snapshot);
-			String preSnapshotPath = preSnapshotVO.getPath();
+			String preSnapshotPath = null;
+			if (preSnapshotVO != null) {
+			    preSnapshotPath = preSnapshotVO.getPath();
+			}
 			SnapshotVO snapshotVO = this.snapshotDao.findById(snapshot.getId());
 			// The snapshot was successfully created
 			if (preSnapshotPath != null && preSnapshotPath.equals(result.getPath())) {
@@ -238,6 +241,11 @@ public class AncientSnasphotStrategy implements SnapshotStrategy {
 		} catch (Exception e) {
 			s_logger.debug("Failed to create snapshot: ", e);
 			snapResult.setResult(e.toString());
+			try {
+                snapshot.processEvent(Snapshot.Event.OperationFailed);
+            } catch (NoTransitionException e1) {
+                s_logger.debug("Failed to change snapshot state: " + e1.toString());
+            }
 		}
 
 		future.complete(snapResult);
@@ -263,19 +271,30 @@ public class AncientSnasphotStrategy implements SnapshotStrategy {
 			s_logger.debug("Failed to update snapshot state due to " + nte.getMessage());
 			throw new CloudRuntimeException("Failed to update snapshot state due to " + nte.getMessage());
 		}
+
 		AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
-
-		CreateSnapshotContext<CommandResult> context = new CreateSnapshotContext<CommandResult>(
-				null, volume, snapshot, future);
-		AsyncCallbackDispatcher<AncientSnasphotStrategy, CreateCmdResult> caller = AsyncCallbackDispatcher
-				.create(this);
-		caller.setCallback(
-				caller.getTarget().createSnapshotAsyncCallback(null, null))
-				.setContext(context);
-		PrimaryDataStoreDriver primaryStore = (PrimaryDataStoreDriver)volume.getDataStore().getDriver();
-
-		primaryStore.takeSnapshot(snapshot, caller);
+		try {
+		    CreateSnapshotContext<CommandResult> context = new CreateSnapshotContext<CommandResult>(
+		            null, volume, snapshot, future);
+		    AsyncCallbackDispatcher<AncientSnasphotStrategy, CreateCmdResult> caller = AsyncCallbackDispatcher
+		            .create(this);
+		    caller.setCallback(
+		            caller.getTarget().createSnapshotAsyncCallback(null, null))
+		            .setContext(context);
+		    PrimaryDataStoreDriver primaryStore = (PrimaryDataStoreDriver)volume.getDataStore().getDriver();
+		    primaryStore.takeSnapshot(snapshot, caller);
+		} catch (Exception e) {
+		    s_logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
+		    try {
+                snapshot.processEvent(Snapshot.Event.OperationFailed);
+            } catch (NoTransitionException e1) {
+                s_logger.debug("Failed to change state for event: OperationFailed" , e);
+            }
+		    throw new CloudRuntimeException("Failed to take snapshot" + snapshot.getId());
+		}
+		
 		SnapshotResult result;
+		
 		try {
 			result = future.get();
 			if (result.isFailed()) {
@@ -390,6 +409,11 @@ public class AncientSnasphotStrategy implements SnapshotStrategy {
 		} catch (Exception e) {
 			s_logger.debug("Failed to copy snapshot", e);
 			result.setResult("Failed to copy snapshot:" +e.toString());
+			try {
+                snapObj.processEvent(Snapshot.Event.OperationFailed);
+            } catch (NoTransitionException e1) {
+                s_logger.debug("Failed to change state: " + e1.toString());
+            }
 			future.complete(result);
 		}
 

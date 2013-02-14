@@ -26,7 +26,7 @@ SnapshotStateMachineManager {
 		stateMachine.addTransition(Snapshot.State.Creating, Event.OperationFailed, Snapshot.State.Error);
 		stateMachine.addTransition(Snapshot.State.CreatedOnPrimary, Event.BackupToSecondary, Snapshot.State.BackingUp);
 		stateMachine.addTransition(Snapshot.State.BackingUp, Event.OperationSucceeded, Snapshot.State.BackedUp);
-		stateMachine.addTransition(Snapshot.State.BackingUp, Event.OperationFailed, Snapshot.State.Error);
+		stateMachine.addTransition(Snapshot.State.BackingUp, Event.OperationFailed, Snapshot.State.CreatedOnPrimary);
 		
 		stateMachine.registerListener(new SnapshotStateListener());
 	}
