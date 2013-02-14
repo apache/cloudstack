@@ -768,6 +768,8 @@
       // Multiple Vlan Ranges functionality
       //
       var addVlan = function(options) {
+        var $tab = $tabs.filter('div.physical-network-item:visible');
+
         var evenOdd = function() {
           cloudStack.evenOdd($container, '.field[rel=vlanRange]:visible', {
             even: function($elem) { $elem.removeClass('odd'); $elem.addClass('even'); },
@@ -775,7 +777,7 @@
           });
         };
 
-        var $vlanClone = $vlanRangeFirst.clone();
+        var $vlanClone = $tab.find('.field[rel=vlanRange]:first').clone();
         var $remove = $hide.clone();
 
         $vlanClone.find('input').val('');
