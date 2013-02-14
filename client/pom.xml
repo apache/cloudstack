@@ -392,14 +392,14 @@
                 <artifactItem>
                   <groupId>org.jasypt</groupId>
                   <artifactId>jasypt</artifactId>
-                  <version>1.9.0</version>`
+                  <version>1.9.0</version>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.jasypt</groupId>
                   <artifactId>jasypt</artifactId>
-                  <version>1.8</version>`
+                  <version>1.8</version>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
                 </artifactItem>
