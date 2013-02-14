@@ -117,7 +117,7 @@ public class SnapshotVO implements Snapshot {
         this.snapshotType = snapshotType;
         this.typeDescription = typeDescription;
         this.size = size;
-        this.state = State.Creating;
+        this.state = State.Allocated;
         this.prevSnapshotId = 0;
         this.hypervisorType = hypervisorType;
         this.version = "2.2";

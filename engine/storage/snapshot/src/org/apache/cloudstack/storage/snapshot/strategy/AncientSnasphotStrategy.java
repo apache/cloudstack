@@ -67,6 +67,9 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
 public class AncientSnasphotStrategy implements SnapshotStrategy {
@@ -103,6 +106,8 @@ public class AncientSnasphotStrategy implements SnapshotStrategy {
 	DataMotionService motionSrv;
 	@Inject
 	ObjectInDataStoreManager objInStoreMgr;
+	@Inject
+	VMSnapshotDao _vmSnapshotDao;
 
 
 	@Override
