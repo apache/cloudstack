@@ -351,6 +351,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     		 throw new CloudRuntimeException("Can't find snapshot:" + snapshotId);
     	 }
     	 
+    	 if (snapshot.getState() == Snapshot.State.BackedUp) {
+    	     return snapshot;
+    	 }
+    	 
     	 SnapshotStrategy strategy = null;
          for (SnapshotStrategy st : snapshotStrategies) {
          	if (st.canHandle(snapshot)) {

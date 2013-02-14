@@ -74,6 +74,11 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     
     @Override
     public SnapshotInfo getSnapshot(DataObject obj, DataStore store) {
-        throw new CloudRuntimeException("not implemented yet");
+        SnapshotVO snapshot = snapshotDao.findByIdIncludingRemoved(obj.getId());
+        if (snapshot == null) {
+            throw new CloudRuntimeException("Can't find snapshot: " + obj.getId());
+        }
+        SnapshotObject so =  SnapshotObject.getSnapshotObject(snapshot, store);
+        return so;
     }
 }
