@@ -471,6 +471,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 // enable static nat on the backend
                 s_logger.trace("Enabling static nat for ip address " + ipAddress + " and vm id=" + vmId + " on the backend");
                 if (applyStaticNatForIp(ipId, false, caller, false)) {
+                    performedIpAssoc = false; // ignore unassignIPFromVpcNetwork in finally block
                     return true;
                 } else {
                     s_logger.warn("Failed to enable static nat rule for ip address " + ipId + " on the backend");
