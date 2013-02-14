@@ -25,9 +25,12 @@ import java.security.SignatureException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -443,25 +446,35 @@ public class EC2Engine extends ManagerBase {
      */
     public EC2DescribeSnapshotsResponse handleRequest( EC2DescribeSnapshots request ) 
     {
-        EC2DescribeVolumesResponse volumes = new EC2DescribeVolumesResponse();
         EC2SnapshotFilterSet sfs = request.getFilterSet();
         EC2TagKeyValue[] tagKeyValueSet = request.getResourceTagSet();
 
         try { 
-            // -> query to get the volume size for each snapshot
             EC2DescribeSnapshotsResponse response = listSnapshots( request.getSnapshotSet(),
                     getResourceTags(tagKeyValueSet));
             if (response == null) {
                 return new EC2DescribeSnapshotsResponse();
             }
             EC2Snapshot[] snapshots = response.getSnapshotSet();
-            for (EC2Snapshot snap : snapshots) {
-                volumes = listVolumes(snap.getVolumeId(), null, volumes, null);
-                EC2Volume[] volSet = volumes.getVolumeSet();
-                if (0 < volSet.length) snap.setVolumeSize(volSet[0].getSize());
-                volumes.reset();
+            // -> query to get the volume size for each snapshot
+            HashMap<String, Long> volumeIdSize = new HashMap<String, Long>();
+            for( EC2Snapshot snap : snapshots ) {
+                Boolean duplicateVolume = false;
+                Long size = null;
+                if ( volumeIdSize.containsKey(snap.getVolumeId()) ) {
+                    size = volumeIdSize.get(snap.getVolumeId());
+                    duplicateVolume = true;
+                    break;
+                }
+                if ( !duplicateVolume ) {
+                    EC2DescribeVolumesResponse volumes = new EC2DescribeVolumesResponse();
+                    volumes = listVolumes(snap.getVolumeId(), null, volumes, null);
+                    EC2Volume[] volumeSet = volumes.getVolumeSet();
+                    if (volumeSet.length > 0) size = volumeSet[0].getSize();
+                    volumeIdSize.put(snap.getVolumeId(), size);
+                }
+                snap.setVolumeSize(size);
             }
-
             if ( null == sfs )
                 return response;
             else return sfs.evaluate( response );
