@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -56,7 +56,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
             required = true, description = "availability zone for the auto deployed virtual machine")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class,
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class,
             required = true, description = "the service offering of the auto deployed virtual machine")
     private Long serviceOfferingId;
 
