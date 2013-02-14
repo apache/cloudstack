@@ -37,6 +37,9 @@ import com.cloud.agent.api.ConfigureNexusVsmForAsaCommand;
 import com.cloud.agent.api.CreateLogicalEdgeFirewallCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupExternalFirewallCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.SetSourceNatCommand;
+import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.api.commands.AddCiscoAsa1000vResourceCmd;
 import com.cloud.api.commands.AddCiscoVnmcResourceCmd;
 import com.cloud.api.commands.DeleteCiscoAsa1000vResourceCmd;
@@ -63,6 +66,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.PhysicalNetworkServiceProvider;
@@ -100,6 +104,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -206,6 +211,24 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         return answer.getResult();
     }
 
+    private boolean configureSourceNat(long vlanId, String guestCidr,
+    		PublicIp sourceNatIp, long hostId) {
+        boolean add = (sourceNatIp.getState() == IpAddress.State.Releasing ? false : true);
+        IpAddressTO ip = new IpAddressTO(sourceNatIp.getAccountId(), sourceNatIp.getAddress().addr(), add, false,
+                sourceNatIp.isSourceNat(), sourceNatIp.getVlanTag(), sourceNatIp.getGateway(), sourceNatIp.getNetmask(), sourceNatIp.getMacAddress(),
+                null, sourceNatIp.isOneToOneNat());
+        boolean addSourceNat = false;
+        if (sourceNatIp.isSourceNat()) {
+            addSourceNat = add;
+        }
+
+        SetSourceNatCommand cmd = new SetSourceNatCommand(ip, addSourceNat);
+        cmd.setContextParam(NetworkElementCommand.GUEST_VLAN_TAG, Long.toString(vlanId));
+        cmd.setContextParam(NetworkElementCommand.GUEST_NETWORK_CIDR, guestCidr);
+        Answer answer = _agentMgr.easySend(hostId, cmd);
+        return answer.getResult();
+    }
+
     private boolean associateAsaWithLogicalEdgeFirewall(long vlanId,
     		String asaMgmtIp, long hostId) {
         AssociateAsaWithLogicalEdgeFirewallCommand cmd = 
@@ -293,7 +316,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
             // create logical edge firewall in VNMC
             if (!createLogicalEdgeFirewall(vlanId, network.getGateway(), sourceNatIp.getAddress().addr(), ciscoVnmcHost.getId())) {
-                s_logger.error("Failed to create logical edge firewall in Cisco Vnmc device for network " + network.getName());
+                s_logger.error("Failed to create logical edge firewall in Cisco VNMC device for network " + network.getName());
                 return false;
             }
 
@@ -306,6 +329,12 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
                 return false;
             }
 
+            // configure source NAT
+            if (!configureSourceNat(vlanId, network.getCidr(), sourceNatIp, ciscoVnmcHost.getId())) {
+                s_logger.error("Failed to configure source NAT in Cisco VNMC device for network " + network.getName());
+                return false;
+            }
+            
             // associate Asa 1000v instance with logical edge firewall
             if (!associateAsaWithLogicalEdgeFirewall(vlanId, assignedAsa.getManagementIp(), ciscoVnmcHost.getId())) {
                 s_logger.error("Failed to associate Cisco ASA 1000v (" + assignedAsa.getManagementIp() +
@@ -318,6 +347,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         } finally {
             if (!status) {
                 txn.rollback();
+                //FIXME: also undo changes in VNMC, VSM if anything failed
             }
         }
 

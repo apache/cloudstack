@@ -41,7 +41,9 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupExternalFirewallCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.host.Host;
 import com.cloud.network.cisco.CiscoVnmcConnectionImpl;
@@ -52,6 +54,7 @@ import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.OperationType;
 import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.SwitchPortMode;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.utils.net.NetUtils;
 
 public class CiscoVnmcResource implements ServerResource{
 
@@ -79,6 +82,8 @@ public class CiscoVnmcResource implements ServerResource{
             return execute((MaintainCommand) cmd);
         } else if (cmd instanceof IpAssocCommand) {
             return execute((IpAssocCommand) cmd);
+        } else if (cmd instanceof SetSourceNatCommand) {
+            return execute((SetSourceNatCommand) cmd);
         } else if (cmd instanceof SetStaticNatRulesCommand) {
             return execute((SetStaticNatRulesCommand) cmd);
         } else if (cmd instanceof SetPortForwardingRulesCommand) {
@@ -251,6 +256,52 @@ public class CiscoVnmcResource implements ServerResource{
     private Answer execute(IpAssocCommand cmd, int numRetries) {        
         String[] results = new String[cmd.getIpAddresses().length];
         return new IpAssocAnswer(cmd, results);
+    }
+
+    /*
+     * Source NAT
+     */
+    private synchronized Answer execute(SetSourceNatCommand cmd) {
+    	refreshVnmcConnection();
+        return execute(cmd, _numRetries);
+    }
+
+    private Answer execute(SetSourceNatCommand cmd, int numRetries) {
+    	String vlanId = cmd.getContextParam(NetworkElementCommand.GUEST_VLAN_TAG);
+        String tenant = "vlan-" + vlanId;
+        try {
+            // create-nat-policy-set
+            if (!_connection.createTenantVDCNatPolicySet(tenant)) {
+            	throw new Exception("Failed to create NAT policy set in VNMC for guest network with vlan " + vlanId);
+            }
+
+            // create-source-nat-pool
+            if (!_connection.createTenantVDCSourceNATPool(tenant, cmd.getIpAddress().getPublicIp())) {
+                throw new Exception("Failed to create source NAT pool in VNMC for guest network with vlan " + vlanId);
+            }
+
+            // create-source-nat-policy
+            String cidr = cmd.getContextParam(NetworkElementCommand.GUEST_NETWORK_CIDR);
+            String[] result = cidr.split("\\/");
+            assert (result.length == 2) : "Something is wrong with guest cidr " + cidr;
+            long size = Long.valueOf(result[1]);
+            String startIp = NetUtils.getIpRangeStartIpFromCidr(result[0], size);
+            String endIp = NetUtils.getIpRangeEndIpFromCidr(result[0], size);
+            if (!_connection.createTenantVDCSourceNATPolicy(tenant, startIp, endIp)) {
+                throw new Exception("Failed to create source NAT policy in VNMC for guest network with vlan " + vlanId);
+            }
+
+            // associate-nat-policy-set
+            if (!_connection.associateNatPolicySet(tenant)) {
+                throw new Exception("Failed to associate source NAT policy set with edge security profile in VNMC for guest network with vlan " + vlanId);
+            }
+        } catch (Throwable e) {
+            String msg = "SetSourceNatCommand failed due to " + e.getMessage();
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, msg);
+        }
+
+        return new Answer(cmd, true, "Success");
     }
 
     /*
