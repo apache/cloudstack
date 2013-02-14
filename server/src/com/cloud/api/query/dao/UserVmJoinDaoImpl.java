@@ -327,7 +327,15 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         }
 
         Set<Long> vmIdSet = userVmDataHash.keySet();
-        return searchByIds(vmIdSet.toArray(new Long[vmIdSet.size()]));
+        List<UserVmJoinVO> uvms = searchByIds(vmIdSet.toArray(new Long[vmIdSet.size()]));
+        // populate transit password field from UserVm
+        if ( uvms != null ){
+            for (UserVmJoinVO uvm : uvms){
+                UserVm v = userVmDataHash.get(uvm.getId());
+                uvm.setPassword(v.getPassword());
+            }
+        }
+        return uvms;
     }
 
 }
