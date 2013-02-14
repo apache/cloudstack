@@ -44,7 +44,11 @@
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
+    <testSourceDirectory>${project.basedir}/test</testSourceDirectory>
+    <testResources>
+      <testResource>
+        <directory>${project.basedir}/test/resource</directory>
+      </testResource>
+    </testResources>
   </build>
 </project>
