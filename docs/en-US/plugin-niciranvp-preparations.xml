@@ -23,7 +23,7 @@
 <section id="Prerequisites">
     <title>Prerequisites</title>
     <para>Before enabling the Nicira NVP plugin the NVP Controller needs to be configured. Please review the NVP User Guide on how to do that. </para>
-    <para>CloudStack needs to have at least one physical network with the isolation method set to "STT". This network should be enabled for the Guest traffic type.</para>
+    <para>&PRODUCT; needs to have at least one physical network with the isolation method set to "STT". This network should be enabled for the Guest traffic type.</para>
         <note><para>The Guest traffic type should be configured with the traffic label that matches the name of
             the Integration Bridge on the hypervisor. See the Nicira NVP User Guide for more details
             on how to set this up in XenServer or KVM.</para></note>
@@ -33,6 +33,6 @@
         <listitem><para>The username to access the API</para></listitem>
         <listitem><para>The password to access the API</para></listitem>
         <listitem><para>The UUID of the Transport Zone that contains the hypervisors in this Zone</para></listitem>
-        <listitem><para>The UUID of the Physical Network that will used for the Guest networks</para></listitem>
+        <listitem><para>The UUID of the Physical Network that will be used for the Guest networks</para></listitem>
     </itemizedlist>
 </section>
