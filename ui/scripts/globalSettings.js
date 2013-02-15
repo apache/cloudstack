@@ -150,8 +150,8 @@
                                 
                             },
                         port: {  label: 'Port' , defaultValue: '389' },
-                        truststore:{ label:'Trust Store' , isHidden:true  },
-                        truststorepassword:{ label:'Trust Store Password' ,isHidden:true }
+                        truststore:{ label:'Trust Store' , isHidden:true , dependsOn:'ssl' },
+                        truststorepassword:{ label:'Trust Store Password' ,isHidden:true , dependsOn:'ssl'}
                         
                      }
  
@@ -160,11 +160,6 @@
             
 
                 action:function(args) {
-                         var $form = $(this).closest("form");
-                         if($form.find('.form-item [rel=port]').find('input[ type=checkbox]').is(":checked") ==true) {
-                                  $form.find('.form-item[rel=truststore]').attr("isHidden",false);
-                                  $form.find('.form-item[rel=truststorepassword]').attr("isHidden",false);
-                                        }
 
 
                 }
