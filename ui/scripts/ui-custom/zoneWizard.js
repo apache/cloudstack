@@ -161,6 +161,29 @@
       }
     }
 
+    // Support for multiple VLAN ranges
+    if (groupedForms.zone && groupedForms.zone.networkType == 'Advanced' &&
+        groupedForms.physicalNetworks.length) {
+      groupedForms.vlanRanges = groupedForms.vlanRanges ? groupedForms.vlanRanges : [];
+
+      // One VLAN pair list per physical network
+      groupedForms.vlanRanges = $(groupedForms.physicalNetworks).map(function(index, physicalNetwork) {
+        var id = physicalNetwork.id;
+        var $guestVlanTab = $wizard.find('div.physical-network-item#physical-network-' + id);
+        var guestTrafficForm;
+
+        if (!$guestVlanTab.size()) return false;
+
+        guestTrafficForm = cloudStack.serializeForm($guestVlanTab.find('form'));
+
+        return {
+          physicalNetworkID: id,
+          start: guestTrafficForm.vlanRangeStart,
+          end: guestTrafficForm.vlanRangeEnd
+        };
+      });
+    }
+
     return groupedForms;
   };
 
@@ -750,6 +773,7 @@
       var $hidelabel = $('<div>').addClass('hide-label').html('Hide VLAN Range');
       var data = getData($wizard, { all: true });
       var $vlanRanges, $vlanRangeFirst, $subnav;
+      var vlanRangeData = getData($wizard).vlanRanges;
 
       // Cleanup
       guestTraffic.remove($wizard);
@@ -768,10 +792,12 @@
       // Multiple Vlan Ranges functionality
       //
       var addVlan = function(options) {
-        var $tab = $tabs.filter('div.physical-network-item:visible');
+        var $tab = options && options.physicalNetworkID ?
+          $tabs.filter('div.physical-network-item#physical-network-' + options.physicalNetworkID) :
+          $tabs.filter('div.physical-network-item:visible');
 
         var evenOdd = function() {
-          cloudStack.evenOdd($container, '.field[rel=vlanRange]:visible', {
+          cloudStack.evenOdd($tab, '.field[rel=vlanRange]', {
             even: function($elem) { $elem.removeClass('odd'); $elem.addClass('even'); },
             odd: function($elem) { $elem.removeClass('even'); $elem.addClass('odd'); }
           });
@@ -781,7 +807,7 @@
         var $remove = $hide.clone();
 
         $vlanClone.find('input').val('');
-        $vlanClone.insertAfter($container.find('.field[rel=vlanRange]:visible').filter(':last'));
+        $vlanClone.insertAfter($tab.find('.field[rel=vlanRange]').filter(':last'));
         $remove.appendTo($vlanClone);
 
         if (options) {
@@ -805,25 +831,34 @@
         addVlan();
       });
 
-      if (data.vlanRangeStart || data.vlanRangeEnd) {
-        if (($.isArray(data.vlanRangeStart) || $.isArray(data.vlanRangeEnd)) &&
-            (data.vlanRangeStart.length > 1 || data.vlanRangeEnd.length > 1)) {
-          $(data.vlanRangeStart).map(function(index) {
-            if (index) {
-              addVlan({
-                start: data.vlanRangeStart[index],
-                end: data.vlanRangeEnd[index]
-              });
-            }
-          });
+      $(vlanRangeData).each(function() {
+        var physicalNetworkID = this.physicalNetworkID;
+        var start = this.start;
+        var end = this.end;
+        var $tab = $tabs.filter('div.physical-network-item#physical-network-' + physicalNetworkID);
+        var $vlanRangeFirst = $tab.find('.field[rel=vlanRange]:first');
 
-          $vlanRangeFirst.find('input:first').val(data.vlanRangeStart[0]);
-          $vlanRangeFirst.find('input:last').val(data.vlanRangeEnd[0]);
-        } else { // Only 1 vlan range
-          $vlanRangeFirst.find('input:first').val(data.vlanRangeStart);
-          $vlanRangeFirst.find('input:last').val(data.vlanRangeEnd);
+        if (start || end) {
+          if (($.isArray(start) || $.isArray(end)) &&
+            (start.length > 1 || end.length > 1)) {
+            $(start).map(function(index) {
+              if (index) {
+                addVlan({
+                  physicalNetworkID: physicalNetworkID,
+                  start: start[index],
+                  end: end[index]
+                });
+              }
+            });
+
+            $vlanRangeFirst.find('input:first').val(start[0]);
+            $vlanRangeFirst.find('input:last').val(end[0]);
+          } else { // Only 1 vlan range
+            $vlanRangeFirst.find('input:first').val(start);
+            $vlanRangeFirst.find('input:last').val(end);
+          }
         }
-      }
+      });
     },
 
     /**
