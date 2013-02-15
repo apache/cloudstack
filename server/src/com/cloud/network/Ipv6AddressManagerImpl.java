@@ -80,7 +80,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
 		}
     	List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
     	if (vlans == null) {
-    		s_logger.debug("Cannot find related vlan or too many vlan attached to network " + networkId);
+    		s_logger.debug("Cannot find related vlan attached to network " + networkId);
     		return null;
     	}
     	String ip = null; 
@@ -109,7 +109,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
     			}
     		}
     		if (ip == null) {
-    			throw new InsufficientAddressCapacityException("Cannot find a usable IP in the network " + network.getName() + " after network.ipv6.search.retry.max = " + _ipv6RetryMax + " times retry!",
+    			throw new InsufficientAddressCapacityException("Cannot find a usable IP in the network " + network.getName() + " after " + _ipv6RetryMax + "(network.ipv6.search.retry.max) times retry!",
     						DataCenter.class, network.getDataCenterId());
     		}
     	} else {
