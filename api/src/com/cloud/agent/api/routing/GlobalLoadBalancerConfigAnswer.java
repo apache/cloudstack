@@ -20,7 +20,7 @@ import com.cloud.agent.api.Answer;
 
 public class GlobalLoadBalancerConfigAnswer extends Answer{
 
-    protected GlobalLoadBalancerConfigAnswer() {
+    public GlobalLoadBalancerConfigAnswer() {
         super();
     }
 }
