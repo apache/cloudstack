@@ -106,10 +106,10 @@
                    var data = {};
                    listViewDataProvider(args, data);
                     $.ajax({
-              url: createURL(''),
+              url: createURL(''),   //Need a list LDAP configuration API call which needs to be implemented
               data: data,
                 success: function(json) {
-               // var items = json.listhypervisorcapabilitiesresponse.hypervisorCapabilities;
+               // var items = json.listldapconfigresponse;
                 args.response.success({data:items});
                    },
                    error: function(data) {
@@ -145,13 +145,11 @@
                                label:'SSL' ,
                                isBoolean:true,
                                isChecked:false
-                               // var $form = $(this).closest("form");
-
                                 
                             },
                         port: {  label: 'Port' , defaultValue: '389' },
-                        truststore:{ label:'Trust Store' , isHidden:true , dependsOn:'ssl' },
-                        truststorepassword:{ label:'Trust Store Password' ,isHidden:true , dependsOn:'ssl'}
+                        truststore:{ label:'Trust Store' , isHidden:true , dependsOn:'ssl',validation:{required:true} },
+                        truststorepassword:{ label:'Trust Store Password' ,isHidden:true , dependsOn:'ssl', validation:{required:true}}
                         
                      }
  
@@ -160,6 +158,41 @@
             
 
                 action:function(args) {
+                     var array = [];
+                      array.push("&binddn=" + todb(args.data.name));
+                      array.push("&bindpass=" + todb(args.data.password));
+                      array.push("&hostname=" + todb(args.data.hostname));
+                      array.push("&searchbase=" +todb(args.data.searchbase));
+                      array.push("&queryfilter=" +todb(args.data.queryfilter));
+                      array.push("&port=" +todb(args.data.port));
+
+                      if(args.$form.find('.form-item[rel=ssl]').find('input[type=checkbox]').is(':Checked')== true)  {
+
+                            array.push("&ssl=true");
+                            if(args.data.truststore != "")
+                            array.push("&truststore=" +todb(args.data.truststore));
+
+                            if(args.data.truststorepassword !="")
+                            array.push("&truststorepass=" +todb(args.data.truststorepassword));
+
+                        }
+
+                      else
+                        array.push("&ssl=false");
+
+                  $.ajax({
+                    url: createURL("ldapConfig" + array.join("")),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                       var items = json.ldapconfigresponse;
+                       args.response.success({
+                                   data: items
+                             });
+
+                      }
+
+                     });
 
 
                 }
