@@ -1299,3 +1299,5 @@ INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client/a
 ALTER TABLE `cloud`.`account` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
 ALTER TABLE `cloud`.`user` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
 ALTER TABLE `cloud`.`domain` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
+
+ALTER TABLE `cloud_usage`.`account` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';

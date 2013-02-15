@@ -35,8 +35,9 @@ import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageSecurityGroupDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
+import org.springframework.stereotype.Component;
 
-
+@Component
 public class SecurityGroupUsageParser {
     public static final Logger s_logger = Logger.getLogger(SecurityGroupUsageParser.class.getName());
     

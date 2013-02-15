@@ -42,6 +42,11 @@
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+      <testResources>
+          <testResource>
+              <directory>test/resources</directory>
+          </testResource>
+      </testResources>
     <resources>
       <resource>
           <directory>resources</directory>

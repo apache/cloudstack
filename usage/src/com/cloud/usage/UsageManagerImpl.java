@@ -35,6 +35,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.usage.UsageTypes;
+import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -79,6 +80,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value={UsageManager.class})
 public class UsageManagerImpl extends ManagerBase implements UsageManager, Runnable {
     public static final Logger s_logger = Logger.getLogger(UsageManagerImpl.class.getName());
