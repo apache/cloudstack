@@ -504,13 +504,12 @@
     </profile>
     <profile>
       <id>developer</id>
+        <properties>
+            <marvin.config>tools/devcloud/devcloud.cfg</marvin.config>
+        </properties>
       <modules>
         <module>developer</module>
-        <module>tools/apidoc</module>
-        <module>tools/devcloud</module>
-        <module>tools/devcloud-kvm</module>
-        <module>tools/marvin</module>
-        <module>tools/cli</module>
+        <module>tools</module>
       </modules>
     </profile>
     <profile>
@@ -524,5 +523,113 @@
         <module>vmware-base</module>
       </modules>
     </profile>
+    <profile>
+          <id>simulator</id>
+          <activation>
+              <property>
+                  <name>deploydb-simulator</name>
+              </property>
+          </activation>
+          <build>
+              <plugins>
+                  <plugin>
+                      <groupId>org.codehaus.mojo</groupId>
+                      <artifactId>properties-maven-plugin</artifactId>
+                      <version>1.0-alpha-2</version>
+                      <executions>
+                          <execution>
+                              <phase>initialize</phase>
+                              <goals>
+                                  <goal>read-project-properties</goal>
+                              </goals>
+                              <configuration>
+                                  <files>
+                                      <file>${project.basedir}/utils/conf/db.properties</file>
+                                      <file>${project.basedir}/utils/conf/db.properties.override</file>
+                                  </files>
+                                  <quiet>true</quiet>
+                              </configuration>
+                          </execution>
+                      </executions>
+                  </plugin>
+                  <!-- DatabaseCreator driver here -->
+                  <plugin>
+                      <groupId>org.codehaus.mojo</groupId>
+                      <artifactId>exec-maven-plugin</artifactId>
+                      <version>1.2.1</version>
+                      <dependencies>
+                          <!-- specify the dependent jdbc driver here -->
+                          <dependency>
+                              <groupId>mysql</groupId>
+                              <artifactId>mysql-connector-java</artifactId>
+                              <version>${cs.mysql.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>commons-dbcp</groupId>
+                              <artifactId>commons-dbcp</artifactId>
+                              <version>${cs.dbcp.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>commons-pool</groupId>
+                              <artifactId>commons-pool</artifactId>
+                              <version>${cs.pool.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>org.jasypt</groupId>
+                              <artifactId>jasypt</artifactId>
+                              <version>${cs.jasypt.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>org.apache.cloudstack</groupId>
+                              <artifactId>cloud-utils</artifactId>
+                              <version>${project.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>org.apache.cloudstack</groupId>
+                              <artifactId>cloud-server</artifactId>
+                              <version>${project.version}</version>
+                          </dependency>
+                      </dependencies>
+                      <executions>
+                          <execution>
+                              <phase>process-resources</phase>
+                              <id>create-schema</id>
+                              <goals>
+                                  <goal>java</goal>
+                              </goals>
+                          </execution>
+                      </executions>
+                      <configuration>
+                          <includeProjectDependencies>false</includeProjectDependencies>
+                          <includePluginDependencies>true</includePluginDependencies>
+                          <executableDependency>
+                              <groupId>org.apache.cloudstack</groupId>
+                              <artifactId>cloud-server</artifactId>
+                          </executableDependency>
+                          <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+                          <arguments>
+                              <!-- db properties file -->
+                              <argument>${project.basedir}/utils/conf/db.properties</argument>
+                              <argument>${project.basedir}/utils/conf/db.properties.override</argument>
+                              <!-- simulator sql files -->
+                              <argument>${basedir}/target/db/create-schema-simulator.sql</argument>
+                              <argument>${basedir}/target/db/templates.simulator.sql</argument>
+                              <!-- database upgrade-->
+                              <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
+                              <argument>--database=simulator</argument>
+                              <argument>--rootpassword=${db.root.password}</argument>
+                              <!-- enable verbosity by -v or dash-dash-verbose -->
+                          </arguments>
+                          <systemProperties>
+                              <systemProperty>
+                                  <key>catalina.home</key>
+                                  <value>${project.basedir}/utils</value>
+                              </systemProperty>
+                          </systemProperties>
+                      </configuration>
+                  </plugin>
+              </plugins>
+          </build>
+      </profile>
   </profiles>
 </project>

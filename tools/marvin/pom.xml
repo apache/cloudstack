@@ -12,15 +12,14 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>cloud-marvin</artifactId>
-    <name>Apache CloudStack Developer Tools: marvin</name>
+    <name>Apache CloudStack marvin</name>
     <packaging>pom</packaging>
     <parent>
         <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloudstack</artifactId>
+        <artifactId>cloud-tools</artifactId>
         <version>4.1.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
-
     <build>
         <defaultGoal>install</defaultGoal>
         <plugins>
@@ -29,14 +28,15 @@
                 <version>1.7</version>
                 <executions>
                     <execution>
-                        <id>generate-resource</id>
-                        <phase>generate-resources</phase>
+                        <id>clean</id>
+                        <phase>clean</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>
                         <configuration>
                             <target>
-                                <delete dir="marvin/cloudstackAPI"/>  
+                                <delete dir="marvin/cloudstackAPI"/>
+                                <echo>Deleting ${project.artifactId} API sources</echo>
                             </target>
                         </configuration>
                     </execution>
@@ -54,12 +54,13 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <workingDirectory>marvin</workingDirectory>
+                            <workingDirectory>${basedir}/marvin</workingDirectory>
                             <executable>python</executable>
                             <arguments>
                                 <argument>codegenerator.py</argument>
                                 <argument>-s</argument>
                                 <argument>${basedir}/../apidoc/target/commands.xml</argument>
+                                <echo>Generating ${project.artifactId} API classes}</echo>
                             </arguments>
                         </configuration>
                     </execution>
@@ -78,23 +79,42 @@
                             </arguments>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>deploy</id>
-                        <phase>deploy</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <workingDirectory>dist</workingDirectory>
-                            <executable>pip</executable>
-                            <arguments>
-                                <argument>install</argument>
-                                <argument>Marvin-0.1.0.tar.gz</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
                 </executions>
+
             </plugin>
     </plugins>
-</build>
+    </build>
+    <profiles>
+        <profile>
+            <id>marvin</id>
+            <activation>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.2.1</version>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <workingDirectory>${basedir}/marvin</workingDirectory>
+                            <executable>python</executable>
+                            <arguments>
+                                <argument>deployDataCenter.py</argument>
+                                <argument>-i</argument>
+                                <argument>${user.dir}/${marvin.config}</argument>
+                            </arguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
