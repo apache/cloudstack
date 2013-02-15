@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 (function(cloudStack) {
   cloudStack.sections['global-settings'] = {
     title: 'label.menu.global.settings',
@@ -81,6 +82,103 @@
           }
         }
       },
+
+      ldapConfiguration:{
+         type:'select',
+         title:'LDAP Configuration',
+         listView:{
+            id:'ldap',
+            label:'LDAP Configuration', 
+            fields:{
+                hostname: {label: 'Hostname'},
+                queryfilter: {label: 'Query Filter'},
+                searchbase: {label: 'Search Base'},
+                port: {label: 'LDAP Port'},
+                ssl: {
+                  label: 'SSL'
+
+
+                  }
+
+
+             },
+              dataProvider:function(args){
+                   var data = {};
+                   listViewDataProvider(args, data);
+                    $.ajax({
+              url: createURL(''),
+              data: data,
+                success: function(json) {
+               // var items = json.listhypervisorcapabilitiesresponse.hypervisorCapabilities;
+                args.response.success({data:items});
+                   },
+                   error: function(data) {
+                args.response.error(parseXMLHttpResponse(data));
+                  }
+               });
+           },
+
+          actions: {
+               add:{
+
+               label: 'Configure LDAP',
+ 
+               messages: {
+                confirm: function(args) {
+                  return 'Do you really want to configure LDAP ? ';
+                },
+                notification: function(args) {
+                  return 'LDAP configured';
+                }
+              },
+         
+              createForm: {
+                    
+                    title: 'Configure LDAP',
+                    fields:{
+                        name:{label: 'Bind Username' , validation: {required:true} },
+                        password: {label: 'Bind Password', validation: {required: true },isPassword:true },
+                        hostname: {label:'Hostname' , validation:{required:true}},
+                        queryfilter: {label:'Query Filter' , validation: {required:true}},
+                        searchbase: {label:'SearchBase',validation:{required:true}},
+                        ssl:  {
+                               label:'SSL' ,
+                               isBoolean:true,
+                               isChecked:false
+                               // var $form = $(this).closest("form");
+
+                                
+                            },
+                        port: {  label: 'Port' , defaultValue: '389' },
+                        truststore:{ label:'Trust Store' , isHidden:true  },
+                        truststorepassword:{ label:'Trust Store Password' ,isHidden:true }
+                        
+                     }
+ 
+
+              },
+            
+
+                action:function(args) {
+                         var $form = $(this).closest("form");
+                         if($form.find('.form-item [rel=port]').find('input[ type=checkbox]').is(":checked") ==true) {
+                                  $form.find('.form-item[rel=truststore]').attr("isHidden",false);
+                                  $form.find('.form-item[rel=truststorepassword]').attr("isHidden",false);
+                                        }
+
+
+                }
+             }
+
+           }
+
+ 
+
+          }
+
+
+
+       },
       hypervisorCapabilities: {
         type: 'select',
         title: 'label.hypervisor.capabilities',
