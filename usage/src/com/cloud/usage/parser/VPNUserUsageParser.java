@@ -35,8 +35,9 @@ import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVPNUserDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
+import org.springframework.stereotype.Component;
 
-
+@Component
 public class VPNUserUsageParser {
     public static final Logger s_logger = Logger.getLogger(VPNUserUsageParser.class.getName());
     
