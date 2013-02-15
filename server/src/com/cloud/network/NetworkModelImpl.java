@@ -1923,4 +1923,36 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             throw new InvalidParameterValueException("The cidr size of IPv6 network must be no less than 64 bits!");
         }
     }
+
+    @Override
+    public void checkRequestedIpAddresses(long networkId, String ip4, String ip6) throws InvalidParameterValueException {
+        if (ip4 != null) {
+            if (!NetUtils.isValidIp(ip4)) {
+                throw new InvalidParameterValueException("Invalid specified IPv4 address " + ip4);
+            }
+            //Other checks for ipv4 are done in assignPublicIpAddress()
+        }
+        if (ip6 != null) {
+            if (!NetUtils.isValidIpv6(ip6)) {
+                throw new InvalidParameterValueException("Invalid specified IPv6 address " + ip6);
+            }
+            if (_ipv6Dao.findByNetworkIdAndIp(networkId, ip6) != null) {
+                throw new InvalidParameterValueException("The requested IP is already taken!");
+            }
+            List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+            if (vlans == null) {
+                throw new CloudRuntimeException("Cannot find related vlan attached to network " + networkId);
+            }
+            Vlan ipVlan = null;
+            for (Vlan vlan : vlans) {
+                if (NetUtils.isIp6InRange(ip6, vlan.getIp6Range())) {
+                    ipVlan = vlan;
+                    break;
+                }
+            }
+            if (ipVlan == null) {
+                throw new InvalidParameterValueException("Requested IPv6 is not in the predefined range!");
+            }
+        }
+    }
 }

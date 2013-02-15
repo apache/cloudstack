@@ -3299,7 +3299,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             if (requestedIpPair == null) {
             	requestedIpPair = new IpAddresses(null, null);
             } else {
-            	checkRequestedIpAddresses(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address());
+            	_networkModel.checkRequestedIpAddresses(network.getId(), requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address());
             }
             
             NicProfile profile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address());
@@ -3308,7 +3308,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 defaultNetworkNumber++;
                 // if user requested specific ip for default network, add it
                 if (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null) {
-                	checkRequestedIpAddresses(defaultIps.getIp4Address(), defaultIps.getIp6Address());
+                	_networkModel.checkRequestedIpAddresses(network.getId(), defaultIps.getIp4Address(), defaultIps.getIp6Address());
                     profile = new NicProfile(defaultIps.getIp4Address(), defaultIps.getIp6Address());
                 }
 
@@ -3485,19 +3485,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         return vm;
     }
-
-    private void checkRequestedIpAddresses(String ip4, String ip6) throws InvalidParameterValueException {
-    	if (ip4 != null) {
-    		if (!NetUtils.isValidIp(ip4)) {
-    			throw new InvalidParameterValueException("Invalid specified IPv4 address " + ip4);
-    		}
-    	}
-    	if (ip6 != null) {
-    		if (!NetUtils.isValidIpv6(ip6)) {
-    			throw new InvalidParameterValueException("Invalid specified IPv6 address " + ip6);
-    		}
-    	}
-	}
 
 	private void validateUserData(String userData) {
         byte[] decodedUserData = null;
