@@ -1711,7 +1711,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         // 4) if network has been upgraded from a non persistent ntwk offering to a persistent ntwk offering,
         // implement the network if its not already
-        if ( !oldNtwkOff.getIsPersistent() && networkOffering.getIsPersistent()) {
+        if ( networkOfferingChanged && !oldNtwkOff.getIsPersistent() && networkOffering.getIsPersistent()) {
             if( network.getState() == Network.State.Allocated) {
                 try {
                     DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
