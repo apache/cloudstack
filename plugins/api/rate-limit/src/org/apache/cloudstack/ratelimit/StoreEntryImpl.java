@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Implementation of limit store entry.
- * @author minc
  *
  */
 public class StoreEntryImpl implements StoreEntry {

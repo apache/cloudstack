@@ -23,7 +23,6 @@ import net.sf.ehcache.constructs.blocking.LockTimeoutException;
 
 /**
  * A Limit store implementation using Ehcache.
- * @author minc
  *
  */
 public class EhcacheLimitStore implements LimitStore {
