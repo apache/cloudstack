@@ -1036,6 +1036,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             return false;
         }
 
+        if (host.getStatus() == Status.Disconnected) {
+            s_logger.info("Host is already disconnected, no work to be done");
+            return true;
+        }
+        
         if (host.getStatus() != Status.Up && host.getStatus() != Status.Alert && host.getStatus() != Status.Rebalancing) {
             s_logger.info("Unable to disconnect host because it is not in the correct state: host=" + hostId + "; Status=" + host.getStatus());
             return false;
