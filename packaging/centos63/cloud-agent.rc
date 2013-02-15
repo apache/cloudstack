@@ -31,8 +31,7 @@ whatami=cloudstack-agent
 SHORTNAME="$whatami"
 PIDFILE=/var/run/"$whatami".pid
 LOCKFILE=/var/lock/subsys/"$SHORTNAME"
-LOGDIR=/var/log/cloudstack/agent
-LOGFILE=${LOGFIR}/agent.log
+LOGFILE=/var/log/cloudstack/agent/agent.log
 PROGNAME="Cloud Agent"
 CLASS="com.cloud.agent.AgentShell"
 JSVC=`which jsvc 2>/dev/null`;
@@ -68,7 +67,7 @@ export CLASSPATH="$SCP:$DCP:$ACP:$JCP:/etc/cloudstack/agent:/usr/share/cloudstac
 start() {
         echo -n $"Starting $PROGNAME: "
 	if hostname --fqdn >/dev/null 2>&1 ; then
-		$JSVC -cp "$CLASSPATH" -outfile "${LOGDIR}/cloudstack-agent.out" -errfile "${LOGDIR}/cloudstack-agent.err" -pidfile "$PIDFILE" $CLASS
+		$JSVC -cp "$CLASSPATH" -pidfile "$PIDFILE" $CLASS
 		RETVAL=$?
 		echo
 	else
