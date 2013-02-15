@@ -21,7 +21,7 @@ RPMDIR=$CWD/../../dist/rpmbuild
 
 
 
-VERSION=`(cd ../../; mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep -v '^\['`
+VERSION=`(cd ../../; mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep '^[0-9]\.'`
 if echo $VERSION | grep SNAPSHOT ; then
   REALVER=`echo $VERSION | cut -d '-' -f 1`
   DEFVER="-D_ver $REALVER"
