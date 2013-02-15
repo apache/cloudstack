@@ -18,7 +18,6 @@ package org.apache.cloudstack.api;
 
 /**
  * Enum class for various API error code used in CloudStack
- * @author minc
  *
  */
 public enum ApiErrorCode {

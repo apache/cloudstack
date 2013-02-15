@@ -20,7 +20,6 @@ import com.cloud.utils.SerialVersionUID;
 
 /**
  * Exception thrown if number of requests is over api rate limit set.
- * @author minc
  *
  */
 public class RequestLimitException extends PermissionDeniedException {

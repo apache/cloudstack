@@ -22,7 +22,6 @@ import com.cloud.utils.component.PluggableService;
 
 /**
  * Provide API rate limit service
- * @author minc
  *
  */
 public interface ApiRateLimitService extends PluggableService{

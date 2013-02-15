@@ -67,7 +67,6 @@ import com.cloud.user.UserContext;
 
 /**
  * Helper class to generate response from DB view VO objects.
- * @author minc
  *
  */
 public class ViewResponseHelper {

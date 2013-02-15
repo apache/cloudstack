@@ -30,18 +30,16 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
- * A test fixture to test APIs or bugs found for Transaction class. This test fixture will do one time setup before 
+ * A test fixture to test APIs or bugs found for Transaction class. This test fixture will do one time setup before
  * all its testcases to set up a test db table, and then tear down these test db artifacts after all testcases are run.
- * 
- * @author Min Chen
- * 
+ *
  */
 public class TransactionTest {
 
     @BeforeClass
     public static void oneTimeSetup() {
         Connection conn = null;
-        PreparedStatement pstmt = null; 
+        PreparedStatement pstmt = null;
         try {
             conn = Transaction.getStandaloneConnection();
 
@@ -75,7 +73,7 @@ public class TransactionTest {
      * When a transaction is set to use user-managed db connection, for each following db statement, we should see
      * that the same db connection is reused rather than acquiring a new one each time in typical transaction model.
      */
-    public void testUserManagedConnection() {        
+    public void testUserManagedConnection() {
         DbTestDao testDao = ComponentContext.inject(DbTestDao.class);
         Transaction txn = Transaction.open("SingleConnectionThread");
         Connection conn = null;
@@ -97,7 +95,7 @@ public class TransactionTest {
         } catch (SQLException e) {
             Assert.fail(e.getMessage());
         } finally {
-            txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);            
+            txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
             txn.close();
 
             if (conn != null) {
