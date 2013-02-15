@@ -402,6 +402,7 @@
               <exclude>ui/lib/qunit/qunit.css</exclude>
               <exclude>ui/lib/qunit/qunit.js</exclude>
               <exclude>ui/lib/reset.css</exclude>
+              <exclude>ui/lib/require.js</exclude>
               <exclude>waf</exclude>
               <exclude>patches/systemvm/debian/systemvm.vmx</exclude>
               <exclude>patches/systemvm/debian/config/root/.ssh/authorized_keys</exclude>
