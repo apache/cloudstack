@@ -117,7 +117,7 @@
                 </row>
                 <row>
                   <entry><para>Firewall</para></entry>
-                  <entry><para condition="admin">For more information, see <xref
+                  <entry><para condition="install">For more information, see <xref
                         linkend="firewall-rules"/>.</para>
                     <para condition="admin">For more information, see the Administration
                       Guide.</para></entry>
