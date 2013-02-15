@@ -230,7 +230,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
- 
+
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
         _port = NumbersUtil.parseInt(configs.get("port"), 8250);
         final int workers = NumbersUtil.parseInt(configs.get("workers"), 5);
@@ -778,7 +778,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 if (host != null) {
                     agentStatusTransitTo(host, Event.AgentDisconnected, _nodeId);
                 }
-            }	
+            }
         }
 
         if (forRebalance) {
@@ -895,7 +895,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             } catch (NoTransitionException ne) {
                 /* Agent may be currently in status of Down, Alert, Removed, namely there is no next status for some events.
                  * Why this can happen? Ask God not me. I hate there was no piece of comment for code handling race condition.
-                 * God knew what race condition the code dealt with! 
+                 * God knew what race condition the code dealt with!
                  */
             }
 
@@ -1044,6 +1044,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (host == null || host.getRemoved() != null) {
             s_logger.warn("Unable to find host " + hostId);
             return false;
+        }
+
+        if (host.getStatus() == Status.Disconnected) {
+            s_logger.info("Host is already disconnected, no work to be done");
+            return true;
         }
 
         if (host.getStatus() != Status.Up && host.getStatus() != Status.Alert && host.getStatus() != Status.Rebalancing) {
@@ -1197,12 +1202,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
         }
         Response response = null;
-        response = new Response(request, answers[0], _nodeId, -1); 
+        response = new Response(request, answers[0], _nodeId, -1);
         try {
             link.send(response.toBytes());
         } catch (ClosedChannelException e) {
             s_logger.debug("Failed to send startupanswer: " + e.toString());
-        }        
+        }
         _connectExecutor.execute(new HandleAgentConnectTask(link, cmds, request));
     }
 
@@ -1405,7 +1410,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             } else {
                 throw new CloudRuntimeException("Unkonwn TapAgentsAction " + action);
             }
-        }  
+        }
         return true;
     }
 
@@ -1508,7 +1513,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             attache.setMaintenanceMode(true);
             // Now cancel all of the commands except for the active one.
             attache.cancelAllCommands(Status.Disconnected, false);
-        }        
+        }
     }
 
     @Override
