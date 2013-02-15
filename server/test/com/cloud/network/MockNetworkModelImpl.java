@@ -817,4 +817,10 @@ public class MockNetworkModelImpl implements NetworkModel, Manager {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public void checkRequestedIpAddresses(long networkId, String ip4, String ip6)
+			throws InvalidParameterValueException {
+		// TODO Auto-generated method stub
+	}
 }
