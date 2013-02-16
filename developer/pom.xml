@@ -157,8 +157,6 @@
                 <!-- Create default schema and db table views -->
                 <argument>${basedir}/target/db/create-schema.sql</argument>
                 <argument>${basedir}/target/db/create-schema-premium.sql</argument>
-                <!-- Create schema view -->
-                <argument>${basedir}/target/db/create-schema-view.sql</argument>
                 <!-- Seed templates -->
                 <argument>${basedir}/target/db/templates.sql</argument>
                 <!-- Run cloudbridge related sqls -->
