@@ -229,9 +229,12 @@
             </connector>
           </connectors>
           <jvmArgs>-XX:MaxPermSize=512m -Xmx2g</jvmArgs>
-          <contextPath>/client</contextPath>
           <webXml>${project.build.directory}/${project.build.finalName}/WEB-INF/web.xml</webXml>
           <webAppSourceDirectory>${project.build.directory}/${project.build.finalName}</webAppSourceDirectory>
+          <webAppConfig>
+            <contextPath>/client</contextPath>
+            <extraClasspath>${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
+          </webAppConfig>
         </configuration>
       </plugin>
       <plugin>
