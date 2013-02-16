@@ -297,4 +297,10 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         }
         return responses;
     }
+
+
+    @Override
+    public String getPxeServiceType() {
+        return BaremetalPxeManager.BaremetalPxeType.PING.toString();
+    }
 }

@@ -543,3 +543,6 @@ listVMSnapshot=15
 createVMSnapshot=15
 deleteVMSnapshot=15
 revertToSnapshot=15
+
+#### Baremetal commands
+addBaremetalHost=1

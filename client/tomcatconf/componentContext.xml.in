@@ -74,6 +74,9 @@
   <bean id="BareMetalPxe" class="com.cloud.baremetal.networkservice.BaremetalPxeElement">
       <property name="name" value="BareMetalPxe"/>
   </bean>
+  <bean id="BareMetalUserdata" class="com.cloud.baremetal.networkservice.BaremetalUserdataElement">
+      <property name="name" value="BareMetalUserdata"/>
+  </bean>
   <bean id="SecurityGroupProvider" class="com.cloud.network.element.SecurityGroupElement">
     <property name="name" value="SecurityGroupProvider"/>
   </bean>

@@ -32,6 +32,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.vm.VirtualMachine.State;
@@ -70,27 +71,27 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
             String prepareScript = "scripts/network/ping/prepare_kickstart_bootfile.py";
             String prepareScriptPath = Script.findScript("", prepareScript);
             if (prepareScriptPath == null) {
-                throw new ConfigurationException("Can not find prepare_kickstart_bootfile.py at " + prepareScriptPath);
+                throw new ConfigurationException("Can not find prepare_kickstart_bootfile.py at " + prepareScript);
             }
             scp.put(prepareScriptPath, "/usr/bin/", "0755");
 
             String cpScript = "scripts/network/ping/prepare_kickstart_kernel_initrd.py";
             String cpScriptPath = Script.findScript("", cpScript);
             if (cpScriptPath == null) {
-                throw new ConfigurationException("Can not find prepare_kickstart_kernel_initrd.py at " + cpScriptPath);
+                throw new ConfigurationException("Can not find prepare_kickstart_kernel_initrd.py at " + cpScript);
             }
             scp.put(cpScriptPath, "/usr/bin/", "0755");
             
             String userDataScript = "scripts/network/ping/baremetal_user_data.py";
             String userDataScriptPath = Script.findScript("", userDataScript);
             if (userDataScriptPath == null) {
-                throw new ConfigurationException("Can not find baremetal_user_data.py at " + userDataScriptPath);
+                throw new ConfigurationException("Can not find baremetal_user_data.py at " + userDataScript);
             }
             scp.put(userDataScriptPath, "/usr/bin/", "0755");
 
             return true;
         } catch (Exception e) {
-            throw new ConfigurationException(e.getMessage());
+            throw new CloudRuntimeException(e);
         } finally {
             if (sshConnection != null) {
                 sshConnection.close();

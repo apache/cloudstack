@@ -30,7 +30,12 @@ public class AddBaremetalHostCmd extends AddHostCmd {
     private String vmIpAddress;
 
     public AddBaremetalHostCmd() {
+    }
+    
+    @Override
+    public void execute(){
         this.getFullUrlParams().put(ApiConstants.BAREMETAL_DISCOVER_NAME, BareMetalDiscoverer.class.getName());
+        super.execute();
     }
     
     public String getVmIpAddress() {
