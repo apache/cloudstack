@@ -157,8 +157,6 @@ public class ApiServer implements HttpRequestHandler {
     @Inject List<PluggableService> _pluggableServices;
     @Inject List<APIChecker> _apiAccessCheckers;
 
-    private Account _systemAccount = null;
-    private User _systemUser = null;
     @Inject private RegionManager _regionMgr = null;
     
     private static int _workerCount = 0;
@@ -182,9 +180,6 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     public void init() {
-        _systemAccount = _accountMgr.getSystemAccount();
-        _systemUser = _accountMgr.getSystemUser();
-
         Integer apiPort = null; // api port, null by default
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, "integration.api.port");
@@ -278,7 +273,7 @@ public class ApiServer implements HttpRequestHandler {
 
             try {
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
-                UserContext.registerContext(_systemUser.getId(), _systemAccount, null, true);
+                UserContext.registerContext(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, true);
                 sb.insert(0, "(userId=" + User.UID_SYSTEM + " accountId=" + Account.ACCOUNT_ID_SYSTEM + " sessionId=" + null + ") ");
                 String responseText = handleRequest(parameterMap, responseType, sb);
                 sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
