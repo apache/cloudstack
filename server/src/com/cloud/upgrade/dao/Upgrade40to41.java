@@ -70,7 +70,7 @@ public class Upgrade40to41 implements DbUpgrade {
 	public File[] getCleanupScripts() {
         String script = Script.findScript("", "db/schema-40to410-cleanup.sql");
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-302to40-cleanup.sql");
+            throw new CloudRuntimeException("Unable to find db/schema-40to410-cleanup.sql");
         }
 
         return new File[] { new File(script) };
