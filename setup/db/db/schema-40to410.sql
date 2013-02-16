@@ -40,6 +40,7 @@ alter table vm_instance add column owner varchar(255);
 alter table vm_instance add column speed int(10) unsigned;
 alter table vm_instance add column host_name varchar(255);
 alter table vm_instance add column display_name varchar(255);
+alter table vm_instance add column `desired_state` varchar(32) NULL;
 
 alter table data_center add column owner varchar(255);
 alter table data_center add column created datetime COMMENT 'date created';
@@ -171,7 +172,7 @@ CREATE TABLE `cloud`.`template_s3_ref` (
   CONSTRAINT `uc_template_s3_ref__template_id` UNIQUE (`template_id`),
   CONSTRAINT `fk_template_s3_ref__s3_id` FOREIGN KEY `fk_template_s3_ref__s3_id` (`s3_id`) REFERENCES `s3` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_template_s3_ref__template_id` FOREIGN KEY `fk_template_s3_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`),
-  INDEX `i_template_s3_ref__swift_id`(`s3_id`),
+  INDEX `i_template_s3_ref__s3_id`(`s3_id`),
   INDEX `i_template_s3_ref__template_id`(`template_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -189,11 +190,19 @@ ALTER TABLE `cloud`.`external_load_balancer_devices` DROP COLUMN `is_inline`;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network','DEFAULT','NetworkManager','network.dhcp.nondefaultnetwork.setgateway.guestos','Windows','The guest OS\'s name start with this fields would result in DHCP server response gateway information even when the network it\'s on is not default network. Names are separated by comma.');
 
-ALTER TABLE `sync_queue` ADD `queue_size` SMALLINT NOT NULL DEFAULT '0' COMMENT 'number of items being processed by the queue';
+ALTER TABLE `cloud`.`sync_queue` ADD `queue_size` SMALLINT NOT NULL DEFAULT '0' COMMENT 'number of items being processed by the queue';
 
-ALTER TABLE `sync_queue` ADD `queue_size_limit` SMALLINT NOT NULL DEFAULT '1' COMMENT 'max number of items the queue can process concurrently';
+ALTER TABLE `cloud`.`sync_queue` ADD `queue_size_limit` SMALLINT NOT NULL DEFAULT '1' COMMENT 'max number of items the queue can process concurrently';
 
-ALTER TABLE `sync_queue_item` ADD `queue_proc_time` DATETIME NOT NULL COMMENT 'when processing started for the item' AFTER `queue_proc_number`;
+ALTER TABLE `cloud`.`sync_queue` DROP INDEX `i_sync_queue__queue_proc_time`;
+
+ALTER TABLE `cloud`.`sync_queue` DROP COLUMN `queue_proc_time`;
+
+ALTER TABLE `cloud`.`sync_queue` DROP COLUMN `queue_proc_msid`;
+
+ALTER TABLE `cloud`.`sync_queue_item` ADD `queue_proc_time` DATETIME NOT NULL COMMENT 'when processing started for the item' AFTER `queue_proc_number`;
+
+ALTER TABLE `cloud`.`sync_queue_item` ADD INDEX `i_sync_queue__queue_proc_time`(`queue_proc_time`);
 
 ALTER TABLE `cloud`.`inline_load_balancer_nic_map` DROP FOREIGN KEY fk_inline_load_balancer_nic_map__load_balancer_id;
 
@@ -253,7 +262,7 @@ UPDATE `cloud`.`swift` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`upload` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`user` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`user_ip_address` set uuid=id WHERE uuid is NULL;
-UPDATE `cloud`.`user_vm_temp` set uuid=id WHERE uuid is NULL;
+-- UPDATE `cloud`.`user_vm_temp` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`virtual_router_providers` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`virtual_supervisor_module` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`vlan` set uuid=id WHERE uuid is NULL;
@@ -264,23 +273,258 @@ UPDATE `cloud`.`vpc_gateways` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`vpc_offerings` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`vpn_users` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`volumes` set uuid=id WHERE uuid is NULL;
-UPDATE `cloud`.`autoscale_vmgroups` set uuid=id WHERE uuid is NULL;
-UPDATE `cloud`.`autoscale_vmprofiles` set uuid=id WHERE uuid is NULL;
-UPDATE `cloud`.`autoscale_policies` set uuid=id WHERE uuid is NULL;
-UPDATE `cloud`.`counter` set uuid=id WHERE uuid is NULL;
-UPDATE `cloud`.`conditions` set uuid=id WHERE uuid is NULL;
+-- UPDATE `cloud`.`autoscale_vmgroups` set uuid=id WHERE uuid is NULL;
+-- UPDATE `cloud`.`autoscale_vmprofiles` set uuid=id WHERE uuid is NULL;
+-- UPDATE `cloud`.`autoscale_policies` set uuid=id WHERE uuid is NULL;
+-- UPDATE `cloud`.`counter` set uuid=id WHERE uuid is NULL;
+-- UPDATE `cloud`.`conditions` set uuid=id WHERE uuid is NULL;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'detail.batch.query.size', '2000', 'Default entity detail batch query size for listing');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'api.throttling.interval', '1', 'Time interval (in seconds) to reset API count');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'api.throttling.max', '25', 'Max allowed number of APIs within fixed interval');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'api.throttling.cachesize', '50000', 'Account based API count cache size');
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'direct.agent.pool.size', '500', 'Default size for DirectAgentPool');
+
+ALTER TABLE `cloud`.`op_dc_vnet_alloc` DROP INDEX i_op_dc_vnet_alloc__vnet__data_center_id;
+
+ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id`(`vnet`, `physical_network_id`, `data_center_id`);
+
+CREATE TABLE  `cloud`.`region` (
+  `id` int unsigned NOT NULL UNIQUE,
+  `name` varchar(255) NOT NULL UNIQUE,
+  `end_point` varchar(255) NOT NULL,
+  `api_key` varchar(255),
+  `secret_key` varchar(255),
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`region_sync` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `region_id` int unsigned NOT NULL,
+  `api` varchar(1024) NOT NULL,
+  `created` datetime NOT NULL COMMENT 'date created',
+  `processed` tinyint NOT NULL default '0',
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client/api','','');
+ALTER TABLE `cloud`.`account` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
+ALTER TABLE `cloud`.`user` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
+ALTER TABLE `cloud`.`domain` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.cpus', '40', 'The default maximum number of cpu cores that can be used for an account');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.memory', '40960', 'The default maximum memory (in MB) that can be used for an account');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.cpus', '40', 'The default maximum number of cpu cores that can be used for a project');
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.memory', '40960', 'The default maximum memory (in MB) that can be used for a project');
+
+ALTER TABLE `cloud_usage`.`account` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
+
+CREATE TABLE `cloud`.`nicira_nvp_router_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `logicalrouter_uuid` varchar(255) NOT NULL UNIQUE COMMENT 'nicira uuid of logical router',
+  `network_id` bigint unsigned NOT NULL UNIQUE COMMENT 'cloudstack id of the network',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_nicira_nvp_router_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`external_bigswitch_vns_devices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which bigswitch vns device is added',
+  `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this bigswitch vns device',
+  `device_name` varchar(255) NOT NULL COMMENT 'name of the bigswitch vns device',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external bigswitch vns device',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_external_bigswitch_vns_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_bigswitch_vns_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`counter` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
+  `source` varchar(255) NOT NULL COMMENT 'source e.g. netscaler, snmp',
+  `name` varchar(255) NOT NULL COMMENT 'Counter name',
+  `value` varchar(255) NOT NULL COMMENT 'Value in case of source=snmp',
+  `removed` datetime COMMENT 'date removed if not null',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_counter__uuid` UNIQUE (`uuid`),
+  INDEX `i_counter__removed`(`removed`),
+  INDEX `i_counter__source`(`source`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`conditions` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
+  `counter_id` bigint unsigned NOT NULL COMMENT 'Counter Id',
+  `threshold` bigint unsigned NOT NULL COMMENT 'threshold value for the given counter',
+  `relational_operator` char(2) COMMENT 'relational operator to be used upon the counter and condition',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain the Condition belongs to',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this Condition',
+  `removed` datetime COMMENT 'date removed if not null',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_conditions__counter_id` FOREIGN KEY `fk_condition__counter_id`(`counter_id`) REFERENCES `counter`(`id`),
+  CONSTRAINT `fk_conditions__account_id` FOREIGN KEY `fk_condition__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_conditions__domain_id` FOREIGN KEY `fk_condition__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_conditions__uuid` UNIQUE (`uuid`),
+  INDEX `i_conditions__removed`(`removed`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_vmprofiles` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `uuid` varchar(40),
+  `zone_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `autoscale_user_id` bigint unsigned NOT NULL,
+  `service_offering_id` bigint unsigned NOT NULL,
+  `template_id` bigint unsigned NOT NULL,
+  `other_deploy_params` varchar(1024) COMMENT 'other deployment parameters that is in addition to zoneid,serviceofferingid,domainid',
+  `destroy_vm_grace_period` int unsigned COMMENT 'the time allowed for existing connections to get closed before a vm is destroyed',
+  `counter_params` varchar(1024) COMMENT 'the parameters for the counter to be used to get metric information from VMs',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_vmprofiles__domain_id` FOREIGN KEY `fk_autoscale_vmprofiles__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmprofiles__account_id` FOREIGN KEY `fk_autoscale_vmprofiles__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmprofiles__autoscale_user_id` FOREIGN KEY `fk_autoscale_vmprofiles__autoscale_user_id` (`autoscale_user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_autoscale_vmprofiles__uuid` UNIQUE (`uuid`),
+  INDEX `i_autoscale_vmprofiles__removed`(`removed`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_policies` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `uuid` varchar(40),
+  `domain_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `duration` int unsigned NOT NULL,
+  `quiet_time` int unsigned NOT NULL,
+  `action` varchar(15),
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_policies__domain_id` FOREIGN KEY `fk_autoscale_policies__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_policies__account_id` FOREIGN KEY `fk_autoscale_policies__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_autoscale_policies__uuid` UNIQUE (`uuid`),
+  INDEX `i_autoscale_policies__removed`(`removed`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_vmgroups` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `uuid` varchar(40),
+  `zone_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `load_balancer_id` bigint unsigned NOT NULL,
+  `min_members` int unsigned DEFAULT 1,
+  `max_members` int unsigned NOT NULL,
+  `member_port` int unsigned NOT NULL,
+  `interval` int unsigned NOT NULL,
+  `profile_id` bigint unsigned NOT NULL,
+  `state` varchar(255) NOT NULL COMMENT 'enabled or disabled, a vmgroup is disabled to stop autoscaling activity',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_vmgroup__autoscale_vmprofile_id` FOREIGN KEY(`profile_id`) REFERENCES `autoscale_vmprofiles`(`id`),
+  CONSTRAINT `fk_autoscale_vmgroup__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroups__domain_id` FOREIGN KEY `fk_autoscale_vmgroups__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroups__account_id` FOREIGN KEY `fk_autoscale_vmgroups__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroups__zone_id` FOREIGN KEY `fk_autoscale_vmgroups__zone_id`(`zone_id`) REFERENCES `data_center`(`id`),
+  CONSTRAINT `uc_autoscale_vmgroups__uuid` UNIQUE (`uuid`),
+  INDEX `i_autoscale_vmgroups__removed`(`removed`),
+  INDEX `i_autoscale_vmgroups__load_balancer_id`(`load_balancer_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_policy_condition_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `policy_id` bigint unsigned NOT NULL,
+  `condition_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_policy_condition_map__policy_id` FOREIGN KEY `fk_autoscale_policy_condition_map__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_policy_condition_map__condition_id` FOREIGN KEY `fk_autoscale_policy_condition_map__condition_id` (`condition_id`) REFERENCES `conditions` (`id`),
+  INDEX `i_autoscale_policy_condition_map__policy_id`(`policy_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `vmgroup_id` bigint unsigned NOT NULL,
+  `policy_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_vmgroup_policy_map__vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__vmgroup_id` (`vmgroup_id`) REFERENCES `autoscale_vmgroups` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroup_policy_map__policy_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`),
+  INDEX `i_autoscale_vmgroup_policy_map__vmgroup_id`(`vmgroup_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (1, UUID(), 'snmp','Linux User CPU - percentage', '1.3.6.1.4.1.2021.11.9.0', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (2, UUID(), 'snmp','Linux System CPU - percentage', '1.3.6.1.4.1.2021.11.10.0', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (3, UUID(), 'snmp','Linux CPU Idle - percentage', '1.3.6.1.4.1.2021.11.11.0', now());
+INSERT INTO `cloud`.`counter` (id, uuid, source, name, value,created) VALUES (100, UUID(), 'netscaler','Response Time - microseconds', 'RESPTIME', now());
+CREATE TABLE `cloud`.`vm_snapshots` (
+  `id` bigint(20) unsigned NOT NULL auto_increment COMMENT 'Primary Key',
+  `uuid` varchar(40) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `display_name` varchar(255) default NULL,
+  `description` varchar(255) default NULL,
+  `vm_id` bigint(20) unsigned NOT NULL,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `domain_id` bigint(20) unsigned NOT NULL,
+  `vm_snapshot_type` varchar(32) default NULL,
+  `state` varchar(32) NOT NULL,
+  `parent` bigint unsigned default NULL,
+  `current` int(1) unsigned default NULL,
+  `update_count` bigint unsigned NOT NULL DEFAULT 0,
+  `updated` datetime default NULL,
+  `created` datetime default NULL,
+  `removed` datetime default NULL,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT UNIQUE KEY `uc_vm_snapshots_uuid` (`uuid`),
+  INDEX `vm_snapshots_name` (`name`),
+  INDEX `vm_snapshots_vm_id` (`vm_id`),
+  INDEX `vm_snapshots_account_id` (`account_id`),
+  INDEX `vm_snapshots_display_name` (`display_name`),
+  INDEX `vm_snapshots_removed` (`removed`),
+  INDEX `vm_snapshots_parent` (`parent`),
+  CONSTRAINT `fk_vm_snapshots_vm_id__vm_instance_id` FOREIGN KEY `fk_vm_snapshots_vm_id__vm_instance_id` (`vm_id`) REFERENCES `vm_instance` (`id`),
+  CONSTRAINT `fk_vm_snapshots_account_id__account_id` FOREIGN KEY `fk_vm_snapshots_account_id__account_id` (`account_id`) REFERENCES `account` (`id`),
+  CONSTRAINT `fk_vm_snapshots_domain_id__domain_id` FOREIGN KEY `fk_vm_snapshots_domain_id__domain_id` (`domain_id`) REFERENCES `domain` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `cloud`.`user_ipv6_address` (
+  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
+  `uuid` varchar(40),
+  `account_id` bigint unsigned NULL,
+  `domain_id` bigint unsigned NULL,
+  `ip_address` char(50) NOT NULL,
+  `data_center_id` bigint unsigned NOT NULL COMMENT 'zone that it belongs to',
+  `vlan_id` bigint unsigned NOT NULL,
+  `state` char(32) NOT NULL default 'Free' COMMENT 'state of the ip address',
+  `mac_address` varchar(40) NOT NULL COMMENT 'mac address of this ip',
+  `source_network_id` bigint unsigned NOT NULL COMMENT 'network id ip belongs to',
+  `network_id` bigint unsigned COMMENT 'network this public ip address is associated with',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this configuration is based on',
+  `created` datetime NULL COMMENT 'Date this ip was allocated to someone',
+  PRIMARY KEY (`id`),
+  UNIQUE (`ip_address`, `source_network_id`),
+  CONSTRAINT `fk_user_ipv6_address__source_network_id` FOREIGN KEY (`source_network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_user_ipv6_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_user_ipv6_address__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`),
+  CONSTRAINT `fk_user_ipv6_address__vlan_id` FOREIGN KEY (`vlan_id`) REFERENCES `vlan`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_user_ipv6_address__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_user_ipv6_address__uuid` UNIQUE (`uuid`),
+  CONSTRAINT `fk_user_ipv6_address__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 -- DB views for list api
 
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE VIEW `cloud`.`user_vm_view` AS
-    select 
+    select
         vm_instance.id id,
         vm_instance.name name,
         user_vm.display_name display_name,
@@ -445,7 +689,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`domain_router_view`;
 CREATE VIEW `cloud`.`domain_router_view` AS
-    select 
+    select
         vm_instance.id id,
         vm_instance.name name,
         account.id account_id,
@@ -544,7 +788,7 @@ CREATE VIEW `cloud`.`domain_router_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`security_group_view`;
 CREATE VIEW `cloud`.`security_group_view` AS
-    select 
+    select
         security_group.id id,
         security_group.name name,
         security_group.description description,
@@ -603,7 +847,7 @@ CREATE VIEW `cloud`.`security_group_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`resource_tag_view`;
 CREATE VIEW `cloud`.`resource_tag_view` AS
-    select 
+    select
         resource_tags.id,
         resource_tags.uuid,
         resource_tags.key,
@@ -635,7 +879,7 @@ CREATE VIEW `cloud`.`resource_tag_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`event_view`;
 CREATE VIEW `cloud`.`event_view` AS
-    select 
+    select
         event.id,
         event.uuid,
         event.type,
@@ -674,7 +918,7 @@ CREATE VIEW `cloud`.`event_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`instance_group_view`;
 CREATE VIEW `cloud`.`instance_group_view` AS
-    select 
+    select
         instance_group.id,
         instance_group.uuid,
         instance_group.name,
@@ -702,7 +946,7 @@ CREATE VIEW `cloud`.`instance_group_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`user_view`;
 CREATE VIEW `cloud`.`user_view` AS
-    select 
+    select
         user.id,
         user.uuid,
         user.username,
@@ -745,7 +989,7 @@ CREATE VIEW `cloud`.`user_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`project_view`;
 CREATE VIEW `cloud`.`project_view` AS
-    select 
+    select
         projects.id,
         projects.uuid,
         projects.name,
@@ -786,7 +1030,7 @@ CREATE VIEW `cloud`.`project_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`project_account_view`;
 CREATE VIEW `cloud`.`project_account_view` AS
-    select 
+    select
         project_account.id,
         account.id account_id,
         account.uuid account_uuid,
@@ -811,7 +1055,7 @@ CREATE VIEW `cloud`.`project_account_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`project_invitation_view`;
 CREATE VIEW `cloud`.`project_invitation_view` AS
-    select 
+    select
         project_invitations.id,
         project_invitations.uuid,
         project_invitations.email,
@@ -839,7 +1083,7 @@ CREATE VIEW `cloud`.`project_invitation_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`host_view`;
 CREATE VIEW `cloud`.`host_view` AS
-    select 
+    select
         host.id,
         host.uuid,
         host.name,
@@ -909,7 +1153,7 @@ CREATE VIEW `cloud`.`host_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE VIEW `cloud`.`volume_view` AS
-    select 
+    select
         volumes.id,
         volumes.uuid,
         volumes.name,
@@ -1010,7 +1254,7 @@ CREATE VIEW `cloud`.`volume_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`account_netstats_view`;
 CREATE VIEW `cloud`.`account_netstats_view` AS
-    SELECT 
+    SELECT
         account_id,
         sum(net_bytes_received) + sum(current_bytes_received) as bytesReceived,
         sum(net_bytes_sent) + sum(current_bytes_sent) as bytesSent
@@ -1021,7 +1265,7 @@ CREATE VIEW `cloud`.`account_netstats_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`account_vmstats_view`;
 CREATE VIEW `cloud`.`account_vmstats_view` AS
-    SELECT 
+    SELECT
         account_id, state, count(*) as vmcount
     from
         `cloud`.`vm_instance`
@@ -1029,7 +1273,7 @@ CREATE VIEW `cloud`.`account_vmstats_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`free_ip_view`;
 CREATE VIEW `cloud`.`free_ip_view` AS
-    select 
+    select
         count(user_ip_address.id) free_ip
     from
         `cloud`.`user_ip_address`
@@ -1041,7 +1285,7 @@ CREATE VIEW `cloud`.`free_ip_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`account_view`;
 CREATE VIEW `cloud`.`account_view` AS
-    select 
+    select
         account.id,
         account.uuid,
         account.account_name,
@@ -1168,7 +1412,7 @@ CREATE VIEW `cloud`.`account_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`async_job_view`;
 CREATE VIEW `cloud`.`async_job_view` AS
-    select 
+    select
         account.id account_id,
         account.uuid account_uuid,
         account.account_name account_name,
@@ -1277,7 +1521,7 @@ CREATE VIEW `cloud`.`async_job_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`storage_pool_view`;
 CREATE VIEW `cloud`.`storage_pool_view` AS
-    select 
+    select
         storage_pool.id,
         storage_pool.uuid,
         storage_pool.name,
@@ -1326,7 +1570,7 @@ CREATE VIEW `cloud`.`storage_pool_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
 CREATE VIEW `cloud`.`disk_offering_view` AS
-    select 
+    select
         disk_offering.id,
         disk_offering.uuid,
         disk_offering.name,
@@ -1351,7 +1595,7 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
 
 DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
 CREATE VIEW `cloud`.`service_offering_view` AS
-    select 
+    select
         service_offering.id,
         disk_offering.uuid,
         disk_offering.name,
@@ -1382,10 +1626,10 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         `cloud`.`disk_offering` ON service_offering.id = disk_offering.id
             left join
         `cloud`.`domain` ON disk_offering.domain_id = domain.id;
-        
+
 DROP VIEW IF EXISTS `cloud`.`data_center_view`;
 CREATE VIEW `cloud`.`data_center_view` AS
-    select 
+    select
         data_center.id,
         data_center.uuid,
         data_center.name,
@@ -1410,43 +1654,5 @@ CREATE VIEW `cloud`.`data_center_view` AS
     from
         `cloud`.`data_center`
             left join
-        `cloud`.`domain` ON data_center.domain_id = domain.id;               
-        
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'direct.agent.pool.size', '500', 'Default size for DirectAgentPool');
+        `cloud`.`domain` ON data_center.domain_id = domain.id;
 
-ALTER TABLE `cloud`.`op_dc_vnet_alloc` DROP INDEX i_op_dc_vnet_alloc__vnet__data_center_id;
-
-ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id`(`vnet`, `physical_network_id`, `data_center_id`);
-
-CREATE TABLE  `cloud`.`region` (
-  `id` int unsigned NOT NULL UNIQUE,
-  `name` varchar(255) NOT NULL UNIQUE,
-  `end_point` varchar(255) NOT NULL,
-  `api_key` varchar(255),
-  `secret_key` varchar(255),
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`region_sync` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `region_id` int unsigned NOT NULL,
-  `api` varchar(1024) NOT NULL,
-  `created` datetime NOT NULL COMMENT 'date created',
-  `processed` tinyint NOT NULL default '0',
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client/api','','');
-ALTER TABLE `cloud`.`account` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
-ALTER TABLE `cloud`.`user` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
-ALTER TABLE `cloud`.`domain` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.cpus', '40', 'The default maximum number of cpu cores that can be used for an account');
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.memory', '40960', 'The default maximum memory (in MB) that can be used for an account');
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.cpus', '40', 'The default maximum number of cpu cores that can be used for a project');
-
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.memory', '40960', 'The default maximum memory (in MB) that can be used for a project');
-
-ALTER TABLE `cloud_usage`.`account` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
