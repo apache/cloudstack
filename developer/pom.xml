@@ -159,8 +159,6 @@
                 <argument>${basedir}/target/db/create-schema-premium.sql</argument>
                 <!-- Create schema view -->
                 <argument>${basedir}/target/db/create-schema-view.sql</argument>
-                <!-- Create any new db schema -->
-                <argument>${basedir}/target/db/4.1-new-db-schema.sql</argument>
                 <!-- Seed templates -->
                 <argument>${basedir}/target/db/templates.sql</argument>
                 <!-- Run cloudbridge related sqls -->
@@ -193,7 +191,5 @@
         </plugins>
       </build>
     </profile>
-
-
   </profiles>
 </project>
