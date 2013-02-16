@@ -54,7 +54,6 @@ import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
@@ -107,12 +106,13 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
 	}
 
 	protected BaremetalPxeService getServiceByType(String type) {
-		BaremetalPxeService _service;
-		_service = AdapterBase.getAdapterByName(_services, type);
-		if (_service == null) {
-			throw new CloudRuntimeException("Cannot find PXE service for " + type);
+		for (BaremetalPxeService service : _services) {
+		    if (service.getPxeServiceType().equals(type)) {
+		        return service;
+		    }
 		}
-		return _service;
+		
+		throw new CloudRuntimeException("Cannot find PXE service for " + type);
 	}
 	
 	@Override

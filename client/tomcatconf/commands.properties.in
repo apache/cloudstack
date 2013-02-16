@@ -537,3 +537,6 @@ addRegion=1
 updateRegion=1
 removeRegion=1
 listRegions=15
+
+#### Baremetal commands
+addBaremetalHost=1

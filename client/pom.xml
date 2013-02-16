@@ -263,6 +263,12 @@
             </goals>
             <configuration>
               <target>
+                <exec executable="cp">
+                    <arg value="-r" />
+                    <arg value="${basedir}/../scripts" />
+                    <arg value="${basedir}/target/generated-webapp/WEB-INF/classes/scripts" />
+                </exec>
+
                 <copy
                   todir="${basedir}/target/generated-webapp/WEB-INF/">
                   <fileset dir="${basedir}/WEB-INF/">
@@ -274,10 +280,6 @@
                   <fileset dir="${basedir}/WEB-INF/classes">
                     <include name="resources/**/*" />
                   </fileset>
-                </copy>
-                <copy
-                  todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts">
-                  <fileset dir="${basedir}/../scripts" />
                 </copy>
                 <copy
                   todir="${basedir}/target/generated-webapp/WEB-INF/classes/vms">

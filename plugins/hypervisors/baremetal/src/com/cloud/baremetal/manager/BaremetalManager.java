@@ -20,8 +20,9 @@ package com.cloud.baremetal.manager;
 
 import com.cloud.network.Network.Provider;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.PluggableService;
 
-public interface BaremetalManager extends Manager {
+public interface BaremetalManager extends Manager, PluggableService {
     public static final String EchoSecurityGroupAgent = "EchoSecurityGroupAgent";
     public static final String ExternalBaremetalSystemUrl = "ExternalBaremetalSystemUrl";
     public static final String DO_PXE = "doPxe";
