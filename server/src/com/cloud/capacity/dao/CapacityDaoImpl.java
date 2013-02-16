@@ -62,7 +62,6 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     private final SearchBuilder<CapacityVO> _hostIdTypeSearch;
     private final SearchBuilder<CapacityVO> _hostOrPoolIdSearch;
-    protected GenericSearchBuilder<CapacityVO, SummedCapacity> SummedCapacitySearch;
     private final SearchBuilder<CapacityVO> _allFieldsSearch;
     @Inject protected StoragePoolDao _storagePoolDao;
 
@@ -309,7 +308,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     @Override
     public  List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId){
 
-        SummedCapacitySearch = createSearchBuilder(SummedCapacity.class);
+        GenericSearchBuilder<CapacityVO, SummedCapacity> SummedCapacitySearch = createSearchBuilder(SummedCapacity.class);
         SummedCapacitySearch.select("dcId", Func.NATIVE, SummedCapacitySearch.entity().getDataCenterId());
         SummedCapacitySearch.select("sumUsed", Func.SUM, SummedCapacitySearch.entity().getUsedCapacity());
         SummedCapacitySearch.select("sumReserved", Func.SUM, SummedCapacitySearch.entity().getReservedCapacity());
@@ -528,7 +527,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     @Override
     public List<SummedCapacity> findByClusterPodZone(Long zoneId, Long podId, Long clusterId){
 
-        SummedCapacitySearch = createSearchBuilder(SummedCapacity.class);
+        GenericSearchBuilder<CapacityVO, SummedCapacity> SummedCapacitySearch = createSearchBuilder(SummedCapacity.class);
         SummedCapacitySearch.select("sumUsed", Func.SUM, SummedCapacitySearch.entity().getUsedCapacity());
         SummedCapacitySearch.select("sumTotal", Func.SUM, SummedCapacitySearch.entity().getTotalCapacity());   
         SummedCapacitySearch.select("capacityType", Func.NATIVE, SummedCapacitySearch.entity().getCapacityType());                                
@@ -563,7 +562,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     @Override
     public List<SummedCapacity> findNonSharedStorageForClusterPodZone(Long zoneId, Long podId, Long clusterId){
 
-        SummedCapacitySearch = createSearchBuilder(SummedCapacity.class);
+        GenericSearchBuilder<CapacityVO, SummedCapacity> SummedCapacitySearch = createSearchBuilder(SummedCapacity.class);
         SummedCapacitySearch.select("sumUsed", Func.SUM, SummedCapacitySearch.entity().getUsedCapacity());
         SummedCapacitySearch.select("sumTotal", Func.SUM, SummedCapacitySearch.entity().getTotalCapacity());   
         SummedCapacitySearch.select("capacityType", Func.NATIVE, SummedCapacitySearch.entity().getCapacityType());
