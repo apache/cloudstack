@@ -24,11 +24,11 @@
     console view via the web UI. It connects the user’s browser to the VNC port made available via
     the hypervisor for the console of the guest. Both the administrator and end user web UIs offer a
     console connection.</para>
-  <para>Clicking on a console icon brings up a new window. The AJAX code downloaded into that window
+  <para>Clicking a console icon brings up a new window. The AJAX code downloaded into that window
     refers to the public IP address of a console proxy VM. There is exactly one public IP address
     allocated per console proxy VM. The AJAX application connects to this IP. The console proxy then
-    proxies the connection to the VNC port for the requested VM on the Host hosting the guest.
-    .</para>
+    proxies the connection to the VNC port for the requested VM on the Host hosting the
+    guest.</para>
   <note>
     <para>The hypervisors will have many ports assigned to VNC usage so that multiple VNC sessions
       can occur simultaneously.</para>
