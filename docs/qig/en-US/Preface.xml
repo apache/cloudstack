@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE authorgroup PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
-<!ENTITY % BOOK_ENTITIES SYSTEM "Runbook.ent">
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "qig.ent">
 %BOOK_ENTITIES;
 ]>
 
@@ -23,10 +23,11 @@
 -->
 
 
-<authorgroup>
-    <author>
-        <firstname>Apache</firstname>
-        <surname>CloudStack</surname>
-    </author>
-</authorgroup>
+<preface id="pref-qig-Preface">
+    <title>Preface</title>
+    <xi:include href="Common_Content/Conventions.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="Feedback.xml" xmlns:xi="http://www.w3.org/2001/XInclude"><xi:fallback xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include href="Common_Content/Feedback.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </xi:fallback>
+    </xi:include>
+</preface>
 

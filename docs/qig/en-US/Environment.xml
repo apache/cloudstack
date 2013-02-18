@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
-<!ENTITY % BOOK_ENTITIES SYSTEM "Runbook.ent">
+<!ENTITY % BOOK_ENTITIES SYSTEM "qig.ent">
 %BOOK_ENTITIES;
 ]>
 
@@ -23,13 +23,13 @@
 -->
 
 
-<chapter id="chap-Runbook-Environment">
+<chapter id="chap-qig-Environment">
   <title>Environment</title>
   <para>
       Before you begin, you need to prepare the environment before you install CloudStack. 
       We will go over the steps to prepare now.
   </para>
-  <section id="sect-Runbook-Environment-operatingsys">
+  <section id="sect-qig-Environment-operatingsys">
     <title>Operating System</title>
     <para>
       Using the CentOS 6.3 x86_64 minimal install ISO, you'll need to install CentOS
@@ -41,7 +41,7 @@
       logins in a production environment, so be sure to turn off remote logins once you 
       have finished the installation and configuration.
     </para>
-    <section id="sect-Runbook-Environment-operatingsys-network">
+    <section id="sect-qig-Environment-operatingsys-network">
       <title>Configuring the network</title>
       <para>
         By default the network will not come up on your hardware and you
@@ -103,7 +103,7 @@ DNS2=8.8.4.4
       <screen><prompt># </prompt><userinput><command>chkconfig</command> network on</userinput></screen>
       <screen><prompt># </prompt><userinput><command>service</command> network start</userinput></screen>
     </section>
-    <section id="sect-Runbook-Environment-operatingsys-hostname">
+    <section id="sect-qig-Environment-operatingsys-hostname">
       <title>Hostname</title>
       <para>
         Cloudstack requires that the hostname be properly set. If you used the default
@@ -123,7 +123,7 @@ DNS2=8.8.4.4
         <para>Now recheck with the <command>hostname --fqdn</command> command and ensure that it returns 
         a FQDN response</para>
     </section>
-    <section id="sect-Runbook-Environment-operatingsys-selinux">
+    <section id="sect-qig-Environment-operatingsys-selinux">
       <title>SELinux</title>
       <para>At the moment, for CloudStack to work properly SELinux must be 
       set to permissive. We want to both configure this for future boots and modify it
@@ -151,7 +151,7 @@ SELINUXTYPE=targeted
       </screen>
 
     </section>
-    <section id="sect-Runbook-Environment-operatingsys-ntp">
+    <section id="sect-qig-Environment-operatingsys-ntp">
       <title>NTP</title>
       <para>NTP configuration is a necessity for keeping all of the clocks in your cloud
       servers in sync. However, NTP is not installed by default. So we'll install and 
@@ -163,7 +163,7 @@ SELINUXTYPE=targeted
       <screen><prompt># </prompt><userinput><command>chkconfig</command> ntpd on</userinput></screen>
       <screen><prompt># </prompt><userinput><command>service</command> ntpd start</userinput></screen>
     </section>
-    <section id="sect-Runbook-Environment-operatingsys-repoconfig">
+    <section id="sect-qig-Environment-operatingsys-repoconfig">
       <title>Configuring the CloudStack Package Repository</title>
       <para>
         We need to configure the machine to use a CloudStack package repository.
@@ -188,7 +188,7 @@ gpgcheck=0
       </programlisting>
     </section>
   </section>
-  <section id="sect-Runbook-Environment-nfs">
+  <section id="sect-qig-Environment-nfs">
     <title>NFS</title>
     <para>
       Our configuration is going to use NFS for both primary and secondary

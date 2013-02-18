@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
-<!ENTITY % BOOK_ENTITIES SYSTEM "Runbook.ent">
+<!ENTITY % BOOK_ENTITIES SYSTEM "qig.ent">
 %BOOK_ENTITIES;
 ]>
 
@@ -23,7 +23,7 @@
 -->
 
 
-<chapter id="chap-Runbook-Config">
+<chapter id="chap-qig-Config">
   <title>Configuration</title>
   <para>
     As we noted before we will be using security groups to provide isolation
@@ -31,7 +31,7 @@
     It also means that the simplicity of our setup means that we can use the 
     quick installer. 
   </para>
-  <section id="sect-Runbook-Config-UI_Access">
+  <section id="sect-qig-Config-UI_Access">
     <title>UI Access</title>
       <para>
         To get access to CloudStack's web interface, merely point your 
@@ -46,7 +46,7 @@
         the admin user. Please do so. 
       </para>
   </section>
-  <section id="sect-Runbook-Config-Zone">
+  <section id="sect-qig-Config-Zone">
     <title>Setting up a Zone</title>
     <para>
       A zone is the largest organization entity in CloudStack - and we'll be creating one, this 
@@ -86,7 +86,7 @@
       </para>
     </note>
     </section>
-    <section id="sect-Runbook-Config-Pod">
+    <section id="sect-qig-Config-Pod">
       <title>Pod Configuration</title>
       <para>Now that we've added a Zone, the next step that comes up is a prompt
         for information regading a pod. Which is looking for 4 items. 
