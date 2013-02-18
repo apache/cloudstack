@@ -18,6 +18,9 @@
 set -x
 
 appliance="systemvmtemplate"
+build_date=`date +%Y-%m-%d`
+branch="master"
+rootdir=$PWD
 
 # Initialize veewee and dependencies
 bundle
@@ -25,3 +28,34 @@ bundle
 # Start building the appliance
 veewee vbox build $appliance --nogui
 veewee vbox halt $appliance
+
+# Get appliance uuids
+machine_uuid=`vboxmanage showvminfo $appliance | grep UUID | head -1 | awk '{print $2}'`
+hdd_uuid=`vboxmanage showvminfo $appliance | grep vhd | head -1 | awk '{print $8}' | cut -d ')' -f 1`
+
+# Start exporting
+rm -fr dist
+mkdir dist
+cd dist
+
+# Export for VMWare vSphere
+vboxmanage export $machine_uuid --output $appliance-$build_date-$branch-vmware.ova
+
+# Export for HyperV
+vboxmanage clonehd $hdd_uuid $appliance-$build_date-$branch-hyperv.vhd --format VHD
+bzip2 $appliance-$build_date-$branch-hyperv.vhd
+rm $appliance-$build_date-$branch-hyperv.vhd
+
+# Export for KVM
+vboxmanage clonehd $hdd_uuid raw.img --format RAW
+qemu-img convert -f raw -O qcow2 raw.img $appliance-$build_date-$branch-kvm.qcow2
+bzip2 $appliance-$build_date-$branch-kvm.qcow2
+rm $appliance-$build_date-$branch-kvm.qcow2
+
+# Export for Xen
+# This will be an overwrite convert so, do it at the end
+vhd-util convert -s 0 -t 1 -i raw.img  -o $appliance-$build_date-$branch-xen.vhd
+bzip2 $appliance-$build_date-$branch-hyperv.vhd
+rm $appliance-$build_date-$branch-hyperv.vhd
+
+cd $rootdir
