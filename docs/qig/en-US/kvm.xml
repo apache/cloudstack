@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
-<!ENTITY % BOOK_ENTITIES SYSTEM "Runbook.ent">
+<!ENTITY % BOOK_ENTITIES SYSTEM "qig.ent">
 %BOOK_ENTITIES;
 ]>
 
@@ -23,7 +23,7 @@
 -->
 
 
-<chapter id="chap-Runbook-KVM">
+<chapter id="chap-qig-KVM">
   <title>KVM Setup and installation</title>
   <para>
     KVM is the hypervisor we'll be using - we will recover the initial setup
@@ -31,7 +31,7 @@
     of the agent software, you can use the same steps to add additional KVM 
     nodes to your CloudStack environment. 
   </para>
-  <section id="sect-Runbook-KVM-Prerequisites">
+  <section id="sect-qig-KVM-Prerequisites">
     <title>Prerequisites</title>
     <para>
       We explicitly are using the management server as a compute node as well, 
@@ -41,27 +41,27 @@
       <orderedlist>
         <listitem>
           <para>
-            <xref linkend="sect-Runbook-Environment-operatingsys-network" />
+            <xref linkend="sect-qig-Environment-operatingsys-network" />
           </para>
         </listitem>
         <listitem>
           <para>
-            <xref linkend="sect-Runbook-Environment-operatingsys-hostname" />
+            <xref linkend="sect-qig-Environment-operatingsys-hostname" />
           </para>
         </listitem>
         <listitem>
           <para>
-            <xref linkend="sect-Runbook-Environment-operatingsys-selinux" />
+            <xref linkend="sect-qig-Environment-operatingsys-selinux" />
           </para>
         </listitem>
         <listitem>
           <para>
-            <xref linkend="sect-Runbook-Environment-operatingsys-ntp" />
+            <xref linkend="sect-qig-Environment-operatingsys-ntp" />
           </para>
         </listitem>
         <listitem>
           <para>
-            <xref linkend="sect-Runbook-Environment-operatingsys-repoconfig" />
+            <xref linkend="sect-qig-Environment-operatingsys-repoconfig" />
           </para>
         </listitem>
       </orderedlist>
@@ -72,14 +72,14 @@
     </para>
   </section>
    
-  <section id="sect-Runbook-KVM-Installation">
+  <section id="sect-qig-KVM-Installation">
     <title>Installation</title>
     <para>Installation of the KVM agent is trivial with just a single command, but afterwards we'll need to configure a few things.</para>
     <screen><prompt># </prompt><userinput><command>yum</command> -y install cloud-agent</userinput></screen>
-    <section id="sect-Runbook-KVM-Configuration">
+    <section id="sect-qig-KVM-Configuration">
       <title>KVM Configuration</title>
       <para>We have two different parts of KVM to configure, libvirt, and QEMU.</para>
-      <section id="sect-Runbook-KVM-Configuration-qemu">
+      <section id="sect-qig-KVM-Configuration-qemu">
         <title>QEMU Configuration</title>
         <para>
           KVM configuration is relatively simple at only a single item. We need to 
@@ -89,7 +89,7 @@
           <screen>vnc_listen=0.0.0.0</screen>
         </para>
       </section>
-      <section id="sect-Runbook-KVM-Configuration-libvirt">
+      <section id="sect-qig-KVM-Configuration-libvirt">
         <title>Libvirt Configuration</title>
         <para>
           CloudStack uses libvirt for managing virtual machines. Therefore it
@@ -130,7 +130,7 @@
           </listitem>
         </orderedlist>
       </section>
-      <section id="sect-Runbook-KVM-Configuration-finish">
+      <section id="sect-qig-KVM-Configuration-finish">
         <title>KVM configuration complete</title>
         <para>
         That concludes our installation and configuration of KVM, and we'll now move to using the CloudStack UI

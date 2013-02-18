@@ -23,16 +23,16 @@
 -->
 
 
-<bookinfo id="book-Runbook-Runbook">
-    <title>Runbook</title>
+<bookinfo id="book-qig-qig">
+    <title>Quick Install Guide</title>
     <subtitle>Prescriptive instructions for deploying Apache CloudStack</subtitle>
     <productname>Apache CloudStack</productname>
-    <productnumber>4.0.0-incubating</productnumber>
+    <productnumber>4.0.1-incubating</productnumber>
     <edition>0</edition>
     <pubsnumber>0</pubsnumber>
     <abstract>
         <para>
-            These runbooks are designed to provide a strict environment to guarantee 
+            This guide is designed to provide a strict environment to guarantee 
                         a higher degree of success in initial deployments of Apache CloudStack. 
                         All of the elements of the environment will be provided to you. 
                         Apache CloudStack is capable of much more complex configurations, 

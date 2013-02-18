@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
-<!ENTITY % BOOK_ENTITIES SYSTEM "Runbook.ent">
+<!ENTITY % BOOK_ENTITIES SYSTEM "qig.ent">
 %BOOK_ENTITIES;
 ]>
 
@@ -23,7 +23,7 @@
 -->
 
 
-<chapter id="chap-Runbook-Overview">
+<chapter id="chap-qig-Overview">
   <title>Overview</title>
     <para>
     Infrastructure-as-a-Service (IaaS) clouds can be a complex thing to build, 
@@ -32,7 +32,7 @@
     The goal for this runbook is to provide a straightforward set of instructions 
     to get you up and running with CloudStack with a minimum amount of trouble. 
     </para>
-    <section id="sect-Runbook-Overview-What_building">
+    <section id="sect-qig-Overview-What_building">
       <title>What exactly are we building?</title>
       <para>
       This runbook will focus on building a CloudStack cloud using KVM with 
@@ -50,7 +50,7 @@
         to a group of virtual machines.
       </para>
     </section>
-    <section id="sect-Runbook-Overview-hilevel">
+    <section id="sect-qig-Overview-hilevel">
       <title>High level overview of the process</title>
       <para> 
         Before we actually get to installing CloudStack, we'll start with 
@@ -61,7 +61,7 @@
         cloud in the CloudStack web interface. 
       </para>
     </section>    
-    <section id="sect-Runbook-Overview-prereqs">
+    <section id="sect-qig-Overview-prereqs">
       <title>Prerequisites</title>
         <para>
           To complete this runbook you'll need the following items:
