@@ -331,6 +331,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected boolean _isOvs = false;
     protected List<VIF> _tmpDom0Vif = new ArrayList<VIF>();
     protected XenServerStorageResource storageResource;
+    protected int _maxNics = 7;
 
     public enum SRType {
         NFS, LVM, ISCSI, ISO, LVMOISCSI, LVMOHBA, EXT, FILE;
@@ -3842,22 +3843,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException("Could not find an available slot in VM with name to attach a new disk.");
     }
 
-
-    protected String getUnusedVIFNum(Connection conn, VM vm) {
-        String vmName = "";
-        try {
-            vmName = vm.getNameLabel(conn);
-            Set<String> allowedVIFDevices = vm.getAllowedVIFDevices(conn);
-            if (allowedVIFDevices.size() > 0) {
-                return allowedVIFDevices.iterator().next();
-            }
-        } catch (Exception e) {
-            String msg = "getUnusedVIFNum failed due to " + e.toString();
-            s_logger.warn(msg, e);
-        }
-        throw new CloudRuntimeException("Could not find available VIF slot in VM with name: " + vmName + " to plug a VIF");
-    }
-
     protected String callHostPlugin(Connection conn, String plugin, String cmd, String... params) {
         Map<String, String> args = new HashMap<String, String>();
         String msg;
@@ -3990,21 +3975,25 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected String getLowestAvailableVIFDeviceNum(Connection conn, VM vm) {
         try {
-            Set<String> availableDeviceNums = vm.getAllowedVIFDevices(conn);
-            Iterator<String> deviceNumsIterator = availableDeviceNums.iterator();
-            List<Integer> sortedDeviceNums = new ArrayList<Integer>();
-
-            while (deviceNumsIterator.hasNext()) {
-                try {
-                    sortedDeviceNums.add(Integer.valueOf(deviceNumsIterator.next()));
+            List<Integer> usedDeviceNums = new ArrayList<Integer>();
+            Set<VIF> vifs = vm.getVIFs(conn);
+            Iterator<VIF> vifIter = vifs.iterator();
+            while(vifIter.hasNext()){
+                VIF vif = vifIter.next();
+                try{
+                    usedDeviceNums.add(Integer.valueOf(vif.getDevice(conn)));
                 } catch (NumberFormatException e) {
-                    s_logger.debug("Obtained an invalid value for an available VIF device number for VM: " + vm.getNameLabel(conn));
+                    s_logger.debug("Obtained an invalid value for an allocated VIF device number for VM: " + vm.getNameLabel(conn));
                     return null;
                 }
             }
 
-            Collections.sort(sortedDeviceNums);
-            return String.valueOf(sortedDeviceNums.get(0));
+            for(Integer i=0; i< _maxNics; i++){
+                if(!usedDeviceNums.contains(i)){
+                    s_logger.debug("Lowest available Vif device number: "+i+" for VM: " + vm.getNameLabel(conn));
+                    return i.toString();
+                }
+            }
         } catch (XmlRpcException e) {
             String msg = "Caught XmlRpcException: " + e.getMessage();
             s_logger.warn(msg, e);
@@ -5654,6 +5643,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         value = (String) params.get("migratewait");
         _migratewait = NumbersUtil.parseInt(value, 3600);
+
+        _maxNics = NumbersUtil.parseInt((String) params.get("xen.nics.max"), 7);
 
         if (_pod == null) {
             throw new ConfigurationException("Unable to get the pod");
@@ -7765,7 +7756,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.warn(msg);
                 return new PlugNicAnswer(cmd, false, msg);
             }
-            String deviceId = getUnusedVIFNum(conn, vm);
+            String deviceId = getLowestAvailableVIFDeviceNum(conn, vm);
             nic.setDeviceId(Integer.parseInt(deviceId));
             vif = createVif(conn, vmName, vm, nic);
             vif.plug(conn);

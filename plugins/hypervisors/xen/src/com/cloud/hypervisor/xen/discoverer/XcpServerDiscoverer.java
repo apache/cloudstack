@@ -315,6 +315,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 params.put("wait", Integer.toString(_wait));
                 details.put("wait", Integer.toString(_wait));
                 params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
+                params.put(Config.XenMaxNics.toString().toLowerCase(), _configDao.getValue(Config.XenMaxNics.toString()));
                 params.put(Config.InstanceName.toString().toLowerCase(), _instance);
                 details.put(Config.InstanceName.toString().toLowerCase(), _instance);
                 try {
