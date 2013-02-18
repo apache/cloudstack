@@ -25,7 +25,8 @@ rootdir=$PWD
 # Initialize veewee and dependencies
 bundle
 
-# Start building the appliance
+# Clean and start building the appliance
+veewee vbox destroy $appliance
 veewee vbox build $appliance --nogui
 veewee vbox halt $appliance
 
