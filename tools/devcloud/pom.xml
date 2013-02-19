@@ -62,8 +62,8 @@
                 </goals>
                 <configuration>
                   <files>
-                    <file>${project.parent.basedir}/utils/conf/db.properties</file>
-                    <file>${project.parent.basedir}/utils/conf/db.properties.override</file>
+                    <file>${project.parent.parent.basedir}/utils/conf/db.properties</file>
+                    <file>${project.parent.parent.basedir}/utils/conf/db.properties.override</file>
                   </files>
                   <quiet>true</quiet>
                 </configuration>
