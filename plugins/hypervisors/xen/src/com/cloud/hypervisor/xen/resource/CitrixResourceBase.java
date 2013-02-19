@@ -3974,7 +3974,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected String getLowestAvailableVIFDeviceNum(Connection conn, VM vm) {
+        String vmName = "";
         try {
+            vmName = vm.getNameLabel(conn);
             List<Integer> usedDeviceNums = new ArrayList<Integer>();
             Set<VIF> vifs = vm.getVIFs(conn);
             Iterator<VIF> vifIter = vifs.iterator();
@@ -3983,14 +3985,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 try{
                     usedDeviceNums.add(Integer.valueOf(vif.getDevice(conn)));
                 } catch (NumberFormatException e) {
-                    s_logger.debug("Obtained an invalid value for an allocated VIF device number for VM: " + vm.getNameLabel(conn));
-                    return null;
+                    String msg = "Obtained an invalid value for an allocated VIF device number for VM: " + vmName;
+                    s_logger.debug(msg, e);
+                    throw new CloudRuntimeException(msg);
                 }
             }
 
             for(Integer i=0; i< _maxNics; i++){
                 if(!usedDeviceNums.contains(i)){
-                    s_logger.debug("Lowest available Vif device number: "+i+" for VM: " + vm.getNameLabel(conn));
+                    s_logger.debug("Lowest available Vif device number: "+i+" for VM: " + vmName);
                     return i.toString();
                 }
             }
@@ -4002,7 +4005,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn(msg, e);
         }
 
-        return null;
+        throw new CloudRuntimeException("Could not find available VIF slot in VM with name: " + vmName);
     }
 
     protected VDI mount(Connection conn, StoragePoolType pooltype, String volumeFolder, String volumePath) {
