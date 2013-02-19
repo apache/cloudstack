@@ -2427,6 +2427,10 @@ Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
             id='vmware.com'
             name='VMware, Inc'
             url='http://www.vmware.com/' />
+        <organisation
+        	id='person:janvanbesien'
+        	name='Jan Van Besien'
+        	url='mailto:janvanbesien@gmail.com' />
     </organisations>
     <primary-license id='ApacheLicenseVersion2'>
         <copyright-notice>Copyright (c) 2013 The Apache Software Foundation</copyright-notice>
@@ -2965,6 +2969,12 @@ Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
                <by-organisation id='vmware.com'>
                    <resource name='rabbitmq-client.jar' source='http://www.rabbitmq.com/java-client.html' />
                </by-organisation>
+        </with-license>
+        <with-license id='ApacheLicenseVersion2'>
+        	<copyright-notice />
+        	<by-organisation id='person:janvanbesien'>
+        		<resource name='java-ipv6.jar' source='http://code.google.com/p/java-ipv6' />
+        	</by-organisation>
         </with-license>
     </within>
 </manifest>
