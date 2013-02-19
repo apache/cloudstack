@@ -2994,6 +2994,11 @@ Within the target/jar directory
             jetty-6.1.26.jar  from http://repo1.maven.org/maven2/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26-sources.jar
             jetty-util-6.1.26.jar  from http://repo1.maven.org/maven2/org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26-sources.jar
 
+    licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
+    
+        from Jan Van Besien  mailto:janvanbesien@gmail.com 
+            java-ipv6.jar  from http://code.google.com/p/java-ipv6
+
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
 
             Copyright (c) 2009, Caringo, Inc. 

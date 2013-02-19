@@ -2431,6 +2431,10 @@ Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
         	id='dojofoundation.org'
         	name='The Dojo Foundation'
         	url='http://dojofoundation.org/' />
+        <organisation
+            id='person:janvanbesien'
+            name='Jan Van Besien'
+            url='mailto:janvanbesien@gmail.com' />
     </organisations>
     <primary-license id='ApacheLicenseVersion2'>
         <copyright-notice>Copyright (c) 2013 The Apache Software Foundation</copyright-notice>
@@ -2827,6 +2831,12 @@ All rights reserved.
                 <resource name='cloud-backport-util-concurrent-3.0.jar' source='http://backport-jsr166.sourceforge.net/' />
             </by-organisation>
         </public-domain>
+        <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice></copyright-notice>
+            <by-organisation id='person:janvanbesien'>
+                <resource name='java-ipv6.jar' source='http://code.google.com/p/java-ipv6' />
+            </by-organisation>
+        </with-license>
     </within>
     <within dir='deps/awsapi-lib'>
         <with-license id='ApacheLicenseVersion2'>
