@@ -97,19 +97,17 @@
                 ssl: {
                   label: 'SSL'
 
-
                   }
-
 
              },
               dataProvider:function(args){
                    var data = {};
                    listViewDataProvider(args, data);
                     $.ajax({
-              url: createURL(''),   //Need a list LDAP configuration API call which needs to be implemented
+              url: createURL('ldapConfig&listall=true'),   //Need a list LDAP configuration API call which needs to be implemented
               data: data,
                 success: function(json) {
-               // var items = json.listldapconfigresponse;
+                var items = json.ldapconfigresponse.ldapconfig;
                 args.response.success({data:items});
                    },
                    error: function(data) {
@@ -185,7 +183,7 @@
                     dataType: "json",
                     async: true,
                     success: function(json) {
-                       var items = json.ldapconfigresponse;
+                       var items = json.ldapconfigresponse.ldapconfig;
                        args.response.success({
                                    data: items
                              });
