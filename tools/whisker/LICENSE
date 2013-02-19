@@ -2999,6 +2999,13 @@ Within the target/jar directory
         from Jan Van Besien  mailto:janvanbesien@gmail.com 
             java-ipv6.jar  from http://code.google.com/p/java-ipv6
 
+    licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
+    Copyright 2002-2012 the original author or authors.
+        from SpringSource, a division of VMware.  http://www.springsource.org/ 
+            spring-context-3.1.2.RELEASE.jar  from https://github.com/SpringSource/spring-framework
+            spring-core-3.1.2.RELEASE.jar  from https://github.com/SpringSource/spring-framework
+            spring-web-3.1.2.RELEASE.jar  from https://github.com/SpringSource/spring-framework
+
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
 
             Copyright (c) 2009, Caringo, Inc. 

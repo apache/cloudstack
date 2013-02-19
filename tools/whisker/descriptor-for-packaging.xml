@@ -2435,6 +2435,10 @@ Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
             id='person:janvanbesien'
             name='Jan Van Besien'
             url='mailto:janvanbesien@gmail.com' />
+        <organisation
+        	id='springsource.com'
+        	name='SpringSource, a division of VMware.'
+        	url='http://www.springsource.org/' />
     </organisations>
     <primary-license id='ApacheLicenseVersion2'>
         <copyright-notice>Copyright (c) 2013 The Apache Software Foundation</copyright-notice>
@@ -2835,6 +2839,16 @@ All rights reserved.
             <copyright-notice></copyright-notice>
             <by-organisation id='person:janvanbesien'>
                 <resource name='java-ipv6.jar' source='http://code.google.com/p/java-ipv6' />
+            </by-organisation>
+        </with-license>
+        <with-license id='ApacheLicenseVersion2'>
+        	<copyright-notice>
+Copyright 2002-2012 the original author or authors.
+        	</copyright-notice>
+        	<by-organisation id='springsource.com'>
+        		<resource name='spring-core-3.1.2.RELEASE.jar' source='https://github.com/SpringSource/spring-framework' />
+        		<resource name='spring-context-3.1.2.RELEASE.jar' source='https://github.com/SpringSource/spring-framework' />
+        		<resource name='spring-web-3.1.2.RELEASE.jar' source='https://github.com/SpringSource/spring-framework' />
             </by-organisation>
         </with-license>
     </within>
