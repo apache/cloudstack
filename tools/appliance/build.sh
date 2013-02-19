@@ -45,23 +45,25 @@ hdd_uuid=`vboxmanage showvminfo $appliance | grep vmdk | head -1 | awk '{print $
 # Start exporting
 rm -fr dist
 mkdir dist
-cd dist
 
 # Export for VMWare vSphere
-vboxmanage export $machine_uuid --output $appliance-$build_date-$branch-vmware.ova
+vboxmanage export $machine_uuid --output dist/$appliance-$build_date-$branch-vmware.ova
+echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware.ova"
 
 # Export for HyperV
-vboxmanage clonehd $hdd_uuid $appliance-$build_date-$branch-hyperv.vhd --format VHD
-bzip2 $appliance-$build_date-$branch-hyperv.vhd
+vboxmanage clonehd $hdd_uuid dist/$appliance-$build_date-$branch-hyperv.vhd --format VHD
+bzip2 dist/$appliance-$build_date-$branch-hyperv.vhd
+echo "$appliance exported for HyperV: dist/$appliance-$build_date-$branch-hyperv.vhd.bz2"
 
 # Export for KVM
-vboxmanage clonehd $hdd_uuid raw.img --format RAW
-qemu-img convert -f raw -O qcow2 raw.img $appliance-$build_date-$branch-kvm.qcow2
-bzip2 $appliance-$build_date-$branch-kvm.qcow2
+vboxmanage clonehd $hdd_uuid dist/raw.img --format RAW
+qemu-img convert -f raw -O qcow2 dist/raw.img dist/$appliance-$build_date-$branch-kvm.qcow2
+bzip2 dist/$appliance-$build_date-$branch-kvm.qcow2
+echo "$appliance exported for KVM: dist/$appliance-$build_date-$branch-kvm.qcow2.bz2"
 
 # Export for Xen
 # This will be an overwrite convert so, do it at the end
-vhd-util convert -s 0 -t 1 -i raw.img  -o $appliance-$build_date-$branch-xen.vhd
-bzip2 $appliance-$build_date-$branch-xen.vhd
+vhd-util convert -s 0 -t 1 -i dist/raw.img  -o dist/$appliance-$build_date-$branch-xen.vhd
+bzip2 dist/$appliance-$build_date-$branch-xen.vhd
+echo "$appliance exported for Xen: dist/$appliance-$build_date-$branch-xen.vhd.bz2"
 
-cd $rootdir
