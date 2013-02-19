@@ -116,6 +116,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
                 nicResponse.setNetworkid(router.getNetworkUuid());
                 nicResponse.setNetworkName(router.getNetworkName());
                 nicResponse.setMacAddress(router.getMacAddress());
+                nicResponse.setIp6Address(router.getIp6Address());
+                nicResponse.setIp6Gateway(router.getIp6Gateway());
+                nicResponse.setIp6Cidr(router.getIp6Cidr());
                 if (router.getBroadcastUri() != null) {
                     nicResponse.setBroadcastUri(router.getBroadcastUri().toString());
                 }
@@ -171,6 +174,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             nicResponse.setNetmask(vr.getNetmask());
             nicResponse.setNetworkid(vr.getNetworkUuid());
             nicResponse.setMacAddress(vr.getMacAddress());
+            nicResponse.setIp6Address(vr.getIp6Address());
+            nicResponse.setIp6Gateway(vr.getIp6Gateway());
+            nicResponse.setIp6Cidr(vr.getIp6Cidr());
             if (vr.getBroadcastUri() != null) {
                 nicResponse.setBroadcastUri(vr.getBroadcastUri().toString());
             }
