@@ -2439,6 +2439,10 @@ Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
         	id='springsource.com'
         	name='SpringSource, a division of VMware.'
         	url='http://www.springsource.org/' />
+        <organisation
+        	id='owasp.org'
+        	name='OWASP Foundation Inc.'
+        	url='https://www.owasp.org/' />
     </organisations>
     <primary-license id='ApacheLicenseVersion2'>
         <copyright-notice>Copyright (c) 2013 The Apache Software Foundation</copyright-notice>
@@ -2850,6 +2854,15 @@ Copyright 2002-2012 the original author or authors.
         		<resource name='spring-context-3.1.2.RELEASE.jar' source='https://github.com/SpringSource/spring-framework' />
         		<resource name='spring-web-3.1.2.RELEASE.jar' source='https://github.com/SpringSource/spring-framework' />
             </by-organisation>
+        </with-license>
+        <with-license id='BSD2ClauseGeneric'>
+        	<copyright-notice>
+Copyright (c) 2007, The OWASP Foundation
+All rights reserved.
+        	</copyright-notice>
+        	<by-organisation id='owasp.org'>
+        		<resource name='esapi-2.0.1.jar' source='http://code.google.com/p/owasp-esapi-java/' />
+        	</by-organisation>
         </with-license>
     </within>
     <within dir='deps/awsapi-lib'>
