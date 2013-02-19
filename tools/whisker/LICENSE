@@ -376,11 +376,6 @@ Within the deps/awsapi-lib directory
         from Json.simple Project  http://code.google.com/p/json-simple/ 
             json_simple-1.1.jar  from http://code.google.com/p/json-simple/source/checkout
 
-    licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
-    
-        from Jan Van Besien  mailto:janvanbesien@gmail.com 
-            java-ipv6.jar  from http://code.google.com/p/java-ipv6
-
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
 
             Copyright (c) 2002-2011 Atsuhiko Yamanaka, JCraft,Inc. 
@@ -2998,6 +2993,18 @@ Within the target/jar directory
         from Jetty Committers  http://jetty.codehaus.org/jetty/ 
             jetty-6.1.26.jar  from http://repo1.maven.org/maven2/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26-sources.jar
             jetty-util-6.1.26.jar  from http://repo1.maven.org/maven2/org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26-sources.jar
+
+    licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
+    
+        from Jan Van Besien  mailto:janvanbesien@gmail.com 
+            java-ipv6.jar  from http://code.google.com/p/java-ipv6
+
+    licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
+    Copyright 2002-2012 the original author or authors.
+        from SpringSource, a division of VMware.  http://www.springsource.org/ 
+            spring-context-3.1.2.RELEASE.jar  from https://github.com/SpringSource/spring-framework
+            spring-core-3.1.2.RELEASE.jar  from https://github.com/SpringSource/spring-framework
+            spring-web-3.1.2.RELEASE.jar  from https://github.com/SpringSource/spring-framework
 
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
 
