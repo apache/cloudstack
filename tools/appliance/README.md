@@ -19,6 +19,8 @@ under the License.
 
 # Setting up Tools and Environment
 
+    - Install VirtualBox 4.2 or latest
+    - Tool for exporting appliances: qemu-img, vboxmanage, vhd-util
     - Install [RVM](https://rvm.io/rvm/install)
     - Setup paths:
           export PATH=~/.rvm/bin:$PATH
@@ -36,7 +38,14 @@ Note, gem may require gcc-4.2, make sure link exists:
 
     sudo ln -s /usr/bin/gcc /usr/bin/gcc-4.2
 
-# How to build SystemVM template appliance
+# How to build SystemVMs automatically
+
+Just run build.sh, it will export archived appliances for KVM, Xen,
+VMWare and HyperV in `dist`:
+
+    sh build.sh
+
+# Building SystemVM template appliance manually
 
 List available appliances one can build:
 
@@ -50,3 +59,9 @@ Build systemvm template appliance:
 Start the box:
 
     veewee vbox up 'systemvmtemplate'
+
+Halt the box:
+
+    veewee vbox halt 'systemvmtemplate'
+
+Now VirtualBox can be used to export appliance.

@@ -1233,13 +1233,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager{
             ex.addProxyObject("vpc", vpcId, "VPC");
             throw ex;
         }
-        
-        //allow only one private gateway per vpc
-        VpcGatewayVO gatewayVO = _vpcGatewayDao.getPrivateGatewayForVpc(vpcId);
-        if (gatewayVO != null) {
-            throw new InvalidParameterValueException("Private ip address already exists for vpc " + vpc);
-        }
-        
+
         //Validate physical network
         if (physicalNetworkId == null) {
             List<? extends PhysicalNetwork> pNtwks = _ntwkModel.getPhysicalNtwksSupportingTrafficType(vpc.getZoneId(), TrafficType.Guest);
@@ -1258,7 +1252,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager{
                 vlan, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId);
         
         //2) create gateway entry
-        gatewayVO = new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(),
+        VpcGatewayVO gatewayVO = new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(),
                 privateNtwk.getId(), vlan, gateway, netmask, vpc.getAccountId(), vpc.getDomainId());
         _vpcGatewayDao.persist(gatewayVO);
         
