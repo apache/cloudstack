@@ -193,6 +193,13 @@
     <property name="name" value="Bare Metal Agent"/>
   </bean>
 
+  <!--
+  <bean id="SimulatorDiscoverer" class="com.cloud.resource.SimulatorDiscoverer">
+    <property name="name" value="KVM Agent"/>
+  </bean>
+  -->
+
+
   <bean id="HypervServerDiscoverer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer">
     <property name="name" value="SCVMMServer"/>
   </bean>
@@ -288,5 +295,10 @@
   <bean id="BaremetalGuru" class="com.cloud.baremetal.manager.BareMetalGuru">
     <property name="name" value="BaremetalGuru"/>
   </bean>
+  <!--
+  <bean id="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru">
+    <property name="name" value="SimulatorGuru"/>
+  </bean>
+  -->
   
 </beans>

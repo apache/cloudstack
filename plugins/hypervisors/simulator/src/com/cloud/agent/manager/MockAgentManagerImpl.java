@@ -62,7 +62,9 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import org.springframework.stereotype.Component;
 
+@Component
 @Local(value = { MockAgentManager.class })
 public class MockAgentManagerImpl extends ManagerBase implements MockAgentManager {
     private static final Logger s_logger = Logger.getLogger(MockAgentManagerImpl.class);

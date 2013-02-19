@@ -97,7 +97,9 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine.State;
+import org.springframework.stereotype.Component;
 
+@Component
 @Local(value = { MockStorageManager.class })
 public class MockStorageManagerImpl extends ManagerBase implements MockStorageManager {
     private static final Logger s_logger = Logger.getLogger(MockStorageManagerImpl.class);
