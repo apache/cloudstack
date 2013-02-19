@@ -16,13 +16,15 @@
 // under the License.
 package com.cloud.simulator.dao;
 
-import javax.ejb.Local;
-
 import com.cloud.simulator.MockSecStorageVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.springframework.stereotype.Component;
 
+import javax.ejb.Local;
+
+@Component
 @Local(value={MockSecStorageDao.class})
 public class MockSecStorageDaoImpl extends GenericDaoBase<MockSecStorageVO, Long> implements MockSecStorageDao {
     protected final SearchBuilder<MockSecStorageVO> urlSearch;

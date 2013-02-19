@@ -16,18 +16,19 @@
 // under the License.
 package com.cloud.simulator.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.Formatter;
-
-import javax.ejb.Local;
-
 import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import org.springframework.stereotype.Component;
 
+import javax.ejb.Local;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Formatter;
+
+@Component
 @Local(value={MockConfigurationDao.class})
 public class MockConfigurationDaoImpl extends GenericDaoBase<MockConfigurationVO, Long> implements MockConfigurationDao {
     private SearchBuilder<MockConfigurationVO> _searchByDcIdName;

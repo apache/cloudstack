@@ -42,7 +42,9 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.secondary.SecondaryStorageDiscoverer;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.springframework.stereotype.Component;
 
+@Component
 @Local(value=Discoverer.class)
 public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer implements ResourceStateAdapter, Listener {
     private static final Logger s_logger = Logger.getLogger(SimulatorSecondaryDiscoverer.class);
