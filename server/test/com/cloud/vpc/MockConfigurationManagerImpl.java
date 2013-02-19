@@ -366,6 +366,15 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#listLDAPConfig(org.apache.cloudstack.api.commands.LDAPConfigCmd)
+     */
+    @Override
+    public LDAPConfigCmd listLDAPConfig(LDAPConfigCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationService#isOfferingForVpc(com.cloud.offering.NetworkOffering)
      */
     @Override

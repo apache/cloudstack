@@ -66,7 +66,7 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
         String port = _configDao.getValue(LDAPParams.port.toString());
         String queryFilter = _configDao.getValue(LDAPParams.queryfilter.toString());
         String searchBase = _configDao.getValue(LDAPParams.searchbase.toString());
-        String useSSL = _configDao.getValue(LDAPParams.usessl.toString());
+        Boolean useSSL = Boolean.valueOf(_configDao.getValue(LDAPParams.usessl.toString()));
         String bindDN = _configDao.getValue(LDAPParams.dn.toString());
         String bindPasswd = _configDao.getValue(LDAPParams.passwd.toString());
         String trustStore = _configDao.getValue(LDAPParams.truststore.toString());
@@ -77,7 +77,7 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
             Hashtable<String, String> env = new Hashtable<String, String>(11);
             env.put(Context.INITIAL_CONTEXT_FACTORY,"com.sun.jndi.ldap.LdapCtxFactory");
             String protocol = "ldap://" ;
-            if (new Boolean(useSSL)){
+            if (useSSL){
                 env.put(Context.SECURITY_PROTOCOL, "ssl");
                 protocol="ldaps://" ;
                 System.setProperty("javax.net.ssl.trustStore", trustStore);
@@ -123,7 +123,7 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
             env = new Hashtable<String, String>(11);
             env.put(Context.INITIAL_CONTEXT_FACTORY,"com.sun.jndi.ldap.LdapCtxFactory");
             protocol = "ldap://" ;
-            if (new Boolean(useSSL)){
+            if (useSSL){
                 env.put(Context.SECURITY_PROTOCOL, "ssl");
                 protocol="ldaps://" ;
             }
@@ -135,8 +135,7 @@ public class LDAPUserAuthenticator extends DefaultUserAuthenticator {
             ctx.close();
 
         } catch (NamingException ne) {
-            ne.printStackTrace();
-            s_logger.warn("Authentication failed due to " + ne.getMessage());
+            s_logger.warn("Authentication Failed ! " + ne.getMessage() + (ne.getCause() != null ? ("; Caused by:" + ne.getCause().getMessage()) : ""));
             return false;
         }
         catch (Exception e){

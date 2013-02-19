@@ -31,6 +31,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
 @APICommand(name = "ldapConfig", description="Configure the LDAP context for this site.", responseObject=LDAPConfigResponse.class, since="3.0.0")
@@ -43,7 +44,10 @@ public class LDAPConfigCmd extends BaseCmd  {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.HOST_NAME, type=CommandType.STRING, required=true, description="Hostname or ip address of the ldap server eg: my.ldap.com")
+    @Parameter(name=ApiConstants.LIST_ALL, type=CommandType.STRING,  description="Hostname or ip address of the ldap server eg: my.ldap.com")
+    private String listall;
+
+    @Parameter(name=ApiConstants.HOST_NAME, type=CommandType.STRING,  description="Hostname or ip address of the ldap server eg: my.ldap.com")
     private String hostname;
 
     @Parameter(name=ApiConstants.PORT, type=CommandType.INTEGER, description="Specify the LDAP port if required, default is 389.")
@@ -52,10 +56,10 @@ public class LDAPConfigCmd extends BaseCmd  {
     @Parameter(name=ApiConstants.USE_SSL, type=CommandType.BOOLEAN, description="Check Use SSL if the external LDAP server is configured for LDAP over SSL.")
     private Boolean useSSL;
 
-    @Parameter(name=ApiConstants.SEARCH_BASE, type=CommandType.STRING, required=true, description="The search base defines the starting point for the search in the directory tree Example:  dc=cloud,dc=com.")
+    @Parameter(name=ApiConstants.SEARCH_BASE, type=CommandType.STRING,  description="The search base defines the starting point for the search in the directory tree Example:  dc=cloud,dc=com.")
     private String searchBase;
 
-    @Parameter(name=ApiConstants.QUERY_FILTER, type=CommandType.STRING, required=true, description="You specify a query filter here, which narrows down the users, who can be part of this domain.")
+    @Parameter(name=ApiConstants.QUERY_FILTER, type=CommandType.STRING,  description="You specify a query filter here, which narrows down the users, who can be part of this domain.")
     private String queryFilter;
 
     @Parameter(name=ApiConstants.BIND_DN, type=CommandType.STRING, description="Specify the distinguished name of a user with the search permission on the directory.")
@@ -74,6 +78,10 @@ public class LDAPConfigCmd extends BaseCmd  {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public String getListAll() {
+        return listall == null ? "false" : listall;
+    }
+
     public String getBindPassword() {
         return bindPassword;
     }
@@ -82,30 +90,56 @@ public class LDAPConfigCmd extends BaseCmd  {
         return bindDN;
     }
 
+    public void setBindDN(String bdn) {
+        this.bindDN=bdn;
+    }
+
     public String getQueryFilter() {
         return queryFilter;
     }
 
+    public void setQueryFilter(String queryFilter) {
+        this.queryFilter=queryFilter;
+    }
     public String getSearchBase() {
         return searchBase;
     }
 
+    public void setSearchBase(String searchBase) {
+        this.searchBase=searchBase;
+    }
+
     public Boolean getUseSSL() {
-        return useSSL == null ? Boolean.FALSE : Boolean.TRUE;
+        return useSSL == null ? Boolean.FALSE : useSSL;
+    }
+
+    public void setUseSSL(Boolean useSSL) {
+        this.useSSL=useSSL;
     }
 
     public String getHostname() {
         return hostname;
     }
 
+    public void setHostname(String hostname) {
+        this.hostname=hostname;
+    }
+
     public Integer getPort() {
         return port <= 0 ? 389 : port;
+    }
+
+    public void setPort(Integer port) {
+        this.port=port;
     }
 
     public String getTrustStore() {
         return trustStore;
     }
 
+    public void setTrustStore(String trustStore) {
+        this.trustStore=trustStore;
+    }
 
     public String getTrustStorePassword() {
         return trustStorePassword;
@@ -122,11 +156,24 @@ public class LDAPConfigCmd extends BaseCmd  {
             InsufficientCapacityException, ServerApiException,
             ConcurrentOperationException, ResourceAllocationException {
           try {
-              boolean result = _configService.updateLDAP(this);
-              if (result){
-                  LDAPConfigResponse lr = _responseGenerator.createLDAPConfigResponse(getHostname(), getPort(), getUseSSL(), getQueryFilter(), getSearchBase(), getBindDN());
+              if ("true".equalsIgnoreCase(getListAll())){
+                  // return the existing conf
+                  LDAPConfigCmd cmd = _configService.listLDAPConfig(this);
+                  LDAPConfigResponse lr = _responseGenerator.createLDAPConfigResponse(cmd.getHostname(), cmd.getPort(), cmd.getUseSSL(),
+                          cmd.getQueryFilter(), cmd.getSearchBase(), cmd.getBindDN());
                   lr.setResponseName(getCommandName());
                   this.setResponseObject(lr);
+              }
+              else if (getHostname()==null || getSearchBase() == null || getQueryFilter() == null) {
+                  throw new InvalidParameterValueException("You need to provide hostname, serachbase and queryfilter to configure your LDAP server");
+              }
+              else {
+                  boolean result = _configService.updateLDAP(this);
+                  if (result){
+                      LDAPConfigResponse lr = _responseGenerator.createLDAPConfigResponse(getHostname(), getPort(), getUseSSL(), getQueryFilter(), getSearchBase(), getBindDN());
+                      lr.setResponseName(getCommandName());
+                      this.setResponseObject(lr);
+                  }
               }
           }
           catch (NamingException ne){
