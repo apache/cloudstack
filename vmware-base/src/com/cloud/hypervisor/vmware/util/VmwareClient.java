@@ -58,6 +58,36 @@ import com.vmware.vim25.ObjectContent;
  */
 public class VmwareClient {
 
+    private static class TrustAllTrustManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {
+
+        @Override
+        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+            return null;
+        }
+
+        @Override
+        public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) throws java.security.cert.CertificateException {
+            return;
+        }
+
+        @Override
+        public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) throws java.security.cert.CertificateException {
+            return;
+        }
+    }
+
+    private static void trustAllHttpsCertificates() throws Exception {
+        // Create a trust manager that does not validate certificate chains:
+        javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[1];
+        javax.net.ssl.TrustManager tm = new TrustAllTrustManager();
+        trustAllCerts[0] = tm;
+        javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("SSL");
+        javax.net.ssl.SSLSessionContext sslsc = sc.getServerSessionContext();
+        sslsc.setSessionTimeout(0);
+        sc.init(null, trustAllCerts, null);
+        javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+    }
+
     private ManagedObjectReference SVC_INST_REF = new ManagedObjectReference();
     private ManagedObjectReference propCollectorRef;
     private ManagedObjectReference rootRef;
@@ -86,6 +116,7 @@ public class VmwareClient {
                 return true;
             }
         };
+        trustAllHttpsCertificates();
         HttpsURLConnection.setDefaultHostnameVerifier(hv);
 
         SVC_INST_REF.setType(SVC_INST_NAME);
