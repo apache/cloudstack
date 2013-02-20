@@ -1762,17 +1762,26 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkId) {
-        boolean netscalerInNetwork = isProviderForNetwork(Network.Provider.Netscaler, networkId);
-        boolean juniperInNetwork = isProviderForNetwork(Network.Provider.JuniperSRX, networkId);
-        boolean f5InNetwork = isProviderForNetwork(Network.Provider.F5BigIp, networkId);
-    
-        if (netscalerInNetwork || juniperInNetwork || f5InNetwork) {
-            return true;
-        } else {
-            return false;
+        List<Provider> networkProviders = getNetworkProviders(networkId);
+       for(Provider provider : networkProviders){
+           if(provider.isExternal()){
+               return true;
+           }
         }
+       return false;
     }
 
+    private List<Provider> getNetworkProviders(long networkId) {
+        List<String> providerNames = _ntwkSrvcDao.getDistinctProviders(networkId);
+        Map<String, Provider> providers = new HashMap<String, Provider>();
+        for (String providerName : providerNames) {
+           if(!providers.containsKey(providerName)){
+               providers.put(providerName, Network.Provider.getProvider(providerName));
+           }
+        }
+
+       return new ArrayList<Provider>(providers.values());
+    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
