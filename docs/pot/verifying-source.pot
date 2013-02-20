@@ -40,7 +40,7 @@ msgstr ""
 
 #. Tag: para
 #, no-c-format
-msgid "To enable you to verify the GPG signature, you will need to download the <ulink url=\"http://www.apache.org/dist/dev/incubator/cloudstack/KEYS\">KEYS</ulink> file."
+msgid "To enable you to verify the GPG signature, you will need to download the <ulink url=\"http://www.apache.org/dist/incubator/cloudstack/KEYS\">KEYS</ulink> file."
 msgstr ""
 
 #. Tag: para
