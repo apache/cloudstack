@@ -278,6 +278,7 @@
           },
 					pluginFrom: {
 					  name: 'installWizard',
+						selectedNetworkOffering: selectedNetworkOffering,
 						selectedNetworkOfferingHavingSG: true
 					}						
         },
