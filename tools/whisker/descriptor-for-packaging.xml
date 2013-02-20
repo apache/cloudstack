@@ -2261,6 +2261,10 @@ The Apache Software Foundation (http://www.apache.org/).
 This product includes software Copyright University of Southampton IT
 Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
         </notice>
+        <notice id='java-ipv6.notice'>
+   Java IPv6
+   Copyright 2013 Jan Van Besien
+        </notice>
     </notices>
     <organisations>
         <organisation 
@@ -2840,9 +2844,11 @@ All rights reserved.
             </by-organisation>
         </public-domain>
         <with-license id='ApacheLicenseVersion2'>
-            <copyright-notice></copyright-notice>
+            <copyright-notice>
+Copyright 2013 Jan Van Besien
+            </copyright-notice>
             <by-organisation id='person:janvanbesien'>
-                <resource name='java-ipv6.jar' source='http://code.google.com/p/java-ipv6' />
+                <resource name='java-ipv6.jar' source='http://code.google.com/p/java-ipv6' notice='java-ipv6.notice' />
             </by-organisation>
         </with-license>
         <with-license id='ApacheLicenseVersion2'>
