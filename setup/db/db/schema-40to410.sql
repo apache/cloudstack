@@ -519,6 +519,15 @@ CREATE TABLE  `cloud`.`user_ipv6_address` (
   CONSTRAINT `fk_user_ipv6_address__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `cloud`.`networks` ADD COLUMN `ip6_gateway` varchar(50) COMMENT 'IPv6 gateway for this network';
+ALTER TABLE `cloud`.`networks` ADD COLUMN `ip6_cidr` varchar(50) COMMENT 'IPv6 cidr for this network';
+
+ALTER TABLE `cloud`.`nics` ADD COLUMN `ip6_gateway` varchar(50) COMMENT 'gateway for ip6 address';
+ALTER TABLE `cloud`.`nics` ADD COLUMN `ip6_cidr` varchar(50) COMMENT 'cidr for ip6 address';
+
+ALTER TABLE `cloud`.`vlan` ADD COLUMN `ip6_gateway` varchar(255);
+ALTER TABLE `cloud`.`vlan` ADD COLUMN `ip6_cidr` varchar(255);
+ALTER TABLE `cloud`.`vlan` ADD COLUMN `ip6_range` varchar(255);
 
 -- DB views for list api
 
@@ -1662,37 +1671,3 @@ CREATE VIEW `cloud`.`data_center_view` AS
             left join
         `cloud`.`domain` ON data_center.domain_id = domain.id;
 
-CREATE TABLE  `cloud`.`user_ipv6_address` (
-  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
-  `uuid` varchar(40),
-  `account_id` bigint unsigned NULL,
-  `domain_id` bigint unsigned NULL,
-  `ip_address` char(50) NOT NULL,
-  `data_center_id` bigint unsigned NOT NULL COMMENT 'zone that it belongs to',
-  `vlan_id` bigint unsigned NOT NULL,
-  `state` char(32) NOT NULL default 'Free' COMMENT 'state of the ip address',
-  `mac_address` varchar(40) NOT NULL COMMENT 'mac address of this ip',
-  `source_network_id` bigint unsigned NOT NULL COMMENT 'network id ip belongs to',
-  `network_id` bigint unsigned COMMENT 'network this public ip address is associated with',
-  `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this configuration is based on',
-  `created` datetime NULL COMMENT 'Date this ip was allocated to someone',
-  PRIMARY KEY (`id`),
-  UNIQUE (`ip_address`, `source_network_id`),
-  CONSTRAINT `fk_user_ipv6_address__source_network_id` FOREIGN KEY (`source_network_id`) REFERENCES `networks`(`id`),
-  CONSTRAINT `fk_user_ipv6_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
-  CONSTRAINT `fk_user_ipv6_address__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`),
-  CONSTRAINT `fk_user_ipv6_address__vlan_id` FOREIGN KEY (`vlan_id`) REFERENCES `vlan`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_user_ipv6_address__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `uc_user_ipv6_address__uuid` UNIQUE (`uuid`),
-  CONSTRAINT `fk_user_ipv6_address__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-ALTER TABLE `cloud`.`networks` ADD COLUMN `ip6_gateway` varchar(50) COMMENT 'IPv6 gateway for this network';
-ALTER TABLE `cloud`.`networks` ADD COLUMN `ip6_cidr` varchar(50) COMMENT 'IPv6 cidr for this network';
-
-ALTER TABLE `cloud`.`nics` ADD COLUMN `ip6_gateway` varchar(50) COMMENT 'gateway for ip6 address';
-ALTER TABLE `cloud`.`nics` ADD COLUMN `ip6_cidr` varchar(50) COMMENT 'cidr for ip6 address';
-
-ALTER TABLE `cloud`.`vlan` ADD COLUMN `ip6_gateway` varchar(255);
-ALTER TABLE `cloud`.`vlan` ADD COLUMN `ip6_cidr` varchar(255);
-ALTER TABLE `cloud`.`vlan` ADD COLUMN `ip6_range` varchar(255);
