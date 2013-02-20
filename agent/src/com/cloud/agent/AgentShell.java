@@ -48,6 +48,7 @@ import com.cloud.agent.dao.StorageComponent;
 import com.cloud.agent.dao.impl.PropertiesStorage;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.ProcessUtil;
 import com.cloud.utils.PropertiesUtil;
@@ -611,6 +612,8 @@ public class AgentShell implements IAgentShell {
 
     public static void main(String[] args) {
         try {
+        	LogUtils.initLog4j("log4j-cloud.xml");
+        	
             AgentShell shell = new AgentShell();
             shell.init(args);
             shell.start();
