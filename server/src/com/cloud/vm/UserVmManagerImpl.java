@@ -108,6 +108,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeployPlannerSelector;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -133,15 +134,11 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
-import com.cloud.network.Network;
 import com.cloud.network.*;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -392,6 +389,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     protected GuestOSCategoryDao _guestOSCategoryDao;
     @Inject
     UsageEventDao _usageEventDao;
+    @Inject
+    List<DeployPlannerSelector> plannerSelectors;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -3152,13 +3151,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
         }
 
-        // check if we have available pools for vm deployment
-        long availablePools = _storagePoolDao
-                .countPoolsByStatus(StoragePoolStatus.Up);
-        if (availablePools  < 1) {
-            throw new StorageUnavailableException(
-                    "There are no available pools in the UP state for vm deployment",
-                    -1);
+        if (template.getHypervisorType() != null && template.getHypervisorType() != HypervisorType.BareMetal) {
+            // check if we have available pools for vm deployment
+            long availablePools = _storagePoolDao.countPoolsByStatus(StoragePoolStatus.Up);
+            if (availablePools < 1) {
+                throw new StorageUnavailableException("There are no available pools in the UP state for vm deployment", -1);
+            }
         }
 
         ServiceOfferingVO offering = _serviceOfferingDao
@@ -3847,7 +3845,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
         
-        String reservationId = vmEntity.reserve("FirstFitPlanner", plan, new ExcludeList(), new Long(callerUser.getId()).toString());
+        String plannerName = null;
+        for (DeployPlannerSelector dps : plannerSelectors) {
+            plannerName = dps.selectPlanner(vm);
+            if (plannerName != null) {
+                break;
+            }
+        }
+        if (plannerName == null) {
+            throw new CloudRuntimeException(String.format("cannot find DeployPlannerSelector for vm[uuid:%s, hypervisorType:%s]", vm.getUuid(), vm.getHypervisorType()));
+        }
+        
+        String reservationId = vmEntity.reserve(plannerName, plan, new ExcludeList(), new Long(callerUser.getId()).toString());
         vmEntity.deploy(reservationId, new Long(callerUser.getId()).toString());
 
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = new Pair(vm, params);
