@@ -89,6 +89,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeployPlannerSelector;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -397,6 +398,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Inject 
     protected VMSnapshotManager _vmSnapshotMgr;
     
+    @Inject
+    List<DeployPlannerSelector> plannerSelectors;
+
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
     protected int _expungeDelay;
@@ -2168,13 +2172,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
         }
 
-        // check if we have available pools for vm deployment
-        long availablePools = _storagePoolDao
-                .countPoolsByStatus(StoragePoolStatus.Up);
-        if (availablePools  < 1) {
-            throw new StorageUnavailableException(
-                    "There are no available pools in the UP state for vm deployment",
-                    -1);
+        if (template.getHypervisorType() != null && template.getHypervisorType() != HypervisorType.BareMetal) {
+            // check if we have available pools for vm deployment
+            long availablePools = _storagePoolDao.countPoolsByStatus(StoragePoolStatus.Up);
+            if (availablePools < 1) {
+                throw new StorageUnavailableException("There are no available pools in the UP state for vm deployment", -1);
+            }
         }
 
         if (template.getTemplateType().equals(TemplateType.SYSTEM)) {
@@ -2861,7 +2864,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
         
-        String reservationId = vmEntity.reserve("FirstFitPlanner", plan, new ExcludeList(), new Long(callerUser.getId()).toString());
+        String plannerName = null;
+        for (DeployPlannerSelector dps : plannerSelectors) {
+            plannerName = dps.selectPlanner(vm);
+            if (plannerName != null) {
+                break;
+            }
+        }
+        if (plannerName == null) {
+            throw new CloudRuntimeException(String.format("cannot find DeployPlannerSelector for vm[uuid:%s, hypervisorType:%s]", vm.getUuid(), vm.getHypervisorType()));
+        }
+        
+        String reservationId = vmEntity.reserve(plannerName, plan, new ExcludeList(), new Long(callerUser.getId()).toString());
         vmEntity.deploy(reservationId, new Long(callerUser.getId()).toString());
 
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = new Pair(vm, params);

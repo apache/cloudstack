@@ -343,11 +343,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return (VirtualMachineGuru<T>) _vmGurus.get(vm.getType());
     }
 
-    @SuppressWarnings("unchecked")
-    private <T extends VMInstanceVO> VirtualMachineGuru<T> getBareMetalVmGuru(T vm) {
-        return (VirtualMachineGuru<T>) _vmGurus.get(VirtualMachine.Type.UserBareMetal);
-    }
-
     @Override
     public <T extends VMInstanceVO> boolean expunge(T vm, User caller, Account account) throws ResourceUnavailableException {
         try {
@@ -593,12 +588,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         long vmId = vm.getId();
-        VirtualMachineGuru<T> vmGuru;
-        if (vm.getHypervisorType() == HypervisorType.BareMetal) {
-            vmGuru = getBareMetalVmGuru(vm);
-        } else {
-            vmGuru = getVmGuru(vm);
-        }
+        VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
 
         vm = vmGuru.findById(vm.getId());
         Ternary<T, ReservationContext, ItWorkVO> start = changeToStartState(vmGuru, vm, caller, account);

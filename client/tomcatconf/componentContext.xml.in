@@ -65,9 +65,6 @@
   <bean id="Ovs" class="com.cloud.network.element.OvsElement">
     <property name="name" value="Ovs"/>
   </bean>
-  <bean id="ExternalDhcpServer" class="com.cloud.network.element.ExternalDhcpElement">
-    <property name="name" value="ExternalDhcpServer"/>
-  </bean>
   <bean id="BareMetalDhcp" class="com.cloud.baremetal.networkservice.BaremetalDhcpElement">
       <property name="name" value="BareMetalDhcp"/>
   </bean>
@@ -223,8 +220,16 @@
     <property name="name" value="UserConcentratedPod"/>
   </bean>
 
-  <bean id="BareMetalPlanner" class="com.cloud.deploy.BareMetalPlanner">
+  <bean id="BareMetalPlanner" class="com.cloud.baremetal.manager.BareMetalPlanner">
     <property name="name" value="BareMetal Fit"/>
+  </bean>
+
+  <bean id="BaremetalPlannerSelector" class="com.cloud.baremetal.manager.BaremetalPlannerSelector">
+    <property name="name" value="BaremetalPlannerSelector"/>
+  </bean>
+
+  <bean id="HypervisorPlannerSelector" class="com.cloud.deploy.HypervisorVmPlannerSelector">
+    <property name="name" value="BaremetalPlannerSelector"/>
   </bean>
     
    
@@ -279,10 +284,6 @@
     <property name="name" value="KVMGuru"/>
   </bean>
   
-  <bean id="BareMetalGuru" class="com.cloud.baremetal.BareMetalGuru">
-    <property name="name" value="BareMetalGuru"/>
-  </bean>
-
   <bean id="HypervGuru" class="com.cloud.hypervisor.guru.HypervGuru">
     <property name="name" value="HypervGuru"/>
   </bean>
@@ -296,5 +297,9 @@
     <property name="name" value="SimulatorGuru"/>
   </bean>
   -->
+
+  <bean id="BaremetalGuru" class="com.cloud.baremetal.manager.BareMetalGuru">
+    <property name="name" value="BaremetalGuru"/>
+  </bean>
   
 </beans>

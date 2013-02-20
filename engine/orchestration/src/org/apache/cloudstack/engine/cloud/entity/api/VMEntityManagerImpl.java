@@ -42,6 +42,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.org.Cluster;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -168,10 +169,13 @@ public class VMEntityManagerImpl implements VMEntityManager {
            //save destination with VMEntityVO
             VMReservationVO vmReservation = new VMReservationVO(vm.getId(), dest.getDataCenter().getId(), dest.getPod().getId(), dest.getCluster().getId(), dest.getHost().getId());
             Map<Long,Long> volumeReservationMap = new HashMap<Long,Long>();
-            for(Volume vo : dest.getStorageForDisks().keySet()){
-                volumeReservationMap.put(vo.getId(), dest.getStorageForDisks().get(vo).getId());
+            
+            if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+                for(Volume vo : dest.getStorageForDisks().keySet()){
+                    volumeReservationMap.put(vo.getId(), dest.getStorageForDisks().get(vo).getId());
+                }
+                vmReservation.setVolumeReservation(volumeReservationMap);
             }
-            vmReservation.setVolumeReservation(volumeReservationMap);
 
             vmEntityVO.setVmReservation(vmReservation);
             _vmEntityDao.persist(vmEntityVO);

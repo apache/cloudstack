@@ -388,7 +388,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
             } catch (InsufficientCapacityException ex) {
                 s_logger.info(ex);
-                s_logger.trace(ex);
+                s_logger.info(ex.getMessage(), ex);
                 throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
             }
         } else {
@@ -477,7 +477,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             }
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);
-            s_logger.trace(ex);
+            s_logger.trace(ex.getMessage(), ex);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.deploy;
+package com.cloud.baremetal.manager;
 
 import java.util.List;
 import java.util.Map;
@@ -34,6 +34,10 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
