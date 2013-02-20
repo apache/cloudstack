@@ -906,4 +906,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         return nexusVSMCredentials;
     }
+
+    @Override
+    public String getRootDiskController() {
+        return _rootDiskController;
+    }
 }

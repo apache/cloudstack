@@ -67,4 +67,6 @@ public interface VmwareManager {
     String getPublicVSwitchName(long dcId, HypervisorType hypervisorType);
 
     String getGuestVSwitchName(long dcId, HypervisorType hypervisorType);
+    
+    public String getRootDiskController();
 }
