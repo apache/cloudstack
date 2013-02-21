@@ -8695,6 +8695,20 @@
               createForm: {
                 title: 'label.add.primary.storage',
                 fields: {
+                  scope: {
+                    label: 'label.scope',
+                    select: function(args) {
+                      var scope = [
+                        { id: 'zone-wide', description: _l('label.zone.wide') },
+                        { id: 'cluster', description: _l('label.cluster') },
+                        { id: 'host', description: _l('label.host') }
+                      ];
+
+                      args.response.success({
+                        data: scope
+                      });
+                    }
+                  },
                   zoneid: {
                     label: 'Zone',
                     docID: 'helpPrimaryStorageZone',
@@ -8762,6 +8776,29 @@
                           args.response.success({
                             actionFilter: clusterActionfilter,
                             data: items
+                          });
+                        }
+                      });
+                    }
+                  },
+
+                  hostId: {
+                    label: 'label.host',
+                    validation: { required: true },
+                    dependsOn: 'clusterId',
+                    select: function(args) {
+                      $.ajax({
+                        url: createURL('listHosts'),
+                        data: {
+                          clusterid: args.clusterId
+                        },
+                        success: function(json) {
+                          var hosts = json.listhostsresponse.host ?
+                              json.listhostsresponse.host : [] 
+                          args.response.success({
+                            data: $.map(hosts, function(host) {
+                              return { id: host.id, description: host.name }
+                            })
                           });
                         }
                       });
