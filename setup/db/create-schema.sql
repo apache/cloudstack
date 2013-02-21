@@ -1049,6 +1049,7 @@ CREATE TABLE  `cloud`.`vm_template` (
   `source_template_id` bigint unsigned COMMENT 'Id of the original template, if this template is created from snapshot',
   `template_tag` varchar(255) COMMENT 'template tag',
   `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method',
+  `image_data_store_id` bigint unsigned,
   PRIMARY KEY  (`id`),
   INDEX `i_vm_template__removed`(`removed`),
   CONSTRAINT `uc_vm_template__uuid` UNIQUE (`uuid`)

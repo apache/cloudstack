@@ -35,6 +35,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -53,7 +54,7 @@ public class UserVmManagerTest {
 
     @Spy UserVmManagerImpl _userVmMgr = new UserVmManagerImpl();
     @Mock VirtualMachineManager _itMgr;
-    @Mock StorageManager _storageMgr;
+    @Mock VolumeManager _storageMgr;
     @Mock Account _account;
     @Mock AccountManager _accountMgr;
     @Mock AccountDao _accountDao;
@@ -76,7 +77,7 @@ public class UserVmManagerTest {
         _userVmMgr._templateDao = _templateDao;
         _userVmMgr._volsDao = _volsDao;
         _userVmMgr._itMgr = _itMgr;
-        _userVmMgr._storageMgr = _storageMgr;
+        _userVmMgr.volumeMgr = _storageMgr;
         _userVmMgr._accountDao = _accountDao;
         _userVmMgr._userDao = _userDao;
         _userVmMgr._accountMgr = _accountMgr;
@@ -116,7 +117,7 @@ public class UserVmManagerTest {
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
         when(_volumeMock.getId()).thenReturn(3L);
         doNothing().when(_volsDao).detachVolume(anyLong());
-        when(_storageMgr.destroyVolume(_volumeMock)).thenReturn(true);
+      
         when(_templateMock.getUuid()).thenReturn("e0552266-7060-11e2-bbaa-d55f5db67735");
 
         _userVmMgr.restoreVMInternal(_account, _vmMock, null);
@@ -141,7 +142,7 @@ public class UserVmManagerTest {
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
         when(_volumeMock.getId()).thenReturn(3L);
         doNothing().when(_volsDao).detachVolume(anyLong());
-        when(_storageMgr.destroyVolume(_volumeMock)).thenReturn(true);
+     
         when(_templateMock.getUuid()).thenReturn("e0552266-7060-11e2-bbaa-d55f5db67735");
 
         _userVmMgr.restoreVMInternal(_account, _vmMock, null);
@@ -171,7 +172,7 @@ public class UserVmManagerTest {
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
         when(_volumeMock.getId()).thenReturn(3L);
         doNothing().when(_volsDao).detachVolume(anyLong());
-        when(_storageMgr.destroyVolume(_volumeMock)).thenReturn(true);
+      
         when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
 
         _userVmMgr.restoreVMInternal(_account, _vmMock, 14L);
