@@ -54,20 +54,20 @@ public class UserVmManagerTest {
     @Spy UserVmManagerImpl _userVmMgr = new UserVmManagerImpl();
     @Mock VirtualMachineManager _itMgr;
     @Mock StorageManager _storageMgr;
-    @Mock Account account;
+    @Mock Account _account;
     @Mock AccountManager _accountMgr;
     @Mock AccountDao _accountDao;
     @Mock UserDao _userDao;
     @Mock UserVmDao _vmDao;
     @Mock VMTemplateDao _templateDao;
     @Mock VolumeDao _volsDao;
-    @Mock RestoreVMCmd restoreVMCmd;
-    @Mock AccountVO accountMock;
-    @Mock UserVO userMock;
-    @Mock UserVmVO vmMock;
-    @Mock VMTemplateVO templateMock;
-    @Mock VolumeVO volumeMock;
-    @Mock List<VolumeVO> rootVols;
+    @Mock RestoreVMCmd _restoreVMCmd;
+    @Mock AccountVO _accountMock;
+    @Mock UserVO _userMock;
+    @Mock UserVmVO _vmMock;
+    @Mock VMTemplateVO _templateMock;
+    @Mock VolumeVO _volumeMock;
+    @Mock List<VolumeVO> _rootVols;
     @Before
     public void setup(){
         MockitoAnnotations.initMocks(this);
@@ -79,69 +79,102 @@ public class UserVmManagerTest {
         _userVmMgr._storageMgr = _storageMgr;
         _userVmMgr._accountDao = _accountDao;
         _userVmMgr._userDao = _userDao;
+        _userVmMgr._accountMgr = _accountMgr;
 
-        doReturn(3L).when(account).getId();
-        doReturn(8L).when(vmMock).getAccountId();
-        when(_accountDao.findById(anyLong())).thenReturn(accountMock);
-        when(_userDao.findById(anyLong())).thenReturn(userMock);
-        doReturn(Account.State.enabled).when(account).getState();
-        when(vmMock.getId()).thenReturn(314L);
+        doReturn(3L).when(_account).getId();
+        doReturn(8L).when(_vmMock).getAccountId();
+        when(_accountDao.findById(anyLong())).thenReturn(_accountMock);
+        when(_userDao.findById(anyLong())).thenReturn(_userMock);
+        doReturn(Account.State.enabled).when(_account).getState();
+        when(_vmMock.getId()).thenReturn(314L);
 
     }
 
-    // VM state not in running/stopped case
+    // Test restoreVm when VM state not in running/stopped case
     @Test(expected=CloudRuntimeException.class)
     public void testRestoreVMF1() throws ResourceAllocationException {
 
-        when(_vmDao.findById(anyLong())).thenReturn(vmMock);
-        when(_templateDao.findById(anyLong())).thenReturn(templateMock);
-        doReturn(VirtualMachine.State.Error).when(vmMock).getState();
-        _userVmMgr.restoreVMInternal(account, vmMock);
+        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
+        when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
+        doReturn(VirtualMachine.State.Error).when(_vmMock).getState();
+        _userVmMgr.restoreVMInternal(_account, _vmMock, null);
     }
 
-    // when VM is in stopped state
+    // Test restoreVm when VM is in stopped state
     @Test
     public void testRestoreVMF2()  throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
-    ConcurrentOperationException, ResourceAllocationException {
+        ConcurrentOperationException, ResourceAllocationException {
 
-        doReturn(VirtualMachine.State.Stopped).when(vmMock).getState();
-        when(_vmDao.findById(anyLong())).thenReturn(vmMock);
-        when(_volsDao.findByInstance(anyLong())).thenReturn(rootVols);
-        doReturn(false).when(rootVols).isEmpty();
-        when(rootVols.get(eq(0))).thenReturn(volumeMock);
-        doReturn(3L).when(volumeMock).getTemplateId();
-        when(_templateDao.findById(anyLong())).thenReturn(templateMock);
-        when(_storageMgr.allocateDuplicateVolume(volumeMock, null)).thenReturn(volumeMock);
+        doReturn(VirtualMachine.State.Stopped).when(_vmMock).getState();
+        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
+        when(_volsDao.findByInstance(anyLong())).thenReturn(_rootVols);
+        doReturn(false).when(_rootVols).isEmpty();
+        when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
+        doReturn(3L).when(_volumeMock).getTemplateId();
+        when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
+        when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
-        when(volumeMock.getId()).thenReturn(3L);
+        when(_volumeMock.getId()).thenReturn(3L);
         doNothing().when(_volsDao).detachVolume(anyLong());
-        when(_storageMgr.destroyVolume(volumeMock)).thenReturn(true);
+        when(_storageMgr.destroyVolume(_volumeMock)).thenReturn(true);
+        when(_templateMock.getUuid()).thenReturn("e0552266-7060-11e2-bbaa-d55f5db67735");
 
-        _userVmMgr.restoreVMInternal(account, vmMock);
+        _userVmMgr.restoreVMInternal(_account, _vmMock, null);
 
     }
 
-    // when VM is in running state
+    // Test restoreVM when VM is in running state
     @Test
     public void testRestoreVMF3()  throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
-    ConcurrentOperationException, ResourceAllocationException {
+        ConcurrentOperationException, ResourceAllocationException {
 
-        doReturn(VirtualMachine.State.Running).when(vmMock).getState();
-        when(_vmDao.findById(anyLong())).thenReturn(vmMock);
-        when(_volsDao.findByInstance(anyLong())).thenReturn(rootVols);
-        doReturn(false).when(rootVols).isEmpty();
-        when(rootVols.get(eq(0))).thenReturn(volumeMock);
-        doReturn(3L).when(volumeMock).getTemplateId();
-        when(_templateDao.findById(anyLong())).thenReturn(templateMock);
-        when(_itMgr.stop(vmMock, userMock, account)).thenReturn(true);
-        when(_itMgr.start(vmMock, null, userMock, account)).thenReturn(vmMock);
-        when(_storageMgr.allocateDuplicateVolume(volumeMock, null)).thenReturn(volumeMock);
+        doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
+        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
+        when(_volsDao.findByInstance(anyLong())).thenReturn(_rootVols);
+        doReturn(false).when(_rootVols).isEmpty();
+        when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
+        doReturn(3L).when(_volumeMock).getTemplateId();
+        when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
+        when(_itMgr.stop(_vmMock, _userMock, _account)).thenReturn(true);
+        when(_itMgr.start(_vmMock, null, _userMock, _account)).thenReturn(_vmMock);
+        when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
-        when(volumeMock.getId()).thenReturn(3L);
+        when(_volumeMock.getId()).thenReturn(3L);
         doNothing().when(_volsDao).detachVolume(anyLong());
-        when(_storageMgr.destroyVolume(volumeMock)).thenReturn(true);
+        when(_storageMgr.destroyVolume(_volumeMock)).thenReturn(true);
+        when(_templateMock.getUuid()).thenReturn("e0552266-7060-11e2-bbaa-d55f5db67735");
 
-        _userVmMgr.restoreVMInternal(account, vmMock);
+        _userVmMgr.restoreVMInternal(_account, _vmMock, null);
+
+    }
+
+    // Test restoreVM on providing new template Id, when VM is in running state
+    @Test
+    public void testRestoreVMF4()  throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
+            ConcurrentOperationException, ResourceAllocationException {
+        doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
+        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
+        when(_volsDao.findByInstance(anyLong())).thenReturn(_rootVols);
+        doReturn(false).when(_rootVols).isEmpty();
+        when(_rootVols.get(eq(0))).thenReturn(_volumeMock);
+        doReturn(3L).when(_volumeMock).getTemplateId();
+        when(_templateDao.findById(anyLong())).thenReturn(_templateMock);
+        doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
+        when(_itMgr.stop(_vmMock, _userMock, _account)).thenReturn(true);
+        when(_storageMgr.allocateDuplicateVolume(_volumeMock, 14L)).thenReturn(_volumeMock);
+        when(_templateMock.getGuestOSId()).thenReturn(5L);
+        doNothing().when(_vmMock).setGuestOSId(anyLong());
+        doNothing().when(_vmMock).setTemplateId(3L);
+        when(_vmDao.update(314L, _vmMock)).thenReturn(true);
+        when(_itMgr.start(_vmMock, null, _userMock, _account)).thenReturn(_vmMock);
+        when(_storageMgr.allocateDuplicateVolume(_volumeMock, null)).thenReturn(_volumeMock);
+        doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
+        when(_volumeMock.getId()).thenReturn(3L);
+        doNothing().when(_volsDao).detachVolume(anyLong());
+        when(_storageMgr.destroyVolume(_volumeMock)).thenReturn(true);
+        when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
+
+        _userVmMgr.restoreVMInternal(_account, _vmMock, 14L);
 
     }
 

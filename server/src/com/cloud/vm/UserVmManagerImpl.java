@@ -2675,8 +2675,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         // If the VM is Volatile in nature, on reboot discard the VM's root disk and create a new root disk for it: by calling restoreVM
         long serviceOfferingId = vmInstance.getServiceOfferingId();
         ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOfferingId);
-        if(offering.getVolatileVm()){
-            return restoreVMInternal(caller, vmInstance);
+        if(offering != null && offering.getRemoved() == null) {
+            if(offering.getVolatileVm()){
+                return restoreVMInternal(caller, vmInstance, null);
+            }
+        } else {
+            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId + " corresponding to the vm");
         }
 
         return rebootVirtualMachine(UserContext.current().getCallerUserId(),
@@ -4795,9 +4799,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     public UserVm restoreVM(RestoreVMCmd cmd) {
         // Input validation
         Account caller = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
 
         long vmId = cmd.getVmId();
+        Long newTemplateId = cmd.getTemplateId();
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Cannot find VM with ID " + vmId);
@@ -4805,10 +4809,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             throw ex;
         }
 
-        return restoreVMInternal(caller, vm);
+        _accountMgr.checkAccess(caller, null, true, vm);
+
+        return restoreVMInternal(caller, vm, newTemplateId);
     }
 
-    public UserVm restoreVMInternal(Account caller, UserVmVO vm){
+    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId){
 
         Long userId = caller.getId();
         Account owner = _accountDao.findById(vm.getAccountId());
@@ -4857,13 +4863,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             throw ex;
         }
 
-        VMTemplateVO template = _templateDao.findById(templateId);
-        if (template == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException(
-                    "Cannot find template for specified volumeid and vmId");
-            ex.addProxyObject(vm, vmId, "vmId");
-            ex.addProxyObject(root, root.getId(), "volumeId");
-            throw ex;
+        VMTemplateVO template = null;
+        if(newTemplateId != null) {
+            template = _templateDao.findById(newTemplateId);
+            _accountMgr.checkAccess(caller, null, true, template);
+        } else {
+            template = _templateDao.findById(templateId);
+            if (template == null) {
+                InvalidParameterValueException ex = new InvalidParameterValueException(
+                        "Cannot find template for specified volumeid and vmId");
+                ex.addProxyObject(vm, vmId, "vmId");
+                ex.addProxyObject(root, root.getId(), "volumeId");
+                throw ex;
+            }
         }
 
         if (needRestart) {
@@ -4878,8 +4890,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
         }
 
-        /* allocate a new volume from original template */
-        VolumeVO newVol = _storageMgr.allocateDuplicateVolume(root, null);
+        /* If new template is provided allocate a new volume from new template otherwise allocate new volume from original template */
+        VolumeVO newVol = null;
+        if (newTemplateId != null){
+            newVol = _storageMgr.allocateDuplicateVolume(root, newTemplateId);
+            vm.setGuestOSId(template.getGuestOSId());
+            vm.setTemplateId(newTemplateId);
+            _vmDao.update(vmId, vm);
+        } else newVol = _storageMgr.allocateDuplicateVolume(root, null);
+
         _volsDao.attachVolume(newVol.getId(), vmId, newVol.getDeviceId());
 
         /* Detach and destory the old root volume */
@@ -4903,8 +4922,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
         }
 
-        s_logger.debug("Restore VM " + vm.getUuid() + " with template "
-                + root.getTemplateId() + " successfully");
+        s_logger.debug("Restore VM " + vmId + " with template "
+                + template.getUuid() + " done successfully");
         return vm;
 
     }
