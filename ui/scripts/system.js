@@ -8707,6 +8707,37 @@
                       args.response.success({
                         data: scope
                       });
+
+                      args.$select.change(function() {
+                        var $form = $(this).closest('form');
+                        var scope = $(this).val();
+
+                        if(scope == 'zone-wide'){
+                            $form.find('.form-item[rel=podId]').hide();
+                            $form.find('.form-item[rel=clusterId]').hide();
+                            $form.find('.form-item[rel=hostId]').hide();
+
+
+                         }
+
+                        else if(scope == 'cluster'){
+
+                             $form.find('.form-item[rel=hostId]').hide();
+                             $form.find('.form-item[rel=podId]').css('display', 'inline-block');
+                             $form.find('.form-item[rel=clusterId]').css('display', 'inline-block');
+
+
+                         }
+
+                         else if(scope == 'host'){
+                            $form.find('.form-item[rel=podId]').css('display', 'inline-block');
+                            $form.find('.form-item[rel=clusterId]').css('display', 'inline-block');
+                            $form.find('.form-item[rel=hostId]').css('display', 'inline-block');
+
+                         }
+
+                        })
+
                     }
                   },
                   zoneid: {
@@ -8867,6 +8898,7 @@
                         var protocol = $(this).val();
                         if(protocol == null)
                           return;
+                       
 
                         if(protocol == "nfs") {
                           //$("#add_pool_server_container", $dialogAddPool).show();
