@@ -147,7 +147,6 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     CiscoAsa1000vDao _ciscoAsa1000vDao;
     @Inject
     NetworkAsa1000vMapDao _networkAsa1000vMapDao;
-    
 
     private boolean canHandle(Network network) {
         if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {

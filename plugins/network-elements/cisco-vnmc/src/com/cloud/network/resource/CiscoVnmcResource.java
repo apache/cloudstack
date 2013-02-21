@@ -17,6 +17,7 @@
 package com.cloud.network.resource;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -319,39 +320,53 @@ public class CiscoVnmcResource implements ServerResource{
     private Answer execute(SetFirewallRulesCommand cmd, int numRetries) {
         String vlanId = cmd.getContextParam(NetworkElementCommand.GUEST_VLAN_TAG);
         String tenant = "vlan-" + vlanId;
+
+        FirewallRuleTO[] rules = cmd.getRules();
+        Map<String, List<FirewallRuleTO>> publicIpRulesMap = new HashMap<String, List<FirewallRuleTO>>();
+        for (FirewallRuleTO rule : rules) {
+            String publicIp = rule.getSrcIp();
+            if (!publicIpRulesMap.containsKey(publicIp)) {
+                List<FirewallRuleTO> publicIpRulesList = new ArrayList<FirewallRuleTO>();
+                publicIpRulesMap.put(publicIp, publicIpRulesList);
+            }
+            publicIpRulesMap.get(publicIp).add(rule);
+        }
+
         try {
             // create-acl-policy-set for ingress
             _connection.createTenantVDCAclPolicySet(tenant, true);
-
-            // delete-acl-policy for ingress
-            _connection.deleteTenantVDCAclPolicy(tenant, true);
-            // delete-acl-policy for egress
-
-            // create-acl-policy for ingress
-            _connection.createTenantVDCAclPolicy(tenant, true);
-
             // create-acl-policy-set for egress
-            // create-acl-policy for egress
 
-            FirewallRuleTO[] rules = cmd.getRules();
-            for (FirewallRuleTO rule : rules) {
-                if (rule.revoked()) {
-                    // delete-acl-rule
-                    //_connection.deleteAclRule(tenant, Long.toString(rule.getId()));
-                } else {
-                    String cidr = rule.getSourceCidrList().get(0);
-                    String[] result = cidr.split("\\/");
-                    assert (result.length == 2) : "Something is wrong with source cidr " + cidr;
-                    long size = Long.valueOf(result[1]);
-                    String startIp = NetUtils.getIpRangeStartIpFromCidr(result[0], size);
-                    String endIp = NetUtils.getIpRangeEndIpFromCidr(result[0], size);
-                    // create-ingress-acl-rule
-                    _connection.createIngressAclRule(tenant,
-                            Long.toString(rule.getId()), rule.getProtocol().toUpperCase(), startIp, endIp,
-                            Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]), rule.getSrcIp());
+            for (String publicIp : publicIpRulesMap.keySet()) {
+                String policyIdentifier = publicIp.replace('.', '-');
+                // delete-acl-policy for ingress
+                _connection.deleteTenantVDCAclPolicy(tenant, policyIdentifier);
+                // delete-acl-policy for egress
+
+                // create-acl-policy for ingress
+                _connection.createTenantVDCAclPolicy(tenant, policyIdentifier, true);
+                _connection.createTenantVDCAclPolicyRef(tenant, policyIdentifier, true);
+                // create-acl-policy for egress
+
+                for (FirewallRuleTO rule : publicIpRulesMap.get(publicIp)) {
+                    if (rule.revoked()) {
+                        // delete-acl-rule
+                        //_connection.deleteAclRule(tenant, Long.toString(rule.getId()), publicIp);
+                    } else {
+                        String cidr = rule.getSourceCidrList().get(0);
+                        String[] result = cidr.split("\\/");
+                        assert (result.length == 2) : "Something is wrong with source cidr " + cidr;
+                        long size = Long.valueOf(result[1]);
+                        String externalStartIp = NetUtils.getIpRangeStartIpFromCidr(result[0], size);
+                        String externalEndIp = NetUtils.getIpRangeEndIpFromCidr(result[0], size);
+                        // create-ingress-acl-rule
+                        _connection.createIngressAclRule(tenant,
+                                Long.toString(rule.getId()), policyIdentifier,
+                                rule.getProtocol().toUpperCase(), externalStartIp, externalEndIp,
+                                Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]), publicIp);
+                    }
                 }
             }
-
             // associate-acl-policy-set
             _connection.associateAclPolicySet(tenant);
         } catch (Throwable e) {

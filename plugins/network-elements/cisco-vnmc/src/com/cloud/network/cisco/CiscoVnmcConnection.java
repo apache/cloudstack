@@ -64,18 +64,23 @@ public interface CiscoVnmcConnection {
     public boolean associateNatPolicySet(String tenantName)
             throws ExecutionException;
 
-    public boolean createIngressAclRule(String tenantName, String identifier,
+    public boolean createIngressAclRule(String tenantName,
+            String identifier, String policyIdentifier,
             String protocol, String sourceStartIp, String sourceEndIp,
             String destStartPort, String destEndPort, String destIp)
             throws ExecutionException;
 
-    public boolean deleteAclRule(String tenantName, String identifier)
+    public boolean deleteAclRule(String policyIdentifier,
+            String identifier, String destIp)
             throws ExecutionException;
 
-    public boolean createTenantVDCAclPolicy(String tenantName, boolean ingress)
-            throws ExecutionException;
+    public boolean createTenantVDCAclPolicy(String tenantName, String identifier,
+            boolean ingress) throws ExecutionException;
 
-    public boolean deleteTenantVDCAclPolicy(String tenantName, boolean ingress)
+    public boolean createTenantVDCAclPolicyRef(String tenantName, String identifier,
+            boolean ingress) throws ExecutionException;
+
+    public boolean deleteTenantVDCAclPolicy(String tenantName, String identifier)
             throws ExecutionException;
 
     public boolean createTenantVDCAclPolicySet(String tenantName, boolean ingress)

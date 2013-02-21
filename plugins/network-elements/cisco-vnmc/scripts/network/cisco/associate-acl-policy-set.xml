@@ -3,7 +3,7 @@
   inHierarchical="false">
     <inConfigs>
       <pair key="%espdn%" >
-          <policyVirtualNetworkEdgeProfile
+        <policyVirtualNetworkEdgeProfile
           connTimeoutRef=""
           descr="%descr%"
           dn="%espdn%"

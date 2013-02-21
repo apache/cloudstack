@@ -66,6 +66,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         DELETE_ACL_RULE("delete-acl-rule.xml", "policy-mgr"),
         CREATE_ACL_POLICY("create-acl-policy.xml", "policy-mgr"),
         DELETE_ACL_POLICY("delete-acl-policy.xml", "policy-mgr"),
+        CREATE_ACL_POLICY_REF("create-acl-policy-ref.xml", "policy-mgr"),
         CREATE_ACL_POLICY_SET("create-acl-policy-set.xml", "policy-mgr"),
         RESOLVE_ACL_POLICY_SET("associate-acl-policy-set.xml", "policy-mgr"),
         CREATE_EDGE_FIREWALL("create-edge-firewall.xml", "resource-mgr"),
@@ -566,37 +567,38 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return getDnForTenantVDC(tenantName) + "/pset-" + getNameForAclPolicySet(tenantName, ingress) ;
     }
 
-    private String getNameForAclPolicy(String tenantName, boolean ingress) {
-        return (ingress ? "Ingress-" : "Egress-") + "ACL-For-" + tenantName;
+    private String getNameForAclPolicy(String tenantName, String identifier) {
+        return "Policy-" + tenantName + "-" + identifier;
     }
 
-    private String getDnForAclPolicy(String tenantName, boolean ingress) {
-        return getDnForTenantVDC(tenantName) + "/pol-" + getNameForAclPolicy(tenantName, ingress);
+    private String getDnForAclPolicy(String tenantName, String identifier) {
+        return getDnForTenantVDC(tenantName) + "/pol-" + getNameForAclPolicy(tenantName, identifier);
     }
 
-    private String getDnForAclPolicyRef(String tenantName, boolean ingress) {
-        return getDnForAclPolicySet(tenantName, ingress) + "/polref-" + getNameForAclPolicy(tenantName, ingress);
+    private String getDnForAclPolicyRef(String tenantName, String identifier, boolean ingress) {
+        return getDnForAclPolicySet(tenantName, ingress) + "/polref-" + getNameForAclPolicy(tenantName, identifier);
     }
 
-    private String getNameForAclRule(String tenantName, String identifier, boolean ingress) {
-        return (ingress ? "Ingress-" : "Egress-") + "ACL-Rule-For-" + tenantName + "-" + identifier;
+    private String getNameForAclRule(String tenantName, String identifier) {
+        return "Rule-" + tenantName + "-" + identifier;
     }
 
-    private String getDnForAclRule(String tenantName, String identifier, boolean ingress) {
-        return getDnForAclPolicy(tenantName, ingress) + "/rule-" + getNameForAclRule(tenantName, identifier, ingress);
+    private String getDnForAclRule(String tenantName, String identifier, String policyIdentifier) {
+        return getDnForAclPolicy(tenantName, policyIdentifier) + "/rule-" + getNameForAclRule(tenantName, identifier);
     }
 
     /* (non-Javadoc)
      * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCAclPolicy(java.lang.String)
      */
     @Override
-    public boolean createTenantVDCAclPolicy(String tenantName, boolean ingress) throws ExecutionException {
+    public boolean createTenantVDCAclPolicy(String tenantName, String identifier, boolean ingress) throws ExecutionException {
         String xml = VnmcXml.CREATE_ACL_POLICY.getXml();
         String service = VnmcXml.CREATE_ACL_POLICY.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
         //xml = replaceXmlValue(xml, "descr", "ACL Policy for Tenant VDC " + tenantName);
-        xml = replaceXmlValue(xml, "aclpolicyname", getNameForAclPolicy(tenantName, ingress));
-        xml = replaceXmlValue(xml, "aclpolicydn", getDnForAclPolicy(tenantName, ingress));
+        xml = replaceXmlValue(xml, "aclpolicyname", getNameForAclPolicy(tenantName, identifier));
+        xml = replaceXmlValue(xml, "aclpolicydn", getDnForAclPolicy(tenantName, identifier));
+        xml = replaceXmlValue(xml, "aclpolicyrefdn", getDnForAclPolicyRef(tenantName, identifier, ingress));
 
         String response =  sendRequest(service, xml);
 
@@ -607,12 +609,29 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
      * @see com.cloud.network.resource.CiscoVnmcConnection#deleteTenantVDCAclPolicy(java.lang.String)
      */
     @Override
-    public boolean deleteTenantVDCAclPolicy(String tenantName, boolean ingress) throws ExecutionException {
+    public boolean deleteTenantVDCAclPolicy(String tenantName, String identifier) throws ExecutionException {
         String xml = VnmcXml.DELETE_ACL_POLICY.getXml();
         String service = VnmcXml.DELETE_ACL_POLICY.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
-        xml = replaceXmlValue(xml, "aclpolicyname", getNameForAclPolicy(tenantName, ingress));
-        xml = replaceXmlValue(xml, "aclpolicydn", getDnForAclPolicy(tenantName, ingress));
+        xml = replaceXmlValue(xml, "aclpolicyname", getNameForAclPolicy(tenantName, identifier));
+        xml = replaceXmlValue(xml, "aclpolicydn", getDnForAclPolicy(tenantName, identifier));
+
+        String response =  sendRequest(service, xml);
+
+        return verifySuccess(response);
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCAclPolicySet(java.lang.String)
+     */
+    @Override
+    public boolean createTenantVDCAclPolicyRef(String tenantName, String identifier, boolean ingress) throws ExecutionException {
+        String xml = VnmcXml.CREATE_ACL_POLICY_REF.getXml();
+        String service = VnmcXml.CREATE_ACL_POLICY_REF.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "aclpolicyname", getNameForAclPolicy(tenantName, identifier));
+        xml = replaceXmlValue(xml, "aclpolicydn", getDnForAclPolicy(tenantName, identifier));
+        xml = replaceXmlValue(xml, "aclpolicyrefdn", getDnForAclPolicyRef(tenantName, identifier, ingress));
 
         String response =  sendRequest(service, xml);
 
@@ -628,10 +647,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         String service = VnmcXml.CREATE_ACL_POLICY_SET.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
         //xml = replaceXmlValue(xml, "descr", "ACL Policy Set for Tenant VDC " + tenantName);
-        xml = replaceXmlValue(xml, "aclpolicyname", getNameForAclPolicy(tenantName, ingress));
         xml = replaceXmlValue(xml, "aclpolicysetname", getNameForAclPolicySet(tenantName, ingress));
         xml = replaceXmlValue(xml, "aclpolicysetdn", getDnForAclPolicySet(tenantName, ingress));
-        xml = replaceXmlValue(xml, "aclpolicyrefdn", getDnForAclPolicyRef(tenantName, ingress));
 
         String response =  sendRequest(service, xml);
 
@@ -663,15 +680,16 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
      * @see com.cloud.network.resource.CiscoVnmcConnection#createIngressAclRule(java.lang.String)
      */
     @Override
-    public boolean createIngressAclRule(String tenantName, String identifier,
+    public boolean createIngressAclRule(String tenantName,
+            String identifier, String policyIdentifier,
             String protocol, String sourceStartIp, String sourceEndIp,
             String destStartPort, String destEndPort, String destIp) throws ExecutionException {
         String xml = VnmcXml.CREATE_INGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_INGRESS_ACL_RULE.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
         //xml = replaceXmlValue(xml, "descr", "Ingress ACL Policy for Tenant VDC" + tenantName);
-        xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, true));
-        xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier, true));
+        xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
+        xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
         xml = replaceXmlValue(xml, "actiontype", "permit");
         xml = replaceXmlValue(xml, "protocolvalue", protocol);
         xml = replaceXmlValue(xml, "sourcestartip", sourceStartIp);
@@ -689,12 +707,12 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
      * @see com.cloud.network.resource.CiscoVnmcConnection#deleteAclRule(java.lang.String)
      */
     @Override
-    public boolean deleteAclRule(String tenantName, String identifier) throws ExecutionException {
+    public boolean deleteAclRule(String tenantName, String identifier, String policyIdentifier) throws ExecutionException {
         String xml = VnmcXml.DELETE_ACL_RULE.getXml();
         String service = VnmcXml.DELETE_ACL_RULE.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
-        xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, true));
-        xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier, true));
+        xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
+        xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
 
         String response =  sendRequest(service, xml);
 
