@@ -1526,7 +1526,7 @@
       allowedActions.push("destroy");
       allowedActions.push("changeService");
       allowedActions.push("reset");
-      allowedactions.push("scaleUp");
+      allowedActions.push("scaleUp");
 
       if (isAdmin())
         allowedActions.push("migrate");
