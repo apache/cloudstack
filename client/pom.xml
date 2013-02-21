@@ -92,6 +92,16 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-hypervisor-baremetal</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-hypervisor-ucs</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-kvm</artifactId>
       <version>${project.version}</version>
       <exclusions>
