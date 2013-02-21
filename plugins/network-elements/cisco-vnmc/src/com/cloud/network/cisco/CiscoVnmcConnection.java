@@ -22,55 +22,75 @@ import com.cloud.utils.exception.ExecutionException;
 
 public interface CiscoVnmcConnection {
 
-	public boolean createTenant(String tenantName) throws ExecutionException;
+    public boolean createTenant(String tenantName) throws ExecutionException;
 
-	public boolean createTenantVDC(String tenantName) throws ExecutionException;
+    public boolean createTenantVDC(String tenantName) throws ExecutionException;
 
-	public boolean createTenantVDCEdgeDeviceProfile(String tenantName)
-			throws ExecutionException;
+    public boolean createTenantVDCEdgeDeviceProfile(String tenantName)
+            throws ExecutionException;
 
-	public boolean createTenantVDCEdgeStaticRoutePolicy(String tenantName)
-			throws ExecutionException;
+    public boolean createTenantVDCEdgeStaticRoutePolicy(String tenantName)
+            throws ExecutionException;
 
-	public boolean createTenantVDCEdgeStaticRoute(String tenantName,
-			String nextHopIp, String outsideIntf, String destination,
-			String netmask) throws ExecutionException;
+    public boolean createTenantVDCEdgeStaticRoute(String tenantName,
+            String nextHopIp, String outsideIntf, String destination,
+            String netmask) throws ExecutionException;
 
-	public boolean associateTenantVDCEdgeStaticRoutePolicy(String tenantName)
-			throws ExecutionException;
+    public boolean associateTenantVDCEdgeStaticRoutePolicy(String tenantName)
+            throws ExecutionException;
 
-	public boolean associateTenantVDCEdgeDhcpPolicy(String tenantName,
-			String intfName) throws ExecutionException;
+    public boolean associateTenantVDCEdgeDhcpPolicy(String tenantName,
+            String intfName) throws ExecutionException;
 
-	public boolean createTenantVDCEdgeDhcpPolicy(String tenantName,
-			String startIp, String endIp, String subnet, String nameServerIp,
-			String domain) throws ExecutionException;
+    public boolean createTenantVDCEdgeDhcpPolicy(String tenantName,
+            String startIp, String endIp, String subnet, String nameServerIp,
+            String domain) throws ExecutionException;
 
-	public boolean associateTenantVDCEdgeDhcpServerPolicy(String tenantName,
-			String intfName) throws ExecutionException;
+    public boolean associateTenantVDCEdgeDhcpServerPolicy(String tenantName,
+            String intfName) throws ExecutionException;
 
-	public boolean createTenantVDCEdgeSecurityProfile(String tenantName)
-			throws ExecutionException;
+    public boolean createTenantVDCEdgeSecurityProfile(String tenantName)
+            throws ExecutionException;
 
-	public boolean createTenantVDCSourceNATPool(String tenantName,
-			String publicIp) throws ExecutionException;
+    public boolean createTenantVDCSourceNATPool(String tenantName,
+            String publicIp) throws ExecutionException;
 
-	public boolean createTenantVDCSourceNATPolicy(String tenantName,
-			String startSourceIp, String endSourceIp) throws ExecutionException;
+    public boolean createTenantVDCSourceNATPolicy(String tenantName,
+            String startSourceIp, String endSourceIp) throws ExecutionException;
 
-	public boolean createTenantVDCNatPolicySet(String tenantName)
-			throws ExecutionException;
+    public boolean createTenantVDCNatPolicySet(String tenantName)
+            throws ExecutionException;
 
-	public boolean associateNatPolicySet(String tenantName)
-			throws ExecutionException;
+    public boolean associateNatPolicySet(String tenantName)
+            throws ExecutionException;
 
-	public boolean createEdgeFirewall(String tenantName, String publicIp,
-			String insideIp, String insideSubnet, String outsideSubnet)
-			throws ExecutionException;
+    public boolean createIngressAclRule(String tenantName, String identifier,
+            String protocol, String sourceStartIp, String sourceEndIp,
+            String destStartPort, String destEndPort, String destIp)
+            throws ExecutionException;
 
-	public Map<String, String> listUnAssocAsa1000v() throws ExecutionException;
+    public boolean deleteAclRule(String tenantName, String identifier)
+            throws ExecutionException;
 
-	public boolean assocAsa1000v(String tenantName, String firewallDn)
-			throws ExecutionException;
+    public boolean createTenantVDCAclPolicy(String tenantName, boolean ingress)
+            throws ExecutionException;
+
+    public boolean deleteTenantVDCAclPolicy(String tenantName, boolean ingress)
+            throws ExecutionException;
+
+    public boolean createTenantVDCAclPolicySet(String tenantName, boolean ingress)
+            throws ExecutionException;
+
+    public boolean associateAclPolicySet(String tenantName)
+            throws ExecutionException;
+
+    public boolean createEdgeFirewall(String tenantName, String publicIp,
+            String insideIp, String insideSubnet, String outsideSubnet)
+            throws ExecutionException;
+
+    public Map<String, String> listUnAssocAsa1000v() throws ExecutionException;
+
+    public boolean assocAsa1000v(String tenantName, String firewallDn)
+            throws ExecutionException;
 
 }

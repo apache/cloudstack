@@ -42,9 +42,11 @@ import com.cloud.agent.api.StartupExternalFirewallCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.host.Host;
 import com.cloud.network.cisco.CiscoVnmcConnectionImpl;
 import com.cloud.resource.ServerResource;
@@ -71,7 +73,7 @@ public class CiscoVnmcResource implements ServerResource{
     private String _publicInterface;
     private String _privateInterface;
 
-	CiscoVnmcConnectionImpl _connection;
+    CiscoVnmcConnectionImpl _connection;
 
     private final Logger s_logger = Logger.getLogger(CiscoVnmcResource.class);
 
@@ -84,6 +86,8 @@ public class CiscoVnmcResource implements ServerResource{
             return execute((IpAssocCommand) cmd);
         } else if (cmd instanceof SetSourceNatCommand) {
             return execute((SetSourceNatCommand) cmd);
+        } else if (cmd instanceof SetFirewallRulesCommand) {
+            return execute((SetFirewallRulesCommand) cmd);
         } else if (cmd instanceof SetStaticNatRulesCommand) {
             return execute((SetStaticNatRulesCommand) cmd);
         } else if (cmd instanceof SetPortForwardingRulesCommand) {
@@ -93,9 +97,9 @@ public class CiscoVnmcResource implements ServerResource{
         } else if (cmd instanceof CreateLogicalEdgeFirewallCommand) {
             return execute((CreateLogicalEdgeFirewallCommand)cmd);
         } else if (cmd instanceof ConfigureNexusVsmForAsaCommand) {
-        	return execute((ConfigureNexusVsmForAsaCommand)cmd);
+            return execute((ConfigureNexusVsmForAsaCommand)cmd);
         } else if (cmd instanceof AssociateAsaWithLogicalEdgeFirewallCommand) {
-        	return execute((AssociateAsaWithLogicalEdgeFirewallCommand)cmd);
+            return execute((AssociateAsaWithLogicalEdgeFirewallCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -131,7 +135,7 @@ public class CiscoVnmcResource implements ServerResource{
             _password = (String) params.get("password");
             if (_password == null) {
                 throw new ConfigurationException("Unable to find password");
-            }			
+            }            
 
             _publicInterface = (String) params.get("publicinterface");
             if (_publicInterface == null) {
@@ -232,7 +236,7 @@ public class CiscoVnmcResource implements ServerResource{
     }
 
     private ExternalNetworkResourceUsageAnswer execute(ExternalNetworkResourceUsageCommand cmd) {
-    	return new ExternalNetworkResourceUsageAnswer(cmd);
+        return new ExternalNetworkResourceUsageAnswer(cmd);
     }
 
     /*
@@ -243,13 +247,13 @@ public class CiscoVnmcResource implements ServerResource{
         try {
             ret = _connection.login();
         } catch (ExecutionException ex) {
-        	s_logger.error("Login to Vnmc failed", ex);
+            s_logger.error("Login to Vnmc failed", ex);
         }
         return ret;
     }
 
     private synchronized Answer execute(IpAssocCommand cmd) {
-    	refreshVnmcConnection();
+        refreshVnmcConnection();
         return execute(cmd, _numRetries);
     }
 
@@ -262,17 +266,17 @@ public class CiscoVnmcResource implements ServerResource{
      * Source NAT
      */
     private synchronized Answer execute(SetSourceNatCommand cmd) {
-    	refreshVnmcConnection();
+        refreshVnmcConnection();
         return execute(cmd, _numRetries);
     }
 
     private Answer execute(SetSourceNatCommand cmd, int numRetries) {
-    	String vlanId = cmd.getContextParam(NetworkElementCommand.GUEST_VLAN_TAG);
+        String vlanId = cmd.getContextParam(NetworkElementCommand.GUEST_VLAN_TAG);
         String tenant = "vlan-" + vlanId;
         try {
             // create-nat-policy-set
             if (!_connection.createTenantVDCNatPolicySet(tenant)) {
-            	throw new Exception("Failed to create NAT policy set in VNMC for guest network with vlan " + vlanId);
+                throw new Exception("Failed to create NAT policy set in VNMC for guest network with vlan " + vlanId);
             }
 
             // create-source-nat-pool
@@ -305,10 +309,65 @@ public class CiscoVnmcResource implements ServerResource{
     }
 
     /*
+     * Firewall rule
+     */
+    private synchronized Answer execute(SetFirewallRulesCommand cmd) {
+        refreshVnmcConnection();
+        return execute(cmd, _numRetries);
+    }
+
+    private Answer execute(SetFirewallRulesCommand cmd, int numRetries) {
+        String vlanId = cmd.getContextParam(NetworkElementCommand.GUEST_VLAN_TAG);
+        String tenant = "vlan-" + vlanId;
+        try {
+            // create-acl-policy-set for ingress
+            _connection.createTenantVDCAclPolicySet(tenant, true);
+
+            // delete-acl-policy for ingress
+            _connection.deleteTenantVDCAclPolicy(tenant, true);
+            // delete-acl-policy for egress
+
+            // create-acl-policy for ingress
+            _connection.createTenantVDCAclPolicy(tenant, true);
+
+            // create-acl-policy-set for egress
+            // create-acl-policy for egress
+
+            FirewallRuleTO[] rules = cmd.getRules();
+            for (FirewallRuleTO rule : rules) {
+                if (rule.revoked()) {
+                    // delete-acl-rule
+                    //_connection.deleteAclRule(tenant, Long.toString(rule.getId()));
+                } else {
+                    String cidr = rule.getSourceCidrList().get(0);
+                    String[] result = cidr.split("\\/");
+                    assert (result.length == 2) : "Something is wrong with source cidr " + cidr;
+                    long size = Long.valueOf(result[1]);
+                    String startIp = NetUtils.getIpRangeStartIpFromCidr(result[0], size);
+                    String endIp = NetUtils.getIpRangeEndIpFromCidr(result[0], size);
+                    // create-ingress-acl-rule
+                    _connection.createIngressAclRule(tenant,
+                            Long.toString(rule.getId()), rule.getProtocol().toUpperCase(), startIp, endIp,
+                            Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]), rule.getSrcIp());
+                }
+            }
+
+            // associate-acl-policy-set
+            _connection.associateAclPolicySet(tenant);
+        } catch (Throwable e) {
+            String msg = "SetFirewallRulesCommand failed due to " + e.getMessage();
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, msg);
+        }
+
+        return new Answer(cmd);
+    }
+
+    /*
      * Static NAT
      */
     private synchronized Answer execute(SetStaticNatRulesCommand cmd) {
-    	refreshVnmcConnection();
+        refreshVnmcConnection();
         return execute(cmd, _numRetries);
     }
 
@@ -320,7 +379,7 @@ public class CiscoVnmcResource implements ServerResource{
      * Destination NAT
      */
     private synchronized Answer execute(SetPortForwardingRulesCommand cmd) {
-    	refreshVnmcConnection();
+        refreshVnmcConnection();
         return execute(cmd, _numRetries);
     }
 
@@ -332,7 +391,7 @@ public class CiscoVnmcResource implements ServerResource{
      * Logical edge firewall
      */
     private synchronized Answer execute(CreateLogicalEdgeFirewallCommand cmd) {
-    	refreshVnmcConnection();
+        refreshVnmcConnection();
         return execute(cmd, _numRetries);
     }
 
@@ -341,19 +400,19 @@ public class CiscoVnmcResource implements ServerResource{
         try {
             // create tenant
             if (!_connection.createTenant(tenant))
-            	throw new Exception("Failed to create tenant in VNMC for guest network with vlan " + cmd.getVlanId());
+                throw new Exception("Failed to create tenant in VNMC for guest network with vlan " + cmd.getVlanId());
 
             // create tenant VDC
             if (!_connection.createTenantVDC(tenant))
-            	throw new Exception("Failed to create tenant VDC in VNMC for guest network with vlan " + cmd.getVlanId());
+                throw new Exception("Failed to create tenant VDC in VNMC for guest network with vlan " + cmd.getVlanId());
 
             // create edge security profile
             if (!_connection.createTenantVDCEdgeSecurityProfile(tenant))
-            	throw new Exception("Failed to create tenant edge security profile in VNMC for guest network with vlan " + cmd.getVlanId());
+                throw new Exception("Failed to create tenant edge security profile in VNMC for guest network with vlan " + cmd.getVlanId());
 
             // create logical edge firewall
             if (!_connection.createEdgeFirewall(tenant, cmd.getPublicIp(), cmd.getInternalIp(), cmd.getPublicSubnet(), cmd.getInternalSubnet()))
-            	throw new Exception("Failed to create edge firewall in VNMC for guest network with vlan " + cmd.getVlanId());
+                throw new Exception("Failed to create edge firewall in VNMC for guest network with vlan " + cmd.getVlanId());
         } catch (Throwable e) {
             String msg = "CreateLogicalEdgeFirewallCommand failed due to " + e.getMessage();
             s_logger.error(msg, e);
@@ -371,7 +430,7 @@ public class CiscoVnmcResource implements ServerResource{
     }
 
     private Answer execute(ConfigureNexusVsmForAsaCommand cmd, int numRetries) {
-    	String vlanId = Long.toString(cmd.getVlanId());
+        String vlanId = Long.toString(cmd.getVlanId());
         NetconfHelper helper = null;
         List<Pair<OperationType, String>> params = new ArrayList<Pair<OperationType, String>>();
         params.add(new Pair<OperationType, String>(OperationType.addvlanid, vlanId));

@@ -104,7 +104,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -114,13 +113,13 @@ import com.cloud.vm.VirtualMachineProfile;
 public class CiscoVnmcElement extends AdapterBase implements SourceNatServiceProvider, FirewallServiceProvider,
     PortForwardingServiceProvider, IpDeployer, StaticNatServiceProvider, ResourceStateAdapter, NetworkElement,
     CiscoVnmcElementService, CiscoAsa1000vService {
-	private static final Logger s_logger = Logger.getLogger(CiscoVnmcElement.class);
+    private static final Logger s_logger = Logger.getLogger(CiscoVnmcElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Inject
     AgentManager _agentMgr;
     @Inject
-	ResourceManager _resourceMgr;
+    ResourceManager _resourceMgr;
     @Inject
     ConfigurationManager _configMgr;
     @Inject
@@ -155,7 +154,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             return false; //TODO: should handle VxLAN as well
         }
 
-        return true;        
+        return true;
     }
 
     @Override
@@ -212,7 +211,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     }
 
     private boolean configureSourceNat(long vlanId, String guestCidr,
-    		PublicIp sourceNatIp, long hostId) {
+            PublicIp sourceNatIp, long hostId) {
         boolean add = (sourceNatIp.getState() == IpAddress.State.Releasing ? false : true);
         IpAddressTO ip = new IpAddressTO(sourceNatIp.getAccountId(), sourceNatIp.getAddress().addr(), add, false,
                 sourceNatIp.isSourceNat(), sourceNatIp.getVlanTag(), sourceNatIp.getGateway(), sourceNatIp.getNetmask(), sourceNatIp.getMacAddress(),
@@ -230,7 +229,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     }
 
     private boolean associateAsaWithLogicalEdgeFirewall(long vlanId,
-    		String asaMgmtIp, long hostId) {
+            String asaMgmtIp, long hostId) {
         AssociateAsaWithLogicalEdgeFirewallCommand cmd = 
                 new AssociateAsaWithLogicalEdgeFirewallCommand(vlanId, asaMgmtIp);
         Answer answer = _agentMgr.easySend(hostId, cmd);
@@ -239,9 +238,9 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
     @Override
     public boolean implement(Network network, NetworkOffering offering,
-    	    DeployDestination dest, ReservationContext context)
-    	    throws ConcurrentOperationException, ResourceUnavailableException,
-    	    InsufficientCapacityException {
+            DeployDestination dest, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
 
         if (zone.getNetworkType() == NetworkType.Basic) {
@@ -280,13 +279,13 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         List<CiscoAsa1000vDeviceVO> asaList = _ciscoAsa1000vDao.listByPhysicalNetwork(network.getPhysicalNetworkId());
         if (asaList.isEmpty()) {
             s_logger.debug("No Cisco ASA 1000v device on network " + network.getName());
-        	return false;
+            return false;
         }
 
         NetworkAsa1000vMapVO asaForNetwork = _networkAsa1000vMapDao.findByNetworkId(network.getId());
         if (asaForNetwork != null) {
             s_logger.debug("Cisco ASA 1000v device already associated with network " + network.getName());
-        	return true;
+            return true;
         }
 
         if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.CiscoVnmc)) {
@@ -294,13 +293,13 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             return false;
         }
 
-		Transaction txn = Transaction.currentTxn();
-		boolean status = false;
+        Transaction txn = Transaction.currentTxn();
+        boolean status = false;
         try {
-        	txn.start();
+            txn.start();
 
             // ensure that there is an ASA 1000v assigned to this network
-        	CiscoAsa1000vDevice assignedAsa = assignAsa1000vToNetwork(network);
+            CiscoAsa1000vDevice assignedAsa = assignAsa1000vToNetwork(network);
             if (assignedAsa == null) {
                 s_logger.error("Unable to assign ASA 1000v device to network " + network.getName());
                 return false;
@@ -354,84 +353,84 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         return true;
     }
 
-	@Override
-	public boolean prepare(Network network, NicProfile nic,
-			VirtualMachineProfile<? extends VirtualMachine> vm,
-			DeployDestination dest, ReservationContext context)
-			throws ConcurrentOperationException, ResourceUnavailableException,
-			InsufficientCapacityException {
-		//Ensure that there is an ASA 1000v assigned to this network
-		return true;
-	}
+    @Override
+    public boolean prepare(Network network, NicProfile nic,
+            VirtualMachineProfile<? extends VirtualMachine> vm,
+            DeployDestination dest, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        //Ensure that there is an ASA 1000v assigned to this network
+        return true;
+    }
 
-	@Override
-	public boolean release(Network network, NicProfile nic,
-			VirtualMachineProfile<? extends VirtualMachine> vm,
-			ReservationContext context) throws ConcurrentOperationException,
-			ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean release(Network network, NicProfile nic,
+            VirtualMachineProfile<? extends VirtualMachine> vm,
+            ReservationContext context) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean shutdown(Network network, ReservationContext context,
-			boolean cleanup) throws ConcurrentOperationException,
-			ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean shutdown(Network network, ReservationContext context,
+            boolean cleanup) throws ConcurrentOperationException,
+            ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean isReady(PhysicalNetworkServiceProvider provider) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean shutdownProviderInstances(
-			PhysicalNetworkServiceProvider provider, ReservationContext context)
-			throws ConcurrentOperationException, ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean shutdownProviderInstances(
+            PhysicalNetworkServiceProvider provider, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean canEnableIndividualServices() {
-		return true;
-	}
+    @Override
+    public boolean canEnableIndividualServices() {
+        return true;
+    }
 
-	@Override
-	public boolean verifyServicesCombination(Set<Service> services) {
+    @Override
+    public boolean verifyServicesCombination(Set<Service> services) {
         if (!services.contains(Service.Firewall)) {
             s_logger.warn("CiscoVnmc must be used as Firewall Service Provider in the network");
             return false;
         }
         return true;
-	}
+    }
 
-	@Override
-	public boolean applyFWRules(Network network,
-			List<? extends FirewallRule> rules)
-			throws ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean applyFWRules(Network network,
+            List<? extends FirewallRule> rules)
+            throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean destroy(Network network, ReservationContext context)
-			throws ConcurrentOperationException, ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean destroy(Network network, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public List<Class<?>> getCommands() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public List<Class<?>> getCommands() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public CiscoVnmcController addCiscoVnmcResource(AddCiscoVnmcResourceCmd cmd) {
+    @Override
+    public CiscoVnmcController addCiscoVnmcResource(AddCiscoVnmcResourceCmd cmd) {
         String deviceName = Provider.CiscoVnmc.getName();
         NetworkDevice networkDevice = NetworkDevice.getNetworkDevice(deviceName);
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
@@ -469,7 +468,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         Map<String, Object> hostdetails = new HashMap<String,Object>();
         hostdetails.putAll(params);
 
-		ServerResource resource = new CiscoVnmcResource();
+        ServerResource resource = new CiscoVnmcResource();
         Transaction txn = Transaction.currentTxn();
         try {
             resource.configure(cmd.getHost(), hostdetails);
@@ -495,114 +494,114 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         }
     }
 
-	@Override
-	public CiscoVnmcResourceResponse createCiscoVnmcResourceResponse(
-			CiscoVnmcController ciscoVnmcResourceVO) {
-		HostVO ciscoVnmcHost = _hostDao.findById(ciscoVnmcResourceVO.getHostId());
+    @Override
+    public CiscoVnmcResourceResponse createCiscoVnmcResourceResponse(
+            CiscoVnmcController ciscoVnmcResourceVO) {
+        HostVO ciscoVnmcHost = _hostDao.findById(ciscoVnmcResourceVO.getHostId());
 
-		CiscoVnmcResourceResponse response = new CiscoVnmcResourceResponse();
-		response.setId(ciscoVnmcResourceVO.getUuid());
-		response.setPhysicalNetworkId(ciscoVnmcResourceVO.getPhysicalNetworkId());
-		response.setProviderName(ciscoVnmcResourceVO.getProviderName());
-		response.setResourceName(ciscoVnmcHost.getName());
+        CiscoVnmcResourceResponse response = new CiscoVnmcResourceResponse();
+        response.setId(ciscoVnmcResourceVO.getUuid());
+        response.setPhysicalNetworkId(ciscoVnmcResourceVO.getPhysicalNetworkId());
+        response.setProviderName(ciscoVnmcResourceVO.getProviderName());
+        response.setResourceName(ciscoVnmcHost.getName());
 
-		return response;
-	}
+        return response;
+    }
 
-	@Override
-	public boolean deleteCiscoVnmcResource(DeleteCiscoVnmcResourceCmd cmd) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean deleteCiscoVnmcResource(DeleteCiscoVnmcResourceCmd cmd) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public List<CiscoVnmcControllerVO> listCiscoVnmcResources(
-			ListCiscoVnmcResourcesCmd cmd) {
-		Long physicalNetworkId = cmd.getPhysicalNetworkId();
-		Long ciscoVnmcResourceId = cmd.getCiscoVnmcResourceId();
-		List<CiscoVnmcControllerVO> responseList = new ArrayList<CiscoVnmcControllerVO>();
+    @Override
+    public List<CiscoVnmcControllerVO> listCiscoVnmcResources(
+            ListCiscoVnmcResourcesCmd cmd) {
+        Long physicalNetworkId = cmd.getPhysicalNetworkId();
+        Long ciscoVnmcResourceId = cmd.getCiscoVnmcResourceId();
+        List<CiscoVnmcControllerVO> responseList = new ArrayList<CiscoVnmcControllerVO>();
 
-		if (physicalNetworkId == null && ciscoVnmcResourceId == null) {
-			throw new InvalidParameterValueException("Either physical network Id or vnmc device Id must be specified");
-		}
+        if (physicalNetworkId == null && ciscoVnmcResourceId == null) {
+            throw new InvalidParameterValueException("Either physical network Id or vnmc device Id must be specified");
+        }
 
-		if (ciscoVnmcResourceId != null) {
-			CiscoVnmcControllerVO ciscoVnmcResource = _ciscoVnmcDao.findById(ciscoVnmcResourceId);
-			if (ciscoVnmcResource == null) {
-				throw new InvalidParameterValueException("Could not find Cisco Vnmc device with id: " + ciscoVnmcResource);
-			}
-			responseList.add(ciscoVnmcResource);
-		}
-		else {
-			PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
-			if (physicalNetwork == null) {
-				throw new InvalidParameterValueException("Could not find a physical network with id: " + physicalNetworkId);
-			}
-			responseList = _ciscoVnmcDao.listByPhysicalNetwork(physicalNetworkId);
-		}
+        if (ciscoVnmcResourceId != null) {
+            CiscoVnmcControllerVO ciscoVnmcResource = _ciscoVnmcDao.findById(ciscoVnmcResourceId);
+            if (ciscoVnmcResource == null) {
+                throw new InvalidParameterValueException("Could not find Cisco Vnmc device with id: " + ciscoVnmcResource);
+            }
+            responseList.add(ciscoVnmcResource);
+        }
+        else {
+            PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+            if (physicalNetwork == null) {
+                throw new InvalidParameterValueException("Could not find a physical network with id: " + physicalNetworkId);
+            }
+            responseList = _ciscoVnmcDao.listByPhysicalNetwork(physicalNetworkId);
+        }
 
-		return responseList;
-	}
-	
-	@Override
-	public IpDeployer getIpDeployer(Network network) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        return responseList;
+    }
+    
+    @Override
+    public IpDeployer getIpDeployer(Network network) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public boolean applyPFRules(Network network, List<PortForwardingRule> rules)
-			throws ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean applyPFRules(Network network, List<PortForwardingRule> rules)
+            throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean applyStaticNats(Network config,
-			List<? extends StaticNat> rules)
-			throws ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean applyStaticNats(Network config,
+            List<? extends StaticNat> rules)
+            throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean applyIps(Network network,
-			List<? extends PublicIpAddress> ipAddress, Set<Service> services)
-			throws ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean applyIps(Network network,
+            List<? extends PublicIpAddress> ipAddress, Set<Service> services)
+            throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public HostVO createHostVOForConnectedAgent(HostVO host,
-			StartupCommand[] cmd) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public HostVO createHostVOForConnectedAgent(HostVO host,
+            StartupCommand[] cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public HostVO createHostVOForDirectConnectAgent(HostVO host,
-			StartupCommand[] startup, ServerResource resource,
-			Map<String, String> details, List<String> hostTags) {
+    @Override
+    public HostVO createHostVOForDirectConnectAgent(HostVO host,
+            StartupCommand[] startup, ServerResource resource,
+            Map<String, String> details, List<String> hostTags) {
         if (!(startup[0] instanceof StartupExternalFirewallCommand)) {
             return null;
         }
         host.setType(Host.Type.ExternalFirewall);
         return host;
-	}
+    }
 
-	@Override
-	public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
-			boolean isForceDeleteStorage) throws UnableDeleteHostException {
+    @Override
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
+            boolean isForceDeleteStorage) throws UnableDeleteHostException {
         if (host.getType() != com.cloud.host.Host.Type.ExternalFirewall) {
             return null;
         }
         return new DeleteHostAnswer(true);
-	}
+    }
 
-	@Override
-	public CiscoAsa1000vDevice addCiscoAsa1000vResource(
-			AddCiscoAsa1000vResourceCmd cmd) {
+    @Override
+    public CiscoAsa1000vDevice addCiscoAsa1000vResource(
+            AddCiscoAsa1000vResourceCmd cmd) {
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
         CiscoAsa1000vDevice ciscoAsa1000vResource = null;
 
@@ -615,56 +614,56 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         _ciscoAsa1000vDao.persist((CiscoAsa1000vDeviceVO)ciscoAsa1000vResource);
                 
         return ciscoAsa1000vResource;
-	}
+    }
 
-	@Override
-	public CiscoAsa1000vResourceResponse createCiscoAsa1000vResourceResponse(
-			CiscoAsa1000vDevice ciscoAsa1000vDeviceVO) {
-		CiscoAsa1000vResourceResponse response = new CiscoAsa1000vResourceResponse();
-		response.setId(ciscoAsa1000vDeviceVO.getUuid());
-		response.setManagementIp(ciscoAsa1000vDeviceVO.getManagementIp());
-		response.setInPortProfile(ciscoAsa1000vDeviceVO.getInPortProfile());
+    @Override
+    public CiscoAsa1000vResourceResponse createCiscoAsa1000vResourceResponse(
+            CiscoAsa1000vDevice ciscoAsa1000vDeviceVO) {
+        CiscoAsa1000vResourceResponse response = new CiscoAsa1000vResourceResponse();
+        response.setId(ciscoAsa1000vDeviceVO.getUuid());
+        response.setManagementIp(ciscoAsa1000vDeviceVO.getManagementIp());
+        response.setInPortProfile(ciscoAsa1000vDeviceVO.getInPortProfile());
 
-		return response;
-	}
+        return response;
+    }
 
-	@Override
-	public boolean deleteCiscoAsa1000vResource(
-			DeleteCiscoAsa1000vResourceCmd cmd) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean deleteCiscoAsa1000vResource(
+            DeleteCiscoAsa1000vResourceCmd cmd) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public List<CiscoAsa1000vDeviceVO> listCiscoAsa1000vResources(
-			ListCiscoAsa1000vResourcesCmd cmd) {
-		Long physicalNetworkId = cmd.getPhysicalNetworkId();
-		Long ciscoAsa1000vResourceId = cmd.getCiscoAsa1000vResourceId();
-		List<CiscoAsa1000vDeviceVO> responseList = new ArrayList<CiscoAsa1000vDeviceVO>();
+    @Override
+    public List<CiscoAsa1000vDeviceVO> listCiscoAsa1000vResources(
+            ListCiscoAsa1000vResourcesCmd cmd) {
+        Long physicalNetworkId = cmd.getPhysicalNetworkId();
+        Long ciscoAsa1000vResourceId = cmd.getCiscoAsa1000vResourceId();
+        List<CiscoAsa1000vDeviceVO> responseList = new ArrayList<CiscoAsa1000vDeviceVO>();
 
-		if (physicalNetworkId == null && ciscoAsa1000vResourceId == null) {
-			throw new InvalidParameterValueException("Either physical network Id or Asa 1000v device Id must be specified");
-		}
+        if (physicalNetworkId == null && ciscoAsa1000vResourceId == null) {
+            throw new InvalidParameterValueException("Either physical network Id or Asa 1000v device Id must be specified");
+        }
 
-		if (ciscoAsa1000vResourceId != null) {
-			CiscoAsa1000vDeviceVO ciscoAsa1000vResource = _ciscoAsa1000vDao.findById(ciscoAsa1000vResourceId);
-			if (ciscoAsa1000vResource == null) {
-				throw new InvalidParameterValueException("Could not find Cisco Asa 1000v device with id: " + ciscoAsa1000vResourceId);
-			}
-			responseList.add(ciscoAsa1000vResource);
-		} else {
-			PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
-			if (physicalNetwork == null) {
-				throw new InvalidParameterValueException("Could not find a physical network with id: " + physicalNetworkId);
-			}
-			responseList = _ciscoAsa1000vDao.listByPhysicalNetwork(physicalNetworkId);
-		}
+        if (ciscoAsa1000vResourceId != null) {
+            CiscoAsa1000vDeviceVO ciscoAsa1000vResource = _ciscoAsa1000vDao.findById(ciscoAsa1000vResourceId);
+            if (ciscoAsa1000vResource == null) {
+                throw new InvalidParameterValueException("Could not find Cisco Asa 1000v device with id: " + ciscoAsa1000vResourceId);
+            }
+            responseList.add(ciscoAsa1000vResource);
+        } else {
+            PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+            if (physicalNetwork == null) {
+                throw new InvalidParameterValueException("Could not find a physical network with id: " + physicalNetworkId);
+            }
+            responseList = _ciscoAsa1000vDao.listByPhysicalNetwork(physicalNetworkId);
+        }
 
-		return responseList;
-	}
+        return responseList;
+    }
 
-	@Override
-	public CiscoAsa1000vDevice assignAsa1000vToNetwork(Network network) {
+    @Override
+    public CiscoAsa1000vDevice assignAsa1000vToNetwork(Network network) {
         List<CiscoAsa1000vDeviceVO> asaList = _ciscoAsa1000vDao.listByPhysicalNetwork(network.getPhysicalNetworkId());
         for (CiscoAsa1000vDeviceVO asa : asaList) {
             NetworkAsa1000vMapVO assignedToNetwork = _networkAsa1000vMapDao.findByAsa1000vId(asa.getId());
@@ -672,7 +671,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
                 NetworkAsa1000vMapVO networkAsaMap = new NetworkAsa1000vMapVO(network.getId(), asa.getId());
                 _networkAsa1000vMapDao.persist(networkAsaMap);
                 return asa;
-        	}
+            }
         }
         return null;
     }
