@@ -34,15 +34,15 @@
           },
           label: 'state.Destroyed'
         }
-      },			
+      },
 			preFilter: function(args) {
 				var hiddenFields = [];
-				if(!isAdmin()) {				
+				if(!isAdmin()) {
 					hiddenFields.push('instancename');
-				}			
+				}
 				return hiddenFields;
-			},			
-      fields: {      
+			},
+      fields: {
 				name: { label: 'label.name' },
 				instancename: { label: 'label.internal.name' },
 				displayname: { label: 'label.display.name' },
@@ -57,18 +57,18 @@
           }
         }
       },
-			
+
 			advSearchFields: {
 				name: { label: 'Name' },
-				zoneid: { 
-					label: 'Zone',							
-					select: function(args) {							  					
+				zoneid: {
+					label: 'Zone',
+					select: function(args) {
 						$.ajax({
 							url: createURL('listZones'),
 							data: {
 								listAll: true
 							},
-							success: function(json) {									  
+							success: function(json) {
 								var zones = json.listzonesresponse.zone;
 
 								args.response.success({
@@ -81,16 +81,16 @@
 								});
 							}
 						});
-					}						
-				},	
-				
-				domainid: {					
-				  label: 'Domain',					
+					}
+				},
+
+				domainid: {
+				  label: 'Domain',
 					select: function(args) {
 					  if(isAdmin() || isDomainAdmin()) {
 							$.ajax({
 								url: createURL('listDomains'),
-								data: { 
+								data: {
 									listAll: true,
 									details: 'min'
 								},
@@ -120,21 +120,21 @@
 						else
 						  return true;
 					}
-				},		
-        account: { 
+				},
+        account: {
 				  label: 'Account',
           isHidden: function(args) {
 					  if(isAdmin() || isDomainAdmin())
 						  return false;
 						else
 						  return true;
-					}			
+					}
 				},
-				
+
 				tagKey: { label: 'Tag Key' },
-				tagValue: { label: 'Tag Value' }						
-			},						
-			
+				tagValue: { label: 'Tag Value' }
+			},
+
       // List view actions
       actions: {
         // Add instance wizard
@@ -145,9 +145,9 @@
             custom: cloudStack.uiCustom.instanceWizard(cloudStack.instanceWizard)
           },
 
-          messages: {            
-            notification: function(args) {              
-              return 'label.vm.add'; 
+          messages: {
+            notification: function(args) {
+              return 'label.vm.add';
             }
           },
           notification: {
@@ -346,49 +346,49 @@
 
       dataProvider: function(args) {
 			  var data = {};
-				listViewDataProvider(args, data);		
-				        				
+				listViewDataProvider(args, data);
+
 				if(args.filterBy != null) {	//filter dropdown
 					if(args.filterBy.kind != null) {
 						switch(args.filterBy.kind) {
-						case "all":						  						
+						case "all":
 							break;
 						case "mine":
 							if (!args.context.projects) {
 							  $.extend(data, {
-								  domainid: g_domainid, 
+								  domainid: g_domainid,
 									account: g_account
-								});		
-              }								
+								});
+              }
 							break;
 						case "running":
 						  $.extend(data, {
 							  state: 'Running'
-							});						
+							});
 							break;
 						case "stopped":
 						  $.extend(data, {
 							  state: 'Stopped'
-							});	
+							});
 							break;
 						case "destroyed":
 						  $.extend(data, {
 							  state: 'Destroyed'
-							});									
+							});
 							break;
 						}
-					}					
+					}
 				}
-								
-        if("hosts" in args.context) {          
+
+        if("hosts" in args.context) {
 					$.extend(data, {
 					  hostid: args.context.hosts[0].id
 					});
 				}
-					 							
+
         $.ajax({
           url: createURL('listVirtualMachines'),
-          data: data,          
+          data: data,
           success: function(json) {
             var items = json.listvirtualmachinesresponse.virtualmachine;
            // Code for hiding "Expunged VMs"
@@ -419,7 +419,34 @@
 
       detailView: {
         name: 'Instance details',
-        viewAll: [{ path: 'storage.volumes', label: 'label.volumes' }, { path: 'vmsnapshots', label: 'Snapshots' } ],
+        viewAll: [
+          { path: 'storage.volumes', label: 'label.volumes' },
+          { path: 'vmsnapshots', label: 'label.snapshots' },
+          {
+            path: '_zone.hosts',
+            label: 'label.hosts',
+            preFilter: function(args) {
+              return isAdmin();
+            },
+            updateContext: function(args) {
+              var instance = args.context.instances[0];
+              var zone;
+
+              $.ajax({
+                url: createURL('listZones'),
+                data: {
+                  id: instance.zoneid
+                },
+                async: false,
+                success: function(json) {
+                  zone = json.listzonesresponse.zone[0]
+                }
+              });
+
+              return { zones: [zone] };
+            }
+          }
+        ],
         tabFilter: function(args) {
           var hiddenTabs = [];
 					

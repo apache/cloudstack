@@ -1282,6 +1282,7 @@
 					
           dataProvider: function(args) {					  
 						var data = {};
+            var instanceVolumeIds = [];
 						listViewDataProvider(args, data);		
             
             if(args.context != null) {
@@ -1289,6 +1290,21 @@
 							  $.extend(data, {
 								  volumeid: args.context.volumes[0].id
 								});                
+              } else if (args.context.instances) {
+                $.ajax({
+                  url: createURL('listVolumes'),
+                  data: {
+                    virtualmachineid: args.context.instances[0].id,
+                    listAll: true
+                  },
+                  async: false,
+                  success: function(json) {
+                    instanceVolumeIds = $.map(json.listvolumesresponse.volume, function(volume) {
+                      return volume.id;
+                    })
+                  }
+                });
+                data.volumeid = instanceVolumeIds.join(',');
               }
             }
 

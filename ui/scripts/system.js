@@ -7965,11 +7965,17 @@
 								}
 							}
 						}
-            array1.push("&zoneid=" + args.context.zones[0].id);
-            if("pods" in args.context)
-              array1.push("&podid=" + args.context.pods[0].id);
-            if("clusters" in args.context)
-              array1.push("&clusterid=" + args.context.clusters[0].id);
+
+            if (!args.context.instances) {
+              array1.push("&zoneid=" + args.context.zones[0].id);
+              if("pods" in args.context)
+                array1.push("&podid=" + args.context.pods[0].id);
+              if("clusters" in args.context)
+                array1.push("&clusterid=" + args.context.clusters[0].id);
+            } else {
+              array1.push("&hostid=" + args.context.instances[0].hostid);
+            }
+
             $.ajax({
               url: createURL("listHosts&type=Routing" + array1.join("") + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",

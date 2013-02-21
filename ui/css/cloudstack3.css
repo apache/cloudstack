@@ -1276,14 +1276,14 @@ div.list-view td.state.off span {
 
 /** Quick view tooltip*/
 .quick-view-tooltip {
-  width: 400px;
+  width: 470px;
   display: inline-block;
-  margin-left: -359px;
+  margin-left: -462px;
   padding-top: 50px;
 }
 
 .quick-view-tooltip > div.title {
-  width: 376px;
+  width: 444px;
   position: absolute;
   top: 71px;
   left: 10px;
@@ -1320,7 +1320,7 @@ div.list-view td.state.off span {
 .quick-view-tooltip .container {
   border: 1px solid #9EA2A5;
   background: #CCCFD6;
-  width: 400px;
+  width: 470px;
   min-height: 100px;
   height: auto;
   overflow: hidden;
@@ -1337,7 +1337,7 @@ div.list-view td.state.off span {
 }
 
 .quick-view-tooltip .detail-view .main-groups {
-  width: 394px;
+  width: 456px;
   height: 132px;
   position: absolute;
   top: 55px;
@@ -1484,7 +1484,7 @@ div.list-view td.state.off span {
 }
 
 .quick-view-tooltip .detail-view .detail-group.actions .detail-actions {
-  width: 400px;
+  width: 460px;
   height: auto;
   background: none;
   vertical-align: top;
@@ -1495,7 +1495,7 @@ div.list-view td.state.off span {
   position: relative;
   left: 0px;
   float: left;
-  width: 394px;
+  width: 460px;
   height: 22px;
   border-top: 1px solid #808080;
   /*+box-shadow:inset 0px 1px #FFFFFF;*/
@@ -1911,6 +1911,20 @@ div.details .main-groups label.error {
   top: 6px;
 }
 
+.detail-view td.view-all.multiple {
+  width: 123px !important;
+  height: 22px;
+  float: left;
+  display: block;
+  margin: 8px 2px 8px 8px;
+  border: none !important;
+  /*+box-shadow:none;*/
+  -moz-box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -o-box-shadow: none !important;
+  box-shadow: none !important;
+}
+
 /*** Actions*/
 div.detail-group.actions {
   padding: 0;
@@ -1933,6 +1947,12 @@ div.detail-group.actions td {
 .detail-group table td.detail-actions {
   width: 59%;
   height: 26px;
+}
+
+.detail-group table td.detail-actions.full-length {
+  display: block;
+  width: 99%;
+  border-bottom: 1px solid #AAAAAA;
 }
 
 .detail-group table td.detail-actions .action.text {
