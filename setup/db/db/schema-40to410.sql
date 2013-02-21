@@ -1631,12 +1631,6 @@ CREATE VIEW `cloud`.`data_center_view` AS
             left join
         `cloud`.`domain` ON data_center.domain_id = domain.id;
 
-INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client/api','','');
-ALTER TABLE `cloud`.`account` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
-ALTER TABLE `cloud`.`user` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
-ALTER TABLE `cloud`.`domain` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
-
-ALTER TABLE `cloud_usage`.`account` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
 
 CREATE TABLE `cloud`.`baremetal_dhcp_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
