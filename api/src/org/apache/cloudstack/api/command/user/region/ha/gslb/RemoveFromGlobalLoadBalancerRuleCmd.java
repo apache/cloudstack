@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
 import com.cloud.event.EventTypes;
 import com.cloud.region.ha.GlobalLoadBalancer;
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
 import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.APICommand;
@@ -30,9 +31,11 @@ import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
+import javax.inject.Inject;
 import java.util.List;
 
-@APICommand(name = "removeFromGlobalLoadBalancerRule", description="Removes a load balancer rule association with global load balancer rule", responseObject=SuccessResponse.class)
+@APICommand(name = "removeFromGlobalLoadBalancerRule", description="Removes a load balancer rule association with" +
+        " global load balancer rule", responseObject=SuccessResponse.class)
 public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveFromGlobalLoadBalancerRuleCmd.class.getName());
 
@@ -47,7 +50,8 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     private Long id;
 
     @Parameter(name=ApiConstants.LOAD_BALANCER_RULE_LIST, type=CommandType.LIST, collectionType=CommandType.UUID,
-            entityType = LoadBalancerResponse.class, required=true, description="the list load balancer rules that " + "will be assigned to gloabal load balacner rule")
+            entityType = LoadBalancerResponse.class, required=true, description="the list load balancer rules that "
+            + "will be assigned to gloabal load balacner rule")
     private List<Long> loadBalancerRulesIds;
 
     /////////////////////////////////////////////////////
@@ -65,6 +69,9 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+    @Inject
+    public GlobalLoadBalancingRulesService _gslbService;
 
     @Override
     public String getCommandName() {
@@ -87,12 +94,13 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "removing load balancer rules:" + StringUtils.join(getLoadBalancerRulesId(), ",") + " from global load balancer: " + getGlobalLoadBalancerId();
+        return  "removing load balancer rules:" + StringUtils.join(getLoadBalancerRulesId(), ",") +
+                " from global load balancer: " + getGlobalLoadBalancerId();
     }
 
     @Override
     public void execute(){
-
+        boolean response = _gslbService.removeFromGlobalLoadBalancerRule(this);
     }
 
     @Override

@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -26,7 +27,9 @@ import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.log4j.Logger;
 
-@APICommand(name = "updateGlobalLoadBalancerRules", description = "update global load balancer rules.", responseObject = LoadBalancerResponse.class)
+import javax.inject.Inject;
+
+@APICommand(name = "updateGlobalLoadBalancerRule", description = "update global load balancer rules.", responseObject = LoadBalancerResponse.class)
 public class UpdateGlobalLoadBalancerRuleCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(GlobalLoadBalancerResponse.class.getName());
 
@@ -53,6 +56,9 @@ public class UpdateGlobalLoadBalancerRuleCmd extends BaseListTaggedResourcesCmd 
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
 
+    @Inject
+    public GlobalLoadBalancingRulesService _gslbService;
+
     @Override
     public String getCommandName() {
         return s_name;
@@ -60,7 +66,7 @@ public class UpdateGlobalLoadBalancerRuleCmd extends BaseListTaggedResourcesCmd 
 
     @Override
     public void execute() {
-
+        _gslbService.updateGlobalLoadBalancerRule(this);
     }
 
 }

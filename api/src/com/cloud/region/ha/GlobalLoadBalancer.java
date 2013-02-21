@@ -16,13 +16,52 @@
 // under the License.
 package com.cloud.region.ha;
 
-import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Definition for a GlobalLoadBalancer
  */
-public interface GlobalLoadBalancer extends ControlledEntity, Identity, InternalIdentity {
+public interface GlobalLoadBalancer extends Identity, InternalIdentity {
 
+    enum Algorithm {
+
+        RoundRobin,
+        LeastConn,
+        Proximity;
+
+        public static boolean isValidAlgorithm(String algorithm) {
+            if (RoundRobin.name().equalsIgnoreCase(algorithm) ||
+                    LeastConn.name().equalsIgnoreCase(algorithm) ||
+                    Proximity.name().equalsIgnoreCase(algorithm)) {
+                return true;
+            }
+            return false;
+        }
+    }
+    enum Persistence {
+
+        sourceip;
+
+        public static  boolean isValidPersistence(String persistence) {
+            if (sourceip.name().equalsIgnoreCase(persistence)) {
+                return true;
+            }
+            return false;
+        }
+    }
+
+    public String getName();
+
+    public String getDescription();
+
+    public String getGslbDomain();
+
+    public String getAlgorithm();
+
+    public String getPersistence();
+
+    public int getRegion();
+
+    public long getAccountId();
 }

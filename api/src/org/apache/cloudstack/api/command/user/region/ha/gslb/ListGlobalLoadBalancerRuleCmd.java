@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.log4j.Logger;
 
-@APICommand(name = "listLoadBalancerRules", description = "Lists load balancer rules.", responseObject = GlobalLoadBalancerResponse.class)
+@APICommand(name = "listGlobalLoadBalancerRules", description = "Lists load balancer rules.", responseObject = GlobalLoadBalancerResponse.class)
 public class ListGlobalLoadBalancerRuleCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListGlobalLoadBalancerRuleCmd.class.getName());
 

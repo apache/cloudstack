@@ -17,6 +17,29 @@
 
 package com.cloud.region.ha;
 
+import org.apache.cloudstack.api.command.user.region.ha.gslb.*;
+
+import java.security.spec.InvalidParameterSpecException;
+import java.util.List;
+
 public interface GlobalLoadBalancingRulesService {
+
+    /*
+     * methods for managing life cycle of global load balancing rules
+     */
+    GlobalLoadBalancer createGlobalLoadBalancerRule(CreateGlobalLoadBalancerRuleCmd createGslbCmd) throws InvalidParameterSpecException;
+
+    boolean deleteGlobalLoadBalancerRule(DeleteGlobalLoadBalancerRuleCmd deleteGslbCmd);
+
+    GlobalLoadBalancer updateGlobalLoadBalancerRule(UpdateGlobalLoadBalancerRuleCmd updateGslbCmd);
+
+    List<GlobalLoadBalancer> listGlobalLoadBalancerRule(ListGlobalLoadBalancerRuleCmd listGslbCmd);
+
+    /*
+     * methods for managing sites participating in global load balancing
+     */
+    boolean assignToGlobalLoadBalancerRule(AssignToGlobalLoadBalancerRuleCmd assignToGslbCmd);
+
+    boolean removeFromGlobalLoadBalancerRule(RemoveFromGlobalLoadBalancerRuleCmd removeFromGslbCmd);
 
 }

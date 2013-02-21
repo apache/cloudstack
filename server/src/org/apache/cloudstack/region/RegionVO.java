@@ -41,7 +41,18 @@ public class RegionVO implements Region{
     
     @Column(name="secret_key")
     private String secretKey;
-    
+
+    public boolean getGslbEnabled() {
+        return gslbEnabled;
+    }
+
+    public void setGslbEnabled(boolean gslbEnabled) {
+        this.gslbEnabled = gslbEnabled;
+    }
+
+    @Column(name="gslb_service_enabled")
+    private boolean gslbEnabled;
+
     public RegionVO() {
     }
     
@@ -51,6 +62,7 @@ public class RegionVO implements Region{
     	this.endPoint = endPoint;
     	this.apiKey = apiKey;
     	this.secretKey = secretKey;
+        this.gslbEnabled = true;
     }
 
 	public int getId() {
@@ -85,7 +97,12 @@ public class RegionVO implements Region{
 		return secretKey;
 	}
 
-	public void setSecretKey(String secretKey) {
+    @Override
+    public boolean checkIfServiceEnabled(Service service) {
+        return gslbEnabled;
+    }
+
+    public void setSecretKey(String secretKey) {
 		this.secretKey = secretKey;
 	}
 

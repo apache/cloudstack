@@ -19,19 +19,18 @@ package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
+import com.cloud.region.ha.GlobalLoadBalancer;
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.UserContext;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
 
 @APICommand(name = "createGlobalLoadBalancerRule", description="Creates a global load balancer rule",
         responseObject=GlobalLoadBalancerResponse.class)
@@ -45,17 +44,14 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ALGORITHM, type=CommandType.STRING, required=true, description="load balancer algorithm (source, roundrobin, leastconn)")
-    private String algorithm;
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the load balancer rule")
+    private String globalLoadBalancerRuleName;
 
     @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the load balancer rule", length=4096)
     private String description;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the load balancer rule")
-    private String globalLoadBalancerRuleName;
-
-    @Parameter(name=ApiConstants.REGION_ID, type= CommandType.UUID, entityType = RegionResponse.class, required=true, description="region where the global load balancer is going to be created.")
-    private Long regionId;
+    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.INTEGER, entityType = RegionResponse.class, required=true, description="region where the global load balancer is going to be created.")
+    private Integer regionId;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the global load balancer. Must be used with the domainId parameter.")
     private String accountName;
@@ -63,26 +59,50 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class, description="the domain ID associated with the load balancer")
     private Long domainId;
 
+    @Parameter(name=ApiConstants.GSLB_LB_METHOD, type=CommandType.STRING, required=false, description="load balancer algorithm (roundrobin, leastconn, proximity) " +
+            "that is used to distributed traffic across the zones participating in global server load balancing, if not specified defaults to 'round robin'")
+    private String algorithm;
+
+    @Parameter(name=ApiConstants.GSLB_STICKY_SESSION_METHOD, type=CommandType.STRING, required=false, description="session sticky method (sourceip) if not specified defaults to sourceip")
+    private String stickyMethod;
+
+    @Parameter(name=ApiConstants.GSLB_SERVICE_DOMAIN_NAME, type = CommandType.STRING, required = true, description = "domain name for the GSLB service.")
+    private String serviceDomainName;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getAlgorithm() {
-        return algorithm;
+    public String getName() {
+        return globalLoadBalancerRuleName;
     }
 
     public String getDescription() {
         return description;
     }
 
-    public String getGlobalLoadBalancerRuleName() {
-        return globalLoadBalancerRuleName;
+    public String getAlgorithm() {
+        return algorithm;
     }
 
-
-    public String getName() {
-        return globalLoadBalancerRuleName;
+    public String getGslbMethod() {
+        return algorithm;
     }
+
+    public String getStickyMethod() {
+        return stickyMethod;
+    }
+
+    public String getServiceDomainName() {
+        return serviceDomainName;
+    }
+
+    public Integer getRegionId() {
+        return regionId;
+    }
+
+    @Inject
+    private GlobalLoadBalancingRulesService _gslbService;
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -97,19 +117,28 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {
 
         UserContext callerContext = UserContext.current();
-
-        try {
-            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
-        } catch (Exception ex) {
-
-        }finally {
-
+        GlobalLoadBalancer rule = _entityMgr.findById(GlobalLoadBalancer.class, getEntityId());
+        GlobalLoadBalancerResponse response = null;
+        if (rule != null) {
+            response = _responseGenerator.createGlobalLoadBalancerResponse(rule);
+            setResponseObject(response);
         }
+        response.setResponseName(getCommandName());
     }
 
     @Override
     public void create() {
+        try {
+            GlobalLoadBalancer gslbRule = _gslbService.createGlobalLoadBalancerRule(this);
+            this.setEntityId(gslbRule.getId());
+            this.setEntityUuid(gslbRule.getUuid());
+            UserContext.current().setEventDetails("Rule Id: " + getEntityId());
+        } catch (Exception ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage());
+        }finally {
 
+        }
     }
 
     @Override
@@ -130,24 +159,14 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return getAccountId();
+        Long accountId = finalyzeAccountId(accountName, domainId, null, true);
+        if (accountId == null) {
+            return UserContext.current().getCaller().getId();
+        }
+        return accountId;
     }
 
     public String getAccountName() {
         return accountName;
-    }
-
-    public long getAccountId() {
-        Account account = null;
-        if ((domainId != null) && (accountName != null)) {
-            account = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-            if (account != null) {
-                return account.getId();
-            } else {
-                throw new InvalidParameterValueException("Unable to find account " + account + " in domain id=" + domainId);
-            }
-        } else {
-            throw new InvalidParameterValueException("Can't define IP owner. Either specify account/domainId or publicIpId");
-        }
     }
 }

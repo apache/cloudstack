@@ -20,12 +20,15 @@ package org.apache.cloudstack.api.command.user.region.ha.gslb;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.region.ha.GlobalLoadBalancer;
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
 
 @APICommand(name = "deleteGlobalLoadBalancerRule", description="Deletes a global load balancer rule.", responseObject=SuccessResponse.class)
 public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
@@ -59,6 +62,9 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
         return s_name;
     }
 
+    @Inject
+    public GlobalLoadBalancingRulesService _gslbService;
+
     @Override
     public long getEntityOwnerId() {
         GlobalLoadBalancer lb = _entityMgr.findById(GlobalLoadBalancer.class, getGlobalLoadBalancerId());
@@ -81,6 +87,7 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
+        _gslbService.deleteGlobalLoadBalancerRule(this);
         UserContext.current().setEventDetails("Deleting global Load balancer Id: " + getGlobalLoadBalancerId());
     }
 

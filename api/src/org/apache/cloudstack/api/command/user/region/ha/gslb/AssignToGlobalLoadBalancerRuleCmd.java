@@ -21,6 +21,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.region.ha.GlobalLoadBalancer;
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
@@ -30,6 +31,7 @@ import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
+import javax.inject.Inject;
 import java.util.List;
 
 @APICommand(name = "assignToGlobalLoadBalancerRule", description="Assign load balancer rule or list of load " +
@@ -69,6 +71,9 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Inject
+    public GlobalLoadBalancingRulesService _gslbService;
+
     @Override
     public String getCommandName() {
         return s_name;
@@ -98,7 +103,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     public void execute(){
         UserContext.current().setEventDetails("Global Load balancer rule Id: "+ getGlobalLoadBalancerId()+ " VmIds: "
                 + StringUtils.join(getLoadBalancerRulesId(), ","));
-        boolean result = _lbService.assignToLoadBalancer(getGlobalLoadBalancerId(), loadBalancerRulesIds);
+        boolean result = _gslbService.assignToGlobalLoadBalancerRule(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

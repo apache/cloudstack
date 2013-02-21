@@ -77,6 +77,9 @@ public class ApiConstants {
     public static final String IP6_GATEWAY = "ip6gateway";
     public static final String GROUP = "group";
     public static final String GROUP_ID = "groupid";
+    public static final String GSLB_LB_METHOD = "gslblbmethod";
+    public static final String GSLB_SERVICE_DOMAIN_NAME = "gslbdomainname";
+    public static final String GSLB_STICKY_SESSION_METHOD = "gslbstickysessionmethodname";
     public static final String GUEST_CIDR_ADDRESS = "guestcidraddress";
     public static final String HA_ENABLE = "haenable";
     public static final String HOST_ID = "hostid";
