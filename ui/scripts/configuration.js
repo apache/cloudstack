@@ -136,6 +136,14 @@
                     isChecked: true,
                     docID: 'helpComputeOfferingPublic'
                   },
+
+                   isVolatile:{
+                     label:'isVolatile',
+                     isBoolean:true,
+                     isChecked:false
+
+                   },
+
                   domainId: {
                     label: 'label.domain',
                     docID: 'helpComputeOfferingDomain',
@@ -196,6 +204,10 @@
 								$.extend(data, {
 								  limitcpuuse: (args.data.cpuCap == "on")
 								});
+      
+                 $.extend(data, {
+                  isvolatile: (args.data.isVolatile == "on")
+                });
                 
                 if(args.$form.find('.form-item[rel=domainId]').css("display") != "none") {
 								  $.extend(data, {
@@ -349,6 +361,7 @@
                       label: 'label.CPU.cap',
                       converter: cloudStack.converters.toBooleanText
                     },
+                    isvolatile:{ label:'Volatile' , converter: cloudStack.converters.toBooleanText },
                     tags: { label: 'label.storage.tags' },
                     hosttags: { label: 'label.host.tags' },
                     domain: { label: 'label.domain' },
