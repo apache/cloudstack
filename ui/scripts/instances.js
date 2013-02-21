@@ -1240,6 +1240,44 @@
             }
           },
 
+          scaleUp:{
+            label:'scaleUp VM',
+            action: function(args) {
+              $.ajax({
+                url: createURL("scaleVirtualMachine&id=" + args.context.instances[0].id),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var jid = json.scaleupvirtualmachineresponse.jobid;
+                  args.response.success(
+                    {_custom:
+                     {jobId: jid,
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                      },
+                      getActionFilter: function() {
+                        return vmActionfilter;
+                      }
+                     }
+                    }
+                  );
+                }
+              });
+            },
+            messages: {
+              confirm: function(args) {
+                return 'Do you really want to scale Up your instance ?';
+              },
+              notification: function(args) {
+                return 'Instance Scaled Up';
+              }
+            },
+            notification: {
+              poll: pollAsyncJobResult
+            }
+
+          },
+
           viewConsole: {
             label: 'label.view.console',  
             action: {
@@ -1488,6 +1526,7 @@
       allowedActions.push("destroy");
       allowedActions.push("changeService");
       allowedActions.push("reset");
+      allowedactions.push("scaleUp");
 
       if (isAdmin())
         allowedActions.push("migrate");
@@ -1511,6 +1550,8 @@
       allowedActions.push("destroy");
       allowedActions.push("reset");
       allowedActions.push("snapshot");
+      allowedActions.push("scaleUp");
+
       if(isAdmin())
         allowedActions.push("migrateToAnotherStorage");
 
