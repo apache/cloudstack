@@ -584,10 +584,15 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     private File getSystemVMPatchIsoFile() {
         // locate systemvm.iso
-        URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
-        File file = new File(url.getFile());
-        File isoFile = new File(file.getParent() + "/vms/systemvm.iso");
-        if (!isoFile.exists()) {
+        //URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
+        //File file = new File(url.getFile());
+        //File isoFile = new File(file.getParent() + "/vms/systemvm.iso");
+        URL url = this.getClass().getClassLoader().getResource("vms/systemvm.iso");
+        File isoFile = null;
+        if (url != null) {
+            isoFile = new File(url.getPath());
+        }
+        if (isoFile == null || !isoFile.exists()) {
             isoFile = new File("/usr/lib64/cloud/common/" + "/vms/systemvm.iso");
             if (!isoFile.exists()) {
                 isoFile = new File("/usr/lib/cloud/common/" + "/vms/systemvm.iso");
@@ -598,11 +603,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public File getSystemVMKeyFile() {
-        URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
-        File file = new File(url.getFile());
-
-        File keyFile = new File(file.getParent(), "/scripts/vm/systemvm/id_rsa.cloud");
-        if (!keyFile.exists()) {
+       // URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
+       // File file = new File(url.getFile());
+        URL url = this.getClass().getClassLoader().getResource("scripts/vm/systemvm/id_rsa.cloud");
+        File keyFile = null;
+        if ( url != null ){
+            keyFile = new File(url.getPath());
+        }
+        if (keyFile == null || !keyFile.exists()) {
             keyFile = new File("/usr/lib64/cloud/common" + "/scripts/vm/systemvm/id_rsa.cloud");
             if (!keyFile.exists()) {
                 keyFile = new File("/usr/lib/cloud/common" + "/scripts/vm/systemvm/id_rsa.cloud");
