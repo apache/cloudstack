@@ -8654,7 +8654,8 @@
             name: { label: 'label.name' },
             ipaddress: { label: 'label.server' },
 						path: { label: 'label.path' },
-						clustername: { label: 'label.cluster'}
+						clustername: { label: 'label.cluster'},
+            scope:{label:'Scope'}
           },
 
           dataProvider: function(args) {
@@ -9218,9 +9219,24 @@
 
               action: function(args) {
                 var array1 = [];
+                array1.push("&scope=" + todb(args.data.scope));
+
                 array1.push("&zoneid=" + args.data.zoneid);
-                array1.push("&podId=" + args.data.podId);
+            
+               if(args.data.scope == 'cluster'){
+
+                array1.push("&podid=" + args.data.podId);
                 array1.push("&clusterid=" + args.data.clusterId);
+
+               }
+
+                if(args.data.scope == 'host'){
+                array1.push("&podid=" + args.data.podId);
+                array1.push("&clusterid=" + args.data.clusterId);
+                array1.push("&hostid=" + args.data.hostId);
+
+               }
+
                 array1.push("&name=" + todb(args.data.name));
 
                 var server = args.data.server;
