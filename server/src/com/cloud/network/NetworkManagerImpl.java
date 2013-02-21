@@ -3070,7 +3070,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         }
 
         try {
-            if (!_lbMgr.applyRules(network, Purpose.LoadBalancing, lbs)) {
+            if (!_lbMgr.applyRules(network, Purpose.LoadBalancing, lbRules)) {
                 s_logger.warn("Failed to cleanup lb rules as a part of shutdownNetworkRules");
                 success = false;
             }
