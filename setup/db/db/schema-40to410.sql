@@ -200,7 +200,7 @@ ALTER TABLE `cloud`.`sync_queue` DROP COLUMN `queue_proc_time`;
 
 ALTER TABLE `cloud`.`sync_queue` DROP COLUMN `queue_proc_msid`;
 
-ALTER TABLE `cloud`.`sync_queue_item` ADD `queue_proc_time` DATETIME NOT NULL COMMENT 'when processing started for the item' AFTER `queue_proc_number`;
+ALTER TABLE `cloud`.`sync_queue_item` ADD `queue_proc_time` DATETIME COMMENT 'when processing started for the item' AFTER `queue_proc_number`;
 
 ALTER TABLE `cloud`.`sync_queue_item` ADD INDEX `i_sync_queue__queue_proc_time`(`queue_proc_time`);
 
