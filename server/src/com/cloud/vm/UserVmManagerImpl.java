@@ -2672,6 +2672,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
+        // If the VM is Volatile in nature, on reboot discard the VM's root disk and create a new root disk for it: by calling restoreVM
+        long serviceOfferingId = vmInstance.getServiceOfferingId();
+        ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOfferingId);
+        if(offering.getVolatileVm()){
+            return restoreVMInternal(caller, vmInstance);
+        }
+
         return rebootVirtualMachine(UserContext.current().getCallerUserId(),
                 vmId);
     }
@@ -4789,19 +4796,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         // Input validation
         Account caller = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
-        UserVO user = _userDao.findById(userId);
-        boolean needRestart = false;
 
         long vmId = cmd.getVmId();
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException(
-                    "Cann not find VM with ID " + vmId);
+            InvalidParameterValueException ex = new InvalidParameterValueException("Cannot find VM with ID " + vmId);
             ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
 
+        return restoreVMInternal(caller, vm);
+    }
+
+    public UserVm restoreVMInternal(Account caller, UserVmVO vm){
+
+        Long userId = caller.getId();
         Account owner = _accountDao.findById(vm.getAccountId());
+        UserVO user = _userDao.findById(userId);
+        long vmId = vm.getId();
+        boolean needRestart = false;
+
+        // Input validation
         if (owner == null) {
             throw new InvalidParameterValueException("The owner of " + vm
                     + " does not exist: " + vm.getAccountId());
@@ -4816,7 +4831,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
                 && vm.getState() != VirtualMachine.State.Stopped) {
             throw new CloudRuntimeException(
                     "Vm "
-                            + vmId
+                            + vm.getUuid()
                             + " currently in "
                             + vm.getState()
                             + " state, restore vm can only execute when VM in Running or Stopped");
@@ -4829,13 +4844,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         List<VolumeVO> rootVols = _volsDao.findByInstance(vmId);
         if (rootVols.isEmpty()) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
-                    "Can not find root volume for VM " + vmId);
+                    "Can not find root volume for VM " + vm.getUuid());
             ex.addProxyObject(vm, vmId, "vmId");
             throw ex;
         }
 
         VolumeVO root = rootVols.get(0);
-        long templateId = root.getTemplateId();
+        Long templateId = root.getTemplateId();
+        if(templateId == null) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("Currently there is no support to reset a vm that is deployed using ISO " + vm.getUuid());
+            ex.addProxyObject(vm, vmId, "vmId");
+            throw ex;
+        }
+
         VMTemplateVO template = _templateDao.findById(templateId);
         if (template == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException(
@@ -4849,7 +4870,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             try {
                 _itMgr.stop(vm, user, caller);
             } catch (ResourceUnavailableException e) {
-                s_logger.debug("Stop vm " + vmId + " failed", e);
+                s_logger.debug("Stop vm " + vm.getUuid() + " failed", e);
                 CloudRuntimeException ex = new CloudRuntimeException(
                         "Stop vm failed for specified vmId");
                 ex.addProxyObject(vm, vmId, "vmId");
@@ -4874,7 +4895,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             try {
                 _itMgr.start(vm, null, user, caller);
             } catch (Exception e) {
-                s_logger.debug("Unable to start VM " + vmId, e);
+                s_logger.debug("Unable to start VM " + vm.getUuid(), e);
                 CloudRuntimeException ex = new CloudRuntimeException(
                         "Unable to start VM with specified id" + e.getMessage());
                 ex.addProxyObject(vm, vmId, "vmId");
@@ -4882,9 +4903,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             }
         }
 
-        s_logger.debug("Restore VM " + vmId + " with template "
+        s_logger.debug("Restore VM " + vm.getUuid() + " with template "
                 + root.getTemplateId() + " successfully");
         return vm;
+
     }
 
     @Override

@@ -433,7 +433,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA,
-            boolean limitResourceUse, String tags, Long domainId, String hostTag, Integer networkRate) {
+            boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate) {
         // TODO Auto-generated method stub
         return null;
     }
