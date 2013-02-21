@@ -276,5 +276,13 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
         
         return new DeleteHostAnswer(true);
     }
+	
+	@Override
+	protected HashMap<String, Object> buildConfigParams(HostVO host) {
+	    HashMap<String, Object> params = super.buildConfigParams(host);
+        params.put("hostId", host.getId());
+        params.put("ipaddress", host.getPrivateIpAddress());
+        return params;
+	}
 
 }
