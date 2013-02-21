@@ -361,6 +361,7 @@
                       label: 'label.CPU.cap',
                       converter: cloudStack.converters.toBooleanText
                     },
+                    isvolatile:{ label:'Volatile' , converter: cloudStack.converters.toBooleanText },
                     tags: { label: 'label.storage.tags' },
                     hosttags: { label: 'label.host.tags' },
                     domain: { label: 'label.domain' },
