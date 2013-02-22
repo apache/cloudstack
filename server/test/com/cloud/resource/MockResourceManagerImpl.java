@@ -54,6 +54,9 @@ import com.cloud.storage.Swift;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.component.Manager;
+
+
 import com.cloud.utils.fsm.NoTransitionException;
 
 @Local(value = {ResourceManager.class})

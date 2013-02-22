@@ -2921,15 +2921,11 @@ ServerResource {
         vm.addComp(guest);
 
         GuestResourceDef grd = new GuestResourceDef();
-        //check if overcommit should be considered.
-        if(vmTO.getMinSpeed() == vmTO.getMaxSpeed()){
 
-
-        }
         if (vmTO.getMinRam() != vmTO.getMaxRam()){
-             grd.setMemBalloning(true);
-             grd.setCurrentMem((int)vmTO.getMinRam()/1024);
-             grd.setMemorySize((int)vmTO.getMaxRam()/1024);
+            grd.setMemBalloning(true);
+            grd.setCurrentMem((int)vmTO.getMinRam()/1024);
+            grd.setMemorySize((int)vmTO.getMaxRam()/1024);
         }
         else{
             grd.setMemorySize(vmTO.getMaxRam() / 1024);
