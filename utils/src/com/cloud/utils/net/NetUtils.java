@@ -1216,6 +1216,9 @@ public class NetUtils {
 	
 	// Can cover 127 bits
 	public static BigInteger countIp6InRange(String ip6Range) {
+		if (ip6Range == null) {
+			return null;
+		}
     	String[] ips = ip6Range.split("-");
     	String startIp = ips[0];
     	String endIp = ips[0];
@@ -1238,6 +1241,9 @@ public class NetUtils {
 	}
 
 	public static boolean isIp6InRange(String ip6, String ip6Range) {
+		if (ip6Range == null) {
+			return false;
+		}
     	String[] ips = ip6Range.split("-");
     	String startIp = ips[0];
     	String endIp = null;
