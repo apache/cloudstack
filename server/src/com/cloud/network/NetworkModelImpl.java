@@ -568,6 +568,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public boolean isIP6AddressAvailableInVlan(long vlanId) {
     	VlanVO vlan = _vlanDao.findById(vlanId);
+    	if (vlan.getIp6Range() == null) {
+    		return false;
+    	}
     	long existedCount = _ipv6Dao.countExistedIpsInVlan(vlanId);
     	BigInteger existedInt = BigInteger.valueOf(existedCount);
     	BigInteger rangeInt = NetUtils.countIp6InRange(vlan.getIp6Range());

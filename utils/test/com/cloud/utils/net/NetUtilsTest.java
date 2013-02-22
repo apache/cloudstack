@@ -122,5 +122,10 @@ public class NetUtilsTest extends TestCase {
     	assertTrue(NetUtils.isIp6InNetwork("1234:5678::1", "1234:5678::/64"));
     	assertTrue(NetUtils.isIp6InNetwork("1234:5678::ffff:ffff:ffff:ffff", "1234:5678::/64"));
     	assertTrue(NetUtils.isIp6InNetwork("1234:5678::", "1234:5678::/64"));
+    	//Test isIp6InRange
+    	assertTrue(NetUtils.isIp6InRange("1234:5678:abcd::1", "1234:5678:abcd::1-1234:5678:abcd::1"));
+    	assertFalse(NetUtils.isIp6InRange("1234:5678:abcd::1", "1234:5678:abcd::2-1234:5678:abcd::1"));
+    	assertFalse(NetUtils.isIp6InRange("1234:5678:abcd::1", null));
+    	assertTrue(NetUtils.isIp6InRange("1234:5678:abcd::1", "1234:5678::1-1234:5679::1"));
     }
 }
