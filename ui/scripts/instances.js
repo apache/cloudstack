@@ -135,6 +135,27 @@
 				tagValue: { label: 'Tag Value' }
 			},
 
+      // List view actions
+      actions: {
+        // Add instance wizard
+        add: {
+          label: 'label.vm.add',
+
+          action: {
+            custom: cloudStack.uiCustom.instanceWizard(cloudStack.instanceWizard)
+          },
+
+          messages: {
+            notification: function(args) {
+              return 'label.vm.add';
+            }
+          },
+          notification: {
+            poll: pollAsyncJobResult
+          }
+        }
+      },
+
       dataProvider: function(args) {
 			  var data = {};
 				listViewDataProvider(args, data);
