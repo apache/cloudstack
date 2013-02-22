@@ -20,6 +20,7 @@
 --;
 
 use cloud;
+SET foreign_key_checks = 0;
 
 alter table vm_template add size bigint unsigned;
 alter table vm_template add state varchar(255);
@@ -1653,3 +1654,5 @@ CREATE TABLE `cloud`.`baremetal_pxe_devices` (
   `host_id` bigint unsigned DEFAULT NULL COMMENT 'host id coresponding to the external pxe device',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+SET foreign_key_checks = 1;
