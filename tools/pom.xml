@@ -35,7 +35,7 @@
         <defaultGoal>install</defaultGoal>
     </build>
     <modules>
-        <!--<module>apidoc</module-->
+        <module>apidoc</module>
         <module>marvin</module>
         <module>cli</module>
         <module>devcloud</module>
