@@ -1242,6 +1242,10 @@
                 }
               }
             ],
+            viewAll: {
+              path: 'network.ipAddresses',
+              attachTo: 'ipaddress'
+            },
             dataProvider: function(args) {
                     $.ajax({
                      url:createURL("listVirtualMachines&details=nics&id=" + args.context.instances[0].id),

@@ -1034,6 +1034,16 @@
                   actionFilter: actionFilter
                 }
               ).appendTo($tabContent);
+
+              if (tabData.viewAll) {
+                $tabContent.find('tr')
+                  .filter('.' + tabData.viewAll.attachTo).find('td.value')
+                  .append(
+                    $('<div>').addClass('view-all').append(
+                      $('<span>').html('View all IP Addresses')
+                    )
+                  );
+              }
             });
 
             return true;
