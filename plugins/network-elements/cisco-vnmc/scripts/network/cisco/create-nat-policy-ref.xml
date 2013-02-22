@@ -1,0 +1,20 @@
+<configConfMos 
+  cookie="%cookie%"
+  inHierarchical="false">
+  <inConfigs>
+
+    <pair key="%natpolicyrefdn%" >
+      <policyPolicyNameRef
+        dn="%natpolicyrefdn%"
+        order="%order%"
+        policyName="%natpolicyname%"
+        status="created"/>
+    </pair>
+
+  </inConfigs>
+</configConfMos>
+
+<!--
+    natpolicyrefdn="org-root/org-TenantD/org-VDC-TenantD/natpset-TenantD-NAT-Policy-Set/polref-Source-NAT-Policy-TenantD"
+    natpolicyname="Source-NAT-Policy-TenantD"
+--!>
