@@ -72,7 +72,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
             required=true, description="the Zone ID for the storage pool")
     private Long zoneId;
     
-    @Parameter(name=ApiConstants.PROVIDER, type=CommandType.UUID,
+    @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING,
             required=false, description="the storage provider uuid")
     private String storageProviderUuid;
     

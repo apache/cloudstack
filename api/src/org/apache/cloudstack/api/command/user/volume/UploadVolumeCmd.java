@@ -68,7 +68,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.CHECKSUM, type=CommandType.STRING, description="the MD5 checksum value of this volume")
     private String checksum;
     
-    @Parameter(name=ApiConstants.IMAGE_STORE_UUID, type=CommandType.UUID,
+    @Parameter(name=ApiConstants.IMAGE_STORE_UUID, type=CommandType.STRING,
             description="Image store uuid")
     private String imageStoreUuid;
 

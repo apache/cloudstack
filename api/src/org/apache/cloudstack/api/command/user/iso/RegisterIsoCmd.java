@@ -89,7 +89,7 @@ public class RegisterIsoCmd extends BaseCmd {
             description="Register iso for the project")
     private Long projectId;
     
-    @Parameter(name=ApiConstants.IMAGE_STORE_UUID, type=CommandType.UUID,
+    @Parameter(name=ApiConstants.IMAGE_STORE_UUID, type=CommandType.STRING,
             description="Image store uuid")
     private String imageStoreUuid;
 
