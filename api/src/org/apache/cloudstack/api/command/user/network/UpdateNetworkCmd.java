@@ -64,6 +64,9 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
             description="network offering ID")
     private Long networkOfferingId;
 
+    @Parameter(name=ApiConstants.GUEST_VM_CIDR, type=CommandType.STRING, description="CIDR for Guest VMs,Cloudstack allocates IPs to Guest VMs only from this CIDR")
+    private String guestVmCidr;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -93,6 +96,10 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
             return changeCidr;
         }
         return false;
+    }
+
+    private String getGuestVmCidr() {
+        return guestVmCidr;
     }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -125,10 +132,10 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
         Network result = null;
         if (network.getVpcId() != null) {
             result = _vpcService.updateVpcGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount,
-                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr());
+                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr(), getGuestVmCidr());
         } else {
             result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount,
-                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr());
+                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr(), getGuestVmCidr());
         }
 
         if (result != null) {

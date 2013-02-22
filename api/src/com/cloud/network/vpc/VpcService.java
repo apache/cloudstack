@@ -246,5 +246,5 @@ public interface VpcService {
         InsufficientAddressCapacityException, ConcurrentOperationException;
 
     public Network updateVpcGuestNetwork(long networkId, String name, String displayText, Account callerAccount,
-            User callerUser, String domainSuffix, Long ntwkOffId, Boolean changeCidr);
+            User callerUser, String domainSuffix, Long ntwkOffId, Boolean changeCidr, String guestVmCidr);
 }

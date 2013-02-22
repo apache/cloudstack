@@ -66,6 +66,7 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.*;
 import com.cloud.network.IpAddress.State;
+import com.cloud.vm.Nic;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
@@ -1491,7 +1492,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
     public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, 
-            User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr) {
+            User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr) {
         boolean restartNetwork = false;
 
         // verify input parameters
@@ -1552,8 +1553,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 ex.addProxyObject(networkOffering, networkOfferingId, "networkOfferingId");                
                 throw ex;
             }
-            
-            
             //can't update from vpc to non-vpc network offering
             boolean forVpcNew = _configMgr.isOfferingForVpc(networkOffering);
             boolean vorVpcOriginal = _configMgr.isOfferingForVpc(_configMgr.getNetworkOffering(oldNetworkOfferingId));
@@ -1585,6 +1584,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 networkOfferingChanged = true;
             }
         }
+
         Map<String, String> newSvcProviders = new HashMap<String, String>();
         if (networkOfferingChanged) {
             newSvcProviders = _networkMgr.finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(networkOfferingId), network.getPhysicalNetworkId());
@@ -1616,6 +1616,81 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             restartNetwork = true;
         }
 
+        //IP reservation checks
+        // allow reservation only to Isolated Guest networks
+        DataCenter dc = _dcDao.findById(network.getDataCenterId());
+        String networkCidr = network.getNetworkCidr();
+
+        if (guestVmCidr!= null ) {
+            if(dc.getNetworkType() == NetworkType.Basic) {
+                throw new InvalidParameterValueException("Guest VM CIDR can't be specified for zone with " + NetworkType.Basic  + " networking");
+            }
+            if (network.getGuestType() != GuestType.Isolated) {
+                throw new InvalidParameterValueException("Can only allow IP Reservation in networks with guest type " + GuestType.Isolated);
+            }
+            if (networkOfferingChanged == true) {
+                throw new InvalidParameterValueException("Cannot specify this nework offering change and guestVmCidr at same time. Specify only one.");
+            }
+            if (!(network.getState() == Network.State.Implemented)) {
+                throw new InvalidParameterValueException ("The network must be in " +  Network.State.Implemented + " state. IP Reservation cannot be applied in " + network.getState() + " state");
+            }
+            if (!NetUtils.isValidCIDR(guestVmCidr)) {
+                throw new InvalidParameterValueException ("Invalid format of Guest VM CIDR.");
+            }
+            if (!NetUtils.validateGuestCidr(guestVmCidr)) {
+                throw new InvalidParameterValueException ("Invalid format of Guest VM CIDR. Make sure it is RFC1918 compliant. ");
+            }
+
+            // If networkCidr is null it implies that there was no prior IP reservation, so the network cidr is network.getCidr()
+            // But in case networkCidr is a non null value (IP reservation already exists), it implies network cidr is networkCidr
+            if (networkCidr != null && ! NetUtils.isNetworkAWithinNetworkB(guestVmCidr, networkCidr)) {
+                    throw new InvalidParameterValueException ("Invalid value of Guest VM CIDR. For IP Reservation, Guest VM CIDR  should be a subset of network CIDR : " + networkCidr);
+            } else {
+                if (! NetUtils.isNetworkAWithinNetworkB(guestVmCidr, network.getCidr())) {
+                     throw new InvalidParameterValueException ("Invalid value of Guest VM CIDR. For IP Reservation, Guest VM CIDR  should be a subset of network CIDR :  " + network.getCidr());
+                }
+            }
+
+            // This check makes sure there are no active IPs existing outside the guestVmCidr in the network
+                String[] guestVmCidrPair = guestVmCidr.split("\\/");
+                Long size = Long.valueOf(guestVmCidrPair[1]);
+                List<NicVO> nicsPresent = _nicDao.listByNetworkId(networkId);
+
+                String cidrIpRange[] = NetUtils.getIpRangeFromCidr(guestVmCidrPair[0], size);
+                s_logger.info("The start IP of the specified guest vm cidr is: " +  cidrIpRange[0] +" and end IP is: " +  cidrIpRange[1]);
+                long startIp = NetUtils.ip2Long(cidrIpRange[0]);
+                long endIp = NetUtils.ip2Long(cidrIpRange[1]);
+                long range =  endIp - startIp + 1;
+                s_logger.info("The specified guest vm cidr has " +  range + " IPs");
+
+                for (NicVO nic : nicsPresent) {
+                    long nicIp = NetUtils.ip2Long(nic.getIp4Address());
+                    //check if nic IP is outside the guest vm cidr
+                    if (nicIp < startIp || nicIp > endIp) {
+                        if(!(nic.getState() == Nic.State.Deallocating)) {
+                            throw new InvalidParameterValueException("Active IPs like " + nic.getIp4Address() + " exist outside the Guest VM CIDR. Cannot apply reservation ");
+                            }
+                        }
+                    }
+
+                // When reservation is applied for the first time, network_cidr will be null
+                // Populate it with the actual network cidr
+                if (network.getNetworkCidr() == null) {
+                    network.setNetworkCidr(network.getCidr());
+                }
+
+                // Condition for IP Reservation reset : guestVmCidr and network CIDR are same
+                if (network.getNetworkCidr().equals(guestVmCidr)) {
+                    s_logger.warn("Guest VM CIDR and Network CIDR both are same, reservation will reset.");
+                    network.setNetworkCidr(null);
+                }
+                // Finally update "cidr" with the guestVmCidr
+                // which becomes the effective address space for CloudStack guest VMs
+                network.setCidr(guestVmCidr);
+                _networksDao.update(networkId, network);
+                s_logger.info("IP Reservation has been applied. The new CIDR for Guests Vms is " + guestVmCidr);
+            }
+
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
         // 1) Shutdown all the elements and cleanup all the rules. Don't allow to shutdown network in intermediate
         // states - Shutdown and Implementing
@@ -1634,6 +1709,15 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 } else {
                     // We need to shutdown the network, since we want to re-implement the network.
                     s_logger.debug("Shutting down network id=" + networkId + " as a part of network update");
+
+                    //check if network has reservation
+                    if(NetUtils.isNetworkAWithinNetworkB(network.getCidr(), network.getNetworkCidr())) {
+                        s_logger.warn ("Existing IP reservation will become ineffective for the network with id =  " + networkId + " You need to reapply reservation after network reimplementation.");
+                        //set cidr to the newtork cidr
+                        network.setCidr(network.getNetworkCidr());
+                        //set networkCidr to null to bring network back to no IP reservation state
+                        network.setNetworkCidr(null);
+                    }
 
                     if (!_networkMgr.shutdownNetwork(network.getId(), context, true)) {
                         s_logger.warn("Failed to shutdown the network as a part of update to network with specified id");
@@ -1655,7 +1739,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         boolean validStateToImplement = (networkState == Network.State.Implemented || networkState == Network.State.Setup || networkState == Network.State.Allocated);
         if (restartNetwork && !validStateToImplement) {
             CloudRuntimeException ex = new CloudRuntimeException("Failed to implement the network elements and resources as a part of update to network with specified id; network is in wrong state: " + networkState);
-            ex.addProxyObject(network, networkId, "networkId");            
+            ex.addProxyObject(network, networkId, "networkId");
             throw ex;
         }
 
@@ -1681,11 +1765,11 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     UsageEventUtils.saveUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), networkOfferingId, null, isDefault);
                 }
                 txn.commit();
-            } else {
+            }   else {
                 network.setNetworkOfferingId(networkOfferingId);
                 _networksDao.update(networkId, network, _networkMgr.finalizeServicesAndProvidersForNetwork(_configMgr.getNetworkOffering(networkOfferingId), network.getPhysicalNetworkId()));
             }
-        } else {
+        }   else {
             _networksDao.update(networkId, network);
         }
 
@@ -1731,7 +1815,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     }
 
 
-    
+
 
     protected Set<Long> getAvailableIps(Network network, String requestedIp) {
         String[] cidr = network.getCidr().split("/");

@@ -69,5 +69,5 @@ public class Upgrade410to420 implements DbUpgrade {
         }
 
         return new File[] { new File(script) };
-	}
-}
+	    }
+    }
