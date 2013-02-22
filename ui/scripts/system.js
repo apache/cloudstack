@@ -7440,6 +7440,18 @@
                     validation: { required: true }
                   },
 
+                  cpuovercommit:{
+                     label: 'CPU overcommit ratio',
+                     defaultValue:'1'
+
+                  },
+
+                  memoryovercommit:{
+                     label: 'RAM overcommit ratio',
+                     defaultValue:'1'
+
+                   },
+
                   //hypervisor==VMWare begins here
                   vCenterHost: {
                     label: 'label.vcenter.host',
@@ -7497,6 +7509,13 @@
                 array1.push("&podId=" + args.data.podId);
 
                 var clusterName = args.data.name;
+
+                if(args.data.cpuovercommit != "")
+                    array1.push("&cpuovercommitratio=" + todb(args.data.cpuovercommit));
+
+                 if(args.data.memoryovercommit != "")
+                    array1.push("&memoryovercommitratio=" + todb(args.data.memoryovercommit));
+
                 if(args.data.hypervisor == "VMware") {
                   array1.push("&username=" + todb(args.data.vCenterUsername));
                   array1.push("&password=" + todb(args.data.vCenterPassword));
@@ -7572,6 +7591,38 @@
             },
 
             actions: {
+
+               edit: {
+                label: 'label.edit',
+                action: function(args) {
+                  var array1 = [];
+
+                  if (args.data.cpuovercommitratio != "" && args.data.cpuovercommitratio > 0)
+                    array1.push("&cpuovercommitratio=" + args.data.cpuovercommitratio);
+
+                  if (args.data.memoryovercommitratio != "" && args.data.memoryovercommitratio > 0)
+                    array1.push("&memoryovercommitratio=" + args.data.memoryovercommitratio);
+
+                  $.ajax({
+
+                    url: createURL("updateCluster&id=" + args.context.clusters[0].id + array1.join("")),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var item = json.updateclusterresponse.cluster;
+                      args.context.clusters[0].cpuovercommitratio = item.cpuovercommitratio;
+                      args.context.clusters[0].memoryovercommitratio = item.memoryovercommitratio;
+                      addExtraPropertiesToClusterObject(item);
+                      args.response.success({
+                        actionFilter: clusterActionfilter,
+                        data:item
+                       });
+
+                    }
+                  });
+                }
+              },
+              
               enable: {
                 label: 'label.action.enable.cluster',
                 messages: {
@@ -7741,6 +7792,8 @@
                     podname: { label: 'label.pod' },
                     hypervisortype: { label: 'label.hypervisor' },
                     clustertype: { label: 'label.cluster.type' },
+                    cpuovercommitratio:{ label: 'CPU overcommit Ratio', isEditable:true},
+                    memoryovercommitratio:{ label: 'Memory overcommit Ratio', isEditable:true},
                     //allocationstate: { label: 'label.allocation.state' },
                     //managedstate: { label: 'Managed State' },
 										state: { label: 'label.state' }
@@ -10413,10 +10466,14 @@
     if(jsonObj.state == "Enabled") {//managed, allocation enabled
 		  allowedActions.push("unmanage");
       allowedActions.push("disable");
+      allowedActions.push("edit");
+
 		}
 		else if(jsonObj.state == "Disabled") { //managed, allocation disabled
 		  allowedActions.push("unmanage");
       allowedActions.push("enable");
+      allowedActions.push("edit");
+
 		}
 		else { //Unmanaged, PrepareUnmanaged , PrepareUnmanagedError
 			allowedActions.push("manage");
