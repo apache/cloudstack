@@ -37,6 +37,9 @@ import java.util.Map;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
+import javax.xml.ws.BindingProvider;
+import com.sun.xml.internal.ws.transport.http.client.CookieJar;
+import com.sun.xml.internal.ws.client.BindingProviderProperties;
 
 import org.apache.log4j.Logger;
 
@@ -378,8 +381,12 @@ public class VmwareContext {
 			long totalBytesDownloaded, ActionDelegate progressUpdater) throws Exception {
 		HttpURLConnection conn = getRawHTTPConnection(urlString);
 
-		String cookieString = getServiceCookie();
-	    conn.setRequestProperty(org.apache.axis.transport.http.HTTPConstants.HEADER_COOKIE, cookieString);
+		CookieJar cookie = getServiceCookie();
+        if ( cookie == null ){
+            s_logger.error("No cookie is found in vwware web service request context!");
+            throw new Exception("No cookie is found in vmware web service request context!");
+        }
+		cookie.applyRelevantCookies(conn);
 	    conn.setDoInput(true);
 	    conn.setDoOutput(true);
 	    conn.setAllowUserInteraction(true);
@@ -530,7 +537,11 @@ public class VmwareContext {
 	}
 
 	public HttpURLConnection getHTTPConnection(String urlString, String httpMethod) throws Exception {
-		String cookieString = getServiceCookie();
+		CookieJar cookie = getServiceCookie();
+		if ( cookie == null ){
+		    s_logger.error("No cookie is found in vmware web service request context!");
+            throw new Exception("No cookie is found in vmware web service request context!");
+		}
 	    HostnameVerifier hv = new HostnameVerifier() {
 	    	@Override
             public boolean verify(String urlHostName, SSLSession session) {
@@ -545,7 +556,7 @@ public class VmwareContext {
 	    conn.setDoInput(true);
 	    conn.setDoOutput(true);
 	    conn.setAllowUserInteraction(true);
-	    conn.setRequestProperty(org.apache.axis.transport.http.HTTPConstants.HEADER_COOKIE, cookieString);
+	    cookie.applyRelevantCookies(conn);
 	    conn.setRequestMethod(httpMethod);
         connectWithRetry(conn);
 	    return conn;
@@ -564,13 +575,10 @@ public class VmwareContext {
 	    return (HttpURLConnection)url.openConnection();
 	}
 
-	private String getServiceCookie() throws Exception {
-		com.vmware.vim25.VimPortType service = getService();
-		org.apache.axis.client.Stub st = (org.apache.axis.client.Stub)service;
-		org.apache.axis.client.Call callObj = st._getCall();
-		org.apache.axis.MessageContext msgContext = callObj.getMessageContext();
-		String cookieString = (String)msgContext.getProperty(org.apache.axis.transport.http.HTTPConstants.HEADER_COOKIE);
-		return cookieString;
+	private CookieJar getServiceCookie() throws Exception {
+		VimPortType port = getService();
+        Map<String, Object> ctxt = ((BindingProvider) port).getRequestContext();
+        return (CookieJar)ctxt.get(BindingProviderProperties.HTTP_COOKIE_JAR);
 	}
 
 	private static void connectWithRetry(HttpURLConnection conn) throws Exception {
