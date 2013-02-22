@@ -110,7 +110,7 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void testCreateTenantVDCEdgeDeviceRoute() {
         try {
-            boolean response = connection.createTenantVDCEdgeStaticRoute(tenantName, 
+            boolean response = connection.createTenantVDCEdgeStaticRoute(tenantName,
                     "10.223.136.1", "Edge_Outside", "0.0.0.0", "0.0.0.0");
             assertTrue(response);
         } catch (ExecutionException e) {
@@ -122,7 +122,7 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void testAssociateRoutePolicyWithEdgeProfile() {
         try {
-            boolean response = connection.associateTenantVDCEdgeStaticRoutePolicy(tenantName); 
+            boolean response = connection.associateTenantVDCEdgeStaticRoutePolicy(tenantName);
             assertTrue(response);
         } catch (ExecutionException e) {
             // TODO Auto-generated catch block
@@ -133,7 +133,7 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void testAssociateTenantVDCEdgeDhcpPolicy() {
         try {
-            boolean response = connection.associateTenantVDCEdgeDhcpPolicy(tenantName, "Edge_Inside"); 
+            boolean response = connection.associateTenantVDCEdgeDhcpPolicy(tenantName, "Edge_Inside");
             assertTrue(response);
         } catch (ExecutionException e) {
             // TODO Auto-generated catch block
@@ -144,8 +144,8 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void testCreateTenantVDCEdgeDhcpPolicy() {
         try {
-            boolean response = connection.createTenantVDCEdgeDhcpPolicy(tenantName, 
-                    "10.1.1.2", "10.1.1.254", "255.255.255.0","4.4.4.4", tenantName+ ".net"); 
+            boolean response = connection.createTenantVDCEdgeDhcpPolicy(tenantName,
+                    "10.1.1.2", "10.1.1.254", "255.255.255.0","4.4.4.4", tenantName+ ".net");
             assertTrue(response);
         } catch (ExecutionException e) {
             // TODO Auto-generated catch block
@@ -156,7 +156,7 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void testCreateTenantVDCEdgeSecurityProfile() {
         try {
-            boolean response = connection.createTenantVDCEdgeSecurityProfile(tenantName); 
+            boolean response = connection.createTenantVDCEdgeSecurityProfile(tenantName);
             assertTrue(response);
         } catch (ExecutionException e) {
             // TODO Auto-generated catch block
@@ -165,9 +165,9 @@ public class CiscoVnmcConnectionTest {
     }
 
     @Test
-    public void testCreateTenantVDCSourceNATPool() {
+    public void testCreateTenantVDCSourceNatIpPool() {
         try {
-            boolean response = connection.createTenantVDCSourceNATPool(tenantName, "10.223.136.10"); 
+            boolean response = connection.createTenantVDCSourceNatIpPool(tenantName, "1", "10.223.136.10");
             assertTrue(response);
         } catch (ExecutionException e) {
             // TODO Auto-generated catch block
@@ -176,9 +176,13 @@ public class CiscoVnmcConnectionTest {
     }
 
     @Test
-    public void testCreateTenantVDCSourceNATPolicy() {
+    public void testCreateTenantVDCSourceNatPolicy() {
         try {
-            boolean response = connection.createTenantVDCSourceNATPolicy(tenantName, "10.1.1.2", "10.1.1.254"); 
+            boolean response = connection.createTenantVDCSourceNatPolicy(tenantName, "1");
+            assertTrue(response);
+            response = connection.createTenantVDCSourceNatPolicyRef(tenantName, "1");
+            assertTrue(response);
+            response = connection.createTenantVDCSourceNatRule(tenantName, "1", "10.1.1.2", "10.1.1.254");
             assertTrue(response);
         } catch (ExecutionException e) {
             // TODO Auto-generated catch block
@@ -189,7 +193,7 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void testCreateTenantVDCNatPolicySet() {
         try {
-            boolean response = connection.createTenantVDCNatPolicySet(tenantName); 
+            boolean response = connection.createTenantVDCNatPolicySet(tenantName);
             assertTrue(response);
         } catch (ExecutionException e) {
             // TODO Auto-generated catch block
@@ -200,7 +204,7 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void testAssociateNatPolicySet() {
         try {
-            boolean response = connection.associateNatPolicySet(tenantName); 
+            boolean response = connection.associateNatPolicySet(tenantName);
             assertTrue(response);
         } catch (ExecutionException e) {
             // TODO Auto-generated catch block
@@ -211,8 +215,8 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void testCreateEdgeFirewall() {
         try {
-            boolean response = connection.createEdgeFirewall(tenantName, 
-                    "44.44.44.44", "192.168.1.1", "255.255.255.0", "255.255.255.192"); 
+            boolean response = connection.createEdgeFirewall(tenantName,
+                    "44.44.44.44", "192.168.1.1", "255.255.255.0", "255.255.255.192");
             assertTrue(response);
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -222,7 +226,7 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void testListUnassocAsa1000v() {
         try {
-            Map<String, String> response = connection.listUnAssocAsa1000v(); 
+            Map<String, String> response = connection.listUnAssocAsa1000v();
             assertTrue(response.size() >=0);
             fwDns = response;
         } catch (ExecutionException e) {
@@ -234,7 +238,7 @@ public class CiscoVnmcConnectionTest {
     @Test
     public void assocAsa1000v() {
         try {
-            boolean result = connection.assocAsa1000v(tenantName, fwDns.get(0)); 
+            boolean result = connection.assocAsa1000v(tenantName, fwDns.get(0));
             assertTrue(result);
         } catch (ExecutionException e) {
             // TODO Auto-generated catch block

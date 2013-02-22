@@ -52,11 +52,39 @@ public interface CiscoVnmcConnection {
     public boolean createTenantVDCEdgeSecurityProfile(String tenantName)
             throws ExecutionException;
 
-    public boolean createTenantVDCSourceNATPool(String tenantName,
+    public boolean createTenantVDCSourceNatIpPool(String tenantName, String identifier,
             String publicIp) throws ExecutionException;
 
-    public boolean createTenantVDCSourceNATPolicy(String tenantName,
+    public boolean createTenantVDCSourceNatRule(String tenantName, String identifier,
             String startSourceIp, String endSourceIp) throws ExecutionException;
+
+    public boolean createTenantVDCSourceNatPolicy(String tenantName, String identifier)
+            throws ExecutionException;
+
+    public boolean createTenantVDCSourceNatPolicyRef(String tenantName, String identifier)
+            throws ExecutionException;
+
+    public boolean createTenantVDCDNatPortPool(String tenantName, String identifier,
+            String startPort, String endPort)
+            throws ExecutionException;
+
+    public boolean createTenantVDCDNatIpPool(String tenantName, String identifier,
+            String ipAddress) throws ExecutionException;
+
+    public boolean createTenantVDCDNatRule(String tenantName,
+            String identifier, String policyIdentifier,
+            String protocol, String sourceIp,
+            String startSourcePort, String endSourcePort)
+            throws ExecutionException;
+
+    public boolean createTenantVDCDNatPolicy(String tenantName, String identifier)
+            throws ExecutionException;
+
+    public boolean deleteTenantVDCDNatPolicy(String tenantName, String identifier)
+            throws ExecutionException;
+
+    public boolean createTenantVDCDNatPolicyRef(String tenantName, String identifier)
+            throws ExecutionException;
 
     public boolean createTenantVDCNatPolicySet(String tenantName)
             throws ExecutionException;
