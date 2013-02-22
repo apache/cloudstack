@@ -47,7 +47,7 @@ import com.cloud.org.Cluster;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
-import com.cloud.region.ha.GlobalLoadBalancer;
+import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.*;
 import com.cloud.storage.snapshot.SnapshotPolicy;
@@ -106,7 +106,7 @@ public interface ResponseGenerator {
 
     IPAddressResponse createIPAddressResponse(IpAddress ipAddress);
 
-    GlobalLoadBalancerResponse createGlobalLoadBalancerResponse(GlobalLoadBalancer globalLoadBalancer);
+    GlobalLoadBalancerResponse createGlobalLoadBalancerResponse(GlobalLoadBalancerRule globalLoadBalancerRule);
 
     LoadBalancerResponse createLoadBalancerResponse(LoadBalancer loadBalancer);
 

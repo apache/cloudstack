@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
-import com.cloud.region.ha.GlobalLoadBalancer;
+import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -67,7 +67,7 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        GlobalLoadBalancer lb = _entityMgr.findById(GlobalLoadBalancer.class, getGlobalLoadBalancerId());
+        GlobalLoadBalancerRule lb = _entityMgr.findById(GlobalLoadBalancerRule.class, getGlobalLoadBalancerId());
         if (lb != null) {
             return lb.getAccountId();
         }

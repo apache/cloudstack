@@ -59,7 +59,7 @@ import com.cloud.org.Cluster;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
-import com.cloud.region.ha.GlobalLoadBalancer;
+import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.server.Criteria;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
@@ -534,15 +534,15 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public GlobalLoadBalancerResponse createGlobalLoadBalancerResponse(GlobalLoadBalancer globalLoadBalancer) {
+    public GlobalLoadBalancerResponse createGlobalLoadBalancerResponse(GlobalLoadBalancerRule globalLoadBalancerRule) {
         GlobalLoadBalancerResponse response = new GlobalLoadBalancerResponse();
-        response.setAlgorithm(globalLoadBalancer.getAlgorithm());
-        response.setStickyMethod(globalLoadBalancer.getPersistence());
-        response.setServiceDomainName(globalLoadBalancer.getGslbDomain());
-        response.setName(globalLoadBalancer.getName());
-        response.setDescription(globalLoadBalancer.getDescription());
-        response.setRegionIdId(globalLoadBalancer.getRegion());
-        response.setId(globalLoadBalancer.getUuid());
+        response.setAlgorithm(globalLoadBalancerRule.getAlgorithm());
+        response.setStickyMethod(globalLoadBalancerRule.getPersistence());
+        response.setServiceDomainName(globalLoadBalancerRule.getGslbDomain());
+        response.setName(globalLoadBalancerRule.getName());
+        response.setDescription(globalLoadBalancerRule.getDescription());
+        response.setRegionIdId(globalLoadBalancerRule.getRegion());
+        response.setId(globalLoadBalancerRule.getUuid());
         return response;
     }
 

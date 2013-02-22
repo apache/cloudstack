@@ -19,16 +19,30 @@ package org.apache.cloudstack.region.gslb;
 
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
+import java.util.List;
 
 @Component
 @Local(value={GlobalLoadBalancerLbRuleMapDao.class})
 @DB(txn = false)
 public class GlobalLoadBalancerLbRuleMapDaoImpl extends GenericDaoBase<GlobalLoadBalancerLbRuleMapVO, Long> implements GlobalLoadBalancerLbRuleMapDao {
 
-    public GlobalLoadBalancerLbRuleMapDaoImpl() {
+    private final SearchBuilder<GlobalLoadBalancerLbRuleMapVO> listByGslbRuleId;
 
+    public GlobalLoadBalancerLbRuleMapDaoImpl() {
+        listByGslbRuleId = createSearchBuilder();
+        listByGslbRuleId.and("gslbLoadBalancerId", listByGslbRuleId.entity().getGslbLoadBalancerId(), SearchCriteria.Op.EQ);
+        listByGslbRuleId.done();
+    }
+
+    @Override
+    public List<GlobalLoadBalancerLbRuleMapVO> listByGslbRuleId(long gslbRuleId) {
+        SearchCriteria<GlobalLoadBalancerLbRuleMapVO> sc = listByGslbRuleId.create();
+        sc.setParameters("gslbLoadBalancerId", gslbRuleId);
+        return listBy(sc);
     }
 }

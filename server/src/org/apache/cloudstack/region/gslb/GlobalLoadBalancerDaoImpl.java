@@ -27,9 +27,9 @@ import java.util.List;
 
 @Component
 @Local(value={GlobalLoadBalancerDao.class})
-public class GlobalLoadBalancerDaoImpl extends GenericDaoBase<GlobalLoadBalancerVO, Long> implements GlobalLoadBalancerDao {
+public class GlobalLoadBalancerDaoImpl extends GenericDaoBase<GlobalLoadBalancerRuleVO, Long> implements GlobalLoadBalancerDao {
 
-    private final SearchBuilder<GlobalLoadBalancerVO> listByDomainSearch;
+    private final SearchBuilder<GlobalLoadBalancerRuleVO> listByDomainSearch;
 
     public GlobalLoadBalancerDaoImpl() {
         listByDomainSearch = createSearchBuilder();
@@ -38,13 +38,13 @@ public class GlobalLoadBalancerDaoImpl extends GenericDaoBase<GlobalLoadBalancer
     }
 
     @Override
-    public List<GlobalLoadBalancerVO> listByRegionId(long regionId) {
+    public List<GlobalLoadBalancerRuleVO> listByRegionId(long regionId) {
         return null;
     }
 
     @Override
-    public List<GlobalLoadBalancerVO> listByDomainName(String domainName) {
-        SearchCriteria<GlobalLoadBalancerVO> sc = listByDomainSearch.create();
+    public List<GlobalLoadBalancerRuleVO> listByDomainName(String domainName) {
+        SearchCriteria<GlobalLoadBalancerRuleVO> sc = listByDomainSearch.create();
         sc.setParameters("gslbDomain", domainName);
         return listBy(sc);
     }

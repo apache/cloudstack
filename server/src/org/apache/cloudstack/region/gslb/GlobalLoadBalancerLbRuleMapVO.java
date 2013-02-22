@@ -40,6 +40,9 @@ public class GlobalLoadBalancerLbRuleMapVO implements InternalIdentity {
     @Column(name="gslb_rule_id")
     private long gslbLoadBalancerId;
 
+    @Column(name="revoke")
+    private boolean revoke = false;
+
     public GlobalLoadBalancerLbRuleMapVO() {
 
     }
@@ -47,6 +50,7 @@ public class GlobalLoadBalancerLbRuleMapVO implements InternalIdentity {
     public GlobalLoadBalancerLbRuleMapVO(long loadBalancerId, long gslbLoadBalancerId) {
         this.loadBalancerId = loadBalancerId;
         this.gslbLoadBalancerId = gslbLoadBalancerId;
+        this.revoke = false;
     }
 
     public long getId() {
@@ -67,5 +71,13 @@ public class GlobalLoadBalancerLbRuleMapVO implements InternalIdentity {
 
     public void setGslbLoadBalancerId(long gslbLoadBalancerId) {
         this.gslbLoadBalancerId = gslbLoadBalancerId;
+    }
+
+    public boolean isRevoke() {
+        return revoke;
+    }
+
+    public void setRevoke(boolean revoke) {
+        this.revoke = revoke;
     }
 }

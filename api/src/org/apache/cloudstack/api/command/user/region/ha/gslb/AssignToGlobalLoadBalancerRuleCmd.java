@@ -20,7 +20,7 @@ package org.apache.cloudstack.api.command.user.region.ha.gslb;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancer;
-import com.cloud.region.ha.GlobalLoadBalancer;
+import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -59,11 +59,11 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getGlobalLoadBalancerId() {
+    public Long getGlobalLoadBalancerRuleId() {
         return id;
     }
 
-    public List<Long> getLoadBalancerRulesId() {
+    public List<Long> getLoadBalancerRulesIds() {
         return loadBalancerRulesIds;
     }
 
@@ -81,11 +81,12 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        GlobalLoadBalancer globalLoadBalancer = _entityMgr.findById(GlobalLoadBalancer.class, getGlobalLoadBalancerId());
-        if (globalLoadBalancer == null) {
+        GlobalLoadBalancerRule globalLoadBalancerRule = _entityMgr.findById(GlobalLoadBalancerRule.class,
+                getGlobalLoadBalancerRuleId());
+        if (globalLoadBalancerRule == null) {
             return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
         }
-        return globalLoadBalancer.getAccountId();
+        return globalLoadBalancerRule.getAccountId();
     }
 
     @Override
@@ -95,14 +96,14 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "applying load balancer rules " + StringUtils.join(getLoadBalancerRulesId(), ",") +
-                " to global load balancer rule " + getGlobalLoadBalancerId();
+        return "applying load balancer rules " + StringUtils.join(getLoadBalancerRulesIds(), ",") +
+                " to global load balancer rule " + getGlobalLoadBalancerRuleId();
     }
 
     @Override
     public void execute(){
-        UserContext.current().setEventDetails("Global Load balancer rule Id: "+ getGlobalLoadBalancerId()+ " VmIds: "
-                + StringUtils.join(getLoadBalancerRulesId(), ","));
+        UserContext.current().setEventDetails("Global Load balancer rule Id: "+ getGlobalLoadBalancerRuleId()+ " VmIds: "
+                + StringUtils.join(getLoadBalancerRulesIds(), ","));
         boolean result = _gslbService.assignToGlobalLoadBalancerRule(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

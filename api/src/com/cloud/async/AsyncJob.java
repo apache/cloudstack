@@ -16,11 +16,10 @@
 // under the License.
 package com.cloud.async;
 
-import java.util.Date;
-
-import com.cloud.region.ha.GlobalLoadBalancer;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import java.util.Date;
 
 public interface AsyncJob extends Identity, InternalIdentity {
     public enum Type {

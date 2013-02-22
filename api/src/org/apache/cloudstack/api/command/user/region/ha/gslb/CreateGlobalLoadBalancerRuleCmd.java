@@ -21,7 +21,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.region.ha.GlobalLoadBalancer;
+import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.UserContext;
 import org.apache.cloudstack.api.*;
@@ -117,7 +117,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {
 
         UserContext callerContext = UserContext.current();
-        GlobalLoadBalancer rule = _entityMgr.findById(GlobalLoadBalancer.class, getEntityId());
+        GlobalLoadBalancerRule rule = _entityMgr.findById(GlobalLoadBalancerRule.class, getEntityId());
         GlobalLoadBalancerResponse response = null;
         if (rule != null) {
             response = _responseGenerator.createGlobalLoadBalancerResponse(rule);
@@ -129,7 +129,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() {
         try {
-            GlobalLoadBalancer gslbRule = _gslbService.createGlobalLoadBalancerRule(this);
+            GlobalLoadBalancerRule gslbRule = _gslbService.createGlobalLoadBalancerRule(this);
             this.setEntityId(gslbRule.getId());
             this.setEntityUuid(gslbRule.getUuid());
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
@@ -154,7 +154,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.FirewallRule;
+        return AsyncJob.Type.GlobalLoadBalancerRule;
     }
 
     @Override

@@ -18,7 +18,7 @@
 package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
 import com.cloud.event.EventTypes;
-import com.cloud.region.ha.GlobalLoadBalancer;
+import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
 import com.cloud.utils.StringUtils;
@@ -80,11 +80,11 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        GlobalLoadBalancer globalLoadBalancer = _entityMgr.findById(GlobalLoadBalancer.class, getGlobalLoadBalancerId());
-        if (globalLoadBalancer == null) {
+        GlobalLoadBalancerRule globalLoadBalancerRule = _entityMgr.findById(GlobalLoadBalancerRule.class, getGlobalLoadBalancerId());
+        if (globalLoadBalancerRule == null) {
             return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
         }
-        return globalLoadBalancer.getAccountId();
+        return globalLoadBalancerRule.getAccountId();
     }
 
     @Override

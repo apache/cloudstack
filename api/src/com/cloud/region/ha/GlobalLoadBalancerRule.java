@@ -16,13 +16,14 @@
 // under the License.
 package com.cloud.region.ha;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 /**
- * Definition for a GlobalLoadBalancer
+ * GlobalLoadBalancerRule defines a global (multi zone) load balancing configuration.
  */
-public interface GlobalLoadBalancer extends Identity, InternalIdentity {
+public interface GlobalLoadBalancerRule extends Identity, InternalIdentity, ControlledEntity {
 
     enum Algorithm {
 
@@ -51,6 +52,13 @@ public interface GlobalLoadBalancer extends Identity, InternalIdentity {
         }
     }
 
+    enum State {
+        Staged,
+        Add,
+        Active,
+        Revoke
+    }
+
     public String getName();
 
     public String getDescription();
@@ -64,4 +72,6 @@ public interface GlobalLoadBalancer extends Identity, InternalIdentity {
     public int getRegion();
 
     public long getAccountId();
+
+    public State getState();
 }

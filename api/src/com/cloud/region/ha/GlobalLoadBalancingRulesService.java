@@ -25,18 +25,24 @@ import java.util.List;
 public interface GlobalLoadBalancingRulesService {
 
     /*
+     *
      * methods for managing life cycle of global load balancing rules
+     *
      */
-    GlobalLoadBalancer createGlobalLoadBalancerRule(CreateGlobalLoadBalancerRuleCmd createGslbCmd) throws InvalidParameterSpecException;
+    GlobalLoadBalancerRule createGlobalLoadBalancerRule(CreateGlobalLoadBalancerRuleCmd createGslbCmd)
+            throws InvalidParameterSpecException;
 
     boolean deleteGlobalLoadBalancerRule(DeleteGlobalLoadBalancerRuleCmd deleteGslbCmd);
 
-    GlobalLoadBalancer updateGlobalLoadBalancerRule(UpdateGlobalLoadBalancerRuleCmd updateGslbCmd);
+    GlobalLoadBalancerRule updateGlobalLoadBalancerRule(UpdateGlobalLoadBalancerRuleCmd updateGslbCmd);
 
-    List<GlobalLoadBalancer> listGlobalLoadBalancerRule(ListGlobalLoadBalancerRuleCmd listGslbCmd);
+    List<GlobalLoadBalancerRule> listGlobalLoadBalancerRule(ListGlobalLoadBalancerRuleCmd listGslbCmd);
+
 
     /*
+     *
      * methods for managing sites participating in global load balancing
+     *
      */
     boolean assignToGlobalLoadBalancerRule(AssignToGlobalLoadBalancerRuleCmd assignToGslbCmd);
 
