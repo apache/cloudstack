@@ -306,9 +306,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                 if (requestedIpv6 != null) {
                 	requestedIpv6 = requestedIpv6.toLowerCase();
                 }
-                if (requestedIpv6 != null) {
-                	throw new InvalidParameterValueException("Cannot support specified IPv6 address!");
-                }
                 IpAddresses addrs = new IpAddresses(requestedIp, requestedIpv6);
                 ipToNetworkMap.put(networkId, addrs);
             }
@@ -407,10 +404,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException{
         try {
-        	if (getIp6Address() != null) {
-        		throw new InvalidParameterValueException("Cannot support specified IPv6 address!");
-        	}
-        	
             //Verify that all objects exist before passing them to the service
             Account owner = _accountService.getActiveAccountById(getEntityOwnerId());
 
