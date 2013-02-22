@@ -7446,7 +7446,7 @@
 
                   },
 
-                  ramovercommit:{
+                  memoryovercommit:{
                      label: 'RAM overcommit ratio',
                      defaultValue:'1'
 
@@ -7513,8 +7513,8 @@
                 if(args.data.cpuovercommit != "")
                     array1.push("&cpuovercommitratio=" + todb(args.data.cpuovercommit));
 
-                 if(args.data.ramovercommit != "")
-                    array1.push("&ramovercommitratio=" + todb(args.data.ramovercommit));
+                 if(args.data.memoryovercommit != "")
+                    array1.push("&memoryovercommitratio=" + todb(args.data.memoryovercommit));
 
                 if(args.data.hypervisor == "VMware") {
                   array1.push("&username=" + todb(args.data.vCenterUsername));
@@ -7600,8 +7600,8 @@
                   if (args.data.cpuovercommitratio != "" && args.data.cpuovercommitratio > 0)
                     array1.push("&cpuovercommitratio=" + args.data.cpuovercommitratio);
 
-                  if (args.data.ramovercommitratio != "" && args.data.ramovercommitratio > 0)
-                    array1.push("&ramovercommitratio=" + args.data.ramovercommitratio);
+                  if (args.data.memoryovercommitratio != "" && args.data.memoryovercommitratio > 0)
+                    array1.push("&memoryovercommitratio=" + args.data.memoryovercommitratio);
 
                   $.ajax({
 
@@ -7611,7 +7611,7 @@
                     success: function(json) {
                       var item = json.updateclusterresponse.cluster;
                       args.context.clusters[0].cpuovercommitratio = item.cpuovercommitratio;
-                      args.context.clusters[0].ramovercommitratio = item.ramovercommitratio;
+                      args.context.clusters[0].memoryovercommitratio = item.memoryovercommitratio;
                       addExtraPropertiesToClusterObject(item);
                       args.response.success({
                         actionFilter: clusterActionfilter,
@@ -7793,7 +7793,7 @@
                     hypervisortype: { label: 'label.hypervisor' },
                     clustertype: { label: 'label.cluster.type' },
                     cpuovercommitratio:{ label: 'CPU overcommit Ratio', isEditable:true},
-                    ramovercommitratio:{ label: 'RAM overcommit Ratio', isEditable:true},
+                    memoryovercommitratio:{ label: 'Memory overcommit Ratio', isEditable:true},
                     //allocationstate: { label: 'label.allocation.state' },
                     //managedstate: { label: 'Managed State' },
 										state: { label: 'label.state' }
