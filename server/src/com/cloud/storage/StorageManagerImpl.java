@@ -772,8 +772,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         if (storeProvider == null) {
             storeProvider = dataStoreProviderMgr.getDefaultPrimaryDataStoreProvider();
+            if (storeProvider == null) {
             throw new InvalidParameterValueException(
-                    "invalid storage provider uuid" + providerUuid);
+                    "can't find storage provider: " + providerUuid);
+            }
         }
 
         Long clusterId = cmd.getClusterId();
@@ -983,15 +985,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         HypervisorHostListener listener = hostListeners.get(provider.getUuid());
         listener.hostConnect(hostId, pool.getId());
     }
-    
-  
-
-   
-
-  
-   
-
-    
 
     @Override
     public void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated) {

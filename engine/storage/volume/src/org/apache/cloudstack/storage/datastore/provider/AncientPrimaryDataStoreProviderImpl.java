@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.driver.AncientPrimaryDataStoreDriverImpl;
@@ -59,6 +60,8 @@ public class AncientPrimaryDataStoreProviderImpl implements
         uuid = (String)params.get("uuid");
         id = (Long)params.get("id");
         storeMgr.registerDriver(uuid, this.driver);
+        HypervisorHostListener listener = ComponentContext.inject(DefaultHostListener.class);
+        storeMgr.registerHostListener(uuid, listener);
         return true;
     }
 

@@ -36,6 +36,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.StorageManager;
+
 @Component
 public class DefaultPrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProviderManager {
     @Inject
@@ -45,6 +47,7 @@ public class DefaultPrimaryDataStoreProviderManagerImpl implements PrimaryDataSt
     @Inject
     PrimaryDataStoreDao dataStoreDao;
     Map<String, PrimaryDataStoreDriver> driverMaps;
+    @Inject StorageManager storageMgr;
 
     @PostConstruct
     public void config() {
@@ -77,7 +80,6 @@ public class DefaultPrimaryDataStoreProviderManagerImpl implements PrimaryDataSt
 
     @Override
     public boolean registerHostListener(String uuid, HypervisorHostListener listener) {
-        // TODO Auto-generated method stub
-        return false;
+        return storageMgr.registerHostListener(uuid, listener);
     }
 }

@@ -204,7 +204,11 @@ public class AncientPrimaryDataStoreLifeCyclImpl implements
 
         String scheme = uri.getScheme();
         String storageHost = uri.getHost();
-        String hostPath = uri.getPath().replaceFirst("/", "");
+        String hostPath = uri.getPath();
+        Object localStorage = dsInfos.get("localStorage");
+        if (localStorage != null) {
+            hostPath = hostPath.replace("/", "");
+        }
         String userInfo = uri.getUserInfo();
         int port = uri.getPort();
         StoragePoolVO pool = null;
@@ -310,7 +314,6 @@ public class AncientPrimaryDataStoreLifeCyclImpl implements
                     "Unable to figure out the scheme for URI: " + uri);
         }
 
-        Object localStorage = dsInfos.get("localStorage");
         if (localStorage == null) {
             List<StoragePoolVO> pools = primaryDataStoreDao
                     .listPoolByHostPath(storageHost, hostPath);
@@ -463,8 +466,11 @@ public class AncientPrimaryDataStoreLifeCyclImpl implements
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope) {
-        // TODO Auto-generated method stub
-        return false;
+        StoragePoolVO pool = this.primaryDataStoreDao.findById(dataStore.getId());
+        pool.setScope(ScopeType.ZONE);
+        pool.setStatus(StoragePoolStatus.Up);
+        this.primaryDataStoreDao.update(pool.getId(), pool);
+        return true;
     }
 
     @Override
