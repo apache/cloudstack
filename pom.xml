@@ -440,7 +440,8 @@
             <target>${cs.jdk.version}</target>
 			<fork>true</fork>
           	<meminitial>128m</meminitial>
-          	<maxmem>512m</maxmem>            
+          	<maxmem>512m</maxmem> 
+          	<compilerArgument>-XDignore.symbol.file=true</compilerArgument>            
           </configuration>
         </plugin>
       <plugin>
