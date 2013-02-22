@@ -23,14 +23,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.*;
+import com.cloud.dc.ClusterDetailsDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -61,16 +60,14 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
 	@Inject protected ConfigurationDao _configDao;
 	@Inject protected CapacityManager _capacityMgr;
 	@Inject protected ResourceManager _resourceMgr;
+    @Inject protected ClusterDetailsDao _clusterDetailsDao;
 	
 	@Override
 	public DeployDestination plan(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
 		VirtualMachine vm = vmProfile.getVirtualMachine();
-		ServiceOffering offering = vmProfile.getServiceOffering();	
+		ServiceOffering offering = vmProfile.getServiceOffering();
 		String hostTag = null;
-		
-        String opFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
-        float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
-        
+
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
         
 		if (vm.getLastHostId() != null && haVmTag == null) {
@@ -126,7 +123,13 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
 		        return null;
 		    }
 			for (HostVO h : hosts) {
-				if (_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOverprovisioningFactor, true)) {
+                long cluster_id = h.getClusterId();
+                ClusterDetailsVO cluster_detail_cpu =  _clusterDetailsDao.findDetail(cluster_id,"cpuOvercommitRatio") ;
+                ClusterDetailsVO cluster_detail_ram =  _clusterDetailsDao.findDetail(cluster_id,"memoryOvercommitRatio");
+                Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
+                Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
+
+				if (_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
 					s_logger.debug("Find host " + h.getId() + " has enough capacity");
 					DataCenter dc = _dcDao.findById(h.getDataCenterId());
 					Pod pod = _podDao.findById(h.getPodId());

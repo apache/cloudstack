@@ -37,6 +37,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import com.cloud.dc.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -76,6 +77,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -157,6 +159,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 
 @Local(value = VirtualMachineManager.class)
 public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, Listener {
@@ -232,6 +235,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     
     @Inject 
     protected VMSnapshotManager _vmSnapshotMgr = null;
+    @Inject
+    protected ClusterDetailsDao  _clusterDetailsDao;
+    @Inject
+    protected UserVmDetailsDao _uservmDetailsDao;
 
     @Inject
     protected ConfigurationDao _configDao;
@@ -398,6 +405,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         VirtualMachineGuru<T> guru = getVmGuru(vm);
         guru.finalizeExpunge(vm);
+        //remove the overcommit detials from the uservm details
+        _uservmDetailsDao.deleteDetails(vm.getId());
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Expunged " + vm);
@@ -718,6 +727,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 long destHostId = dest.getHost().getId();
                 vm.setPodId(dest.getPod().getId());
+                Long cluster_id = dest.getCluster().getId();
+                ClusterDetailsVO cluster_detail_cpu =  _clusterDetailsDao.findDetail(cluster_id,"cpuOvercommitRatio");
+                ClusterDetailsVO cluster_detail_ram =  _clusterDetailsDao.findDetail(cluster_id,"memoryOvercommitRatio");
+                vmProfile.setcpuOvercommitRatio(Float.parseFloat(cluster_detail_cpu.getValue()));
+                vmProfile.setramOvercommitRatio(Float.parseFloat(cluster_detail_ram.getValue()));
 
                 try {
                     if (!changeState(vm, Event.OperationRetry, destHostId, work, Step.Prepare)) {

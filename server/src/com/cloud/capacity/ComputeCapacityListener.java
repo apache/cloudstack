@@ -42,12 +42,11 @@ public class ComputeCapacityListener implements Listener {
 
 
     public ComputeCapacityListener(CapacityDao _capacityDao,
-    		CapacityManager _capacityMgr,
-            float _overProvisioningFactor) {
+    		CapacityManager _capacityMgr
+           ) {
         super();
         this._capacityDao = _capacityDao;
         this._capacityMgr = _capacityMgr;
-        this._cpuOverProvisioningFactor = _overProvisioningFactor;
     }
 
 

@@ -318,6 +318,7 @@ public class ApiDBUtils {
     static AsyncJobDao _asyncJobDao;
     static HostDetailsDao _hostDetailsDao;
     static VMSnapshotDao _vmSnapshotDao;
+    static ClusterDetailsDao _clusterDetailsDao;
 
     @Inject private ManagementServer ms;
     @Inject public AsyncJobManager asyncMgr;
@@ -418,6 +419,7 @@ public class ApiDBUtils {
     @Inject private SnapshotPolicyDao snapshotPolicyDao;
     @Inject private AsyncJobDao asyncJobDao;
     @Inject private HostDetailsDao hostDetailsDao;
+    @Inject private ClusterDetailsDao clusterDetailsDao;
     @Inject private VMSnapshotDao vmSnapshotDao;
     @PostConstruct
     void init() {
@@ -517,6 +519,7 @@ public class ApiDBUtils {
         _snapshotPolicyDao = snapshotPolicyDao;
         _asyncJobDao = asyncJobDao;
         _hostDetailsDao = hostDetailsDao;
+        _clusterDetailsDao = clusterDetailsDao;
         _vmSnapshotDao = vmSnapshotDao;
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -679,6 +682,10 @@ public class ApiDBUtils {
 
     public static ClusterVO findClusterById(long clusterId) {
         return _clusterDao.findById(clusterId);
+    }
+
+    public static ClusterDetailsVO findClusterDetails(long clusterId, String name){
+         return _clusterDetailsDao.findDetail(clusterId,name);
     }
 
     public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {

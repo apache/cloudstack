@@ -46,6 +46,7 @@ public class ApiConstants {
     public static final String COMPONENT = "component";
     public static final String CPU_NUMBER = "cpunumber";
     public static final String CPU_SPEED = "cpuspeed";
+    public static final String CPU_OVERCOMMIT_RATIO="cpuovercommitratio";
     public static final String CREATED = "created";
     public static final String CUSTOMIZED = "customized";
     public static final String DESCRIPTION = "description";
@@ -119,6 +120,7 @@ public class ApiConstants {
     public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MEMORY = "memory";
+    public static final String MEMORY_OVERCOMMIT_RATIO="memoryovercommitratio";
     public static final String MODE = "mode";
     public static final String NAME = "name";
     public static final String METHOD_NAME = "methodname";

@@ -43,13 +43,16 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     T _vm;
     ServiceOfferingVO _offering;
     VMTemplateVO _template;
+    UserVmDetailVO _userVmDetails;
     Map<Param, Object> _params;
     List<NicProfile> _nics = new ArrayList<NicProfile>();
     List<VolumeTO> _disks = new ArrayList<VolumeTO>();
     StringBuilder _bootArgs = new StringBuilder();
     Account _owner;
     BootloaderType _bootloader;
-    
+    Float cpuOvercommitRatio = 1.0f;
+    Float memoryOvercommitRatio = 1.0f;
+
     VirtualMachine.Type _type;
     
     public VirtualMachineProfileImpl(T vm, VMTemplateVO template, ServiceOfferingVO offering, Account owner, Map<Param, Object> params) {
@@ -239,6 +242,25 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
 	public void setServiceOffering(ServiceOfferingVO offering) {
 		_offering = offering;
 	}
-	
-	
+
+    public void setcpuOvercommitRatio(Float cpuOvercommitRatio){
+        this.cpuOvercommitRatio= cpuOvercommitRatio;
+
+    }
+
+    public void setramOvercommitRatio(Float memoryOvercommitRatio){
+        this.memoryOvercommitRatio= memoryOvercommitRatio;
+
+    }
+    @Override
+   public Float getCpuOvercommitRatio(){
+        return  this.cpuOvercommitRatio;
+    }
+
+    @Override
+    public Float getMemoryOvercommitRatio(){
+        return this.memoryOvercommitRatio;
+    }
+
+
 }

@@ -348,7 +348,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     @Override
     public Answer startVM(StartCommand cmd, SimulatorInfo info) {
         VirtualMachineTO vm = cmd.getVirtualMachine();
-        String result = startVM(vm.getName(), vm.getNics(), vm.getCpus()* vm.getSpeed(), vm.getMaxRam(), vm.getBootArgs(), info.getHostUuid());
+        String result = startVM(vm.getName(), vm.getNics(), vm.getCpus()* vm.getMaxSpeed(), vm.getMaxRam(), vm.getBootArgs(), info.getHostUuid());
         if (result != null) {
             return new StartAnswer(cmd, result);
         } else {

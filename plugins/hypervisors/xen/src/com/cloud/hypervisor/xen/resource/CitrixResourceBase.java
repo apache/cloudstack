@@ -1114,13 +1114,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         vm.setAffinity(conn, host);
         vm.removeFromOtherConfig(conn, "disks");
         vm.setNameLabel(conn, vmSpec.getName());
-        setMemory(conn, vm, vmSpec.getMinRam());
+        setMemory(conn, vm, vmSpec.getMinRam(),vmSpec.getMaxRam());
         vm.setVCPUsMax(conn, (long)vmSpec.getCpus());
         vm.setVCPUsAtStartup(conn, (long)vmSpec.getCpus());
 
         Map<String, String> vcpuParams = new HashMap<String, String>();
 
-        Integer speed = vmSpec.getSpeed();
+        Integer speed = vmSpec.getMinSpeed();
         if (speed != null) {
 
             int cpuWeight = _maxWeight; //cpu_weight
@@ -3253,8 +3253,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected void setMemory(Connection conn, VM vm, long memsize) throws XmlRpcException, XenAPIException {
-        vm.setMemoryLimits(conn, memsize, memsize, memsize, memsize);
+    protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
+        vm.setMemoryLimits(conn, maxMemsize, maxMemsize, minMemsize, maxMemsize);
     }
 
     private void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException {
