@@ -47,7 +47,7 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
     final GenericSearchBuilder<VersionVO, String> CurrentVersionSearch;
     final SearchBuilder<VersionVO> AllFieldsSearch;
 
-    protected VersionDaoImpl() {
+    public VersionDaoImpl() {
         super();
 
         CurrentVersionSearch = createSearchBuilder(String.class);
