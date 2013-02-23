@@ -29,7 +29,6 @@ import java.util.Properties;
 
 import com.cloud.utils.PropertiesUtil;
 
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.Transaction;
@@ -193,8 +192,6 @@ public class DatabaseCreator {
             }
         }
 
-        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-        try {
         // Process db upgrade classes
         for (String upgradeClass: upgradeClasses) {
             System.out.println("========> Processing upgrade: " + upgradeClass);
@@ -205,22 +202,13 @@ public class DatabaseCreator {
                     System.err.println("The class must be of SystemIntegrityChecker: " + clazz.getName());
                     System.exit(1);
                 }
-                SystemIntegrityChecker checker = (SystemIntegrityChecker)clazz.newInstance();
-                checker.check();
             } catch (ClassNotFoundException e) {
                 System.err.println("Unable to find " + upgradeClass + ": " + e.getMessage());
                 System.exit(1);
-            } catch (InstantiationException e) {
-                System.err.println("Unable to instantiate " + upgradeClass + ": " + e.getMessage());
-                System.exit(1);
-            } catch (IllegalAccessException e) {
-                System.err.println("Unable to access " + upgradeClass + ": " + e.getMessage());
-                System.exit(1);
             }
 
-         }
-        } finally {
-            txn.close();
+            //SystemIntegrityChecker checker = (SystemIntegrityChecker)ComponentLocator.inject(clazz);
+            //checker.check();
         }
     }
 }
