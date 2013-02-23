@@ -1040,7 +1040,7 @@
                   .filter('.' + tabData.viewAll.attachTo).find('td.value')
                   .append(
                     $('<div>').addClass('view-all').append(
-                      $('<span>').html('View all IP Addresses')
+                      $('<span>').html(_l('label.view.all'))
                     )
                   );
               }

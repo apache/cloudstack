@@ -1737,16 +1737,33 @@ div.list-view td.state.off span {
   text-indent: 0;
 }
 
-.detail-group .main-groups table td.value span {
+.detail-group .main-groups table td.value > span {
   display: block;
   height: 30px;
   overflow: auto;
   position: relative;
   top: 9px;
+  float: left;
+  width: 291px;
 }
 
-.detail-group .main-groups table td.value span {
-  width: 355px;
+.detail-group .main-groups table td.value .view-all {
+  cursor: pointer;
+  /*[empty]height:;*/
+  border-left: 1px solid #9FA2A5;
+  /*+border-radius:4px 0 0 4px;*/
+  -moz-border-radius: 4px 0 0 4px;
+  -webkit-border-radius: 4px 0 0 4px;
+  -khtml-border-radius: 4px 0 0 4px;
+  border-radius: 4px 0 0 4px;
+  background: url(../images/sprites.png) no-repeat 100% -398px;
+  float: right;
+  margin: 1px 0 0;
+  padding: 8px 33px 6px 15px;
+}
+
+.detail-group .main-groups table td.value .view-all:hover {
+  background-position: 100% -431px;
 }
 
 .panel.always-maximized .detail-group .main-groups table td.value span {
