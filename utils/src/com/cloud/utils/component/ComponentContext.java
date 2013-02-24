@@ -55,8 +55,18 @@ public class ComponentContext implements ApplicationContextAware {
 
     private static ApplicationContext s_appContext;  
 
+    private static Advisor s_advisor;
+    private static ProxyFactory s_pf;
+    static {
+        s_advisor = new DefaultPointcutAdvisor(new MatchAnyMethodPointcut(),
+                new TransactionContextBuilder());
+        s_pf = new ProxyFactory();
+        s_pf.addAdvisor(s_advisor);
+    }
+    
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {  
+    public void setApplicationContext(ApplicationContext applicationContext) {
+    	s_logger.info("Setup Spring Application context");
         s_appContext = applicationContext;  
     }  
 
@@ -157,27 +167,24 @@ public class ComponentContext implements ApplicationContextAware {
 
     public static <T> T getComponent(Class<T> beanType) {
         assert(s_appContext != null);
-        try {
-            return s_appContext.getBean(beanType);
-        } catch(NoSuchBeanDefinitionException e) {
-            Map<String, T> matchedTypes = getComponentsOfType(beanType);
-            if(matchedTypes.size() > 0) {
-                for(Map.Entry<String, T> entry : matchedTypes.entrySet()) {
-                    Primary primary = getTargetClass(entry.getValue()).getAnnotation(Primary.class);
-                    if(primary != null)
-                        return entry.getValue();
-                }
-
-                if(matchedTypes.size() > 1) {
-                    s_logger.warn("Unable to uniquely locate bean type " + beanType.getName());
-                    for(Map.Entry<String, T> entry : matchedTypes.entrySet()) {
-                        s_logger.warn("Candidate " + getTargetClass(entry.getValue()).getName());
-                    }
-                }
-
-                return (T)matchedTypes.values().toArray()[0];
+        Map<String, T> matchedTypes = getComponentsOfType(beanType);
+        if(matchedTypes.size() > 0) {
+            for(Map.Entry<String, T> entry : matchedTypes.entrySet()) {
+                Primary primary = getTargetClass(entry.getValue()).getAnnotation(Primary.class);
+                if(primary != null)
+                    return entry.getValue();
             }
+
+            if(matchedTypes.size() > 1) {
+                s_logger.warn("Unable to uniquely locate bean type " + beanType.getName());
+                for(Map.Entry<String, T> entry : matchedTypes.entrySet()) {
+                    s_logger.warn("Candidate " + getTargetClass(entry.getValue()).getName());
+                }
+            }
+
+            return (T)matchedTypes.values().toArray()[0];
         }
+        
         throw new NoSuchBeanDefinitionException(beanType.getName());
     }
 
@@ -208,24 +215,19 @@ public class ComponentContext implements ApplicationContextAware {
         return (T)instance;
     }
 
-    @SuppressWarnings("unchecked")
-	public static <T> T inject(Class<T> clz) {
-        Object instance = s_appContext.getAutowireCapableBeanFactory().createBean(clz);
-        return (T)inject(instance);
+    public static <T> T inject(Class<T> clz) {
+        T instance = s_appContext.getAutowireCapableBeanFactory().createBean(clz);
+        return instance;
     }
 
     public static <T> T inject(Object instance) {
         // autowire dynamically loaded object
         AutowireCapableBeanFactory  beanFactory = s_appContext.getAutowireCapableBeanFactory();
         beanFactory.autowireBean(instance);
-
-        Advisor advisor = new DefaultPointcutAdvisor(new MatchAnyMethodPointcut(),
-                new TransactionContextBuilder());
-
-        ProxyFactory pf = new ProxyFactory();
-        pf.setTarget(instance);
-        pf.addAdvisor(advisor);
-
-        return (T)pf.getProxy();        
+        return (T)instance;
+/*
+        s_pf.setTarget(instance);
+        return (T)s_pf.getProxy();        
+*/  
     }
 }

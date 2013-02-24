@@ -84,9 +84,6 @@ public class CloudOrchestrator implements OrchestrationService {
 	@Inject
 	protected DiskOfferingDao _diskOfferingDao = null;
 	
-	@Inject 
-	protected VirtualMachineEntityFactory _vmEntityFactory;
-
 	@Inject
 	protected NetworkDao _networkDao;
 	
@@ -230,7 +227,9 @@ public class CloudOrchestrator implements OrchestrationService {
     	// VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
     	VirtualMachineEntityImpl vmEntity = null;
 		try {
-			vmEntity = _vmEntityFactory.getObject();
+			vmEntity = VirtualMachineEntityImpl.class.newInstance();
+			vmEntity = ComponentContext.inject(vmEntity);
+			
 		} catch (Exception e) {
 			// add error handling here
 		}

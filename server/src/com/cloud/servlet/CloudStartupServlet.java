@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.servlet;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -31,10 +34,22 @@ public class CloudStartupServlet extends HttpServlet {
     public static final Logger s_logger = Logger.getLogger(CloudStartupServlet.class.getName());
     static final long serialVersionUID = SerialVersionUID.CloudStartupServlet;
     
+    Timer _timer = new Timer();
+    
     @Override
     public void init(ServletConfig config) throws ServletException {
     	LogUtils.initLog4j("log4j-cloud.xml");
     	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
-    	ComponentContext.initComponentsLifeCycle();
+    	
+    	// wait when condition is ready for initialization
+    	_timer.scheduleAtFixedRate(new TimerTask() {
+			@Override
+			public void run() {
+				if(ComponentContext.getApplicationContext() != null) {
+					_timer.cancel();
+					ComponentContext.initComponentsLifeCycle();
+				}
+			}
+    	}, 0, 1000);
     }
 }

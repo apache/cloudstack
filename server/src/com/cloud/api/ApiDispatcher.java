@@ -135,7 +135,9 @@ public class ApiDispatcher {
             processParameters(cmd, params);
             UserContext ctx = UserContext.current();
             ctx.setAccountId(cmd.getEntityOwnerId());
-            if (cmd instanceof BaseAsyncCmd) {
+            
+            BaseCmd realCmdObj = ComponentContext.getTargetObject(cmd);
+            if (realCmdObj instanceof BaseAsyncCmd) {
 
                 BaseAsyncCmd asyncCmd = (BaseAsyncCmd) cmd;
                 String startEventId = params.get("ctxStartEventId");

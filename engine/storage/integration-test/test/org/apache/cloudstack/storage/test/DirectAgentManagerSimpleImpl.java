@@ -240,4 +240,10 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
         return null;
     }
 
+	@Override
+	public void disconnectWithInvestigation(long hostId, Event event) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

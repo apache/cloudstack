@@ -16,14 +16,11 @@
 // under the License.
 package com.cloud.network.dao;
 
-import org.springframework.stereotype.Component;
-
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.GenericDaoBase;
 
-@Component
-public class NetworkAccountDaoImpl extends GenericDaoBase<NetworkAccountVO, Long> implements NetworkAccountDao {
-    public NetworkAccountDaoImpl() {
-        super();
-    }
+public interface NetworkOpDao extends GenericDao<NetworkOpVO, Long> {
+    public int getActiveNics(long networkId);
+    public void changeActiveNicsBy(long networkId, int count);
+    public void setCheckForGc(long networkId);
+    public void clearCheckForGc(long networkId);
 }

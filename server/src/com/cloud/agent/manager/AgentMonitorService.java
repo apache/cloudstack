@@ -14,16 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.dao;
+package com.cloud.agent.manager;
 
-import org.springframework.stereotype.Component;
+import com.cloud.agent.Listener;
 
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.GenericDaoBase;
+public interface AgentMonitorService extends Listener {
 
-@Component
-public class NetworkAccountDaoImpl extends GenericDaoBase<NetworkAccountVO, Long> implements NetworkAccountDao {
-    public NetworkAccountDaoImpl() {
-        super();
-    }
+	public Boolean isAgentBehindOnPing(long agentId);
+    public Long getAgentPingTime(long agentId);
+    public void pingBy(long agentId);
+    public void signalStop();
+    public void startMonitoring();
 }

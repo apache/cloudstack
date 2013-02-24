@@ -37,7 +37,7 @@
   <!--
     @DB support
   -->
-  <aop:config proxy-target-class="true">
+  <aop:config>
     <aop:aspect id="dbContextBuilder" ref="transactionContextBuilder">
         <aop:pointcut id="captureAnyMethod"
             expression="execution(* *(..))" 
@@ -50,14 +50,13 @@
         <aop:pointcut id="captureEventMethod"
             expression="execution(* *(..)) and @annotation(com.cloud.event.ActionEvent)" 
         />
+
         <aop:around pointcut-ref="captureEventMethod" method="AroundAnyMethod"/> 
     </aop:aspect>
-
   </aop:config>
-  
+
   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
   <bean id="actionEventInterceptor" class="com.cloud.event.ActionEventInterceptor" />
-
 
   <!--
     RPC/Async/EventBus

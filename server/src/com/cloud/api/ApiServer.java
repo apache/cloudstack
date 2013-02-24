@@ -142,7 +142,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-public class ApiServer implements HttpRequestHandler {
+public class ApiServer implements HttpRequestHandler, ApiServerService {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
@@ -500,22 +500,22 @@ public class ApiServer implements HttpRequestHandler {
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
             // For those listXXXCommand which we have already created DB views, this step is not needed since async job is joined in their db views.
-            if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
-                    && !(cmdObj instanceof ListSecurityGroupsCmd)
-                    && !(cmdObj instanceof ListTagsCmd)
-                    && !(cmdObj instanceof ListEventsCmd)
-                    && !(cmdObj instanceof ListVMGroupsCmd)
-                    && !(cmdObj instanceof ListProjectsCmd)
-                    && !(cmdObj instanceof ListProjectAccountsCmd)
-                    && !(cmdObj instanceof ListProjectInvitationsCmd)
-                    && !(cmdObj instanceof ListHostsCmd)
-                    && !(cmdObj instanceof ListVolumesCmd)
-                    && !(cmdObj instanceof ListUsersCmd)
-                    && !(cmdObj instanceof ListAccountsCmd)
-                    && !(cmdObj instanceof ListStoragePoolsCmd)
-                    && !(cmdObj instanceof ListDiskOfferingsCmd)
-                    && !(cmdObj instanceof ListServiceOfferingsCmd)
-                    && !(cmdObj instanceof ListZonesByCmd)
+            if (realCmdObj instanceof BaseListCmd && !(realCmdObj instanceof ListVMsCmd) && !(realCmdObj instanceof ListRoutersCmd)
+                    && !(realCmdObj instanceof ListSecurityGroupsCmd)
+                    && !(realCmdObj instanceof ListTagsCmd)
+                    && !(realCmdObj instanceof ListEventsCmd)
+                    && !(realCmdObj instanceof ListVMGroupsCmd)
+                    && !(realCmdObj instanceof ListProjectsCmd)
+                    && !(realCmdObj instanceof ListProjectAccountsCmd)
+                    && !(realCmdObj instanceof ListProjectInvitationsCmd)
+                    && !(realCmdObj instanceof ListHostsCmd)
+                    && !(realCmdObj instanceof ListVolumesCmd)
+                    && !(realCmdObj instanceof ListUsersCmd)
+                    && !(realCmdObj instanceof ListAccountsCmd)
+                    && !(realCmdObj instanceof ListStoragePoolsCmd)
+                    && !(realCmdObj instanceof ListDiskOfferingsCmd)
+                    && !(realCmdObj instanceof ListServiceOfferingsCmd)
+                    && !(realCmdObj instanceof ListZonesByCmd)
                     ) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }

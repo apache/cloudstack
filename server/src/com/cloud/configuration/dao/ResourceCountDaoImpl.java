@@ -31,8 +31,10 @@ import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -48,11 +50,8 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
     private final SearchBuilder<ResourceCountVO> AccountSearch;
     private final SearchBuilder<ResourceCountVO> DomainSearch;
 
-    //protected final DomainDaoImpl _domainDao = ComponentLocator.inject(DomainDaoImpl.class);
-    //protected final AccountDaoImpl _accountDao = ComponentLocator.inject(AccountDaoImpl.class);
-
-    @Inject protected DomainDaoImpl _domainDao;
-    @Inject protected AccountDaoImpl _accountDao;
+    @Inject protected DomainDao _domainDao;
+    @Inject protected AccountDao _accountDao;
 
     public ResourceCountDaoImpl() {
         TypeSearch = createSearchBuilder();
