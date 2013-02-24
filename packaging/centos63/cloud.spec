@@ -78,7 +78,7 @@ Requires: mkisofs
 Requires: MySQL-python
 Requires: python-paramiko
 Requires: ipmitool
-Requires: %{name}-common = 4.1.0
+Requires: %{name}-common = %{_ver} 
 Obsoletes: cloud-client < 4.1.0
 Obsoletes: cloud-client-ui < 4.1.0
 Obsoletes: cloud-daemonize < 4.1.0
