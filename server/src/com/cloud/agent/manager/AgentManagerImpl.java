@@ -218,7 +218,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     protected int _pingInterval;
     protected long _pingTimeout;
-    @Inject protected AgentMonitor _monitor;
+    @Inject protected AgentMonitorService _monitor;
 
     protected ExecutorService _executor;
     protected ThreadPoolExecutor _connectExecutor;
@@ -668,7 +668,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public boolean start() {
         startDirectlyConnectedHosts();
         if (_monitor != null) {
-            _monitor.start();
+            _monitor.startMonitoring();
         }
         if (_connection != null) {
             _connection.start();
@@ -1455,7 +1455,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _executor.submit(new DisconnectTask(attache, event, false));
     }
 
-    protected void disconnectWithInvestigation(AgentAttache attache, final Status.Event event) {
+    public void disconnectWithInvestigation(AgentAttache attache, final Status.Event event) {
         _executor.submit(new DisconnectTask(attache, event, true));
     }
 

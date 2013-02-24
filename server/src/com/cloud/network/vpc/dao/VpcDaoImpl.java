@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 
 import com.cloud.utils.db.DB;
@@ -44,7 +45,7 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     final GenericSearchBuilder<VpcVO, Integer> CountByOfferingId;
     final SearchBuilder<VpcVO> AllFieldsSearch;
     final GenericSearchBuilder<VpcVO, Long> CountByAccountId;
-    @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject ResourceTagDao _tagsDao;
 
     protected VpcDaoImpl() {
         super();

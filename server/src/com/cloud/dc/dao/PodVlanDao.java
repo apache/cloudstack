@@ -14,16 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.dao;
+package com.cloud.dc.dao;
 
-import org.springframework.stereotype.Component;
+import java.util.List;
 
+import com.cloud.dc.PodVlanVO;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.GenericDaoBase;
 
-@Component
-public class NetworkAccountDaoImpl extends GenericDaoBase<NetworkAccountVO, Long> implements NetworkAccountDao {
-    public NetworkAccountDaoImpl() {
-        super();
-    }
+public interface PodVlanDao extends GenericDao<PodVlanVO, Long> {
+    public List<PodVlanVO> listAllocatedVnets(long podId);    
+    public void add(long podId, int start, int end);   
+    public void delete(long podId);
+    public PodVlanVO take(long podId, long accountId);
+    public void release(String vlan, long podId, long accountId);
 }

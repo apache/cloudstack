@@ -156,4 +156,6 @@ public interface AgentManager extends Manager {
 
 	boolean reconnect(long hostId);
     Answer sendToSSVM(Long dcId, final Command cmd);
+
+    void disconnectWithInvestigation(final long hostId, final Status.Event event);
 }

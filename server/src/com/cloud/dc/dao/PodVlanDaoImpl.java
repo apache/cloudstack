@@ -35,7 +35,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  * PodVlanDaoImpl maintains the one-to-many relationship between
  */
 @Component
-public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements GenericDao<PodVlanVO, Long> {
+public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements PodVlanDao {
     private final SearchBuilder<PodVlanVO> FreeVlanSearch;
     private final SearchBuilder<PodVlanVO> VlanPodSearch;
     private final SearchBuilder<PodVlanVO> PodSearchAllocated;

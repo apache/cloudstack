@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.type.RootDisk;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
@@ -36,6 +37,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.Pair;
 
@@ -63,8 +65,7 @@ public class VolumeDao2Impl extends GenericDaoBase<VolumeVO, Long> implements Vo
     protected final SearchBuilder<VolumeVO> InstanceStatesSearch;
     protected final SearchBuilder<VolumeVO> AllFieldsSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
-    //ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
-    ResourceTagsDaoImpl _tagsDao = null;
+    @Inject ResourceTagDao _tagsDao = null;
     protected static final String SELECT_VM_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ? and v.mirror_state = ?";
     protected static final String SELECT_HYPERTYPE_FROM_VOLUME = "SELECT c.hypervisor_type from volumes v, storage_pool s, cluster c where v.pool_id = s.id and s.cluster_id = c.id and v.id = ?";
 

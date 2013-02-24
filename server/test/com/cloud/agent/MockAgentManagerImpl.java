@@ -188,4 +188,10 @@ public class MockAgentManagerImpl extends ManagerBase implements AgentManager {
         return null;
     }
 
+	@Override
+	public void disconnectWithInvestigation(long hostId, Event event) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

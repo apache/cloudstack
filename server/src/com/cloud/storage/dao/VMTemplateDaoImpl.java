@@ -55,6 +55,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
@@ -123,7 +124,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     private SearchBuilder<VMTemplateVO> UserIsoSearch;
     private GenericSearchBuilder<VMTemplateVO, Long> CountTemplatesByAccount;
 
-    @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject ResourceTagDao _tagsDao;
 
 
     private String routerTmpltName;

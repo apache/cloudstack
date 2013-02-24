@@ -56,6 +56,7 @@ import com.cloud.storage.dao.VMTemplateDaoImpl;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
@@ -115,9 +116,8 @@ public class ImageDataDaoImpl extends GenericDaoBase<ImageDataVO, Long> implemen
     private GenericSearchBuilder<ImageDataVO, Long> CountTemplatesByAccount;
     private SearchBuilder<ImageDataVO> updateStateSearch;
 
-    //ResourceTagsDaoImpl _tagsDao = ComponentInject.inject(ResourceTagsDaoImpl.class);
     @Inject
-    ResourceTagsDaoImpl _tagsDao = null;
+    ResourceTagDao _tagsDao = null;
     private String routerTmpltName;
     private String consoleProxyTmpltName;
 

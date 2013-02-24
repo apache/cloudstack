@@ -42,7 +42,7 @@ import com.cloud.utils.net.NetUtils;
 
 @Component
 @Local(value={DataCenterLinkLocalIpAddressDaoImpl.class}) @DB(txn=false)
-public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCenterLinkLocalIpAddressVO, Long> implements GenericDao<DataCenterLinkLocalIpAddressVO, Long> {
+public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCenterLinkLocalIpAddressVO, Long> implements DataCenterLinkLocalIpAddressDao {
     private static final Logger s_logger = Logger.getLogger(DataCenterLinkLocalIpAddressDaoImpl.class);
     
     private final SearchBuilder<DataCenterLinkLocalIpAddressVO> AllFieldsSearch;
