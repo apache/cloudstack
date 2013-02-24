@@ -27,15 +27,16 @@
       <version>5.1.21</version>
       <scope>runtime</scope>
     </dependency>
-      <dependency>
-          <groupId>org.apache.cloudstack</groupId>
-          <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
-          <version>${project.version}</version>
-          <scope>compile</scope>
-      </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
+    <testOutputDirectory>target/db</testOutputDirectory>
   </build>
 
   <profiles>
@@ -132,6 +133,11 @@
                 <artifactId>cloud-server</artifactId>
                 <version>${project.version}</version>
               </dependency>
+              <dependency>
+                <groupId>org.apache.cloudstack</groupId>
+                <artifactId>cloud-server</artifactId>
+                <version>${project.version}</version>
+              </dependency>
             </dependencies>
             <executions>
               <execution>
@@ -143,13 +149,15 @@
               </execution>
             </executions>
             <configuration>
-              <includeProjectDependencies>false</includeProjectDependencies>
+              <includeProjectDependencies>true</includeProjectDependencies>
               <includePluginDependencies>true</includePluginDependencies>
               <executableDependency>
                 <groupId>org.apache.cloudstack</groupId>
                 <artifactId>cloud-server</artifactId>
               </executableDependency>
+
               <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+              <classpathScope>test</classpathScope>
               <arguments>
                 <!-- db properties file -->
                 <argument>${project.parent.basedir}/utils/conf/db.properties</argument>
@@ -170,7 +178,7 @@
                 <argument>${basedir}/target/db/cloudbridge_offering_alter.sql</argument>
                 <!-- Seed the database -->
                 <argument>${basedir}/developer-prefill.sql</argument>
-                <!-- Do database upgrade-->
+                <!-- Do database upgrade -->
                 <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
                 <argument>--database=cloud,usage,awsapi</argument>
                 <argument>--rootpassword=${db.root.password}</argument>
