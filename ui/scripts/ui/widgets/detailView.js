@@ -587,7 +587,8 @@
     var $listView;
     var isCustom = $.isFunction(viewAllID.custom);
     var updateContext = options.updateContext;
-
+    var customTitle = options.title;
+    
     if (isCustom) {
       $browser.cloudBrowser('addPanel', {
         title: _l(viewAllID.label),
@@ -644,7 +645,7 @@
 
     // Make panel
     var $panel = $browser.cloudBrowser('addPanel', {
-      title: _l(listViewArgs.title),
+      title: customTitle ? customTitle({ context: context }) : _l(listViewArgs.title),
       data: '',
       noSelectPanel: true,
       maximizeIfSelected: true,
@@ -970,7 +971,7 @@
     var tabs = args.tabs[targetTabID];
     var dataProvider = tabs.dataProvider;
     var isMultiple = tabs.multiple || tabs.isMultiple;
-    var viewAll = args.viewAll;
+    var viewAllArgs = args.viewAll;
     var $detailView = $tabContent.closest('.detail-view');
     var jsonObj = $detailView.data('view-args').jsonObj;
 
@@ -1024,6 +1025,8 @@
 
           if (isMultiple) {
             $(data).each(function() {
+              var item = this;
+
               var $fieldContent = makeFieldContent(
                 $.extend(true, {}, tabs, {
                   id: targetTabID
@@ -1036,12 +1039,22 @@
               ).appendTo($tabContent);
 
               if (tabData.viewAll) {
-                $tabContent.find('tr')
+                $fieldContent.find('tr')
                   .filter('.' + tabData.viewAll.attachTo).find('td.value')
                   .append(
                     $('<div>').addClass('view-all').append(
                       $('<span>').html(_l('label.view.all'))
-                    )
+                    ).click(function() {
+                      viewAll(
+                        tabData.viewAll.path,
+                        {
+                          updateContext: function(args) {
+                            return { nics: [item] };
+                          },
+                          title: tabData.viewAll.title
+                        }
+                      ); 
+                    })
                   );
               }
             });
