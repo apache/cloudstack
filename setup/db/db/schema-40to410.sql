@@ -490,6 +490,9 @@ ALTER TABLE `cloud`.`vlan` ADD COLUMN `ip6_gateway` varchar(255);
 ALTER TABLE `cloud`.`vlan` ADD COLUMN `ip6_cidr` varchar(255);
 ALTER TABLE `cloud`.`vlan` ADD COLUMN `ip6_range` varchar(255);
 
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `ip6_dns1` varchar(255);
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `ip6_dns2` varchar(255);
+
 -- DB views for list api
 
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;

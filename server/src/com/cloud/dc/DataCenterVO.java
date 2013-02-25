@@ -59,6 +59,12 @@ public class DataCenterVO implements DataCenter {
     @Column(name="dns2")
     private String dns2 = null;
 
+    @Column(name="ip6_dns1")
+    private String ip6Dns1 = null;
+
+    @Column(name="ip6_dns2")
+    private String ip6Dns2 = null;
+
     @Column(name="internal_dns1")
     private String internalDns1 = null;
 
@@ -177,17 +183,19 @@ public class DataCenterVO implements DataCenter {
     }
 
     public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
-        this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false, false);
+        this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false, false, null, null);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;
         this.uuid = UUID.randomUUID().toString();
 	}
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled) {
+    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled, String ip6Dns1, String ip6Dns2) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
         this.dns2 = dns2;
+        this.ip6Dns1 = ip6Dns1;
+        this.ip6Dns2 = ip6Dns2;
         this.internalDns1 = dns3;
         this.internalDns2 = dns4;
         this.guestNetworkCidr = guestCidr;
@@ -431,4 +439,20 @@ public class DataCenterVO implements DataCenter {
     public void setMacAddress(long macAddress) {
         this.macAddress = macAddress;
     }
+
+	public String getIp6Dns1() {
+		return ip6Dns1;
+	}
+
+	public void setIp6Dns1(String ip6Dns1) {
+		this.ip6Dns1 = ip6Dns1;
+	}
+
+	public String getIp6Dns2() {
+		return ip6Dns2;
+	}
+
+	public void setIp6Dns2(String ip6Dns2) {
+		this.ip6Dns2 = ip6Dns2;
+	}
 }
