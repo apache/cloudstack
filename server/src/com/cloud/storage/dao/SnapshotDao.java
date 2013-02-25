@@ -25,7 +25,7 @@ import com.cloud.utils.fsm.StateDao;
 
 import java.util.List;
 
-public interface SnapshotDao extends GenericDao<SnapshotVO, Long>, StateDao<Snapshot.State, Snapshot.Event, Snapshot> {
+public interface SnapshotDao extends GenericDao<SnapshotVO, Long>, StateDao<Snapshot.State, Snapshot.Event, SnapshotVO> {
 	List<SnapshotVO> listByVolumeId(long volumeId);
 	List<SnapshotVO> listByVolumeId(Filter filter, long volumeId);
 	SnapshotVO findNextSnapshot(long parentSnapId);

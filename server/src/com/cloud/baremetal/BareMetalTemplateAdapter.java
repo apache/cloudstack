@@ -37,10 +37,10 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.TemplateProfile;
+import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateAdapterBase;
@@ -53,6 +53,11 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 	private final static Logger s_logger = Logger.getLogger(BareMetalTemplateAdapter.class);
 	@Inject HostDao _hostDao;
 	@Inject ResourceManager _resourceMgr;
+
+	@Override
+    public String getName() {
+        return TemplateAdapterType.BareMetal.getName();
+    }
 
 	@Override
 	public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {

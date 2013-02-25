@@ -58,6 +58,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.VmwareCleanupMaid;
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
@@ -92,6 +93,7 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
 import com.google.gson.Gson;
+import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.HostConnectSpec;
 import com.vmware.vim25.ManagedObjectReference;
 
@@ -120,6 +122,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Inject ClusterVSMMapDao _vsmMapDao;
     @Inject ConfigurationDao _configDao;
     @Inject ConfigurationServer _configServer;
+    @Inject HypervisorCapabilitiesDao _hvCapabilitiesDao;
 
     String _mountParent;
     StorageLayer _storage;
@@ -134,13 +137,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     String _recycleHungWorker = "false";
     int _additionalPortRangeStart;
     int _additionalPortRangeSize;
-    int _maxHostsPerCluster;
     int _routerExtraPublicNics = 2;
 
-    String _cpuOverprovisioningFactor = "1";
     String _reserveCpu = "false";
 
-    String _memOverprovisioningFactor = "1";
     String _reserveMem = "false";
 
     String _rootDiskController = DiskControllerType.ide.toString();
@@ -261,15 +261,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
-
-        _maxHostsPerCluster = NumbersUtil.parseInt(_configDao.getValue(Config.VmwarePerClusterHostMax.key()), VmwareManager.MAX_HOSTS_PER_CLUSTER);
-        _cpuOverprovisioningFactor = _configDao.getValue(Config.CPUOverprovisioningFactor.key());
-        if(_cpuOverprovisioningFactor == null || _cpuOverprovisioningFactor.isEmpty())
-            _cpuOverprovisioningFactor = "1";
-
-        _memOverprovisioningFactor = _configDao.getValue(Config.MemOverprovisioningFactor.key());
-        if(_memOverprovisioningFactor == null || _memOverprovisioningFactor.isEmpty())
-            _memOverprovisioningFactor = "1";
 
         _reserveCpu = _configDao.getValue(Config.VmwareReserveCpu.key());
         if(_reserveCpu == null || _reserveCpu.isEmpty())
@@ -403,10 +394,15 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)serviceContext.getVimClient().getDynamicProperty(mor, "host");
                 assert(hosts != null);
 
-                if(hosts.size() > _maxHostsPerCluster) {
-                    String msg = "vCenter cluster size is too big (current configured cluster size: " + _maxHostsPerCluster + ")";
+                if (hosts.size() > 0) {
+                    AboutInfo about = (AboutInfo)(serviceContext.getVimClient().getDynamicProperty(hosts.get(0), "config.product"));
+                    String version = about.getApiVersion();
+                    int maxHostsPerCluster = _hvCapabilitiesDao.getMaxHostsPerCluster(HypervisorType.VMware, version);
+                    if (hosts.size() > maxHostsPerCluster) {
+                        String msg = "vCenter cluster size is too big (current configured cluster size: " + maxHostsPerCluster + ")";
                     s_logger.error(msg);
                     throw new DiscoveredWithErrorException(msg);
+                }
                 }
 
                 for(ManagedObjectReference morHost: hosts) {
@@ -505,9 +501,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         params.put("vmware.use.nexus.vswitch", _nexusVSwitchActive);
         params.put("service.console.name", _serviceConsoleName);
         params.put("management.portgroup.name", _managemetPortGroupName);
-        params.put("cpu.overprovisioning.factor", _cpuOverprovisioningFactor);
         params.put("vmware.reserve.cpu", _reserveCpu);
-        params.put("mem.overprovisioning.factor", _memOverprovisioningFactor);
         params.put("vmware.reserve.mem", _reserveMem);
         params.put("vmware.root.disk.controller", _rootDiskController);
         params.put("vmware.recycle.hung.wokervm", _recycleHungWorker);
@@ -882,11 +876,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public int getMaxHostsPerCluster() {
-        return this._maxHostsPerCluster;
-    }
-
-    @Override
     public int getRouterExtraPublicNics() {
         return this._routerExtraPublicNics;
     }
@@ -917,5 +906,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             s_logger.info("Successfully fetched the credentials of Nexus VSM.");
         }
         return nexusVSMCredentials;
+    }
+
+    @Override
+    public String getRootDiskController() {
+        return _rootDiskController;
     }
 }

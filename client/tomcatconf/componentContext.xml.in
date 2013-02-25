@@ -44,7 +44,6 @@
   <bean id="clusteredAgentManagerImpl" class="com.cloud.agent.manager.ClusteredAgentManagerImpl" />
   <bean id="clusteredVirtualMachineManagerImpl" class="com.cloud.vm.ClusteredVirtualMachineManagerImpl" />
   <bean id="highAvailabilityManagerExtImpl" class="com.cloud.ha.HighAvailabilityManagerExtImpl" />
-  <!-- bean id="bareMetalVmManagerImpl" class="com.cloud.baremetal.BareMetalVmManagerImpl" / -->
   <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl" />
   <bean id="consoleProxyManagerImpl" class="com.cloud.consoleproxy.ConsoleProxyManagerImpl" />
   <bean id="securityGroupManagerImpl2" class="com.cloud.network.security.SecurityGroupManagerImpl2" />
@@ -53,6 +52,11 @@
   <bean id="ipv6AddressManagerImpl" class="com.cloud.network.Ipv6AddressManagerImpl" />
 
   <bean id="apiRateLimitServiceImpl" class="org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl"/>
+  <bean id="BaremetalManager" class="com.cloud.baremetal.manager.BaremetalManagerImpl"/>
+  <bean id="BaremetalDhcpManager" class="com.cloud.baremetal.networkservice.BaremetalDhcpManagerImpl"/>
+  <bean id="BaremetalKickStartPxeService" class="com.cloud.baremetal.networkservice.BaremetalKickStartServiceImpl"/>
+  <bean id="BaremetalPingPxeService" class="com.cloud.baremetal.networkservice.BareMetalPingServiceImpl" />
+  <bean id="BaremetalPxeManager" class="com.cloud.baremetal.networkservice.BaremetalPxeManagerImpl" />
 
    
   <!--
@@ -61,11 +65,14 @@
   <bean id="Ovs" class="com.cloud.network.element.OvsElement">
     <property name="name" value="Ovs"/>
   </bean>
-  <bean id="ExternalDhcpServer" class="com.cloud.network.element.ExternalDhcpElement">
-    <property name="name" value="ExternalDhcpServer"/>
+  <bean id="BareMetalDhcp" class="com.cloud.baremetal.networkservice.BaremetalDhcpElement">
+      <property name="name" value="BareMetalDhcp"/>
   </bean>
-  <bean id="BareMetal" class="com.cloud.network.element.BareMetalElement">
-    <property name="name" value="BareMetal"/>
+  <bean id="BareMetalPxe" class="com.cloud.baremetal.networkservice.BaremetalPxeElement">
+      <property name="name" value="BareMetalPxe"/>
+  </bean>
+  <bean id="BareMetalUserdata" class="com.cloud.baremetal.networkservice.BaremetalUserdataElement">
+      <property name="name" value="BareMetalUserdata"/>
   </bean>
   <bean id="SecurityGroupProvider" class="com.cloud.network.element.SecurityGroupElement">
     <property name="name" value="SecurityGroupProvider"/>
@@ -131,6 +138,10 @@
     <property name="name" value="HypervisorAdapter"/>
   </bean>
 
+  <bean id="BareMetalTemplateAdapter" class="com.cloud.baremetal.manager.BareMetalTemplateAdapter" >
+    <property name="name" value="BareMetalTemplateAdapter"/>
+  </bean>
+
   <!--
     Authenticators
   -->
@@ -186,7 +197,14 @@
     <property name="name" value="KVM Agent"/>
   </bean>
 
-  <bean id="BareMetalDiscoverer" class="com.cloud.baremetal.BareMetalDiscoverer">
+  <!--
+  <bean id="SimulatorDiscoverer" class="com.cloud.resource.SimulatorDiscoverer">
+    <property name="name" value="KVM Agent"/>
+  </bean>
+  -->
+
+
+  <bean id="BareMetalDiscoverer" class="com.cloud.baremetal.manager.BareMetalDiscoverer">
     <property name="name" value="Bare Metal Agent"/>
   </bean>
 
@@ -210,8 +228,16 @@
     <property name="name" value="UserConcentratedPod"/>
   </bean>
 
-  <bean id="BareMetalPlanner" class="com.cloud.deploy.BareMetalPlanner">
+  <bean id="BareMetalPlanner" class="com.cloud.baremetal.manager.BareMetalPlanner">
     <property name="name" value="BareMetal Fit"/>
+  </bean>
+    
+  <bean id="BaremetalPlannerSelector" class="com.cloud.baremetal.manager.BaremetalPlannerSelector">
+    <property name="name" value="BaremetalPlannerSelector"/>
+  </bean>
+
+  <bean id="HypervisorPlannerSelector" class="com.cloud.deploy.HypervisorVmPlannerSelector">
+    <property name="name" value="BaremetalPlannerSelector"/>
   </bean>
     
    
@@ -266,16 +292,22 @@
     <property name="name" value="KVMGuru"/>
   </bean>
   
-  <bean id="BareMetalGuru" class="com.cloud.baremetal.BareMetalGuru">
-    <property name="name" value="BareMetalGuru"/>
-  </bean>
-
   <bean id="HypervGuru" class="com.cloud.hypervisor.guru.HypervGuru">
     <property name="name" value="HypervGuru"/>
   </bean>
 
   <bean id="OvmGuru" class="com.cloud.ovm.hypervisor.OvmGuru">
     <property name="name" value="OvmGuru"/>
+  </bean>
+  
+  <!--
+  <bean id="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru">
+    <property name="name" value="SimulatorGuru"/>
+  </bean>
+  -->
+
+  <bean id="BaremetalGuru" class="com.cloud.baremetal.manager.BareMetalGuru">
+    <property name="name" value="BaremetalGuru"/>
   </bean>
   
 </beans>

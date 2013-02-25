@@ -46,6 +46,8 @@ public interface BaremetalPxeService extends Adapter {
 	
 	List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxePingServersCmd cmd);
 	
+	String getPxeServiceType();
+	
 	public static final String PXE_PARAM_TYPE = "type";
 	public static final String PXE_PARAM_ZONE = "zone";
 	public static final String PXE_PARAM_POD = "pod";

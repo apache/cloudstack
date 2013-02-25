@@ -43,7 +43,7 @@ public class EC2VolumeFilterSet {
 		filterTypes.put( "attachment.delete-on-termination", "null"         );
 		filterTypes.put( "attachment.device",                "string"       );
 		filterTypes.put( "attachment.instance-id",           "string"       );
-		filterTypes.put( "attachment.status",                "null"         );
+		filterTypes.put( "attachment.status",                "set:attached|attaching|detached|detaching" );
 		filterTypes.put( "availability-zone",                "string"       );
 		filterTypes.put( "create-time",                      "xsd:dateTime" );
 		filterTypes.put( "size",                             "integer"      );
@@ -136,6 +136,9 @@ public class EC2VolumeFilterSet {
 			return containsDevice(vol.getDeviceId(), valueSet );	
 		else if (filterName.equalsIgnoreCase( "attachment.instance-id" )) 
 			return containsString(String.valueOf(vol.getInstanceId()), valueSet );
+        else if ( filterName.equalsIgnoreCase( "attachment.status" ) ) {
+            return containsString(vol.getAttachmentState(), valueSet );
+        }
         else if (filterName.equalsIgnoreCase("tag-key"))
         {
             EC2TagKeyValue[] tagSet = vol.getResourceTags();

@@ -75,6 +75,8 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.UserIpv6AddressDao;
+import com.cloud.network.element.IpDeployer;
+import com.cloud.network.element.IpDeployingRequester;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -390,9 +392,18 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             throw new InvalidParameterException("There is no new provider for IP " + publicIp.getAddress() + " of service " + service.getName() + "!");
         }
         Provider newProvider = (Provider) newProviders.toArray()[0];
-        if (!oldProvider.equals(newProvider)) {
-            throw new InvalidParameterException("There would be multiple providers for IP " + publicIp.getAddress() + "!");
-        }
+        Network network = _networksDao.findById(networkId);
+        NetworkElement oldElement = getElementImplementingProvider(oldProvider.getName());
+        NetworkElement newElement = getElementImplementingProvider(newProvider.getName());
+        if (oldElement instanceof IpDeployingRequester && newElement instanceof IpDeployingRequester) {
+        	IpDeployer oldIpDeployer = ((IpDeployingRequester)oldElement).getIpDeployer(network);
+        	IpDeployer newIpDeployer = ((IpDeployingRequester)newElement).getIpDeployer(network);
+        	if (!oldIpDeployer.getProvider().getName().equals(newIpDeployer.getProvider().getName())) {
+        		throw new InvalidParameterException("There would be multiple providers for IP " + publicIp.getAddress() + "!");
+        	}
+        } else {
+        	throw new InvalidParameterException("Ip cannot be applied for new provider!");
+         }
         return true;
     }
     
@@ -557,6 +568,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public boolean isIP6AddressAvailableInVlan(long vlanId) {
     	VlanVO vlan = _vlanDao.findById(vlanId);
+    	if (vlan.getIp6Range() == null) {
+    		return false;
+    	}
     	long existedCount = _ipv6Dao.countExistedIpsInVlan(vlanId);
     	BigInteger existedInt = BigInteger.valueOf(existedCount);
     	BigInteger rangeInt = NetUtils.countIp6InRange(vlan.getIp6Range());
@@ -1751,17 +1765,26 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkId) {
-        boolean netscalerInNetwork = isProviderForNetwork(Network.Provider.Netscaler, networkId);
-        boolean juniperInNetwork = isProviderForNetwork(Network.Provider.JuniperSRX, networkId);
-        boolean f5InNetwork = isProviderForNetwork(Network.Provider.F5BigIp, networkId);
-    
-        if (netscalerInNetwork || juniperInNetwork || f5InNetwork) {
-            return true;
-        } else {
-            return false;
+        List<Provider> networkProviders = getNetworkProviders(networkId);
+       for(Provider provider : networkProviders){
+           if(provider.isExternal()){
+               return true;
+           }
         }
+       return false;
     }
 
+    private List<Provider> getNetworkProviders(long networkId) {
+        List<String> providerNames = _ntwkSrvcDao.getDistinctProviders(networkId);
+        Map<String, Provider> providers = new HashMap<String, Provider>();
+        for (String providerName : providerNames) {
+           if(!providers.containsKey(providerName)){
+               providers.put(providerName, Network.Provider.getProvider(providerName));
+           }
+        }
+
+       return new ArrayList<Provider>(providers.values());
+    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -1910,6 +1933,38 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         // Ipv6 cidr limit should be at least /64
         if (cidrSize < 64) {
             throw new InvalidParameterValueException("The cidr size of IPv6 network must be no less than 64 bits!");
+        }
+    }
+
+    @Override
+    public void checkRequestedIpAddresses(long networkId, String ip4, String ip6) throws InvalidParameterValueException {
+        if (ip4 != null) {
+            if (!NetUtils.isValidIp(ip4)) {
+                throw new InvalidParameterValueException("Invalid specified IPv4 address " + ip4);
+            }
+            //Other checks for ipv4 are done in assignPublicIpAddress()
+        }
+        if (ip6 != null) {
+            if (!NetUtils.isValidIpv6(ip6)) {
+                throw new InvalidParameterValueException("Invalid specified IPv6 address " + ip6);
+            }
+            if (_ipv6Dao.findByNetworkIdAndIp(networkId, ip6) != null) {
+                throw new InvalidParameterValueException("The requested IP is already taken!");
+            }
+            List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+            if (vlans == null) {
+                throw new CloudRuntimeException("Cannot find related vlan attached to network " + networkId);
+            }
+            Vlan ipVlan = null;
+            for (Vlan vlan : vlans) {
+                if (NetUtils.isIp6InRange(ip6, vlan.getIp6Range())) {
+                    ipVlan = vlan;
+                    break;
+                }
+            }
+            if (ipVlan == null) {
+                throw new InvalidParameterValueException("Requested IPv6 is not in the predefined range!");
+            }
         }
     }
 }

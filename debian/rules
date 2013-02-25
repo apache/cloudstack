@@ -60,7 +60,7 @@ install:
 	mkdir -p debian/tmp/usr/share/cloud/management/webapps/client
 	
 	cp -r client/target/utilities/scripts/db/* debian/tmp/usr/share/cloud/setup/
-	cp -r client/target/cloud-client-ui-4.1.0-SNAPSHOT/* debian/tmp/usr/share/cloud/management/webapps/client/
+	cp -r client/target/cloud-client-ui-*-SNAPSHOT/* debian/tmp/usr/share/cloud/management/webapps/client/
 	dh_installdirs -s
 	dh_install -s
 

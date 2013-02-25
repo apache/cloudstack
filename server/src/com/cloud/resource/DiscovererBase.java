@@ -128,6 +128,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         params.put("secondary.storage.vm", "false");
         params.put("max.template.iso.size", _configDao.getValue(Config.MaxTemplateAndIsoSize.toString()));
         params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
+        params.put(Config.XenMaxNics.toString().toLowerCase(), _configDao.getValue(Config.XenMaxNics.toString()));
         return params;
 
     }

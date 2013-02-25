@@ -269,6 +269,15 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "netmask")
     private String netmask;
 
+    @Column(name = "ip6_address")
+    private String ip6Address;
+
+    @Column(name = "ip6_gateway")
+    private String ip6Gateway;
+
+    @Column(name = "ip6_cidr")
+    private String ip6Cidr;
+
     @Column(name = "mac_address")
     private String macAddress;
 
@@ -1611,4 +1620,42 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
         return toString;
     }
 
+	public String getIp6Address() {
+		return ip6Address;
+	}
+
+
+
+
+	public void setIp6Address(String ip6Address) {
+		this.ip6Address = ip6Address;
+	}
+
+
+
+
+	public String getIp6Gateway() {
+		return ip6Gateway;
+	}
+
+
+
+
+	public void setIp6Gateway(String ip6Gateway) {
+		this.ip6Gateway = ip6Gateway;
+	}
+
+
+
+
+	public String getIp6Cidr() {
+		return ip6Cidr;
+	}
+
+
+
+
+	public void setIp6Cidr(String ip6Cidr) {
+		this.ip6Cidr = ip6Cidr;
+	}
 }

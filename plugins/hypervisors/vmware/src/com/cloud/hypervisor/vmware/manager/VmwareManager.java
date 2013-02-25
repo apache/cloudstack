@@ -29,10 +29,6 @@ import com.vmware.vim25.ManagedObjectReference;
 public interface VmwareManager {
     public final String CONTEXT_STOCK_NAME = "vmwareMgr";
 
-    // this limitation comes from the fact that we are using linked clone on shared VMFS storage,
-    // we need to limit the size of vCenter cluster, http://en.wikipedia.org/wiki/VMware_VMFS
-    public final int MAX_HOSTS_PER_CLUSTER = 8;
-
     String composeWorkerName();
 
     String getSystemVMIsoFileNameOnDatastore();
@@ -57,7 +53,6 @@ public interface VmwareManager {
 
     Pair<Integer, Integer> getAddiionalVncPortRange();
 
-    int getMaxHostsPerCluster();
     int getRouterExtraPublicNics();
 
     boolean beginExclusiveOperation(int timeOutSeconds);
@@ -72,4 +67,6 @@ public interface VmwareManager {
     String getPublicVSwitchName(long dcId, HypervisorType hypervisorType);
 
     String getGuestVSwitchName(long dcId, HypervisorType hypervisorType);
+    
+    public String getRootDiskController();
 }

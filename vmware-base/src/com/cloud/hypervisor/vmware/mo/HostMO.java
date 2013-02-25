@@ -949,4 +949,20 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
     	HostRuntimeInfo runtimeInfo = (HostRuntimeInfo)_context.getVimClient().getDynamicProperty(_mor, "runtime");
     	return runtimeInfo.getConnectionState() == HostSystemConnectionState.CONNECTED;
 	}
+
+    public boolean revertToSnapshot(ManagedObjectReference morSnapshot)
+            throws Exception {
+        ManagedObjectReference morTask = _context.getService()
+                .revertToSnapshotTask(morSnapshot, _mor, false);
+        boolean result = _context.getVimClient().waitForTask(morTask);
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
+            return true;
+        } else {
+            s_logger.error("VMware revert to snapshot failed due to "
+                    + TaskMO.getTaskFailureInfo(_context, morTask));
+        }
+
+        return false;
+    }
 }

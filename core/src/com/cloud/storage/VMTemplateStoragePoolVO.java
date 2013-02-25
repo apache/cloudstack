@@ -29,8 +29,11 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+
 import com.cloud.utils.db.GenericDaoBase;
-import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Join table for storage pools and templates
@@ -38,7 +41,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  */
 @Entity
 @Table(name="template_spool_ref")
-public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc {
+public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, DataObjectInStore {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	long id;
@@ -69,7 +72,18 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc {
 	@Column (name="template_size") long templateSize;
 	
 	@Column (name="marked_for_gc") boolean markedForGC;
-    
+
+	@Column(name="update_count", updatable = true, nullable=false)
+	protected long updatedCount;
+
+	@Column(name = "updated")
+	@Temporal(value = TemporalType.TIMESTAMP)
+	Date updated;
+
+	@Column(name = "state")
+	@Enumerated(EnumType.STRING)
+	ObjectInDataStoreStateMachine.State state;
+
 	@Override
     public String getInstallPath() {
 		return installPath;
@@ -148,6 +162,7 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc {
 		this.poolId = poolId;
 		this.templateId = templateId;
 		this.downloadState = Status.NOT_DOWNLOADED;
+		this.state = ObjectInDataStoreStateMachine.State.Allocated;
 		this.markedForGC = false;
 	}
 
@@ -234,5 +249,27 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc {
     public String toString() {
 	    return new StringBuilder("TmplPool[").append(id).append("-").append(templateId).append("-").append("poolId").append("-").append(installPath).append("]").toString();
 	}
+
+    @Override
+    public State getState() {
+        return this.state;
+    }
+    
+    public long getUpdatedCount() {
+        return this.updatedCount;
+    }
+    
+    public void incrUpdatedCount() {
+        this.updatedCount++;
+    }
+
+    public void decrUpdatedCount() {
+        this.updatedCount--;
+    }
+    
+    public Date getUpdated() {
+        return updated;
+    }
+    
 
 }

@@ -1607,8 +1607,9 @@ under the License.
     <script src="lib/date.js" type="text/javascript"></script>
     <script src="lib/jquery.cookies.js" type="text/javascript"></script>
     <script src="lib/jquery.md5.js" type="text/javascript" ></script>
-		
-    <script src="lib/excanvas.js"></script>
+    <script src="lib/require.js" type="text/javascript"></script>
+
+    <script src="lib/excanvas.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.flot.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.colorhelpers.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.flot.crosshair.js" type="text/javascript"></script>
@@ -1674,6 +1675,12 @@ under the License.
     <script type="text/javascript" src="scripts/system.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/domains.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/docs.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/vm_snapshots.js?t=<%=now%>"></script>  
+
+    <!-- Plugins -->
+    <script type="text/javascript" src="scripts/ui-custom/plugins.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="plugins/plugins.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/plugins.js?t=<%=now%>"></script>
   </body>
 </html>
 <jsp:include page="dictionary.jsp" />

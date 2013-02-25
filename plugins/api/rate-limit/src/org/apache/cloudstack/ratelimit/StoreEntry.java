@@ -18,7 +18,6 @@ package org.apache.cloudstack.ratelimit;
 
 /**
  * Interface for each entry in LimitStore.
- * @author minc
  *
  */
 public interface StoreEntry {

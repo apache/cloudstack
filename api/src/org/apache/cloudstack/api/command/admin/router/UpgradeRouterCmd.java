@@ -22,8 +22,8 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.router.VirtualRouter;
@@ -42,7 +42,7 @@ public class UpgradeRouterCmd extends BaseCmd {
             required=true, description="The ID of the router")
     private Long id;
 
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType = DiskOfferingResponse.class,
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType = ServiceOfferingResponse.class,
             required=true, description="the service offering ID to apply to the domain router")
     private Long serviceOfferingId;
 

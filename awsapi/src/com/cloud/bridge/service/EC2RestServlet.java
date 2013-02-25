@@ -707,12 +707,20 @@ public class EC2RestServlet extends HttpServlet {
             else break;
 
             String[] fromPort = request.getParameterValues( "IpPermissions." + nCount + ".FromPort" );
-            if ( null != fromPort && 0 < fromPort.length)
-                perm.setFromPort( Integer.parseInt( fromPort[0]));
+            if ( null != fromPort && 0 < fromPort.length ) {
+                if ( protocol[0].equalsIgnoreCase("icmp") )
+                    perm.setIcmpType( fromPort[0] ) ;
+                else
+                    perm.setFromPort( Integer.parseInt( fromPort[0]) );
+            }
 
             String[] toPort = request.getParameterValues( "IpPermissions." + nCount + ".ToPort" );
-            if ( null != toPort && 0 < toPort.length)
-                perm.setToPort( Integer.parseInt( toPort[0]));
+            if ( null != toPort && 0 < toPort.length ) {
+                if ( protocol[0].equalsIgnoreCase("icmp") )
+                    perm.setIcmpCode( toPort[0] );
+                else
+                    perm.setToPort( Integer.parseInt( toPort[0]) );
+            }
 
             // -> list: IpPermissions.n.IpRanges.m.CidrIp
             mCount = 1;
@@ -780,12 +788,20 @@ public class EC2RestServlet extends HttpServlet {
         else break;
 
         String[] fromPort = request.getParameterValues( "IpPermissions." + nCount + ".FromPort" );
-            if ( null != fromPort && 0 < fromPort.length)
-                perm.setFromPort( Integer.parseInt( fromPort[0]));
+            if ( null != fromPort && 0 < fromPort.length ) {
+                if ( protocol[0].equalsIgnoreCase("icmp") )
+                    perm.setIcmpType( fromPort[0] ) ;
+                else
+                    perm.setFromPort( Integer.parseInt( fromPort[0]) );
+            }
 
         String[] toPort = request.getParameterValues( "IpPermissions." + nCount + ".ToPort" );
-            if ( null != toPort && 0 < toPort.length)
-                perm.setToPort( Integer.parseInt( toPort[0]));
+            if ( null != toPort && 0 < toPort.length ) {
+                if ( protocol[0].equalsIgnoreCase("icmp") )
+                    perm.setIcmpCode( toPort[0] );
+                else
+                    perm.setToPort( Integer.parseInt( toPort[0]) );
+            }
 
         // -> list: IpPermissions.n.IpRanges.m.CidrIp
         int mCount = 1;
@@ -1142,14 +1158,26 @@ public class EC2RestServlet extends HttpServlet {
         else { response.sendError(530, "Missing ImageId parameter" ); return; }
 
         String[] minCount = request.getParameterValues( "MinCount" );
-        if ( null != minCount && 0 < minCount.length ) 
-            EC2request.setMinCount( Integer.parseInt( minCount[0] ));
-        else { response.sendError(530, "Missing MinCount parameter" ); return; }
+        if ( minCount == null || minCount.length < 1) {
+            response.sendError(530, "Missing MinCount parameter" );
+            return;
+        } else if ( Integer.parseInt(minCount[0]) < 1) {
+            throw new EC2ServiceException(ClientError.InvalidParameterValue,
+                    "Value of parameter MinCount should be greater than 0");
+        } else {
+            EC2request.setMinCount( Integer.parseInt( minCount[0]) );
+        }
 
         String[] maxCount = request.getParameterValues( "MaxCount" );
-        if ( null != maxCount && 0 < maxCount.length ) 
-            EC2request.setMaxCount( Integer.parseInt( maxCount[0] ));
-        else { response.sendError(530, "Missing MaxCount parameter" ); return; }
+        if ( maxCount == null || maxCount.length < 1) {
+            response.sendError(530, "Missing MaxCount parameter" );
+            return;
+        } else if ( Integer.parseInt(maxCount[0]) < 1) {
+            throw new EC2ServiceException(ClientError.InvalidParameterValue,
+                    "Value of parameter MaxCount should be greater than 0");
+        } else {
+            EC2request.setMaxCount( Integer.parseInt( maxCount[0]) );
+        }
 
         String[] instanceType = request.getParameterValues( "InstanceType" );
         if ( null != instanceType && 0 < instanceType.length ) 
@@ -1256,6 +1284,11 @@ public class EC2RestServlet extends HttpServlet {
             }
         }	
         if (0 == count) { response.sendError(530, "Missing InstanceId parameter" ); return; }
+
+        String[] force = request.getParameterValues("Force");
+        if ( force != null) {
+            EC2request.setForce( Boolean.parseBoolean(force[0]));
+        }
 
         // -> execute the request
         StopInstancesResponse EC2response = EC2SoapServiceImpl.toStopInstancesResponse( ServiceProvider.getInstance().getEC2Engine().stopInstances( EC2request ));
@@ -1899,10 +1932,14 @@ public class EC2RestServlet extends HttpServlet {
                     String paramName = (String) params.nextElement();
                     // exclude the signature string obviously. ;)
                     if (paramName.equalsIgnoreCase("Signature")) continue;
+                    // URLEncoder performs application/x-www-form-urlencoded-type encoding and not Percent encoding
+                    // according to RFC 3986 as required by Amazon, we need to Percent-encode (URL Encode)
+                    String encodedValue = URLEncoder.encode(request.getParameter(paramName), "UTF-8")
+                            .replace("+", "%20").replace("*", "%2A");
                     if (queryString == null) 
-                        queryString = paramName + "=" + URLEncoder.encode(request.getParameter(paramName), "UTF-8"); 
+                        queryString = paramName + "=" + encodedValue;
                     else 
-                        queryString = queryString + "&" + paramName + "=" + URLEncoder.encode(request.getParameter(paramName), "UTF-8"); 
+                        queryString = queryString + "&" + paramName + "=" + encodedValue;
                 }
             }
         }

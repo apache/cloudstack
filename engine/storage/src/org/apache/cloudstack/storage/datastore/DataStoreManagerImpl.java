@@ -18,12 +18,15 @@
  */
 package org.apache.cloudstack.storage.datastore;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
 import org.springframework.stereotype.Component;
 
@@ -49,6 +52,23 @@ public class DataStoreManagerImpl implements DataStoreManager {
     public DataStore registerDataStore(Map<String, String> params,
             String providerUuid) {
         return null;
+    }
+    @Override
+    public DataStore getDataStore(String uuid, DataStoreRole role) {
+        if (role == DataStoreRole.Primary) {
+            return primaryStorMgr.getPrimaryDataStore(uuid);
+        } else if (role == DataStoreRole.Image) {
+            return imageDataStoreMgr.getImageDataStore(uuid);
+        }
+        throw new CloudRuntimeException("un recognized type" + role);
+    }
+    @Override
+    public List<DataStore> getImageStores(Scope scope) {
+        return imageDataStoreMgr.getList();
+    }
+    @Override
+    public DataStore getPrimaryDataStore(long storeId) {
+        return primaryStorMgr.getPrimaryDataStore(storeId);
     }
 
 }

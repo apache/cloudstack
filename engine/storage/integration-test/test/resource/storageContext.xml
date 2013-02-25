@@ -45,6 +45,7 @@
   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
   <bean id="actionEventInterceptor" class="com.cloud.event.ActionEventInterceptor" />
 
+  <bean id="componentContext" class="com.cloud.utils.component.ComponentContext"/>
 
   <bean class="org.apache.cloudstack.storage.test.ChildTestConfiguration" />
 

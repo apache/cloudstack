@@ -35,16 +35,17 @@ import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
+import org.springframework.stereotype.Component;
 
-
+@Component
 public class VMInstanceUsageParser {
     public static final Logger s_logger = Logger.getLogger(VMInstanceUsageParser.class.getName());
-    
+
     private static UsageDao m_usageDao;
     private static UsageVMInstanceDao m_usageInstanceDao;
 
-    @Inject private static UsageDao _usageDao;;
-    @Inject private static UsageVMInstanceDao _usageInstanceDao;
+    @Inject private UsageDao _usageDao;;
+    @Inject private UsageVMInstanceDao _usageInstanceDao;
     
     @PostConstruct
     void init() {

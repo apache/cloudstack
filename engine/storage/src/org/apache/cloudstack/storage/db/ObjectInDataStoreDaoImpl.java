@@ -20,17 +20,17 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.Event;
-import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.storage.VolumeVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 public class ObjectInDataStoreDaoImpl extends GenericDaoBase<ObjectInDataStoreVO, Long> implements ObjectInDataStoreDao {
@@ -47,7 +47,8 @@ public class ObjectInDataStoreDaoImpl extends GenericDaoBase<ObjectInDataStoreVO
     }
     @Override
     public boolean updateState(State currentState, Event event,
-            State nextState, ObjectInDataStoreVO vo, Object data) {
+            State nextState, DataObjectInStore dataObj, Object data) {
+        ObjectInDataStoreVO vo = (ObjectInDataStoreVO)dataObj;
         Long oldUpdated = vo.getUpdatedCount();
         Date oldUpdatedTime = vo.getUpdated();
     

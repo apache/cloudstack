@@ -134,15 +134,15 @@ public class ResizeVolumeCommandTest {
         }
 
         @Override
-        public String getStorageProvider() {
+        public Long getStorageProviderId() {
             // TODO Auto-generated method stub
             return null;
         }
 
         @Override
-        public String getStorageType() {
+        public boolean isInMaintenance() {
             // TODO Auto-generated method stub
-            return null;
+            return false;
         };
     };
 

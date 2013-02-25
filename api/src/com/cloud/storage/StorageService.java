@@ -22,17 +22,10 @@ import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaint
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
-import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
 
 public interface StorageService{
     /**
@@ -50,37 +43,6 @@ public interface StorageService{
      */
     StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException,
     UnknownHostException, ResourceUnavailableException;
-
-    /**
-     * Creates the database object for a volume based on the given criteria
-     *
-     * @param cmd
-     *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot,
-     *            name)
-     * @return the volume object
-     * @throws PermissionDeniedException
-     */
-    Volume allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException;
-
-    /**
-     * Creates the volume based on the given criteria
-     *
-     * @param cmd
-     *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot,
-     *            name)
-     * @return the volume object
-     */
-    Volume createVolume(CreateVolumeCmd cmd);
-
-
-    /**
-     * Resizes the volume based on the given criteria
-     * 
-     * @param cmd
-     *            the API command wrapping the criteria
-     * @return the volume object
-     */
-    Volume resizeVolume(ResizeVolumeCmd cmd);
 
     /**
      * Delete the storage pool
@@ -120,19 +82,4 @@ public interface StorageService{
     public StoragePool updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
 
     public StoragePool getStoragePool(long id);
-
-    Volume migrateVolume(Long volumeId, Long storagePoolId) throws ConcurrentOperationException;
-
-
-    /**
-     * Uploads the volume to secondary storage
-     *
-     * @param UploadVolumeCmd cmd
-     *
-     * @return Volume object
-     */
-    Volume uploadVolume(UploadVolumeCmd cmd)	throws ResourceAllocationException;
-
-    boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException;
-
 }

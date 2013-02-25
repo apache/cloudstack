@@ -341,11 +341,11 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 _agentMgr.send(dest.getHost().getId(), cmds);
                 PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
                 if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
-                    s_logger.warn("Unable to plug nic for vm " + vm.getHostName());
+                    s_logger.warn("Unable to plug nic for vm " + vm.getName());
                     result = false;
                 } 
             } catch (OperationTimedoutException e) {
-                throw new AgentUnavailableException("Unable to plug nic for router " + vm.getHostName() + " in network " + network,
+                throw new AgentUnavailableException("Unable to plug nic for router " + vm.getName() + " in network " + network,
                         dest.getHost().getId(), e);
             }
         } else {

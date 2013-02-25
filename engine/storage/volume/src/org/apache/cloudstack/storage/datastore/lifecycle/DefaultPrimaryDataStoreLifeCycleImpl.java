@@ -26,22 +26,22 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
-import org.apache.cloudstack.storage.datastore.DataStoreStatus;
-import org.apache.cloudstack.storage.datastore.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.endpoint.EndPointSelector;
-import org.apache.cloudstack.storage.image.datastore.ImageDataStoreHelper;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 
+import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.StoragePoolStatus;
 
 public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
@@ -58,9 +58,9 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     }
     
     @Override
-    public DataStore initialize(Map<String, String> dsInfos) {
+    public DataStore initialize(Map<String, Object> dsInfos) {
         
-        PrimaryDataStoreVO storeVO = primaryStoreHelper.createPrimaryDataStore(dsInfos); 
+        StoragePoolVO storeVO = primaryStoreHelper.createPrimaryDataStore(dsInfos); 
         return providerMgr.getPrimaryDataStore(storeVO.getId());
     }
 
@@ -83,11 +83,11 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     
     @Override
     public boolean attachCluster(DataStore dataStore, ClusterScope scope) {
-        PrimaryDataStoreVO dataStoreVO = dataStoreDao.findById(dataStore.getId());
+        StoragePoolVO dataStoreVO = dataStoreDao.findById(dataStore.getId());
         dataStoreVO.setDataCenterId(scope.getZoneId());
         dataStoreVO.setPodId(scope.getPodId());
         dataStoreVO.setClusterId(scope.getScopeId());
-        dataStoreVO.setStatus(DataStoreStatus.Attaching);
+        dataStoreVO.setStatus(StoragePoolStatus.Attaching);
         dataStoreVO.setScope(scope.getScopeType());
         dataStoreDao.update(dataStoreVO.getId(), dataStoreVO);
         
@@ -95,7 +95,7 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
         attachCluster(dataStore);
         
         dataStoreVO = dataStoreDao.findById(dataStore.getId());
-        dataStoreVO.setStatus(DataStoreStatus.Up);
+        dataStoreVO.setStatus(StoragePoolStatus.Up);
         dataStoreDao.update(dataStoreVO.getId(), dataStoreVO);
         
         return true;
@@ -114,19 +114,19 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     }
 
     @Override
-    public boolean maintain() {
+    public boolean maintain(long storeId) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean cancelMaintain() {
+    public boolean cancelMaintain(long storeId) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean deleteDataStore() {
+    public boolean deleteDataStore(long storeId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -135,6 +135,13 @@ public class DefaultPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean attachHost(DataStore store, HostScope scope,
+            StoragePoolInfo existingInfo) {
         // TODO Auto-generated method stub
         return false;
     }

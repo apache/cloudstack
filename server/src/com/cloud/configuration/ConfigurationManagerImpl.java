@@ -1246,6 +1246,27 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return true;
     }
 
+
+    @Override
+    @DB
+    public LDAPConfigCmd listLDAPConfig(LDAPConfigCmd cmd) {
+        String hostname = _configDao.getValue(LDAPParams.hostname.toString());
+        cmd.setHostname(hostname == null ? "" : hostname);
+        String port = _configDao.getValue(LDAPParams.port.toString());
+        cmd.setPort(port == null ? 0 : Integer.valueOf(port));
+        String queryFilter = _configDao.getValue(LDAPParams.queryfilter.toString());
+        cmd.setQueryFilter(queryFilter == null ? "" : queryFilter);
+        String searchBase =  _configDao.getValue(LDAPParams.searchbase.toString());
+        cmd.setSearchBase(searchBase == null ? "" : searchBase);
+        String useSSL =  _configDao.getValue(LDAPParams.usessl.toString());
+        cmd.setUseSSL(useSSL == null ? Boolean.FALSE : Boolean.valueOf(useSSL));
+        String binddn =  _configDao.getValue(LDAPParams.dn.toString());
+        cmd.setBindDN(binddn == null ? "" : binddn);
+        String truststore =  _configDao.getValue(LDAPParams.truststore.toString());
+        cmd.setTrustStore(truststore == null ? "" : truststore);
+        return cmd;
+    }
+
     @Override
     @DB
     public boolean updateLDAP(LDAPConfigCmd cmd) {
@@ -1265,11 +1286,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("If you specify a bind name then you need to provide bind password too.");
             }
 
+            // check query filter if it contains valid substitution
+            if (!queryFilter.contains("%u") && !queryFilter.contains("%n") && !queryFilter.contains("%e")){
+                throw new InvalidParameterValueException("QueryFilter should contain at least one of the substitutions: %u, %n or %e: " + queryFilter);
+            }
+
             // check if the info is correct
             Hashtable<String, String> env = new Hashtable<String, String>(11);
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
             String protocol = "ldap://";
-            if (new Boolean(useSSL)) {
+            if (useSSL) {
                 env.put(Context.SECURITY_PROTOCOL, "ssl");
                 protocol = "ldaps://";
                 if (trustStore == null || trustStorePassword == null) {
@@ -1288,7 +1314,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             DirContext ctx = new InitialDirContext(env);
             ctx.close();
 
-            // store the result in DB COnfiguration
+            // store the result in DB Configuration
             ConfigurationVO cvo = _configDao.findByName(LDAPParams.hostname.toString());
             if (cvo == null) {
                 cvo = new ConfigurationVO("Hidden", "DEFAULT", "management-server", LDAPParams.hostname.toString(), null, "Hostname or ip address of the ldap server eg: my.ldap.com");
@@ -1356,8 +1382,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             s_logger.debug("The ldap server is configured: " + hostname);
         } catch (NamingException ne) {
-            ne.printStackTrace();
-            throw new InvalidParameterValueException("Naming Exception, check you ldap data ! " + ne.getMessage() + (ne.getCause() != null ? ("Caused by:" + ne.getCause().getMessage()) : ""));
+            throw new InvalidParameterValueException("Naming Exception, check you ldap data ! " + ne.getMessage() + (ne.getCause() != null ? ("; Caused by:" + ne.getCause().getMessage()) : ""));
         }
         return true;
     }
@@ -1752,14 +1777,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         Boolean offerHA = cmd.getOfferHa();
-        if (offerHA == null) {
-            offerHA = false;
-        }
-
         Boolean limitCpuUse = cmd.GetLimitCpuUse();
-        if (limitCpuUse == null) {
-            limitCpuUse = false;
-        }
+        Boolean volatileVm = cmd.getVolatileVm();
 
         String vmTypeString = cmd.getSystemVmType();
         VirtualMachine.Type vmType = null;
@@ -1786,15 +1805,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return createServiceOffering(userId, cmd.getIsSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
-                localStorageRequired, offerHA, limitCpuUse, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate());
+                localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(), cmd.getNetworkRate());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering")
     public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type, String name, int cpu, int ramSize, int speed, String displayText,
-            boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, String tags, Long domainId, String hostTag, Integer networkRate) {
+            boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, boolean volatileVm,  String tags, Long domainId, String hostTag, Integer networkRate) {
         tags = cleanupTags(tags);
-        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, displayText, localStorageRequired, false, tags, isSystem, vm_type,
+        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, volatileVm, displayText, localStorageRequired, false, tags, isSystem, vm_type,
                 domainId, hostTag);
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {

@@ -22,9 +22,9 @@ import java.util.Set;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.storage.image.TemplateInfo;
-import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
 
 public interface ImageDataStore extends DataStore {
     TemplateInfo getTemplate(long templateId);

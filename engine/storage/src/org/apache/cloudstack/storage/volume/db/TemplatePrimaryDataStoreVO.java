@@ -32,7 +32,9 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.fsm.StateObject;
 

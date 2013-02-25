@@ -20,31 +20,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EC2DescribeAvailabilityZonesResponse {
+    private List<EC2AvailabilityZone> availabilityZoneSet = new ArrayList<EC2AvailabilityZone>();
 
-	private List<String> zoneIds   = new ArrayList<String>();    
-	private List<String> zoneNames = new ArrayList<String>();    
+    public EC2DescribeAvailabilityZonesResponse() {
+    }
 
-	public EC2DescribeAvailabilityZonesResponse() {
-	}
-	
-    public void addZone(String id, String name) {
-        zoneIds.add(id);
-        zoneNames.add(name);
-	}
-	
-	/**
-	 * The Amazon API only cares about the names of zones not their ID value.
-	 * 
-	 * @return an array containing a set of zone names
-	 */
-	public String[] getZoneSet() {
-		return zoneNames.toArray(new String[0]);
-	}
-	
-    public String getZoneIdAt(int index) {
-        if (zoneIds.isEmpty() || index >= zoneIds.size()) {
-            return null;
-        }
-        return zoneIds.get(index);
-	}
+    public void addAvailabilityZone( EC2AvailabilityZone param ) {
+        availabilityZoneSet.add( param );
+    }
+
+    public EC2AvailabilityZone[] getAvailabilityZoneSet() {
+        return availabilityZoneSet.toArray(new EC2AvailabilityZone[0]);
+    }
+
 }

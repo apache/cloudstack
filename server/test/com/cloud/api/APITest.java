@@ -36,8 +36,6 @@ import com.google.gson.Gson;
 /**
  * Base class for API Test
  *
- * @author Min Chen
- *
  */
 public abstract class APITest {
 

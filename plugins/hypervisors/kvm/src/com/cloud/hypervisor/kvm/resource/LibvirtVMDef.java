@@ -116,6 +116,7 @@ public class LibvirtVMDef {
         private int _currentMem = -1;
         private String _memBacking;
         private int _vcpu = -1;
+        private boolean _memBalloning= false;
 
         public void setMemorySize(long mem) {
             _mem = mem;
@@ -133,6 +134,10 @@ public class LibvirtVMDef {
             _vcpu = vcpu;
         }
 
+        public void setMemBalloning(boolean turnon){
+              _memBalloning = turnon;
+        }
+
         @Override
         public String toString() {
             StringBuilder resBuidler = new StringBuilder();
@@ -144,6 +149,9 @@ public class LibvirtVMDef {
             if (_memBacking != null) {
                 resBuidler.append("<memoryBacking>" + "<" + _memBacking + "/>"
                         + "</memoryBacking>\n");
+            }
+            if (_memBalloning){
+                resBuidler.append("<devices>\n" + "<memballoon model='virtio'/>\n" + "</devices>\n");
             }
             if (_vcpu != -1) {
                 resBuidler.append("<vcpu>" + _vcpu + "</vcpu>\n");

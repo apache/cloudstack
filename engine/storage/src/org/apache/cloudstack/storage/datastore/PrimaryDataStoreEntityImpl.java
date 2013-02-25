@@ -26,8 +26,8 @@ import java.util.Map;
 import org.apache.cloudstack.engine.datacenter.entity.api.StorageEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 
-import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePoolStatus;
 
 public class PrimaryDataStoreEntityImpl implements StorageEntity {
     private PrimaryDataStoreInfo dataStore;
@@ -132,7 +132,8 @@ public class PrimaryDataStoreEntityImpl implements StorageEntity {
 
     @Override
     public State getState() {
-        return this.dataStore.getManagedState();
+        //return this.dataStore.getManagedState();
+        return null;
     }
 
     @Override
@@ -229,13 +230,7 @@ public class PrimaryDataStoreEntityImpl implements StorageEntity {
         return null;
     }
 
-    @Override
-    public String getStorageProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
-    @Override
     public String getStorageType() {
         // TODO Auto-generated method stub
         return null;
@@ -246,5 +241,17 @@ public class PrimaryDataStoreEntityImpl implements StorageEntity {
 		// TODO Auto-generated method stub
 		
 	}
+
+    @Override
+    public Long getStorageProviderId() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean isInMaintenance() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }

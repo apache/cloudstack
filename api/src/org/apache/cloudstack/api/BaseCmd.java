@@ -62,6 +62,7 @@ import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.StorageService;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.snapshot.SnapshotService;
 import com.cloud.template.TemplateService;
 import com.cloud.user.Account;
@@ -69,8 +70,8 @@ import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
-import com.cloud.vm.BareMetalVmService;
 import com.cloud.vm.UserVmService;
+import com.cloud.vm.snapshot.VMSnapshotService;
 
 public abstract class BaseCmd {
     private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
@@ -101,6 +102,7 @@ public abstract class BaseCmd {
     @Inject public UserVmService _userVmService;
     @Inject public ManagementService _mgr;
     @Inject public StorageService _storageService;
+    @Inject public VolumeApiService _volumeService;
     @Inject public ResourceService _resourceService;
     @Inject public NetworkService _networkService;
     @Inject public TemplateService _templateService;
@@ -128,6 +130,7 @@ public abstract class BaseCmd {
     @Inject public QueryService _queryService;
     @Inject public UsageService _usageService;
     @Inject public NetworkUsageService _networkUsageService;
+    @Inject public VMSnapshotService _vmSnapshotService;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
 

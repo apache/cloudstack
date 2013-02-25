@@ -81,6 +81,9 @@ public class NetworkVO implements Network {
     @Column(name="cidr")
     String cidr;
 
+    @Column(name="network_cidr")
+    String networkCidr;
+
     @Column(name="network_offering_id")
     long networkOfferingId;
 
@@ -198,6 +201,7 @@ public class NetworkVO implements Network {
                 related, name, displayText, networkDomain, guestType, dcId, physicalNetworkId, aclType, specifyIpRanges, vpcId);
         this.gateway = that.getGateway();
         this.cidr = that.getCidr();
+        this.networkCidr = that.getNetworkCidr();
         this.broadcastUri = that.getBroadcastUri();
         this.broadcastDomainType = that.getBroadcastDomainType();
         this.guruName = guruName;
@@ -353,7 +357,10 @@ public class NetworkVO implements Network {
     public void setGateway(String gateway) {
         this.gateway = gateway;
     }
-
+    // "cidr" is the Cloudstack managed address space, all CloudStack managed vms get IP address from "cidr"
+    // In general "cidr" also serves as the network cidr
+    // But in case IP reservation feature is configured for a Guest network, "network_cidr" is the Effective network cidr for the network,
+    //  "cidr" will still continue to be the effective address space for CloudStack managed vms in that Guest network
     @Override
     public String getCidr() {
         return cidr;
@@ -361,6 +368,18 @@ public class NetworkVO implements Network {
 
     public void setCidr(String cidr) {
         this.cidr = cidr;
+    }
+
+    // "networkcidr" is the network CIDR of the guest network which is configured with IP reservation feature
+    // It is the summation of "cidr" and the reservedIPrange(the address space used for non cloudstack purposes.)
+    //  For networks not using IP reservation "networkcidr" is always null
+    @Override
+    public String getNetworkCidr() {
+        return networkCidr;
+    }
+
+    public void setNetworkCidr(String networkCidr) {
+        this.networkCidr = networkCidr;
     }
 
     @Override

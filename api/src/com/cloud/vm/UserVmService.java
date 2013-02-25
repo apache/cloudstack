@@ -23,7 +23,6 @@ import javax.naming.InsufficientResourcesException;
 
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
-import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
@@ -103,24 +102,6 @@ public interface UserVmService {
      */
     UserVm resetVMSSHKey(ResetVMSSHKeyCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
 
-    /**
-     * Attaches the specified volume to the specified VM
-     *
-     * @param cmd
-     *            - the command specifying volumeId and vmId
-     * @return the Volume object if attach worked successfully.
-     */
-    Volume attachVolumeToVM(AttachVolumeCmd cmd);
-
-    /**
-     * Detaches the specified volume from the VM it is currently attached to.
-     *
-     * @param cmd
-     *            - the command specifying volumeId
-     * @return the Volume object if detach worked successfully.
-     */
-    Volume detachVolumeFromVM(DetachVolumeCmd cmmd);
-
     UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException,
             ResourceAllocationException;
 
@@ -151,28 +132,6 @@ public interface UserVmService {
 
     UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException;
 
-    /**
-     * Create a template database record in preparation for creating a private template.
-     *
-     * @param cmd
-     *            the command object that defines the name, display text, snapshot/volume, bits, public/private, etc.
-     *            for the
-     *            private template
-     * @param templateOwner
-     *            TODO
-     * @return the vm template object if successful, null otherwise
-     * @throws ResourceAllocationException
-     */
-    VirtualMachineTemplate createPrivateTemplateRecord(CreateTemplateCmd cmd, Account templateOwner) throws ResourceAllocationException;
-
-    /**
-     * Creates a private template from a snapshot of a VM
-     *
-     * @param cmd
-     *            - the command specifying snapshotId, name, description
-     * @return a template if successfully created, null otherwise
-     */
-    VirtualMachineTemplate createPrivateTemplate(CreateTemplateCmd cmd);
 
     /**
      * Creates a Basic Zone User VM in the database and returns the VM to the caller.

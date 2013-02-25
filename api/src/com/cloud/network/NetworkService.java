@@ -66,10 +66,8 @@ public interface NetworkService {
 
     IpAddress getIp(long id);
 
-
     Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser,
-            String domainSuffix, Long networkOfferingId, Boolean changeCidr);
-
+            String domainSuffix, Long networkOfferingId, Boolean changeCidr, String guestVmCidr);
 
     PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, 
             List<String> isolationMethods, String broadcastDomainRange, Long domainId, List<String> tags, String name);

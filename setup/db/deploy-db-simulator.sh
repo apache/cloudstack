@@ -55,11 +55,6 @@ if [ ! -f create-index-fk.sql ]; then
   exit 6;
 fi
 
-if [ ! -f create-schema-view.sql ]; then
-  printf "Error: Unable to find create-schema-view.sql\n"
-  exit 7
-fi
-
 
 PATHSEP=':'
 if [[ $OSTYPE == "cygwin" ]] ; then
@@ -106,12 +101,6 @@ fi
 mysql --user=cloud --password=cloud < create-schema-premium.sql
 if [ $? -ne 0 ]; then
   printf "Error: Cannot execute create-schema-premium.sql\n"
-  exit 11
-fi
-
-mysql --user=cloud --password=cloud cloud < create-schema-view.sql
-if [ $? -ne 0 ]; then
-  printf "Error: Cannot execute create-schema-view.sql\n"
   exit 11
 fi
 

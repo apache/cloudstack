@@ -20,23 +20,23 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.Map;
 
+import com.cloud.agent.api.StoragePoolInfo;
+
 
 public interface DataStoreLifeCycle {
-    public DataStore initialize(Map<String, String> dsInfos);
+    public DataStore initialize(Map<String, Object> dsInfos);
 
     public boolean attachCluster(DataStore store, ClusterScope scope);
-    
+    public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo);
     boolean attachZone(DataStore dataStore, ZoneScope scope);
     
     public boolean dettach();
 
     public boolean unmanaged();
 
-    public boolean maintain();
+    public boolean maintain(long storeId);
 
-    public boolean cancelMaintain();
+    public boolean cancelMaintain(long storeId);
 
-    public boolean deleteDataStore();
-
-
+    public boolean deleteDataStore(long storeId);
 }

@@ -74,8 +74,9 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccountPod;
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccount;
     protected GenericSearchBuilder<UserVmVO, Long> PodsHavingVmsForAccount;
-    
+
     protected SearchBuilder<UserVmVO> UserVmSearch;
+    protected SearchBuilder<UserVmVO> UserVmByIsoSearch;
     protected Attribute _updateTimeAttr;
     // ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
     @Inject ResourceTagsDaoImpl _tagsDao;
@@ -194,7 +195,10 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         AccountDataCenterVirtualSearch.and("dc", AccountDataCenterVirtualSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         AccountDataCenterVirtualSearch.join("nicSearch", nicSearch, AccountDataCenterVirtualSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         AccountDataCenterVirtualSearch.done();
-       
+
+        UserVmByIsoSearch = createSearchBuilder();
+        UserVmByIsoSearch.and("isoId", UserVmByIsoSearch.entity().getIsoId(), SearchCriteria.Op.EQ);
+        UserVmByIsoSearch.done();
 
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
@@ -248,10 +252,17 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     public List<UserVmVO> listByHostId(Long id) {
         SearchCriteria<UserVmVO> sc = HostSearch.create();
         sc.setParameters("host", id);
-        
+
         return listBy(sc);
     }
-    
+
+    @Override
+    public List<UserVmVO> listByIsoId(Long isoId) {
+        SearchCriteria<UserVmVO> sc = UserVmByIsoSearch.create();
+        sc.setParameters("isoId", isoId);
+        return listBy(sc);
+    }
+
     @Override
     public List<UserVmVO> listUpByHostId(Long hostId) {
         SearchCriteria<UserVmVO> sc = HostUpSearch.create();

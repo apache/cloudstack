@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.1.0-SNAPSHOT</version>
+    <version>4.2.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
@@ -42,12 +42,26 @@
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+      <testResources>
+          <testResource>
+              <directory>test/resources</directory>
+          </testResource>
+      </testResources>
     <resources>
       <resource>
           <directory>resources</directory>
       </resource>
     </resources>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+            <excludes>
+                <exclude>com/cloud/usage/UsageManagerTest.java</exclude>
+            </excludes>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
@@ -166,8 +180,8 @@
               <arguments/>
               <systemProperties>
                 <systemProperty>
-                  <key>pid</key>
-                  <value>$$</value>
+                  <key>catalina.home</key>
+                  <value>${project.parent.basedir}/utils</value>
                 </systemProperty>
               </systemProperties>
             </configuration>

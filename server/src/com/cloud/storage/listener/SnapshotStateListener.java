@@ -17,24 +17,24 @@
 
 package com.cloud.storage.listener;
 
-import com.cloud.event.EventCategory;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.Event;
-import com.cloud.storage.Snapshot.State;
-import com.cloud.server.ManagementServer;
-import com.cloud.utils.fsm.StateListener;
-
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
-import org.apache.log4j.Logger;
-
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.inject.Inject;
 
-public class SnapshotStateListener implements StateListener<State, Event, Snapshot> {
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.log4j.Logger;
+
+import com.cloud.event.EventCategory;
+import com.cloud.server.ManagementServer;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.Event;
+import com.cloud.storage.Snapshot.State;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.utils.fsm.StateListener;
+
+public class SnapshotStateListener implements StateListener<State, Event, SnapshotVO> {
 
     // get the event bus provider if configured
     @Inject protected EventBus _eventBus;
@@ -46,13 +46,13 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
     }
 
     @Override
-    public boolean preStateTransitionEvent(State oldState, Event event, State newState, Snapshot vo, boolean status, Object opaque) {
+    public boolean preStateTransitionEvent(State oldState, Event event, State newState, SnapshotVO vo, boolean status, Object opaque) {
         pubishOnEventBus(event.name(), "preStateTransitionEvent", vo, oldState, newState);
         return true;
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, Snapshot vo, boolean status, Object opaque) {
+    public boolean postStateTransitionEvent(State oldState, Event event, State newState, SnapshotVO vo, boolean status, Object opaque) {
         pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
         return true;
     }

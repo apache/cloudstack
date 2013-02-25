@@ -36,8 +36,9 @@ import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
+import org.springframework.stereotype.Component;
 
-
+@Component
 public class StorageUsageParser {
     public static final Logger s_logger = Logger.getLogger(StorageUsageParser.class.getName());
     

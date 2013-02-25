@@ -53,7 +53,7 @@ linkend="sect-source-buildrpm"/> or <xref linkend="sect-source-builddebs"/> as
       <para>Configure the database client. Note the absence of the --deploy-as argument in this
         case. (For more details about the arguments to this command, see <xref
           linkend="management-server-install-db-external"/>.) </para>
-      <programlisting><prompt>#</prompt> cloud-setup-databases cloud:<replaceable>dbpassword</replaceable>@<replaceable>dbhost</replaceable> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable>
+      <programlisting><prompt>#</prompt> cloud-setup-databases cloud:<replaceable>dbpassword</replaceable>@<replaceable>dbhost</replaceable> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable> -i <replaceable>management_server_ip</replaceable>
       </programlisting>
     </listitem>
     <listitem>

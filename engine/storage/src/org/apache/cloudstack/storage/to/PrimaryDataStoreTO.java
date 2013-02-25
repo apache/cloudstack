@@ -21,12 +21,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 public class PrimaryDataStoreTO {
     private final String uuid;
     private final String name;
-    private final String type;
+    private  String type;
     private final long id;
     public PrimaryDataStoreTO(PrimaryDataStoreInfo dataStore) {
         this.uuid = dataStore.getUuid();
         this.name = dataStore.getName();
-        this.type = dataStore.getType();
+      //  this.type = dataStore.getType();
         this.id = dataStore.getId();
     }
     

@@ -22,11 +22,14 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStoreHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageDataStoreManager;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreDao;
 import org.apache.cloudstack.storage.image.db.ImageDataStoreVO;
+
+import com.cloud.agent.api.StoragePoolInfo;
 
 public class DefaultImageDataStoreLifeCycle implements ImageDataStoreLifeCycle {
     @Inject
@@ -40,7 +43,7 @@ public class DefaultImageDataStoreLifeCycle implements ImageDataStoreLifeCycle {
 
 
     @Override
-    public DataStore initialize(Map<String, String> dsInfos) {
+    public DataStore initialize(Map<String, Object> dsInfos) {
         ImageDataStoreVO ids = imageStoreHelper.createImageDataStore(dsInfos);
         return imageStoreMgr.getImageDataStore(ids.getId());
     }
@@ -48,6 +51,14 @@ public class DefaultImageDataStoreLifeCycle implements ImageDataStoreLifeCycle {
 
     @Override
     public boolean attachCluster(DataStore store, ClusterScope scope) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+
+    @Override
+    public boolean attachHost(DataStore store, HostScope scope,
+            StoragePoolInfo existingInfo) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -75,23 +86,27 @@ public class DefaultImageDataStoreLifeCycle implements ImageDataStoreLifeCycle {
 
 
     @Override
-    public boolean maintain() {
+    public boolean maintain(long storeId) {
         // TODO Auto-generated method stub
         return false;
     }
 
 
     @Override
-    public boolean cancelMaintain() {
+    public boolean cancelMaintain(long storeId) {
         // TODO Auto-generated method stub
         return false;
     }
 
 
     @Override
-    public boolean deleteDataStore() {
+    public boolean deleteDataStore(long storeId) {
         // TODO Auto-generated method stub
         return false;
     }
+
+
+  
+
 
 }

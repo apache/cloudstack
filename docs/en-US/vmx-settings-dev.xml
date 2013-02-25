@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<section id="vmx-settings-dev">
+  <title>Additional VMX Settings</title>
+  <para>A VMX (.vmx) file is the primary configuration file for a virtual machine. When a new VM is
+    created, information on the operating system, disk sizes, and networking is stored in this file.
+    The VM actively writes to its .vmx file for all the configuration changes. The VMX file is
+    typically located in the directory where the VM is created. In Windows Vista / Windows 7 /
+    Windows Server 2008, the default location is C:\Users\&lt;your_user_name&gt;\My
+    Documents\Virtual Machines\&lt;virtual_machine_name&gt;.vmx. In Linux, vmware-cmd -l lists the
+    full path to all the registered VMX files. Any manual additions to the .vmx file from ESX/ESXi
+    are overwritten by the entries stored in the vCenter Server database. Therefore, before you edit
+    a .vmx file, first remove the VM from the vCenter server's inventory and register the VM again
+    after editing.</para>
+  <para>The CloudStack API that supports passing some of the VMX settings is registerTemplate. The
+    supported parameters are rootDiskController, nicAdapter, and keyboard. In addition to these
+    existing VMX parameters, you can now use the keyboard.typematicMinDelay parameter in the
+    registerTemplate API call. This parameter controls the amount of delay for the repeated key
+    strokes on remote consoles. For more information on keyboard.typematicMinDelay, see <ulink
+      url=" http://kb.vmware.com/selfservice/microsites/search.do?language=en_US&amp;cmd=displayKC&amp;externalId=196"
+      >keyboard.typematicMinDelay</ulink>.</para>
+</section>

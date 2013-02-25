@@ -20,44 +20,48 @@ package org.apache.cloudstack.storage.image.store;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
-import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
-import org.apache.cloudstack.storage.image.TemplateEvent;
-import org.apache.cloudstack.storage.image.TemplateInfo;
-import org.apache.cloudstack.storage.image.db.ImageDataDao;
-import org.apache.cloudstack.storage.image.db.ImageDataVO;
 import org.apache.cloudstack.storage.image.manager.ImageDataManager;
-import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine;
 import org.apache.log4j.Logger;
 
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.storage.encoding.EncodingType;
 
 public class TemplateObject implements TemplateInfo {
     private static final Logger s_logger = Logger
             .getLogger(TemplateObject.class);
-    private ImageDataVO imageVO;
+    private VMTemplateVO imageVO;
     private DataStore dataStore;
     @Inject
     ImageDataManager imageMgr;
     @Inject
-    ImageDataDao imageDao;
+    VMTemplateDao imageDao;
     @Inject
     ObjectInDataStoreManager ojbectInStoreMgr;
+    @Inject VMTemplatePoolDao templatePoolDao;
 
     protected TemplateObject() {
     }
 
-    protected void configure(ImageDataVO template, DataStore dataStore) {
+    protected void configure(VMTemplateVO template, DataStore dataStore) {
         this.imageVO = template;
         this.dataStore = dataStore;
     }
 
-    public static TemplateObject getTemplate(ImageDataVO vo, DataStore store) {
+    public static TemplateObject getTemplate(VMTemplateVO vo, DataStore store) {
         TemplateObject to = ComponentContext.inject(TemplateObject.class);
         to.configure(vo, store);
         return to;
@@ -66,12 +70,12 @@ public class TemplateObject implements TemplateInfo {
     public void setImageStoreId(long id) {
         this.imageVO.setImageDataStoreId(id);
     }
-    
+
     public void setSize(Long size) {
         this.imageVO.setSize(size);
     }
 
-    public ImageDataVO getImage() {
+    public VMTemplateVO getImage() {
         return this.imageVO;
     }
 
@@ -87,23 +91,20 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getUuid() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.imageVO.getUuid();
     }
 
     @Override
     public String getUri() {
-        ImageDataVO image = imageDao.findById(this.imageVO.getId());
+        VMTemplateVO image = imageDao.findById(this.imageVO.getId());
         if (this.dataStore == null) {
             return image.getUrl();
         } else {
-            ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(
-                    this.imageVO.getId(), DataObjectType.TEMPLATE,
-                    this.dataStore.getId(), this.dataStore.getRole());
+            DataObjectInStore obj = ojbectInStoreMgr.findObject(this, this.dataStore);
             StringBuilder builder = new StringBuilder();
             if (obj.getState() == ObjectInDataStoreStateMachine.State.Ready
                     || obj.getState() == ObjectInDataStoreStateMachine.State.Copying) {
-                
+
                 builder.append(this.dataStore.getUri());
                 builder.append("&" + EncodingType.OBJTYPE + "=" + DataObjectType.TEMPLATE);
                 builder.append("&" + EncodingType.PATH + "=" + obj.getInstallPath());
@@ -124,10 +125,33 @@ public class TemplateObject implements TemplateInfo {
         if (this.dataStore == null) {
             return this.imageVO.getSize();
         }
-        ObjectInDataStoreVO obj = ojbectInStoreMgr.findObject(
-                this.imageVO.getId(), DataObjectType.TEMPLATE,
-                this.dataStore.getId(), this.dataStore.getRole());
-        return obj.getSize();
+
+        /*
+
+// If the template that was passed into this allocator is not installed in the storage pool,
+            // add 3 * (template size on secondary storage) to the running total
+            VMTemplateHostVO templateHostVO = _storageMgr.findVmTemplateHost(templateForVmCreation.getId(), null);
+
+            if (templateHostVO == null) {
+                VMTemplateSwiftVO templateSwiftVO = _swiftMgr.findByTmpltId(templateForVmCreation.getId());
+                if (templateSwiftVO != null) {                                    
+                    long templateSize = templateSwiftVO.getPhysicalSize();
+                    if (templateSize == 0) {
+                        templateSize = templateSwiftVO.getSize();
+                    }
+                    totalAllocatedSize += (templateSize + _extraBytesPerVolume);
+                }
+            } else {
+                long templateSize = templateHostVO.getPhysicalSize();
+                if ( templateSize == 0 ){
+                    templateSize = templateHostVO.getSize();
+                }
+                totalAllocatedSize +=  (templateSize + _extraBytesPerVolume);
+            }
+
+         */
+        VMTemplateVO image = imageDao.findById(this.imageVO.getId());
+        return image.getSize();
     }
 
     @Override
@@ -137,7 +161,7 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public DiskFormat getFormat() {
-        return DiskFormat.getFormat(this.imageVO.getFormat());
+        return DiskFormat.valueOf(this.imageVO.getFormat().toString());
     }
 
     public boolean stateTransit(TemplateEvent e) throws NoTransitionException {
@@ -145,5 +169,15 @@ public class TemplateObject implements TemplateInfo {
                 imageDao);
         this.imageVO = imageDao.findById(this.imageVO.getId());
         return result;
+    }
+
+    @Override
+    public void processEvent(Event event) {
+        try {
+            ojbectInStoreMgr.update(this, event);
+        } catch (NoTransitionException e) {
+            s_logger.debug("failed to update state", e);
+            throw new CloudRuntimeException("Failed to update state" + e.toString());
+        }
     }
 }

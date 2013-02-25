@@ -306,9 +306,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                 if (requestedIpv6 != null) {
                 	requestedIpv6 = requestedIpv6.toLowerCase();
                 }
-                if (requestedIpv6 != null) {
-                	throw new InvalidParameterValueException("Cannot support specified IPv6 address!");
-                }
                 IpAddresses addrs = new IpAddresses(requestedIp, requestedIpv6);
                 ipToNetworkMap.put(networkId, addrs);
             }
@@ -388,7 +385,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
             } catch (InsufficientCapacityException ex) {
                 s_logger.info(ex);
-                s_logger.trace(ex);
+                s_logger.info(ex.getMessage(), ex);
                 throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
             }
         } else {
@@ -407,10 +404,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException{
         try {
-        	if (getIp6Address() != null) {
-        		throw new InvalidParameterValueException("Cannot support specified IPv6 address!");
-        	}
-        	
             //Verify that all objects exist before passing them to the service
             Account owner = _accountService.getActiveAccountById(getEntityOwnerId());
 
@@ -477,7 +470,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             }
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);
-            s_logger.trace(ex);
+            s_logger.trace(ex.getMessage(), ex);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);

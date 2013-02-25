@@ -409,6 +409,26 @@ public class VirtualMachineMO extends BaseMO {
 		return false;
 	}
 
+    public boolean revertToSnapshot(String snapshotName) throws Exception {
+        ManagedObjectReference morSnapshot = getSnapshotMor(snapshotName);
+        if (morSnapshot == null) {
+            s_logger.warn("Unable to find snapshot: " + snapshotName);
+            return false;
+        }
+        ManagedObjectReference morTask = _context.getService()
+                .revertToSnapshotTask(morSnapshot, _mor, null);
+        boolean result = _context.getVimClient().waitForTask(morTask);
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
+            return true;
+        } else {
+            s_logger.error("VMware revert to snapshot failed due to "
+                    + TaskMO.getTaskFailureInfo(_context, morTask));
+        }
+
+        return false;
+    }
+
 	public boolean removeAllSnapshots() throws Exception {
 		VirtualMachineSnapshotInfo snapshotInfo = getSnapshotInfo();
 

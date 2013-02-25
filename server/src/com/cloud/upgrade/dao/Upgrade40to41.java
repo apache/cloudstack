@@ -32,47 +32,24 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
-/**
- * @author htrippaers
- *
- */
 public class Upgrade40to41 implements DbUpgrade {
 	final static Logger s_logger = Logger.getLogger(Upgrade40to41.class);
 
-	/**
-	 *
-	 */
-	public Upgrade40to41() {
-		// TODO Auto-generated constructor stub
-	}
-
-	/* (non-Javadoc)
-	 * @see com.cloud.upgrade.dao.DbUpgrade#getUpgradableVersionRange()
-	 */
 	@Override
 	public String[] getUpgradableVersionRange() {
 		return new String[] { "4.0.0", "4.1.0" };
 	}
 
-	/* (non-Javadoc)
-	 * @see com.cloud.upgrade.dao.DbUpgrade#getUpgradedVersion()
-	 */
 	@Override
 	public String getUpgradedVersion() {
 		return "4.1.0";
 	}
 
-	/* (non-Javadoc)
-	 * @see com.cloud.upgrade.dao.DbUpgrade#supportsRollingUpgrade()
-	 */
 	@Override
 	public boolean supportsRollingUpgrade() {
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.cloud.upgrade.dao.DbUpgrade#getPrepareScripts()
-	 */
 	@Override
 	public File[] getPrepareScripts() {
 		String script = Script.findScript("", "db/schema-40to410.sql");
@@ -83,21 +60,20 @@ public class Upgrade40to41 implements DbUpgrade {
         return new File[] { new File(script) };
 	}
 
-	/* (non-Javadoc)
-	 * @see com.cloud.upgrade.dao.DbUpgrade#performDataMigration(java.sql.Connection)
-	 */
 	@Override
 	public void performDataMigration(Connection conn) {
         upgradeEIPNetworkOfferings(conn);
         upgradeEgressFirewallRules(conn);
 	}
 
-	/* (non-Javadoc)
-	 * @see com.cloud.upgrade.dao.DbUpgrade#getCleanupScripts()
-	 */
 	@Override
 	public File[] getCleanupScripts() {
-		return new File[0];
+        String script = Script.findScript("", "db/schema-40to410-cleanup.sql");
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find db/schema-40to410-cleanup.sql");
+        }
+
+        return new File[] { new File(script) };
 	}
 
     private void upgradeEIPNetworkOfferings(Connection conn) {
@@ -132,7 +108,6 @@ public class Upgrade40to41 implements DbUpgrade {
             }
         }
     }
-
 
     private void upgradeEgressFirewallRules(Connection conn) {
         PreparedStatement pstmt = null;

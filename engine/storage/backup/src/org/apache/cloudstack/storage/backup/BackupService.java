@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.backup;
 
-import org.apache.cloudstack.storage.snapshot.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 
 public interface BackupService {
 	public boolean backupSnapshot(SnapshotInfo snapshot, long backupStoreId);

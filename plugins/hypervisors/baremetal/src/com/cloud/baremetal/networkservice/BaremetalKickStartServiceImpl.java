@@ -235,4 +235,9 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
         return responses;
     }
 
+    @Override
+    public String getPxeServiceType() {
+        return BaremetalPxeManager.BaremetalPxeType.KICK_START.toString();
+    }
+
 }

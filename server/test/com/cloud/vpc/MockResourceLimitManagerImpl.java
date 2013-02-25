@@ -31,7 +31,6 @@ import com.cloud.domain.Domain;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
@@ -115,6 +114,22 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     public void checkResourceLimit(Account account, ResourceType type, long... count) throws ResourceAllocationException {
         // TODO Auto-generated method stub
 
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.user.ResourceLimitService#countCpusForAccount(long)
+     */
+    public long countCpusForAccount(long accountId) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.user.ResourceLimitService#calculateRAMForAccount(long)
+     */
+    public long calculateMemoryForAccount(long accountId) {
+        // TODO Auto-generated method stub
+        return 0;
     }
 
     /* (non-Javadoc)

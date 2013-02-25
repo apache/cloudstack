@@ -66,9 +66,13 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
+import com.cloud.agent.api.CreateVMSnapshotAnswer;
+import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.DeleteVMSnapshotAnswer;
+import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetHostStatsAnswer;
@@ -104,6 +108,8 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.RevertToVMSnapshotAnswer;
+import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.SetupGuestNetworkAnswer;
@@ -287,10 +293,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected VirtualSwitchType _vSwitchType = VirtualSwitchType.StandardVirtualSwitch;
     protected boolean _nexusVSwitch = false;
 
-    protected float _cpuOverprovisioningFactor = 1;
     protected boolean _reserveCpu = false;
 
-    protected float _memOverprovisioningFactor = 1;
     protected boolean _reserveMem = false;
     protected boolean _recycleHungWorker = false;
     protected DiskControllerType _rootDiskController = DiskControllerType.ide;
@@ -450,7 +454,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((SetSourceNatCommand) cmd);
             } else if (clz == SetNetworkACLCommand.class) {
                 answer = execute((SetNetworkACLCommand) cmd);
-            } else if (clz == SetPortForwardingRulesVpcCommand.class) {
+            } else if (cmd instanceof CreateVMSnapshotCommand) {
+            	return execute((CreateVMSnapshotCommand)cmd);
+            } else if(cmd instanceof DeleteVMSnapshotCommand){
+            	return execute((DeleteVMSnapshotCommand)cmd);
+            } else if(cmd instanceof RevertToVMSnapshotCommand){
+            	return execute((RevertToVMSnapshotCommand)cmd);
+        	}else if (clz == SetPortForwardingRulesVpcCommand.class) {
                 answer = execute((SetPortForwardingRulesVpcCommand) cmd);
             } else if (clz == Site2SiteVpnCfgCommand.class) {
                 answer = execute((Site2SiteVpnCfgCommand) cmd);
@@ -2090,11 +2100,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         }
                     }
 
-                    assert (vmSpec.getSpeed() != null) && (rootDiskDataStoreDetails != null);
-
-                    if (!hyperHost.createBlankVm(vmName, vmSpec.getCpus(), vmSpec.getSpeed().intValue(),
-                            getReserveCpuMHz(vmSpec.getSpeed().intValue()), vmSpec.getLimitCpuUse(), ramMb, getReserveMemMB(ramMb),
-                            translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), rootDiskDataStoreDetails.first(), false)) {
+                    assert (vmSpec.getMinSpeed() != null) && (rootDiskDataStoreDetails != null);
+                    if (!hyperHost.createBlankVm(vmName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(),
+                    vmSpec.getMinSpeed(), vmSpec.getLimitCpuUse(),(int)(vmSpec.getMaxRam()/(1024*1024)), ramMb,
+                    translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).toString(), rootDiskDataStoreDetails.first(), false)) {
                         throw new Exception("Failed to create VM. vmName: " + vmName);
                     }
                 }
@@ -2124,9 +2133,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
             int ramMb = (int) (vmSpec.getMinRam() / (1024 * 1024));
-            VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getSpeed().intValue(),
-                    getReserveCpuMHz(vmSpec.getSpeed().intValue()), ramMb, getReserveMemMB(ramMb),
-                    translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), vmSpec.getLimitCpuUse());
+            VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(),
+            vmSpec.getMinSpeed(),(int) (vmSpec.getMaxRam()/(1024*1024)), ramMb,
+            translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).toString(), vmSpec.getLimitCpuUse());
 
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
             int i = 0;
@@ -2379,21 +2388,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return validatedDetails;
     }
 
-    private int getReserveCpuMHz(int cpuMHz) {
-        if(this._reserveCpu) {
-            return (int)(cpuMHz / this._cpuOverprovisioningFactor);
-        }
 
-        return 0;
-    }
-
-    private int getReserveMemMB(int memMB) {
-        if(this._reserveMem) {
-            return (int)(memMB / this._memOverprovisioningFactor);
-        }
-
-        return 0;
-    }
 
     private NicTO[] sortNicsByDeviceId(NicTO[] nics) {
 
@@ -2815,7 +2810,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         // before we stop VM, remove all possible snapshots on the VM to let
                         // disk chain be collapsed
                         s_logger.info("Remove all snapshot before stopping VM " + cmd.getVmName());
-                        vmMo.removeAllSnapshots();
                         if (vmMo.safePowerOff(_shutdown_waitMs)) {
                             state = State.Stopped;
                             return new StopAnswer(cmd, "Stop VM " + cmd.getVmName() + " Succeed", 0, true);
@@ -3367,7 +3361,42 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    protected Answer execute(CreateVMSnapshotCommand cmd) {
+        try {
+            VmwareContext context = getServiceContext();
+            VmwareManager mgr = context
+                    .getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
+            return mgr.getStorageManager().execute(this, cmd);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new CreateVMSnapshotAnswer(cmd, false, "");
+        }
+    }
+
+    protected Answer execute(DeleteVMSnapshotCommand cmd) {
+        try {
+            VmwareContext context = getServiceContext();
+            VmwareManager mgr = context
+                    .getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+
+            return mgr.getStorageManager().execute(this, cmd);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new DeleteVMSnapshotAnswer(cmd, false, "");
+        }
+    }
+
+    protected Answer execute(RevertToVMSnapshotCommand cmd){
+    	try{
+    		VmwareContext context = getServiceContext();
+			VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+			return mgr.getStorageManager().execute(this, cmd);
+    	}catch (Exception e){
+    		e.printStackTrace();
+    		return new RevertToVMSnapshotAnswer(cmd,false,"");
+    	}
+    }
     protected Answer execute(CreateVolumeFromSnapshotCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource CreateVolumeFromSnapshotCommand: " + _gson.toJson(cmd));
@@ -4855,21 +4884,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             _guestNetworkVSwitchName = (String) params.get("guest.network.vswitch.name");
         }
 
-        String value = (String) params.get("cpu.overprovisioning.factor");
-        if(value != null)
-            _cpuOverprovisioningFactor = Float.parseFloat(value);
-
-        value = (String) params.get("vmware.reserve.cpu");
+        String value = (String) params.get("vmware.reserve.cpu");
         if(value != null && value.equalsIgnoreCase("true"))
             _reserveCpu = true;
 
         value = (String) params.get("vmware.recycle.hung.wokervm");
         if(value != null && value.equalsIgnoreCase("true"))
             _recycleHungWorker = true;
-
-        value = (String) params.get("mem.overprovisioning.factor");
-        if(value != null)
-            _memOverprovisioningFactor = Float.parseFloat(value);
 
         value = (String) params.get("vmware.reserve.mem");
         if(value != null && value.equalsIgnoreCase("true"))

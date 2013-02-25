@@ -698,10 +698,7 @@ ServerResource {
 
         _sysvmISOPath = (String) params.get("systemvm.iso.path");
         if (_sysvmISOPath == null) {
-            String[] isoPaths = { "/usr/lib64/cloud/agent/vms/systemvm.iso",
-                    "/usr/lib/cloud/agent/vms/systemvm.iso",
-                    "/usr/lib64/cloud/common/vms/systemvm.iso",
-            "/usr/lib/cloud/common/vms/systemvm.iso" };
+            String[] isoPaths = {"/usr/share/cloudstack-common/vms/systemvm.iso"};
             for (String isoPath : isoPaths) {
                 if (_storage.exists(isoPath)) {
                     _sysvmISOPath = isoPath;
@@ -858,7 +855,7 @@ ServerResource {
 
     private String getPif(String bridge) {
         String pif = matchPifFileInDirectory(bridge);
-        File vlanfile = new File("/proc/net/vlan" + pif);
+        File vlanfile = new File("/proc/net/vlan/" + pif);
 
         if (vlanfile.isFile()) {
                 pif = Script.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/"
@@ -2924,12 +2921,20 @@ ServerResource {
         vm.addComp(guest);
 
         GuestResourceDef grd = new GuestResourceDef();
-        grd.setMemorySize(vmTO.getMinRam() / 1024);
+
+        if (vmTO.getMinRam() != vmTO.getMaxRam()){
+            grd.setMemBalloning(true);
+            grd.setCurrentMem((int)vmTO.getMinRam()/1024);
+            grd.setMemorySize((int)vmTO.getMaxRam()/1024);
+        }
+        else{
+            grd.setMemorySize(vmTO.getMaxRam() / 1024);
+        }
         grd.setVcpuNum(vmTO.getCpus());
         vm.addComp(grd);
 
         CpuTuneDef ctd = new CpuTuneDef();
-        ctd.setShares(vmTO.getCpus() * vmTO.getSpeed());
+        ctd.setShares(vmTO.getCpus() * vmTO.getMinSpeed());
         vm.addComp(ctd);
 
         FeaturesDef features = new FeaturesDef();

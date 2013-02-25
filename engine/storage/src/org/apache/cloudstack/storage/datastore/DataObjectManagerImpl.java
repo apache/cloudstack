@@ -24,14 +24,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
-import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
 import org.apache.cloudstack.storage.motion.DataMotionService;
-import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.Event;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -52,7 +52,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
     protected DataObject waitingForCreated(DataObject dataObj,
             DataStore dataStore) {
         long retries = this.waitingRetries;
-        ObjectInDataStoreVO obj = null;
+        DataObjectInStore obj = null;
         do {
             try {
                 Thread.sleep(waitingTime);
@@ -61,8 +61,8 @@ public class DataObjectManagerImpl implements DataObjectManager {
                 throw new CloudRuntimeException("sleep interrupted", e);
             }
 
-            obj = objectInDataStoreMgr.findObject(dataObj.getId(),
-                    dataObj.getType(), dataStore.getId(), dataStore.getRole());
+            obj = objectInDataStoreMgr.findObject(dataObj,
+                    dataStore);
             if (obj == null) {
                 s_logger.debug("can't find object in db, maybe it's cleaned up already, exit waiting");
                 break;
@@ -92,11 +92,10 @@ public class DataObjectManagerImpl implements DataObjectManager {
     }
     
     @Override
-    public void createAsync(DataObject data, DataStore store,
+    public void createAsync(DataObject data, DataStore store, 
             AsyncCompletionCallback<CreateCmdResult> callback, boolean noCopy) {
-        ObjectInDataStoreVO obj = objectInDataStoreMgr.findObject(
-                data.getId(), data.getType(), store.getId(),
-                store.getRole());
+        DataObjectInStore obj = objectInDataStoreMgr.findObject(
+                data, store);
         DataObject objInStore = null;
         boolean freshNewTemplate = false;
         if (obj == null) {
@@ -105,8 +104,8 @@ public class DataObjectManagerImpl implements DataObjectManager {
                         data, store);
                 freshNewTemplate = true;
             } catch (Throwable e) {
-                obj = objectInDataStoreMgr.findObject(data.getId(),
-                        data.getType(), store.getId(), store.getRole());
+                obj = objectInDataStoreMgr.findObject(data,
+                        store);
                 if (obj == null) {
                     CreateCmdResult result = new CreateCmdResult(
                             null, null);
@@ -184,20 +183,12 @@ public class DataObjectManagerImpl implements DataObjectManager {
             return null;
         }
 
-        ObjectInDataStoreVO obj = objectInDataStoreMgr.findObject(
-                objInStrore.getId(), objInStrore
-                        .getType(), objInStrore.getDataStore()
-                        .getId(), objInStrore.getDataStore()
-                        .getRole());
-
-        obj.setInstallPath(result.getPath());
-        obj.setSize(result.getSize());
         try {
-            objectInDataStoreMgr.update(obj,
+            objectInDataStoreMgr.update(objInStrore,
                     ObjectInDataStoreStateMachine.Event.OperationSuccessed);
         } catch (NoTransitionException e) {
             try {
-                objectInDataStoreMgr.update(obj,
+                objectInDataStoreMgr.update(objInStrore,
                         ObjectInDataStoreStateMachine.Event.OperationFailed);
             } catch (NoTransitionException e1) {
                 s_logger.debug("failed to change state", e1);
@@ -259,14 +250,10 @@ public class DataObjectManagerImpl implements DataObjectManager {
             CopyContext<CreateCmdResult> context) {
         CopyCommandResult result = callback.getResult();
         DataObject destObj = context.destObj;
-        ObjectInDataStoreVO obj = objectInDataStoreMgr.findObject(
-                destObj.getId(), destObj
-                        .getType(), destObj.getDataStore()
-                        .getId(), destObj.getDataStore()
-                        .getRole());
+
         if (result.isFailed()) {
             try {
-                objectInDataStoreMgr.update(obj, Event.OperationFailed);
+                objectInDataStoreMgr.update(destObj, Event.OperationFailed);
             } catch (NoTransitionException e) {
                 s_logger.debug("Failed to update copying state", e);
             }
@@ -276,10 +263,8 @@ public class DataObjectManagerImpl implements DataObjectManager {
             context.getParentCallback().complete(res);
         }
 
-        obj.setInstallPath(result.getPath());
-
         try {
-            objectInDataStoreMgr.update(obj,
+            objectInDataStoreMgr.update(destObj,
                     ObjectInDataStoreStateMachine.Event.OperationSuccessed);
         } catch (NoTransitionException e) {
             s_logger.debug("Failed to update copying state: ", e);
@@ -311,11 +296,8 @@ public class DataObjectManagerImpl implements DataObjectManager {
     @Override
     public void deleteAsync(DataObject data,
             AsyncCompletionCallback<CommandResult> callback) {
-        ObjectInDataStoreVO obj = objectInDataStoreMgr.findObject(
-                data.getId(), data.getType(), data.getDataStore().getId(),
-                data.getDataStore().getRole());
         try {
-            objectInDataStoreMgr.update(obj, Event.DestroyRequested);
+            objectInDataStoreMgr.update(data, Event.DestroyRequested);
         } catch (NoTransitionException e) {
             s_logger.debug("destroy failed", e);
             CreateCmdResult res = new CreateCmdResult(
@@ -338,23 +320,18 @@ public class DataObjectManagerImpl implements DataObjectManager {
     protected Void deleteAsynCallback(AsyncCallbackDispatcher<DataObjectManagerImpl, CommandResult> callback,
             DeleteContext<CommandResult> context) {
         DataObject destObj = context.obj;
-        ObjectInDataStoreVO obj = objectInDataStoreMgr.findObject(
-                destObj.getId(), destObj
-                        .getType(), destObj.getDataStore()
-                        .getId(), destObj.getDataStore()
-                        .getRole());
-        
+
         CommandResult res = callback.getResult();
         if (res.isFailed()) {
             try {
-                objectInDataStoreMgr.update(obj, Event.OperationFailed);
+                objectInDataStoreMgr.update(destObj, Event.OperationFailed);
             } catch (NoTransitionException e) {
                s_logger.debug("delete failed", e);
             }
             
         } else {
             try {
-                objectInDataStoreMgr.update(obj, Event.OperationSuccessed);
+                objectInDataStoreMgr.update(destObj, Event.OperationSuccessed);
             } catch (NoTransitionException e) {
                s_logger.debug("delete failed", e);
             }
@@ -366,9 +343,8 @@ public class DataObjectManagerImpl implements DataObjectManager {
 
     @Override
     public DataObject createInternalStateOnly(DataObject data, DataStore store) {
-        ObjectInDataStoreVO obj = objectInDataStoreMgr.findObject(
-                data.getId(), data.getType(), store.getId(),
-                store.getRole());
+        DataObjectInStore obj = objectInDataStoreMgr.findObject(
+                data, store);
         DataObject objInStore = null;
         if (obj == null) {
             objInStore = objectInDataStoreMgr.create(
@@ -391,12 +367,6 @@ public class DataObjectManagerImpl implements DataObjectManager {
 
     @Override
     public void update(DataObject data, String path, Long size) {
-        ObjectInDataStoreVO obj = objectInDataStoreMgr.findObject(
-                data.getId(), data.getType(), data.getDataStore().getId(),
-                data.getDataStore().getRole());
-        
-        obj.setInstallPath(path);
-        obj.setSize(size);
-        objectInDataStoreMgr.update(obj);
+       throw new CloudRuntimeException("not implemented");
     }
 }
