@@ -143,6 +143,7 @@ Apache CloudStack command line interface
 
 %package awsapi
 Summary: Apache CloudStack AWS API compatibility wrapper
+Requires: %{name}-management = %{_ver}
 %description awsapi
 Apache Cloudstack AWS API compatibility wrapper
 
@@ -160,7 +161,7 @@ echo Doing CloudStack build
 cp packaging/centos63/replace.properties build/replace.properties
 echo VERSION=%{_maventag} >> build/replace.properties
 echo PACKAGE=%{name} >> build/replace.properties
-mvn package -Dsystemvm
+mvn -P awsapi package -Dsystemvm
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -215,7 +216,7 @@ install -D client/target/utilities/bin/cloud-sysvmadm ${RPM_BUILD_ROOT}%{_bindir
 install -D client/target/utilities/bin/cloud-update-xenserver-licenses ${RPM_BUILD_ROOT}%{_bindir}/%{name}-update-xenserver-licenses
 
 cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
-cp -r client/target/cloud-client-ui-*-SNAPSHOT/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client
+cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client
 
 # Don't package the scripts in the management webapp
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
@@ -271,6 +272,14 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/usage/
 cp -r cloud-cli/cloudtool ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/
 install cloud-cli/cloudapis/cloud.py ${RPM_BUILD_ROOT}%{_libdir}/python2.6/site-packages/cloudapis.py
 
+# AWS API
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/setup
+cp -r awsapi/target/cloud-awsapi-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/webapps/bridge
+install -D awsapi-setup/setup/cloud-setup-bridge ${RPM_BUILD_ROOT}%{_bindir}/cloudstack-setup-bridge
+install -D awsapi-setup/setup/cloudstack-aws-api-register ${RPM_BUILD_ROOT}%{_bindir}/cloudstack-aws-api-register
+cp -r awsapi-setup/db/mysql/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-bridge/setup
+
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
@@ -303,6 +312,11 @@ fi
 if [ ! -f %{_datadir}/cloudstack/management/webapps/client/WEB-INF/classes/scripts/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
     echo %{_datadir}/cloudstack/management/webapps/client/WEB-INF/classes/scripts/vm/hypervisor/xenserver/
+fi
+
+%post awsapi
+if [ -d "%{_datadir}/%{name}-management" ] ; then
+   ln %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
 fi
 
 #No default permission as the permission setup is complex
@@ -408,6 +422,11 @@ fi
 %doc NOTICE
 
 %files awsapi
+%defattr(0644,cloud,cloud,0755)
+%{_datadir}/%{name}-bridge/webapps/bridge
+%attr(0644,root,root) %{_datadir}/%{name}-bridge/setup/*
+%attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
+%attr(0755,root,root) %{_bindir}/cloudstack-setup-bridge
 %doc LICENSE
 %doc NOTICE
 
