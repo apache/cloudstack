@@ -63,6 +63,7 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
 
 public abstract class TemplateAdapterBase extends AdapterBase implements TemplateAdapter {
 	private final static Logger s_logger = Logger.getLogger(TemplateAdapterBase.class);
@@ -77,6 +78,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 	protected @Inject VMTemplateZoneDao _tmpltZoneDao;
 	protected @Inject UsageEventDao _usageEventDao;
 	protected @Inject HostDao _hostDao;
+	protected @Inject UserVmDao _userVmDao;
 	protected @Inject ResourceLimitService _resourceLimitMgr;
 	protected @Inject DataStoreManager storeMgr;
 	@Inject TemplateManager templateMgr;

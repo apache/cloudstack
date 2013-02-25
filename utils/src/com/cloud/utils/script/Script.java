@@ -449,6 +449,12 @@ public class Script implements Callable<String> {
             }
 
         }
+
+        file = new File(System.getProperty("paths.script") + File.separator + path + File.separator + script);
+        if (file.exists()) {
+            return file.getAbsolutePath();
+        }
+
         s_logger.warn("Unable to find script " + script);
         return null;
     }

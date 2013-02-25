@@ -60,16 +60,16 @@ import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.PlugNicAnswer;
+import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StopAnswer;
+import com.cloud.agent.api.UnPlugNicAnswer;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.agent.api.PlugNicAnswer;
-import com.cloud.agent.api.PlugNicCommand;
-import com.cloud.agent.api.UnPlugNicAnswer;
-import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.UserVmJoinDao;
@@ -115,11 +115,14 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
-import com.cloud.network.*;
+import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -244,6 +247,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
@@ -252,7 +256,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
-//import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
@@ -408,10 +411,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     protected String _name;
     protected String _instance;
     protected String _zone;
+    protected boolean _instanceNameFlag;
 
     @Inject ConfigurationDao _configDao;
     private int _createprivatetemplatefromvolumewait;
     private int _createprivatetemplatefromsnapshotwait;
+    private final int MAX_VM_NAME_LEN = 80;
 
     @Inject
     protected OrchestrationService _orchSrvc;
@@ -1218,6 +1223,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         VirtualMachine.State.getStateMachine().registerListener(
                 new UserVmStateListener(_usageEventDao, _networkDao, _nicDao));
+
+        value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
+        if(value == null) {
+            _instanceNameFlag = false;
+        }
+        else
+        {
+            _instanceNameFlag = Boolean.parseBoolean(value);
+        }
 
         s_logger.info("User VM Manager is configured.");
 
@@ -2114,6 +2128,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, null, group, userData, sshKeyPair, hypervisor, caller, requestedIps, defaultIps, keyboard);
     }
 
+
+    public void checkNameForRFCCompliance(String name) {
+        if (!NetUtils.verifyDomainNameLabel(name, true)) {
+            throw new InvalidParameterValueException("Invalid name. Vm name can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                    + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit");
+        }
+    }
+
     @DB @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", create = true)
     protected UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, String hostName, String displayName, Account owner, Long diskOfferingId,
             Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, String userData, String sshKeyPair, HypervisorType hypervisor, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, String keyboard)
@@ -2300,8 +2322,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
 
         long id = _vmDao.getNextInSequence(Long.class, "id");
 
-        String instanceName = VirtualMachineName.getVmName(id, owner.getId(),
-                _instance);
+        String instanceName;
+        if (_instanceNameFlag && displayName != null) {
+            // Check if the displayName conforms to RFC standards.
+            checkNameForRFCCompliance(displayName);
+            instanceName = VirtualMachineName.getVmName(id, owner.getId(), displayName);
+            if (instanceName.length() > MAX_VM_NAME_LEN) {
+                throw new InvalidParameterValueException("Specified display name " + displayName + " causes VM name to exceed 80 characters in length");
+            }
+            // Search whether there is already an instance with the same instance name
+            // that is not in the destroyed or expunging state.
+            VMInstanceVO vm = _vmInstanceDao.findVMByInstanceName(instanceName);
+            if (vm != null && vm.getState() != VirtualMachine.State.Expunging) {
+                throw new InvalidParameterValueException("There already exists a VM by the display name supplied");
+            }
+        } else {
+            instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
+        }
 
         String uuidName = UUID.randomUUID().toString();
 
@@ -2309,12 +2346,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         if (hostName == null) {
             hostName = uuidName;
         } else {
-            // 1) check is hostName is RFC complient
-            if (!NetUtils.verifyDomainNameLabel(hostName, true)) {
-                throw new InvalidParameterValueException(
-                        "Invalid name. Vm name can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                        + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit");
-            }
+            //1) check is hostName is RFC compliant
+            checkNameForRFCCompliance(hostName);
             // 2) hostName has to be unique in the network domain
             Map<String, List<Long>> ntwkDomains = new HashMap<String, List<Long>>();
             for (NetworkVO network : networkList) {

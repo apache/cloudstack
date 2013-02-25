@@ -63,6 +63,8 @@ import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmVO;
+
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
@@ -85,7 +87,6 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
     @Inject ImageService imageService;
     @Inject ImageDataFactory imageFactory;
     @Inject TemplateManager templateMgr;
-
 
     @Override
     public String getName() {
@@ -248,17 +249,21 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
                     templateHostVO.setDestroyed(true);
 					_tmpltHostDao.update(templateHostVO.getId(), templateHostVO);
                     String installPath = templateHostVO.getInstallPath();
-                    if (installPath != null) {
-                        Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, new DeleteTemplateCommand(secondaryStorageHost.getStorageUrl(), installPath));
+                    List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(templateId);
+                    //check if there is any VM using this ISO.
+                    if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
+                        if (installPath != null) {
+                            Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, new DeleteTemplateCommand(secondaryStorageHost.getStorageUrl(), installPath));
 
-                        if (answer == null || !answer.getResult()) {
-                            s_logger.debug("Failed to delete " + templateHostVO + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
+                            if (answer == null || !answer.getResult()) {
+                                s_logger.debug("Failed to delete " + templateHostVO + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
+                            } else {
+                                _tmpltHostDao.remove(templateHostVO.getId());
+                                s_logger.debug("Deleted template at: " + installPath);
+                            }
                         } else {
                             _tmpltHostDao.remove(templateHostVO.getId());
-                            s_logger.debug("Deleted template at: " + installPath);
                         }
-                    } else {
-                        _tmpltHostDao.remove(templateHostVO.getId());
                     }
 					VMTemplateZoneVO templateZone = _tmpltZoneDao.findByZoneTemplate(sZoneId, templateId);
 					

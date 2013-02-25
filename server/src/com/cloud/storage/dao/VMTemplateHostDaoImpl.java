@@ -258,7 +258,6 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
         sc.setParameters("template_id", templateId);
         sc.setParameters("host_id", hostId);
         sc.setParameters("states", (Object[])states);
-        sc.setParameters("destroyed", false);
         return search(sc, null);
     }
 	   
