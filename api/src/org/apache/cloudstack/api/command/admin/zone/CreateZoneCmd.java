@@ -46,6 +46,12 @@ public class CreateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DNS2, type=CommandType.STRING, description="the second DNS for the Zone")
     private String dns2;
 
+    @Parameter(name=ApiConstants.IP6_DNS1, type=CommandType.STRING, description="the first DNS for IPv6 network in the Zone")
+    private String ip6Dns1;
+
+    @Parameter(name=ApiConstants.IP6_DNS2, type=CommandType.STRING, description="the second DNS for IPv6 network in the Zone")
+    private String ip6Dns2;
+
     @Parameter(name=ApiConstants.GUEST_CIDR_ADDRESS, type=CommandType.STRING, description="the guest CIDR address for the Zone")
     private String guestCidrAddress;
 
@@ -87,6 +93,14 @@ public class CreateZoneCmd extends BaseCmd {
 
     public String getDns2() {
         return dns2;
+    }
+
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
+
+    public String getIp6Dns2() {
+        return ip6Dns2;
     }
 
     public String getGuestCidrAddress() {
