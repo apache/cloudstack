@@ -129,6 +129,8 @@ Requires: java >= 1.6.0
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
+Obsoletes: cloud-usage < 4.1.0
+Provides: cloud-usage
 %description usage
 The CloudStack usage calculation service
 
