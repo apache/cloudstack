@@ -3405,6 +3405,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     			nic.setReservationId(String.valueOf(ip.getVlanTag()));
     			nic.setMacAddress(ip.getMacAddress());
     		}
+    		nic.setDns1(dc.getDns1());
+    		nic.setDns2(dc.getDns2());
     	}
     	
     	if (network.getIp6Gateway() != null) {
@@ -3426,10 +3428,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     				nic.setMacAddress(ip.getMacAddress());
     			}
     		}
+    		nic.setIp6Dns1(dc.getIp6Dns1());
+    		nic.setIp6Dns2(dc.getIp6Dns2());
     	}
 
-        nic.setDns1(dc.getDns1());
-        nic.setDns2(dc.getDns2());
     }
 
 	@Override

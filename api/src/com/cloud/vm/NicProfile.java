@@ -50,6 +50,8 @@ public class NicProfile implements InternalIdentity {
     Integer deviceId;
     String dns1;
     String dns2;
+    String ip6Dns1;
+    String ip6Dns2;
     Integer networkRate;
     boolean isSecurityGroupEnabled;
     String name;
@@ -330,6 +332,22 @@ public class NicProfile implements InternalIdentity {
 
 	public void setRequestedIpv6(String requestedIpv6) {
 		this.requestedIpv6 = requestedIpv6;
+	}
+
+	public String getIp6Dns1() {
+		return ip6Dns1;
+	}
+
+	public void setIp6Dns1(String ip6Dns1) {
+		this.ip6Dns1 = ip6Dns1;
+	}
+
+	public String getIp6Dns2() {
+		return ip6Dns2;
+	}
+
+	public void setIp6Dns2(String ip6Dns2) {
+		this.ip6Dns2 = ip6Dns2;
 	}
 
 }
