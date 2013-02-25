@@ -440,6 +440,7 @@ public class DataCenterVO implements DataCenter {
         this.macAddress = macAddress;
     }
 
+ 	@Override
 	public String getIp6Dns1() {
 		return ip6Dns1;
 	}
@@ -448,6 +449,7 @@ public class DataCenterVO implements DataCenter {
 		this.ip6Dns1 = ip6Dns1;
 	}
 
+ 	@Override
 	public String getIp6Dns2() {
 		return ip6Dns2;
 	}

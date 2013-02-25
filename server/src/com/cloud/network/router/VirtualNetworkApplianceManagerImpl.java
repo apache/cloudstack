@@ -1922,6 +1922,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         NicProfile controlNic = null;
         String defaultDns1 = null;
         String defaultDns2 = null;
+        String defaultIp6Dns1 = null;
+        String defaultIp6Dns2 = null;
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
             boolean ipv4 = false, ipv6 = false;
@@ -1945,6 +1947,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             	}
                 defaultDns1 = nic.getDns1();
                 defaultDns2 = nic.getDns2();
+                defaultIp6Dns1 = nic.getIp6Dns1();
+                defaultIp6Dns2 = nic.getIp6Dns2();
             }
 
             if (nic.getTrafficType() == TrafficType.Management) {
@@ -2039,6 +2043,12 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
             if (defaultDns2 != null) {
                 buf.append(" dns2=").append(defaultDns2);
+            }
+            if (defaultIp6Dns1 != null) {
+                buf.append(" ip6dns1=").append(defaultIp6Dns1);
+            }
+            if (defaultIp6Dns2 != null) {
+                buf.append(" ip6dns2=").append(defaultIp6Dns2);
             }
 
             boolean useExtDns = !dnsProvided;

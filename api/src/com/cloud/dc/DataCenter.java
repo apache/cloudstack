@@ -37,6 +37,10 @@ public interface DataCenter extends InfrastructureEntity, Grouping, Identity, In
 
     String getDns2();
 
+    String getIp6Dns1();
+
+    String getIp6Dns2();
+
     String getGuestNetworkCidr();
 
     String getName();
