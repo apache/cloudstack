@@ -96,6 +96,7 @@ import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.HostConnectSpec;
 import com.vmware.vim25.ManagedObjectReference;
 
+
 @Local(value = {VmwareManager.class})
 public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
@@ -130,6 +131,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     String _publicNetworkVSwitchName;
     String _guestNetworkVSwitchName;
     boolean _nexusVSwitchActive;
+    boolean _fullCloneFlag;
     String _serviceConsoleName;
     String _managemetPortGroupName;
     String _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
@@ -197,9 +199,15 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         if(value == null) {
             _nexusVSwitchActive = false;
         }
-        else
-        {
+        else {
             _nexusVSwitchActive = Boolean.parseBoolean(value);
+        }
+
+        value = _configDao.getValue(Config.VmwareCreateFullClone.key());
+        if (value == null) {
+            _fullCloneFlag = false;
+        } else {
+            _fullCloneFlag = Boolean.parseBoolean(value);
         }
 
         _privateNetworkVSwitchName = _configDao.getValue(Config.VmwarePrivateNetworkVSwitch.key());
@@ -313,6 +321,11 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public boolean getNexusVSwitchGlobalParameter() {
         return _nexusVSwitchActive;
+    }
+
+    @Override
+    public boolean getFullCloneFlag() {
+        return _fullCloneFlag;
     }
 
     @Override
@@ -495,6 +508,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         params.put("public.network.vswitch.name", _publicNetworkVSwitchName);
         params.put("guest.network.vswitch.name", _guestNetworkVSwitchName);
         params.put("vmware.use.nexus.vswitch", _nexusVSwitchActive);
+        params.put("vmware.create.full.clone", _fullCloneFlag);
         params.put("service.console.name", _serviceConsoleName);
         params.put("management.portgroup.name", _managemetPortGroupName);
         params.put("vmware.reserve.cpu", _reserveCpu);

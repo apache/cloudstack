@@ -100,3 +100,12 @@ CREATE TABLE  `vpc_service_map` (
 SET foreign_key_checks = 1;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.instancename.flag', 'false', 'Append guest VM display Name (if set) to the internal name of the VM');
+
+CREATE TABLE `cloud`.`user_vm_clone_setting` (
+  `vm_id` bigint unsigned NOT NULL COMMENT 'guest VM id',
+  `clone_type` varchar(10) NOT NULL COMMENT 'Full or Linked Clone (applicable to VMs on ESX)',
+  PRIMARY KEY (`vm_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'false', 'If set to true, creates VMs as full clones on ESX hypervisor');

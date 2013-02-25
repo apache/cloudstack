@@ -159,9 +159,9 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
@@ -192,6 +192,7 @@ import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostResourceSummary;
+import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareGuestOsMapper;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
@@ -260,6 +261,7 @@ import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualSCSISharing;
 
+
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
 
@@ -288,6 +290,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected String _guestNetworkVSwitchName;
     protected VirtualSwitchType _vSwitchType = VirtualSwitchType.StandardVirtualSwitch;
     protected boolean _nexusVSwitch = false;
+    protected boolean _fullCloneFlag = false;
 
     protected boolean _reserveCpu = false;
 
@@ -3695,9 +3698,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     dsMo.deleteFile(cmd.getVolume().getPath() + ".vmdk", morDc, true);
 
                     // root volume may be created via linked-clone, delete the delta disk as well
-                    if (s_logger.isInfoEnabled())
+                    if (_fullCloneFlag) {
+                        if (s_logger.isInfoEnabled()) {
+                            s_logger.info("Destroy volume by derived name: " + cmd.getVolume().getPath() + "-flat.vmdk");
+                        }
+                        dsMo.deleteFile(cmd.getVolume().getPath() + "-flat.vmdk", morDc, true);
+                    } else {
+                        if (s_logger.isInfoEnabled()) {
                         s_logger.info("Destroy volume by derived name: " + cmd.getVolume().getPath() + "-delta.vmdk");
+                        }
                     dsMo.deleteFile(cmd.getVolume().getPath() + "-delta.vmdk", morDc, true);
+                    }
                     return new Answer(cmd, true, "Success");
                 }
 
@@ -3799,6 +3810,70 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+
+
+    private boolean createVMFullClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo,
+            String vmdkName, ManagedObjectReference morDatastore, ManagedObjectReference morPool) throws Exception {
+
+        if(dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName))
+            dsMo.deleteFile(String.format("[%s] %s/", dsMo.getName(), vmdkName), dcMo.getMor(), false);
+
+        s_logger.info("creating full clone from template");
+        if (!vmTemplate.createFullClone(vmdkName, dcMo.getVmFolder(), morPool, morDatastore)) {
+            String msg = "Unable to create full clone from the template";
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
+
+        // we can't rely on un-offical API (VirtualMachineMO.moveAllVmDiskFiles() any more, use hard-coded disk names that we know
+        // to move files
+        s_logger.info("Move volume out of volume-wrapper VM ");
+        dsMo.moveDatastoreFile(String.format("[%s] %s/%s.vmdk", dsMo.getName(), vmdkName, vmdkName),
+                dcMo.getMor(), dsMo.getMor(),
+                String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
+
+        dsMo.moveDatastoreFile(String.format("[%s] %s/%s-flat.vmdk", dsMo.getName(), vmdkName, vmdkName),
+                dcMo.getMor(), dsMo.getMor(),
+                String.format("[%s] %s-flat.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
+
+        return true;
+    }
+
+    private boolean createVMLinkedClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo,
+            String vmdkName, ManagedObjectReference morDatastore, ManagedObjectReference morPool) throws Exception {
+
+        ManagedObjectReference morBaseSnapshot = vmTemplate.getSnapshotMor("cloud.template.base");
+        if (morBaseSnapshot == null) {
+            String msg = "Unable to find template base snapshot, invalid template";
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
+
+        if(dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName))
+            dsMo.deleteFile(String.format("[%s] %s/", dsMo.getName(), vmdkName), dcMo.getMor(), false);
+
+        s_logger.info("creating linked clone from template");
+        if (!vmTemplate.createLinkedClone(vmdkName, morBaseSnapshot, dcMo.getVmFolder(), morPool, morDatastore)) {
+            String msg = "Unable to clone from the template";
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
+
+        // we can't rely on un-offical API (VirtualMachineMO.moveAllVmDiskFiles() any more, use hard-coded disk names that we know
+        // to move files
+        s_logger.info("Move volume out of volume-wrapper VM ");
+        dsMo.moveDatastoreFile(String.format("[%s] %s/%s.vmdk", dsMo.getName(), vmdkName, vmdkName),
+                dcMo.getMor(), dsMo.getMor(),
+                String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
+
+        dsMo.moveDatastoreFile(String.format("[%s] %s/%s-delta.vmdk", dsMo.getName(), vmdkName, vmdkName),
+                dcMo.getMor(), dsMo.getMor(),
+                String.format("[%s] %s-delta.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
+
+        return true;
+    }
+
+
     @Override
     public synchronized CreateAnswer execute(CreateCommand cmd) {
         if (s_logger.isInfoEnabled()) {
@@ -3858,36 +3933,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
                     ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
-                    ManagedObjectReference morBaseSnapshot = vmTemplate.getSnapshotMor("cloud.template.base");
-                    if (morBaseSnapshot == null) {
-                        String msg = "Unable to find template base snapshot, invalid template";
-                        s_logger.error(msg);
-                        throw new Exception(msg);
-                    }
-
-                    if(dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName))
-                        dsMo.deleteFile(String.format("[%s] %s/", dsMo.getName(), vmdkName), dcMo.getMor(), false);
-
-                    s_logger.info("create linked clone from template");
-                    if (!vmTemplate.createLinkedClone(vmdkName, morBaseSnapshot, dcMo.getVmFolder(), morPool, morDatastore)) {
-                        String msg = "Unable to clone from the template";
-                        s_logger.error(msg);
-                        throw new Exception(msg);
+                    //createVMLinkedClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
+                    if (!_fullCloneFlag) {
+                        createVMLinkedClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
+                    } else {
+                        createVMFullClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
                     }
 
                     VirtualMachineMO vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
                     assert (vmMo != null);
-
-                    // we can't rely on un-offical API (VirtualMachineMO.moveAllVmDiskFiles() any more, use hard-coded disk names that we know
-                    // to move files
-                    s_logger.info("Move volume out of volume-wrapper VM ");
-                    dsMo.moveDatastoreFile(String.format("[%s] %s/%s.vmdk", dsMo.getName(), vmdkName, vmdkName),
-                            dcMo.getMor(), dsMo.getMor(),
-                            String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
-
-                    dsMo.moveDatastoreFile(String.format("[%s] %s/%s-delta.vmdk", dsMo.getName(), vmdkName, vmdkName),
-                            dcMo.getMor(), dsMo.getMor(),
-                            String.format("[%s] %s-delta.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
 
                     s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
                     vmMo.detachAllDisks();
@@ -4887,6 +4941,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         value = params.get("vmware.use.nexus.vswitch").toString();
         if(value != null && value.equalsIgnoreCase("true"))
             _nexusVSwitch = true;
+
+        value = params.get("vmware.create.full.clone").toString();
+        if (value != null && value.equalsIgnoreCase("true")) {
+            _fullCloneFlag = true;
+        } else {
+            _fullCloneFlag = false;
+        }
 
         s_logger.info("VmwareResource network configuration info. private vSwitch: " + _privateNetworkVSwitchName + ", public vSwitch: " + _publicNetworkVSwitchName + ", guest network: "
                 + _guestNetworkVSwitchName);
