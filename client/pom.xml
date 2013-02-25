@@ -268,11 +268,6 @@
             </goals>
             <configuration>
               <target>
-                <exec executable="cp">
-                    <arg value="-r" />
-                    <arg value="${basedir}/../scripts" />
-                    <arg value="${basedir}/target/generated-webapp/WEB-INF/classes/scripts" />
-                </exec>
 
                 <copy
                   todir="${basedir}/target/generated-webapp/WEB-INF/">
@@ -286,6 +281,13 @@
                     <include name="resources/**/*" />
                   </fileset>
                 </copy>
+
+                <exec executable="cp">
+                    <arg value="-r" />
+                    <arg value="${basedir}/../scripts" />
+                    <arg value="${basedir}/target/generated-webapp/WEB-INF/classes/" />
+                </exec>
+
                 <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/vms">
                   <fileset dir="${basedir}/../services/console-proxy/server/dist">
                     <include name="systemvm.zip" />
