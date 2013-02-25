@@ -1585,30 +1585,47 @@
 										});
 									}									
 								}			
-                $.ajax({
-                  url: createURL('associateIpAddress'),
-                  data: dataObj,   
-                  success: function(data) {
-                    args.response.success({
-                      _custom: {
-                        jobId: data.associateipaddressresponse.jobid,
-                        getUpdatedItem: function(data) {
-                          var newIP = data.queryasyncjobresultresponse.jobresult.ipaddress;
-                          return $.extend(newIP, {
-                            state: 'Allocated'
-                          });
-                        },
-                        getActionFilter: function() {
-                          return actionFilters.ipAddress;
-                        }
-                      }
-                    });
-                  },
 
-                  error: function(json) {
-                    args.response.error(parseXMLHttpResponse(json));
-                  }
-                });
+                if (args.context.nics) {
+                  $.ajax({
+                    url: createURL('addIpToNic'),
+                    data: {
+                      nicId: args.context.nics[0].id
+                    },
+                    success: function(json) {
+                      args.response.success({
+                        _custom: {
+                          jobId: json.addiptonicresponse.jobid
+                        }
+                      });
+                    }
+                  });
+                } else {
+                  $.ajax({
+                    url: createURL('associateIpAddress'),
+                    data: dataObj,   
+                    success: function(data) {
+                      args.response.success({
+                        _custom: {
+                          jobId: data.associateipaddressresponse.jobid,
+                          getUpdatedItem: function(data) {
+                            var newIP = data.queryasyncjobresultresponse.jobresult.ipaddress;
+                            return $.extend(newIP, {
+                              state: 'Allocated'
+                            });
+                          },
+                          getActionFilter: function() {
+                            return actionFilters.ipAddress;
+                          }
+                        }
+                      });
+                    },
+
+                    error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }
+                  });
+                }
               },
 
               notification: {
@@ -1643,27 +1660,42 @@
               });
             }
 
-            $.ajax({
-              url: createURL('listPublicIpAddresses'),
-              data: data,
-              dataType: "json",
-              async: true,
-              success: function(json) {
-                var items = json.listpublicipaddressesresponse.publicipaddress;
-                
-								$(items).each(function() {								  
-								  getExtaPropertiesForIpObj(this, args);
-								});                            
+            if (args.context.nics) {
+              $.ajax({
+                url: createURL('listNics'),
+                data: {
+                  nicId: args.context.nics[0].id,
+                  vmId: args.context.instances[0].id
+                },
+                success: function(json) {
+                  args.response.success({
+                    data: json.listnicsresponse.nic[0].ipAddresses
+                  });
+                }
+              });
+            } else {
+              $.ajax({
+                url: createURL('listPublicIpAddresses'),
+                data: data,
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var items = json.listpublicipaddressesresponse.publicipaddress;
+                  
+                  $(items).each(function() {								  
+                    getExtaPropertiesForIpObj(this, args);
+                  });                            
 
-                args.response.success({
-                  actionFilter: actionFilters.ipAddress,
-                  data: items
-                });
-              },
-              error: function(data) {
-                args.response.error(parseXMLHttpResponse(data));
-              }
-            });
+                  args.response.success({
+                    actionFilter: actionFilters.ipAddress,
+                    data: items
+                  });
+                },
+                error: function(data) {
+                  args.response.error(parseXMLHttpResponse(data));
+                }
+              });
+            }
           },
 
           // Detail view
@@ -2017,39 +2049,53 @@
               remove: {
                 label: 'label.action.release.ip',
                 action: function(args) {
-                  $.ajax({
-                    url: createURL('disassociateIpAddress'),
-                    data: {
-                      id: args.context.ipAddresses[0].id
-                    },
-                    dataType: 'json',
-                    async: true,
-                    success: function(data) {
-                      args.response.success({
-                        _custom: {
-                          jobId: data.disassociateipaddressresponse.jobid,
-                          getActionFilter: function() {
-                            return function(args) {
-                              var allowedActions = ['enableStaticNAT'];
+                  if (args.context.nics) {
+                    $.ajax({
+                      url: createURL('removeIpFromNic'),
+                      data: {
+                        id: args.context.ipAddresses[0].id
+                      },
+                      success: function(json) {
+                        args.response.success({
+                          _custom: { jobId: json.removeipfromnicresponse.jobid }
+                        });
+                      }
+                    });
+                  } else {
+                    $.ajax({
+                      url: createURL('disassociateIpAddress'),
+                      data: {
+                        id: args.context.ipAddresses[0].id
+                      },
+                      dataType: 'json',
+                      async: true,
+                      success: function(data) {
+                        args.response.success({
+                          _custom: {
+                            jobId: data.disassociateipaddressresponse.jobid,
+                            getActionFilter: function() {
+                              return function(args) {
+                                var allowedActions = ['enableStaticNAT'];
 
-                              return allowedActions;
-                            };
-                          },
-                          getUpdatedItem: function(args) {
-                            return {
-                              state: 'Released'
-                            };
-                          },
-                          onComplete: function() {
-                            $(window).trigger('cloudStack.fullRefresh');
+                                return allowedActions;
+                              };
+                            },
+                            getUpdatedItem: function(args) {
+                              return {
+                                state: 'Released'
+                              };
+                            },
+                            onComplete: function() {
+                              $(window).trigger('cloudStack.fullRefresh');
+                            }
                           }
-                        }
-                      });
-                    },
-                    error: function(data) {
-                      args.response.error(parseXMLHttpResponse(data));
-                    }
-                  });
+                        });
+                      },
+                      error: function(data) {
+                        args.response.error(parseXMLHttpResponse(data));
+                      }
+                    });
+                  }
                 },
                 messages: {
                   confirm: function(args) {
