@@ -17,31 +17,24 @@
 package com.cloud.network.vpc.dao;
 
 import java.util.List;
-import java.util.Map;
 
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
+import com.cloud.network.dao.NetworkServiceMapVO;
+import com.cloud.network.vpc.VpcServiceMapVO;
 import com.cloud.utils.db.GenericDao;
 
-
-public interface VpcDao extends GenericDao<VpcVO, Long>{
-
-    /**
-     * @param offId
-     * @return
-     */
-    int getVpcCountByOfferingId(long offId);
-    
-    Vpc getActiveVpcById(long vpcId);
-    
-    List<? extends Vpc> listByAccountId(long accountId);
-    
-    List<VpcVO> listInactiveVpcs();
-    
-    long countByAccountId(long accountId);
-
-    VpcVO persist(VpcVO vpc, Map<String, String> serviceProviderMap);
-
-    void persistVpcServiceProviders(long vpcId,
-                                    Map<String, String> serviceProviderMap);
+/**
+ * VpcServiceMapDao deals with searches and operations done on the
+ * vpc_service_map table.
+ *
+ */
+public interface VpcServiceMapDao extends GenericDao<VpcServiceMapVO, Long>{
+    boolean areServicesSupportedInVpc(long vpcId, Service... services);
+    boolean canProviderSupportServiceInVpc(long vpcId, Service service, Provider provider);
+    List<NetworkServiceMapVO> getServicesInVpc(long vpcId);
+    String getProviderForServiceInVpc(long vpcId, Service service);
+    void deleteByVpcId(long vpcId);
+    List<String> getDistinctProviders(long vpcId);
+    String isProviderForVpc(long vpcId, Provider provider);
 }
