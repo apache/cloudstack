@@ -18,6 +18,7 @@ package com.cloud.vpc.dao;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 
@@ -83,7 +84,17 @@ public class MockVpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDa
         // TODO Auto-generated method stub
         return 0;
     }
-    
+
+    @Override
+    public VpcVO persist(VpcVO vpc, Map<String, String> serviceProviderMap) {
+        return null;
+    }
+
+    @Override
+    public void persistVpcServiceProviders(long vpcId, Map<String, String> serviceProviderMap) {
+        return;
+    }
+
     @Override
     public VpcVO findById(Long id) {
         VpcVO vo = null;
