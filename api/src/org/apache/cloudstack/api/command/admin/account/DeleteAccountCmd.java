@@ -48,9 +48,6 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
             required=true, description="Account id")
     private Long id;
 
-    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
-    private Boolean isPropagate;
-
     @Inject RegionService _regionService;
     
     /////////////////////////////////////////////////////
@@ -61,10 +58,6 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
-
-	public Boolean getIsPropagate() {
-		return isPropagate;
-	}
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

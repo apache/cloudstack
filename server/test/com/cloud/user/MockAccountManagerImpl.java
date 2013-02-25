@@ -325,30 +325,28 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-	public UserAccount createUserAccount(String userName, String password,
-			String firstName, String lastName, String email, String timezone,
-			String accountName, short accountType, Long domainId,
-			String networkDomain, Map<String, String> details,
-			String accountUUID, String userUUID, Integer regionId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public UserAccount createUserAccount(String userName, String password,
+            String firstName, String lastName, String email, String timezone,
+            String accountName, short accountType, Long domainId,
+            String networkDomain, Map<String, String> details) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public User createUser(String userName, String password, String firstName,
-			String lastName, String email, String timeZone, String accountName,
-			Long domainId, String userUUID, Integer regionId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public User createUser(String userName, String password, String firstName,
+            String lastName, String email, String timeZone, String accountName,
+            Long domainId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Account createAccount(String accountName, short accountType,
-			Long domainId, String networkDomain, Map details, String uuid,
-			int regionId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Account createAccount(String accountName, short accountType,
+            Long domainId, String networkDomain, Map details) {
+        // TODO Auto-generated method stub
+        return null;
+    }
     @Override
     public RoleType getRoleType(Account account) {
         return null;
