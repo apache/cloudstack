@@ -38,13 +38,13 @@ def can_bridge_firewall(privnic):
         execute("which iptables")
     except:
         print "no iptables on your host machine"
-        exit(1)
+        sys.exit(1)
 
     try:
         execute("which ebtables")
     except:
         print "no ebtables on your host machine"
-        exit(2)
+        sys.exit(2)
 
     
     if not os.path.exists('/var/run/cloud'):
@@ -813,6 +813,9 @@ if __name__ == '__main__':
     parser.add_option("--hostIp", dest="hostIp")
     parser.add_option("--hostMacAddr", dest="hostMacAddr")
     (option, args) = parser.parse_args()
+    if len(args) == 0:
+        logging.debug("No command to execute")
+        sys.exit(1)
     cmd = args[0]
     if cmd == "can_bridge_firewall":
         can_bridge_firewall(args[1])
@@ -830,3 +833,6 @@ if __name__ == '__main__':
         cleanup_rules()
     elif cmd == "post_default_network_rules":
         post_default_network_rules(option.vmName, option.vmID, option.vmIP, option.vmMAC, option.vif, option.brname, option.dhcpSvr, option.hostIp, option.hostMacAddr)
+    else:
+        logging.debug("Unknown command: " + cmd)
+        sys.exit(1)
