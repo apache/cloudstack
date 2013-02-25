@@ -1421,7 +1421,19 @@
                           networkdomain: {
                             label: 'label.network.domain',
                             docID: 'helpGuestNetworkZoneNetworkDomain'
-                          }
+                          },
+                          
+                         ipv6: { label:'Enable IPV6' , isBoolean:true , isChecked:false },
+
+                         startipv6:{ label:'Start IPV6' , isHidden:true, dependsOn:'ipv6', validation:{required:true}},
+
+                         endipv6: {label: 'End IPV6' , isHidden:true , dependsOn:'ipv6', validation:{required:true}},
+
+                         ip6gateway: {label: 'IPV6 Gateway' , isHidden:true , dependsOn: 'ipv6', validation:{required:true}},
+
+                         ip6cidr:{label: 'IPV6 CIDR' , isHidden:true, dependsOn: 'ipv6', validation:{required:true}}
+
+ 
                         }
                       },
 
@@ -1486,7 +1498,25 @@
 												if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
 													array1.push("&networkdomain=" + todb(args.data.networkdomain));
 
-                        $.ajax({
+                       
+                                                                                                                                                                                         if(args.$form.find('.form-item[rel=ipv6]').find('input[type=checkbox]').is(':Checked') == true && selectedNetworkOfferingObj.guestiptype == "Shared") {
+
+                 if(args.data.startipv6 !="")
+                     array1.push("&startipv6=" +todb(args.data.startipv6));
+
+                 if(args.data.endipv6 !="")
+                      array1.push("&endipv6=" +todb(args.data.endipv6));
+
+                 if(args.data.ip6gateway !="")
+                     array1.push("&ip6gateway=" +todb(args.data.ip6gateway));
+
+                 if(args.data.ip6cidr !="")
+                   array1.push("&ip6cidr=" +todb(args.data.ip6cidr));
+
+                     }
+
+
+                       $.ajax({
                           url: createURL("createNetwork" + array1.join("")),
                           dataType: "json",
                           success: function(json) {
