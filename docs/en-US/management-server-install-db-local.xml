@@ -101,10 +101,6 @@ binlog-format = 'ROW'</programlisting>
       </orderedlist>
     </listitem>
     <listitem>
-      <para>Set up &PRODUCT; Management Server setup:</para>
-      <programlisting># cloud-setup-management</programlisting>
-    </listitem>
-    <listitem>
       <para>Set up the database. The following command creates the "cloud" user on the
         database.</para>
       <itemizedlist>
@@ -152,9 +148,6 @@ binlog-format = 'ROW'</programlisting>
       <para>If you are running the KVM hypervisor on the same machine with the Management Server,
         edit /etc/sudoers and add the following line:</para>
       <programlisting language="Bash">Defaults:cloud !requiretty</programlisting>
-      <note>
-        <para>This type of single-machine setup is recommended only for a trial installation.</para>
-      </note>
     </listitem>
     <listitem>
       <para>Now that the database is set up, you can finish configuring the OS for the Management
