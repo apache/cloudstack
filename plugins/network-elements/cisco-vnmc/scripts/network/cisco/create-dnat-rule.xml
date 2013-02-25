@@ -26,7 +26,7 @@
         isRoundRobinIpEnabled="no"
         srcTranslatedIpPatPool=""
         srcTranslatedIpPool="%ippoolname%"
-        srcTranslatedPortPool="%portpoolname%"
+        srcTranslatedPortPool=""
         status="created"/>
     </pair>
 
@@ -62,77 +62,6 @@
         value="%srcip%"/>
     </pair>
 
-    <pair key="%natruledn%/rule-cond-3">
-      <policyRuleCondition
-        dn="%natruledn%/rule-cond-3"
-        id="3"
-        order="unspecified"
-        status="created"/>
-    </pair>
-    <pair key="%natruledn%/rule-cond-3/nw-expr2/nw-attr-qual">
-      <policyNwAttrQualifier
-        attrEp="source"
-        dn="%natruledn%/rule-cond-3/nw-expr2/nw-attr-qual"
-        status="created"/>
-    </pair>
-    <pair key="%natruledn%/rule-cond-3/nw-expr2">
-      <policyNetworkExpression
-        dn="%natruledn%/rule-cond-3/nw-expr2"
-        id="2"
-        opr="range"
-        status="created"/>
-    </pair>
-    <pair key="%natruledn%/rule-cond-3/nw-expr2/nw-port-2">
-      <policyNetworkPort
-        appType="Other"
-        dataType="string"
-        descr=""
-        dn="%natruledn%/rule-cond-3/nw-expr2/nw-port-2"
-        id="2"
-        name=""
-        placement="begin"
-        status="created"
-        value="%srcportstart%"/>
-    </pair>
-    <pair key="%natruledn%/rule-cond-3/nw-expr2/nw-port-3">
-      <policyNetworkPort
-        appType="Other"
-        dataType="string"
-        descr=""
-        dn="%natruledn%/rule-cond-3/nw-expr2/nw-port-3"
-        id="3"
-        name=""
-        placement="end"
-        status="created"
-        value="%srcportend%"/>
-    </pair>
-
-    <pair key="%natruledn%/rule-cond-4">
-      <policyRuleCondition
-        dn="%natruledn%/rule-cond-4"
-        id="4"
-        order="unspecified"
-        status="created"/>
-    </pair>
-    <pair key="%natruledn%/rule-cond-4/nw-expr2">
-      <policyNetworkExpression
-        dn="%natruledn%/rule-cond-4/nw-expr2"
-        id="2"
-        opr="eq"
-        status="created"/>
-    </pair>
-    <pair key="%natruledn%/rule-cond-4/nw-expr2/nw-protocol-2">
-      <policyProtocol
-        dataType="string"
-        descr=""
-        dn="%natruledn%/rule-cond-4/nw-expr2/nw-protocol-2"
-        id="2"
-        name=""
-        placement="none"
-        status="created"
-        value="%protocolvalue%"/>
-    </pair>
-
   </inConfigs>
 </configConfMos>
 
@@ -141,9 +70,5 @@
     natrulename="bbb"
     descr=value
     ippoolname="ccc"
-    portpoolname="ddd"
     srcip="10.147.30.230"
-    srcportstart="22"
-    srcportend="22"
-    protocolvalue="TCP"
 --!>

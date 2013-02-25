@@ -72,6 +72,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         CREATE_PORT_POOL("create-port-pool.xml", "policy-mgr"),
         CREATE_IP_POOL("create-ip-pool.xml", "policy-mgr"),
 
+        CREATE_PF_RULE("create-pf-rule.xml", "policy-mgr"),
         CREATE_DNAT_RULE("create-dnat-rule.xml", "policy-mgr"),
         CREATE_SOURCE_NAT_RULE("create-source-nat-rule.xml", "policy-mgr"),
 
@@ -416,20 +417,18 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
    }
 
     private String getNameForSourceNatIpPool(String tenantName) {
-        return "SNAT-Ip-" + tenantName;
+        return "SNATIp-" + tenantName;
     }
 
     private String getDnForSourceNatPool(String tenantName) {
         return getDnForTenantVDC(tenantName) + "/objgrp-" + getNameForSourceNatIpPool(tenantName);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCSourceNatIpPool(java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public boolean createTenantVDCSourceNatIpPool(String tenantName, String identifier,
             String publicIp) throws ExecutionException {
-        return createTenantVDCIpPool(getDnForSourceNatPool(tenantName),
+        return createTenantVDCIpPool(
+                getDnForSourceNatPool(tenantName),
                 getNameForSourceNatIpPool(tenantName),
                 "Source NAT ip pool for Tenant VDC " + tenantName,
                 publicIp);
@@ -451,9 +450,18 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return getDnForSourceNatPolicy(tenantName) + "/rule-" + getNameForSourceNatRule(tenantName);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCSourceNatRule(java.lang.String, java.lang.String, java.lang.String)
-     */
+    private String getNameForNatPolicySet(String tenantName) {
+        return "NAT-PolicySet-" + tenantName;
+    }
+
+    private String getDnForNatPolicySet(String tenantName) {
+        return getDnForTenantVDC(tenantName) + "/natpset-" + getNameForNatPolicySet(tenantName) ;
+    }
+
+    private String getDnForSourceNatPolicyRef(String tenantName) {
+        return getDnForNatPolicySet(tenantName) + "/polref-" + getNameForSourceNatPolicy(tenantName) ;
+    }
+
     @Override
     public boolean createTenantVDCSourceNatRule(String tenantName, String identifier,
             String startSourceIp, String endSourceIp) throws ExecutionException {
@@ -473,21 +481,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return verifySuccess(response);
     }
 
-    private String getNameForNatPolicySet(String tenantName) {
-        return "NAT-PolicySet-" + tenantName;
-    }
-
-    private String getDnForNatPolicySet(String tenantName) {
-        return getDnForTenantVDC(tenantName) + "/natpset-" + getNameForNatPolicySet(tenantName) ;
-    }
-
-    private String getDnForSourceNatPolicyRef(String tenantName) {
-        return getDnForNatPolicySet(tenantName) + "/polref-" + getNameForSourceNatPolicy(tenantName) ;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCSourceNatPolicyRef(java.lang.String, java.lang.String)
-     */
     @Override
     public boolean createTenantVDCSourceNatPolicyRef(String tenantName, String identifier) throws ExecutionException {
         return createTenantVDCNatPolicyRef(
@@ -496,9 +489,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
                 tenantName);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCSourceNatPolicy(java.lang.String, java.lang.String)
-     */
     @Override
     public boolean createTenantVDCSourceNatPolicy(String tenantName, String identifier) throws ExecutionException {
         return createTenantVDCNatPolicy(
@@ -506,9 +496,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
                 getNameForSourceNatPolicy(tenantName));
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCNatPolicySet(java.lang.String)
-     */
     @Override
     public boolean createTenantVDCNatPolicySet(String tenantName) throws ExecutionException {
         String xml = VnmcXml.CREATE_NAT_POLICY_SET.getXml();
@@ -523,9 +510,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return verifySuccess(response);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#associateNatPolicySet(java.lang.String)
-     */
     @Override
     public boolean associateNatPolicySet(String tenantName) throws ExecutionException {
         String xml = VnmcXml.RESOLVE_NAT_POLICY_SET.getXml();
@@ -571,9 +555,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return getDnForAclPolicy(tenantName, policyIdentifier) + "/rule-" + getNameForAclRule(tenantName, identifier);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCAclPolicy(java.lang.String, java.lang.String, boolean)
-     */
     @Override
     public boolean createTenantVDCAclPolicy(String tenantName, String identifier, boolean ingress) throws ExecutionException {
         String xml = VnmcXml.CREATE_ACL_POLICY.getXml();
@@ -588,9 +569,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return verifySuccess(response);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#deleteTenantVDCAclPolicy(java.lang.String, java.lang.String)
-     */
     @Override
     public boolean deleteTenantVDCAclPolicy(String tenantName, String identifier) throws ExecutionException {
         String xml = VnmcXml.DELETE_ACL_POLICY.getXml();
@@ -604,9 +582,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return verifySuccess(response);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCAclPolicyRef(java.lang.String, java.lang.String, boolean)
-     */
     @Override
     public boolean createTenantVDCAclPolicyRef(String tenantName, String identifier, boolean ingress) throws ExecutionException {
         String xml = VnmcXml.CREATE_ACL_POLICY_REF.getXml();
@@ -621,9 +596,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return verifySuccess(response);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCAclPolicySet(java.lang.String, boolean)
-     */
     @Override
     public boolean createTenantVDCAclPolicySet(String tenantName, boolean ingress) throws ExecutionException {
         String xml = VnmcXml.CREATE_ACL_POLICY_SET.getXml();
@@ -638,9 +610,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return verifySuccess(response);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#associateAclPolicySet(java.lang.String)
-     */
     @Override
     public boolean associateAclPolicySet(String tenantName) throws ExecutionException {
         String xml = VnmcXml.RESOLVE_ACL_POLICY_SET.getXml();
@@ -659,9 +628,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return verifySuccess(response);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createIngressAclRule(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public boolean createIngressAclRule(String tenantName,
             String identifier, String policyIdentifier,
@@ -686,9 +652,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return verifySuccess(response);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#deleteAclRule(java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public boolean deleteAclRule(String tenantName, String identifier, String policyIdentifier) throws ExecutionException {
         String xml = VnmcXml.DELETE_ACL_RULE.getXml();
@@ -702,20 +665,20 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return verifySuccess(response);
     }
 
-    private String getNameForDNatPortPool(String tenantName, String identifier) {
-        return "Port-" + tenantName + "-" + identifier;
+    private String getNameForPFPortPool(String tenantName, String identifier) {
+        return "PFPort-" + tenantName + "-" + identifier;
     }
 
-    private String getDnForDNatPortPool(String tenantName, String identifier) {
-        return getDnForTenantVDC(tenantName) + "/objgrp-" + getNameForDNatPortPool(tenantName, identifier);
+    private String getDnForPFPortPool(String tenantName, String identifier) {
+        return getDnForTenantVDC(tenantName) + "/objgrp-" + getNameForPFPortPool(tenantName, identifier);
     }
 
-    private String getNameForDNatIpPool(String tenantName, String identifier) {
-        return "Ip-" + tenantName + "-" + identifier;
+    private String getNameForPFIpPool(String tenantName, String identifier) {
+        return "PFIp-" + tenantName + "-" + identifier;
     }
 
-    private String getDnForDNatIpPool(String tenantName, String identifier) {
-        return getDnForTenantVDC(tenantName) + "/objgrp-" + getNameForDNatIpPool(tenantName, identifier);
+    private String getDnForPFIpPool(String tenantName, String identifier) {
+        return getDnForTenantVDC(tenantName) + "/objgrp-" + getNameForPFIpPool(tenantName, identifier);
     }
 
     private boolean createTenantVDCPortPool(String poolDn, String name,
@@ -811,28 +774,117 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         }
 
         return result;
-
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCDNatPortPool(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
-    public boolean createTenantVDCDNatPortPool(String tenantName, String identifier,
+    public boolean createTenantVDCPFPortPool(String tenantName, String identifier,
             String startPort, String endPort) throws ExecutionException {
         return createTenantVDCPortPool(
-                getDnForDNatPortPool(tenantName, identifier), getNameForDNatPortPool(tenantName, identifier),
-                "DNAT port pool for " + getNameForDNatPortPool(tenantName, identifier), startPort, endPort);
+                getDnForPFPortPool(tenantName, identifier),
+                getNameForPFPortPool(tenantName, identifier),
+                "PF port pool for " + getNameForPFPortPool(tenantName, identifier),
+                startPort, endPort);
     }
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCDNatIpPool(java.lang.String, java.lang.String, java.lang.String)
-     */
+
     @Override
-    public boolean createTenantVDCDNatIpPool(String tenantName, String identifier,
+    public boolean createTenantVDCPFIpPool(String tenantName, String identifier,
             String ipAddress) throws ExecutionException {
         return createTenantVDCIpPool(
-                getDnForDNatIpPool(tenantName, identifier), getNameForDNatIpPool(tenantName, identifier),
-                "DNAT ip pool for " + getNameForDNatIpPool(tenantName, identifier), ipAddress);
+                getDnForPFIpPool(tenantName, identifier),
+                getNameForPFIpPool(tenantName, identifier),
+                "PF ip pool for " + getNameForPFIpPool(tenantName, identifier),
+                ipAddress);
+    }
+
+    private String getNameForPFPolicy(String tenantName, String identifier) {
+        return "PF-" + tenantName + "-" + identifier;
+    }
+
+    private String getDnForPFPolicy(String tenantName, String identifier) {
+        return getDnForTenantVDC(tenantName) + "/natpol-" + getNameForPFPolicy(tenantName, identifier);
+    }
+
+    private String getDnForPFPolicyRef(String tenantName, String identifier) {
+        return getDnForNatPolicySet(tenantName) + "/polref-" + getNameForPFPolicy(tenantName, identifier);
+    }
+
+    private String getNameForPFRule(String tenantName, String identifier) {
+        return "Rule-" + tenantName + "-" + identifier;
+    }
+
+    private String getDnForPFRule(String tenantName, String identifier, String policyIdentifier) {
+        return getDnForPFPolicy(tenantName, policyIdentifier) + "/rule-" + getNameForPFRule(tenantName, identifier);
+    }
+
+    @Override
+    public boolean createTenantVDCPFRule(String tenantName,
+            String identifier, String policyIdentifier,
+            String protocol, String sourceIp,
+            String startSourcePort, String endSourcePort) throws ExecutionException {
+        String xml = VnmcXml.CREATE_PF_RULE.getXml();
+        String service = VnmcXml.CREATE_PF_RULE.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "natruledn", getDnForPFRule(tenantName, identifier, policyIdentifier));
+        xml = replaceXmlValue(xml, "natrulename", getNameForPFRule(tenantName, identifier));
+        xml = replaceXmlValue(xml, "descr", "PF rule for Tenant VDC " + tenantName);
+        xml = replaceXmlValue(xml, "ippoolname", getNameForPFIpPool(tenantName, policyIdentifier + "-" + identifier));
+        xml = replaceXmlValue(xml, "portpoolname", getNameForPFPortPool(tenantName, policyIdentifier + "-" + identifier));
+        xml = replaceXmlValue(xml, "srcip", sourceIp);
+        xml = replaceXmlValue(xml, "srcportstart", startSourcePort);
+        xml = replaceXmlValue(xml, "srcportend", endSourcePort);
+        xml = replaceXmlValue(xml, "protocolvalue", protocol);
+
+        String response =  sendRequest(service, xml);
+
+        return verifySuccess(response);
+    }
+
+    @Override
+    public boolean createTenantVDCPFPolicyRef(String tenantName, String identifier) throws ExecutionException {
+        return createTenantVDCNatPolicyRef(
+                getDnForPFPolicyRef(tenantName, identifier),
+                getNameForPFPolicy(tenantName, identifier),
+                tenantName);
+    }
+
+    @Override
+    public boolean createTenantVDCPFPolicy(String tenantName, String identifier) throws ExecutionException {
+        return createTenantVDCNatPolicy(
+                getDnForPFPolicy(tenantName, identifier),
+                getNameForPFPolicy(tenantName, identifier));
+    }
+
+    @Override
+    public boolean deleteTenantVDCPFPolicy(String tenantName, String identifier) throws ExecutionException {
+        return deleteTenantVDCNatPolicy(
+                getDnForPFPolicy(tenantName, identifier),
+                getNameForPFPolicy(tenantName, identifier));
+    }
+
+    private String getNameForDNatIpPool(String tenantName, String identifier) {
+        return "DNATIp-" + tenantName + "-" + identifier;
+    }
+
+    private String getDnForDNatIpPool(String tenantName, String identifier) {
+        return getDnForTenantVDC(tenantName) + "/objgrp-" + getNameForDNatIpPool(tenantName, identifier);
+    }
+
+    @Override
+    public boolean createTenantVDCDNatIpPool(String tenantName,
+            String identifier, String ipAddress) throws ExecutionException {
+        return createTenantVDCIpPool(
+                getDnForDNatIpPool(tenantName, identifier),
+                getNameForDNatIpPool(tenantName, identifier),
+                "DNAT ip pool for " + getNameForDNatIpPool(tenantName, identifier),
+                ipAddress);
+    }
+
+    private String getNameForDNatRule(String tenantName, String identifier) {
+        return "Rule-" + tenantName + "-" + identifier;
+    }
+
+    private String getDnForDNatRule(String tenantName, String identifier, String policyIdentifier) {
+        return getDnForDNatPolicy(tenantName, policyIdentifier) + "/rule-" + getNameForDNatRule(tenantName, identifier);
     }
 
     private String getNameForDNatPolicy(String tenantName, String identifier) {
@@ -847,49 +899,10 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return getDnForNatPolicySet(tenantName) + "/polref-" + getNameForDNatPolicy(tenantName, identifier);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCDNatPolicyRef(java.lang.String, java.lang.String)
-     */
-    public boolean createTenantVDCDNatPolicyRef(String tenantName, String identifier) throws ExecutionException {
-        return createTenantVDCNatPolicyRef(
-                getDnForDNatPolicyRef(tenantName, identifier),
-                getNameForDNatPolicy(tenantName, identifier),
-                tenantName);
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCDNatPolicy(java.lang.String, java.lang.String)
-     */
-    public boolean createTenantVDCDNatPolicy(String tenantName, String identifier) throws ExecutionException {
-        return createTenantVDCNatPolicy(
-                getDnForDNatPolicy(tenantName, identifier),
-                getNameForDNatPolicy(tenantName, identifier));
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#deleteTenantVDCDNatPolicy(java.lang.String, java.lang.String)
-     */
-    public boolean deleteTenantVDCDNatPolicy(String tenantName, String identifier) throws ExecutionException {
-        return deleteTenantVDCNatPolicy(
-                getDnForDNatPolicy(tenantName, identifier),
-                getNameForDNatPolicy(tenantName, identifier));
-    }
-
-    private String getNameForDNatRule(String tenantName, String identifier) {
-        return "Rule-" + tenantName + "-" + identifier;
-    }
-
-    private String getDnForDNatRule(String tenantName, String identifier, String policyIdentifier) {
-        return getDnForDNatPolicy(tenantName, policyIdentifier) + "/rule-" + getNameForDNatRule(tenantName, identifier);
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCDNatRule(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-     */
+    @Override
     public boolean createTenantVDCDNatRule(String tenantName,
-            String identifier, String policyIdentifier,
-            String protocol, String sourceIp,
-            String startSourcePort, String endSourcePort) throws ExecutionException {
+            String identifier, String policyIdentifier, String sourceIp)
+            throws ExecutionException {
         String xml = VnmcXml.CREATE_DNAT_RULE.getXml();
         String service = VnmcXml.CREATE_DNAT_RULE.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
@@ -897,15 +910,36 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "natrulename", getNameForDNatRule(tenantName, identifier));
         xml = replaceXmlValue(xml, "descr", "DNAT rule for Tenant VDC " + tenantName);
         xml = replaceXmlValue(xml, "ippoolname", getNameForDNatIpPool(tenantName, policyIdentifier + "-" + identifier));
-        xml = replaceXmlValue(xml, "portpoolname", getNameForDNatPortPool(tenantName, policyIdentifier + "-" + identifier));
         xml = replaceXmlValue(xml, "srcip", sourceIp);
-        xml = replaceXmlValue(xml, "srcportstart", startSourcePort);
-        xml = replaceXmlValue(xml, "srcportend", endSourcePort);
-        xml = replaceXmlValue(xml, "protocolvalue", protocol);
 
         String response =  sendRequest(service, xml);
 
         return verifySuccess(response);
+    }
+
+    @Override
+    public boolean createTenantVDCDNatPolicyRef(String tenantName,
+            String identifier) throws ExecutionException {
+        return createTenantVDCNatPolicyRef(
+                getDnForDNatPolicyRef(tenantName, identifier),
+                getNameForDNatPolicy(tenantName, identifier),
+                tenantName);
+    }
+
+    @Override
+    public boolean createTenantVDCDNatPolicy(String tenantName,
+            String identifier) throws ExecutionException {
+        return createTenantVDCNatPolicy(
+                getDnForDNatPolicy(tenantName, identifier),
+                getNameForDNatPolicy(tenantName, identifier));
+    }
+
+    @Override
+    public boolean deleteTenantVDCDNatPolicy(String tenantName,
+            String identifier) throws ExecutionException {
+        return deleteTenantVDCNatPolicy(
+                getDnForDNatPolicy(tenantName, identifier),
+                getNameForDNatPolicy(tenantName, identifier));
     }
 
     private String getNameForEdgeFirewall(String tenantName) {

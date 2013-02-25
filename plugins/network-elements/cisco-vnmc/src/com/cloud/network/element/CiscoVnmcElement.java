@@ -41,9 +41,11 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.api.commands.AddCiscoAsa1000vResourceCmd;
 import com.cloud.api.commands.AddCiscoVnmcResourceCmd;
 import com.cloud.api.commands.DeleteCiscoAsa1000vResourceCmd;
@@ -56,7 +58,6 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.ClusterDao;
@@ -612,8 +613,8 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     public boolean applyPFRules(Network network, List<PortForwardingRule> rules)
             throws ResourceUnavailableException {
 
-        if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, Provider.CiscoVnmc)) {
-            s_logger.error("Firewall service is not provided by Cisco Vnmc device on network " + network.getName());
+        if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.PortForwarding, Provider.CiscoVnmc)) {
+            s_logger.error("Port forwarding service is not provided by Cisco Vnmc device on network " + network.getName());
             return false;
         }
 
@@ -632,7 +633,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         }
 
         if (network.getState() == Network.State.Allocated) {
-            s_logger.debug("External firewall was asked to apply firewall rules for network with ID " + network.getId() + "; this network is not implemented. Skipping backend commands.");
+            s_logger.debug("External firewall was asked to apply port forwarding rules for network with ID " + network.getId() + "; this network is not implemented. Skipping backend commands.");
             return true;
         }
 
@@ -664,11 +665,58 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     }
 
     @Override
-    public boolean applyStaticNats(Network config,
+    public boolean applyStaticNats(Network network,
             List<? extends StaticNat> rules)
             throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+        if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.StaticNat, Provider.CiscoVnmc)) {
+            s_logger.error("Static NAT service is not provided by Cisco Vnmc device on network " + network.getName());
+            return false;
+        }
+
+        // Find VNMC host for physical network
+        List<CiscoVnmcControllerVO> devices = _ciscoVnmcDao.listByPhysicalNetwork(network.getPhysicalNetworkId());
+        if (devices.isEmpty()) {
+            s_logger.error("No Cisco Vnmc device on network " + network.getName());
+            return true;
+        }
+
+        // Find if ASA 1000v is associated with network
+        NetworkAsa1000vMapVO asaForNetwork = _networkAsa1000vMapDao.findByNetworkId(network.getId());
+        if (asaForNetwork == null) {
+            s_logger.debug("Cisco ASA 1000v device is not associated with network " + network.getName());
+            return true;
+        }
+
+        if (network.getState() == Network.State.Allocated) {
+            s_logger.debug("External firewall was asked to apply static NAT rules for network with ID " + network.getId() + "; this network is not implemented. Skipping backend commands.");
+            return true;
+        }
+
+        CiscoVnmcControllerVO ciscoVnmcDevice = devices.get(0);
+        HostVO ciscoVnmcHost = _hostDao.findById(ciscoVnmcDevice.getHostId());
+
+        List<StaticNatRuleTO> rulesTO = new ArrayList<StaticNatRuleTO>();
+        for (StaticNat rule : rules) {
+            IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+            StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, 
+                    null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
+            rulesTO.add(ruleTO);
+        }
+
+        if (!rulesTO.isEmpty()) {
+            SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO, null);
+            cmd.setContextParam(NetworkElementCommand.GUEST_VLAN_TAG, network.getBroadcastUri().getHost());
+            cmd.setContextParam(NetworkElementCommand.GUEST_NETWORK_CIDR, network.getCidr());
+            Answer answer = _agentMgr.easySend(ciscoVnmcHost.getId(), cmd);
+            if (answer == null || !answer.getResult()) {
+                String details = (answer != null) ? answer.getDetails() : "details unavailable";
+                String msg = "Unable to apply static NAT rules to Cisco ASA 1000v appliance due to: " + details + ".";
+                s_logger.error(msg);
+                throw new ResourceUnavailableException(msg, DataCenter.class, network.getDataCenterId());
+            }
+        }
+
+        return true;
     }
 
     @Override

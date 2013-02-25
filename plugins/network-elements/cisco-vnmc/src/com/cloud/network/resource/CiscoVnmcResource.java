@@ -49,6 +49,7 @@ import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
 import com.cloud.network.cisco.CiscoVnmcConnectionImpl;
 import com.cloud.resource.ServerResource;
@@ -259,7 +260,7 @@ public class CiscoVnmcResource implements ServerResource{
         return execute(cmd, _numRetries);
     }
 
-    private Answer execute(IpAssocCommand cmd, int numRetries) {        
+    private Answer execute(IpAssocCommand cmd, int numRetries) {
         String[] results = new String[cmd.getIpAddresses().length];
         return new IpAssocAnswer(cmd, results);
     }
@@ -402,7 +403,65 @@ public class CiscoVnmcResource implements ServerResource{
     }
 
     private Answer execute(SetStaticNatRulesCommand cmd, int numRetries) {
-        return new Answer(cmd);
+        String vlanId = cmd.getContextParam(NetworkElementCommand.GUEST_VLAN_TAG);
+        String tenant = "vlan-" + vlanId;
+
+        StaticNatRuleTO[] rules = cmd.getRules();
+        Map<String, List<StaticNatRuleTO>> publicIpRulesMap = new HashMap<String, List<StaticNatRuleTO>>();
+        for (StaticNatRuleTO rule : rules) {
+            String publicIp = rule.getSrcIp();
+            if (!publicIpRulesMap.containsKey(publicIp)) {
+                List<StaticNatRuleTO> publicIpRulesList = new ArrayList<StaticNatRuleTO>();
+                publicIpRulesMap.put(publicIp, publicIpRulesList);
+            }
+            publicIpRulesMap.get(publicIp).add(rule);
+        }
+
+        try {
+            if (!_connection.createTenantVDCNatPolicySet(tenant)) {
+                throw new Exception("Failed to create NAT policy set in VNMC for guest network with vlan " + vlanId);
+            }
+
+            for (String publicIp : publicIpRulesMap.keySet()) {
+                String policyIdentifier = publicIp.replace('.', '-');
+
+                if (!_connection.deleteTenantVDCDNatPolicy(tenant, policyIdentifier)) {
+                    throw new Exception("Failed to delete ACL ingress policy in VNMC for guest network with vlan " + vlanId);
+                }
+
+                if (!_connection.createTenantVDCDNatPolicy(tenant, policyIdentifier)) {
+                    throw new Exception("Failed to create DNAT policy in VNMC for guest network with vlan " + vlanId);
+                }
+                if (!_connection.createTenantVDCDNatPolicyRef(tenant, policyIdentifier)) {
+                    throw new Exception("Failed to associate DNAT policy with NAT policy set in VNMC for guest network with vlan " + vlanId);
+                }
+
+                for (StaticNatRuleTO rule : publicIpRulesMap.get(publicIp)) {
+                    if (rule.revoked()) {
+                        //_connection.deleteDNatRule(tenant, Long.toString(rule.getId()), publicIp);
+                    } else {
+                        if (!_connection.createTenantVDCDNatIpPool(tenant, policyIdentifier + "-" + rule.getId(), rule.getDstIp())) {
+                            throw new Exception("Failed to create DNAT ip pool in VNMC for guest network with vlan " + vlanId);
+                        }
+
+                        if (!_connection.createTenantVDCDNatRule(tenant,
+                                Long.toString(rule.getId()), policyIdentifier, rule.getSrcIp())) {
+                            throw new Exception("Failed to create DNAT rule in VNMC for guest network with vlan " + vlanId);
+                        }
+                    }
+                }
+            }
+
+            if (!_connection.associateNatPolicySet(tenant)) {
+                throw new Exception("Failed to associate source NAT policy set with edge security profile in VNMC for guest network with vlan " + vlanId);
+            }
+        } catch (Throwable e) {
+            String msg = "SetSourceNatCommand failed due to " + e.getMessage();
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, msg);
+        }
+
+        return new Answer(cmd, true, "Success");
     }
 
     /*
@@ -436,35 +495,35 @@ public class CiscoVnmcResource implements ServerResource{
             for (String publicIp : publicIpRulesMap.keySet()) {
                 String policyIdentifier = publicIp.replace('.', '-');
 
-                if (!_connection.deleteTenantVDCDNatPolicy(tenant, policyIdentifier)) {
+                if (!_connection.deleteTenantVDCPFPolicy(tenant, policyIdentifier)) {
                     throw new Exception("Failed to delete ACL ingress policy in VNMC for guest network with vlan " + vlanId);
                 }
 
-                if (!_connection.createTenantVDCDNatPolicy(tenant, policyIdentifier)) {
-                    throw new Exception("Failed to create DNAT policy in VNMC for guest network with vlan " + vlanId);
+                if (!_connection.createTenantVDCPFPolicy(tenant, policyIdentifier)) {
+                    throw new Exception("Failed to create PF policy in VNMC for guest network with vlan " + vlanId);
                 }
-                if (!_connection.createTenantVDCDNatPolicyRef(tenant, policyIdentifier)) {
-                    throw new Exception("Failed to associate DNAT policy with NAT policy set in VNMC for guest network with vlan " + vlanId);
+                if (!_connection.createTenantVDCPFPolicyRef(tenant, policyIdentifier)) {
+                    throw new Exception("Failed to associate PF policy with NAT policy set in VNMC for guest network with vlan " + vlanId);
                 }
 
                 for (PortForwardingRuleTO rule : publicIpRulesMap.get(publicIp)) {
                     if (rule.revoked()) {
-                        //_connection.deleteDNatRule(tenant, Long.toString(rule.getId()), publicIp);
+                        //_connection.deletePFRule(tenant, Long.toString(rule.getId()), publicIp);
                     } else {
-                        if (!_connection.createTenantVDCDNatIpPool(tenant, policyIdentifier + "-" + rule.getId(), rule.getDstIp())) {
-                            throw new Exception("Failed to create DNAT ip pool in VNMC for guest network with vlan " + vlanId);
+                        if (!_connection.createTenantVDCPFIpPool(tenant, policyIdentifier + "-" + rule.getId(), rule.getDstIp())) {
+                            throw new Exception("Failed to create PF ip pool in VNMC for guest network with vlan " + vlanId);
                         }
 
-                        if (!_connection.createTenantVDCDNatPortPool(tenant, policyIdentifier + "-" + rule.getId(),
+                        if (!_connection.createTenantVDCPFPortPool(tenant, policyIdentifier + "-" + rule.getId(),
                                 Integer.toString(rule.getDstPortRange()[0]), Integer.toString(rule.getDstPortRange()[1]))) {
-                            throw new Exception("Failed to create DNAT port pool in VNMC for guest network with vlan " + vlanId);
+                            throw new Exception("Failed to create PF port pool in VNMC for guest network with vlan " + vlanId);
                         }
 
-                        if (!_connection.createTenantVDCDNatRule(tenant,
+                        if (!_connection.createTenantVDCPFRule(tenant,
                                 Long.toString(rule.getId()), policyIdentifier,
                                 rule.getProtocol().toUpperCase(), rule.getSrcIp(),
                                 Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
-                            throw new Exception("Failed to create DNAT rule in VNMC for guest network with vlan " + vlanId);
+                            throw new Exception("Failed to create PF rule in VNMC for guest network with vlan " + vlanId);
                         }
                     }
                 }

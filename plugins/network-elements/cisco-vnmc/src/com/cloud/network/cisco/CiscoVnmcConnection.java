@@ -64,17 +64,12 @@ public interface CiscoVnmcConnection {
     public boolean createTenantVDCSourceNatPolicyRef(String tenantName, String identifier)
             throws ExecutionException;
 
-    public boolean createTenantVDCDNatPortPool(String tenantName, String identifier,
-            String startPort, String endPort)
-            throws ExecutionException;
-
     public boolean createTenantVDCDNatIpPool(String tenantName, String identifier,
             String ipAddress) throws ExecutionException;
 
     public boolean createTenantVDCDNatRule(String tenantName,
             String identifier, String policyIdentifier,
-            String protocol, String sourceIp,
-            String startSourcePort, String endSourcePort)
+            String sourceIp)
             throws ExecutionException;
 
     public boolean createTenantVDCDNatPolicy(String tenantName, String identifier)
@@ -84,6 +79,28 @@ public interface CiscoVnmcConnection {
             throws ExecutionException;
 
     public boolean createTenantVDCDNatPolicyRef(String tenantName, String identifier)
+            throws ExecutionException;
+
+    public boolean createTenantVDCPFPortPool(String tenantName, String identifier,
+            String startPort, String endPort)
+            throws ExecutionException;
+
+    public boolean createTenantVDCPFIpPool(String tenantName, String identifier,
+            String ipAddress) throws ExecutionException;
+
+    public boolean createTenantVDCPFRule(String tenantName,
+            String identifier, String policyIdentifier,
+            String protocol, String sourceIp,
+            String startSourcePort, String endSourcePort)
+            throws ExecutionException;
+
+    public boolean createTenantVDCPFPolicy(String tenantName, String identifier)
+            throws ExecutionException;
+
+    public boolean deleteTenantVDCPFPolicy(String tenantName, String identifier)
+            throws ExecutionException;
+
+    public boolean createTenantVDCPFPolicyRef(String tenantName, String identifier)
             throws ExecutionException;
 
     public boolean createTenantVDCNatPolicySet(String tenantName)
