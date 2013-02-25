@@ -99,3 +99,4 @@ CREATE TABLE  `vpc_service_map` (
 
 SET foreign_key_checks = 1;
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.instancename.flag', 'false', 'Append guest VM display Name (if set) to the internal name of the VM');
