@@ -26,7 +26,7 @@
     <title>Prepare NFS Shares</title>
     <para>&PRODUCT; needs a place to keep primary and secondary storage (see Cloud Infrastructure Overview). Both of these can be NFS shares. This section tells how to set up the NFS shares before adding the storage to &PRODUCT;.</para>
     <note><title>Alternative Storage</title>
-        <para>NFS is not the only option for primary or secondary storage. For example, you may use a Ceph RDB cluster, GlusterFS, iSCSI, and otthers.</para>
+        <para>NFS is not the only option for primary or secondary storage. For example, you may use Ceph RBD, GlusterFS, iSCSI, and others. The choice of storage system will depend on the choice of hypervisor and whether you are dealing with primary or secondary storage.</para>
     </note>
     <para>The requirements for primary and secondary storage are described in:</para>
     <itemizedlist>
