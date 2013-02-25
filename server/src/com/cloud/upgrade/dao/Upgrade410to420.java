@@ -59,6 +59,20 @@ public class Upgrade410to420 implements DbUpgrade {
 
 	@Override
 	public void performDataMigration(Connection conn) {
+	    PreparedStatement sql = null;
+	    try {
+	        sql = conn.prepareStatement("update vm_template set image_data_store_id = 1 where type = 'SYSTEM' or type = 'BUILTIN'");
+	        sql.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to upgrade vm template data store uuid: " + e.toString());
+        } finally {
+            if (sql != null) {
+                try {
+                    sql.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
 	}
 
 	@Override
