@@ -44,17 +44,17 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
                                                                      "WHERE us.account_id = a.id AND (a.removed IS NULL OR a.removed >= ?) " +
                                                                      "ORDER BY us.id";
     private static final String UPDATED_STATS_SEARCH = "SELECT id, current_bytes_received, current_bytes_sent, net_bytes_received, net_bytes_sent, agg_bytes_received, agg_bytes_sent from  user_statistics " +
-    																"where (agg_bytes_received < net_bytes_received + current_bytes_received) OR (agg_bytes_sent < net_bytes_sent + current_bytes_sent)";
+                                                                    "where (agg_bytes_received < net_bytes_received + current_bytes_received) OR (agg_bytes_sent < net_bytes_sent + current_bytes_sent)";
     private final SearchBuilder<UserStatisticsVO> AllFieldsSearch;
     private final SearchBuilder<UserStatisticsVO> AccountSearch;
-    
-    
-    public UserStatisticsDaoImpl() {
-    	AccountSearch = createSearchBuilder();
-    	AccountSearch.and("account", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-    	AccountSearch.done();
 
-    	AllFieldsSearch = createSearchBuilder();
+
+    public UserStatisticsDaoImpl() {
+        AccountSearch = createSearchBuilder();
+        AccountSearch.and("account", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountSearch.done();
+
+        AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("dc", AllFieldsSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("network", AllFieldsSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
@@ -63,7 +63,7 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
         AllFieldsSearch.and("deviceType", AllFieldsSearch.entity().getDeviceType(), SearchCriteria.Op.EQ);        
         AllFieldsSearch.done();
     }
-    
+
     @Override
     public UserStatisticsVO findBy(long accountId, long dcId, long networkId, String publicIp, Long deviceId, String deviceType) {
         SearchCriteria<UserStatisticsVO> sc = AllFieldsSearch.create();
@@ -133,5 +133,5 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
         }
         return userStats;
     }
-    
+
 }
