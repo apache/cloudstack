@@ -363,6 +363,18 @@ setup_common() {
     echo "nameserver $NS2" >> /etc/dnsmasq-resolv.conf
     echo "nameserver $NS2" >> /etc/resolv.conf
   fi
+
+  if [ -n "$IP6_NS1" ]
+  then
+    echo "nameserver $IP6_NS1" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $IP6_NS1" >> /etc/resolv.conf
+  fi
+  if [ -n "$IP6_NS2" ]
+  then
+    echo "nameserver $IP6_NS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $IP6_NS2" >> /etc/resolv.conf
+  fi
+
   if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
     ip route add $MGMTNET via $LOCAL_GW dev eth1
@@ -453,17 +465,23 @@ setup_dnsmasq() {
   fi
   sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
   [ $DEFAULT_GW ] && echo "dhcp-option=option:router,$DEFAULT_GW" >> /etc/dnsmasq.conf
-  NS=$NS1
-  [ -n "$NS2" ] && NS=$NS1,$NS2
-    #for now set up ourself as the dns server as well
-  sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
-  if [ "$USE_EXTERNAL_DNS" == "true" ]
+
+  [ $ETH0_IP ] && [ $NS1 ] && NS="$NS1,"
+  [ $ETH0_IP ] && [ $NS2 ] && NS="$NS$NS2,"
+  [ $ETH0_IP6 ] && [ $IP6_NS1 ] && NS6="[$IP6_NS1],"
+  [ $ETH0_IP6 ] && [ $IP6_NS2 ] && NS6="$NS6[$IP6_NS2],"
+  #for now set up ourself as the dns server as well
+  sed -i -e "/^[#]*dhcp-option=6,.*$/d" /etc/dnsmasq.conf
+  sed -i -e "/^[#]*dhcp-option=option6:dns-server,.*$/d" /etc/dnsmasq.conf
+  if [ "$USE_EXTERNAL_DNS" != "true" ]
   then
-    [ $ETH0_IP ] && echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
-  else
-    [ $ETH0_IP ] && echo "dhcp-option=6,$INTERNAL_DNS,$NS" >> /etc/dnsmasq.conf
+    [ $ETH0_IP ] && NS="$INTERNAL_DNS,$NS"
+    [ $ETH0_IP6 ] && NS6="[::],$NS6"
   fi
-  [ $ETH0_IP6 ] && echo "dhcp-option=option6:dns-server,[::]" >> /etc/dnsmasq.conf
+  NS=${NS%?}
+  NS6=${NS6%?}
+  [ $ETH0_IP ] && echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
+  [ $ETH0_IP6 ] && echo "dhcp-option=option6:dns-server,$NS6" >> /etc/dnsmasq.conf
 }
 
 setup_sshd(){
@@ -959,6 +977,12 @@ for i in $CMDLINE
           ;;
       dns2)
           NS2=$VALUE
+          ;;
+      ip6dns1)
+          IP6_NS1=$VALUE
+          ;;
+      ip6dns2)
+          IP6_NS2=$VALUE
           ;;
       domain)
           DOMAIN=$VALUE
