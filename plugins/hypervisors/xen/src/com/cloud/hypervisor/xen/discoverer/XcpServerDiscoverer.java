@@ -427,8 +427,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     		prodVersion = prodVersion.trim();
     	}
 
-    	if(prodBrand.equals("XCP") && (prodVersion.equals("1.0.0") ||  prodVersion.equals("1.1.0") || prodVersion.equals("5.6.100") || prodVersion.startsWith("1.4") )) 
-    		return new XcpServerResource();
+        if(prodBrand.equals("XCP") && (prodVersion.equals("1.0.0") ||  prodVersion.equals("1.1.0") || prodVersion.equals("5.6.100") || prodVersion.startsWith("1.4") || prodVersion.startsWith("1.6")))
+            return new XcpServerResource();
 
     	if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) 
     		return new XenServer56Resource();
@@ -455,7 +455,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     		return new XcpOssResource();
     	}
     	
-        String msg = "Only support XCP 1.0.0, 1.1.0, 1.5 beta; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0 but this one is " + prodBrand + " " + prodVersion;
+        String msg = "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0 but this one is " + prodBrand + " " + prodVersion;
     			_alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
     	s_logger.debug(msg);
     	throw new RuntimeException(msg);
