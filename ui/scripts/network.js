@@ -896,8 +896,10 @@
                   if(zone.networktype == "Basic") {
                     hiddenFields.push("account");
                     hiddenFields.push("gateway");
+                    hiddenFields.push("ip6gateway");
                     hiddenFields.push("vlan");
                     hiddenFields.push("cidr");
+                    hiddenFields.push("ip6cidr");
                     //hiddenFields.push("netmask");
                   }
 
@@ -905,6 +907,7 @@
                     hiddenFields.push("networkofferingdisplaytext");
                     hiddenFields.push("networkdomaintext");
                     hiddenFields.push("gateway");
+                    hiddenFields.push("ip6gateway");
                     hiddenFields.push("networkofferingname");
                     //hiddenFields.push("netmask");
                   }
@@ -999,9 +1002,11 @@
                     },
 
                     gateway: { label: 'label.gateway' },
+                    ip6gateway: { label: 'IPv6 Gateway' },
 
                     //netmask: { label: 'label.netmask' },
                     cidr: { label: 'label.cidr' },
+                    ip6cidr: { label: 'IPv6 CIDR' },
 
                     networkdomaintext: {
                       label: 'label.network.domain.text'
