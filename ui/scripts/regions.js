@@ -34,6 +34,7 @@
             title: 'label.add.region',
             desc: 'message.add.region',
             fields: {
+              id: { label: 'label.id', validation: { required: true } },
               name: { label: 'label.name', validation: { required: true } },
               endpoint: { label: 'label.endpoint', validation: { url: true, required: true } },
               userapikey: { label: 'label.api.key' },
@@ -50,9 +51,7 @@
                 args.response.success({ _custom: { jobId: jobID }});
               }
             });
-            args.response.success();
-          },
-          notification: { poll: pollAsyncJobResult }
+          }
         }
       },
       dataProvider: function(args) {
