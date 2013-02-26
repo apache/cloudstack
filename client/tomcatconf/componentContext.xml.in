@@ -229,7 +229,7 @@
   </bean>
 
   <bean id="HypervisorPlannerSelector" class="com.cloud.deploy.HypervisorVmPlannerSelector">
-    <property name="name" value="BaremetalPlannerSelector"/>
+    <property name="name" value="HypervisorPlannerSelector"/>
   </bean>
     
    
