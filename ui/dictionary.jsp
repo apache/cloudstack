@@ -25,6 +25,8 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.add.region': '<fmt:message key="label.add.region"/>',
+'message.add.region': '<fmt:message key="message.add.region"/>',
 'label.region': '<fmt:message key="label.region"/>',
 'label.endpoint': '<fmt:message key="label.endpoint"/>',
 'label.menu.regions': '<fmt:message key="label.menu.regions"/>',

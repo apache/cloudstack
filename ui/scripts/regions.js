@@ -24,6 +24,37 @@
         name: { label: 'label.name' },
         endpoint: { label: 'label.endpoint' }
       },
+      actions: {
+        add: {
+          label: 'label.add.region',
+          messages: {
+            notification: function() { return 'label.add.region'; }
+          },
+          createForm: {
+            title: 'label.add.region',
+            desc: 'message.add.region',
+            fields: {
+              name: { label: 'label.name', validation: { required: true } },
+              endpoint: { label: 'label.endpoint', validation: { url: true, required: true } },
+              userapikey: { label: 'label.api.key' },
+              userapisecretkey: { label: 'label.s3.secret_key' }
+            }
+          },
+          action: function(args) {
+            $.ajax({
+              url: createURL('addRegion'),
+              data: args.data,
+              success: function(json) {
+                var jobID = json.addregionresponse.jobid;
+
+                args.response.success({ _custom: { jobId: jobID }});
+              }
+            });
+            args.response.success();
+          },
+          notification: { poll: pollAsyncJobResult }
+        }
+      },
       dataProvider: function(args) {
         $.ajax({
           url: createURL('listRegions&listAll=true'),
