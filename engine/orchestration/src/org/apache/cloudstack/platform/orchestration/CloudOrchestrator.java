@@ -267,10 +267,17 @@ public class CloudOrchestrator implements OrchestrationService {
 		rootDiskOffering.first(diskOffering);
 		rootDiskOffering.second(size);
 		
+        List<Pair<NetworkVO, NicProfile>> networkIpMap = new ArrayList<Pair<NetworkVO, NicProfile>>();
+        for (String uuid : networkNicMap.keySet()) {
+            NetworkVO network = _networkDao.findByUuid(uuid);
+            if(network != null){
+                networkIpMap.add(new Pair<NetworkVO, NicProfile>(network, networkNicMap.get(uuid)));
+            }
+        }
 		
 		HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
 		
-    	if (_itMgr.allocate(vm, _templateDao.findById(new Long(isoId)), offering, rootDiskOffering, dataDiskOfferings, null, null,	plan, hypervisorType, null) == null) {
+    	if (_itMgr.allocate(_userVmDao.findById(vm.getId(), true), _templateDao.findById(new Long(isoId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, null,	plan, hypervisorType, _accountDao.findById(new Long(owner))) == null) {
 			return null;
 		}
     	
