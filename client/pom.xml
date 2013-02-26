@@ -275,7 +275,7 @@
                 <exec executable="cp">
                     <arg value="-r" />
                     <arg value="${basedir}/../scripts" />
-                    <arg value="${basedir}/target/generated-webapp/WEB-INF/classes/scripts" />
+                    <arg value="${basedir}/target/generated-webapp/WEB-INF/classes/" />
                 </exec>
                 <copy
                   todir="${basedir}/target/generated-webapp/WEB-INF/">
