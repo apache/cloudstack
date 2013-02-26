@@ -19,6 +19,7 @@
 -- Schema upgrade from 4.1.0 to 4.2.0;
 --;
 
+-- Disable foreign key checking
 SET foreign_key_checks = 0;
 
 ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `max_hosts_per_cluster` int unsigned DEFAULT NULL COMMENT 'Max. hosts in cluster supported by hypervisor';
@@ -97,7 +98,6 @@ CREATE TABLE  `vpc_service_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-SET foreign_key_checks = 1;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.instancename.flag', 'false', 'Append guest VM display Name (if set) to the internal name of the VM');
 
@@ -109,3 +109,6 @@ CREATE TABLE `cloud`.`user_vm_clone_setting` (
 
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'false', 'If set to true, creates VMs as full clones on ESX hypervisor');
+
+-- Re-enable foreign key checking, at the end of the upgrade path
+SET foreign_key_checks = 1;
