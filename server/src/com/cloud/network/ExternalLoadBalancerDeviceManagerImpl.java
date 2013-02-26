@@ -109,6 +109,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
@@ -1102,7 +1103,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         }
 
         NetworkElement element = _networkModel.getElementImplementingProvider(providers.get(0).getName());
-        if (!(element instanceof IpDeployer)) {
+        if (!(ComponentContext.getTargetObject(element) instanceof IpDeployer)) {
             s_logger.error("The firewall provider for network " + network.getName() + " don't have ability to deploy IP address!");
             return null;
         }
