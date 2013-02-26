@@ -63,7 +63,7 @@ JCP="/usr/share/java/commons-daemon.jar"
 
 # We need to append the JSVC daemon JAR to the classpath
 # AgentShell implements the JSVC daemon methods
-export CLASSPATH="$SCP:$DCP:$UCP:$JCP:/etc/sysconfig"
+export CLASSPATH="$SCP:$DCP:$UCP:$JCP:/etc/cloudstack/usage"
 
 start() {
     if [ -s "$PIDFILE" ] && kill -0 $(cat "$PIDFILE") >/dev/null 2>&1; then

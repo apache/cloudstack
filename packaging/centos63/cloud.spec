@@ -262,6 +262,7 @@ install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-%{_maventa
 cp plugins/hypervisors/kvm/target/dependencies/*  ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
 
 # Usage server
+mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib
 install -D usage/target/cloud-usage-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/cloud-usage-%{_maventag}.jar
 cp usage/target/dependencies/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib/
@@ -407,6 +408,7 @@ fi
 %attr(0644,root,root) %{_datadir}/%{name}-usage/*.jar
 %attr(0644,root,root) %{_datadir}/%{name}-usage/lib/*.jar
 %dir /var/log/%{name}/usage
+%dir %{_sysconfdir}/%{name}/usage
 %doc LICENSE
 %doc NOTICE
 
