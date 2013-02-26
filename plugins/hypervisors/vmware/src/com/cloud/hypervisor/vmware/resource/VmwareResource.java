@@ -2138,7 +2138,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             int ramMb = (int) (vmSpec.getMinRam() / (1024 * 1024));
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(),
             vmSpec.getMinSpeed(),(int) (vmSpec.getMaxRam()/(1024*1024)), ramMb,
-            translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).toString(), vmSpec.getLimitCpuUse());
+            translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), vmSpec.getLimitCpuUse());
 
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
             int i = 0;
