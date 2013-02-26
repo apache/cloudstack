@@ -343,8 +343,14 @@ public class DownloadListener implements Listener {
 			updateBuilder.setInstallPath(answer.getInstallPath());
 			updateBuilder.setSize(answer.getTemplateSize());
 			updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
-			
+
 			volumeHostDao.update(getVolumeHostId(), updateBuilder);
+
+			// Update volume size in Volume table.
+			VolumeVO updateVolume = _volumeDao.createForUpdate();
+			updateVolume.setSize(answer.getTemplateSize());
+			_volumeDao.update(volume.getId(), updateVolume);
+
 			/*if (answer.getCheckSum() != null) {
 				VMTemplateVO templateDaoBuilder = _vmTemplateDao.createForUpdate();
 				templateDaoBuilder.setChecksum(answer.getCheckSum());
