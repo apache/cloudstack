@@ -455,6 +455,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 							+ cmd.getHypervisor());
         }
 
+        if (hypervisorType == HypervisorType.VMware) {
+            Map<String, String> allParams = cmd.getFullUrlParams();
+            discoverer.putParam(allParams);
+        }
+
         List<ClusterVO> result = new ArrayList<ClusterVO>();
 
         long clusterId = 0;
