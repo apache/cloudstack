@@ -11103,9 +11103,8 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   -khtml-border-radius: 4px;
   border-radius: 4px;
   width: 281px;
-  background: #FFFFFF;
-  min-height: 275px;
-  max-height: 275px;
+  background: #E4E4E4;
+  height: 327px;
   /*+placement:shift 72px 49px;*/
   position: relative;
   left: 72px;
@@ -11119,14 +11118,65 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   box-shadow: 0px 3px 11px #171717;
 }
 
-.region-selector ul {
-  width: 97%;
+.region-selector h2 {
+  color: #283139;
+  text-shadow: 0px 1px 3px #FFFFFF;
+  margin: 5px 0 12px;
+  text-align: center;
+  letter-spacing: 1px;
+  font-size: 18px;
+}
+
+.region-selector .buttons {
+  width: 95%;
+  height: 33px;
+  margin: 5px auto 0;
+}
+
+.region-selector .buttons .button.close {
+  float: right;
+  cursor: pointer;
+  background: url(../images/bg-gradients.png) 0px -270px;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
   border-radius: 4px;
-  height: 253px;
+  border: 1px solid #B1B1B1;
+  padding: 8px 17px 8px 18px;
+}
+
+.region-selector .buttons .button.close:hover {
+  /*+box-shadow:inset 0px 2px 4px #525252;*/
+  -moz-box-shadow: inset 0px 2px 4px #525252;
+  -webkit-box-shadow: inset 0px 2px 4px #525252;
+  -o-box-shadow: inset 0px 2px 4px #525252;
+  box-shadow: inset 0px 2px 4px #525252;
+}
+
+.region-selector .buttons .button.close span {
+  color: #636363;
+  /*+text-shadow:none;*/
+  -moz-text-shadow: none;
+  -webkit-text-shadow: none;
+  -o-text-shadow: none;
+  text-shadow: none;
+}
+
+.region-selector .buttons .button.close:hover span {
+  color: #000000;
+}
+
+.region-selector ul {
+  background: #FFFFFF;
+  width: 94%;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  height: 237px;
+  border: 1px solid #B7B7B7;
   overflow: auto;
   margin: auto;
   /*+box-shadow:inset 0px 0px 8px #A3A3A3;*/
@@ -11138,8 +11188,8 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .region-selector ul li {
   background: none;
-  color: #3E4B56;
-  font-size: 14px;
+  color: #415C72;
+  font-size: 13px;
   /*+text-shadow:none;*/
   -moz-text-shadow: none;
   -webkit-text-shadow: none;
@@ -11147,13 +11197,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   text-shadow: none;
   text-indent: 14px;
   cursor: pointer;
-  border-bottom: 1px solid #C9C5C5;
+  border-bottom: 1px solid #CACACA;
   width: 100%;
-  padding: 18px 0;
+  padding: 15px 0;
 }
 
-.region-selector ul li:hover {
-  background: #E9E9E9;
+.region-selector ul li:hover,
+.region-selector ul li.active {
+  background: #E9E9E9 url(../images/bg-gradients.png) repeat-x 0px -31px;
   /*+text-shadow:0px 1px #FFFFFF;*/
   -moz-text-shadow: 0px 1px #FFFFFF;
   -webkit-text-shadow: 0px 1px #FFFFFF;

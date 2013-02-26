@@ -141,7 +141,14 @@
 
       var $regionSelector = $('<div>').addClass('region-selector')
         .append($('<div>').addClass('top-arrow'))
+        .append($('<h2>').html(_l('label.menu.regions')))
         .append($regionList)
+        .append(
+          $('<div>').addClass('buttons')
+            .append(
+              $('<div>').addClass('button close').append($('<span>').html(_l('label.close')))
+            )
+        )
         .hide();
       var $regionSwitcherButton = $('<div>').addClass('region-switcher')
         .attr('title', 'Select region')
@@ -149,16 +156,44 @@
           $('<span>').addClass('icon').html('&nbsp;')
         );
 
+      var closeRegionSelector = function(args) {
+        $regionSwitcherButton.removeClass('active');
+        $regionSelector.fadeOut(args ? args.complete : null);
+        $('body > .overlay').fadeOut(function() { $('body > .overlay').remove() });
+      };
+
+      var switchRegion = function(url) {
+        closeRegionSelector({
+          complete: function() {
+            $('#container').prepend($('<div>').addClass('loading-overlay'));
+
+            document.location.href = url;
+          }
+        });
+      };
+
+      $regionList.click(function(event) {
+        var $target = $(event.target);
+        var $li = $target.closest('li');
+
+        if ($li.size()) {
+          var url = 'http://10.223.77.3:8080/client';
+
+          switchRegion(url);
+        }
+      });
 
       $regionSwitcherButton.click(function() {
         if ($regionSwitcherButton.hasClass('active')) {
-          $regionSwitcherButton.removeClass('active');
-          $regionSelector.fadeOut();
-          $('body > .overlay').remove();
+          closeRegionSelector();
         } else {
           $regionSwitcherButton.addClass('active');
           $regionSelector.fadeIn('fast').overlay();
         }
+      });
+
+      $regionSelector.find('.button.close').click(function() {
+        closeRegionSelector();
       });
 
       // Project switcher
