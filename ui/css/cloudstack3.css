@@ -6899,7 +6899,9 @@ label.error {
 
 /*** Multi-edit*/
 .multi-wizard.zone-wizard .multi-edit {
-  width: 100%;
+  width: 732px;
+  float: left;
+  margin-left: 0px;
 }
 
 .multi-wizard.zone-wizard .multi-edit table {
@@ -6907,20 +6909,43 @@ label.error {
   width: 98%;
 }
 
-.multi-wizard.zone-wizard .multi-edit table th,
-.multi-wizard.zone-wizard .multi-edit table td {
-  min-width: 97px;
-  max-width: 97px;
+.multi-wizard.zone-wizard .multi-edit table td,
+.multi-wizard.zone-wizard .multi-edit table th {
+  padding: 4px;
+}
+
+.multi-wizard.zone-wizard .multi-edit table th {
+  padding-top: 11px;
+  padding-bottom: 8px;
+}
+
+.multi-wizard.zone-wizard .multi-edit table input {
+  margin: 2px 0px 2px -5px;
+  padding: 2px 0px;
 }
 
 .multi-wizard.zone-wizard .multi-edit .data {
-  width: 102%;
   float: left;
   overflow: visible;
 }
 
+.multi-wizard.zone-wizard .multi-edit .data-body {
+  margin: 0;
+}
+
 .multi-wizard.zone-wizard .multi-edit .data-body .data-item {
   float: left;
+}
+
+.multi-wizard.zone-wizard .multi-edit .data-body .data-item td {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.multi-wizard.zone-wizard .multi-edit .data-body .data-item td span {
+  font-size: 10px;
+  text-overflow: ellipsis;
+  max-width: 91px;
 }
 
 /*** Select container fields*/
