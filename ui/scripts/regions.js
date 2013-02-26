@@ -18,6 +18,20 @@
   cloudStack.sections.regions = {
     title: 'label.menu.regions',
     id: 'regions',
+    regionSelector: {
+      dataProvider: function(args) {
+        $.ajax({
+          url: createURL('listRegions&listAll=true'),
+          success: function(json) {
+            var regions = json.listregionsresponse.region
+
+            args.response.success({
+              data: regions ? regions : []
+            });
+          }
+        }); 
+      }
+    },
     listView: {
       section: 'regions',
       fields: {

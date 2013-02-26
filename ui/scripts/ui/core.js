@@ -127,75 +127,6 @@
             .append($('<span>').html(_l('label.notifications')))
             .notifications();
 
-      // Region switcher
-      var $regionList = $('<ul>');
-
-      // Append dummy content for now
-      $regionList.append($('<li>').append($('<span>').html('USA')));
-      $regionList.append($('<li>').append($('<span>').html('Canada')));
-      $regionList.append($('<li>').append($('<span>').html('Europe')));
-      $regionList.append($('<li>').append($('<span>').html('Asia')));
-      $regionList.append($('<li>').append($('<span>').html('USA')));
-      $regionList.append($('<li>').append($('<span>').html('Canada')));
-      $regionList.append($('<li>').append($('<span>').html('Europe'))); 
-
-      var $regionSelector = $('<div>').addClass('region-selector')
-        .append($('<div>').addClass('top-arrow'))
-        .append($('<h2>').html(_l('label.menu.regions')))
-        .append($regionList)
-        .append(
-          $('<div>').addClass('buttons')
-            .append(
-              $('<div>').addClass('button close').append($('<span>').html(_l('label.close')))
-            )
-        )
-        .hide();
-      var $regionSwitcherButton = $('<div>').addClass('region-switcher')
-        .attr('title', 'Select region')
-        .append(
-          $('<span>').addClass('icon').html('&nbsp;')
-        );
-
-      var closeRegionSelector = function(args) {
-        $regionSwitcherButton.removeClass('active');
-        $regionSelector.fadeOut(args ? args.complete : null);
-        $('body > .overlay').fadeOut(function() { $('body > .overlay').remove() });
-      };
-
-      var switchRegion = function(url) {
-        closeRegionSelector({
-          complete: function() {
-            $('#container').prepend($('<div>').addClass('loading-overlay'));
-
-            document.location.href = url;
-          }
-        });
-      };
-
-      $regionList.click(function(event) {
-        var $target = $(event.target);
-        var $li = $target.closest('li');
-
-        if ($li.size()) {
-          var url = 'http://10.223.77.3:8080/client';
-
-          switchRegion(url);
-        }
-      });
-
-      $regionSwitcherButton.click(function() {
-        if ($regionSwitcherButton.hasClass('active')) {
-          closeRegionSelector();
-        } else {
-          $regionSwitcherButton.addClass('active');
-          $regionSelector.fadeIn('fast').overlay({ closeAction: closeRegionSelector });
-        }
-      });
-
-      $regionSelector.find('.button.close').click(function() {
-        closeRegionSelector();
-      });
-
       // Project switcher
       var $viewSwitcher = $('<div>').addClass('button view-switcher')
             .append(
@@ -204,6 +135,8 @@
                 .html(_l('label.default.view'))
                 .prepend(
                   $('<span>').addClass('icon').html('&nbsp;')
+
+
                 )
             )
             .append(
@@ -288,8 +221,6 @@
         $('<div>').addClass('logo'),
         $('<div>').addClass('controls')
           .append($notificationArea)
-          .append($regionSwitcherButton)
-          .append($regionSelector)
           .append($viewSwitcher)
           .append($projectSelect)
           .append($userInfo)
@@ -426,6 +357,8 @@
 
     // Hide logo conditionally
     if (!args.hasLogo) $('#header, #header .controls').addClass('nologo');
+    
+    $(window).trigger('cloudStack.ready');
 
     return this;
   };

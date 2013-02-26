@@ -11102,29 +11102,28 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
   border-radius: 4px;
-  width: 281px;
-  background: #E4E4E4;
-  height: 327px;
-  /*+placement:shift 72px 49px;*/
+  width: 318px;
+  background: url(../images/bg-notifications.png) center;
+  height: 372px;
+  /*+placement:shift 321px 49px;*/
   position: relative;
-  left: 72px;
+  left: 321px;
   top: 49px;
   position: absolute;
   z-index: 1000;
-  /*+box-shadow:0px 3px 11px #171717;*/
-  -moz-box-shadow: 0px 3px 11px #171717;
-  -webkit-box-shadow: 0px 3px 11px #171717;
-  -o-box-shadow: 0px 3px 11px #171717;
-  box-shadow: 0px 3px 11px #171717;
 }
 
 .region-selector h2 {
-  color: #283139;
-  text-shadow: 0px 1px 3px #FFFFFF;
-  margin: 5px 0 12px;
+  color: #FFFFFF;
   text-align: center;
+  font-size: 21px;
   letter-spacing: 1px;
-  font-size: 18px;
+  /*+text-shadow:0px 1px 2px #000000;*/
+  -moz-text-shadow: 0px 1px 2px #000000;
+  -webkit-text-shadow: 0px 1px 2px #000000;
+  -o-text-shadow: 0px 1px 2px #000000;
+  text-shadow: 0px 1px 2px #000000;
+  margin: 31px 0 14px;
 }
 
 .region-selector .buttons {
@@ -11134,16 +11133,16 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .region-selector .buttons .button.close {
+  background: url(../images/gradients.png) 0px -317px;
   float: right;
-  cursor: pointer;
-  background: url(../images/bg-gradients.png) 0px -270px;
+  margin-right: 10px;
+  border-bottom: 1px solid #232323;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
   border-radius: 4px;
-  border: 1px solid #B1B1B1;
-  padding: 8px 17px 8px 18px;
+  padding: 8px;
 }
 
 .region-selector .buttons .button.close:hover {
@@ -11155,16 +11154,17 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 }
 
 .region-selector .buttons .button.close span {
-  color: #636363;
-  /*+text-shadow:none;*/
-  -moz-text-shadow: none;
-  -webkit-text-shadow: none;
-  -o-text-shadow: none;
-  text-shadow: none;
+  color: #FFFFFF;
+  font-weight: bold;
+  letter-spacing: 1px;
+  /*+text-shadow:0px 1px 2px #000000;*/
+  -moz-text-shadow: 0px 1px 2px #000000;
+  -webkit-text-shadow: 0px 1px 2px #000000;
+  -o-text-shadow: 0px 1px 2px #000000;
+  text-shadow: 0px 1px 2px #000000;
 }
 
 .region-selector .buttons .button.close:hover span {
-  color: #000000;
 }
 
 .region-selector ul {
@@ -11210,16 +11210,6 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   -webkit-text-shadow: 0px 1px #FFFFFF;
   -o-text-shadow: 0px 1px #FFFFFF;
   text-shadow: 0px 1px #FFFFFF;
-}
-
-.region-selector .top-arrow {
-  width: 76px;
-  height: 12px;
-  background: url(../images/sprites.png) -107px -1312px;
-  /*+placement:shift 78px -12px;*/
-  position: relative;
-  left: 78px;
-  top: -12px;
 }
 
 .region-switcher .icon {
