@@ -15,8 +15,19 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/usr/share/java/cloud-utils.jar
-/usr/share/java/cloud-api.jar
-/usr/share/doc/cloud/version-info
-/usr/bin/cloud-sccs
-/usr/bin/cloud-gitrevs
+/usr/share/cloudstack-common/lib/cloudstack-core.jar
+/usr/share/cloudstack-common/lib/cloudstack-api.jar
+/usr/share/cloudstack-common/vms/systemvm.iso
+/usr/share/cloudstack-common/scripts/installer/*
+/usr/share/cloudstack-common/scripts/network/*
+/usr/share/cloudstack-common/scripts/storage/*
+/usr/share/cloudstack-common/scripts/util/*
+/usr/share/cloudstack-common/scripts/vm/network/*
+/usr/share/cloudstack-common/scripts/vm/systemvm/*
+/usr/share/cloudstack-common/scripts/vm/pingtest.sh
+/usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/*
+/usr/share/cloudstack-common/scripts/vm/hypervisor/versions.sh
+/usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/*
+/usr/bin/cloud-set-guest-password
+/usr/bin/cloud-set-guest-sshkey
+/usr/lib/python2.?/*-packages/*

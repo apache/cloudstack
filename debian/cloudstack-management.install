@@ -1,4 +1,3 @@
-#!/bin/sh -e
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,32 +15,17 @@
 # specific language governing permissions and limitations
 # under the License.
 
-case "$1" in
-    configure)
-
-        if ! id cloud > /dev/null 2>&1 ; then
-            adduser --system --home /var/lib/cloud/management --no-create-home \
-                --group --disabled-password --shell /bin/sh cloud
-                # update me in cloud-client.postinst as well
-        fi
-
-	for i in /var/log/cloud/usage
-	do
-		chmod 0770 $i
-		chgrp cloud $i
-	done
-	
-	for i in /etc/cloud/usage/db.properties
-	do
-		chmod 0640 $i
-		chgrp cloud $i
-	done
-	
-	if [ "$2" = "" ] ; then # no recently configured version, this is a first install
-		/usr/sbin/update-rc.d cloud-usage defaults || true
-	fi
-	
-    ;;
-esac
-
-#DEBHELPER#
+/etc/cloud/server/*
+/etc/cloud/management/*
+/etc/init.d/cloud-management
+/var/cache/cloudstack/management
+/var/cache/cloudstack/management/work
+/var/cache/cloudstack/management/temp
+/var/log/cloudstack/management
+/var/lib/cloud/mnt
+/var/lib/cloud/management
+/usr/bin/cloud-update-xenserver-licenses
+/usr/bin/cloud-setup-management
+/usr/bin/cloud-setup-databases
+/usr/bin/cloud-migrate-databases
+/usr/share/cloudstack-management/*

@@ -15,9 +15,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/usr/share/java/cloud-usage.jar
-/etc/init.d/cloud-usage
-/var/log/cloud/usage
-/etc/cloud/usage/usage-components.xml
-/etc/cloud/usage/log4j-cloud_usage.xml
-/etc/cloud/usage/db.properties
+/etc/cloud/agent/agent.properties
+/etc/cloud/agent/environment.properties
+/etc/cloud/agent/log4j-cloud.xml
+/etc/init.d/cloud-agent
+/usr/bin/cloud-setup-agent
+/usr/bin/cloud-ssh
+/var/log/cloudstack/agent
+/usr/share/cloudstack-agent/lib/cloudstack-agent-kvm.jar

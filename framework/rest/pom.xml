@@ -67,6 +67,10 @@
           <groupId>org.eclipse.jetty</groupId>
           <artifactId>jetty-server</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.geronimo.specs</groupId>
+          <artifactId>geronimo-servlet_3.0_spec</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
   </dependencies>
