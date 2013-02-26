@@ -127,6 +127,13 @@
             .append($('<span>').html(_l('label.notifications')))
             .notifications();
 
+      // Region switcher
+      var $regionSwitcher = $('<div>').addClass('region-switcher')
+        .attr('title', 'Select region')
+        .append(
+          $('<span>').addClass('icon').html('&nbsp;')
+        );
+
       // Project switcher
       var $viewSwitcher = $('<div>').addClass('button view-switcher')
             .append(
@@ -220,6 +227,7 @@
         $('<div>').addClass('controls')
           .append($notificationArea)
           .append($viewSwitcher)
+          .append($regionSwitcher)
           .append($projectSelect)
           .append($userInfo)
       ];

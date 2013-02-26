@@ -68,6 +68,26 @@
       },
       detailView: {
         name: 'Region details',
+        actions: {
+          remove: {
+            label: 'label.remove.region',
+            messages: {
+              notification: function() { return 'label.remove.region'; },
+              confirm: function() { return 'message.remove.region'; }
+            },
+            action: function(args) {
+              var region = args.context.regions[0];
+
+              $.ajax({ 
+                url: createURL('removeRegion'),
+                data: { id: region.id },
+                success: function(json) {
+                  args.response.success();
+                }
+              });
+            }
+          }
+        },
         tabs: {
           details: {
             title: 'label.details',
