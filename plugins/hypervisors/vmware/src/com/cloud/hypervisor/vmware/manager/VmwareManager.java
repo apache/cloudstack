@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
@@ -59,6 +60,8 @@ public interface VmwareManager {
     void endExclusiveOperation();
 
     boolean getNexusVSwitchGlobalParameter();
+
+    boolean getFullCloneFlag();
 
     Map<String, String> getNexusVSMCredentialsByClusterId(Long clusterId);
 

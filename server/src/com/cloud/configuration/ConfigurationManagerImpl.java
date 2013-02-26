@@ -1092,7 +1092,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     }
 
-    private void checkZoneParameters(String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, boolean checkForDuplicates, Long domainId, String allocationStateStr) {
+    private void checkZoneParameters(String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, boolean checkForDuplicates, Long domainId, String allocationStateStr,
+    								 String ip6Dns1, String ip6Dns2) {
         if (checkForDuplicates) {
             // Check if a zone with the specified name already exists
             if (validZone(zoneName)) {
@@ -1125,6 +1126,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (internalDns2 != null && internalDns2.length() > 0 && !NetUtils.isValidIp(internalDns2)) {
             throw new InvalidParameterValueException("Please enter a valid IP address for internal DNS2");
+        }
+
+        if (ip6Dns1 != null && ip6Dns1.length() > 0 && !NetUtils.isValidIpv6(ip6Dns1)) {
+            throw new InvalidParameterValueException("Please enter a valid IPv6 address for IP6 DNS1");
+        }
+
+        if (ip6Dns2 != null && ip6Dns2.length() > 0 && !NetUtils.isValidIpv6(ip6Dns2)) {
+            throw new InvalidParameterValueException("Please enter a valid IPv6 address for IP6 DNS2");
         }
 
         Grouping.AllocationState allocationState = null;
@@ -1396,6 +1405,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String zoneName = cmd.getZoneName();
         String dns1 = cmd.getDns1();
         String dns2 = cmd.getDns2();
+        String ip6Dns1 = cmd.getIp6Dns1();
+        String ip6Dns2 = cmd.getIp6Dns2();
         String internalDns1 = cmd.getInternalDns1();
         String internalDns2 = cmd.getInternalDns2();
         String guestCidr = cmd.getGuestCidrAddress();
@@ -1473,6 +1484,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             dns2 = zone.getDns2();
         }
 
+        if (ip6Dns1 == null) {
+            ip6Dns1 = zone.getIp6Dns1();
+        }
+
+        if (ip6Dns2 == null) {
+            ip6Dns2 = zone.getIp6Dns2();
+        }
+
         if (internalDns1 == null) {
             internalDns1 = zone.getInternalDns1();
         }
@@ -1495,20 +1514,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         boolean checkForDuplicates = !zoneName.equals(oldZoneName);
-        checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, checkForDuplicates, null, allocationStateStr);// not
-        // allowing
-        // updating
-        // domain
-        // associated
-        // with
-        // a
-        // zone,
-        // once
-        // created
+        checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, checkForDuplicates, null, allocationStateStr, ip6Dns1, ip6Dns2);// not allowing updating domain associated with a zone, once created
 
         zone.setName(zoneName);
         zone.setDns1(dns1);
         zone.setDns2(dns2);
+        zone.setIp6Dns1(ip6Dns1);
+        zone.setIp6Dns2(ip6Dns2);
         zone.setInternalDns1(internalDns1);
         zone.setInternalDns2(internalDns2);
         zone.setGuestNetworkCidr(guestCidr);
@@ -1588,7 +1600,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId,
-            NetworkType zoneType, String allocationStateStr, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled) {
+            NetworkType zoneType, String allocationStateStr, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1, String ip6Dns2) {
 
         // checking the following params outside checkzoneparams method as we do
         // not use these params for updatezone
@@ -1606,7 +1618,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, true, domainId, allocationStateStr);
+        checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, true, domainId, allocationStateStr, ip6Dns1, ip6Dns2);
 
         byte[] bytes = (zoneName + System.currentTimeMillis()).getBytes();
         String zoneToken = UUID.nameUUIDFromBytes(bytes).toString();
@@ -1614,7 +1626,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         try {
             txn.start();
             // Create the new zone in the database
-            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled);
+            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2);
             if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                 Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
                 zone.setAllocationState(allocationState);
@@ -1686,6 +1698,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String zoneName = cmd.getZoneName();
         String dns1 = cmd.getDns1();
         String dns2 = cmd.getDns2();
+        String ip6Dns1 = cmd.getIp6Dns1();
+        String ip6Dns2 = cmd.getIp6Dns2();
         String internalDns1 = cmd.getInternalDns1();
         String internalDns2 = cmd.getInternalDns2();
         String guestCidr = cmd.getGuestCidrAddress();
@@ -1729,7 +1743,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, allocationState, networkDomain,
-                isSecurityGroupEnabled, isLocalStorageEnabled);
+                isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2);
     }
 
     @Override

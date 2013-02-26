@@ -216,9 +216,6 @@
     <property name="name" value="Bare Metal Agent"/>
   </bean>
 
-  <bean id="BaremetalPlannerSelector" class="com.cloud.baremetal.manager.BaremetalPlannerSelector">
-    <property name="name" value="BaremetalPlannerSelector"/>
-  </bean>
 
   <bean id="HypervServerDiscoverer" class="com.cloud.hypervisor.hyperv.HypervServerDiscoverer">
     <property name="name" value="SCVMMServer"/>
@@ -306,6 +303,14 @@
   
   <bean id="BaremetalGuru" class="com.cloud.baremetal.manager.BareMetalGuru">
     <property name="name" value="BaremetalGuru"/>
+  </bean>
+
+  <bean id="BaremetalPlannerSelector" class="com.cloud.baremetal.manager.BaremetalPlannerSelector">
+    <property name="name" value="BaremetalPlannerSelector"/>
+  </bean>
+
+  <bean id="HypervisorPlannerSelector" class="com.cloud.deploy.HypervisorVmPlannerSelector">
+    <property name="name" value="HypervisorPlannerSelector"/>
   </bean>
 
   <!--

@@ -262,6 +262,7 @@ install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-%{_maventa
 cp plugins/hypervisors/kvm/target/dependencies/*  ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
 
 # Usage server
+mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib
 install -D usage/target/cloud-usage-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/cloud-usage-%{_maventag}.jar
 cp usage/target/dependencies/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib/
@@ -309,9 +310,9 @@ if [ "$1" == "1" ] ; then
     /sbin/chkconfig --level 345 cloud-management on > /dev/null 2>&1 || true
 fi
 
-if [ ! -f %{_datadir}/cloudstack/management/webapps/client/WEB-INF/classes/scripts/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
+if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
-    echo %{_datadir}/cloudstack/management/webapps/client/WEB-INF/classes/scripts/vm/hypervisor/xenserver/
+    echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
 fi
 
 %post awsapi
@@ -407,6 +408,7 @@ fi
 %attr(0644,root,root) %{_datadir}/%{name}-usage/*.jar
 %attr(0644,root,root) %{_datadir}/%{name}-usage/lib/*.jar
 %dir /var/log/%{name}/usage
+%dir %{_sysconfdir}/%{name}/usage
 %doc LICENSE
 %doc NOTICE
 

@@ -138,7 +138,7 @@ public enum Config {
     SnapshotPollInterval("Snapshots", SnapshotManager.class, Integer.class, "snapshot.poll.interval", "300", "The time interval in seconds when the management server polls for snapshots to be scheduled.", null),
     SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
     BackupSnapshotAferTakingSnapshot("Snapshots", SnapshotManager.class, Boolean.class, "snapshot.backup.rightafter", "true", "backup snapshot right after snapshot is taken", null),
-
+    
 	// Advanced
     JobExpireMinutes("Advanced", ManagementServer.class, String.class, "job.expire.minutes", "1440", "Time (in minutes) for async-jobs to be kept in system", null),
     JobCancelThresholdMinutes("Advanced", ManagementServer.class, String.class, "job.cancel.threshold.minutes", "60", "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", null),
@@ -255,6 +255,7 @@ public enum Config {
     VmwarePublicNetworkVSwitch("Hidden", ManagementServer.class, String.class, "vmware.public.vswitch", null, "Specify the vSwitch on host for public network", null),
     VmwareGuestNetworkVSwitch("Hidden", ManagementServer.class, String.class, "vmware.guest.vswitch", null, "Specify the vSwitch on host for guest network", null),
     VmwareUseNexusVSwitch("Network", ManagementServer.class, Boolean.class, "vmware.use.nexus.vswitch", "false", "Enable/Disable Cisco Nexus 1000v vSwitch in VMware environment", null),
+                            VmwareCreateFullClone("Advanced", ManagementServer.class, Boolean.class, "vmware.create.full.clone", "false", "If set to true, creates guest VMs as full clones on ESX", null),
     VmwareServiceConsole("Advanced", ManagementServer.class, String.class, "vmware.service.console", "Service Console", "Specify the service console network name(for ESX hosts)", null),
     VmwareManagementPortGroup("Advanced", ManagementServer.class, String.class, "vmware.management.portgroup", "Management Network", "Specify the management network name(for ESXi hosts)", null),
     VmwareAdditionalVncPortRangeStart("Advanced", ManagementServer.class, Integer.class, "vmware.additional.vnc.portrange.start", "50000", "Start port number of additional VNC port range", null),
@@ -375,14 +376,14 @@ public enum Config {
     ApiLimitMax("Advanced", ManagementServer.class, Integer.class, "api.throttling.max", "25", "Max allowed number of APIs within fixed interval", null),
     ApiLimitCacheSize("Advanced", ManagementServer.class, Integer.class, "api.throttling.cachesize", "50000", "Account based API count cache size", null),
 
-
+	
 	// VMSnapshots
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
     VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "600", "In second, timeout for create vm snapshot", null),
     VMSnapshotExpungeInterval("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.expunge.interval", "60", "The interval (in seconds) to wait before running the expunge thread.", null),
     VMSnapshotExpungeWorkers("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.expunge.workers",  "1", "Number of workers performing expunge ", null);
-
-
+    
+	
 	private final String _category;
 	private final Class<?> _componentClass;
 	private final Class<?> _type;

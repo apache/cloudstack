@@ -49,12 +49,6 @@ public class CreateDomainCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for networks in the domain")
     private String networkDomain;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.STRING, description="Domain UUID, required for adding domain from another Region")
-    private String domainUUID;
-    
-    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.INTEGER, description="Id of the Region creating the Domain")
-    private Integer regionId;
-    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -71,14 +65,6 @@ public class CreateDomainCmd extends BaseCmd {
         return networkDomain;
     }
 
-    public String getDomainUUID() {
-        return domainUUID;
-    }
-    
-	public Integer getRegionId() {
-		return regionId;
-	}
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -96,7 +82,7 @@ public class CreateDomainCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Domain Name: "+getDomainName()+((getParentDomainId()!=null)?", Parent DomainId :"+getParentDomainId():""));
-        Domain domain = _domainService.createDomain(getDomainName(), getParentDomainId(), getNetworkDomain(), getDomainUUID(), getRegionId());
+        Domain domain = _domainService.createDomain(getDomainName(), getParentDomainId(), getNetworkDomain());
         if (domain != null) {
             DomainResponse response = _responseGenerator.createDomainResponse(domain);
             response.setResponseName(getCommandName());

@@ -14,43 +14,37 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.server.auth;
+package com.cloud.vm;
 
-import java.util.Map;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
+@Entity
+@Table(name="user_vm_clone_setting")
+public class UserVmCloneSettingVO {
 
-import com.cloud.utils.component.AdapterBase;
+    @Column(name="vm_id")
+    private Long vmId;
 
-/**
- * Use this UserAuthenticator if users are already authenticated outside
- * 
- */
-@Local(value={UserAuthenticator.class})
-public abstract class DefaultUserAuthenticator extends AdapterBase implements UserAuthenticator {
-	private String _name = null;
-	
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
-		_name = name;
-		return true;
-	}
+    @Column(name="clone_type")
+    private String cloneType;
 
-	@Override
-	public String getName() {
-		return _name;
-	}
+    public UserVmCloneSettingVO() {
 
-	@Override
-	public boolean start() {
-		return true;
-	}
+    }
 
-	@Override
-	public boolean stop() {
-		return true;
-	}
+    public UserVmCloneSettingVO(long id,
+            String cloneType) {
+        this.vmId = id;
+        this.cloneType = cloneType;
+    }
 
+    public long getVmId() {
+        return this.vmId;
+    }
+
+    public String getCloneType() {
+        return this.cloneType;
+    }
 }

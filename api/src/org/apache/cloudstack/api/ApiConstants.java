@@ -59,6 +59,8 @@ public class ApiConstants {
     public static final String DISPLAY_TEXT = "displaytext";
     public static final String DNS1 = "dns1";
     public static final String DNS2 = "dns2";
+    public static final String IP6_DNS1 = "ip6dns1";
+    public static final String IP6_DNS2 = "ip6dns2";
     public static final String DOMAIN = "domain";
     public static final String DOMAIN_ID = "domainid";
     public static final String DURATION = "duration";
@@ -377,9 +379,8 @@ public class ApiConstants {
     public static final String VSM_CONFIG_STATE = "vsmconfigstate";
     public static final String VSM_DEVICE_STATE = "vsmdevicestate";
     public static final String ADD_VSM_FLAG = "addvsmflag";
-	public static final String END_POINT = "endpoint";
-	public static final String REGION_ID = "regionid";
-	public static final String IS_PROPAGATE = "ispropagate";
+    public static final String END_POINT = "endpoint";
+    public static final String REGION_ID = "regionid";
     public static final String VPC_OFF_ID = "vpcofferingid";
     public static final String NETWORK = "network";
     public static final String VPC_ID = "vpcid";

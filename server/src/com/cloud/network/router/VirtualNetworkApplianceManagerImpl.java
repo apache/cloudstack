@@ -293,8 +293,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     UserVmDao _userVmDao;
     @Inject VMInstanceDao _vmDao;
     @Inject
-    UserStatisticsDao _statsDao = null;
-    @Inject
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
     GuestOSDao _guestOSDao = null;
@@ -364,7 +362,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     private String _usageTimeZone = "GMT";
     private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
-    
+    private static final int USAGE_AGGREGATION_RANGE_MIN = 10; // 10 minutes, same as com.cloud.usage.UsageManagerImpl.USAGE_AGGREGATION_RANGE_MIN
+    private boolean _dailyOrHourly = false;
+
     ScheduledExecutorService _executor;
     ScheduledExecutorService _checkExecutor;
     ScheduledExecutorService _networkStatsUpdateExecutor;
@@ -728,6 +728,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             cal.roll(Calendar.DAY_OF_YEAR, true);
             cal.add(Calendar.MILLISECOND, -1);
             endDate = cal.getTime().getTime();
+            _dailyOrHourly = true;
         } else if (_usageAggregationRange == HOURLY_TIME) {
             cal.roll(Calendar.HOUR_OF_DAY, false);
             cal.set(Calendar.MINUTE, 0);
@@ -736,8 +737,15 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             cal.roll(Calendar.HOUR_OF_DAY, true);
             cal.add(Calendar.MILLISECOND, -1);
             endDate = cal.getTime().getTime();
+            _dailyOrHourly = true;
         } else {
             endDate = cal.getTime().getTime();
+            _dailyOrHourly = false;
+        }
+
+        if (_usageAggregationRange < USAGE_AGGREGATION_RANGE_MIN) {
+            s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + USAGE_AGGREGATION_RANGE_MIN);
+            _usageAggregationRange = USAGE_AGGREGATION_RANGE_MIN;
         }
 
         _networkStatsUpdateExecutor.scheduleAtFixedRate(new NetworkStatsUpdateTask(), (endDate - System.currentTimeMillis()),
@@ -854,7 +862,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                                 final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
                                         forVpc, routerNic.getIp4Address());
                                 String routerType = router.getType().toString();
-                                UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(),
+                                UserStatisticsVO previousStats = _userStatsDao.findBy(router.getAccountId(),
                                         router.getDataCenterId(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), routerType);
                                 NetworkUsageAnswer answer = null;
                                 try {
@@ -876,7 +884,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                                             continue;
                                         }
                                         txn.start();
-                                        UserStatisticsVO stats = _statsDao.lock(router.getAccountId(),
+                                        UserStatisticsVO stats = _userStatsDao.lock(router.getAccountId(),
                                                 router.getDataCenterId(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), routerType);
                                         if (stats == null) {
                                             s_logger.warn("unable to find stats for account: " + router.getAccountId());
@@ -912,7 +920,12 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                                             stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
                                         }
                                         stats.setCurrentBytesSent(answer.getBytesSent());
-                                        _statsDao.update(stats.getId(), stats);
+                                        if (! _dailyOrHourly) {
+                                            //update agg bytes
+                                            stats.setAggBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
+                                            stats.setAggBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
+                                        }
+                                        _userStatsDao.update(stats.getId(), stats);
                                         txn.commit();
                                     } catch (Exception e) {
                                         txn.rollback();
@@ -954,7 +967,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     try {
                         txn.start();
                         //get all stats with delta > 0
-                        List<UserStatisticsVO> updatedStats = _statsDao.listUpdatedStats();
+                        List<UserStatisticsVO> updatedStats = _userStatsDao.listUpdatedStats();
                         Date updatedTime = new Date();
                         for(UserStatisticsVO stat : updatedStats){
                             //update agg bytes                    
@@ -1922,6 +1935,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         NicProfile controlNic = null;
         String defaultDns1 = null;
         String defaultDns2 = null;
+        String defaultIp6Dns1 = null;
+        String defaultIp6Dns2 = null;
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
             boolean ipv4 = false, ipv6 = false;
@@ -1945,6 +1960,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             	}
                 defaultDns1 = nic.getDns1();
                 defaultDns2 = nic.getDns2();
+                defaultIp6Dns1 = nic.getIp6Dns1();
+                defaultIp6Dns2 = nic.getIp6Dns2();
             }
 
             if (nic.getTrafficType() == TrafficType.Management) {
@@ -2039,6 +2056,12 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
             if (defaultDns2 != null) {
                 buf.append(" dns2=").append(defaultDns2);
+            }
+            if (defaultIp6Dns1 != null) {
+                buf.append(" ip6dns1=").append(defaultIp6Dns1);
+            }
+            if (defaultIp6Dns2 != null) {
+                buf.append(" ip6dns2=").append(defaultIp6Dns2);
             }
 
             boolean useExtDns = !dnsProvided;
@@ -3588,7 +3611,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     boolean forVpc = router.getVpcId() != null;
                     final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
                             forVpc, routerNic.getIp4Address());
-                    UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(), 
+                    UserStatisticsVO previousStats = _userStatsDao.findBy(router.getAccountId(),
                             router.getDataCenterId(), network.getId(), null, router.getId(), router.getType().toString());
                     NetworkUsageAnswer answer = null;
                     try {
@@ -3610,7 +3633,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                                 continue;
                             }
                             txn.start();
-                            UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), 
+                            UserStatisticsVO stats = _userStatsDao.lock(router.getAccountId(),
                                     router.getDataCenterId(), network.getId(), null, router.getId(), router.getType().toString());
                             if (stats == null) {
                                 s_logger.warn("unable to find stats for account: " + router.getAccountId());
@@ -3646,7 +3669,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                                 stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
                             }
                             stats.setCurrentBytesSent(answer.getBytesSent());
-                            _statsDao.update(stats.getId(), stats);
+                            _userStatsDao.update(stats.getId(), stats);
                             txn.commit();
                         } catch (Exception e) {
                             txn.rollback();

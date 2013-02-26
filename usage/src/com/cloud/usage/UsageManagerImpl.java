@@ -1430,7 +1430,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                             timeSinceJob = now - lastSuccess;
                         }
 
-                        if ((timeSinceJob > 0) && (timeSinceJob > aggregationDurationMillis)) {
+                        if ((timeSinceJob > 0) && (timeSinceJob > (aggregationDurationMillis - 100))) {
                             if (timeToJob > (aggregationDurationMillis/2)) {
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("it's been " + timeSinceJob + " ms since last usage job and " + timeToJob + " ms until next job, scheduling an immediate job to catch up (aggregation duration is " + m_aggregationDuration + " minutes)");

@@ -63,9 +63,6 @@ public class UpdateAccountCmd extends BaseCmd{
     @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
     private Map details;
 
-    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
-    private Boolean isPropagate;
-	
     @Inject RegionService _regionService;
     
     /////////////////////////////////////////////////////
@@ -102,10 +99,7 @@ public class UpdateAccountCmd extends BaseCmd{
         return params;
     }
 
-	public Boolean getIsPropagate() {
-		return isPropagate;
-	}
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -131,7 +125,7 @@ public class UpdateAccountCmd extends BaseCmd{
 
     @Override
     public void execute(){
-    	Account result = _regionService.updateAccount(this);
+        Account result = _regionService.updateAccount(this);
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getCommandName());

@@ -14,43 +14,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.server.auth;
+package com.cloud.vm.dao;
 
-import java.util.Map;
+import java.util.List;
 
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.UserVmCloneSettingVO;
 
-import com.cloud.utils.component.AdapterBase;
+public interface UserVmCloneSettingDao extends GenericDao<UserVmCloneSettingVO, Long> {
 
-/**
- * Use this UserAuthenticator if users are already authenticated outside
- * 
- */
-@Local(value={UserAuthenticator.class})
-public abstract class DefaultUserAuthenticator extends AdapterBase implements UserAuthenticator {
-	private String _name = null;
-	
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
-		_name = name;
-		return true;
-	}
+    /*
+     * Returns a User VM clone type record by vm id.
+     */
+    UserVmCloneSettingVO findByVmId(long id);
 
-	@Override
-	public String getName() {
-		return _name;
-	}
-
-	@Override
-	public boolean start() {
-		return true;
-	}
-
-	@Override
-	public boolean stop() {
-		return true;
-	}
+    /*
+     * Returns a list of VMs by clone type.
+     * cloneType can be full/linked.
+     */
+    List<UserVmCloneSettingVO> listByCloneType(String cloneType);
 
 }

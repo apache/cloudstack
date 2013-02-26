@@ -50,9 +50,6 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.CLEANUP, type=CommandType.BOOLEAN, description="true if all domain resources (child domains, accounts) have to be cleaned up, false otherwise")
     private Boolean cleanup;
 
-    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
-    private Boolean propagate;
-
     @Inject RegionService _regionService;
     
     /////////////////////////////////////////////////////
@@ -67,10 +64,6 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
         return cleanup;
     }
 
-	public Boolean isPropagate() {
-		return propagate;
-	}
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

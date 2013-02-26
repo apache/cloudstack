@@ -45,9 +45,6 @@ public class DeleteUserCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserResponse.class, required=true, description="Deletes a user")
     private Long id;
 
-    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
-    private Boolean isPropagate;
-    
     @Inject RegionService _regionService;
     
     /////////////////////////////////////////////////////
@@ -58,10 +55,6 @@ public class DeleteUserCmd extends BaseCmd {
         return id;
     }
 
-	public Boolean getIsPropagate() {
-		return isPropagate;
-	}
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

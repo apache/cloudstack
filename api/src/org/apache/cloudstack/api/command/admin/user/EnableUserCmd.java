@@ -46,9 +46,6 @@ public class EnableUserCmd extends BaseCmd {
             required=true, description="Enables user by user ID.")
     private Long id;
 
-    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
-    private Boolean isPropagate;
-
     @Inject RegionService _regionService;
     
     /////////////////////////////////////////////////////
@@ -59,10 +56,6 @@ public class EnableUserCmd extends BaseCmd {
         return id;
     }
 
-	public Boolean getIsPropagate() {
-		return isPropagate;
-	}
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

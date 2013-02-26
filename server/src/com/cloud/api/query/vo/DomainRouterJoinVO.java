@@ -107,6 +107,11 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Column(name="dns2")
     private String dns2 = null;
 
+    @Column(name="ip6_dns1")
+    private String ip6Dns1 = null;
+
+    @Column(name="ip6_dns2")
+    private String ip6Dns2 = null;
 
     @Column(name="host_id", updatable=true, nullable=true)
     private long hostId;
@@ -971,4 +976,19 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 	}
 
 
+	public String getIp6Dns1() {
+		return ip6Dns1;
+	}
+
+	public void setIp6Dns1(String ip6Dns1) {
+		this.ip6Dns1 = ip6Dns1;
+	}
+
+	public String getIp6Dns2() {
+		return ip6Dns2;
+	}
+
+	public void setIp6Dns2(String ip6Dns2) {
+		this.ip6Dns2 = ip6Dns2;
+	}
 }

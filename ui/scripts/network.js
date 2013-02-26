@@ -628,7 +628,13 @@
 									  $.extend(data, {
 										  networkdomain: args.data.networkdomain
 										});
-									}
+									} 
+
+                 if(args.data.cidr !="" ){
+                                          $.extend(data, {
+                                                              guestvmcidr: args.data.cidr
+                                           });
+                                  }
 
                   //args.data.networkofferingid is null when networkofferingid field is hidden
                   if(args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid) {
@@ -1001,7 +1007,12 @@
                     gateway: { label: 'label.gateway' },
 
                     //netmask: { label: 'label.netmask' },
-                    cidr: { label: 'label.cidr' },
+                    cidr: { label: 'label.cidr', isEditable:true },
+
+                    networkcidr:{label:'Network CIDR'},
+
+                    reservediprange:{label:'Reserved IP Range'},
+
 
                     networkdomaintext: {
                       label: 'label.network.domain.text'

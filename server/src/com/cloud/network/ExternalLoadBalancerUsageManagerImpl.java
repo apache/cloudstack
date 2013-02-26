@@ -16,22 +16,6 @@
 // under the License.
 package com.cloud.network;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
 import com.cloud.agent.api.ExternalNetworkResourceUsageCommand;
@@ -41,27 +25,30 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
-import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.dao.ExternalFirewallDeviceDao;
+import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDao;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.InlineLoadBalancerNicMapDao;
 import com.cloud.network.dao.InlineLoadBalancerNicMapVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkExternalFirewallDao;
+import com.cloud.network.dao.NetworkExternalFirewallVO;
 import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
 import com.cloud.network.dao.NetworkExternalLoadBalancerVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
@@ -81,6 +68,20 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @Local(value = { ExternalLoadBalancerUsageManager.class })
@@ -146,7 +147,7 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
     ScheduledExecutorService _executor;
     private int _externalNetworkStatsInterval;
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerUsageManagerImpl.class);
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _externalNetworkStatsInterval = NumbersUtil.parseInt(_configDao.getValue(Config.ExternalNetworkStatsInterval.key()), 300);
@@ -160,7 +161,7 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
     @Override
     public boolean start() {
         if (_externalNetworkStatsInterval > 0) {
-            _executor.scheduleAtFixedRate(new ExternalLoadBalancerDeviceNetworkUsageTask(), _externalNetworkStatsInterval, _externalNetworkStatsInterval, TimeUnit.SECONDS);
+            _executor.scheduleAtFixedRate(new ExternalDeviceNetworkUsageTask(), _externalNetworkStatsInterval, _externalNetworkStatsInterval, TimeUnit.SECONDS);
         }
         return true;
     }
@@ -168,6 +169,11 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
     @Override
     public boolean stop() {
         return true;
+    }
+
+    @Override
+    public String getName() {
+        return _name;
     }
 
     private ExternalLoadBalancerDeviceVO getExternalLoadBalancerForNetwork(Network network) {
@@ -180,15 +186,21 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
         }
         return null;
     }
-    
-    private boolean externalLoadBalancerIsInline(HostVO externalLoadBalancer) {
-        DetailVO detail = _hostDetailDao.findDetail(externalLoadBalancer.getId(), "inline");
-        return (detail != null && detail.getValue().equals("true"));
+
+    private ExternalFirewallDeviceVO getExternalFirewallForNetwork(Network network) {
+        NetworkExternalFirewallVO fwDeviceForNetwork = _networkExternalFirewallDao.findByNetworkId(network.getId());
+        if (fwDeviceForNetwork != null) {
+            long fwDeviceId = fwDeviceForNetwork.getExternalFirewallDeviceId();
+            ExternalFirewallDeviceVO fwDevice = _externalFirewallDeviceDao.findById(fwDeviceId);
+            assert(fwDevice != null);
+            return fwDevice;
+        }
+        return null;
     }
-    
+
     @Override
     public void updateExternalLoadBalancerNetworkUsageStats(long loadBalancerRuleId){
-        
+
         LoadBalancerVO lb = _loadBalancerDao.findById(loadBalancerRuleId);
         if(lb == null){
             if(s_logger.isDebugEnabled()){
@@ -204,7 +216,8 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
             }
             return;
         }
-        ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network); 
+
+        ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
         if (lbDeviceVO == null) {
             if(s_logger.isDebugEnabled()){
                 s_logger.debug("Cannot update usage stats,  No external LB device found");
@@ -235,24 +248,24 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
 
         String publicIp = _networkMgr.getIp(lb.getSourceIpAddressId()).getAddress().addr();
         DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
-        String statsEntryIdentifier = "account " + account.getAccountName() + ", zone " + zone.getName() + ", network ID " + networkId + ", host ID " + externalLoadBalancer.getName();            
-        
+        String statsEntryIdentifier = "account " + account.getAccountName() + ", zone " + zone.getName() + ", network ID " + networkId + ", host ID " + externalLoadBalancer.getName();
+
         long newCurrentBytesSent = 0;
         long newCurrentBytesReceived = 0;
-        
+
         if (publicIp != null) {
             long[] bytesSentAndReceived = null;
             statsEntryIdentifier += ", public IP: " + publicIp;
-            
-            if (externalLoadBalancer.getType().equals(Host.Type.ExternalLoadBalancer) && externalLoadBalancerIsInline(externalLoadBalancer)) {
+            boolean inline = _networkMgr.isNetworkInlineMode(network);
+            if (externalLoadBalancer.getType().equals(Host.Type.ExternalLoadBalancer) && inline) {
                 // Look up stats for the guest IP address that's mapped to the public IP address
                 InlineLoadBalancerNicMapVO mapping = _inlineLoadBalancerNicMapDao.findByPublicIpAddress(publicIp);
-                
+
                 if (mapping != null) {
                     NicVO nic = _nicDao.findById(mapping.getNicId());
                     String loadBalancingIpAddress = nic.getIp4Address();
                     bytesSentAndReceived = lbAnswer.ipBytes.get(loadBalancingIpAddress);
-                    
+
                     if (bytesSentAndReceived != null) {
                         bytesSentAndReceived[0] = 0;
                     }
@@ -260,39 +273,39 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
             } else {
                 bytesSentAndReceived = lbAnswer.ipBytes.get(publicIp);
             }
-            
+
             if (bytesSentAndReceived == null) {
                 s_logger.debug("Didn't get an external network usage answer for public IP " + publicIp);
             } else {
                 newCurrentBytesSent += bytesSentAndReceived[0];
                 newCurrentBytesReceived += bytesSentAndReceived[1];
             }
-            
+
             UserStatisticsVO userStats;
             final Transaction txn = Transaction.currentTxn();
             try {
-                txn.start();            
+                txn.start();
                 userStats = _userStatsDao.lock(accountId, zone.getId(), networkId, publicIp, externalLoadBalancer.getId(), externalLoadBalancer.getType().toString());
-            
+
                 if(userStats != null){
                     long oldNetBytesSent = userStats.getNetBytesSent();
                     long oldNetBytesReceived = userStats.getNetBytesReceived();
                     long oldCurrentBytesSent = userStats.getCurrentBytesSent();
                     long oldCurrentBytesReceived = userStats.getCurrentBytesReceived();
                     String warning = "Received an external network stats byte count that was less than the stored value. Zone ID: " + userStats.getDataCenterId() + ", account ID: " + userStats.getAccountId() + ".";
-                                
+
                     userStats.setCurrentBytesSent(newCurrentBytesSent);
                     if (oldCurrentBytesSent > newCurrentBytesSent) {
-                        s_logger.warn(warning + "Stored bytes sent: " + oldCurrentBytesSent + ", new bytes sent: " + newCurrentBytesSent + ".");            
+                        s_logger.warn(warning + "Stored bytes sent: " + oldCurrentBytesSent + ", new bytes sent: " + newCurrentBytesSent + ".");
                         userStats.setNetBytesSent(oldNetBytesSent + oldCurrentBytesSent);
-                    } 
-                    
+                    }
+
                     userStats.setCurrentBytesReceived(newCurrentBytesReceived);
                     if (oldCurrentBytesReceived > newCurrentBytesReceived) {
-                        s_logger.warn(warning + "Stored bytes received: " + oldCurrentBytesReceived + ", new bytes received: " + newCurrentBytesReceived + ".");                        
+                        s_logger.warn(warning + "Stored bytes received: " + oldCurrentBytesReceived + ", new bytes received: " + newCurrentBytesReceived + ".");
                         userStats.setNetBytesReceived(oldNetBytesReceived + oldCurrentBytesReceived);
-                    } 
-                            
+                    }
+
                     if (_userStatsDao.update(userStats.getId(), userStats)) {
                         s_logger.debug("Successfully updated stats for " + statsEntryIdentifier);
                     } else {
@@ -301,7 +314,7 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
                 }else {
                     s_logger.warn("Unable to find user stats entry for " + statsEntryIdentifier);
                 }
-                
+
                 txn.commit();
             }catch (final Exception e) {
                 txn.rollback();
@@ -310,32 +323,32 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
         }
     }
 
-    protected class ExternalLoadBalancerDeviceNetworkUsageTask implements Runnable {
+    protected class ExternalDeviceNetworkUsageTask implements Runnable {
 
-        public ExternalLoadBalancerDeviceNetworkUsageTask() {
+        public ExternalDeviceNetworkUsageTask() {
 
         }
 
         @Override
         public void run() {
-            GlobalLock scanLock = GlobalLock.getInternLock("ExternalLoadBalancerUsageManagerImpl");
+            GlobalLock scanLock = GlobalLock.getInternLock("ExternalDeviceNetworkUsageManagerImpl");
             try {
                 if (scanLock.lock(20)) {
                     try {
-                        runExternalLoadBalancerNetworkUsageTask();
+                        runExternalDeviceNetworkUsageTask();
                     } finally {
                         scanLock.unlock();
                     }
                 }
             } catch (Exception e) {
-                s_logger.warn("Problems while getting external load balancer device usage", e);
+                s_logger.warn("Problems while getting external device usage", e);
             } finally {
                 scanLock.releaseRef();
             }
         }
 
-        private void runExternalLoadBalancerNetworkUsageTask() {
-            s_logger.debug("External load balancer devices stats collector is running...");
+        private void runExternalDeviceNetworkUsageTask() {
+            s_logger.debug("External devices stats collector is running...");
 
             for (DataCenterVO zone : _dcDao.listAll()) {
                 List<DomainRouterVO> domainRoutersInZone = _routerDao.listByDataCenter(zone.getId());
@@ -343,6 +356,7 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
                     continue;
                 }
                 Map<Long, ExternalNetworkResourceUsageAnswer> lbDeviceUsageAnswerMap = new HashMap<Long, ExternalNetworkResourceUsageAnswer>();
+                Map<Long, ExternalNetworkResourceUsageAnswer> fwDeviceUsageAnswerMap = new HashMap<Long, ExternalNetworkResourceUsageAnswer>();
                 List<Long> accountsProcessed = new ArrayList<Long>();
 
                 for (DomainRouterVO domainRouter : domainRoutersInZone) {
@@ -368,32 +382,75 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
                             continue;
                         }
 
+                        ExternalFirewallDeviceVO fwDeviceVO = getExternalFirewallForNetwork(network);
                         ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
-                        if (lbDeviceVO == null) {
+                        if (lbDeviceVO == null && fwDeviceVO == null) {
                             continue;
                         }
 
+                        // Get network stats from the external firewall
+                        ExternalNetworkResourceUsageAnswer firewallAnswer = null;
+                        HostVO externalFirewall = null;
+                        if(fwDeviceVO != null){
+                            externalFirewall = _hostDao.findById(fwDeviceVO.getHostId());
+                            if (externalFirewall != null) {
+                                Long fwDeviceId = new Long(externalFirewall.getId());
+                                if(!fwDeviceUsageAnswerMap.containsKey(fwDeviceId)){
+                                    try{
+                                        ExternalNetworkResourceUsageCommand cmd = new ExternalNetworkResourceUsageCommand();
+                                        firewallAnswer = (ExternalNetworkResourceUsageAnswer) _agentMgr.easySend(externalFirewall.getId(), cmd);
+                                        if (firewallAnswer == null || !firewallAnswer.getResult()) {
+                                            String details = (firewallAnswer != null) ? firewallAnswer.getDetails() : "details unavailable";
+                                            String msg = "Unable to get external firewall stats for network" + zone.getName() + " due to: " + details + ".";
+                                            s_logger.error(msg);
+                                        } else {
+                                            fwDeviceUsageAnswerMap.put(fwDeviceId, firewallAnswer);
+                                        }
+                                    } catch (Exception e){
+                                        String msg = "Unable to get external firewall stats for network" + zone.getName();
+                                        s_logger.error(msg, e);
+                                    }
+                                } else {
+                                    if (s_logger.isTraceEnabled()) {
+                                        s_logger.trace("Reusing usage Answer for device id " + fwDeviceId + "for Network " + network.getId());
+                                    }
+                                    firewallAnswer = fwDeviceUsageAnswerMap.get(fwDeviceId);
+                                }
+                            }}
+
                         // Get network stats from the external load balancer
                         ExternalNetworkResourceUsageAnswer lbAnswer = null;
-                        HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
-                        if (externalLoadBalancer != null) {
-                            Long lbDeviceId = new Long(externalLoadBalancer.getId());
-                            if (!lbDeviceUsageAnswerMap.containsKey(lbDeviceId)) {
-                                ExternalNetworkResourceUsageCommand cmd = new ExternalNetworkResourceUsageCommand();
-                                lbAnswer = (ExternalNetworkResourceUsageAnswer) _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
-                                if (lbAnswer == null || !lbAnswer.getResult()) {
-                                    String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";
-                                    String msg = "Unable to get external load balancer stats for " + zone.getName() + " due to: " + details + ".";
-                                    s_logger.error(msg);
-                                    continue;
+                        HostVO externalLoadBalancer = null;
+                        if(lbDeviceVO !=null){
+                            externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
+                            if (externalLoadBalancer != null) {
+                                Long lbDeviceId = new Long(externalLoadBalancer.getId());
+                                if (!lbDeviceUsageAnswerMap.containsKey(lbDeviceId)) {
+                                    try {
+                                        ExternalNetworkResourceUsageCommand cmd = new ExternalNetworkResourceUsageCommand();
+                                        lbAnswer = (ExternalNetworkResourceUsageAnswer) _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
+                                        if (lbAnswer == null || !lbAnswer.getResult()) {
+                                            String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";
+                                            String msg = "Unable to get external load balancer stats for " + zone.getName() + " due to: " + details + ".";
+                                            s_logger.error(msg);
+                                        } else {
+                                            lbDeviceUsageAnswerMap.put(lbDeviceId, lbAnswer);
+                                        }
+                                    } catch (Exception e){
+                                        String msg = "Unable to get external load balancer stats for " + zone.getName();
+                                        s_logger.error(msg, e);
+                                    }
+                                } else {
+                                    if (s_logger.isTraceEnabled()) {
+                                        s_logger.trace("Reusing usage Answer for device id " + lbDeviceId + "for Network " + network.getId());
+                                    }
+                                    lbAnswer = lbDeviceUsageAnswerMap.get(lbDeviceId);
                                 }
-                                lbDeviceUsageAnswerMap.put(lbDeviceId, lbAnswer);
-                            } else {
-                                if (s_logger.isTraceEnabled()) {
-                                    s_logger.trace("Reusing usage Answer for device id " + lbDeviceId + "for Network " + network.getId());
-                                }
-                                lbAnswer = lbDeviceUsageAnswerMap.get(lbDeviceId);
                             }
+                        }
+
+                        if(firewallAnswer == null && lbAnswer == null){
+                            continue;
                         }
 
                         AccountVO account = _accountDao.findById(accountId);
@@ -402,11 +459,11 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
                             continue;
                         }
 
-                        if (!manageStatsEntries(true, accountId, zoneId, network, externalLoadBalancer, lbAnswer)) {
+                        if (!manageStatsEntries(true, accountId, zoneId, network, externalFirewall, firewallAnswer, externalLoadBalancer, lbAnswer)) {
                             continue;
                         }
 
-                        manageStatsEntries(false, accountId, zoneId, network, externalLoadBalancer, lbAnswer);
+                        manageStatsEntries(false, accountId, zoneId, network, externalFirewall, firewallAnswer, externalLoadBalancer, lbAnswer);
                     }
 
                     accountsProcessed.add(new Long(accountId));
@@ -448,7 +505,7 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
         }
 
         // Updates an existing stats entry with new data from the specified usage answer.
-        private boolean updateStatsEntry(long accountId, long zoneId, long networkId, String publicIp, long hostId, ExternalNetworkResourceUsageAnswer answer) {
+        private boolean updateStatsEntry(long accountId, long zoneId, long networkId, String publicIp, long hostId, ExternalNetworkResourceUsageAnswer answer, boolean inline) {
             AccountVO account = _accountDao.findById(accountId);
             DataCenterVO zone = _dcDao.findById(zoneId);
             NetworkVO network = _networkDao.findById(networkId);
@@ -462,7 +519,7 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
                 long[] bytesSentAndReceived = null;
                 statsEntryIdentifier += ", public IP: " + publicIp;
 
-                if (host.getType().equals(Host.Type.ExternalLoadBalancer) && externalLoadBalancerIsInline(host)) {
+                if (host.getType().equals(Host.Type.ExternalLoadBalancer) && inline) {
                     // Look up stats for the guest IP address that's mapped to the public IP address
                     InlineLoadBalancerNicMapVO mapping = _inlineLoadBalancerNicMapDao.findByPublicIpAddress(publicIp);
 
@@ -520,11 +577,11 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
             }
         }
 
-        private boolean createOrUpdateStatsEntry(boolean create, long accountId, long zoneId, long networkId, String publicIp, long hostId, ExternalNetworkResourceUsageAnswer answer) {
+        private boolean createOrUpdateStatsEntry(boolean create, long accountId, long zoneId, long networkId, String publicIp, long hostId, ExternalNetworkResourceUsageAnswer answer, boolean inline) {
             if (create) {
                 return createStatsEntry(accountId, zoneId, networkId, publicIp, hostId);
             } else {
-                return updateStatsEntry(accountId, zoneId, networkId, publicIp, hostId, answer);
+                return updateStatsEntry(accountId, zoneId, networkId, publicIp, hostId, answer, inline);
             }
         }
 
@@ -534,19 +591,66 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
          * balancing rules
          */
         private boolean manageStatsEntries(boolean create, long accountId, long zoneId, Network network,
-                HostVO externalLoadBalancer, ExternalNetworkResourceUsageAnswer lbAnswer) {
+                                           HostVO externalFirewall, ExternalNetworkResourceUsageAnswer firewallAnswer,
+                                           HostVO externalLoadBalancer, ExternalNetworkResourceUsageAnswer lbAnswer) {
             String accountErrorMsg = "Failed to update external network stats entry. Details: account ID = " + accountId;
             Transaction txn = Transaction.open(Transaction.CLOUD_DB);
             try {
                 txn.start();
                 String networkErrorMsg = accountErrorMsg + ", network ID = " + network.getId();
 
+                boolean sharedSourceNat = false;
+                Map<Network.Capability, String> sourceNatCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Network.Service.SourceNat);
+                if (sourceNatCapabilities != null) {
+                    String supportedSourceNatTypes = sourceNatCapabilities.get(Network.Capability.SupportedSourceNatTypes).toLowerCase();
+                    if (supportedSourceNatTypes.contains("zone")) {
+                        sharedSourceNat = true;
+                    }
+                }
+
+                if(externalFirewall != null && firewallAnswer != null){
+                    if (!sharedSourceNat) {
+                        // Manage the entry for this network's source NAT IP address
+                        List<IPAddressVO> sourceNatIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
+                        if (sourceNatIps.size() == 1) {
+                            String publicIp = sourceNatIps.get(0).getAddress().addr();
+                            if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer, false)) {
+                                throw new ExecutionException(networkErrorMsg + ", source NAT IP = " + publicIp);
+                            }
+                        }
+
+                        // Manage one entry for each static NAT rule in this network
+                        List<IPAddressVO> staticNatIps = _ipAddressDao.listStaticNatPublicIps(network.getId());
+                        for (IPAddressVO staticNatIp : staticNatIps) {
+                            String publicIp = staticNatIp.getAddress().addr();
+                            if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer, false)) {
+                                throw new ExecutionException(networkErrorMsg + ", static NAT rule public IP = " + publicIp);
+                            }
+                        }
+
+                        // Manage one entry for each port forwarding rule in this network
+                        List<PortForwardingRuleVO> portForwardingRules = _portForwardingRulesDao.listByNetwork(network.getId());
+                        for (PortForwardingRuleVO portForwardingRule : portForwardingRules) {
+                            String publicIp = _networkMgr.getIp(portForwardingRule.getSourceIpAddressId()).getAddress().addr();
+                            if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalFirewall.getId(), firewallAnswer, false)) {
+                                throw new ExecutionException(networkErrorMsg + ", port forwarding rule public IP = " + publicIp);
+                            }
+                        }
+                    } else {
+                        // Manage the account-wide entry for the external firewall
+                        if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), null, externalFirewall.getId(), firewallAnswer, false)) {
+                            throw new ExecutionException(networkErrorMsg);
+                        }
+                    }
+                }
+
                 // If an external load balancer is added, manage one entry for each load balancing rule in this network
                 if (externalLoadBalancer != null && lbAnswer != null) {
+                    boolean inline = _networkMgr.isNetworkInlineMode(network);
                     List<LoadBalancerVO> loadBalancers = _loadBalancerDao.listByNetworkId(network.getId());
                     for (LoadBalancerVO loadBalancer : loadBalancers) {
                         String publicIp = _networkMgr.getIp(loadBalancer.getSourceIpAddressId()).getAddress().addr();
-                        if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalLoadBalancer.getId(), lbAnswer)) {
+                        if (!createOrUpdateStatsEntry(create, accountId, zoneId, network.getId(), publicIp, externalLoadBalancer.getId(), lbAnswer, inline)) {
                             throw new ExecutionException(networkErrorMsg + ", load balancing rule public IP = " + publicIp);
                         }
                     }
@@ -561,4 +665,5 @@ public class ExternalLoadBalancerUsageManagerImpl extends ManagerBase implements
             }
         }
     }
+
 }
