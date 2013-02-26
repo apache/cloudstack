@@ -2438,6 +2438,10 @@ div.detail-group.actions td {
   background: url(../images/sprites.png) no-repeat -140px -291px;
 }
 
+#navigation ul li.regions span.icon {
+  background: url(../images/sprites.png) no-repeat -141px -381px;
+}
+
 /*Browser*/
 #browser {
   width: 794px;
