@@ -23,6 +23,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
 import org.springframework.stereotype.Component;
 
@@ -204,8 +205,8 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 	}
 
 	@Override
-	public void deploy(String reservationId, String caller) throws InsufficientCapacityException, ResourceUnavailableException{
-	    manager.deployVirtualMachine(reservationId, caller);
+	public void deploy(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException{
+	    manager.deployVirtualMachine(reservationId, caller, params);
 	}
 
 	@Override

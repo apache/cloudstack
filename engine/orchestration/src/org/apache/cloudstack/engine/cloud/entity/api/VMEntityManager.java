@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.engine.cloud.entity.api;
 
+import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
 
 import com.cloud.deploy.DeploymentPlan;
@@ -26,6 +27,8 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 
+import java.util.Map;
+
 public interface VMEntityManager {
 
 	VMEntityVO loadVirtualMachine(String vmId);
@@ -34,7 +37,7 @@ public interface VMEntityManager {
 
 	String reserveVirtualMachine(VMEntityVO vmEntityVO, String plannerToUse, DeploymentPlan plan, ExcludeList exclude) throws InsufficientCapacityException, ResourceUnavailableException;
 
-    void deployVirtualMachine(String reservationId, String caller) throws InsufficientCapacityException, ResourceUnavailableException;
+    void deployVirtualMachine(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
 
     boolean stopvirtualmachine(VMEntityVO vmEntityVO, String caller) throws ResourceUnavailableException;
 
