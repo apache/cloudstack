@@ -188,7 +188,7 @@
           closeRegionSelector();
         } else {
           $regionSwitcherButton.addClass('active');
-          $regionSelector.fadeIn('fast').overlay();
+          $regionSelector.fadeIn('fast').overlay({ closeAction: closeRegionSelector });
         }
       });
 
