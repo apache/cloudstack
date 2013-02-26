@@ -7286,6 +7286,7 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 }
 
 .multi-edit {
+  overflow: auto;
 }
 
 .multi-edit > form {
@@ -7464,7 +7465,6 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 }
 
 .multi-edit .data .data-body {
-  width: 96%;
   margin: auto auto auto 11px;
   overflow: hidden;
 }
