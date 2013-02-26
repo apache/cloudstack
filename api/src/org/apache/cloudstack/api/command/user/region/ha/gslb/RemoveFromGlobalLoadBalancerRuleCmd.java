@@ -58,7 +58,7 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getGlobalLoadBalancerId() {
+    public Long getGlobalLoadBalancerRuleId() {
         return id;
     }
 
@@ -80,7 +80,7 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        GlobalLoadBalancerRule globalLoadBalancerRule = _entityMgr.findById(GlobalLoadBalancerRule.class, getGlobalLoadBalancerId());
+        GlobalLoadBalancerRule globalLoadBalancerRule = _entityMgr.findById(GlobalLoadBalancerRule.class, getGlobalLoadBalancerRuleId());
         if (globalLoadBalancerRule == null) {
             return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
         }
@@ -95,7 +95,7 @@ public class RemoveFromGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return  "removing load balancer rules:" + StringUtils.join(getLoadBalancerRulesId(), ",") +
-                " from global load balancer: " + getGlobalLoadBalancerId();
+                " from global load balancer: " + getGlobalLoadBalancerRuleId();
     }
 
     @Override

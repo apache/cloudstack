@@ -2665,6 +2665,7 @@ CREATE TABLE `cloud`.`global_load_balancing_rules` (
   `algorithm` varchar(255) NOT NULL COMMENT 'load balancing algorithm used to distribbute traffic across zones',
   `persistence` varchar(255) NOT NULL COMMENT 'session persistence used across the zone',
   `gslb_domain_name` varchar(255) NOT NULL COMMENT 'DNS name for the GSLB service that is used to provide a FQDN for the GSLB service',
+  `service_type` varchar(255) NOT NULL COMMENT 'type of the GSLB service',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_global_load_balancing_rules_account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_global_load_balancing_rules_region_id` FOREIGN KEY(`region_id`) REFERENCES `region`(`id`) ON DELETE CASCADE

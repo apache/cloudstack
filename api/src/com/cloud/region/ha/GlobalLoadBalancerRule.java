@@ -52,6 +52,16 @@ public interface GlobalLoadBalancerRule extends Identity, InternalIdentity, Cont
         }
     }
 
+    enum ServiceType {
+        tcp,
+        udp;
+        public static  boolean isValidServiceType(String serviceType) {
+            if (tcp.name().equalsIgnoreCase(serviceType) || udp.name().equalsIgnoreCase(serviceType)) {
+                return true;
+            }
+            return false;
+        }
+    }
     enum State {
         Staged,
         Add,
@@ -74,4 +84,6 @@ public interface GlobalLoadBalancerRule extends Identity, InternalIdentity, Cont
     public long getAccountId();
 
     public State getState();
+
+    public String getServiceType();
 }

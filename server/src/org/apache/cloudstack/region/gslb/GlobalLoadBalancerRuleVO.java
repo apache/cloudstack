@@ -46,6 +46,9 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
     @Column(name="gslb_domain_name")
     private String gslbDomain;
 
+    @Column(name="service_type")
+    private String serviceType;
+
     @Column(name="region_id")
     private int region;
 
@@ -67,7 +70,8 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
     }
 
     public GlobalLoadBalancerRuleVO(String name, String description, String gslbDomain, String algorithm,
-                                    String persistence, int regionId, long accountId, long domainId, State state) {
+                                    String persistence, String serviceType, int regionId, long accountId,
+                                    long domainId, State state) {
         this.name =name;
         this.description = description;
         this.region = regionId;
@@ -76,6 +80,7 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
         this.persistence = persistence;
         this.accountId = accountId;
         this.domainId = domainId;
+        this.serviceType = serviceType;
         this.uuid = UUID.randomUUID().toString();
         this.state = state;
     }
@@ -156,6 +161,15 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public String getServiceType() {
+        return serviceType;
+    }
+
+    public void setServiceType(String serviceType) {
+        this.serviceType = serviceType;
     }
 
     public void setState(GlobalLoadBalancerRule.State state) {

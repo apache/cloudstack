@@ -69,6 +69,9 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.GSLB_SERVICE_DOMAIN_NAME, type = CommandType.STRING, required = true, description = "domain name for the GSLB service.")
     private String serviceDomainName;
 
+    @Parameter(name=ApiConstants.GSLB_SERVICE_TYPE, type = CommandType.STRING, required = true, description = "GSLB service type (tcp, udp)")
+    private String serviceType;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -99,6 +102,10 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
 
     public Integer getRegionId() {
         return regionId;
+    }
+
+    public String getServiceType() {
+        return serviceType;
     }
 
     @Inject

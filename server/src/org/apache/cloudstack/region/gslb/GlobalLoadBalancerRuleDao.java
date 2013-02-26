@@ -21,7 +21,7 @@ import com.cloud.utils.db.GenericDao;
 
 import java.util.List;
 
-public interface GlobalLoadBalancerDao extends GenericDao<GlobalLoadBalancerRuleVO, Long> {
+public interface GlobalLoadBalancerRuleDao extends GenericDao<GlobalLoadBalancerRuleVO, Long> {
 
     List<GlobalLoadBalancerRuleVO> listByRegionId(long regionId);
     List<GlobalLoadBalancerRuleVO> listByDomainName(String domainName);

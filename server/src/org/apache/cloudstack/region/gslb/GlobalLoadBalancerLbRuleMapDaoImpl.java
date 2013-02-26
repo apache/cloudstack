@@ -45,4 +45,10 @@ public class GlobalLoadBalancerLbRuleMapDaoImpl extends GenericDaoBase<GlobalLoa
         sc.setParameters("gslbLoadBalancerId", gslbRuleId);
         return listBy(sc);
     }
+
+    @Override
+    public GlobalLoadBalancerLbRuleMapVO findByGslbRuleIdAndLbRuleId(long gslbRuleId, long lbRuleId) {
+        return null;
+    }
+
 }

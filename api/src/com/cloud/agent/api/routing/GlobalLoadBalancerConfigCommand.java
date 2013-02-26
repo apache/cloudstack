@@ -19,6 +19,8 @@ package com.cloud.agent.api.routing;
 
 import com.cloud.agent.api.Command;
 
+import java.util.List;
+
 /**
  * GlobalLoadBalancerConfigCommand used for sending the GSLB configuration to GSLB service provider
  */
@@ -40,10 +42,9 @@ public class GlobalLoadBalancerConfigCommand extends Command {
     boolean revoked;
 
     // list of the site details that are participating in the GSLB service
-    SiteLoadBalancer[] siteLoadBalancers;
+    List<SiteLoadBalancerConfig> siteLoadBalancers;
 
-    public  void GlobalLoadBalancerConfigCommand(SiteLoadBalancer[] slbs,
-                                                 String domainName,
+    public GlobalLoadBalancerConfigCommand(String domainName,
                                                  String lbMethod,
                                                  String persistenceType,
                                                  String serviceType,
@@ -53,11 +54,14 @@ public class GlobalLoadBalancerConfigCommand extends Command {
         this.lbMethod = lbMethod;
         this.persistenceType = persistenceType;
         this.revoked = revoked;
-        this.siteLoadBalancers = slbs;
     }
 
-    public SiteLoadBalancer[] getSiteDetails() {
+    public List<SiteLoadBalancerConfig> getSiteDetails() {
         return siteLoadBalancers;
+    }
+
+    public void setSiteLoadBalancers(List<SiteLoadBalancerConfig> siteLoadBalancers) {
+        this.siteLoadBalancers = siteLoadBalancers;
     }
 
     public String getServiceType() {
@@ -83,68 +87,5 @@ public class GlobalLoadBalancerConfigCommand extends Command {
     @Override
     public boolean executeInSequence() {
         return false;
-    }
-
-    // details of site participating in the GLSB service
-    public class SiteLoadBalancer {
-        // true if the site is local (GSLB provider receiving GlobalLoadBalancerConfigCommand is in same site)
-        boolean local;
-
-        // true if the sire needs to be removed from GSLB service
-        boolean revoked;
-
-        // service type of the 'site load balanced' service
-        String serviceType;
-
-        // public IP corresponding to the site load balanced service
-        String servicePublicIp;
-
-        // port corresponding to the site load balanced service
-        String port;
-
-        // IP corresponding to the GSLB service provider in the site.
-        String gslbProviderIp;
-
-        // Public IP corresponding to the GSLB service provider in the site.
-        String gslbProviderPublicIp;
-
-        public void SiteLoadBalancer(String gslbProviderIp, String gslbProviderPublicIP, boolean local, boolean revoked,
-                                     String serviceType, String servicePublicIp, String port) {
-            this.gslbProviderIp = gslbProviderIp;
-            this.gslbProviderPublicIp = gslbProviderPublicIP;
-            this.local = local;
-            this.revoked = revoked;
-            this.serviceType = serviceType;
-            this.servicePublicIp = servicePublicIp;
-            this.port = port;
-        }
-
-        public String getServiceType() {
-            return  serviceType;
-        }
-
-        public String getServicePublicIp() {
-            return servicePublicIp;
-        }
-
-        public String getPublicPort() {
-            return port;
-        }
-
-        public String getGslbProviderPrivateIp() {
-            return gslbProviderIp;
-        }
-
-        public String getGslbProviderPublicIp() {
-            return gslbProviderPublicIp;
-        }
-
-        public boolean isLocal() {
-            return local;
-        }
-
-        public boolean forRevoke() {
-            return revoked;
-        }
     }
 }
