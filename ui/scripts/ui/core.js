@@ -128,11 +128,38 @@
             .notifications();
 
       // Region switcher
-      var $regionSwitcher = $('<div>').addClass('region-switcher')
+      var $regionList = $('<ul>');
+
+      // Append dummy content for now
+      $regionList.append($('<li>').append($('<span>').html('USA')));
+      $regionList.append($('<li>').append($('<span>').html('Canada')));
+      $regionList.append($('<li>').append($('<span>').html('Europe')));
+      $regionList.append($('<li>').append($('<span>').html('Asia')));
+      $regionList.append($('<li>').append($('<span>').html('USA')));
+      $regionList.append($('<li>').append($('<span>').html('Canada')));
+      $regionList.append($('<li>').append($('<span>').html('Europe'))); 
+
+      var $regionSelector = $('<div>').addClass('region-selector')
+        .append($('<div>').addClass('top-arrow'))
+        .append($regionList)
+        .hide();
+      var $regionSwitcherButton = $('<div>').addClass('region-switcher')
         .attr('title', 'Select region')
         .append(
           $('<span>').addClass('icon').html('&nbsp;')
         );
+
+
+      $regionSwitcherButton.click(function() {
+        if ($regionSwitcherButton.hasClass('active')) {
+          $regionSwitcherButton.removeClass('active');
+          $regionSelector.fadeOut();
+          $('body > .overlay').remove();
+        } else {
+          $regionSwitcherButton.addClass('active');
+          $regionSelector.fadeIn('fast').overlay();
+        }
+      });
 
       // Project switcher
       var $viewSwitcher = $('<div>').addClass('button view-switcher')
@@ -226,8 +253,9 @@
         $('<div>').addClass('logo'),
         $('<div>').addClass('controls')
           .append($notificationArea)
+          .append($regionSwitcherButton)
+          .append($regionSelector)
           .append($viewSwitcher)
-          .append($regionSwitcher)
           .append($projectSelect)
           .append($userInfo)
       ];
