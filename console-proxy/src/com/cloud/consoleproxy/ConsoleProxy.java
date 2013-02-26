@@ -425,23 +425,32 @@ public class ConsoleProxy {
         synchronized (connectionMap) {
             ConsoleProxyClient viewer = connectionMap.get(clientKey);
             if (viewer == null) {
+                authenticationExternally(param);
                 viewer = new ConsoleProxyVncClient();
                 viewer.initClient(param);
                 
                 connectionMap.put(clientKey, viewer);
                 s_logger.info("Added viewer object " + viewer);
                 reportLoadChange = true;
-            } else if (!viewer.isFrontEndAlive()) {
-                s_logger.info("The rfb thread died, reinitializing the viewer " + viewer);
-                viewer.initClient(param);
-            } else if (!param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
-                s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " 
-                    + viewer.getClientHostPassword() + ", sid in request: " + param.getClientHostPassword());
-                viewer.initClient(param);
-            } else {
-                if(ajaxSession == null || ajaxSession.isEmpty())
+            }  else {
+				// protected against malicous attack by modifying URL content
+				if(ajaxSession != null) {
+					long ajaxSessionIdFromUrl = Long.parseLong(ajaxSession);
+					if(ajaxSessionIdFromUrl != viewer.getAjaxSessionId())
+						throw new AuthenticationException ("Cannot use the existing viewer " +
+								viewer + ": modified AJAX session id");
+				}
+				
+				if(param.getClientHostPassword() == null || param.getClientHostPassword().isEmpty() || !param.getClientHostPassword().equals(viewer.getClientHostPassword()))
+					throw new AuthenticationException ("Cannot use the existing viewer " +
+							viewer + ": bad sid");
+				
+				if(!viewer.isFrontEndAlive()) {
                     authenticationExternally(param);
-            }
+					viewer.initClient(param);
+					reportLoadChange = true;
+				}
+			}
             
             if(reportLoadChange) {
                 ConsoleProxyClientStatsCollector statsCollector = getStatsCollector();
