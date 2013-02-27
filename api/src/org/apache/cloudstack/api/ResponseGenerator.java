@@ -20,8 +20,8 @@ import java.text.DecimalFormat;
 import java.util.EnumSet;
 import java.util.List;
 
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
@@ -138,7 +138,6 @@ import com.cloud.org.Cluster;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
-import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.*;
 import com.cloud.storage.snapshot.SnapshotPolicy;
@@ -153,15 +152,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.*;
-import org.apache.cloudstack.region.Region;
-
-import java.text.DecimalFormat;
-import java.util.EnumSet;
-import java.util.List;
 
 public interface ResponseGenerator {
     UserResponse createUserResponse(UserAccount user);
@@ -384,12 +375,15 @@ public interface ResponseGenerator {
     GuestOSResponse createGuestOSResponse(GuestOS os);
 
     SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
-    
+
     UsageRecordResponse createUsageResponse(Usage usageRecord);
 
     TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor);
     VMSnapshotResponse createVMSnapshotResponse(VMSnapshot vmSnapshot);
+
     NicSecondaryIpResponse createSecondaryIPToNicResponse(String ip,
             Long nicId, Long networkId);
     public NicResponse createNicResponse(Nic result);
+
+    AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group);
 }
