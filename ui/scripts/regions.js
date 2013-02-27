@@ -65,7 +65,10 @@
 
                 args.response.success({ _custom: { jobId: jobID }});
                 $(window).trigger('cloudStack.refreshRegions');
-              }
+              },
+              error: function(json) {
+                args.response.error(parseXMLHttpResponse(json));
+              } 
             });
           }
         }
@@ -79,7 +82,10 @@
             args.response.success({
               data: regions ? regions : []
             });
-          }
+          },
+          error: function(json) {
+            args.response.error(parseXMLHttpResponse(json));
+          } 
         });
       },
       detailView: {
@@ -94,7 +100,10 @@
                 success: function(json) {
                   args.response.success();
                   $(window).trigger('cloudStack.refreshRegions');
-                }
+                },
+                error: function(json) {
+                  args.response.error(parseXMLHttpResponse(json));
+                } 
               });
             }
           },
@@ -113,7 +122,10 @@
                 success: function(json) {
                   args.response.success();
                   $(window).trigger('cloudStack.refreshRegions');
-                }
+                },
+                error: function(json) {
+                  args.response.error(parseXMLHttpResponse(json));
+                } 
               });
             }
           }
@@ -140,7 +152,10 @@
                   args.response.success({
                     data: region ? region[0] : {}
                   });
-                }
+                },
+                error: function(json) {
+                  args.response.error(parseXMLHttpResponse(json));
+                } 
               });  
             }
           }
