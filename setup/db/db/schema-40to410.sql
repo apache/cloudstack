@@ -251,6 +251,8 @@ ALTER TABLE `cloud`.`op_dc_vnet_alloc` DROP INDEX i_op_dc_vnet_alloc__vnet__data
 
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id`(`vnet`, `physical_network_id`, `data_center_id`);
 
+ALTER TABLE `cloud`.`op_dc_vnet_alloc` DROP INDEX i_op_dc_vnet_alloc__vnet__data_center_id__account_id;
+
 CREATE TABLE  `cloud`.`region` (
   `id` int unsigned NOT NULL UNIQUE,
   `name` varchar(255) NOT NULL UNIQUE,
