@@ -10,12 +10,18 @@
         response: {
           success: function(args) {
             var data = args.data;
+            var activeRegionID = args.activeRegionID;
 
             $(data).each(function() {
               var region = this;
               var $li = $('<li>').append($('<span>').html(_s(region.name)));
 
               $li.data('region-data', region);
+
+              if (region.id == activeRegionID) {
+                $li.addClass('active');
+              }
+              
               $regionList.append($li);
             });
           }
@@ -62,11 +68,16 @@
     $regionList.click(function(event) {
       var $target = $(event.target);
       var $li = $target.closest('li');
+      var region, url;
 
-      if ($li.size()) {
-        var url = $li.data('region-data').endpoint;
+      if ($li.size() && !$li.hasClass('active')) {
+        region = $li.data('region-data');
+        url = region.endpoint;
+        id = region.id;
 
-        switchRegion(url);
+        if (id != '-1') {
+          switchRegion(url);
+        }
       }
     });
 

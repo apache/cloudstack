@@ -23,10 +23,14 @@
         $.ajax({
           url: createURL('listRegions&listAll=true'),
           success: function(json) {
-            var regions = json.listregionsresponse.region
+            var regions = json.listregionsresponse.region;
 
             args.response.success({
-              data: regions ? regions : []
+              data: regions ? regions : [
+                { id: -1, name: '(Default region)' }
+              ],
+              activeRegionID: cloudStack.context.users.regionid ?
+                cloudStack.context.users.regionid : 1
             });
           }
         }); 
