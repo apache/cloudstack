@@ -91,7 +91,7 @@ EOF
 
 fix_inittab() {
   # Fix inittab
-  cat >> etc/inittab << EOF
+  cat >> /etc/inittab << EOF
 
 vc:2345:respawn:/sbin/getty 38400 hvc0
 EOF
@@ -99,16 +99,16 @@ EOF
 
 fix_acpid() {
   # Fix acpid
-  mkdir -p etc/acpi/events
-  cat >> etc/acpi/events/power << EOF
+  mkdir -p /etc/acpi/events
+  cat >> /etc/acpi/events/power << EOF
 event=button/power.*
 action=/usr/local/sbin/power.sh "%e"
 EOF
-  cat >> usr/local/sbin/power.sh << EOF
+  cat >> /usr/local/sbin/power.sh << EOF
 #!/bin/bash
 /sbin/poweroff
 EOF
-  chmod a+x usr/local/sbin/power.sh
+  chmod a+x /usr/local/sbin/power.sh
 }
 
 fix_hostname() {
@@ -149,8 +149,8 @@ configure_services() {
 
   # Get config files from master
   snapshot_url="https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=snapshot;h=HEAD;sf=tgz"
-  snapshot_dir="/tmp/incubator-cloudstack*"
-  cd /tmp
+  snapshot_dir="/opt/incubator-cloudstack*"
+  cd /opt
   wget $snapshot_url -O cloudstack.tar.gz
   tar -zxvf cloudstack.tar.gz
   cp -rv $snapshot_dir/patches/systemvm/debian/config/* /
