@@ -84,6 +84,19 @@
       detailView: {
         name: 'Region details',
         actions: {
+          edit: {
+            label: 'label.edit.region',
+            action: function(args) {
+              $.ajax({
+                url: createURL('updateRegion'),
+                data: args.data,
+                success: function(json) {
+                  args.response.success();
+                  $(window).trigger('cloudStack.refreshRegions');
+                }
+              });
+            }
+          },
           remove: {
             label: 'label.remove.region',
             messages: {
@@ -109,11 +122,11 @@
             title: 'label.details',
             fields: [
               {
-                name: { label: 'label.name' },
+                name: { label: 'label.name', isEditable: true },
               },
               {
-                endpoint: { label: 'label.endpoint' },
-                id: { label: 'label.id' }
+                endpoint: { label: 'label.endpoint', isEditable: true },
+                id: { label: 'label.id', isEditable: true }
               }
             ],
             dataProvider: function(args) {								  
