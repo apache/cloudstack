@@ -7407,7 +7407,7 @@
                         if ($(this).val() == "VMware") {
                           //$('li[input_sub_group="external"]', $dialogAddCluster).show();
 
-                          if(dvSwitchEnabled == false){
+                          if(dvSwitchEnabled){
                         // $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'inline-block');
                          // $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'inline-block');
                          // $form.find('.form-item[rel=vSwitchPublicName]').css('display','inline-block');
