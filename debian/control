@@ -1,118 +1,51 @@
-Source: cloud
+Source: cloudstack
 Section: libs
 Priority: extra
 Maintainer: Wido den Hollander <wido@widodh.nl>
-Build-Depends: debhelper (>= 7), openjdk-6-jdk, tomcat6, libws-commons-util-java, libcommons-codec-java (>= 1.5), libcommons-httpclient-java (>= 3.1), libservlet2.5-java, genisoimage, python-mysqldb, maven3 | maven (>= 3), liblog4j1.2-java (>= 1.2.16)
+Build-Depends: debhelper (>= 7), openjdk-6-jdk, tomcat6, genisoimage,
+ python-mysqldb, maven3 | maven (>= 3), python (>= 2.6.6-3~)
 Standards-Version: 3.8.1
 Homepage: http://www.cloudstack.org/
 
-Package: cloud-deps
-Architecture: any
-Depends: openjdk-6-jre, libcommons-codec-java (>= 1.5), libcommons-httpclient-java (>= 3.1)
-Description: CloudStack library dependencies
- This package contains a number of third-party dependencies
- not shipped by distributions, required to run the CloudStack
- Management Server.
+Package: cloudstack-common
+Architecture: all
+Depends: bash, genisoimage
+Conflicts: cloud-scripts, cloud-utils, cloud-system-iso, cloud-console-proxy, cloud-daemonize, cloud-deps, cloud-python, cloud-setup
+Description: A common package which contains files which are shared by several CloudStack packages
 
-Package: cloud-agent-deps
-Architecture: any
-Depends: openjdk-6-jre, cloud-deps (= ${source:Version})
-Description: CloudStack agent library dependencies
- This package contains a number of third-party dependencies
- not shipped by distributions, required to run the CloudStack
- Agent.
-
-Package: cloud-utils
-Architecture: any
-Depends: openjdk-6-jre, python, libcglib-java (>= 2.2.2), libjsch-java (>= 0.1.42), libbackport-util-concurrent-java (>= 3.1), libcommons-dbcp-java (>= 1.4), libcommons-pool-java (>= 1.5.6)
-Description: CloudStack utility library
- The CloudStack utility libraries provide a set of Java classes used
- in the CloudStack environment.
-
-Package: cloud-client-ui
-Architecture: any
-Depends: openjdk-6-jre, cloud-client (= ${source:Version})
-Description: CloudStack management server UI
- The CloudStack management server is the central point of coordination,
- management, and intelligence in the CloudStack Cloud Stack.  This package
- is a requirement of the cloud-client package, which installs the
- CloudStack management server.
-
-Package: cloud-server
-Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-scripts (= ${source:Version}), libservlet2.5-java
+Package: cloudstack-management
+Architecture: all
+Depends: cloudstack-common (= ${source:Version}), tomcat6, sysvinit-utils, chkconfig, sudo, jsvc, python-mysqldb, python-paramiko, augeas-tools
+Conflicts: cloud-server, cloud-client, cloud-client-ui
 Description: CloudStack server library
- The CloudStack server libraries provide a set of Java classes used
- in the CloudStack management server.
+ The CloudStack management server
 
-Package: cloud-scripts
-Replaces: cloud-agent-scripts
-Architecture: any
-Depends: openjdk-6-jre, python, bash, bzip2, gzip, unzip, nfs-common, openssh-client, lsb-release
-Description: CloudStack scripts
- This package contains a number of scripts needed for the CloudStack Agent and Management Server.
- Both the CloudStack Agent and Management server depend on this package
-
-Package: cloud-core
-Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version})
-Description: CloudStack core library
- The CloudStack core libraries provide a set of Java classes used
- in the CloudStack Cloud Stack.
-
-
-Package: cloud-client
-Architecture: any
-Depends: openjdk-6-jre, cloud-deps (= ${source:Version}), cloud-utils (= ${source:Version}), cloud-server (= ${source:Version}), cloud-client-ui (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-python (= ${source:Version}), tomcat6, libws-commons-util-java, sysvinit-utils, chkconfig, sudo, jsvc, python-mysqldb, python-paramiko, augeas-tools, genisoimage, cloud-system-iso, libmysql-java (>= 5.1)
-Description: CloudStack client
- The CloudStack management server is the central point of coordination,
- management, and intelligence in the CloudStack Cloud Stack.  This package
- is required for the management server to work.
-
-Package: cloud-setup
-Architecture: any
-Depends: openjdk-6-jre, python, cloud-utils (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-python (= ${source:Version}), python-mysqldb
-Description: CloudStack client
- The CloudStack setup tools let you set up your Management Server and Usage Server.
-
-Package: cloud-python
-Architecture: any
-Depends: python
-Description: CloudStack Python library
- The CloudStack Python library contains a few Python modules that the
- CloudStack uses.
-
-Package: cloud-agent-libs
-Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version})
-Description: CloudStack agent libraries
- The CloudStack agent libraries are used by the Cloud Agent.
-
-Package: cloud-agent
-Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-scripts (= ${source:Version}), cloud-system-iso (= ${source:Version}), libvirt0, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, ebtables, vlan, liblog4j1.2-java (>= 1.2.16), libjna-java, wget, jsvc, lsb-base (>= 3.2)
+Package: cloudstack-agent
+Architecture: all
+Depends: openjdk-6-jre, cloudstack-common (= ${source:Version}), lsb-base (>= 3.2), openssh-client, libvirt0, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, ebtables, vlan, wget, jsvc
+Conflicts: cloud-agent, cloud-agent-libs, cloud-agent-deps, cloud-agent-scripts
 Description: CloudStack agent
  The CloudStack agent is in charge of managing shared computing resources in
  a CloudStack powered cloud.  Install this package if this computer
  will participate in your cloud as a KVM HyperVisor.
 
-Package: cloud-system-iso
-Architecture: any
-Description: CloudStack system iso
- The CloudStack agent is in charge of managing shared computing resources in
- a CloudStack powered cloud.  Install this package if this computer
- will participate in your cloud.
-
-Package: cloud-usage
-Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-client (= ${source:Version}), jsvc
+Package: cloudstack-usage
+Architecture: all
+Depends: openjdk-6-jre, cloudstack-common (= ${source:Version}), jsvc
 Description: CloudStack usage monitor
  The CloudStack usage monitor provides usage accounting across the entire cloud for
  cloud operators to charge based on usage parameters.
 
-Package: cloud-cli
-Provides: cloud-cli
-Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-client (= ${source:Version})
-Description: CloudStack commandline tool
- The CloudStack commandline tool for invoking APi
+Package: cloudstack-awsapi
+Architecture: all
+Depends: cloudstack-common (= ${source:Version}), cloudstack-management (= ${source:Version})
+Description: CloudStack Amazon EC2 API
+
+Package: cloudstack-cli
+Architecture: all
+Depends: cloudstack-common (= ${source:Version})
+Description: The CloudStack CLI called CloudMonkey
+
+Package: cloudstack-docs
+Architecture: all
+Description: The CloudStack documentation

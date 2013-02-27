@@ -20,10 +20,13 @@ import java.lang.reflect.Method;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.log4j.Logger;
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.Signature;
 import org.aspectj.lang.reflect.MethodSignature;
 
 public class TransactionContextBuilder implements MethodInterceptor {
+	private static final Logger s_logger = Logger.getLogger(TransactionContextBuilder.class);
 	public TransactionContextBuilder() {
 	}
 	
@@ -31,7 +34,15 @@ public class TransactionContextBuilder implements MethodInterceptor {
 		MethodSignature methodSignature = (MethodSignature)call.getSignature();
         Method targetMethod = methodSignature.getMethod();	
         if(needToIntercept(targetMethod)) {
-			Transaction txn = Transaction.open(call.getSignature().getName());
+        	Transaction txn = null;
+        	try {
+        		Signature s = call.getSignature();
+        		String name = s.getName();
+        		txn = Transaction.open(name);
+        	} catch (Throwable e) {
+        		s_logger.debug("Failed to open transaction: " + e.toString());
+        		throw e;
+        	}
 			Object ret = null;
 			try {
 				 ret = call.proceed();

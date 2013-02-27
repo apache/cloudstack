@@ -90,6 +90,7 @@
     <cs.commons-io.version>1.4</cs.commons-io.version>
     <cs.reflections.version>0.9.8</cs.reflections.version>
     <cs.java-ipv6.version>0.10</cs.java-ipv6.version>
+    <cs.replace.properties>build/replace.properties</cs.replace.properties>
   </properties>
 
   <distributionManagement>
@@ -161,9 +162,9 @@
     <module>usage</module>
     <module>utils</module>
     <module>deps/XenServerJava</module>
+    <module>engine</module>
     <module>plugins</module>
     <module>patches</module>
-    <module>engine</module>
     <module>framework</module>
     <module>services</module>
     <module>test</module>

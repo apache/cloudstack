@@ -23,24 +23,23 @@ import com.cloud.network.Network.Event;
 import com.cloud.network.Network.State;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.server.ManagementServer;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.fsm.StateListener;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.log4j.Logger;
-
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 
 public class NetworkStateListener implements StateListener<State, Event, Network> {
 
     @Inject protected UsageEventDao _usageEventDao;
     @Inject protected NetworkDao _networkDao;
 
-    // get the event bus provider if configured
-    @Inject protected EventBus _eventBus;
+    protected static EventBus _eventBus = null;
 
     private static final Logger s_logger = Logger.getLogger(NetworkStateListener.class);
 
@@ -63,7 +62,9 @@ public class NetworkStateListener implements StateListener<State, Event, Network
 
     private void pubishOnEventBus(String event, String status, Network vo, State oldState, State newState) {
 
-        if (_eventBus == null) {
+        try {
+            _eventBus = ComponentContext.getComponent(EventBus.class);
+        } catch(NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
         }
 

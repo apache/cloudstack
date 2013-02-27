@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
@@ -28,7 +30,6 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.allocator.StoragePoolAllocator;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
@@ -251,11 +252,10 @@ public enum Config {
     XenGuestNetwork("Hidden", ManagementServer.class, String.class, "xen.guest.network.device", null, "Specify for guest network name label", null),
     XenMaxNics("Advanced", AgentManager.class, Integer.class, "xen.nics.max", "7", "Maximum allowed nics for Vms created on Xen", null),
     // VMware
-    VmwarePrivateNetworkVSwitch("Hidden", ManagementServer.class, String.class, "vmware.private.vswitch", null, "Specify the vSwitch on host for private network", null),
-    VmwarePublicNetworkVSwitch("Hidden", ManagementServer.class, String.class, "vmware.public.vswitch", null, "Specify the vSwitch on host for public network", null),
-    VmwareGuestNetworkVSwitch("Hidden", ManagementServer.class, String.class, "vmware.guest.vswitch", null, "Specify the vSwitch on host for guest network", null),
     VmwareUseNexusVSwitch("Network", ManagementServer.class, Boolean.class, "vmware.use.nexus.vswitch", "false", "Enable/Disable Cisco Nexus 1000v vSwitch in VMware environment", null),
-                            VmwareCreateFullClone("Advanced", ManagementServer.class, Boolean.class, "vmware.create.full.clone", "false", "If set to true, creates guest VMs as full clones on ESX", null),
+    VmwareUseDVSwitch("Network", ManagementServer.class, Boolean.class, "vmware.use.dvswitch", "false", "Enable/Disable Nexus/Vmware dvSwitch in VMware environment", null),
+    VmwarePortsPerDVPortGroup("Network", ManagementServer.class, Integer.class, "vmware.ports.per.dvportgroup", "256", "Default number of ports per Vmware dvPortGroup in VMware environment", null),
+    VmwareCreateFullClone("Advanced", ManagementServer.class, Boolean.class, "vmware.create.full.clone", "false", "If set to true, creates guest VMs as full clones on ESX", null),
     VmwareServiceConsole("Advanced", ManagementServer.class, String.class, "vmware.service.console", "Service Console", "Specify the service console network name(for ESX hosts)", null),
     VmwareManagementPortGroup("Advanced", ManagementServer.class, String.class, "vmware.management.portgroup", "Management Network", "Specify the management network name(for ESXi hosts)", null),
     VmwareAdditionalVncPortRangeStart("Advanced", ManagementServer.class, Integer.class, "vmware.additional.vnc.portrange.start", "50000", "Start port number of additional VNC port range", null),

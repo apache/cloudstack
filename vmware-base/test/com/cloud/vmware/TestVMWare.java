@@ -36,44 +36,61 @@ import javax.net.ssl.SSLSession;
 
 import org.apache.log4j.xml.DOMConfigurator;
 
+import com.cloud.hypervisor.vmware.mo.DatacenterMO;
+import com.cloud.hypervisor.vmware.mo.DistributedVirtualSwitchMO;
+import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.PropertiesUtil;
 import com.vmware.apputils.version.ExtendedAppUtil;
-import com.vmware.vim25.HostIpConfig;
-import com.vmware.vim25.HostVirtualNicSpec;
+import com.vmware.vim25.ArrayOfManagedObjectReference;
+import com.vmware.vim25.DVPortgroupConfigInfo;
+import com.vmware.vim25.DVPortgroupConfigSpec;
+import com.vmware.vim25.DVSSecurityPolicy;
+import com.vmware.vim25.DVSTrafficShapingPolicy;
+import com.vmware.vim25.DatastoreInfo;
+import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.HostConfigManager;
+import com.vmware.vim25.HostIpConfig;
 import com.vmware.vim25.HostPortGroupSpec;
+import com.vmware.vim25.HostVirtualNicSpec;
 import com.vmware.vim25.HttpNfcLeaseDeviceUrl;
 import com.vmware.vim25.HttpNfcLeaseInfo;
 import com.vmware.vim25.HttpNfcLeaseState;
-import com.vmware.vim25.OvfCreateImportSpecParams;
-import com.vmware.vim25.OvfCreateImportSpecResult;
-import com.vmware.vim25.OvfFileItem;
-import com.vmware.vim25.OvfNetworkMapping;
-import com.vmware.vim25.VirtualMachineConfigSpec;
-import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
-import com.vmware.vim25.VirtualEthernetCard;
-import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
-import com.vmware.vim25.VirtualNicManagerNetConfig;
-import com.vmware.vim25.VirtualPCNet32;
-import com.vmware.vim25.VirtualDeviceConfigSpec;
-import com.vmware.vim25.VirtualMachineCloneSpec;
-import com.vmware.vim25.VirtualMachineRelocateSpec;
-import com.vmware.vim25.ArrayOfManagedObjectReference;
-import com.vmware.vim25.DatastoreInfo;
-import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.InvalidProperty;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.ObjectSpec;
+import com.vmware.vim25.OvfCreateImportSpecParams;
+import com.vmware.vim25.OvfCreateImportSpecResult;
+import com.vmware.vim25.OvfFileItem;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.RuntimeFault;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
+import com.vmware.vim25.VMwareDVSPortSetting;
+import com.vmware.vim25.VirtualDeviceConfigSpec;
+import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
+import com.vmware.vim25.VirtualEthernetCard;
+import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
+import com.vmware.vim25.VirtualMachineCloneSpec;
+import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineRelocateSpec;
+import com.vmware.vim25.VirtualNicManagerNetConfig;
+import com.vmware.vim25.VirtualPCNet32;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
 
 public class TestVMWare {
 	private static ExtendedAppUtil cb;
-	
+    private static String[] _args;
+
+    private static final int IND_DATACENTER_MOR = 3;
+    private static final int IND_DVSWITCH_MOR = 4;
+    private static final int IND_DVSWITCH_NAME = 5;
+    private static final int IND_DVPORTGROUP_NAME = 6;
+    private static final int IND_DVPORTGROUP_VLAN = 7;
+    private static final int IND_DVPORTGROUP_PORTCOUNT = 8;
+    private static final int MAX_ARGS = 9;
 	static {
 		try {
 			javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[1]; 
@@ -905,7 +922,178 @@ public class TestVMWare {
 		
 		System.out.println("Enable FT resutl : " + result);
 	}
-	
+    private DatacenterMO setupDatacenterObject(String serverAddress, String dcMor) {
+        VmwareContext context = new VmwareContext(cb, serverAddress);
+
+        ManagedObjectReference morDc = new ManagedObjectReference();
+        morDc.setType("Datacenter");
+        morDc.set_value(dcMor);
+
+        return new DatacenterMO(context, morDc);
+    }
+
+    private DistributedVirtualSwitchMO setupDistributedVirtualSwitchObject(String dvsMor, String serverAddress) {
+        VmwareContext context = new VmwareContext(cb, serverAddress);
+        return new DistributedVirtualSwitchMO(context, setupDVS(dvsMor));
+    }
+
+    private ManagedObjectReference setupDVS(String dvsMor) {
+        ManagedObjectReference morDvs = new ManagedObjectReference();
+        morDvs.setType("VmwareDistributedVirtualSwitch");
+        morDvs.set_value(dvsMor);
+        return morDvs;
+    }
+
+    private void testDvSwitchOperations() throws Exception {
+        String dvSwitchName, dcMor;
+        ManagedObjectReference queriedDvs;
+        ManagedObjectReference morDvs;
+        DatacenterMO dcMo;
+        URL serviceUrl;
+
+        // Initialize mor for existing DVS
+        if (_args.length <= IND_DVSWITCH_NAME) {
+            System.out.println("Using default parameters as required command line arguments are not provided.");
+            System.out.println("Sequence of arguments: <SERVERADDRESS> <USER> <PASSWORD> <DATACENTER> <DVSWITCH_MOR> <DVSWITCH_NAME>");
+            morDvs = setupDVS("dvs-921");
+            dvSwitchName = "dvSwitch0";
+            dcMor = "datacenter-2";
+        } else {
+            morDvs = setupDVS(_args[IND_DVSWITCH_MOR]);
+            dvSwitchName = _args[IND_DVSWITCH_NAME];
+            dcMor = _args[IND_DATACENTER_MOR];
+        }
+
+        serviceUrl = new URL(cb.getServiceUrl());
+
+        // Initialize Datacenter Object that pertains to above DVS
+        dcMo = setupDatacenterObject(serviceUrl.getHost(), dcMor);
+
+        // Query for DVS with name
+        queriedDvs = dcMo.getDvSwitchMor(dvSwitchName);
+
+        System.out.print("\nTest fetch dvSwitch object from vCenter : ");
+        if (morDvs.equals(queriedDvs)) {
+            System.out.println("Success\n");
+        } else {
+            System.out.println("Failed\n");
+        }
+    }
+
+    private void testDvPortGroupOpearations() throws Exception {
+        // addDvPortGroup, updateDvPortGroup, getDvPortGroup, hasDvPortGroup
+        ManagedObjectReference morDvs, morDvPortGroup;
+        DatacenterMO dcMo;
+        DistributedVirtualSwitchMO dvsMo;
+        int networkRateMbps;
+        int networkRateMbpsToUpdate;
+        DVSTrafficShapingPolicy shapingPolicy;
+        VmwareDistributedVirtualSwitchVlanSpec vlanSpec;
+        DVSSecurityPolicy secPolicy;
+        VMwareDVSPortSetting dvsPortSetting;
+        DVPortgroupConfigSpec dvPortGroupSpec;
+        DVPortgroupConfigInfo dvPortgroupInfo = null;
+        String dvPortGroupName, dcMor;
+        Integer vid;
+        int numPorts;
+        int timeOutMs;
+        URL serviceUrl;
+
+        if (_args.length < MAX_ARGS) {
+            System.out.println("Using default parameters as required command line arguments are not provided.");
+            System.out.println("Sequence of arguments: <SERVERADDRESS> <USER> <PASSWORD> <DATACENTER> <DVSWITCH_MOR> <DVSWITCH_NAME> <DVPORTGROUP_NAME> <DVPORTGROUP_VLAN> <DVPORTGROUP_PORTCOUNT>");
+            morDvs = setupDVS("dvs-921");
+            dvPortGroupName = "cloud.public.201.dvSwitch0.1";
+            networkRateMbps = 201;
+            vid = new Integer(399); // VLAN 399
+            timeOutMs = 7000;
+            numPorts = 64;
+            dcMor = "datacenter-2";
+        } else {
+            morDvs = setupDVS(_args[IND_DVSWITCH_MOR]);
+            dvPortGroupName = _args[IND_DVPORTGROUP_NAME];
+            vid = new Integer(IND_DVPORTGROUP_VLAN);
+            dcMor = _args[IND_DATACENTER_MOR];
+            numPorts = Integer.parseInt(_args[IND_DVPORTGROUP_PORTCOUNT]);
+            timeOutMs = 7000;
+            networkRateMbps = 201;
+        }
+        serviceUrl = new URL(cb.getServiceUrl());
+
+        // Initialize Datacenter Object that pertains to above DVS
+        dcMo = setupDatacenterObject(serviceUrl.getHost(), dcMor);
+        // Create dvPortGroup configuration spec
+        dvsMo = setupDistributedVirtualSwitchObject(morDvs.get_value(), serviceUrl.getHost());
+
+        shapingPolicy = HypervisorHostHelper.getDVSShapingPolicy(networkRateMbps);
+        secPolicy = HypervisorHostHelper.createDVSSecurityPolicy();
+        if (vid != null) {
+            vlanSpec = HypervisorHostHelper.createDVPortVlanIdSpec(vid);
+        } else {
+            vlanSpec = HypervisorHostHelper.createDVPortVlanSpec();
+        }
+        dvsPortSetting = HypervisorHostHelper.createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, vlanSpec);
+        dvPortGroupSpec = HypervisorHostHelper.createDvPortGroupSpec(dvPortGroupName, dvsPortSetting, numPorts);
+        if (!dcMo.hasDvPortGroup(dvPortGroupName)) {
+            System.out.print("\nTest create dvPortGroup : ");
+            try {
+                // Call method to create dvPortGroup
+                dvsMo.createDVPortGroup(dvPortGroupSpec);
+                System.out.println("Success\n");
+                HypervisorHostHelper.waitForDvPortGroupReady(dcMo, dvPortGroupName, timeOutMs);
+            } catch (Exception e) {
+                System.out.println("Failed\n");
+                throw new Exception(e);
+            }
+        }
+
+        // Test for presence of dvPortGroup
+        System.out.print("\nTest presence of dvPortGroup : ");
+        if (dcMo.hasDvPortGroup(dvPortGroupName)) {
+            System.out.println("Success\n");
+        } else {
+            System.out.println("Failed\n");
+        }
+
+        // Test get existing dvPortGroup
+        System.out.print("\nTest fetch dvPortGroup configuration : ");
+        try {
+            dvPortgroupInfo = dcMo.getDvPortGroupSpec(dvPortGroupName);
+            if (dvPortgroupInfo != null)
+                System.out.println("Success\n");
+        } catch (Exception e) {
+            System.out.println("Failed\n");
+        }
+        // Test compare dvPortGroup configuration
+        System.out.print("\nTest compare dvPortGroup configuration : ");
+
+        if (HypervisorHostHelper.isSpecMatch(dvPortgroupInfo, vid, shapingPolicy)) {
+            System.out.println("Success\n");
+            // We haven't modified the dvPortGroup after creating above.
+            // Hence expecting to be matching.
+            // NOTE : Hopefully nothing changes the configuration externally.
+        } else {
+            System.out.println("Failed\n");
+        }
+
+        // Test update dvPortGroup configuration
+        networkRateMbpsToUpdate = 210;
+        shapingPolicy = HypervisorHostHelper.getDVSShapingPolicy(networkRateMbpsToUpdate);
+        dvsPortSetting = HypervisorHostHelper.createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, vlanSpec);
+        dvPortGroupSpec.setDefaultPortConfig(dvsPortSetting);
+        dvPortGroupSpec.setConfigVersion(dvPortgroupInfo.getConfigVersion());
+        morDvPortGroup = dcMo.getDvPortGroupMor(dvPortGroupName);
+        System.out.print("\nTest update dvPortGroup configuration : ");
+        if (!HypervisorHostHelper.isSpecMatch(dvPortgroupInfo, vid, shapingPolicy)) {
+            try {
+                dvsMo.updateDvPortGroup(morDvPortGroup, dvPortGroupSpec);
+                System.out.println("Success\n");
+            } catch (Exception e) {
+                System.out.println("Failed\n");
+                throw new Exception(e);
+            }
+        }
+    }
 	private void importOVF() throws Exception {
 		ManagedObjectReference morHost = new ManagedObjectReference();
 		morHost.setType("HostSystem");
@@ -1089,6 +1277,7 @@ public class TestVMWare {
 			cb = ExtendedAppUtil.initialize("Connect", params);
 			cb.connect();
 			System.out.println("Connection Succesful.");
+            _args = args;
 
 			// client.listInventoryFolders();
 			// client.listDataCenters();
@@ -1105,8 +1294,20 @@ public class TestVMWare {
 			// client.testFT();
 			// client.testFTEnable();
 			
-			client.importOVF();
-		
+            // client.importOVF();
+
+            // Test get DvSwitch
+            client.testDvSwitchOperations();
+            // Test add DvPortGroup,
+            // Test update vPortGroup,
+            // Test get DvPortGroup,
+            // Test compare DvPortGroup
+            client.testDvPortGroupOpearations();
+
+            // Test addDvNic
+            // Test deleteDvNic
+            // client.testDvNicOperations();
+
 			cb.disConnect();
 		} catch (Exception e) {
 			e.printStackTrace();

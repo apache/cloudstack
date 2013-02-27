@@ -58,6 +58,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ImageDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
@@ -69,7 +70,6 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CleanupSnapshotBackupCommand;
@@ -78,7 +78,6 @@ import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
-
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -100,10 +99,10 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.dao.DomainDao;
-
 import com.cloud.event.dao.EventDao;
-import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -113,7 +112,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -132,8 +130,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Type;
-import com.cloud.storage.allocator.StoragePoolAllocator;
-
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
@@ -146,7 +142,6 @@ import com.cloud.storage.dao.VMTemplateS3Dao;
 import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
-
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.storage.listener.StoragePoolMonitor;
 import com.cloud.storage.listener.VolumeStateListener;
@@ -156,7 +151,11 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
-import com.cloud.user.*;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
@@ -165,20 +164,28 @@ import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.*;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
-
-import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.dao.*;
+import com.cloud.vm.dao.ConsoleProxyDao;
+import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 @Local(value = { StorageManager.class, StorageService.class })
@@ -193,23 +200,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     protected TemplateManager _tmpltMgr;
     @Inject
-    protected AsyncJobManager _asyncMgr;
-    @Inject
-    protected SnapshotManager _snapshotMgr;
-    @Inject
-    protected SnapshotScheduler _snapshotScheduler;
-    @Inject
     protected AccountManager _accountMgr;
     @Inject
     protected ConfigurationManager _configMgr;
-    @Inject
-    protected ConsoleProxyManager _consoleProxyMgr;
-    @Inject
-    protected SecondaryStorageVmManager _secStorageMgr;
-    @Inject
-    protected NetworkModel _networkMgr;
-    @Inject
-    protected ServiceOfferingDao _serviceOfferingDao;
     @Inject
     protected VolumeDao _volsDao;
     @Inject
@@ -275,29 +268,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     protected ClusterDao _clusterDao;
     @Inject
-    protected VirtualMachineManager _vmMgr;
-    @Inject
-    protected DomainRouterDao _domrDao;
-    @Inject
-    protected SecondaryStorageVmDao _secStrgDao;
-    @Inject
     protected StoragePoolWorkDao _storagePoolWorkDao;
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
     @Inject
     protected VolumeDao _volumeDao;
     @Inject
-    protected OCFS2Manager _ocfs2Mgr;
-    @Inject
-    protected ResourceLimitService _resourceLimitMgr;
-    @Inject
     protected SecondaryStorageVmManager _ssvmMgr;
-    @Inject
-    protected ResourceManager _resourceMgr;
-    @Inject
-    protected DownloadMonitor _downloadMonitor;
-    @Inject
-    protected ResourceTagDao _resourceTagDao;
     @Inject
     protected List<StoragePoolAllocator> _storagePoolAllocators;
     @Inject
@@ -464,14 +441,19 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             VMInstanceVO vm, final Set<StoragePool> avoid) {
 
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(
-                vm);
+        		vm);
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
-            final List<StoragePool> poolList = allocator.allocateToPool(
-                    dskCh, profile, dc.getId(), pod.getId(), clusterId, hostId,
-                    avoid, 1);
-            if (poolList != null && !poolList.isEmpty()) {
-                return (StoragePool)this.dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
-            }
+        	
+        	ExcludeList avoidList = new ExcludeList();
+        	for(StoragePool pool : avoid){
+        		avoidList.addPool(pool.getId());
+        	}
+        	DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), pod.getId(), clusterId, hostId, null, null);
+        	
+        	final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, 1);
+        	if (poolList != null && !poolList.isEmpty()) {
+        		return (StoragePool)this.dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
+        	}
         }
         return null;
     }
@@ -786,7 +768,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         String scope = cmd.getScope();
         if (scope != null) {
             try {
-                scopeType = Enum.valueOf(ScopeType.class, scope);
+                scopeType = Enum.valueOf(ScopeType.class, scope.toUpperCase());
             } catch (Exception e) {
                 throw new InvalidParameterValueException("invalid scope"
                         + scope);

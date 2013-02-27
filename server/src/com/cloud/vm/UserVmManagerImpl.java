@@ -2907,7 +2907,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
         }
 
         String reservationId = vmEntity.reserve(plannerName, plan, new ExcludeList(), new Long(callerUser.getId()).toString());
-        vmEntity.deploy(reservationId, new Long(callerUser.getId()).toString());
+        vmEntity.deploy(reservationId, new Long(callerUser.getId()).toString(), params);
 
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = new Pair(vm, params);
         if (vm != null && vm.isUpdateParameters()) {
