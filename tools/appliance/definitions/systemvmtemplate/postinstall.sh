@@ -156,8 +156,8 @@ configure_services() {
   cp -rv $snapshot_dir/patches/systemvm/debian/config/* /
   cp -rv $snapshot_dir/patches/systemvm/debian/vpn/* /
   mkdir -p /usr/share/cloud/
-  tar -cvf /usr/share/cloud/cloud-scripts.tar $snapshot_dir/patches/systemvm/debian/config
-  tar -rvf /usr/share/cloud/cloud-scripts.tar cd $snapshot_dir/patches/systemvm/debian/vpn
+  tar -cvf /usr/share/cloud/cloud-scripts.tar $snapshot_dir/patches/systemvm/debian/config/*
+  tar -rvf /usr/share/cloud/cloud-scripts.tar $snapshot_dir/patches/systemvm/debian/vpn/*
   rm -fr $snapshot_dir cloudstack.tar.gz
 
   chkconfig --add cloud-early-config
@@ -183,12 +183,15 @@ echo "*************INSTALLING PACKAGES********************"
 install_packages
 echo "*************DONE INSTALLING PACKAGES********************"
 setup_accounts
+echo "*************DONE ACCOUNT SETUP********************"
 configure_services
 configure_apache2
+echo "*************DONE SETTING UP SERVICES********************"
 do_fixes
+echo "*************DONE FIXING CONFIGURATION********************"
 do_signature
 
 fin=$(date +%s)
 t=$((fin-begin))
 
-echo "Finished building systemvm appliance in $t seconds"
+echo "Signed systemvm build, finished building systemvm appliance in $t seconds"
