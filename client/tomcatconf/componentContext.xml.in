@@ -110,9 +110,11 @@
   <bean id="LocalStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.LocalStoragePoolAllocator">
     <property name="name" value="LocalStorage"/>
   </bean>
+  <!--
   <bean id="FirstFitStoragePoolAllocator" class="org.apache.cloudstack.storage.allocator.FirstFitStoragePoolAllocator">
     <property name="name" value="Storage"/>
   </bean>
+  -->
 
   <bean id="UserConcentratedAllocator" class="com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator">
     <property name="name" value="User First"/>
