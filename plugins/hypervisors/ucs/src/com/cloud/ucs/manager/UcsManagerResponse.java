@@ -17,12 +17,15 @@
 package com.cloud.ucs.manager;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.EntityReference;
+
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import com.cloud.ucs.database.UcsManagerVO;
 import com.google.gson.annotations.SerializedName;
-
-public class AddUcsManagerResponse extends BaseResponse {
+@EntityReference(value=UcsManagerVO.class)
+public class UcsManagerResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the ucs manager")
     private String id;
     

@@ -34,7 +34,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
-@APICommand(description="List ucs manager", responseObject=ListUcsManagerResponse.class)
+@APICommand(description="List ucs manager", responseObject=UcsManagerResponse.class)
 public class ListUcsManagerCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListUcsManagerCmd.class);
     
@@ -48,7 +48,7 @@ public class ListUcsManagerCmd extends BaseCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException, NetworkRuleConflictException {
         try {
-            ListResponse<ListUcsManagerResponse> response  = mgr.listUcsManager(this);            
+            ListResponse<UcsManagerResponse> response  = mgr.listUcsManager(this);            
             response.setResponseName(getCommandName());
             response.setObjectName("ucsmanager");
             this.setResponseObject(response);

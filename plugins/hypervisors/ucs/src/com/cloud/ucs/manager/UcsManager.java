@@ -21,11 +21,13 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.utils.component.Manager;
 
 public interface UcsManager extends Manager {
-    AddUcsManagerResponse addUcsManager(AddUcsManagerCmd cmd);
+    UcsManagerResponse addUcsManager(AddUcsManagerCmd cmd);
     
-    ListResponse<ListUcsProfileResponse> listUcsProfiles(ListUcsProfileCmd cmd);
+    ListResponse<UcsProfileResponse> listUcsProfiles(ListUcsProfileCmd cmd);
     
-    ListResponse<ListUcsManagerResponse> listUcsManager(ListUcsManagerCmd cmd);
+    ListResponse<UcsManagerResponse> listUcsManager(ListUcsManagerCmd cmd);
 
     void associateProfileToBlade(AssociateUcsProfileToBladeCmd cmd);
+    
+    ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd);
 }

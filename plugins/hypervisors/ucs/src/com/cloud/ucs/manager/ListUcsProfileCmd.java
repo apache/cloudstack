@@ -35,7 +35,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
-@APICommand(description="List profile in ucs manager", responseObject=ListUcsProfileResponse.class)
+@APICommand(description="List profile in ucs manager", responseObject=UcsProfileResponse.class)
 public class ListUcsProfileCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListUcsProfileCmd.class);
     
@@ -56,7 +56,7 @@ public class ListUcsProfileCmd extends BaseCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException, NetworkRuleConflictException {
         try {
-            ListResponse<ListUcsProfileResponse> response = mgr.listUcsProfiles(this);
+            ListResponse<UcsProfileResponse> response = mgr.listUcsProfiles(this);
             response.setResponseName(getCommandName());
             response.setObjectName("ucsprofile");
             this.setResponseObject(response);

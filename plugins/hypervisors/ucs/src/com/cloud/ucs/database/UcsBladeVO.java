@@ -42,7 +42,7 @@ public class UcsBladeVO {
     
     @Column(name="dn")
     private String dn;
-
+    
     public long getId() {
         return id;
     }
