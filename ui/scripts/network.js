@@ -441,10 +441,8 @@
                     }
                   },
 
-                  ip4gateway: { label: 'IPv4 Gateway', docID: 'helpGuestNetworkGateway' },
-                  ip6gateway: { label: 'IPv6 Gateway' },
-             
-                  ip4netmask: { label: 'Netmask', docID: 'helpGuestNetworkNetmask' },
+                  guestGateway: { label: 'label.guest.gateway', docID: 'helpGuestNetworkGateway' },
+                  guestNetmask: { label: 'label.guest.netmask', docID: 'helpGuestNetworkNetmask' },
                   networkDomain: { label: 'label.network.domain' }
                 }
               },
@@ -456,20 +454,14 @@
                   networkOfferingId: args.data.networkOfferingId
                 };		
 		
-                if(args.data.ip4gateway != null && args.data.ip4gateway.length > 0) {                
+                if(args.data.guestGateway != null && args.data.guestGateway.length > 0) {                  
                   $.extend(dataObj, {
-                    gateway: args.data.ip4gateway
+                    gateway: args.data.guestGateway
                   });
-                }				
-                if(args.data.ip6gateway != null && args.data.ip6gateway.length > 0) {
+                }								
+                if(args.data.guestNetmask != null && args.data.guestNetmask.length > 0) {                  
                   $.extend(dataObj, {
-                    ip6gateway: args.data.ip6gateway
-                  });
-                }				
-                
-                if(args.data.ip4netmask != null && args.data.ip4netmask.length > 0) {                  
-                  $.extend(dataObj, {
-                    netmask: args.data.ip4netmask
+                    netmask: args.data.guestNetmask
                   });									
                 }								
                 if(args.$form.find('.form-item[rel=vpcid]').css("display") != "none") {                 
@@ -504,10 +496,9 @@
           id: 'networks',
           fields: {
             name: { label: 'label.name' },
-            //account: { label: 'label.account' },            
+            account: { label: 'label.account' },            
             type: { label: 'label.type' },            
-            cidr: { label: 'IPv4 CIDR' },
-            ip6cidr: { label: 'IPv6 CIDR' }           
+            cidr: { label: 'label.cidr' }           
           },
           
 					advSearchFields: {					 
@@ -1010,11 +1001,11 @@
                       }
                     },
 
-                    gateway: { label: 'IPv4 Gateway' },
+                    gateway: { label: 'label.gateway' },
                     ip6gateway: { label: 'IPv6 Gateway' },
 
                     //netmask: { label: 'label.netmask' },
-                    cidr: { label: 'IPv4 CIDR' },
+                    cidr: { label: 'label.cidr' },
                     ip6cidr: { label: 'IPv6 CIDR' },
 
                     networkdomaintext: {
