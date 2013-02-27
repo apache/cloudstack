@@ -1104,8 +1104,9 @@
                     name: { label: 'label.name' },
                     type: { label: 'label.type' },
                     vlan: { label: 'label.vlan.id' },
-                    cidr: { label: 'label.cidr' },
-                    scope: { label: 'label.scope' }
+                    cidr: { label: 'IPv4 CIDR' },
+                    ip6cidr: { label: 'IPv6 CIDR'}
+                    //scope: { label: 'label.scope' }
                   },
                   actions: {
                     add: {
@@ -1841,9 +1842,13 @@
                               label: 'label.network.offering.id'
                             },
 
-                            gateway: { label: 'label.gateway' },
+                            gateway: { label: 'IPv4 Gateway' },
                             //netmask: { label: 'label.netmask' },
-                            cidr: { label: 'label.cidr' },
+                            cidr: { label: 'IPv4 CIDR' },
+                            
+                            ip6gateway: { label: 'IPv6 Gateway' },
+                            ip6cidr: { label: 'IPv6 CIDR' },
+                            
                             networkdomaintext: {
                               label: 'label.network.domain'
                             },
