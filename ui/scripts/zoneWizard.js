@@ -811,6 +811,19 @@
           },
 
           //hypervisor==VMWare begins here
+           
+            overridepublictraffic:{
+                     label:'Override Public-Traffic',
+                     isBoolean:true
+
+                  },
+
+                  overrideguesttraffic:{
+                     label:'Override Guest-Traffic',
+                     isBoolean:true
+
+                  },
+
 
            vSwitchPublicType:{
                 label: 'Public Traffic vSwitch Type',
@@ -823,8 +836,19 @@
                     items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
                     args.response.success({data: items});
                     },
-                    isHidden:true
-                                                                                                                                                                                                                    },
+                    isHidden:true,
+                    dependsOn:'overridepublictraffic'
+                 },
+
+                   vSwitchPublicName:{
+                        label:'vSwitch Public Traffic Name',
+                        dependsOn:'overridepublictraffic',
+                        isHidden:true
+
+
+                     },
+
+ 
                                                                                                                                                                                                                vSwitchGuestType:{
                label: 'Guest Traffic vSwitch Type',
                select: function(args) {
@@ -834,8 +858,17 @@
                items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
                items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
                                                                                                                                                                                                                     args.response.success({data: items});
-                                                                                                                                                                                                                    },                                                                                                                                                                                                   isHidden:true
-                        },
+                                                                                                                                                                                                                      },                                                                                                                                                                                                   isHidden:true,
+           dependsOn:'overrideguesttraffic'
+
+               },
+
+         vSwitchGuestName:{
+               label:'vSwitch Guest Traffic Name',
+               dependsOn:'overrideguesttraffic',
+               isHidden:true
+
+               },
  
           vCenterHost: {
             label: 'label.vcenter.host',
