@@ -18,24 +18,23 @@
 package com.cloud.storage.listener;
 
 import com.cloud.event.EventCategory;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.State;
-import com.cloud.server.ManagementServer;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.fsm.StateListener;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.inject.Inject;
-
 public class VolumeStateListener implements StateListener<State, Event, Volume> {
 
-    // get the event bus provider if configured
-    @Inject protected EventBus _eventBus = null;
+    protected static EventBus _eventBus = null;
 
     private static final Logger s_logger = Logger.getLogger(VolumeStateListener.class);
 
@@ -57,8 +56,10 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
 
     private void pubishOnEventBus(String event, String status, Volume vo, State oldState, State newState) {
 
-        if (_eventBus == null) {
-            return;  // no provider is configured to provide events bus, so just return
+        try {
+            _eventBus = ComponentContext.getComponent(EventBus.class);
+        } catch(NoSuchBeanDefinitionException nbe) {
+            return; // no provider is configured to provide events bus, so just return
         }
 
         String resourceName = getEntityFromClassName(Volume.class.getName());

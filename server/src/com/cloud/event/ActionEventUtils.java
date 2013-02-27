@@ -26,21 +26,22 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.AnnotationInterceptor;
+import com.cloud.utils.component.ComponentContext;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 
 @Component
 public class ActionEventUtils {
@@ -49,14 +50,12 @@ public class ActionEventUtils {
     private static EventDao _eventDao;
     private static AccountDao _accountDao;
     protected static UserDao _userDao;
-
-    // get the event bus provider if configured
-    protected static EventBus _eventBus;
+    protected static EventBus _eventBus = null;
 
     @Inject EventDao eventDao;
     @Inject AccountDao accountDao;
     @Inject UserDao userDao;
-    
+
     public ActionEventUtils() {
     }
     
@@ -65,8 +64,6 @@ public class ActionEventUtils {
     	_eventDao = eventDao;
     	_accountDao = accountDao;
     	_userDao = userDao;
-    	
-    	// TODO we will do injection of event bus later
     }
 
     public static Long onActionEvent(Long userId, Long accountId, Long domainId, String type, String description) {
@@ -156,7 +153,9 @@ public class ActionEventUtils {
 
     private static void publishOnEventBus(long userId, long accountId, String eventCategory,
                                           String eventType, Event.State state) {
-        if (_eventBus == null) {
+        try {
+            _eventBus = ComponentContext.getComponent(EventBus.class);
+        } catch(NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
         }
 
