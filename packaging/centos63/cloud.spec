@@ -317,7 +317,7 @@ fi
 
 %post awsapi
 if [ -d "%{_datadir}/%{name}-management" ] ; then
-   ln %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
+   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
 fi
 
 #No default permission as the permission setup is complex
