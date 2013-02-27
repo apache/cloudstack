@@ -19,6 +19,7 @@ package com.cloud.cluster.agentlb.dao;
 import java.util.Date;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -37,30 +38,35 @@ import com.cloud.utils.db.SearchCriteria;
 public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Long> implements HostTransferMapDao {
     private static final Logger s_logger = Logger.getLogger(HostTransferMapDaoImpl.class);
 
-    protected final SearchBuilder<HostTransferMapVO> AllFieldsSearch;
-    protected final SearchBuilder<HostTransferMapVO> IntermediateStateSearch;
-    protected final SearchBuilder<HostTransferMapVO> ActiveSearch;
+    protected  SearchBuilder<HostTransferMapVO> AllFieldsSearch;
+    protected  SearchBuilder<HostTransferMapVO> IntermediateStateSearch;
+    protected  SearchBuilder<HostTransferMapVO> ActiveSearch;
 
     public HostTransferMapDaoImpl() {
-        AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("initialOwner", AllFieldsSearch.entity().getInitialOwner(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("futureOwner", AllFieldsSearch.entity().getFutureOwner(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.done();
-        
-        IntermediateStateSearch = createSearchBuilder();
-        IntermediateStateSearch.and("futureOwner", IntermediateStateSearch.entity().getFutureOwner(), SearchCriteria.Op.EQ);
-        IntermediateStateSearch.and("initialOwner", IntermediateStateSearch.entity().getInitialOwner(), SearchCriteria.Op.EQ);
-        IntermediateStateSearch.and("state", IntermediateStateSearch.entity().getState(), SearchCriteria.Op.IN);
-        IntermediateStateSearch.done();
-        
-        ActiveSearch = createSearchBuilder();
-        ActiveSearch.and("created", ActiveSearch.entity().getCreated(),  SearchCriteria.Op.GT);
-        ActiveSearch.and("id", ActiveSearch.entity().getId(), SearchCriteria.Op.EQ);
-        ActiveSearch.and("state", ActiveSearch.entity().getState(), SearchCriteria.Op.EQ);
-        ActiveSearch.done();
-        
+       super();
+    }
+    
+    @PostConstruct
+    public void init() {
+    	 AllFieldsSearch = createSearchBuilder();
+         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
+         AllFieldsSearch.and("initialOwner", AllFieldsSearch.entity().getInitialOwner(), SearchCriteria.Op.EQ);
+         AllFieldsSearch.and("futureOwner", AllFieldsSearch.entity().getFutureOwner(), SearchCriteria.Op.EQ);
+         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
+         AllFieldsSearch.done();
+         
+         IntermediateStateSearch = createSearchBuilder();
+         IntermediateStateSearch.and("futureOwner", IntermediateStateSearch.entity().getFutureOwner(), SearchCriteria.Op.EQ);
+         IntermediateStateSearch.and("initialOwner", IntermediateStateSearch.entity().getInitialOwner(), SearchCriteria.Op.EQ);
+         IntermediateStateSearch.and("state", IntermediateStateSearch.entity().getState(), SearchCriteria.Op.IN);
+         IntermediateStateSearch.done();
+         
+         ActiveSearch = createSearchBuilder();
+         ActiveSearch.and("created", ActiveSearch.entity().getCreated(),  SearchCriteria.Op.GT);
+         ActiveSearch.and("id", ActiveSearch.entity().getId(), SearchCriteria.Op.EQ);
+         ActiveSearch.and("state", ActiveSearch.entity().getState(), SearchCriteria.Op.EQ);
+         ActiveSearch.done();
+         
     }
 
     @Override

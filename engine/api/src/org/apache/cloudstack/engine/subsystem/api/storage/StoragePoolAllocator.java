@@ -14,14 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.allocator;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.List;
-import java.util.Set;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.DiskProfile;
@@ -31,12 +29,6 @@ import com.cloud.vm.VirtualMachineProfile;
 /**
  */
 public interface StoragePoolAllocator extends Adapter {
-	
-	//keeping since storageMgr is using this API for some existing functionalities
-	List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, long dcId, long podId, Long clusterId, Long hostId, Set<? extends StoragePool> avoids, int returnUpTo);
-	
-	String chooseStorageIp(VirtualMachine vm, Host host, Host storage);
-
 	/** 
 	* Determines which storage pools are suitable for the guest virtual machine 
 	* 

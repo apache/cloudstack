@@ -105,12 +105,6 @@
   <!--
     Storage pool allocators
   -->
-  <bean id="LocalStoragePoolAllocator" class="com.cloud.storage.allocator.LocalStoragePoolAllocator">
-    <property name="name" value="LocalStorage"/>
-  </bean>
-  <bean id="FirstFitStoragePoolAllocator" class="com.cloud.storage.allocator.FirstFitStoragePoolAllocator">
-    <property name="name" value="Storage"/>
-  </bean>
 
   <bean id="UserConcentratedAllocator" class="com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator">
     <property name="name" value="User First"/>

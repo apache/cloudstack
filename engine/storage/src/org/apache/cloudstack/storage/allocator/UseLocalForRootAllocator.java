@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.allocator;
+package org.apache.cloudstack.storage.allocator;
 
 import java.util.List;
 import java.util.Map;
@@ -23,23 +23,17 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 
-import com.cloud.configuration.Config;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume.Type;
-
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Component
 @Local(value=StoragePoolAllocator.class)
 public class UseLocalForRootAllocator extends LocalStoragePoolAllocator implements StoragePoolAllocator {
 
@@ -55,29 +49,13 @@ public class UseLocalForRootAllocator extends LocalStoragePoolAllocator implemen
         
         return super.allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo);
     }
-
-    @Override
-    public String chooseStorageIp(VirtualMachine vm, Host host, Host storage) {
-        return null;
-    }
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         return true;
     }
-    
-    @Override
-    protected boolean localStorageAllocationNeeded(DiskProfile dskCh) {
-        if (dskCh.getType() == Type.ROOT) {
-            return true;
-        } else if (dskCh.getType() == Type.DATADISK) {
-            return false;
-        } else {
-            return super.localStorageAllocationNeeded(dskCh);
-        }
-    }
-    
+
     protected UseLocalForRootAllocator() {
     }
 }

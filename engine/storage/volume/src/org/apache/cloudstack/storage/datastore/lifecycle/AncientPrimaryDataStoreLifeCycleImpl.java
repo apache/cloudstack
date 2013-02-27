@@ -94,10 +94,10 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class AncientPrimaryDataStoreLifeCyclImpl implements
+public class AncientPrimaryDataStoreLifeCycleImpl implements
         PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger
-            .getLogger(AncientPrimaryDataStoreLifeCyclImpl.class);
+            .getLogger(AncientPrimaryDataStoreLifeCycleImpl.class);
     @Inject
     protected ResourceManager _resourceMgr;
     protected List<StoragePoolDiscoverer> _discoverers;
@@ -134,9 +134,6 @@ public class AncientPrimaryDataStoreLifeCyclImpl implements
     protected StoragePoolHostDao _storagePoolHostDao;
     @Inject
     protected AlertManager _alertMgr;
-
-
-
     @Inject
     protected ConsoleProxyDao _consoleProxyDao;
 

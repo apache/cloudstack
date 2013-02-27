@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.allocator;
+package org.apache.cloudstack.storage.allocator;
 
 import java.util.List;
 import java.util.Map;
@@ -23,8 +23,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeploymentPlan;
@@ -36,32 +36,18 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Component
 @Local(value=StoragePoolAllocator.class)
 public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAllocator {
     private static final Logger s_logger = Logger.getLogger(GarbageCollectingStoragePoolAllocator.class);
 
     StoragePoolAllocator _firstFitStoragePoolAllocator;
     StoragePoolAllocator _localStoragePoolAllocator;
-    @Inject StorageManager _storageMgr;
+    @Inject StorageManager storageMgr;
     @Inject ConfigurationDao _configDao;
     boolean _storagePoolCleanupEnabled;
 
     @Override
-    public boolean allocatorIsCorrectType(DiskProfile dskCh) {
-        return true;
-    }
-
-    public Integer getStorageOverprovisioningFactor() {
-        return null;
-    }
-
-    public Long getExtraBytesPerVolume() {
-        return null;
-    }
-
-    @Override
-    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    public List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
 
         if (!_storagePoolCleanupEnabled) {
             s_logger.debug("Storage pool cleanup is not enabled, so GarbageCollectingStoragePoolAllocator is being skipped.");
@@ -69,10 +55,10 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
         }
 
         // Clean up all storage pools
-        _storageMgr.cleanupStorage(false);
+        storageMgr.cleanupStorage(false);
         // Determine what allocator to use
         StoragePoolAllocator allocator;
-        if (localStorageAllocationNeeded(dskCh)) {
+        if (dskCh.useLocalStorage()) {
             allocator = _localStoragePoolAllocator;
         } else {
             allocator = _firstFitStoragePoolAllocator;
@@ -88,7 +74,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        _firstFitStoragePoolAllocator = ComponentContext.inject(FirstFitStoragePoolAllocator.class);
+        _firstFitStoragePoolAllocator = ComponentContext.inject(ClusterScopeStoragePoolAllocator.class);
         _firstFitStoragePoolAllocator.configure("GCFirstFitStoragePoolAllocator", params);
         _localStoragePoolAllocator = ComponentContext.inject(LocalStoragePoolAllocator.class);
         _localStoragePoolAllocator.configure("GCLocalStoragePoolAllocator", params);
