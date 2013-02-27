@@ -53,6 +53,9 @@ public class ListZonesByCmd extends BaseListCmd {
             description="the ID of the domain associated with the zone")
     private Long domainId;
 
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the zone")
+    private String name;
+
     @Parameter(name=ApiConstants.SHOW_CAPACITIES, type=CommandType.BOOLEAN, description="flag to display the capacity of the zones")
     private Boolean showCapacities;
 
@@ -70,6 +73,10 @@ public class ListZonesByCmd extends BaseListCmd {
 
     public Long getDomainId(){
         return domainId;
+    }
+
+    public String getName(){
+        return name;
     }
 
     public Boolean getShowCapacities() {
