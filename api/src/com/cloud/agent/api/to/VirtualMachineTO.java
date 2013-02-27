@@ -60,6 +60,21 @@ public class VirtualMachineTO {
     VolumeTO[] disks;
     NicTO[] nics;
 
+    public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader, String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
+        this.id = id;
+        this.name = instanceName;
+        this.type = type;
+        this.cpus = cpus;
+        this.speed = speed;
+        this.minRam = minRam;
+        this.maxRam = maxRam;
+        this.bootloader = bootloader;
+        this.os = os;
+        this.enableHA = enableHA;
+        this.limitCpuUse = limitCpuUse;
+        this.vncPassword = vncPassword;
+    }
+
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer minSpeed, Integer maxSpeed, long minRam, long maxRam, BootloaderType bootloader, String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
         this.id = id;
         this.name = instanceName;
