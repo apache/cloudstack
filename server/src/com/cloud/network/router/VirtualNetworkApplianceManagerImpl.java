@@ -2414,8 +2414,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 
                 if (addIp) {
                     IPAddressVO ipVO = _ipAddressDao.findById(userIp.getId());
-                    PublicIp publicIp = new PublicIp(ipVO, _vlanDao.findById(userIp.getVlanId()), 
-                            NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
+                    PublicIp publicIp = PublicIp.createFromAddrAndVlan(ipVO, _vlanDao.findById(userIp.getVlanId()));
                     allPublicIps.add(publicIp);
                 }
             }
