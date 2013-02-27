@@ -270,8 +270,41 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+<<<<<<< HEAD
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
+=======
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
+import org.apache.cloudstack.api.response.*;
+import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.usage.Usage;
+import org.apache.cloudstack.usage.UsageService;
+import org.apache.cloudstack.usage.UsageTypes;
+import com.cloud.vm.VmStats;
+import com.cloud.vm.dao.UserVmData;
+import com.cloud.vm.dao.UserVmData.NicData;
+import com.cloud.vm.dao.UserVmData.SecurityGroupData;
+import com.cloud.vm.snapshot.VMSnapshot;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.response.VMSnapshotResponse;
+import org.apache.log4j.Logger;
+
+import java.text.DecimalFormat;
+import java.util.*;
+
+import javax.inject.Inject;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+>>>>>>> More API changes
 
 @Component
 public class ApiResponseHelper implements ResponseGenerator {
@@ -439,7 +472,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         vmSnapshotResponse.setCreated(vmSnapshot.getCreated());
         vmSnapshotResponse.setDescription(vmSnapshot.getDescription());
         vmSnapshotResponse.setDisplayName(vmSnapshot.getDisplayName());
-        UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());        
+        UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());
         if(vm!=null)
             vmSnapshotResponse.setVirtualMachineid(vm.getUuid());
         if(vmSnapshot.getParent() != null)
@@ -448,7 +481,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
         return vmSnapshotResponse;
     }
-    
+
     @Override
     public SnapshotPolicyResponse createSnapshotPolicyResponse(SnapshotPolicy policy) {
         SnapshotPolicyResponse policyResponse = new SnapshotPolicyResponse();
@@ -545,7 +578,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         vlanResponse.setIp6Gateway(vlan.getIp6Gateway());
         vlanResponse.setIp6Cidr(vlan.getIp6Cidr());
-        
+
         String ip6Range = vlan.getIp6Range();
         if (ip6Range != null) {
         	String[] range = ip6Range.split("-");
@@ -2247,7 +2280,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (((network.getCidr()) != null) && (network.getNetworkCidr() == null)) {
             response.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
         }
-        
+
         response.setIp6Gateway(network.getIp6Gateway());
         response.setIp6Cidr(network.getIp6Cidr());
 
@@ -2442,7 +2475,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(fwRule.getId());
         response.setCidrList(StringUtils.join(cidrs, ","));
-        
+
         if (fwRule.getTrafficType() == FirewallRule.TrafficType.Ingress) {
             IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
             response.setPublicIpAddressId(ip.getId());
@@ -3473,7 +3506,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 		return usageRecResponse;
 	}
 
-	
+
     public String getDateStringInternal(Date inputDate) {
         if (inputDate == null) return null;
 
@@ -3557,7 +3590,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         return sb.toString();
     }
-    
+
     @Override
     public TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor) {
         Map<String, String> tmDetails = ApiDBUtils.findHostDetailsById(trafficMonitor.getId());
@@ -3615,6 +3648,21 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setIsDefault(result.isDefaultNic());
+        return response;
+    }
+
+    @Override
+    public AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group) {
+
+        AffinityGroupResponse response = new AffinityGroupResponse();
+
+        Account account = ApiDBUtils.findAccountById(group.getAccountId());
+        response.setAccountName(account.getAccountName());
+        response.setName(group.getName());
+        response.setType(group.getType());
+        response.setDescription(group.getDescription());
+        // response.setDomainId(account.)
+
         return response;
     }
 }
