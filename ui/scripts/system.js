@@ -7317,7 +7317,7 @@
                 title: 'label.add.cluster',
                 fields: {
                   zoneid: {
-                    label: 'Zone',
+                    label: 'Zone Name',
                     docID: 'helpClusterZone',
                     validation: { required: true },
                     select: function(args) {
@@ -7412,7 +7412,7 @@
                     }
                   },
                   podId: {
-                    label: 'label.pod',
+                    label: 'Pod Name',
                     docID: 'helpClusterPod',
                     dependsOn: 'zoneid',
                     select: function(args) {
