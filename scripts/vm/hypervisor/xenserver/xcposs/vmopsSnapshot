@@ -321,25 +321,24 @@ def umount(localDir):
     util.SMlog("Successfully unmounted " + localDir)
     return
 
-def mountSnapshotsDir(secondaryStorageMountPath, relativeDir, dcId, accountId, instanceId):
+def mountSnapshotsDir(secondaryStorageMountPath, relativeDir, dcId, accountId, instanceId, secHostId):
     # The aim is to mount secondaryStorageMountPath on 
     # And create <accountId>/<instanceId> dir on it, if it doesn't exist already.
     # Assuming that secondaryStorageMountPath  exists remotely
 
-    # Alex's suggestion and currently implemented:
-    # Just mount secondaryStorageMountPath/<relativeDir> everytime
+    # Just mount secondaryStorageMountPath/<relativeDir>/SecondaryStorageHost/ everytime
     # Never unmount.
     snapshotsDir = os.path.join(secondaryStorageMountPath, relativeDir)
 
     # Mkdir local mount point dir, if it doesn't exist.
     localMountPointPath = os.path.join(CLOUD_DIR, dcId)
-    localMountPointPath = os.path.join(localMountPointPath, relativeDir)
+    localMountPointPath = os.path.join(localMountPointPath, relativeDir, secHostId)
 
     makedirs(localMountPointPath)
     # if something is not mounted already on localMountPointPath, 
     # mount secondaryStorageMountPath on localMountPath
     if os.path.ismount(localMountPointPath):
-        # There is only one secondary storage per zone. 
+        # There can be more than one secondary storage per zone.
         # And we are mounting each sec storage under a zone-specific directory
         # So two secondary storage snapshot dirs will never get mounted on the same point on the same XenServer.
         util.SMlog("The remote snapshots directory has already been mounted on " + localMountPointPath)
@@ -352,11 +351,22 @@ def mountSnapshotsDir(secondaryStorageMountPath, relativeDir, dcId, accountId, i
     makedirs(backupsDir)
     return backupsDir
 
+def unmountAll(path):
+    try:
+        for dir in os.listdir(path):
+            if dir.isdigit():
+                util.SMlog("Unmounting Sub-Directory: " + dir)
+                localMountPointPath = os.path.join(path, dir)
+                umount(localMountPointPath)
+    except:
+        util.SMlog("Ignoring the error while trying to unmount the snapshots dir")
+
 @echo
 def unmountSnapshotsDir(session, args):
     dcId = args['dcId']
     localMountPointPath = os.path.join(CLOUD_DIR, dcId)
     localMountPointPath = os.path.join(localMountPointPath, "snapshots")
+    unmountAll(localMountPointPath)
     try:
         umount(localMountPointPath)
     except:
@@ -490,7 +500,8 @@ def backupSnapshot(session, args):
     snapshotUuid              = args['snapshotUuid']
     prevBackupUuid            = args['prevBackupUuid']
     backupUuid                = args['backupUuid']
-    isISCSI                   = getIsTrueString(args['isISCSI']) 
+    isISCSI                   = getIsTrueString(args['isISCSI'])
+    secHostId                 = args['secHostId']
 
     primarySRPath = getPrimarySRPath(session, primaryStorageSRUuid, isISCSI)
     util.SMlog("primarySRPath: " + primarySRPath)
@@ -504,10 +515,10 @@ def backupSnapshot(session, args):
     # Mount secondary storage mount path on XenServer along the path
     # /var/run/sr-mount/<dcId>/snapshots/ and create <accountId>/<volumeId> dir
     # on it.
-    backupsDir = mountSnapshotsDir(secondaryStorageMountPath, "snapshots", dcId, accountId, volumeId)
+    backupsDir = mountSnapshotsDir(secondaryStorageMountPath, "snapshots", dcId, accountId, volumeId, secHostId)
     util.SMlog("Backups dir " + backupsDir)
 
-    # Check existence of snapshot on primary storage 
+    # Check existence of snapshot on primary storage
     isfile(baseCopyPath, isISCSI)
     if prevBackupUuid:
         # Check existence of prevBackupFile
