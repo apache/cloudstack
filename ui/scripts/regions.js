@@ -63,6 +63,7 @@
                 var jobID = json.addregionresponse.jobid;
 
                 args.response.success({ _custom: { jobId: jobID }});
+                $(window).trigger('cloudStack.refreshRegions');
               }
             });
           }
@@ -97,6 +98,7 @@
                 data: { id: region.id },
                 success: function(json) {
                   args.response.success();
+                  $(window).trigger('cloudStack.refreshRegions');
                 }
               });
             }
