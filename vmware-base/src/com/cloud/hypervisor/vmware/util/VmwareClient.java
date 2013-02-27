@@ -53,7 +53,7 @@ import com.vmware.vim25.ObjectContent;
 /**
  * A wrapper class to handle Vmware vsphere connection and disconnection.
  *
- * @author minc
+ * DISCLAIMER: This code is partly copied from sample codes that come along with Vmware web service 5.1 SDK.
  *
  */
 public class VmwareClient {
@@ -276,7 +276,7 @@ public class VmwareClient {
      * properties to check are reached Destroys the ObjectFilter when done.
      *
      * @param objmor
-     *            MOR of the Object to wait for</param>
+     *            MOR of the Object to wait for
      * @param filterProps
      *            Properties list to filter
      * @param endWaitProps
