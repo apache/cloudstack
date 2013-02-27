@@ -7347,6 +7347,7 @@
                     docID: 'helpClusterHypervisor',
                     select: function(args) {
                       var vSwitchEnabled = false;
+                      var dvSwitchEnabled = false;
 
                       $.ajax({
                         url: createURL("listHypervisors"),
@@ -7375,6 +7376,21 @@
                           }
                         }
                       });
+                      
+                      //Check whether dvSwitch is enabled or not
+                      $.ajax({
+                        url: createURL('listConfigurations'),
+                        data: {
+                           name: 'vmware.use.dvswitch'
+                              },
+                        async: false,
+                        success: function(json) {
+                          if (json.listconfigurationsresponse.configuration[0].value == 'true') {
+                                dvSwitchEnabled = true;
+                          }
+                        }
+                      });
+
 
                       args.$select.bind("change", function(event) {
                         var $form = $(this).closest('form');
@@ -7390,6 +7406,16 @@
 
                         if ($(this).val() == "VMware") {
                           //$('li[input_sub_group="external"]', $dialogAddCluster).show();
+
+                          if(dvSwitchEnabled ){
+                         $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'inline-block');
+                           }
+                          else {
+                                  $form.find('.form-item[rel=vSwitchPublicType]').css('display', 'none');
+                                  $form.find('.form-item[rel=vSwitchGuestType]').css('display', 'none');
+
+                          } 
                           $form.find('.form-item[rel=vCenterHost]').css('display', 'inline-block');
                           $form.find('.form-item[rel=vCenterUsername]').css('display', 'inline-block');
                           $form.find('.form-item[rel=vCenterPassword]').css('display', 'inline-block');
@@ -7453,6 +7479,31 @@
                    },
 
                   //hypervisor==VMWare begins here
+                  vSwitchPublicType:{
+                       label: 'Public Traffic vSwitch Type',
+                        select: function(args) {
+                              var items = []
+
+                              items.push({id: "" , description:" " });
+
+                              items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
+                              items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
+                              args.response.success({data: items});
+                           },
+                        isHidden:true
+                      },
+                 vSwitchGuestType:{
+                        label: 'Guest Traffic vSwitch Type',
+                        select: function(args) {
+                        var items = []
+                        items.push({id: "" , description:" " });
+                        items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
+                        items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
+                        args.response.success({data: items});
+                        },
+                        isHidden:true
+                        },
+
                   vCenterHost: {
                     label: 'label.vcenter.host',
                     docID: 'helpClustervCenterHost',
@@ -7519,6 +7570,13 @@
                 if(args.data.hypervisor == "VMware") {
                   array1.push("&username=" + todb(args.data.vCenterUsername));
                   array1.push("&password=" + todb(args.data.vCenterPassword));
+            
+                 if(args.data.vSwitchPublicType != "")
+                  array1.push('&vswitchtypepublic=' + args.data.vSwitchPublicType);
+
+                  if(args.data.vSwitchGuestType !=  "")
+                  array1.push('&vswitchtypeguest=' + args.data.vSwitchGuestType);
+
 
                   if (args.data.vsmipaddress) {
                     array1.push('&vsmipaddress=' + args.data.vsmipaddress);
