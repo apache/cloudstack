@@ -28,8 +28,20 @@ public class VirtualMachineTO {
     private BootloaderType bootloader;
     Type type;
     int cpus;
+
+    /**
+        'speed' is still here since 4.0.X/4.1.X management servers do not support
+         the overcommit feature yet.
+
+         The overcommit feature sends minSpeed and maxSpeed
+
+         So this is here for backwards compatibility with 4.0.X/4.1.X management servers
+         and newer agents.
+    */
+    Integer speed;
     Integer minSpeed;
     Integer maxSpeed;
+
     long minRam;
     long maxRam;
     String hostName;
@@ -101,6 +113,10 @@ public class VirtualMachineTO {
 
     public void setCpus(int cpus) {
         this.cpus = cpus;
+    }
+
+    public Integer getSpeed() {
+        return speed;
     }
 
     public Integer getMinSpeed() {
