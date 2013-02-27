@@ -68,8 +68,14 @@ install_packages() {
 setup_accounts() {
   # Setup sudo to allow no-password sudo for "admin"
   groupadd -r admin
-  # Create a 'cloud' user
-  useradd -G admin cloud
+  # Create a 'cloud' user if it's not there
+  id cloud
+  if [[ $? -ne 0 ]]
+  then
+    useradd -G admin cloud
+  else
+    usermod -a -G admin cloud
+  fi
   echo "root:$ROOTPW" | chpasswd
   echo "cloud:`openssl rand -base64 32`" | chpasswd
   sed -i -e '/Defaults\s\+env_reset/a Defaults\texempt_group=admin' /etc/sudoers
@@ -156,8 +162,11 @@ configure_services() {
   cp -rv $snapshot_dir/patches/systemvm/debian/config/* /
   cp -rv $snapshot_dir/patches/systemvm/debian/vpn/* /
   mkdir -p /usr/share/cloud/
-  tar -cvf /usr/share/cloud/cloud-scripts.tar $snapshot_dir/patches/systemvm/debian/config/*
-  tar -rvf /usr/share/cloud/cloud-scripts.tar $snapshot_dir/patches/systemvm/debian/vpn/*
+  cd $snapshot_dir/patches/systemvm/debian/config
+  tar -cvf /usr/share/cloud/cloud-scripts.tar *
+  cd $snapshot_dir/patches/systemvm/debian/vpn
+  tar -rvf /usr/share/cloud/cloud-scripts.tar *
+  cd /opt
   rm -fr $snapshot_dir cloudstack.tar.gz
 
   chkconfig --add cloud-early-config
