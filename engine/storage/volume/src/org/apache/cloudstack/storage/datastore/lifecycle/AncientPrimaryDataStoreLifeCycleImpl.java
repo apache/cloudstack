@@ -56,6 +56,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.OCFS2Manager;
@@ -220,10 +221,6 @@ public class AncientPrimaryDataStoreLifeCycleImpl implements
             }
             pool = new StoragePoolVO(StoragePoolType.NetworkFilesystem,
                     storageHost, port, hostPath);
-            if (clusterId == null) {
-                throw new IllegalArgumentException(
-                        "NFS need to have clusters specified for XenServers");
-            }
         } else if (scheme.equalsIgnoreCase("file")) {
             if (port == -1) {
                 port = 0;
@@ -463,7 +460,18 @@ public class AncientPrimaryDataStoreLifeCycleImpl implements
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope) {
-        StoragePoolVO pool = this.primaryDataStoreDao.findById(dataStore.getId());
+    	List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.KVM, scope.getScopeId());
+    	for (HostVO host : hosts) {
+    		try {
+    			this.storageMgr.connectHostToSharedPool(host.getId(),
+    					dataStore.getId());
+    		} catch (Exception e) {
+    			s_logger.warn("Unable to establish a connection between " + host
+    					+ " and " + dataStore, e);
+    		}
+    	}
+    	StoragePoolVO pool = this.primaryDataStoreDao.findById(dataStore.getId());
+        
         pool.setScope(ScopeType.ZONE);
         pool.setStatus(StoragePoolStatus.Up);
         this.primaryDataStoreDao.update(pool.getId(), pool);

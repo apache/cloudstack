@@ -57,7 +57,7 @@ public class XcpOssResource extends CitrixResourceBase {
     @Override
     protected List<File> getPatchFiles() {
         List<File> files = new ArrayList<File>();
-        String patch = "patch";
+        String patch = "scripts/vm/hypervisor/xenserver/xcposs/patch";
         String patchfilePath = Script.findScript("", patch);
         if (patchfilePath == null) {
             throw new CloudRuntimeException("Unable to find patch file " + patch);

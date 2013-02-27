@@ -768,7 +768,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         String scope = cmd.getScope();
         if (scope != null) {
             try {
-                scopeType = Enum.valueOf(ScopeType.class, scope);
+                scopeType = Enum.valueOf(ScopeType.class, scope.toUpperCase());
             } catch (Exception e) {
                 throw new InvalidParameterValueException("invalid scope"
                         + scope);

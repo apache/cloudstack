@@ -49,7 +49,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType = ClusterResponse.class,
-            required=true, description="the cluster ID for the storage pool")
+            description="the cluster ID for the storage pool")
     private Long clusterId;
 
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="the details for the storage pool")
@@ -59,7 +59,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
     private String storagePoolName;
 
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType = PodResponse.class,
-            required=true, description="the Pod ID for the storage pool")
+            description="the Pod ID for the storage pool")
     private Long podId;
 
     @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for the storage pool")

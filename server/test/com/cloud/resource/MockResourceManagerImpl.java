@@ -601,4 +601,11 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
         return "MockResourceManagerImpl";
     }
 
+	@Override
+	public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(
+			HypervisorType type, long dcId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
