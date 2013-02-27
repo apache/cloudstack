@@ -1902,9 +1902,9 @@ public class NetworkModelImpl  implements NetworkModel, Manager{
 		}
 
 		int cidrSize = NetUtils.getIp6CidrSize(ip6Cidr);
-		// Ipv6 cidr limit should be at least /64
-		if (cidrSize < 64) {
-			throw new InvalidParameterValueException("The cidr size of IPv6 network must be no less than 64 bits!");
+		// we only support cidr == 64
+		if (cidrSize != 64) {
+			throw new InvalidParameterValueException("The cidr size of IPv6 network must be 64 bits!");
 		}
 	}
     
