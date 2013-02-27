@@ -15,5 +15,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/usr/share/java/cloud-core.jar
-
+/var/log/cloudstack/awsapi

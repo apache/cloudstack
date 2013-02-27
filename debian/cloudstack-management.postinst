@@ -1,3 +1,4 @@
+#!/bin/sh -e
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,3 +16,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
+if [ "$1" = configure ]; then
+    if ! getent passwd cloud >/dev/null; then
+        adduser --quiet --system --group --no-create-home --home /usr/share/cloudstack-manager cloud
+    fi
+    chown cloud /var/log/cloudstack/management
+fi
+
+#DEBHELPER#
