@@ -55,7 +55,7 @@
             fields: {
               id: { label: 'label.id', validation: { required: true } },
               name: { label: 'label.name', validation: { required: true } },
-              endpoint: { label: 'label.endpoint', validation: { url: true, required: true } },
+              endpoint: { label: 'label.endpoint', validation: { required: true } },
               userapikey: { label: 'label.api.key' },
               userapisecretkey: { label: 'label.s3.secret_key' }
             }
