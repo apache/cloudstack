@@ -7541,10 +7541,12 @@
                         select: function(args) {
                               var items = []
 
-                              items.push({id: "" , description:" " });
+                             // items.push({id: "" , description:" " });
 
                               items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
                               items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
+                           
+                              items.push({ id:" nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
                               args.response.success({data: items});
                            },
                         isHidden:true,
@@ -7571,9 +7573,12 @@
                         label: 'Guest Traffic vSwitch Type',
                         select: function(args) {
                         var items = []
-                        items.push({id: "" , description:" " });
+                      //  items.push({id: "" , description:" " });
                         items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
                         items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
+                         
+                        items.push({ id:" nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
+
                         args.response.success({data: items});
                         },
                         isHidden:true,
@@ -7638,7 +7643,7 @@
             
                   //vSwitch Public Type
                  if(args.data.vSwitchPublicType != "")
-                  array1.push("&vswitchtypepublic=" + args.data.vSwitchPublicType);
+                  array1.push("&publicvswitchtype=" + args.data.vSwitchPublicType);
 
                  if(args.data.vSwitchPublicName != "")
                   array1.push("&publicvswitchname=" +args.data.vSwitchPublicName);
@@ -7646,7 +7651,7 @@
                  
                   //vSwitch Guest Type
                  if(args.data.vSwitchGuestType !=  "")
-                  array1.push("&vswitchtypeguest=" + args.data.vSwitchGuestType);
+                  array1.push("&guestvswitchtype=" + args.data.vSwitchGuestType);
                 
                  if(args.data.vSwitchGuestName !="")
                   array1.push("&guestvswitchname=" +args.data.vSwitchGuestName);
