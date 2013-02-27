@@ -396,7 +396,7 @@ body.login {
   height: 31px;
   float: left;
   margin: 72px 0 0 209px;
-  background: url(../images/logo-login.png) no-repeat;
+  background: url(../images/logo-login.png) no-repeat -7px 0px;
 }
 
 .login.nologo .logo {
