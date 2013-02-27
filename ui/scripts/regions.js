@@ -36,6 +36,7 @@
       section: 'regions',
       fields: {
         name: { label: 'label.name' },
+        id: { label: 'ID' },
         endpoint: { label: 'label.endpoint' }
       },
       actions: {
