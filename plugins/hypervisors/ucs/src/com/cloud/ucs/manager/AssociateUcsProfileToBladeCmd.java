@@ -19,8 +19,10 @@ package com.cloud.ucs.manager;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.log4j.Logger;
 
@@ -30,15 +32,18 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-@APICommand(description="associate a profile to a blade", responseObject=AssociateUcsProfileToBladesInClusterResponse.class)
+@APICommand(name="associatesUscProfileToBlade", description="associate a profile to a blade", responseObject=AssociateUcsProfileToBladeResponse.class)
 public class AssociateUcsProfileToBladeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateUcsProfileToBladeCmd.class);
     
     @Inject
     private UcsManager mgr;
     
+    @Parameter(name=ApiConstants.UCS_MANAGER_ID, type=CommandType.UUID, description="ucs manager id", entityType=UcsManagerResponse.class, required=true)
     private Long ucsManagerId;
+    @Parameter(name=ApiConstants.UCS_PROFILE_DN, type=CommandType.STRING, description="profile dn", required=true)
     private String profileDn;
+    @Parameter(name=ApiConstants.UCS_BLADE_ID, type=CommandType.UUID, description="blade id", required=true)
     private Long bladeId;
     
     @Override
@@ -46,7 +51,7 @@ public class AssociateUcsProfileToBladeCmd extends BaseCmd {
             ResourceAllocationException, NetworkRuleConflictException {
         try {
             mgr.associateProfileToBlade(this);
-            AssociateUcsProfileToBladesInClusterResponse rsp = new AssociateUcsProfileToBladesInClusterResponse();
+            AssociateUcsProfileToBladeResponse rsp = new AssociateUcsProfileToBladeResponse();
             rsp.setResponseName(getCommandName());
             rsp.setObjectName("associateucsprofiletobalde");
             this.setResponseObject(rsp);

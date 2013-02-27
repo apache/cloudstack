@@ -42,8 +42,11 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceService;
@@ -78,8 +81,15 @@ public class UcsManagerImpl implements UcsManager {
     private ClusterDetailsDao clusterDetailsDao;
     @Inject
     private UcsBladeDao bladeDao;
+    @Inject
+    private HostDao hostDao;
+    @Inject
+    private DataCenterDao dcDao;
 
     private Map<Long, String> cookies = new HashMap<Long, String>();
+    private String name;
+    private int runLevel;
+    private Map<String, Object> params;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -98,7 +108,7 @@ public class UcsManagerImpl implements UcsManager {
 
     @Override
     public String getName() {
-        return "UcsManager";
+        return name;
     }
 
     private void discoverBlades(UcsManagerVO ucsMgrVo) {
@@ -114,7 +124,7 @@ public class UcsManagerImpl implements UcsManager {
     
     @Override
     @DB
-    public AddUcsManagerResponse addUcsManager(AddUcsManagerCmd cmd) {
+    public UcsManagerResponse addUcsManager(AddUcsManagerCmd cmd) {
         UcsManagerVO vo = new UcsManagerVO();
         vo.setUuid(UUID.randomUUID().toString());
         vo.setPassword(cmd.getPassword());
@@ -127,7 +137,7 @@ public class UcsManagerImpl implements UcsManager {
         txn.start();
         ucsDao.persist(vo);
         txn.commit();
-        AddUcsManagerResponse rsp = new AddUcsManagerResponse();
+        UcsManagerResponse rsp = new UcsManagerResponse();
         rsp.setId(String.valueOf(vo.getId()));
         rsp.setName(vo.getName());
         rsp.setUrl(vo.getUrl());
@@ -175,12 +185,12 @@ public class UcsManagerImpl implements UcsManager {
     }
 
     @Override
-    public ListResponse<ListUcsProfileResponse> listUcsProfiles(ListUcsProfileCmd cmd) {
+    public ListResponse<UcsProfileResponse> listUcsProfiles(ListUcsProfileCmd cmd) {
         List<UcsProfile> profiles = getUcsProfiles(cmd.getUcsManagerId());
-        ListResponse<ListUcsProfileResponse> response = new ListResponse<ListUcsProfileResponse>();
-        List<ListUcsProfileResponse> rs = new ArrayList<ListUcsProfileResponse>();
+        ListResponse<UcsProfileResponse> response = new ListResponse<UcsProfileResponse>();
+        List<UcsProfileResponse> rs = new ArrayList<UcsProfileResponse>();
         for (UcsProfile p : profiles) {
-            ListUcsProfileResponse r = new ListUcsProfileResponse();
+            UcsProfileResponse r = new UcsProfileResponse();
             r.setObjectName("ucsprofile");
             r.setDn(p.getDn());
             rs.add(r);
@@ -251,54 +261,87 @@ public class UcsManagerImpl implements UcsManager {
         
         s_logger.debug(String.format("successfully associated profile[%s] to blade[%s]", pdn, bvo.getDn()));
     }
+    
+    private String hostIdToUuid(Long hostId) {
+        HostVO vo = hostDao.findById(hostId);
+        return vo.getUuid();
+    }
+    
+    private String zoneIdToUuid(Long zoneId) {
+        DataCenterVO vo = dcDao.findById(zoneId);
+        return vo.getUuid();
+    }
+    
+    private String ucsManagerIdToUuid(Long ucsMgrId) {
+        UcsManagerVO vo = ucsDao.findById(ucsMgrId); 
+        return vo.getUuid();
+    }
 
     @Override
-    public ListResponse<ListUcsManagerResponse> listUcsManager(ListUcsManagerCmd cmd) {
+    public ListResponse<UcsManagerResponse> listUcsManager(ListUcsManagerCmd cmd) {
         SearchCriteriaService<UcsManagerVO, UcsManagerVO> serv = SearchCriteria2.create(UcsManagerVO.class);
         serv.addAnd(serv.getEntity().getZoneId(), Op.EQ, cmd.getZoneId());
         List<UcsManagerVO> vos = serv.list();
 
-        List<ListUcsManagerResponse> rsps = new ArrayList<ListUcsManagerResponse>(vos.size());
+        List<UcsManagerResponse> rsps = new ArrayList<UcsManagerResponse>(vos.size());
         for (UcsManagerVO vo : vos) {
-            ListUcsManagerResponse rsp = new ListUcsManagerResponse();
+            UcsManagerResponse rsp = new UcsManagerResponse();
             rsp.setObjectName("ucsmanager");
-            rsp.setId(String.valueOf(vo.getId()));
+            rsp.setId(vo.getUuid());
             rsp.setName(vo.getName());
-            rsp.setZoneId(String.valueOf(vo.getZoneId()));
+            rsp.setUrl(vo.getUrl());
+            rsp.setZoneId(zoneIdToUuid(vo.getZoneId()));
             rsps.add(rsp);
         }
-        ListResponse<ListUcsManagerResponse> response = new ListResponse<ListUcsManagerResponse>();
+        ListResponse<UcsManagerResponse> response = new ListResponse<UcsManagerResponse>();
         response.setResponses(rsps);
+        return response;
+    }
+    
+    public ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd) {
+        SearchCriteriaService<UcsBladeVO, UcsBladeVO> serv = SearchCriteria2.create(UcsBladeVO.class);
+        serv.addAnd(serv.getEntity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
+        List<UcsBladeVO> vos = serv.list();
+        
+        List<UcsBladeResponse> rsps = new ArrayList<UcsBladeResponse>(vos.size());
+        for (UcsBladeVO vo : vos) {
+            UcsBladeResponse rsp = new UcsBladeResponse();
+            rsp.setObjectName("ucsblade");
+            rsp.setId(vo.getUuid());
+            rsp.setDn(vo.getDn());
+            rsp.setHostId(hostIdToUuid(vo.getHostId()));
+            rsp.setUcsManagerId(ucsManagerIdToUuid(vo.getUcsManagerId()));
+            rsps.add(rsp);
+        }
+        
+        ListResponse<UcsBladeResponse> response = new ListResponse<UcsBladeResponse>();
+        response.setResponses(rsps);
+        
         return response;
     }
 
     @Override
     public void setName(String name) {
-        // TODO Auto-generated method stub
-        
+        this.name = name;
     }
 
     @Override
     public void setConfigParams(Map<String, Object> params) {
-        // TODO Auto-generated method stub
-        
+        this.params = params;
     }
 
     @Override
     public Map<String, Object> getConfigParams() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.params;
     }
 
     @Override
     public int getRunLevel() {
-        // TODO Auto-generated method stub
-        return 0;
+        return runLevel;
     }
 
     @Override
     public void setRunLevel(int level) {
-        // TODO Auto-generated method stub
-        
+        this.runLevel = level;
     }
 }
