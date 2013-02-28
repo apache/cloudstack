@@ -176,9 +176,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
     	VirtualMachineEntityImpl vmEntity = null;
 		try {
-			//vmEntity = _vmEntityFactory.getObject();
-			vmEntity = VirtualMachineEntityImpl.class.newInstance();
-			vmEntity = ComponentContext.inject(vmEntity);
+			vmEntity = _vmEntityFactory.getObject();
 		} catch (Exception e) {
 			// add error handling here
 		}
