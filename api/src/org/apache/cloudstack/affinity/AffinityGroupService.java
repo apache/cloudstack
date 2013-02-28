@@ -2,6 +2,8 @@ package org.apache.cloudstack.affinity;
 
 import java.util.List;
 
+import com.cloud.exception.ResourceInUseException;
+
 public interface AffinityGroupService {
 
     /**
@@ -20,14 +22,15 @@ public interface AffinityGroupService {
 
     /**
      * Creates an affinity/anti-affinity group.
-     *
+     * 
      * @param affinityGroupId
      * @param account
      * @param domainId
      * @param affinityGroupName
-     * @param vmId
+     * @throws ResourceInUseException
      */
-    void deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName, Long vmId);
+    boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName)
+            throws ResourceInUseException;
 
     /**
      * Lists Affinity Groups

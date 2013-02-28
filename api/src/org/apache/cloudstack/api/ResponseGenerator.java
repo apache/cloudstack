@@ -386,4 +386,6 @@ public interface ResponseGenerator {
     public NicResponse createNicResponse(Nic result);
 
     AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group);
+
+    Long getAffinityGroupId(String name, long entityOwnerId);
 }
