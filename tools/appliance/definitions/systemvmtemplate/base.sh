@@ -6,8 +6,8 @@ apt-get -y update
 apt-get -y install curl unzip
 apt-get clean
 
-# Set up sudo
-echo 'vagrant ALL=NOPASSWD:ALL' > /etc/sudoers.d/vagrant
+# Set up sudo, TODO: Check security concerns
+echo 'cloud ALL=NOPASSWD:ALL' > /etc/sudoers.d/cloud
 
 # Tweak sshd to prevent DNS resolution (speed up logins)
 echo 'UseDNS no' >> /etc/ssh/sshd_config

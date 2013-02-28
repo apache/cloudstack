@@ -2190,12 +2190,15 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Long domainId = cmd.getDomainId();
         Long id = cmd.getId();
         String keyword = cmd.getKeyword();
+        String name = cmd.getName();
 
         Filter searchFilter = new Filter(DataCenterJoinVO.class, null, false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<DataCenterJoinVO> sc = _dcJoinDao.createSearchCriteria();
 
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        } else if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
         } else {
             if (keyword != null) {
                 SearchCriteria<DataCenterJoinVO> ssc = _dcJoinDao.createSearchCriteria();

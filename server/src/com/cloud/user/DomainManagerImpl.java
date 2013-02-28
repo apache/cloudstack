@@ -118,7 +118,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_CREATE, eventDescription = "creating Domain")
-    public Domain createDomain(String name, Long parentId, String networkDomain, String domainUUID, Integer regionId) {
+    public Domain createDomain(String name, Long parentId, String networkDomain) {
         Account caller = UserContext.current().getCaller();
 
         if (parentId == null) {
@@ -136,13 +136,13 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
         _accountMgr.checkAccess(caller, parentDomain);
 
-        return createDomain(name, parentId, caller.getId(), networkDomain, domainUUID, regionId);
+        return createDomain(name, parentId, caller.getId(), networkDomain);
 
     }
 
     @Override
     @DB
-    public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain, String domainUUID, Integer regionId) {
+    public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain) {
         // Verify network domain
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
@@ -161,28 +161,14 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
         }
 
-        if(regionId == null){
+
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        	DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, _regionMgr.getId()));
+        DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, _regionMgr.getId()));
         _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
         txn.commit();
-        	//Propagate domain creation to peer Regions
-        	_regionMgr.propagateAddDomain(name, parentId, networkDomain, domain.getUuid());        	
-        	return domain;
-        } else {
-        	Transaction txn = Transaction.currentTxn();
-        	txn.start();
-
-        	DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, domainUUID, regionId));
-        	_resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
-
-        	txn.commit();
         return domain;
-        	
-        }
-        
     }
 
     @Override

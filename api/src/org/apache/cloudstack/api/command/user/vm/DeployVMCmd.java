@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -53,7 +54,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.DiskOffering;
@@ -103,7 +103,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     private Long domainId;
 
     //Network information
-    @ACL
+    @ACL(accessType = AccessType.UseNetwork)
     @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=NetworkResponse.class,
             description="list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
     private List<Long> networkIds;
@@ -306,9 +306,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                 if (requestedIpv6 != null) {
                 	requestedIpv6 = requestedIpv6.toLowerCase();
                 }
-                if (requestedIpv6 != null) {
-                	throw new InvalidParameterValueException("Cannot support specified IPv6 address!");
-                }
                 IpAddresses addrs = new IpAddresses(requestedIp, requestedIpv6);
                 ipToNetworkMap.put(networkId, addrs);
             }
@@ -407,10 +404,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException{
         try {
-        	if (getIp6Address() != null) {
-        		throw new InvalidParameterValueException("Cannot support specified IPv6 address!");
-        	}
-        	
             //Verify that all objects exist before passing them to the service
             Account owner = _accountService.getActiveAccountById(getEntityOwnerId());
 

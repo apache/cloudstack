@@ -26,7 +26,6 @@ import com.cloud.utils.fsm.StateDao;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachine.Type;
 
 
 /*
@@ -75,6 +74,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     
     VMInstanceVO findByIdTypes(long id, VirtualMachine.Type... types);
     
+    VMInstanceVO findVMByInstanceName(String name);
+
     void updateProxyId(long id, Long proxyId, Date time);
 
     List<VMInstanceVO> listByHostIdTypes(long hostid, VirtualMachine.Type... types);

@@ -355,9 +355,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             _firewallMgr.addSystemFirewallRules(addr, owner);
         }
 
-        long macAddress = NetUtils.createSequenceBasedMacAddress(addr.getMacAddress());
-
-        return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()), macAddress);
+        return PublicIp.createFromAddrAndVlan(addr, _vlanDao.findById(addr.getVlanId()));
     }
 
     @DB
@@ -404,8 +402,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         PublicIp ipToReturn = null;
         if (sourceNatIp != null) {
-            ipToReturn = new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()),
-                    NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
+            ipToReturn = PublicIp.createFromAddrAndVlan(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()));
         } else {
             ipToReturn = assignDedicateIpAddress(owner, guestNetwork.getId(), null, dcId, true);
         }
@@ -490,8 +487,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()),
-                        NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
                 publicIps.add(publicIp);
             }
         }
@@ -2311,7 +2307,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
             List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
             if (userIps != null && !userIps.isEmpty()) {
                 for (IPAddressVO userIp : userIps) {
-    			PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+    			PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
     			publicIps.add(publicIp);
 	                }
              }
@@ -2847,7 +2843,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
                 publicIps.add(publicIp);
             }
         }
@@ -2877,7 +2873,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
                         IPAddressVO ip = _ipAddressDao.findByIdIncludingRemoved(staticNat.getSourceIpAddressId());
                         // ip can't be null, otherwise something wrong happened
                         ip.setAssociatedWithVmId(null);
-                        publicIp = new PublicIp(ip, _vlanDao.findById(ip.getVlanId()), NetUtils.createSequenceBasedMacAddress(ip.getMacAddress()));
+                        publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
                         publicIps.add(publicIp);
                         break;
                     }
@@ -3154,7 +3150,7 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
                 userIp.setState(State.Releasing);
-                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
                 publicIpsToRelease.add(publicIp);
             }
         }
@@ -3405,6 +3401,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     			nic.setReservationId(String.valueOf(ip.getVlanTag()));
     			nic.setMacAddress(ip.getMacAddress());
     		}
+    		nic.setDns1(dc.getDns1());
+    		nic.setDns2(dc.getDns2());
     	}
     	
     	if (network.getIp6Gateway() != null) {
@@ -3426,10 +3424,10 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
     				nic.setMacAddress(ip.getMacAddress());
     			}
     		}
+    		nic.setIp6Dns1(dc.getIp6Dns1());
+    		nic.setIp6Dns2(dc.getIp6Dns2());
     	}
 
-        nic.setDns1(dc.getDns1());
-        nic.setDns2(dc.getDns2());
     }
 
 	@Override

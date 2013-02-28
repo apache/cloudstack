@@ -49,9 +49,6 @@ public class DisableUserCmd extends BaseAsyncCmd {
             required=true, description="Disables user by user ID.")
     private Long id;
 
-    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
-    private Boolean isPropagate;
-    
     @Inject RegionService _regionService;
     
     /////////////////////////////////////////////////////
@@ -62,10 +59,6 @@ public class DisableUserCmd extends BaseAsyncCmd {
         return id;
     }
 
-	public Boolean getIsPropagate() {
-		return isPropagate;
-	}
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

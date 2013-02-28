@@ -159,9 +159,9 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
@@ -192,6 +192,7 @@ import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostResourceSummary;
+import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareGuestOsMapper;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
@@ -199,6 +200,8 @@ import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.resource.ServerResource;
 import com.cloud.serializer.GsonHelper;
@@ -260,6 +263,7 @@ import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualSCSISharing;
 
+
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
 
@@ -284,10 +288,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected String _vCenterAddress;
 
     protected String _privateNetworkVSwitchName;
-    protected String _publicNetworkVSwitchName;
-    protected String _guestNetworkVSwitchName;
-    protected VirtualSwitchType _vSwitchType = VirtualSwitchType.StandardVirtualSwitch;
-    protected boolean _nexusVSwitch = false;
+    protected VmwareTrafficLabel _guestTrafficInfo = new VmwareTrafficLabel(TrafficType.Guest);
+    protected VmwareTrafficLabel _publicTrafficInfo = new VmwareTrafficLabel(TrafficType.Public);
+    protected int _portsPerDvPortGroup;
+    protected boolean _fullCloneFlag = false;
 
     protected boolean _reserveCpu = false;
 
@@ -1316,7 +1320,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             NicTO nicTo = cmd.getNic();
             VirtualDevice nic;
             Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo);
-            if (mgr.getNexusVSwitchGlobalParameter()) {
+            if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
                 String dvSwitchUuid;
                 ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
                 DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
@@ -1547,13 +1551,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private void plugPublicNic(VirtualMachineMO vmMo, final String vlanId, final String vifMacAddress) throws Exception {
         // TODO : probably need to set traffic shaping
         Pair<ManagedObjectReference, String> networkInfo = null;
-
-        if (!_nexusVSwitch) {
-            networkInfo = HypervisorHostHelper.prepareNetwork(this._publicNetworkVSwitchName, "cloud.public",
+        VirtualSwitchType vSwitchType = VirtualSwitchType.StandardVirtualSwitch;
+        if (_publicTrafficInfo != null) {
+            vSwitchType = _publicTrafficInfo.getVirtualSwitchType();
+        }
+        if (VirtualSwitchType.StandardVirtualSwitch == vSwitchType) {
+            networkInfo = HypervisorHostHelper.prepareNetwork(this._publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
                     vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, true);
         } else {
-            networkInfo = HypervisorHostHelper.prepareNetwork(this._publicNetworkVSwitchName, "cloud.public",
-                    vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout);
+            networkInfo = HypervisorHostHelper.prepareNetwork(this._publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
+                    vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, vSwitchType, _portsPerDvPortGroup);
         }
 
         int nicIndex = allocPublicNicIndex(vmMo);
@@ -1563,7 +1570,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             VirtualEthernetCard device = (VirtualEthernetCard) nicDevices[nicIndex];
 
-            if (!_nexusVSwitch) {
+            if (VirtualSwitchType.StandardVirtualSwitch == vSwitchType) {
                 VirtualEthernetCardNetworkBackingInfo nicBacking = new VirtualEthernetCardNetworkBackingInfo();
                 nicBacking.setDeviceName(networkInfo.second());
                 nicBacking.setNetwork(networkInfo.first());
@@ -2262,7 +2269,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
                 Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo);
-                if (mgr.getNexusVSwitchGlobalParameter()) {
+                if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
                     String dvSwitchUuid;
                     ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
                     DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
@@ -2461,21 +2468,36 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo) throws Exception {
+        Pair<String, String> switchName;
+        TrafficType trafficType;
+        VirtualSwitchType switchType;
 
-        Pair<String, String> switchName =  getTargetSwitch(nicTo);
+        switchName = getTargetSwitch(nicTo);
+        trafficType = nicTo.getType();
+        // Get switch type from resource property which is dictated by cluster property
+        // If a virtual switch type is specified while adding cluster that will be used.
+        // Else If virtual switch type is specified in physical traffic label that will be used
+        // Else use standard vSwitch
+        switchType = VirtualSwitchType.StandardVirtualSwitch;
+        if (trafficType == TrafficType.Guest && _guestTrafficInfo != null) {
+            switchType = _guestTrafficInfo.getVirtualSwitchType();
+        } else if (trafficType == TrafficType.Public && _publicTrafficInfo != null) {
+            switchType = _publicTrafficInfo.getVirtualSwitchType();
+        }
+
         String namePrefix = getNetworkNamePrefix(nicTo);
         Pair<ManagedObjectReference, String> networkInfo = null;
 
-        s_logger.info("Prepare network on vSwitch: " + switchName + " with name prefix: " + namePrefix);
+        s_logger.info("Prepare network on " + switchType + " " + switchName + " with name prefix: " + namePrefix);
 
-        if(!_nexusVSwitch) {
-            networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, getVlanInfo(nicTo, switchName.second()), 
-                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, 
+        if (VirtualSwitchType.StandardVirtualSwitch == switchType) {
+            networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, getVlanInfo(nicTo, switchName.second()),
+                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout,
                     !namePrefix.startsWith("cloud.private"));
         }
         else {
             networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, getVlanInfo(nicTo, switchName.second()), 
-                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout);
+                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, switchType, _portsPerDvPortGroup);
         }
 
         return networkInfo;
@@ -2485,8 +2507,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private Pair<String, String> getTargetSwitch(NicTO nicTo) throws Exception {
         if(nicTo.getName() != null && !nicTo.getName().isEmpty()) {
             String[] tokens = nicTo.getName().split(",");
-
-            if(tokens.length == 2) {
+            // Format of network traffic label is <VSWITCH>,<VLANID>,<VSWITCHTYPE>
+            // If all 3 fields are mentioned then number of tokens would be 3.
+            // If only <VSWITCH>,<VLANID> are mentioned then number of tokens would be 2.
+            if(tokens.length == 2 || tokens.length == 3) {
                 return new Pair<String, String>(tokens[0], tokens[1]);
             } else {
                 return new Pair<String, String>(nicTo.getName(), Vlan.UNTAGGED);
@@ -2494,11 +2518,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         if (nicTo.getType() == Networks.TrafficType.Guest) {
-            return new Pair<String, String>(this._guestNetworkVSwitchName, Vlan.UNTAGGED);
+            return new Pair<String, String>(this._guestTrafficInfo.getVirtualSwitchName(), Vlan.UNTAGGED);
         } else if (nicTo.getType() == Networks.TrafficType.Control || nicTo.getType() == Networks.TrafficType.Management) {
             return new Pair<String, String>(this._privateNetworkVSwitchName, Vlan.UNTAGGED);
         } else if (nicTo.getType() == Networks.TrafficType.Public) {
-            return new Pair<String, String>(this._publicNetworkVSwitchName, Vlan.UNTAGGED);
+            return new Pair<String, String>(this._publicTrafficInfo.getVirtualSwitchName(), Vlan.UNTAGGED);
         } else if (nicTo.getType() == Networks.TrafficType.Storage) {
             return new Pair<String, String>(this._privateNetworkVSwitchName, Vlan.UNTAGGED);
         } else if (nicTo.getType() == Networks.TrafficType.Vpn) {
@@ -3695,9 +3719,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     dsMo.deleteFile(cmd.getVolume().getPath() + ".vmdk", morDc, true);
 
                     // root volume may be created via linked-clone, delete the delta disk as well
-                    if (s_logger.isInfoEnabled())
+                    if (_fullCloneFlag) {
+                        if (s_logger.isInfoEnabled()) {
+                            s_logger.info("Destroy volume by derived name: " + cmd.getVolume().getPath() + "-flat.vmdk");
+                        }
+                        dsMo.deleteFile(cmd.getVolume().getPath() + "-flat.vmdk", morDc, true);
+                    } else {
+                        if (s_logger.isInfoEnabled()) {
                         s_logger.info("Destroy volume by derived name: " + cmd.getVolume().getPath() + "-delta.vmdk");
+                        }
                     dsMo.deleteFile(cmd.getVolume().getPath() + "-delta.vmdk", morDc, true);
+                    }
                     return new Answer(cmd, true, "Success");
                 }
 
@@ -3799,6 +3831,70 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+
+
+    private boolean createVMFullClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo,
+            String vmdkName, ManagedObjectReference morDatastore, ManagedObjectReference morPool) throws Exception {
+
+        if(dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName))
+            dsMo.deleteFile(String.format("[%s] %s/", dsMo.getName(), vmdkName), dcMo.getMor(), false);
+
+        s_logger.info("creating full clone from template");
+        if (!vmTemplate.createFullClone(vmdkName, dcMo.getVmFolder(), morPool, morDatastore)) {
+            String msg = "Unable to create full clone from the template";
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
+
+        // we can't rely on un-offical API (VirtualMachineMO.moveAllVmDiskFiles() any more, use hard-coded disk names that we know
+        // to move files
+        s_logger.info("Move volume out of volume-wrapper VM ");
+        dsMo.moveDatastoreFile(String.format("[%s] %s/%s.vmdk", dsMo.getName(), vmdkName, vmdkName),
+                dcMo.getMor(), dsMo.getMor(),
+                String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
+
+        dsMo.moveDatastoreFile(String.format("[%s] %s/%s-flat.vmdk", dsMo.getName(), vmdkName, vmdkName),
+                dcMo.getMor(), dsMo.getMor(),
+                String.format("[%s] %s-flat.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
+
+        return true;
+    }
+
+    private boolean createVMLinkedClone(VirtualMachineMO vmTemplate, DatacenterMO dcMo, DatastoreMO dsMo,
+            String vmdkName, ManagedObjectReference morDatastore, ManagedObjectReference morPool) throws Exception {
+
+        ManagedObjectReference morBaseSnapshot = vmTemplate.getSnapshotMor("cloud.template.base");
+        if (morBaseSnapshot == null) {
+            String msg = "Unable to find template base snapshot, invalid template";
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
+
+        if(dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName))
+            dsMo.deleteFile(String.format("[%s] %s/", dsMo.getName(), vmdkName), dcMo.getMor(), false);
+
+        s_logger.info("creating linked clone from template");
+        if (!vmTemplate.createLinkedClone(vmdkName, morBaseSnapshot, dcMo.getVmFolder(), morPool, morDatastore)) {
+            String msg = "Unable to clone from the template";
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
+
+        // we can't rely on un-offical API (VirtualMachineMO.moveAllVmDiskFiles() any more, use hard-coded disk names that we know
+        // to move files
+        s_logger.info("Move volume out of volume-wrapper VM ");
+        dsMo.moveDatastoreFile(String.format("[%s] %s/%s.vmdk", dsMo.getName(), vmdkName, vmdkName),
+                dcMo.getMor(), dsMo.getMor(),
+                String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
+
+        dsMo.moveDatastoreFile(String.format("[%s] %s/%s-delta.vmdk", dsMo.getName(), vmdkName, vmdkName),
+                dcMo.getMor(), dsMo.getMor(),
+                String.format("[%s] %s-delta.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
+
+        return true;
+    }
+
+
     @Override
     public synchronized CreateAnswer execute(CreateCommand cmd) {
         if (s_logger.isInfoEnabled()) {
@@ -3858,36 +3954,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
                     ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
-                    ManagedObjectReference morBaseSnapshot = vmTemplate.getSnapshotMor("cloud.template.base");
-                    if (morBaseSnapshot == null) {
-                        String msg = "Unable to find template base snapshot, invalid template";
-                        s_logger.error(msg);
-                        throw new Exception(msg);
-                    }
-
-                    if(dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName))
-                        dsMo.deleteFile(String.format("[%s] %s/", dsMo.getName(), vmdkName), dcMo.getMor(), false);
-
-                    s_logger.info("create linked clone from template");
-                    if (!vmTemplate.createLinkedClone(vmdkName, morBaseSnapshot, dcMo.getVmFolder(), morPool, morDatastore)) {
-                        String msg = "Unable to clone from the template";
-                        s_logger.error(msg);
-                        throw new Exception(msg);
+                    //createVMLinkedClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
+                    if (!_fullCloneFlag) {
+                        createVMLinkedClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
+                    } else {
+                        createVMFullClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
                     }
 
                     VirtualMachineMO vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
                     assert (vmMo != null);
-
-                    // we can't rely on un-offical API (VirtualMachineMO.moveAllVmDiskFiles() any more, use hard-coded disk names that we know
-                    // to move files
-                    s_logger.info("Move volume out of volume-wrapper VM ");
-                    dsMo.moveDatastoreFile(String.format("[%s] %s/%s.vmdk", dsMo.getName(), vmdkName, vmdkName),
-                            dcMo.getMor(), dsMo.getMor(),
-                            String.format("[%s] %s.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
-
-                    dsMo.moveDatastoreFile(String.format("[%s] %s/%s-delta.vmdk", dsMo.getName(), vmdkName, vmdkName),
-                            dcMo.getMor(), dsMo.getMor(),
-                            String.format("[%s] %s-delta.vmdk", dsMo.getName(), vmdkName), dcMo.getMor(), true);
 
                     s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
                     vmMo.detachAllDisks();
@@ -4488,7 +4563,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     if(!"untagged".equalsIgnoreCase(tokens[2]))
                         vlanId = tokens[2];
 
-                    HypervisorHostHelper.prepareNetwork(this._publicNetworkVSwitchName, "cloud.public",
+                    HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public",
                             hostMo, vlanId, networkRateMbps, null, this._ops_timeout, false);
                 } else {
                     s_logger.info("Skip suspecious cloud network " + networkName);
@@ -4505,7 +4580,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     if(!"untagged".equalsIgnoreCase(tokens[2]))
                         vlanId = tokens[2];
 
-                    HypervisorHostHelper.prepareNetwork(this._guestNetworkVSwitchName, "cloud.guest",
+                    HypervisorHostHelper.prepareNetwork(_guestTrafficInfo.getVirtualSwitchName(), "cloud.guest",
                             hostMo, vlanId, networkRateMbps, null, this._ops_timeout, false);
                 } else {
                     s_logger.info("Skip suspecious cloud network " + networkName);
@@ -4821,6 +4896,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         _morHyperHost.setType(hostTokens[0]);
         _morHyperHost.set_value(hostTokens[1]);
 
+        _guestTrafficInfo = (VmwareTrafficLabel) params.get("guestTrafficInfo");
+        _publicTrafficInfo = (VmwareTrafficLabel) params.get("publicTrafficInfo");
         VmwareContext context = getServiceContext();
         try {
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
@@ -4828,12 +4905,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(context, context.getServiceContent().getCustomFieldsManager());
             cfmMo.ensureCustomFieldDef("Datastore", CustomFieldConstants.CLOUD_UUID);
-            if (mgr.getNexusVSwitchGlobalParameter()) {
+            if (_publicTrafficInfo != null && _publicTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch ||
+                _guestTrafficInfo != null && _guestTrafficInfo.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
                 cfmMo.ensureCustomFieldDef("DistributedVirtualPortgroup", CustomFieldConstants.CLOUD_GC_DVP);
-            } else {
-                cfmMo.ensureCustomFieldDef("Network", CustomFieldConstants.CLOUD_GC);
             }
-
+                cfmMo.ensureCustomFieldDef("Network", CustomFieldConstants.CLOUD_GC);
             cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_UUID);
             cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_NIC_MASK);
 
@@ -4841,15 +4917,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             _hostName = hostMo.getHyperHostName();
 
             Map<String, String> vsmCredentials;
-            if (mgr.getNexusVSwitchGlobalParameter()) {
+            if (_guestTrafficInfo.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch ||
+                _publicTrafficInfo.getVirtualSwitchType() == VirtualSwitchType.NexusDistributedVirtualSwitch) {
                 vsmCredentials = mgr.getNexusVSMCredentialsByClusterId(Long.parseLong(_cluster));
                 if (vsmCredentials != null) {
                     s_logger.info("Stocking credentials while configuring resource.");
                     context.registerStockObject("vsmcredentials", vsmCredentials);
                 }
                 _privateNetworkVSwitchName = mgr.getPrivateVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
-                _publicNetworkVSwitchName = mgr.getPublicVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
-                _guestNetworkVSwitchName = mgr.getGuestVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
             }
 
         } catch (Exception e) {
@@ -4858,12 +4933,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         if(_privateNetworkVSwitchName == null) {
             _privateNetworkVSwitchName = (String) params.get("private.network.vswitch.name");
-        }    
-        if(_publicNetworkVSwitchName == null) {
-            _publicNetworkVSwitchName = (String) params.get("public.network.vswitch.name");
-        }
-        if(_guestNetworkVSwitchName == null) {
-            _guestNetworkVSwitchName = (String) params.get("guest.network.vswitch.name");
         }
 
         String value = (String) params.get("vmware.reserve.cpu");
@@ -4884,12 +4953,22 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         else
             _rootDiskController = DiskControllerType.ide;
 
-        value = params.get("vmware.use.nexus.vswitch").toString();
-        if(value != null && value.equalsIgnoreCase("true"))
-            _nexusVSwitch = true;
+        Integer intObj = (Integer) params.get("ports.per.dvportgroup");
+        if (intObj != null)
+            _portsPerDvPortGroup = intObj.intValue();
 
-        s_logger.info("VmwareResource network configuration info. private vSwitch: " + _privateNetworkVSwitchName + ", public vSwitch: " + _publicNetworkVSwitchName + ", guest network: "
-                + _guestNetworkVSwitchName);
+        s_logger.info("VmwareResource network configuration info." +
+                " private traffic over vSwitch: " + _privateNetworkVSwitchName + ", public traffic over " +
+                this._publicTrafficInfo.getVirtualSwitchType() + " : " + this._publicTrafficInfo.getVirtualSwitchName() +
+                ", guest traffic over " + this._guestTrafficInfo.getVirtualSwitchType() + " : " +
+                this._guestTrafficInfo.getVirtualSwitchName());
+
+        value = params.get("vmware.create.full.clone").toString();
+        if (value != null && value.equalsIgnoreCase("true")) {
+            _fullCloneFlag = true;
+        } else {
+            _fullCloneFlag = false;
+        }
 
         return true;
     }

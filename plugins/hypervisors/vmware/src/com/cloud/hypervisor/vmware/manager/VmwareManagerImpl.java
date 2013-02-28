@@ -96,6 +96,7 @@ import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.HostConnectSpec;
 import com.vmware.vim25.ManagedObjectReference;
 
+
 @Local(value = {VmwareManager.class})
 public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
@@ -125,11 +126,11 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     String _mountParent;
     StorageLayer _storage;
+    String _privateNetworkVSwitchName = "vSwitch0";
 
-    String _privateNetworkVSwitchName;
-    String _publicNetworkVSwitchName;
-    String _guestNetworkVSwitchName;
+    int _portsPerDvPortGroup = 256;
     boolean _nexusVSwitchActive;
+    boolean _fullCloneFlag;
     String _serviceConsoleName;
     String _managemetPortGroupName;
     String _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
@@ -193,43 +194,12 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             _storage = new JavaStorageLayer();
             _storage.configure("StorageLayer", params);
         }
-        value = _configDao.getValue(Config.VmwareUseNexusVSwitch.key());
-        if(value == null) {
-            _nexusVSwitchActive = false;
-        }
-        else
-        {
-            _nexusVSwitchActive = Boolean.parseBoolean(value);
-        }
 
-        _privateNetworkVSwitchName = _configDao.getValue(Config.VmwarePrivateNetworkVSwitch.key());
-
-        if (_privateNetworkVSwitchName == null) {
-            if (_nexusVSwitchActive) {
-                _privateNetworkVSwitchName = "privateEthernetPortProfile";
-            } else {
-                _privateNetworkVSwitchName = "vSwitch0";
-            }
-        }
-
-        _publicNetworkVSwitchName = _configDao.getValue(Config.VmwarePublicNetworkVSwitch.key());
-
-        if (_publicNetworkVSwitchName == null) {
-            if (_nexusVSwitchActive) {
-                _publicNetworkVSwitchName = "publicEthernetPortProfile";
-            } else {
-                _publicNetworkVSwitchName = "vSwitch0";
-            }
-        }
-
-        _guestNetworkVSwitchName = _configDao.getValue(Config.VmwareGuestNetworkVSwitch.key());
-
-        if (_guestNetworkVSwitchName == null) {
-            if (_nexusVSwitchActive) {
-                _guestNetworkVSwitchName = "guestEthernetPortProfile";
-            } else {
-                _guestNetworkVSwitchName = "vSwitch0";
-            }
+        value = _configDao.getValue(Config.VmwareCreateFullClone.key());
+        if (value == null) {
+            _fullCloneFlag = false;
+        } else {
+            _fullCloneFlag = Boolean.parseBoolean(value);
         }
 
         _serviceConsoleName = _configDao.getValue(Config.VmwareServiceConsole.key());
@@ -311,8 +281,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public boolean getNexusVSwitchGlobalParameter() {
-        return _nexusVSwitchActive;
+    public boolean getFullCloneFlag() {
+        return _fullCloneFlag;
     }
 
     @Override
@@ -325,15 +295,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         return _netMgr.getDefaultManagementTrafficLabel(dcId, hypervisorType);
     }
 
-    @Override
-    public String getPublicVSwitchName(long dcId, HypervisorType hypervisorType) {
-        return _netMgr.getDefaultPublicTrafficLabel(dcId, hypervisorType);
-    }
-
-    @Override
-    public String getGuestVSwitchName(long dcId, HypervisorType hypervisorType) {
-        return _netMgr.getDefaultGuestTrafficLabel(dcId, hypervisorType);
-    }
 
     private void prepareHost(HostMO hostMo, String privateTrafficLabel) throws Exception {
         // For ESX host, we need to enable host firewall to allow VNC access
@@ -355,12 +316,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         s_logger.info("Preparing network on host " + hostMo.getContext().toString() + " for " + privateTrafficLabel);
-        if(!_nexusVSwitchActive) {
-            HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
-        }
-        else {
-            HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000);
-        }
+        HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
+
     }
     
     @Override
@@ -491,16 +448,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public void setupResourceStartupParams(Map<String, Object> params) {
-        params.put("private.network.vswitch.name", _privateNetworkVSwitchName);
-        params.put("public.network.vswitch.name", _publicNetworkVSwitchName);
-        params.put("guest.network.vswitch.name", _guestNetworkVSwitchName);
-        params.put("vmware.use.nexus.vswitch", _nexusVSwitchActive);
+        params.put("vmware.create.full.clone", _fullCloneFlag);
         params.put("service.console.name", _serviceConsoleName);
         params.put("management.portgroup.name", _managemetPortGroupName);
         params.put("vmware.reserve.cpu", _reserveCpu);
         params.put("vmware.reserve.mem", _reserveMem);
         params.put("vmware.root.disk.controller", _rootDiskController);
         params.put("vmware.recycle.hung.wokervm", _recycleHungWorker);
+        params.put("ports.per.dvportgroup", _portsPerDvPortGroup);
     }
 
     @Override

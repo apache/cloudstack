@@ -108,8 +108,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
+import com.cloud.vm.dao.UserVmDao;
 
 import edu.emory.mathcs.backport.java.util.Collections;
 
@@ -173,6 +175,8 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
     private SwiftDao _swiftDao;
     @Inject
     protected ResourceLimitService _resourceLimitMgr;
+    @Inject
+    protected UserVmDao _userVmDao;
 
 	private Boolean _sslCopy = new Boolean(false);
 	private String _copyAuthPasswd;
@@ -713,7 +717,7 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
         	//Exists then don't download
         	if (volumeInfos.containsKey(volume.getId())){
                 TemplateInfo volInfo = volumeInfos.remove(volume.getId());
-                toBeDownloaded.remove(volumeHost);                
+                toBeDownloaded.remove(volumeHost);
                 s_logger.info("Volume Sync found " + volume.getUuid() + " already in the volume host table");
                 if (volumeHost.getDownloadState() != Status.DOWNLOADED) {
                 	volumeHost.setErrorString("");
@@ -731,13 +735,19 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
                     }
 
                 } else { // Put them in right status
-                	volumeHost.setDownloadPercent(100);
-                	volumeHost.setDownloadState(Status.DOWNLOADED);
-                	volumeHost.setInstallPath(volInfo.getInstallPath());
-                	volumeHost.setSize(volInfo.getSize());
-                	volumeHost.setPhysicalSize(volInfo.getPhysicalSize());
-                	volumeHost.setLastUpdated(new Date());               
-                	_volumeHostDao.update(volumeHost.getId(), volumeHost);
+                    volumeHost.setDownloadPercent(100);
+                    volumeHost.setDownloadState(Status.DOWNLOADED);
+                    volumeHost.setInstallPath(volInfo.getInstallPath());
+                    volumeHost.setSize(volInfo.getSize());
+                    volumeHost.setPhysicalSize(volInfo.getPhysicalSize());
+                    volumeHost.setLastUpdated(new Date());
+                    _volumeHostDao.update(volumeHost.getId(), volumeHost);
+
+                    if (volume.getSize() == 0) {
+                        // Set volume size in volumes table
+                        volume.setSize(volInfo.getSize());
+                        _volumeDao.update(volumeHost.getVolumeId(), volume);
+                    }
                 }
                 continue;
         	}
@@ -927,17 +937,21 @@ public class DownloadMonitorImpl extends ManagerBase implements  DownloadMonitor
 
         for (String uniqueName : templateInfos.keySet()) {
             TemplateInfo tInfo = templateInfos.get(uniqueName);
-            DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(ssHost.getStorageUrl(), tInfo.getInstallPath());
-            try {
-	            _agentMgr.sendToSecStorage(ssHost, dtCommand, null);
-            } catch (AgentUnavailableException e) {
-                String err = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " which isn't in the database";
-                s_logger.error(err);
-                return;
-            }
+            List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(tInfo.getId());
+            //check if there is any Vm using this ISO.
+            if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
+                DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(ssHost.getStorageUrl(), tInfo.getInstallPath());
+                try {
+                    _agentMgr.sendToSecStorage(ssHost, dtCommand, null);
+                } catch (AgentUnavailableException e) {
+                    String err = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " which isn't in the database";
+                    s_logger.error(err);
+                    return;
+                }
 
-            String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database";
-            s_logger.info(description);
+                String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database";
+                s_logger.info(description);
+            }
         }
     }
 

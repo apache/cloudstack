@@ -57,6 +57,7 @@ public class RawImageProcessor extends AdapterBase implements Processor {
 		String imgPath = templatePath + File.separator + templateName + "." + ImageFormat.RAW.getFileExtension();
 		if (!_storage.exists(imgPath)) {
 			s_logger.debug("Unable to find raw image:" + imgPath);
+			return null;
 		}
         FormatInfo info = new FormatInfo();
         info.format = ImageFormat.RAW;

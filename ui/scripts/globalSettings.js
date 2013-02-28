@@ -188,7 +188,13 @@
                                    data: items
                              });
 
-                      }
+                      },
+
+                   error:function(json){
+                      args.response.error(parseXMLHttpResponse(json));
+
+                     }
+
 
                      });
 

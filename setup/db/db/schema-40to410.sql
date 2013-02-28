@@ -260,16 +260,8 @@ CREATE TABLE  `cloud`.`region` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`region_sync` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `region_id` int unsigned NOT NULL,
-  `api` varchar(1024) NOT NULL,
-  `created` datetime NOT NULL COMMENT 'date created',
-  `processed` tinyint NOT NULL default '0',
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client/api','','');
 
--- INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client/api','','');
 ALTER TABLE `cloud`.`account` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
 ALTER TABLE `cloud`.`user` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
 ALTER TABLE `cloud`.`domain` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';
@@ -490,6 +482,9 @@ ALTER TABLE `cloud`.`vlan` ADD COLUMN `ip6_gateway` varchar(255);
 ALTER TABLE `cloud`.`vlan` ADD COLUMN `ip6_cidr` varchar(255);
 ALTER TABLE `cloud`.`vlan` ADD COLUMN `ip6_range` varchar(255);
 
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `ip6_dns1` varchar(255);
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `ip6_dns2` varchar(255);
+
 -- DB views for list api
 
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
@@ -688,6 +683,8 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         data_center.name data_center_name,
         data_center.dns1 dns1,
         data_center.dns2 dns2,
+        data_center.ip6_dns1 ip6_dns1,
+        data_center.ip6_dns2 ip6_dns2,
         host.id host_id,
         host.uuid host_uuid,
         host.name host_name,
@@ -1614,6 +1611,8 @@ CREATE VIEW `cloud`.`data_center_view` AS
         data_center.description,
         data_center.dns1,
         data_center.dns2,
+        data_center.ip6_dns1,
+        data_center.ip6_dns2,
         data_center.internal_dns1,
         data_center.internal_dns2,
         data_center.guest_network_cidr,

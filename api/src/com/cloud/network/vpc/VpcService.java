@@ -41,7 +41,7 @@ public interface VpcService {
 
     public VpcOffering getVpcOffering(long vpcOfferingId);
 
-    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices);
+    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices, Map<String, List<String>> serviceProviders);
 
     public Vpc getVpc(long vpcId);
 

@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.TreeMap;
 
 import javax.ejb.Local;
-import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
@@ -77,9 +76,10 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
     protected HashMap<String, DbUpgrade[]> _upgradeMap = new HashMap<String, DbUpgrade[]>();
 
-    @Inject VersionDao _dao;
+    VersionDao _dao;
 
     public DatabaseUpgradeChecker() {
+        _dao = new VersionDaoImpl();
         _upgradeMap.put("2.1.7", new DbUpgrade[] { new Upgrade217to218(), new Upgrade218to22(), new Upgrade221to222(),
                 new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade224to225(), new Upgrade225to226(),
                 new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(),
@@ -115,12 +115,12 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         _upgradeMap.put("2.2.4", new DbUpgrade[] { new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(),
                 new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(),
-                new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), 
+                new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(),
                 new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420() });
 
         _upgradeMap.put("2.2.5", new DbUpgrade[] { new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229(),
                 new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(),
-                new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), 
+                new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(),
                 new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420() });
 
         _upgradeMap.put("2.2.6", new DbUpgrade[] { new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(),
@@ -159,7 +159,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put("3.0.1", new DbUpgrade[] { new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420() });
 
         _upgradeMap.put("3.0.2", new DbUpgrade[] { new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420() });
-        
+
         _upgradeMap.put("4.0.0", new DbUpgrade[] { new Upgrade40to41(), new Upgrade410to420() });
 
         _upgradeMap.put("4.1.0", new DbUpgrade[] { new Upgrade410to420() });

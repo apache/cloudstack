@@ -35,6 +35,7 @@ under the License.
         <dao name="VM Instance dao" class="com.cloud.vm.dao.VMInstanceDaoImpl" />
         <dao name="Volume dao" class="com.cloud.storage.dao.VolumeDaoImpl" />
         <dao name="User VM dao" class="com.cloud.vm.dao.UserVmDaoImpl" />
+        <dao name="User VM clone setting dao" class="com.cloud.vm.dao.UserVmCloneSettingDaoImpl" />
         <dao name="domain router dao" class="com.cloud.vm.dao.DomainRouterDaoImpl" />
         <dao name="Storage pool dao" class="com.cloud.storage.dao.StoragePoolDaoImpl" />
         <dao name="Account dao" class="com.cloud.user.dao.AccountDaoImpl" />

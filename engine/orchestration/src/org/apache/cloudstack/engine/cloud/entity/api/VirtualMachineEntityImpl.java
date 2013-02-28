@@ -33,6 +33,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 public class VirtualMachineEntityImpl implements VirtualMachineEntity {
@@ -40,14 +41,14 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 	@Inject private VMEntityManager manager;
 
 	private VMEntityVO vmEntityVO;
-	
+
 	public VirtualMachineEntityImpl() {
 	}
-	
+
 	public void init(String vmId) {
-    	this.vmEntityVO = this.manager.loadVirtualMachine(vmId);
+	this.vmEntityVO = this.manager.loadVirtualMachine(vmId);
 	}
-	
+
 	public void init(String vmId, String owner, String hostName, String displayName, int cpu, int speed, long memory, List<String> computeTags, List<String> rootDiskTags, List<String> networks) {
 		init(vmId);
 		this.vmEntityVO.setOwner(owner);
@@ -57,7 +58,7 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 		this.vmEntityVO.setComputeTags(computeTags);
 		this.vmEntityVO.setRootDiskTags(rootDiskTags);
 		this.vmEntityVO.setNetworkIds(networks);
-		
+
 		manager.saveVirtualMachine(vmEntityVO);
 	}
 	
@@ -204,8 +205,8 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
 	}
 
 	@Override
-	public void deploy(String reservationId, String caller) throws InsufficientCapacityException, ResourceUnavailableException{
-	    manager.deployVirtualMachine(reservationId, caller);
+	public void deploy(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException{
+	    manager.deployVirtualMachine(reservationId, caller, params);
 	}
 
 	@Override

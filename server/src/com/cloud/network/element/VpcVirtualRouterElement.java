@@ -446,7 +446,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         Long vpcId = ip.getVpcId();
         Vpc vpc = _vpcMgr.getVpc(vpcId);
 
-        if (!_vpcMgr.vpcProviderEnabledInZone(vpc.getZoneId())) {
+        if (!_vpcMgr.vpcProviderEnabledInZone(vpc.getZoneId(), Provider.VPCVirtualRouter.getName())) {
             throw new ResourceUnavailableException("VPC provider is not enabled in zone " + vpc.getZoneId(),
                     DataCenter.class, vpc.getZoneId());
         }
@@ -474,7 +474,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         Long vpcId = ip.getVpcId();
         Vpc vpc = _vpcMgr.getVpc(vpcId);
 
-        if (!_vpcMgr.vpcProviderEnabledInZone(vpc.getZoneId())) {
+        if (!_vpcMgr.vpcProviderEnabledInZone(vpc.getZoneId(), Provider.VPCVirtualRouter.getName())) {
             throw new ResourceUnavailableException("VPC provider is not enabled in zone " + vpc.getZoneId(),
                     DataCenter.class, vpc.getZoneId());
         }

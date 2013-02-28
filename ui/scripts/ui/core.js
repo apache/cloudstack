@@ -135,6 +135,8 @@
                 .html(_l('label.default.view'))
                 .prepend(
                   $('<span>').addClass('icon').html('&nbsp;')
+
+
                 )
             )
             .append(
@@ -355,6 +357,8 @@
 
     // Hide logo conditionally
     if (!args.hasLogo) $('#header, #header .controls').addClass('nologo');
+    
+    $(window).trigger('cloudStack.ready');
 
     return this;
   };

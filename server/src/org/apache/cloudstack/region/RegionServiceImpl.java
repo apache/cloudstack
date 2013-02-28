@@ -57,7 +57,7 @@ import com.cloud.utils.component.ManagerBase;
 @Local(value = { RegionService.class })
 public class RegionServiceImpl extends ManagerBase implements RegionService, Manager {
     public static final Logger s_logger = Logger.getLogger(RegionServiceImpl.class);
-    
+
     @Inject
     private RegionDao _regionDao;
     @Inject
@@ -72,15 +72,15 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
     private AccountManager _accountMgr;
     @Inject
     private DomainManager _domainMgr;
-    
+
     private String _name;
-    
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
         return true;
     }
-    
+
     @Override
     public boolean start() {
         return true;
@@ -99,203 +99,121 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
     /**
      * {@inheritDoc}
      */    
-	@Override
-	public Region addRegion(int id, String name, String endPoint, String apiKey, String secretKey) {
-		//Check for valid Name
-		//Check valid end_point url
-		return _regionMgr.addRegion(id, name, endPoint, apiKey, secretKey);
-	}
-
-    /**
-     * {@inheritDoc}
-     */ 
-	@Override
-	public Region updateRegion(int id, String name, String endPoint, String apiKey, String secretKey) {
-		//Check for valid Name
-		//Check valid end_point url		
-		return _regionMgr.updateRegion(id, name, endPoint, apiKey, secretKey);
-	}
-
-    /**
-     * {@inheritDoc}
-     */ 
-	@Override
-	public boolean removeRegion(int id) {
-		return _regionMgr.removeRegion(id);
-	}
-
-    /**
-     * {@inheritDoc}
-     */ 
-	@Override
-	public List<? extends Region> listRegions(ListRegionsCmd cmd) {
-		return _regionMgr.listRegions(cmd.getId(), cmd.getName());
-	}
-
-    /**
-     * {@inheritDoc}
-     */ 
-	@Override
-	public boolean deleteUserAccount(DeleteAccountCmd cmd) {
-        boolean result = false;
-        if(checkIsPropagate(cmd.getIsPropagate())){
-        	result = _accountMgr.deleteUserAccount(cmd.getId());
-        } else {
-        	result = _regionMgr.deleteUserAccount(cmd.getId());
-        }
-		return result;
-	}
-	
-    /**
-     * {@inheritDoc}
-     */ 	
-	@Override
-	public Account updateAccount(UpdateAccountCmd cmd) {
-    	Account result = null;
-    	if(checkIsPropagate(cmd.getIsPropagate())){
-    		result = _accountMgr.updateAccount(cmd);
-        } else {
-        	result = _regionMgr.updateAccount(cmd);
-        }
-		
-		return result;
-	}
-
-    /**
-     * {@inheritDoc}
-     */ 
-	@Override
-	public Account disableAccount(DisableAccountCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException {
-    	Account result = null;
-    	if(checkIsPropagate(cmd.getIsPropagate())){
-    		if(cmd.getLockRequested())
-    			result = _accountMgr.lockAccount(cmd.getAccountName(), cmd.getDomainId(), cmd.getId());
-    		else
-    			result = _accountMgr.disableAccount(cmd.getAccountName(), cmd.getDomainId(), cmd.getId());
-    	} else {
-    		result = _regionMgr.disableAccount(cmd.getAccountName(), cmd.getDomainId(), cmd.getId(), cmd.getLockRequested());
-    	}
-		return result;
-	}
-
-    /**
-     * {@inheritDoc}
-     */ 	
-	@Override
-	public Account enableAccount(EnableAccountCmd cmd) {
-    	Account result = null;
-    	if(checkIsPropagate(cmd.getIsPropagate())){
-    		result = _accountMgr.enableAccount(cmd.getAccountName(), cmd.getDomainId(), cmd.getId());
-    	} else {
-    		result = _regionMgr.enableAccount(cmd.getAccountName(), cmd.getDomainId(), cmd.getId());
-    	}
-		return result;
-	}
-
-    /**
-     * {@inheritDoc}
-     */ 
-	@Override
-	public boolean deleteUser(DeleteUserCmd cmd) {
-        boolean result = false;
-        if(checkIsPropagate(cmd.getIsPropagate())){
-        	result = _accountMgr.deleteUser(cmd);
-        } else {
-        	result = _regionMgr.deleteUser(cmd);
-        }		
-		return result;
-	}
-	
-    /**
-     * {@inheritDoc}
-     */ 	
-	@Override
-	public Domain updateDomain(UpdateDomainCmd cmd) {
-        Domain domain = null;
-        if(checkIsPropagate(cmd.getIsPropagate())){
-        	domain = _domainMgr.updateDomain(cmd);
-        } else {
-        	domain = _regionMgr.updateDomain(cmd);
-        }		
-		return domain;
-	}	
-
-    /**
-     * {@inheritDoc}
-     */ 
-	@Override
-	public boolean deleteDomain(DeleteDomainCmd cmd) {
-		boolean result = false;
-		if(checkIsPropagate(cmd.isPropagate())){
-			result = _domainMgr.deleteDomain(cmd.getId(), cmd.getCleanup());
-		} else {
-			result = _regionMgr.deleteDomain(cmd.getId(), cmd.getCleanup());
-		}
-		return result;
-	}
-
-    /**
-     * {@inheritDoc}
-     */ 	
-	@Override
-	public UserAccount updateUser(UpdateUserCmd cmd){
-        UserAccount user = null;
-        if(checkIsPropagate(cmd.getIsPropagate())){
-        	user = _accountMgr.updateUser(cmd);
-        } else {
-        	user = _regionMgr.updateUser(cmd);
-        }		
-		return user;
-	}
-
-    /**
-     * {@inheritDoc}
-     */ 
-	@Override
-	public UserAccount disableUser(DisableUserCmd cmd) {
-        UserAccount user = null;
-        if(checkIsPropagate(cmd.getIsPropagate())){
-    		user = _accountMgr.disableUser(cmd.getId());
-        } else {
-        	user = _regionMgr.disableUser(cmd.getId());
-        }
-		return user;
-	}
-
-    /**
-     * {@inheritDoc}
-     */ 
-	@Override
-	public UserAccount enableUser(EnableUserCmd cmd) {
-		UserAccount user = null;
-		if(checkIsPropagate(cmd.getIsPropagate())){
-			user = _accountMgr.enableUser(cmd.getId());
-		} else {
-			user = _regionMgr.enableUser(cmd.getId());
-		}		
-		return user;
-	}
-	
-    private boolean isRootAdmin(short accountType) {
-        return (accountType == Account.ACCOUNT_TYPE_ADMIN);
+    @Override
+    public Region addRegion(int id, String name, String endPoint, String apiKey, String secretKey) {
+        //Check for valid Name
+        //Check valid end_point url
+        return _regionMgr.addRegion(id, name, endPoint, apiKey, secretKey);
     }
-    
+
     /**
-     * Check isPopagate flag, Only ROOT Admin can use this param
-     * @param isPopagate
-     * @return
+     * {@inheritDoc}
+     */ 
+    @Override
+    public Region updateRegion(int id, String name, String endPoint, String apiKey, String secretKey) {
+        //Check for valid Name
+        //Check valid end_point url
+        return _regionMgr.updateRegion(id, name, endPoint, apiKey, secretKey);
+    }
+
+    /**
+     * {@inheritDoc}
+     */ 
+    @Override
+    public boolean removeRegion(int id) {
+        return _regionMgr.removeRegion(id);
+    }
+
+    /**
+     * {@inheritDoc}
+     */ 
+    @Override
+    public List<? extends Region> listRegions(ListRegionsCmd cmd) {
+        return _regionMgr.listRegions(cmd.getId(), cmd.getName());
+    }
+
+    /**
+     * {@inheritDoc}
+     */ 
+    @Override
+    public boolean deleteUserAccount(DeleteAccountCmd cmd) {
+        return _accountMgr.deleteUserAccount(cmd.getId());
+    }
+
+    /**
+     * {@inheritDoc}
      */
-    private boolean checkIsPropagate(Boolean isPopagate){
-    	if(isPopagate == null || !isPopagate){
-    		return false;
-    	}
-		// Only Admin can use isPopagate flag
-    	UserContext ctx = UserContext.current();
-    	Account caller = ctx.getCaller();
-    	if(!isRootAdmin(caller.getType())){
-    		throw new PermissionDeniedException("isPropagate param cannot be used by non ROOT Admin");
-    	}          	
-    	return true;
+    @Override
+    public Account updateAccount(UpdateAccountCmd cmd) {
+        return _accountMgr.updateAccount(cmd);
     }
 
+    /**
+     * {@inheritDoc}
+     */ 
+    @Override
+    public Account disableAccount(DisableAccountCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException {
+        Account result = null;
+        if(cmd.getLockRequested())
+            result = _accountMgr.lockAccount(cmd.getAccountName(), cmd.getDomainId(), cmd.getId());
+        else
+            result = _accountMgr.disableAccount(cmd.getAccountName(), cmd.getDomainId(), cmd.getId());
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Account enableAccount(EnableAccountCmd cmd) {
+        return _accountMgr.enableAccount(cmd.getAccountName(), cmd.getDomainId(), cmd.getId());
+    }
+
+    /**
+     * {@inheritDoc}
+     */ 
+    @Override
+    public boolean deleteUser(DeleteUserCmd cmd) {
+        return _accountMgr.deleteUser(cmd);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Domain updateDomain(UpdateDomainCmd cmd) {
+        return _domainMgr.updateDomain(cmd);
+    }
+
+    /**
+     * {@inheritDoc}
+     */ 
+    @Override
+    public boolean deleteDomain(DeleteDomainCmd cmd) {
+        return _domainMgr.deleteDomain(cmd.getId(), cmd.getCleanup());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public UserAccount updateUser(UpdateUserCmd cmd){
+        return _accountMgr.updateUser(cmd);
+    }
+
+    /**
+     * {@inheritDoc}
+     */ 
+    @Override
+    public UserAccount disableUser(DisableUserCmd cmd) {
+        return _accountMgr.disableUser(cmd.getId());
+    }
+
+    /**
+     * {@inheritDoc}
+     */ 
+    @Override
+    public UserAccount enableUser(EnableUserCmd cmd) {
+        return _accountMgr.enableUser(cmd.getId());
+    }
 }

@@ -305,10 +305,17 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             }
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
+                Long capacityPodId = null;
+                Long capacityClusterId = null;
+
+                if(level != 1 && rs.getLong(6) != 0)
+                    capacityPodId = rs.getLong(6);
+                if(level == 3 && rs.getLong(7) != 0)
+                    capacityClusterId = rs.getLong(7);                   
+
                 SummedCapacity summedCapacity = new SummedCapacity( rs.getLong(1), rs.getLong(2), rs.getFloat(3),
                         (short)rs.getLong(4), rs.getLong(5),
-                        level != 1 ? rs.getLong(6): null,
-                                level == 3 ? rs.getLong(7): null);
+                        capacityPodId, capacityClusterId);
 
                 result.add(summedCapacity);
             }

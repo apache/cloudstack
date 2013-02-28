@@ -58,9 +58,6 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.LOCK, type=CommandType.BOOLEAN, required=true, description="If true, only lock the account; else disable the account")
     private Boolean lockRequested;
 
-    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
-    private Boolean isPropagate;
-    
     @Inject RegionService _regionService;
     
     /////////////////////////////////////////////////////
@@ -79,14 +76,10 @@ public class DisableAccountCmd extends BaseAsyncCmd {
         return domainId;
     }
 
-	public Boolean getIsPropagate() {
-		return isPropagate;
-	}
-
     public Boolean getLockRequested() {
-		return lockRequested;
-	}
-	
+        return lockRequested;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -124,7 +117,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException{
         UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
-    	Account result = _regionService.disableAccount(this);
+        Account result = _regionService.disableAccount(this);
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getCommandName());

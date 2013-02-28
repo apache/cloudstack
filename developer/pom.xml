@@ -183,6 +183,10 @@
                   <key>catalina.home</key>
                   <value>${project.parent.basedir}/utils</value>
                 </systemProperty>
+                <systemProperty>
+                  <key>paths.script</key>
+                  <value>${basedir}/target/db</value>
+                </systemProperty>
               </systemProperties>
             </configuration>
           </plugin>

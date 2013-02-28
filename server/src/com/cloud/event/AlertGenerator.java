@@ -22,16 +22,17 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.server.ManagementServer;
-import org.apache.cloudstack.framework.events.*;
+import com.cloud.utils.component.ComponentContext;
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
-
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class AlertGenerator {
@@ -39,13 +40,11 @@ public class AlertGenerator {
     private static final Logger s_logger = Logger.getLogger(AlertGenerator.class);
     private static DataCenterDao _dcDao;
     private static HostPodDao _podDao;
-
-    // get the event bus provider if configured
     protected static EventBus _eventBus = null;
 
     @Inject DataCenterDao dcDao;
     @Inject HostPodDao podDao;
-    
+
     public AlertGenerator() {
     }
     
@@ -56,8 +55,10 @@ public class AlertGenerator {
     }
     
     public static void publishAlertOnEventBus(String alertType, long dataCenterId, Long podId, String subject, String body) {
-        if (_eventBus == null) {
-            return; // no provider is configured to provider events bus, so just return
+        try {
+            _eventBus = ComponentContext.getComponent(EventBus.class);
+        } catch(NoSuchBeanDefinitionException nbe) {
+            return; // no provider is configured to provide events bus, so just return
         }
 
         org.apache.cloudstack.framework.events.Event event =
