@@ -16,11 +16,13 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.DVPortgroupConfigSpec;
-import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.ManagedObjectReference;
 
 public class DistributedVirtualSwitchMO extends BaseMO {
@@ -35,13 +37,13 @@ public class DistributedVirtualSwitchMO extends BaseMO {
     }
 
     public void createDVPortGroup(DVPortgroupConfigSpec dvPortGroupSpec) throws Exception {
-        DVPortgroupConfigSpec[] dvPortGroupSpecArray = new DVPortgroupConfigSpec[1];
-        dvPortGroupSpecArray[0] = dvPortGroupSpec;
-        _context.getService().addDVPortgroup_Task(_mor, dvPortGroupSpecArray);
+        List<DVPortgroupConfigSpec> dvPortGroupSpecArray = new ArrayList<DVPortgroupConfigSpec>();
+        dvPortGroupSpecArray.add(dvPortGroupSpec);
+        _context.getService().addDVPortgroupTask(_mor, dvPortGroupSpecArray);
     }
 
     public void updateDvPortGroup(ManagedObjectReference dvPortGroupMor, DVPortgroupConfigSpec dvPortGroupSpec) throws Exception {
         // TODO(sateesh): Update numPorts
-        _context.getService().reconfigureDVPortgroup_Task(dvPortGroupMor, dvPortGroupSpec);
+        _context.getService().reconfigureDVPortgroupTask(dvPortGroupMor, dvPortGroupSpec);
     }
 }

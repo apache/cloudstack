@@ -540,4 +540,20 @@ public class VmwareClient {
         }
         return null;
     }
+
+    /**
+     * Get a MORef from the property returned.
+     *
+     * @param objMor Object to get a reference property from
+     * @param propName name of the property that is the MORef
+     * @return the ManagedObjectReference for that property.
+     */
+    public ManagedObjectReference getMoRefProp(ManagedObjectReference objMor, String propName) throws Exception {
+       Object props = getDynamicProperty(objMor, propName);
+       ManagedObjectReference propmor = null;
+       if (!props.getClass().isArray()) {
+          propmor = (ManagedObjectReference)props;
+       }
+       return propmor;
+    }
 }
