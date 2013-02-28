@@ -51,13 +51,13 @@ rm -fr dist
 mkdir dist
 
 # Export for Xen
-vboxmange internalcommands converttoraw $hdd_path dist/raw.img
+vboxmanage internalcommands converttoraw $hdd_path dist/raw.img
 vhd-util convert -s 0 -t 1 -i dist/raw.img  -o dist/$appliance-$build_date-$branch-xen.vhd
 bzip2 dist/$appliance-$build_date-$branch-xen.vhd
 echo "$appliance exported for Xen: dist/$appliance-$build_date-$branch-xen.vhd.bz2"
 
 # Export for KVM
-vboxmange internalcommands converttoraw $hdd_path dist/raw.img
+vboxmanage internalcommands converttoraw $hdd_path dist/raw.img
 qemu-img convert -f raw -O qcow2 dist/raw.img dist/$appliance-$build_date-$branch-kvm.qcow2
 rm dist/raw.img
 bzip2 dist/$appliance-$build_date-$branch-kvm.qcow2
