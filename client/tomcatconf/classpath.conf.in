@@ -16,11 +16,23 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# We use WEB-INF/lib in the webapp for including things into
-# the classpath nowdays
-
-for jar in /usr/share/tomcat6/lib/*.jar; do
-    CLASSPATH=$jar:$CLASSPATH
+SYSTEMJARS="@SYSTEMJARS@"
+SCP=$(build-classpath $SYSTEMJARS 2>/dev/null) ; if [ $? != 0 ] ; then export SCP="@SYSTEMCLASSPATH@" ; fi
+MCP="@MSCLASSPATH@"
+DCP="@DEPSCLASSPATH@"
+CLASSPATH=$SCP:$DCP:$MCP:@MSCONF@:@SETUPDATADIR@
+for jarfile in "@PREMIUMJAVADIR@"/* ; do
+	if [ ! -e "$jarfile" ] ; then continue ; fi
+	CLASSPATH=$jarfile:$CLASSPATH
 done
-CLASSPATH=${CLASSPATH}/usr/share/cloudstack-management/webapps/client/WEB-INF/lib/mysql-connector-java-5.1.21.jar
+for plugin in "@PLUGINJAVADIR@"/* ; do
+	if [ ! -e "$plugin" ] ; then continue ; fi
+	CLASSPATH=$plugin:$CLASSPATH
+done
+for vendorconf in "@MSCONF@"/vendor/* ; do
+	if [ ! -d "$vendorconf" ] ; then continue ; fi
+	CLASSPATH=$vendorconf:$CLASSPATH
+done
 export CLASSPATH
+PATH=/sbin:/usr/sbin:$PATH
+export PATH
