@@ -37,6 +37,10 @@
 
               if (region.id == activeRegionID) {
                 $li.addClass('active');
+
+                $regionSwitcherButton.find('.title')
+                  .html(_s(region.name))
+                  .attr('title', _s(region.name));
               }
               
               $regionList.append($li);
@@ -62,7 +66,8 @@
     var $regionSwitcherButton = $('<div>').addClass('region-switcher')
     .attr('title', 'Select region')
     .append(
-      $('<span>').addClass('icon').html('&nbsp;')
+      $('<span>').addClass('icon').html('&nbsp;'),
+      $('<span>').addClass('title').html('')
     );
 
     var closeRegionSelector = function(args) {
@@ -72,7 +77,6 @@
     };
 
     var switchRegion = function(url) {
-
       closeRegionSelector({
         complete: function() {
           $('#container').prepend($('<div>').addClass('loading-overlay'));
