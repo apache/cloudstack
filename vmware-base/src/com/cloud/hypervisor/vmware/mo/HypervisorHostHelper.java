@@ -868,6 +868,7 @@ public class HypervisorHostHelper {
 			s_logger.error(msg);
 			throw new Exception(msg);
 		}
+        boolean importSuccess = true;
 		final HttpNfcLeaseMO leaseMo = new HttpNfcLeaseMO(context, morLease);
 		HttpNfcLeaseState state = leaseMo.waitState(
 			new HttpNfcLeaseState[] { HttpNfcLeaseState.ready, HttpNfcLeaseState.error });
@@ -901,13 +902,25 @@ public class HypervisorHostHelper {
 		        			 }  
 			        	 }  
 			        }
-		        } finally {
+                } catch (Exception e) {
+                    s_logger.error("Failed to complete file upload task. " + e.getMessage());
+                    // Set flag to cleanup the stale template left due to failed import operation, if any
+                    importSuccess = false;
+                    throw e;
+                } finally {
 		        	progressReporter.close();
 		        }
-		        leaseMo.updateLeaseProgress(100);
+                if (bytesAlreadyWritten == totalBytes) {
+                    leaseMo.updateLeaseProgress(100);
+                }
 			}
 		} finally {
-			leaseMo.completeLease();
+            if (!importSuccess) {
+                s_logger.error("Aborting the lease on " + vmName + " after import operation failed.");
+                leaseMo.abortLease();
+            } else {
+                leaseMo.completeLease();
+            }
 		}
 	}
 }
