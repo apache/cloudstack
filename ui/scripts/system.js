@@ -7531,7 +7531,8 @@
                      label:'Override Public-Traffic',
                      isBoolean:true,
                      isHidden:true,
-                     isChecked:false
+                     isChecked:false,
+                     docID:'helpOverridePublicNetwork'
 
                   },
 
@@ -7593,7 +7594,9 @@
                      label:'Override Guest-Traffic',
                      isBoolean:true,
                      isHidden:true,
-                     isChecked:false
+                     isChecked:false,
+                     docID:'helpOverrideGuestNetwork'
+
                   },
 
 
