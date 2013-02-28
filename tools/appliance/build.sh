@@ -47,9 +47,8 @@ hdd_path=`vboxmanage list hdds | grep $appliance | grep vdi | cut -c 14-`
 vboxmanage modifyhd $hdd_uuid --compact
 
 # Start exporting
-rm -fr dist
+rm -fr dist *.ova *.vhd *.vdi *.qcow* *.bz2
 mkdir dist
-cd dist
 
 # Export for Xen
 vboxmanage internalcommands converttoraw "$hdd_path" raw.img
@@ -72,4 +71,6 @@ echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware
 vboxmanage clonehd $hdd_uuid $appliance-$build_date-$branch-hyperv.vhd --format VHD
 bzip2 $appliance-$build_date-$branch-hyperv.vhd
 echo "$appliance exported for HyperV: dist/$appliance-$build_date-$branch-hyperv.vhd.bz2"
+
+mv *.bz2 *.ova dist/
 
