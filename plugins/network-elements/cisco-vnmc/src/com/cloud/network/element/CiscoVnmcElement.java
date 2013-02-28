@@ -104,6 +104,7 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
@@ -514,8 +515,33 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
     @Override
     public boolean deleteCiscoVnmcResource(DeleteCiscoVnmcResourceCmd cmd) {
-        // TODO Auto-generated method stub
-        return false;
+        Long vnmcResourceId = cmd.getCiscoVnmcResourceId();
+        CiscoVnmcControllerVO vnmcResource = _ciscoVnmcDao.findById(vnmcResourceId);
+        if (vnmcResource == null) {
+            throw new InvalidParameterValueException(
+                    "Could not find a Cisco VNMC appliance with id " + vnmcResourceId);
+        }
+
+        // Check if there any ASA 1000v appliances
+        Long physicalNetworkId = vnmcResource.getPhysicalNetworkId();
+        PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+        if (physicalNetwork != null) {
+            List<CiscoAsa1000vDeviceVO> responseList = _ciscoAsa1000vDao.listByPhysicalNetwork(physicalNetworkId);
+            if (responseList.size() > 0) {
+                throw new CloudRuntimeException(
+                        "Cisco VNMC appliance with id " + vnmcResourceId +
+                        " cannot be deleted as there Cisco ASA 1000v appliances using it");
+            }
+        }
+
+        HostVO vnmcHost = _hostDao.findById(vnmcResource.getHostId());
+        Long hostId = vnmcHost.getId();
+        vnmcHost.setResourceState(ResourceState.Maintenance);
+        _hostDao.update(hostId, vnmcHost);
+        _resourceMgr.deleteHost(hostId, false, false);
+        _ciscoVnmcDao.remove(vnmcResourceId);
+
+        return true;
     }
 
 
@@ -768,7 +794,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
         ciscoAsa1000vResource = new CiscoAsa1000vDeviceVO(physicalNetworkId, cmd.getManagementIp(), cmd.getInPortProfile(), cmd.getClusterId());
         _ciscoAsa1000vDao.persist((CiscoAsa1000vDeviceVO)ciscoAsa1000vResource);
-                
+
         return ciscoAsa1000vResource;
     }
 
@@ -791,8 +817,23 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     @Override
     public boolean deleteCiscoAsa1000vResource(
             DeleteCiscoAsa1000vResourceCmd cmd) {
-        // TODO Auto-generated method stub
-        return false;
+        Long asaResourceId = cmd.getCiscoAsa1000vResourceId();
+        CiscoAsa1000vDeviceVO asaResource = _ciscoAsa1000vDao.findById(asaResourceId);
+        if (asaResource == null) {
+            throw new InvalidParameterValueException(
+                    "Could not find a Cisco ASA 1000v appliance with id " + asaResourceId);
+        }
+
+        NetworkAsa1000vMapVO networkAsaMap = _networkAsa1000vMapDao.findByAsa1000vId(asaResource.getId());
+        if (networkAsaMap != null) {
+            throw new CloudRuntimeException(
+                    "Cisco ASA 1000v appliance with id " + asaResourceId +
+                    " cannot be deleted as it is associated with guest network");
+        }
+
+        _ciscoAsa1000vDao.remove(asaResourceId);
+
+        return true;
     }
 
     @Override
