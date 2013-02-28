@@ -3665,4 +3665,14 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         return response;
     }
+
+    @Override
+    public Long getAffinityGroupId(String groupName, long accountId) {
+        AffinityGroup ag = ApiDBUtils.getAffinityGroup(groupName, accountId);
+        if (ag == null) {
+            return null;
+        } else {
+            return ag.getId();
+        }
+    }
 }

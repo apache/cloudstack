@@ -25,6 +25,8 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.AccountResponse;
@@ -230,7 +232,7 @@ public class ApiDBUtils {
     static NetworkModel _networkModel;
     static NetworkManager _networkMgr;
     static TemplateManager _templateMgr;
-    
+
     static StatsCollector _statsCollector;
 
     static AccountDao _accountDao;
@@ -324,6 +326,7 @@ public class ApiDBUtils {
     static VMSnapshotDao _vmSnapshotDao;
     static ClusterDetailsDao _clusterDetailsDao;
     static NicSecondaryIpDao _nicSecondaryIpDao;
+    static AffinityGroupDao _affinityGroupDao;
 
     @Inject private ManagementServer ms;
     @Inject public AsyncJobManager asyncMgr;
@@ -427,6 +430,8 @@ public class ApiDBUtils {
     @Inject private ClusterDetailsDao clusterDetailsDao;
     @Inject private VMSnapshotDao vmSnapshotDao;
     @Inject private NicSecondaryIpDao nicSecondaryIpDao;
+    @Inject private AffinityGroupDao affinityGroupDao;
+
     @PostConstruct
     void init() {
         _ms = ms;
@@ -528,6 +533,7 @@ public class ApiDBUtils {
         _clusterDetailsDao = clusterDetailsDao;
         _vmSnapshotDao = vmSnapshotDao;
         _nicSecondaryIpDao = nicSecondaryIpDao;
+        _affinityGroupDao = affinityGroupDao;
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
     }
@@ -1522,7 +1528,7 @@ public class ApiDBUtils {
    public static DataCenterJoinVO newDataCenterView(DataCenter dc){
        return _dcJoinDao.newDataCenterView(dc);
    }
-   
+
    public static Map<String, String> findHostDetailsById(long hostId){
 	   return _hostDetailsDao.findDetails(hostId);
    }
@@ -1530,4 +1536,8 @@ public class ApiDBUtils {
    public static List<NicSecondaryIpVO> findNicSecondaryIps(long nicId) {
        return _nicSecondaryIpDao.listByNicId(nicId);
    }
+
+    public static AffinityGroup getAffinityGroup(String groupName, long accountId) {
+        return _affinityGroupDao.findByAccountAndName(accountId, groupName);
+    }
 }
