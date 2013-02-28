@@ -5,15 +5,16 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
-//
+// 
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+// 
 package com.cloud.ucs.manager;
 
 import org.apache.commons.httpclient.HttpClient;
@@ -39,7 +40,12 @@ public class UcsHttpClient {
             if (result != 200) {
                throw new CloudRuntimeException("Call failed: " + post.getResponseBodyAsString()); 
             }
-            return post.getResponseBodyAsString();
+            String res = post.getResponseBodyAsString();
+            if (res.contains("errorCode")) {
+                String err = String.format("ucs call failed:\nsubmitted doc:%s\nresponse:%s\n", xml, res);
+                throw new CloudRuntimeException(err);
+            }
+            return res;
         } catch (Exception e) {
             throw new CloudRuntimeException(e.getMessage(), e);
         } finally {
