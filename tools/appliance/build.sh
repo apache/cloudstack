@@ -49,26 +49,27 @@ vboxmanage modifyhd $hdd_uuid --compact
 # Start exporting
 rm -fr dist
 mkdir dist
+cd dist
 
 # Export for Xen
-vboxmanage internalcommands converttoraw $hdd_path dist/raw.img
-vhd-util convert -s 0 -t 1 -i dist/raw.img  -o dist/$appliance-$build_date-$branch-xen.vhd
-bzip2 dist/$appliance-$build_date-$branch-xen.vhd
+vboxmanage internalcommands converttoraw "$hdd_path" raw.img
+vhd-util convert -s 0 -t 1 -i raw.img -o $appliance-$build_date-$branch-xen.vhd
+bzip2 $appliance-$build_date-$branch-xen.vhd
 echo "$appliance exported for Xen: dist/$appliance-$build_date-$branch-xen.vhd.bz2"
 
 # Export for KVM
-vboxmanage internalcommands converttoraw $hdd_path dist/raw.img
-qemu-img convert -f raw -O qcow2 dist/raw.img dist/$appliance-$build_date-$branch-kvm.qcow2
-rm dist/raw.img
-bzip2 dist/$appliance-$build_date-$branch-kvm.qcow2
+vboxmanage internalcommands converttoraw "$hdd_path" raw.img
+qemu-img convert -f raw -O qcow2 raw.img $appliance-$build_date-$branch-kvm.qcow2
+rm raw.img
+bzip2 $appliance-$build_date-$branch-kvm.qcow2
 echo "$appliance exported for KVM: dist/$appliance-$build_date-$branch-kvm.qcow2.bz2"
 
 # Export for VMWare vSphere
-vboxmanage export $machine_uuid --output dist/$appliance-$build_date-$branch-vmware.ova
+vboxmanage export $machine_uuid --output $appliance-$build_date-$branch-vmware.ova
 echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware.ova"
 
 # Export for HyperV
-vboxmanage clonehd $hdd_uuid dist/$appliance-$build_date-$branch-hyperv.vhd --format VHD
-bzip2 dist/$appliance-$build_date-$branch-hyperv.vhd
+vboxmanage clonehd $hdd_uuid $appliance-$build_date-$branch-hyperv.vhd --format VHD
+bzip2 $appliance-$build_date-$branch-hyperv.vhd
 echo "$appliance exported for HyperV: dist/$appliance-$build_date-$branch-hyperv.vhd.bz2"
 
