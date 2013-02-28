@@ -66,6 +66,9 @@ public class CloudOrchestrator implements OrchestrationService {
 	@Inject
 	private VMEntityManager vmEntityManager;
 
+    @Inject
+    private VirtualMachineEntityFactory _vmEntityFactory;
+
 	@Inject
 	private VirtualMachineManager _itMgr;
 	
