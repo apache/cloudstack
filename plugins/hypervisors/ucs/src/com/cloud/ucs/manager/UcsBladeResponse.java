@@ -21,6 +21,9 @@ public class UcsBladeResponse extends BaseResponse {
     @SerializedName(ApiConstants.UCS_BLADE_DN)
     @Param(description = "ucs blade dn")
     private String dn;
+    @SerializedName(ApiConstants.UCS_PROFILE_DN)
+    @Param(description = "associated ucs profile dn")
+    private String associatedProfileDn;
 
     public String getId() {
         return id;
@@ -53,4 +56,13 @@ public class UcsBladeResponse extends BaseResponse {
     public void setDn(String dn) {
         this.dn = dn;
     }
+
+    public String getAssociatedProfileDn() {
+        return associatedProfileDn;
+    }
+
+    public void setAssociatedProfileDn(String associatedProfileDn) {
+        this.associatedProfileDn = associatedProfileDn;
+    }
+    
 }

@@ -5,15 +5,16 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
-//
+// 
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+// 
 package com.cloud.ucs.manager;
 
 import java.io.File;
@@ -67,7 +68,6 @@ import com.cloud.utils.xmlobject.XmlObject;
 import com.cloud.utils.xmlobject.XmlObjectParser;
 
 @Local(value = { UcsManager.class })
-@Component
 public class UcsManagerImpl implements UcsManager {
     public static final Logger s_logger = Logger.getLogger(UcsManagerImpl.class);
 
@@ -155,7 +155,9 @@ public class UcsManagerImpl implements UcsManager {
                 UcsManagerVO mgrvo = ucsDao.findById(ucsMgrId);
                 UcsHttpClient client = new UcsHttpClient(mgrvo.getUrl());
                 String login = UcsCommands.loginCmd(mgrvo.getUsername(), mgrvo.getPassword());
-                cookie = client.call(login);
+                String ret = client.call(login);
+                XmlObject xo = XmlObjectParser.parseFromString(ret);
+                cookie = xo.get("outCookie");
                 cookies.put(ucsMgrId, cookie);
             }
 
@@ -206,7 +208,7 @@ public class UcsManagerImpl implements UcsManager {
         String cmd = UcsCommands.cloneProfile(cookie, srcDn, newProfileName);
         String res = client.call(cmd);
         XmlObject xo = XmlObjectParser.parseFromString(res);
-        return xo.get("lsClone.outConfig.lsServer.dn");
+        return xo.get("outConfig.lsServer.dn");
     }
 
     private boolean isProfileAssociated(Long ucsMgrId, String dn) {
@@ -216,11 +218,11 @@ public class UcsManagerImpl implements UcsManager {
         String cmd = UcsCommands.configResolveDn(cookie, dn);
         String res = client.call(cmd);
         XmlObject xo = XmlObjectParser.parseFromString(res);
-        return xo.get("outConfig.lsServer.assocState").equals("associated");
+        return xo.get("outConfig.computeBlade.association").equals("associated");
     }
 
     @Override
-    public void associateProfileToBlade(AssociateUcsProfileToBladeCmd cmd) {
+    public UcsBladeResponse associateProfileToBlade(AssociateUcsProfileToBladeCmd cmd) {
         SearchCriteriaService<UcsBladeVO, UcsBladeVO> q = SearchCriteria2.create(UcsBladeVO.class);
         q.addAnd(q.getEntity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
         q.addAnd(q.getEntity().getId(), Op.EQ, cmd.getBladeId());
@@ -259,10 +261,19 @@ public class UcsManagerImpl implements UcsManager {
             throw new CloudRuntimeException(String.format("associating profile[%s] to balde[%s] timeout after 600 seconds", pdn, bvo.getDn()));
         }
         
+        bvo.setProfileDn(pdn);
+        bladeDao.update(bvo.getId(), bvo);
+        
+        UcsBladeResponse rsp = bladeVOToResponse(bvo);
+        
         s_logger.debug(String.format("successfully associated profile[%s] to blade[%s]", pdn, bvo.getDn()));
+        return rsp;
     }
     
     private String hostIdToUuid(Long hostId) {
+        if (hostId == null) {
+            return null;
+        }
         HostVO vo = hostDao.findById(hostId);
         return vo.getUuid();
     }
@@ -298,6 +309,16 @@ public class UcsManagerImpl implements UcsManager {
         return response;
     }
     
+    private UcsBladeResponse bladeVOToResponse(UcsBladeVO vo) {
+        UcsBladeResponse rsp = new UcsBladeResponse();
+        rsp.setObjectName("ucsblade");
+        rsp.setId(vo.getUuid());
+        rsp.setDn(vo.getDn());
+        rsp.setHostId(hostIdToUuid(vo.getHostId()));
+        rsp.setUcsManagerId(ucsManagerIdToUuid(vo.getUcsManagerId()));
+        return rsp;
+    }
+    
     public ListResponse<UcsBladeResponse> listUcsBlades(ListUcsBladeCmd cmd) {
         SearchCriteriaService<UcsBladeVO, UcsBladeVO> serv = SearchCriteria2.create(UcsBladeVO.class);
         serv.addAnd(serv.getEntity().getUcsManagerId(), Op.EQ, cmd.getUcsManagerId());
@@ -305,12 +326,7 @@ public class UcsManagerImpl implements UcsManager {
         
         List<UcsBladeResponse> rsps = new ArrayList<UcsBladeResponse>(vos.size());
         for (UcsBladeVO vo : vos) {
-            UcsBladeResponse rsp = new UcsBladeResponse();
-            rsp.setObjectName("ucsblade");
-            rsp.setId(vo.getUuid());
-            rsp.setDn(vo.getDn());
-            rsp.setHostId(hostIdToUuid(vo.getHostId()));
-            rsp.setUcsManagerId(ucsManagerIdToUuid(vo.getUcsManagerId()));
+            UcsBladeResponse rsp = bladeVOToResponse(vo);
             rsps.add(rsp);
         }
         
@@ -343,5 +359,16 @@ public class UcsManagerImpl implements UcsManager {
     @Override
     public void setRunLevel(int level) {
         this.runLevel = level;
+    }
+
+    @Override
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmds = new ArrayList<Class<?>>();
+        cmds.add(ListUcsBladeCmd.class);
+        cmds.add(ListUcsManagerCmd.class);
+        cmds.add(ListUcsProfileCmd.class);
+        cmds.add(AddUcsManagerCmd.class);
+        cmds.add(AssociateUcsProfileToBladeCmd.class);
+        return cmds;
     }
 }

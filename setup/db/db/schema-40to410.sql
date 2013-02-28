@@ -1654,4 +1654,26 @@ CREATE TABLE `cloud`.`baremetal_pxe_devices` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`ucs_blade` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40) UNIQUE,
+  `ucs_manager_id` bigint unsigned NOT NULL,
+  `host_id` bigint unsigned DEFAULT NULL,
+  `dn` varchar(512) NOT NULL,
+  `profile_dn` varchar(512) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ucs_manager` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40) UNIQUE,
+  `zone_id` bigint unsigned NOT NULL,
+  `name` varchar(128) DEFAULT NULL,
+  `url` varchar(255) NOT NULL,
+  `username` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 SET foreign_key_checks = 1;
