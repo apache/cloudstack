@@ -41,6 +41,7 @@ done
 # Get appliance uuids
 machine_uuid=`vboxmanage showvminfo $appliance | grep UUID | head -1 | awk '{print $2}'`
 hdd_uuid=`vboxmanage showvminfo $appliance | grep vdi | head -1 | awk '{print $8}' | cut -d ')' -f 1`
+hdd_path=`vboxmanage list hdds | grep $appliance | grep vdi | cut -c 14-`
 
 # Compact the virtual hdd
 vboxmanage modifyhd $hdd_uuid --compact
@@ -48,6 +49,19 @@ vboxmanage modifyhd $hdd_uuid --compact
 # Start exporting
 rm -fr dist
 mkdir dist
+
+# Export for Xen
+vboxmange internalcommands converttoraw $hdd_path dist/raw.img
+vhd-util convert -s 0 -t 1 -i dist/raw.img  -o dist/$appliance-$build_date-$branch-xen.vhd
+bzip2 dist/$appliance-$build_date-$branch-xen.vhd
+echo "$appliance exported for Xen: dist/$appliance-$build_date-$branch-xen.vhd.bz2"
+
+# Export for KVM
+vboxmange internalcommands converttoraw $hdd_path dist/raw.img
+qemu-img convert -f raw -O qcow2 dist/raw.img dist/$appliance-$build_date-$branch-kvm.qcow2
+rm dist/raw.img
+bzip2 dist/$appliance-$build_date-$branch-kvm.qcow2
+echo "$appliance exported for KVM: dist/$appliance-$build_date-$branch-kvm.qcow2.bz2"
 
 # Export for VMWare vSphere
 vboxmanage export $machine_uuid --output dist/$appliance-$build_date-$branch-vmware.ova
@@ -57,16 +71,4 @@ echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware
 vboxmanage clonehd $hdd_uuid dist/$appliance-$build_date-$branch-hyperv.vhd --format VHD
 bzip2 dist/$appliance-$build_date-$branch-hyperv.vhd
 echo "$appliance exported for HyperV: dist/$appliance-$build_date-$branch-hyperv.vhd.bz2"
-
-# Export for KVM
-vboxmanage clonehd $hdd_uuid dist/raw.img --format RAW
-qemu-img convert -f raw -O qcow2 dist/raw.img dist/$appliance-$build_date-$branch-kvm.qcow2
-bzip2 dist/$appliance-$build_date-$branch-kvm.qcow2
-echo "$appliance exported for KVM: dist/$appliance-$build_date-$branch-kvm.qcow2.bz2"
-
-# Export for Xen
-# This will be an overwrite convert so, do it at the end
-vhd-util convert -s 0 -t 1 -i dist/raw.img  -o dist/$appliance-$build_date-$branch-xen.vhd
-bzip2 dist/$appliance-$build_date-$branch-xen.vhd
-echo "$appliance exported for Xen: dist/$appliance-$build_date-$branch-xen.vhd.bz2"
 
