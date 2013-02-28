@@ -344,14 +344,24 @@
             label: 'label.name', validation: { required: true },
             desc: 'message.tooltip.zone.name'
           },
-          dns1: {
-            label: 'label.dns.1', validation: { required: true },
+          ip4dns1: {
+            label: 'IPv4 DNS1', validation: { required: true },
             desc: 'message.tooltip.dns.1'
           },
-          dns2: {
-            label: 'label.dns.2',
+          ip4dns2: {
+            label: 'IPv4 DNS2',
             desc: 'message.tooltip.dns.2'
           },
+                    
+          ip6dns1: {
+            label: 'IPv6 DNS1', 
+            desc: 'message.tooltip.dns.1'
+          },
+          ip6dns2: {
+            label: 'IPv6 DNS2',
+            desc: 'message.tooltip.dns.2'
+          },      
+          
           internaldns1: {
             label: 'label.internal.dns.1', validation: { required: true },
             desc: 'message.tooltip.internal.dns.1'
@@ -1494,11 +1504,19 @@
           if (args.data.zone.localstorageenabled == 'on') {
             array1.push("&localstorageenabled=true");
           }
-          array1.push("&dns1=" + todb(args.data.zone.dns1));
-
-          var dns2 = args.data.zone.dns2;
-          if (dns2 != null && dns2.length > 0)
-            array1.push("&dns2=" + todb(dns2));
+                    
+          //IPv4
+          if (args.data.zone.ip4dns1 != null && args.data.zone.ip4dns1.length > 0)
+            array1.push("&dns1=" + todb(args.data.zone.ip4dns1));          
+          if (args.data.zone.ip4dns2 != null && args.data.zone.ip4dns2.length > 0)
+            array1.push("&dns2=" + todb(args.data.zone.ip4dns2));
+          
+          //IPv6
+          if (args.data.zone.ip6dns1 != null && args.data.zone.ip6dns1.length > 0)
+            array1.push("&ip6dns1=" + todb(args.data.zone.ip6dns1));          
+          if (args.data.zone.ip6dns2 != null && args.data.zone.ip6dns2.length > 0)
+            array1.push("&ip6dns2=" + todb(args.data.zone.ip6dns2));
+          
 
           array1.push("&internaldns1="+todb(args.data.zone.internaldns1));
 
