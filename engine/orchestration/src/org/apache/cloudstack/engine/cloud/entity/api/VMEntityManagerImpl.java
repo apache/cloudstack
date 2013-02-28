@@ -58,6 +58,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -188,7 +189,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
     }
 
     @Override
-    public void deployVirtualMachine(String reservationId, String caller) throws InsufficientCapacityException, ResourceUnavailableException{
+    public void deployVirtualMachine(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException{
         //grab the VM Id and destination using the reservationId.
         
         VMReservationVO vmReservation = _reservationDao.findByReservationId(reservationId);
@@ -208,7 +209,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vmReservation.getPodId(), vmReservation.getClusterId(),
                 vmReservation.getHostId(), poolId , null);
         
-        VMInstanceVO vmDeployed = _itMgr.start(vm, null, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()), plan);
+        VMInstanceVO vmDeployed = _itMgr.start(vm, params, _userDao.findById(new Long(caller)), _accountDao.findById(vm.getAccountId()), plan);
         
     }
 

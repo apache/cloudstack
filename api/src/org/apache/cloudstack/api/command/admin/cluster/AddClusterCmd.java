@@ -91,6 +91,34 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.MEMORY_OVERCOMMIT_RATIO, type = CommandType.STRING, required = false ,description = "value of the default ram overcommit ratio, defaults to 1")
     private String  memoryovercommitratio;
 
+    @Parameter(name = ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC, type = CommandType.STRING, required = false, description = "Type of virtual switch used for guest traffic in the cluster. Allowed values are, vmwaresvs (for VMware standard vSwitch) and vmwaredvs (for VMware distributed vSwitch)")
+    private String vSwitchTypeGuestTraffic;
+
+    @Parameter(name = ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC, type = CommandType.STRING, required = false, description = "Type of virtual switch used for public traffic in the cluster. Allowed values are, vmwaresvs (for VMware standard vSwitch) and vmwaredvs (for VMware distributed vSwitch)")
+    private String vSwitchTypePublicTraffic;
+
+    @Parameter(name = ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC, type = CommandType.STRING, required = false, description = "Name of virtual switch used for guest traffic in the cluster. This would override zone wide traffic label setting.")
+    private String vSwitchNameGuestTraffic;
+
+    @Parameter(name = ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC, type = CommandType.STRING, required = false, description = "Name of virtual switch used for public traffic in the cluster.  This would override zone wide traffic label setting.")
+    private String vSwitchNamePublicTraffic;
+
+    public String getVSwitchTypeGuestTraffic() {
+        return vSwitchTypeGuestTraffic;
+    }
+
+    public String getVSwitchTypePublicTraffic() {
+        return vSwitchTypePublicTraffic;
+    }
+
+    public String getVSwitchNameGuestTraffic() {
+        return vSwitchNameGuestTraffic;
+    }
+
+    public String getVSwitchNamePublicTraffic() {
+        return vSwitchNamePublicTraffic;
+    }
+
     public String getVSMIpaddress() {
         return vsmipaddress;
     }

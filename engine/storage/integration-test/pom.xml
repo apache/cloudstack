@@ -105,6 +105,29 @@
           </execution>
         </executions>
       </plugin>
+       <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <id>generate-resource</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <copy
+                  todir="${basedir}/target/test-classes/">
+                  <fileset dir="${basedir}/../../../utils/conf/">
+                    <include name="db.properties" />
+                  </fileset>
+                </copy>
+              </target>
+            </configuration>  
+            </execution>
+          </executions>  
+          </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>

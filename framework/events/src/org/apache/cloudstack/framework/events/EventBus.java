@@ -19,15 +19,13 @@
 
 package org.apache.cloudstack.framework.events;
 
-import com.cloud.utils.component.Adapter;
-
 import java.util.UUID;
 
 /**
  * Interface to publish and subscribe to CloudStack events
  *
  */
-public interface EventBus extends Adapter{
+public interface EventBus {
 
     /**
      * publish an event on to the event bus

@@ -2014,8 +2014,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager{
         PublicIp ipToReturn = null;
 
         if (sourceNatIp != null) {
-            ipToReturn = new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
-                    NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
+            ipToReturn = PublicIp.createFromAddrAndVlan(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()));
         } else {
             ipToReturn = _ntwkMgr.assignDedicateIpAddress(owner, null, vpc.getId(), dcId, true);
         }

@@ -23,17 +23,18 @@ import com.cloud.event.dao.UsageEventDao;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
-import org.apache.cloudstack.framework.events.EventBus;
+import com.cloud.utils.component.ComponentContext;
 import org.apache.cloudstack.framework.events.Event;
+import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class UsageEventUtils {
@@ -42,14 +43,12 @@ public class UsageEventUtils {
     private static AccountDao _accountDao;
     private static DataCenterDao _dcDao;
     private static final Logger s_logger = Logger.getLogger(UsageEventUtils.class);
-
-    // get the event bus provider if configured
-    protected static EventBus _eventBus;
+    protected static EventBus _eventBus = null;
 
     @Inject UsageEventDao usageEventDao;
     @Inject AccountDao accountDao;
     @Inject DataCenterDao dcDao;
-    
+
     public UsageEventUtils() {
     }
     
@@ -116,8 +115,10 @@ public class UsageEventUtils {
 
     private static void publishUsageEvent(String usageEventType, Long accountId, Long zoneId, String resourceType, String resourceUUID) {
 
-        if (_eventBus == null) {
-            return; // no provider is configured to provider events bus, so just return
+        try {
+            _eventBus = ComponentContext.getComponent(EventBus.class);
+        } catch(NoSuchBeanDefinitionException nbe) {
+            return; // no provider is configured to provide events bus, so just return
         }
 
         Account account = _accountDao.findById(accountId);

@@ -37,6 +37,10 @@ public class PublicIp implements PublicIpAddress {
         this.macAddress = NetUtils.long2Mac(macAddress);
     }
 
+    public static PublicIp createFromAddrAndVlan(IPAddressVO addr, VlanVO vlan) {
+    	return new PublicIp(addr, vlan, NetUtils.createSequenceBasedMacAddress(addr.getMacAddress()));
+    }
+    
     @Override
     public Ip getAddress() {
         return _addr.getAddress();

@@ -803,8 +803,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                         publicNic.getIp4Address());
                
                 if (userIp.isSourceNat()) {
-                    PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
-                            NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                    PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
                     sourceNat.add(publicIp);
                     
                     if (router.getPublicIpAddress() == null) {
@@ -1227,8 +1226,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         //4) allocate nic for additional public network(s)
         List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpcId, false);
         for (IPAddressVO ip : ips) {
-            PublicIp publicIp = new PublicIp(ip, _vlanDao.findById(ip.getVlanId()), 
-                    NetUtils.createSequenceBasedMacAddress(ip.getMacAddress()));
+            PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
             if ((ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) 
                     && _vpcMgr.ipUsedInVpc(ip)&& !publicVlans.contains(publicIp.getVlanTag())) {
                 s_logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());

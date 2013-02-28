@@ -354,7 +354,7 @@
                     <filterreader
                       classname="org.apache.tools.ant.filters.ReplaceTokens">
                       <param type="propertiesfile"
-                        value="${basedir}/../build/replace.properties" />
+                        value="${cs.replace.properties}" />
                     </filterreader>
                   </filterchain>
                 </copy>

@@ -455,6 +455,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 							+ cmd.getHypervisor());
         }
 
+        if (hypervisorType == HypervisorType.VMware) {
+            Map<String, String> allParams = cmd.getFullUrlParams();
+            discoverer.putParam(allParams);
+        }
+
         List<ClusterVO> result = new ArrayList<ClusterVO>();
 
         long clusterId = 0;
@@ -2822,4 +2827,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         return pcs;
     }
+
+	@Override
+	public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(
+			HypervisorType type, long dcId) {
+		SearchCriteriaService<HostVO, HostVO> sc = SearchCriteria2
+				.create(HostVO.class);
+        sc.addAnd(sc.getEntity().getHypervisorType(), Op.EQ, type);
+        sc.addAnd(sc.getEntity().getDataCenterId(), Op.EQ, dcId);
+        sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
+		sc.addAnd(sc.getEntity().getResourceState(), Op.EQ,
+				ResourceState.Enabled);
+        return sc.list();
+	}
 }

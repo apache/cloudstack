@@ -40,10 +40,12 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.vmware.vim25.BoolPolicy;
+import com.vmware.vim25.DVPortSetting;
 import com.vmware.vim25.DVPortgroupConfigInfo;
+import com.vmware.vim25.DVPortgroupConfigSpec;
+import com.vmware.vim25.DVSSecurityPolicy;
 import com.vmware.vim25.DVSTrafficShapingPolicy;
 import com.vmware.vim25.DynamicProperty;
-import com.vmware.vim25.HostNetworkPolicy;
 import com.vmware.vim25.HostNetworkSecurityPolicy;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
 import com.vmware.vim25.HostPortGroupSpec;
@@ -57,6 +59,7 @@ import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OvfCreateImportSpecParams;
 import com.vmware.vim25.OvfCreateImportSpecResult;
 import com.vmware.vim25.OvfFileItem;
+import com.vmware.vim25.VMwareDVSPortSetting;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualLsiLogicController;
@@ -64,6 +67,8 @@ import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VirtualSCSISharing;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
 
 public class HypervisorHostHelper {
     private static final Logger s_logger = Logger.getLogger(HypervisorHostHelper.class);
@@ -389,29 +394,26 @@ public class HypervisorHostHelper {
 	 * @param networkRateMbps
 	 * @param networkRateMulticastMbps
 	 * @param timeOutMs
+     * @param vSwitchType
+     * @param numPorts
 	 * @return
 	 * @throws Exception
 	 */
 
-    public static Pair<ManagedObjectReference, String> prepareNetwork(String ethPortProfileName, String namePrefix,
-            HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs)
-            throws Exception {
+    public static Pair<ManagedObjectReference, String> prepareNetwork(String physicalNetwork, String namePrefix,
+            HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs,
+            VirtualSwitchType vSwitchType, int numPorts) throws Exception {
         ManagedObjectReference morNetwork = null;
         VmwareContext context = hostMo.getContext();
         ManagedObjectReference dcMor = hostMo.getHyperHostDatacenter();
         DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
-
-        ManagedObjectReference morEthernetPortProfile = dataCenterMo.getDvPortGroupMor(ethPortProfileName);
-
-        if (morEthernetPortProfile == null) {
-            String msg = "Unable to find Ethernet port profile " + ethPortProfileName;
-            s_logger.error(msg);
-            throw new Exception(msg);
-        }
-        else {
-            s_logger.info("Found Ethernet port profile " + ethPortProfileName);
-        }
-
+        DistributedVirtualSwitchMO dvSwitchMo = null;
+        ManagedObjectReference morEthernetPortProfile = null;
+        String ethPortProfileName = null;
+        ManagedObjectReference morDvSwitch = null;
+        ManagedObjectReference morDvPortGroup = null;
+        String dvSwitchName = null;
+        boolean bWaitPortGroupReady = false;
         boolean createGCTag = false;
         String networkName;
         Integer vid = null;
@@ -420,54 +422,109 @@ public class HypervisorHostHelper {
             createGCTag = true;
             vid = Integer.parseInt(vlanId);
         }
+        networkName = composeCloudNetworkName(namePrefix, vlanId, networkRateMbps, physicalNetwork);
 
-        networkName = composeCloudNetworkName(namePrefix, vlanId, networkRateMbps, ethPortProfileName);
+        if (vSwitchType == VirtualSwitchType.VMwareDistributedVirtualSwitch) {
+            DVSTrafficShapingPolicy shapingPolicy;
+            VmwareDistributedVirtualSwitchVlanSpec vlanSpec;
+            DVSSecurityPolicy secPolicy;
+            VMwareDVSPortSetting dvsPortSetting;
+            DVPortgroupConfigSpec dvPortGroupSpec;
+            DVPortgroupConfigInfo dvPortgroupInfo;
 
-        // TODO(sateesh): Enable this for VMware DVS.
-//        DVSTrafficShapingPolicy shapingPolicy = null;
-//        if (networkRateMbps != null && networkRateMbps.intValue() > 0) {
-//            shapingPolicy = new DVSTrafficShapingPolicy();
-//            BoolPolicy isEnabled = new BoolPolicy();
-//            LongPolicy averageBandwidth = new LongPolicy();
-//            LongPolicy peakBandwidth = new LongPolicy();
-//            LongPolicy burstSize = new LongPolicy();
-//
-//            isEnabled.setValue(true);
-//            averageBandwidth.setValue((long) networkRateMbps.intValue() * 1024L * 1024L);
-//            // We chose 50% higher allocation than average bandwidth.
-//            // TODO(sateesh): Also let user specify the peak coefficient
-//            peakBandwidth.setValue((long) (averageBandwidth.getValue() * 1.5));
-//            // TODO(sateesh): Also let user specify the burst coefficient
-//            burstSize.setValue((long) (5 * averageBandwidth.getValue() / 8));
-//
-//            shapingPolicy.setEnabled(isEnabled);
-//            shapingPolicy.setAverageBandwidth(averageBandwidth);
-//            shapingPolicy.setPeakBandwidth(peakBandwidth);
-//            shapingPolicy.setBurstSize(burstSize);
-//        }
-        DVPortgroupConfigInfo spec = dataCenterMo.getDvPortGroupSpec(networkName);
+            dvSwitchName = physicalNetwork;
+            // TODO(sateesh): Remove this after ensuring proper default value for vSwitchName throughout traffic types
+            // and switch types.
+            if (dvSwitchName == null) {
+                s_logger.warn("Detected null dvSwitch. Defaulting to dvSwitch0");
+                dvSwitchName = "dvSwitch0";
+            }
+            morDvSwitch = dataCenterMo.getDvSwitchMor(dvSwitchName);
+            if (morDvSwitch == null) {
+                String msg = "Unable to find distributed vSwitch " + morDvSwitch;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            } else {
+                s_logger.info("Found distributed vSwitch " + morDvSwitch);
+            }
+
+            dvSwitchMo = new DistributedVirtualSwitchMO(context, morDvSwitch);
+
+            shapingPolicy = getDVSShapingPolicy(networkRateMbps);
+            if (vid != null) {
+                vlanSpec = createDVPortVlanIdSpec(vid);
+            } else {
+                vlanSpec = createDVPortVlanSpec();
+            }
+            secPolicy = createDVSSecurityPolicy();
+            dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, vlanSpec);
+            dvPortGroupSpec = createDvPortGroupSpec(networkName, dvsPortSetting, numPorts);
+
+            if (!dataCenterMo.hasDvPortGroup(networkName)) {
+                s_logger.info("Distributed Virtual Port group " + networkName + " not found.");
+                // TODO(sateesh): Handle Exceptions
+                try {
+                    dvSwitchMo.createDVPortGroup(dvPortGroupSpec);
+                } catch (Exception e) {
+                    String msg = "Failed to create distributed virtual port group " + networkName + " on dvSwitch " + physicalNetwork;
+                    throw new Exception(msg);
+                }
+                bWaitPortGroupReady = true;
+            } else {
+                s_logger.info("Found Distributed Virtual Port group " + networkName);
+                // TODO(sateesh): Handle Exceptions
+                dvPortgroupInfo = dataCenterMo.getDvPortGroupSpec(networkName);
+                if (!isSpecMatch(dvPortgroupInfo, vid, shapingPolicy)) {
+                    s_logger.info("Updating Distributed Virtual Port group " + networkName);
+                    dvPortGroupSpec.setDefaultPortConfig(dvsPortSetting);
+                    dvPortGroupSpec.setConfigVersion(dvPortgroupInfo.getConfigVersion());
+                    morDvPortGroup = dataCenterMo.getDvPortGroupMor(networkName);
+                    try {
+                        dvSwitchMo.updateDvPortGroup(morDvPortGroup, dvPortGroupSpec);
+                    } catch (Exception e) {
+                        String msg = "Failed to update distributed virtual port group " + networkName + " on dvSwitch " + physicalNetwork;
+                        throw new Exception(msg);
+                    }
+                    bWaitPortGroupReady = true;
+                }
+            }
+        } else if (vSwitchType == VirtualSwitchType.NexusDistributedVirtualSwitch) {
+            ethPortProfileName = physicalNetwork;
+            // TODO(sateesh): Remove this after ensuring proper default value for vSwitchName throughout traffic types
+            // and switch types.
+            if (ethPortProfileName == null) {
+                s_logger.warn("Detected null ethrenet port profile. Defaulting to epp0.");
+                ethPortProfileName = "epp0";
+            }
+            morEthernetPortProfile = dataCenterMo.getDvPortGroupMor(ethPortProfileName);
+            if (morEthernetPortProfile == null) {
+                String msg = "Unable to find Ethernet port profile " + ethPortProfileName;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            } else {
+                s_logger.info("Found Ethernet port profile " + ethPortProfileName);
+            }
         long averageBandwidth = 0L;
         if (networkRateMbps != null && networkRateMbps.intValue() > 0) {
             averageBandwidth = (long) (networkRateMbps.intValue() * 1024L * 1024L);
         }
         // We chose 50% higher allocation than average bandwidth.
-        // TODO(sateesh): Also let user specify the peak coefficient
+            // TODO(sateesh): Optionally let user specify the peak coefficient
         long peakBandwidth = (long) (averageBandwidth * 1.5);
-        // TODO(sateesh): Also let user specify the burst coefficient
+            // TODO(sateesh): Optionally let user specify the burst coefficient
         long burstSize = 5 * averageBandwidth / 8;
 
-        boolean bWaitPortGroupReady = false;
         if (!dataCenterMo.hasDvPortGroup(networkName)) {
             s_logger.info("Port profile " + networkName + " not found.");
-            createPortProfile(context, ethPortProfileName, networkName, vid, networkRateMbps, peakBandwidth, burstSize);
+                createPortProfile(context, physicalNetwork, networkName, vid, networkRateMbps, peakBandwidth, burstSize);
             bWaitPortGroupReady = true;
         } else {
             s_logger.info("Port profile " + networkName + " found.");
-            bWaitPortGroupReady = true;
-            updatePortProfile(context, ethPortProfileName, networkName, vid, networkRateMbps, peakBandwidth, burstSize);
+                updatePortProfile(context, physicalNetwork, networkName, vid, networkRateMbps, peakBandwidth, burstSize);
+            }
         }
         // Wait for dvPortGroup on vCenter
-        if(bWaitPortGroupReady)
+        if (bWaitPortGroupReady)
             morNetwork = waitForDvPortGroupReady(dataCenterMo, networkName, timeOutMs);
         else
             morNetwork = dataCenterMo.getDvPortGroupMor(networkName);
@@ -486,7 +543,7 @@ public class HypervisorHostHelper {
         return new Pair<ManagedObjectReference, String>(morNetwork, networkName);
     }
 
-    private static ManagedObjectReference waitForDvPortGroupReady(
+    public static ManagedObjectReference waitForDvPortGroupReady(
 			DatacenterMO dataCenterMo, String dvPortGroupName, long timeOutMs) throws Exception {
 		ManagedObjectReference morDvPortGroup = null;
 
@@ -505,12 +562,9 @@ public class HypervisorHostHelper {
 		return morDvPortGroup;
 	}
 
-    // This method would be used for VMware Distributed Virtual Switch.
-	private static boolean isSpecMatch(DVPortgroupConfigInfo spec, Integer vid, DVSTrafficShapingPolicy shapingPolicy) {
+    public static boolean isSpecMatch(DVPortgroupConfigInfo configInfo, Integer vid, DVSTrafficShapingPolicy shapingPolicy) {
 		DVSTrafficShapingPolicy currentTrafficShapingPolicy;
-		currentTrafficShapingPolicy = spec.getDefaultPortConfig().getInShapingPolicy();
-		// TODO(sateesh): Extract and compare vendor specific configuration specification as well.
-		// DistributedVirtualSwitchKeyedOpaqueBlob[] vendorSpecificConfig = spec.getVendorSpecificConfig();
+        currentTrafficShapingPolicy = configInfo.getDefaultPortConfig().getInShapingPolicy();
 
 		assert(currentTrafficShapingPolicy != null);
 
@@ -519,8 +573,9 @@ public class HypervisorHostHelper {
 		LongPolicy peakBandwidth = currentTrafficShapingPolicy.getPeakBandwidth();
 		BoolPolicy isEnabled = currentTrafficShapingPolicy.getEnabled();
 
-		if(!isEnabled.isValue())
+        if (!isEnabled.equals(shapingPolicy.getEnabled())) {
 			return false;
+        }
 
 		if(averageBandwidth != null && !averageBandwidth.equals(shapingPolicy.getAverageBandwidth())) {
 			if(s_logger.isInfoEnabled()) {
@@ -542,11 +597,87 @@ public class HypervisorHostHelper {
 		return true;
 	}
 
+    public static DVPortgroupConfigSpec createDvPortGroupSpec(String dvPortGroupName, DVPortSetting portSetting, int numPorts) {
+        DVPortgroupConfigSpec spec = new DVPortgroupConfigSpec();
+        spec.setName(dvPortGroupName);
+        spec.setDefaultPortConfig(portSetting);
+        spec.setPortNameFormat("vnic<portIndex>");
+        spec.setType("earlyBinding");
+        spec.setNumPorts(numPorts);
+        // TODO(sateesh): Get vSphere API version and
+        // if >= 5.0 set autoExpand property of dvPortGroup config spec to true.
+        // spec.setAutoExpand(true);
+        return spec;
+    }
+
+    public static VMwareDVSPortSetting createVmwareDVPortSettingSpec(DVSTrafficShapingPolicy shapingPolicy, DVSSecurityPolicy secPolicy, VmwareDistributedVirtualSwitchVlanSpec vlanSpec) {
+        VMwareDVSPortSetting dvsPortSetting = new VMwareDVSPortSetting();
+        dvsPortSetting.setVlan(vlanSpec);
+        dvsPortSetting.setSecurityPolicy(secPolicy);
+        dvsPortSetting.setInShapingPolicy(shapingPolicy);
+        dvsPortSetting.setOutShapingPolicy(shapingPolicy);
+
+        return dvsPortSetting;
+    }
+
+    public static DVSTrafficShapingPolicy getDVSShapingPolicy(Integer networkRateMbps) {
+        DVSTrafficShapingPolicy shapingPolicy = new DVSTrafficShapingPolicy();
+        if (networkRateMbps == null || networkRateMbps.intValue() <= 0) {
+            return shapingPolicy;
+        }
+        shapingPolicy = new DVSTrafficShapingPolicy();
+        BoolPolicy isEnabled = new BoolPolicy();
+        LongPolicy averageBandwidth = new LongPolicy();
+        LongPolicy peakBandwidth = new LongPolicy();
+        LongPolicy burstSize = new LongPolicy();
+
+        isEnabled.setValue(true);
+        averageBandwidth.setValue((long) networkRateMbps.intValue() * 1024L * 1024L);
+        // We chose 50% higher allocation than average bandwidth.
+        // TODO(sateesh): Also let user specify the peak coefficient
+        peakBandwidth.setValue((long) (averageBandwidth.getValue() * 1.5));
+        // TODO(sateesh): Also let user specify the burst coefficient
+        burstSize.setValue((long) (5 * averageBandwidth.getValue() / 8));
+
+        shapingPolicy.setEnabled(isEnabled);
+        shapingPolicy.setAverageBandwidth(averageBandwidth);
+        shapingPolicy.setPeakBandwidth(peakBandwidth);
+        shapingPolicy.setBurstSize(burstSize);
+
+        return shapingPolicy;
+    }
+
+    public static VmwareDistributedVirtualSwitchVlanIdSpec createDVPortVlanIdSpec(int vlanId) {
+        VmwareDistributedVirtualSwitchVlanIdSpec vlanIdSpec = new VmwareDistributedVirtualSwitchVlanIdSpec();
+        vlanIdSpec.setVlanId(vlanId);
+        return vlanIdSpec;
+    }
+
+    public static VmwareDistributedVirtualSwitchVlanSpec createDVPortVlanSpec() {
+        VmwareDistributedVirtualSwitchVlanSpec vlanSpec = new VmwareDistributedVirtualSwitchVlanSpec();
+        return vlanSpec;
+    }
+
+    public static DVSSecurityPolicy createDVSSecurityPolicy() {
+        DVSSecurityPolicy secPolicy = new DVSSecurityPolicy();
+        BoolPolicy allow = new BoolPolicy();
+        allow.setValue(true);
+
+        secPolicy.setForgedTransmits(allow);
+        secPolicy.setAllowPromiscuous(allow);
+        secPolicy.setMacChanges(allow);
+        return secPolicy;
+    }
+
 	public static Pair<ManagedObjectReference, String> prepareNetwork(String vSwitchName, String namePrefix,
             HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps,
             long timeOutMs, boolean syncPeerHosts) throws Exception {
 
         HostVirtualSwitch vSwitch;
+        if (vSwitchName == null) {
+            s_logger.info("Detected vswitch name as undefined. Defaulting to vSwitch0");
+            vSwitchName = "vSwitch0";
+        }
         vSwitch = hostMo.getHostVirtualSwitchByName(vSwitchName);
 
         if (vSwitch == null) {

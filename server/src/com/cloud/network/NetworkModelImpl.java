@@ -709,7 +709,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             return null;
         }
     
-        return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()), NetUtils.createSequenceBasedMacAddress(addr.getMacAddress()));
+        return PublicIp.createFromAddrAndVlan(addr, _vlanDao.findById(addr.getVlanId()));
     }
 
     @Override
@@ -1405,7 +1405,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             return true;
         }
         IPAddressVO ipVO = _ipAddressDao.findById(userIp.getId());
-        PublicIp publicIp = new PublicIp(ipVO, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
+        PublicIp publicIp = PublicIp.createFromAddrAndVlan(ipVO, _vlanDao.findById(userIp.getVlanId()));
         if (!canIpUsedForService(publicIp, service, networkId)) {
             return false;
         }
@@ -1884,8 +1884,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             for (IpAddress addr : addrs) {
                 if (addr.isSourceNat()) {
                     sourceNatIp = _ipAddressDao.findById(addr.getId());
-                    return new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
-                            NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
+                    return PublicIp.createFromAddrAndVlan(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()));
                 }
             }
     
@@ -1930,9 +1929,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         }
 
         int cidrSize = NetUtils.getIp6CidrSize(ip6Cidr);
-        // Ipv6 cidr limit should be at least /64
-        if (cidrSize < 64) {
-            throw new InvalidParameterValueException("The cidr size of IPv6 network must be no less than 64 bits!");
+        // we only support cidr == 64
+        if (cidrSize != 64) {
+            throw new InvalidParameterValueException("The cidr size of IPv6 network must be 64 bits!");
         }
     }
 

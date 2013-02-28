@@ -40,7 +40,10 @@ done
 
 # Get appliance uuids
 machine_uuid=`vboxmanage showvminfo $appliance | grep UUID | head -1 | awk '{print $2}'`
-hdd_uuid=`vboxmanage showvminfo $appliance | grep vmdk | head -1 | awk '{print $8}' | cut -d ')' -f 1`
+hdd_uuid=`vboxmanage showvminfo $appliance | grep vdi | head -1 | awk '{print $8}' | cut -d ')' -f 1`
+
+# Compact the virtual hdd
+vboxmanage modifyhd $hdd_uuid --compact
 
 # Start exporting
 rm -fr dist

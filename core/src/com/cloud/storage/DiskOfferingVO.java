@@ -311,4 +311,8 @@ public class DiskOfferingVO implements DiskOffering {
     public int getSortKey() {
     	return sortKey;
     }
+    
+    public void setRecreatable(boolean recreatable) {
+    	this.recreatable = recreatable;
+    }
 }

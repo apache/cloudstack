@@ -27,7 +27,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.driver.AncientPrimaryDataStoreDriverImpl;
-import org.apache.cloudstack.storage.datastore.lifecycle.AncientPrimaryDataStoreLifeCyclImpl;
+import org.apache.cloudstack.storage.datastore.lifecycle.AncientPrimaryDataStoreLifeCycleImpl;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.ComponentContext;
@@ -55,7 +55,7 @@ public class AncientPrimaryDataStoreProviderImpl implements
 
     @Override
     public boolean configure(Map<String, Object> params) {
-        lifecyle = ComponentContext.inject(AncientPrimaryDataStoreLifeCyclImpl.class);
+        lifecyle = ComponentContext.inject(AncientPrimaryDataStoreLifeCycleImpl.class);
         driver = ComponentContext.inject(AncientPrimaryDataStoreDriverImpl.class);
         uuid = (String)params.get("uuid");
         id = (Long)params.get("id");

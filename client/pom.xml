@@ -308,7 +308,7 @@
                     <filterreader
                       classname="org.apache.tools.ant.filters.ReplaceTokens">
                       <param type="propertiesfile"
-                        value="${basedir}/../build/replace.properties" />
+                        value="${cs.replace.properties}" />
                     </filterreader>
                   </filterchain>
                 </copy>
@@ -319,7 +319,7 @@
                   <globmapper from="*.in" to="*" />
                   <filterchain>
                     <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${basedir}/../build/replace.properties" />
+                      <param type="propertiesfile" value="${cs.replace.properties}" />
                     </filterreader>
                   </filterchain>
                 </copy>
@@ -330,7 +330,7 @@
                   <globmapper from="*.in" to="*" />
                   <filterchain>
                     <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${basedir}/../build/replace.properties" />
+                      <param type="propertiesfile" value="${cs.replace.properties}" />
                     </filterreader>
                   </filterchain>
                 </copy>
@@ -341,7 +341,7 @@
                   <globmapper from="*.in" to="*" />
                   <filterchain>
                     <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${basedir}/../build/replace.properties" />
+                      <param type="propertiesfile" value="${cs.replace.properties}" />
                     </filterreader>
                   </filterchain>
                 </copy>
@@ -351,9 +351,25 @@
                   </fileset>
                   <filterchain>
                     <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${basedir}/../build/replace.properties" />
+                      <param type="propertiesfile" value="${cs.replace.properties}" />
                     </filterreader>
                   </filterchain>
+                </copy>
+                <copy overwrite="true" todir="${basedir}/target/conf">
+                  <fileset dir="${basedir}/tomcatconf">
+                    <include name="*.in" />
+                  </fileset>
+                  <globmapper from="*.in" to="*" />
+                  <filterchain>
+                    <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+                      <param type="propertiesfile" value="${cs.replace.properties}" />
+                    </filterreader>
+                  </filterchain>
+                </copy>
+                <copy overwrite="true" todir="${basedir}/target/conf">
+                  <fileset dir="${basedir}/tomcatconf">
+                    <exclude name="*.in" />
+                  </fileset>
                 </copy>
               </target>
             </configuration>

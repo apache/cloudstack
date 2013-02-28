@@ -18,7 +18,7 @@
 
 Name:		publican-cloudstack
 Summary:	Common documentation files for Apache %{brand}
-Version:	0.4
+Version:	0.5
 Release:	1%{?dist}
 License:	ASLv2
 Group:		Applications/Text
@@ -49,12 +49,14 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc README
 %doc LICENSE
 %doc NOTICE
 %{_datadir}/publican/Common_Content/%{brand}
 
 %changelog
+* Tue Feb 29 2013 David Nalley <david@gnsa.us> 0.5-1
+- adding trademark information
+
 * Sun Sep 22 2012 David Nalley <david@gnsa.us> 0.4-1
 - added 'Apache' to the description
 - moved the issue tracker url to the ASF jira instance

@@ -23,10 +23,8 @@
   <context:annotation-config />
   <context:component-scan
     base-package="org.apache.cloudstack.storage" />
-    <context:component-scan base-package="com.cloud.utils.db" />
-    <context:component-scan base-package="com.cloud.utils.component" />
     
-
+  <!-- @DB support -->
   <aop:config proxy-target-class="true">
     <aop:aspect id="dbContextBuilder" ref="transactionContextBuilder">
       <aop:pointcut id="captureAnyMethod" expression="execution(* *(..))" />
@@ -34,50 +32,12 @@
       <aop:around pointcut-ref="captureAnyMethod" method="AroundAnyMethod" />
     </aop:aspect>
 
-    <aop:aspect id="actionEventInterceptorAspect" ref="actionEventInterceptor">
-      <aop:pointcut id="captureEventMethod"
-        expression="execution(* *(..)) and @annotation(com.cloud.event.ActionEvent)" />
-      <aop:around pointcut-ref="captureEventMethod" method="AroundAnyMethod" />
-    </aop:aspect>
-
   </aop:config>
-
+  
   <bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />
-  <bean id="actionEventInterceptor" class="com.cloud.event.ActionEventInterceptor" />
-
   <bean id="componentContext" class="com.cloud.utils.component.ComponentContext"/>
-
-  <bean class="org.apache.cloudstack.storage.test.ChildTestConfiguration" />
-
-  <bean id="onwireRegistry"
-    class="org.apache.cloudstack.framework.serializer.OnwireClassRegistry"
-    init-method="scan">
-    <property name="packages">
-      <list>
-        <value>org.apache.cloudstack.framework</value>
-      </list>
-    </property>
+   <bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor">
+    <property name="requiredParameterValue" value="false" />
   </bean>
-
-  <bean id="messageSerializer"
-    class="org.apache.cloudstack.framework.serializer.JsonMessageSerializer">
-    <property name="onwireClassRegistry" ref="onwireRegistry" />
-  </bean>
-
-  <bean id="transportProvider"
-    class="org.apache.cloudstack.framework.server.ServerTransportProvider"
-    init-method="initialize">
-    <property name="workerPoolSize" value="5" />
-    <property name="nodeId" value="Node1" />
-    <property name="messageSerializer" ref="messageSerializer" />
-  </bean>
-
-  <bean id="rpcProvider" class="org.apache.cloudstack.framework.rpc.RpcProviderImpl"
-    init-method="initialize">
-    <constructor-arg ref="transportProvider" />
-    <property name="messageSerializer" ref="messageSerializer" />
-  </bean>
-
-  <bean id="eventBus" class="org.apache.cloudstack.framework.eventbus.EventBusBase" />
 
 </beans>
