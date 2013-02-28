@@ -421,8 +421,14 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
     @Override
     public List<Class<?>> getCommands() {
-        // TODO Auto-generated method stub
-        return null;
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(AddCiscoVnmcResourceCmd.class);
+        cmdList.add(DeleteCiscoVnmcResourceCmd.class);
+        cmdList.add(ListCiscoVnmcResourcesCmd.class);
+        cmdList.add(AddCiscoAsa1000vResourceCmd.class);
+        cmdList.add(DeleteCiscoAsa1000vResourceCmd.class);
+        cmdList.add(ListCiscoAsa1000vResourcesCmd.class);
+        return cmdList;
     }
 
     @Override
@@ -773,6 +779,11 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         response.setId(ciscoAsa1000vDeviceVO.getUuid());
         response.setManagementIp(ciscoAsa1000vDeviceVO.getManagementIp());
         response.setInPortProfile(ciscoAsa1000vDeviceVO.getInPortProfile());
+
+        NetworkAsa1000vMapVO networkAsaMap = _networkAsa1000vMapDao.findByAsa1000vId(ciscoAsa1000vDeviceVO.getId());
+        if (networkAsaMap != null) {
+            response.setGuestNetworkId(networkAsaMap.getNetworkId());
+        }
 
         return response;
     }

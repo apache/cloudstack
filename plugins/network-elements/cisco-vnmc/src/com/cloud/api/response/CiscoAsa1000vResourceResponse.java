@@ -21,6 +21,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 
 import com.cloud.network.cisco.CiscoAsa1000vDevice;
@@ -34,28 +35,36 @@ public class CiscoAsa1000vResourceResponse extends BaseResponse {
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) 
-    @Parameter(description="the physical network to which this VNMC belongs to", entityType = PhysicalNetworkResponse.class)
+    @Parameter(description="the physical network to which this ASA 1000v belongs to", entityType = PhysicalNetworkResponse.class)
     private Long physicalNetworkId ;
 
     public Long getPhysicalNetworkId() {
-		return physicalNetworkId;
-	}
+        return physicalNetworkId;
+    }
 
-	@SerializedName(ApiConstants.HOST_NAME)
-	@Parameter(description="management ip address of ASA 1000v")
+    @SerializedName(ApiConstants.HOST_NAME)
+    @Parameter(description="management ip address of ASA 1000v")
     private String managementIp;
 
-	public String getManagementIp() {
-		return managementIp;
-	}
+    public String getManagementIp() {
+        return managementIp;
+    }
 
-	@SerializedName(ApiConstants.ASA_INSIDE_PORT_PROFILE)
-	@Parameter(description="management ip address of ASA 1000v")
+    @SerializedName(ApiConstants.ASA_INSIDE_PORT_PROFILE)
+    @Parameter(description="management ip address of ASA 1000v")
     private String inPortProfile;
 
-	public String getInPortProfile() {
-		return inPortProfile;
-	}
+    public String getInPortProfile() {
+        return inPortProfile;
+    }
+
+    @SerializedName(ApiConstants.NETWORK_ID)
+    @Parameter(description="the guest network to which ASA 1000v is associated", entityType = NetworkResponse.class)
+    private Long guestNetworkId;
+
+    public Long getGuestNetworkId() {
+        return guestNetworkId;
+    }
 
     public void setId(String ciscoAsa1000vResourceId) {
         this.id = ciscoAsa1000vResourceId;
@@ -72,5 +81,8 @@ public class CiscoAsa1000vResourceResponse extends BaseResponse {
     public void setInPortProfile(String inPortProfile) {
         this.inPortProfile = inPortProfile;
     }     
-    
+
+    public void setGuestNetworkId(Long guestNetworkId) {
+        this.guestNetworkId = guestNetworkId;
+    }
 }
