@@ -514,7 +514,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         return _storageMgr;
     }
 
-
     @Override
     public void gcLeftOverVMs(VmwareContext context) {
         VmwareCleanupMaid.gcLeftOverVMs(context);
@@ -534,6 +533,19 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                             String msg = "Unable to create systemvm folder on secondary storage. location: " + patchFolder.toString();
                             s_logger.error(msg);
                             throw new CloudRuntimeException(msg);
+                        } else {
+                        	s_logger.info("Creating systemvm folder " + patchFolder.getAbsolutePath() + " failed. try with sudo privilege");
+                        	
+                            String result = null;
+                            Script command = new Script(true, "mkdir", _timeout, s_logger);
+                            command.add("-p");
+                            command.add(patchFolder.getAbsolutePath());
+                            result = command.execute();
+                            if (result != null) {
+                                String msg = "Unable to create systemvm folder on secondary storage. location: " + patchFolder.toString();
+                                s_logger.error(msg);
+                                throw new CloudRuntimeException(msg);
+                            } 
                         }
                     }
 
@@ -547,10 +559,18 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                             FileUtil.copyfile(srcIso, destIso);
                         } catch(IOException e) {
                             s_logger.error("Unexpected exception ", e);
-
-                            String msg = "Unable to copy systemvm ISO on secondary storage. src location: " + srcIso.toString() + ", dest location: " + destIso;
-                            s_logger.error(msg);
-                            throw new CloudRuntimeException(msg);
+                            
+                            String result = null;
+                            Script command = new Script(true, "cp", _timeout, s_logger);
+                            command.add(srcIso.getAbsolutePath());
+                            command.add(destIso.getAbsolutePath());
+                            result = command.execute();
+                            
+                            if (result != null) {
+	                            String msg = "Unable to copy systemvm ISO on secondary storage. src location: " + srcIso.toString() + ", dest location: " + destIso;
+	                            s_logger.error(msg);
+	                            throw new CloudRuntimeException(msg);
+                            }
                         }
                     } else {
                         if(s_logger.isTraceEnabled())
@@ -576,13 +596,15 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     public String getSystemVMDefaultNicAdapterType() {
         return this._defaultSystemVmNicAdapterType;
     }
-
+    
     private File getSystemVMPatchIsoFile() {
         // locate systemvm.iso
-        URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
-        File file = new File(url.getFile());
-        File isoFile = new File(file.getParent() + "/vms/systemvm.iso");
-        if (!isoFile.exists()) {
+        URL url = this.getClass().getClassLoader().getResource("vms/systemvm.iso");
+        File isoFile = null;
+        if (url != null) {
+            isoFile = new File(url.getPath());
+        }
+        if (isoFile == null || !isoFile.exists()) {
             isoFile = new File("/usr/lib64/cloud/common/" + "/vms/systemvm.iso");
             if (!isoFile.exists()) {
                 isoFile = new File("/usr/lib/cloud/common/" + "/vms/systemvm.iso");
@@ -593,18 +615,19 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public File getSystemVMKeyFile() {
-        URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
-        File file = new File(url.getFile());
-
-        File keyFile = new File(file.getParent(), "/scripts/vm/systemvm/id_rsa.cloud");
-        if (!keyFile.exists()) {
+        URL url = this.getClass().getClassLoader().getResource("scripts/vm/systemvm/id_rsa.cloud");
+        File keyFile = null;
+        if ( url != null ){
+            keyFile = new File(url.getPath());
+        }
+        if (keyFile == null || !keyFile.exists()) {
             keyFile = new File("/usr/lib64/cloud/common" + "/scripts/vm/systemvm/id_rsa.cloud");
             if (!keyFile.exists()) {
                 keyFile = new File("/usr/lib/cloud/common" + "/scripts/vm/systemvm/id_rsa.cloud");
             }
         }
         return keyFile;
-    }
+    }    
 
     private Runnable getHostScanTask() {
         return new Runnable() {
@@ -656,6 +679,20 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 if (_storage.mkdir(mntPt)) {
                     mountPoint = mntPt;
                     break;
+                } else {
+                	s_logger.info("Prepare mount point " + mntPt + " failed. try with sudo privilege");
+                	
+                    String result = null;
+                    Script command = new Script(true, "mkdir", _timeout, s_logger);
+                    command.add("-p");
+                    command.add(mntPt);
+                    result = command.execute();
+                    if (result != null) {
+                        s_logger.warn("Unable to umount " + mountPoint + " due to " + result);
+                    } else {
+                    	mountPoint = mntPt;
+                    	break;
+                    }
                 }
             }
             s_logger.error("Unable to create mount: " + mntPt);
@@ -741,7 +778,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         script = new Script(true, "chmod", _timeout, s_logger);
         script.add("777", mountPoint);
         result = script.execute();
-        if (result != null) {
+        if (result != null) {	
             s_logger.warn("Unable to set permissions for " + mountPoint + " due to " + result);
             return null;
         }
