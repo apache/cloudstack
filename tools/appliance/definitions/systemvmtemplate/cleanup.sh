@@ -2,6 +2,7 @@
 #apt-get -y remove linux-headers-$(uname -r) build-essential
 apt-get -y remove dictionaries-common busybox
 apt-get -y autoremove
+apt-get autoclean
 apt-get clean
 
 # Removing leftover leases and persistent rules

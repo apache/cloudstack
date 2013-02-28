@@ -27,7 +27,7 @@ install_packages() {
 
   # Basic packages
   apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables
-  apt-get --no-install-recommends -q -y --force-yes install openssh-server openssl grub-legacy e2fsprogs dhcp3-client dnsmasq tcpdump socat wget
+  apt-get --no-install-recommends -q -y --force-yes install openssh-server openssl grub-legacy e2fsprogs dhcp3-client tcpdump socat wget
   apt-get --no-install-recommends -q -y --force-yes install python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping
   apt-get --no-install-recommends -q -y --force-yes install dnsutils zip unzip ethtool uuid file iproute acpid virt-what sudo
 
@@ -127,11 +127,22 @@ fix_hostname() {
   sed -i '/127.0.1.1/d' /etc/hosts
 }
 
+fix_locale() {
+  cat >> /etc/default/locale  << EOF
+LANG=en_US.UTF-8
+LC_ALL=en_US.UTF-8
+EOF
+  cat >> /etc/locale.gen  << EOF
+en_US.UTF-8 UTF-8
+EOF
+}
+
 do_fixes() {
   fix_nameserver
   fix_inittab
   fix_acpid
   fix_hostname
+  fix_locale
 }
 
 configure_apache2() {

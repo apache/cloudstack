@@ -24,6 +24,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +36,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -87,7 +89,7 @@ public class ApiDispatcher {
 
     public ApiDispatcher() {
     }
-    
+
     @PostConstruct
     void init() {
     	s_instance = this;
@@ -106,7 +108,7 @@ public class ApiDispatcher {
 
     }
 
-    private void doAccessChecks(BaseCmd cmd, List<Object> entitiesToAccess) {
+    private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
         Account caller = UserContext.current().getCaller();
         Account owner = _accountMgr.getActiveAccountById(cmd.getEntityOwnerId());
 
@@ -118,9 +120,9 @@ public class ApiDispatcher {
         if(!entitiesToAccess.isEmpty()){
             //check that caller can access the owner account.
             _accountMgr.checkAccess(caller, null, true, owner);
-            for(Object entity : entitiesToAccess) {
+            for (Object entity : entitiesToAccess.keySet()) {
                 if (entity instanceof ControlledEntity) {
-                    _accountMgr.checkAccess(caller, null, true, (ControlledEntity) entity);
+                    _accountMgr.checkAccess(caller, entitiesToAccess.get(entity), true, (ControlledEntity) entity);
                 }
                 else if (entity instanceof InfrastructureEntity) {
                     //FIXME: Move this code in adapter, remove code from Account manager
@@ -162,11 +164,11 @@ public class ApiDispatcher {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static void processParameters(BaseCmd cmd, Map<String, String> params) {
-        List<Object> entitiesToAccess = new ArrayList<Object>();
+        Map<Object, AccessType> entitiesToAccess = new HashMap<Object, AccessType>();
         Map<String, Object> unpackedParams = cmd.unpackParams(params);
-      
+
         cmd = ComponentContext.getTargetObject(cmd);
-        
+
         if (cmd instanceof BaseListCmd) {
             Object pageSizeObj = unpackedParams.get(ApiConstants.PAGE_SIZE);
             Long pageSize = null;
@@ -258,7 +260,7 @@ public class ApiDispatcher {
                                     List<Long> listParam = (List<Long>) field.get(cmd);
                                     for (Long entityId : listParam) {
                                         Object entityObj = s_instance._entityMgr.findById(entity, entityId);
-                                        entitiesToAccess.add(entityObj);
+                                        entitiesToAccess.put(entityObj, checkAccess.accessType());
                                     }
                                     break;
                                     /*
@@ -279,7 +281,7 @@ public class ApiDispatcher {
                             case LONG:
                             case UUID:
                                 Object entityObj = s_instance._entityMgr.findById(entity, (Long) field.get(cmd));
-                                entitiesToAccess.add(entityObj);
+                                entitiesToAccess.put(entityObj, checkAccess.accessType());
                                 break;
                             default:
                                 break;

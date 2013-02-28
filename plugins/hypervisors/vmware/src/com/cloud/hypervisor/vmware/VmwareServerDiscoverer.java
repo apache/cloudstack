@@ -170,7 +170,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             paramGuestVswitchName = _urlParams.get(ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC);
             paramPublicVswitchType = _urlParams.get(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC);
             paramPublicVswitchName = _urlParams.get(ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC);
-            defaultVirtualSwitchType = getDefaultVirtualSwitchType(nexusDVS);
+            defaultVirtualSwitchType = getDefaultVirtualSwitchType();
         }
         // Get zone wide traffic labels for Guest traffic and Public traffic
         guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
@@ -594,7 +594,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
         String guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(host.getDataCenterId(), HypervisorType.VMware);
         String publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(host.getDataCenterId(), HypervisorType.VMware);
         _readGlobalConfigParameters();
-        VirtualSwitchType defaultVirtualSwitchType = getDefaultVirtualSwitchType(nexusDVS);
+        VirtualSwitchType defaultVirtualSwitchType = getDefaultVirtualSwitchType();
 
         params.put("guestTrafficInfo", getTrafficInfo(TrafficType.Guest, guestTrafficLabel, clusterDetails, defaultVirtualSwitchType));
         params.put("publicTrafficInfo", getTrafficInfo(TrafficType.Public, publicTrafficLabel, clusterDetails, defaultVirtualSwitchType));
@@ -602,8 +602,13 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
         return params;
     }
 
-    private VirtualSwitchType getDefaultVirtualSwitchType(boolean nexusDVS) {
-        return nexusDVS ? VirtualSwitchType.NexusDistributedVirtualSwitch : VirtualSwitchType.VMwareDistributedVirtualSwitch;
+    private VirtualSwitchType getDefaultVirtualSwitchType() {
+        if (nexusDVS)
+            return VirtualSwitchType.NexusDistributedVirtualSwitch;
+        else if(useDVS)
+            return VirtualSwitchType.VMwareDistributedVirtualSwitch;
+        else 
+            return VirtualSwitchType.StandardVirtualSwitch;
     }
 
     @Override

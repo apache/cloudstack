@@ -1,5 +1,6 @@
 # Clean up stuff copied in by veewee
-rm -f /root/*
+rm -fv /root/*.iso
+rm -fv /root/base.sh /root/cleanup.sh /root/postinstall.sh /root/zerodisk.sh
 
 echo "Cleaning up"
 

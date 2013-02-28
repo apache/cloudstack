@@ -20,6 +20,20 @@ cloudStack.docs = {
   desc: 'Any desired login ID. Must be unique in the current domain. The same username can exist in other domains, including sub-domains.',
     externalLink: ''
   },
+
+   helpOverridePublicNetwork:{
+   desc:'Choose to override zone wide traffic label for guest traffic for this cluster',
+   externalLink:''
+
+  },
+
+  helpOverrideGuestNetwork:{
+
+  desc:'Choose to override zone wide traffic label for guest traffic for this cluster',
+  externalLink:''
+
+ },
+
   helpAccountPassword: {
   desc: 'Any desired password',
   externalLink: ''

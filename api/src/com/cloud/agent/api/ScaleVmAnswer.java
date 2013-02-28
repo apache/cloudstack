@@ -14,23 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm.dao;
+package com.cloud.agent.api;
 
+public class ScaleVmAnswer extends Answer {
 
-import javax.ejb.Local;
-
-import org.apache.log4j.Logger;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
-
-@Local(value = { UserVmDao.class })
-public class RandomlyIncreasingVMInstanceDaoImpl extends UserVmDaoImpl {
-
-    public static final Logger s_logger = Logger.getLogger(RandomlyIncreasingVMInstanceDaoImpl.class);
-
-    @Override
-    public <K> K getNextInSequence(final Class<K> clazz, final String name) {
-    	return getRandomlyIncreasingNextInSequence(clazz, name);
+    protected ScaleVmAnswer() {
     }
     
+    public ScaleVmAnswer(ScaleVmCommand cmd, boolean result, String detail) {
+        super(cmd, result, detail);
+    }
+
 }
