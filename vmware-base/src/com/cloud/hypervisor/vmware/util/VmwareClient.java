@@ -194,7 +194,7 @@ public class VmwareClient {
     public Object getDynamicProperty(ManagedObjectReference mor, String propertyName) throws Exception {
         List<String> props = new ArrayList<String>();
         props.add(propertyName);
-        List<ObjectContent> objContent = this.getObjectProperties(mor, props);
+        List<ObjectContent> objContent = this.retrieveMoRefProperties(mor, props);
 
         Object propertyValue = null;
         if (objContent != null && objContent.size() > 0) {
@@ -224,7 +224,7 @@ public class VmwareClient {
         return propertyValue;
     }
 
-    private List<ObjectContent> getObjectProperties(ManagedObjectReference mObj, List<String> props) throws Exception {
+    private List<ObjectContent> retrieveMoRefProperties(ManagedObjectReference mObj, List<String> props) throws Exception {
         PropertySpec pSpec = new PropertySpec();
         pSpec.setAll(false);
         pSpec.setType(mObj.getType());
@@ -380,23 +380,21 @@ public class VmwareClient {
      * @return An array of SelectionSpec covering VM, Host, Resource pool,
      * Cluster Compute Resource and Datastore.
      */
-    private List<SelectionSpec> buildFullTraversal() {
-       // Terminal traversal specs
-
-       // RP -> VM
+    private List<SelectionSpec> constructCompleteTraversalSpec() {
+       // ResourcePools to VM: RP -> VM
        TraversalSpec rpToVm = new TraversalSpec();
        rpToVm.setName("rpToVm");
        rpToVm.setType("ResourcePool");
        rpToVm.setPath("vm");
        rpToVm.setSkip(Boolean.FALSE);
 
-       // vApp -> VM
+       // VirtualApp to VM: vApp -> VM
        TraversalSpec vAppToVM = new TraversalSpec();
        vAppToVM.setName("vAppToVM");
        vAppToVM.setType("VirtualApp");
        vAppToVM.setPath("vm");
 
-       // HostSystem -> VM
+       // Host to VM: HostSystem -> VM
        TraversalSpec hToVm = new TraversalSpec();
        hToVm.setType("HostSystem");
        hToVm.setPath("vm");
@@ -404,7 +402,7 @@ public class VmwareClient {
        hToVm.getSelectSet().add(getSelectionSpec("VisitFolders"));
        hToVm.setSkip(Boolean.FALSE);
 
-       // DC -> DS
+       // DataCenter to DataStore: DC -> DS
        TraversalSpec dcToDs = new TraversalSpec();
        dcToDs.setType("Datacenter");
        dcToDs.setPath("datastore");
@@ -513,7 +511,7 @@ public class VmwareClient {
         ObjectSpec oSpec = new ObjectSpec();
         oSpec.setObj(root);
         oSpec.setSkip(false);
-        oSpec.getSelectSet().addAll(buildFullTraversal());
+        oSpec.getSelectSet().addAll(constructCompleteTraversalSpec());
 
         PropertyFilterSpec spec = new PropertyFilterSpec();
         spec.getPropSet().add(pSpec);
@@ -527,6 +525,7 @@ public class VmwareClient {
             return null;
         }
 
+        // filter through retrieved objects to get the first match.
         for (ObjectContent oc : ocary) {
             ManagedObjectReference mor = oc.getObj();
             List<DynamicProperty> propary = oc.getPropSet();
