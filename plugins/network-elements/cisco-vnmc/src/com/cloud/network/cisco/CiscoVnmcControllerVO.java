@@ -33,23 +33,23 @@ public class CiscoVnmcControllerVO implements CiscoVnmcController {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
-    
+
     @Column(name="uuid")
     private String uuid;
-    
+
     @Column(name="host_id")
     private long hostId;
-    
+
     @Column(name="physical_network_id")
     private long physicalNetworkId;
-    
+
     @Column(name="provider_name")
     private String providerName;
-    
+
     @Column(name="device_name")
     private String deviceName;
 
-    
+
     public CiscoVnmcControllerVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -64,60 +64,39 @@ public class CiscoVnmcControllerVO implements CiscoVnmcController {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    /* (non-Javadoc)
-	 * @see com.cloud.network.cisco.CiscoVnmcController#getId()
-	 */
     @Override
-	public long getId() {
+    public long getId() {
         return id;
     }
-    
-    /* (non-Javadoc)
-	 * @see com.cloud.network.cisco.CiscoVnmcController#getUuid()
-	 */
+
     @Override
-	public String getUuid() {
+    public String getUuid() {
         return uuid;
     }
 
-    /* (non-Javadoc)
-	 * @see com.cloud.network.cisco.CiscoVnmcController#setUuid(java.lang.String)
-	 */
     @Override
-	public void setUuid(String uuid) {
+    public void setUuid(String uuid) {
         this.uuid = uuid;
     }
 
-    /* (non-Javadoc)
-	 * @see com.cloud.network.cisco.CiscoVnmcController#getPhysicalNetworkId()
-	 */
     @Override
-	public long getPhysicalNetworkId() {
+    public long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
 
-    /* (non-Javadoc)
-	 * @see com.cloud.network.cisco.CiscoVnmcController#getHostId()
-	 */
     @Override
-	public long getHostId() {
+    public long getHostId() {
         return hostId;
     }
 
-    /* (non-Javadoc)
-	 * @see com.cloud.network.cisco.CiscoVnmcController#getProviderName()
-	 */
     @Override
-	public String getProviderName() {
+    public String getProviderName() {
         return providerName;
     }
 
-    /* (non-Javadoc)
-	 * @see com.cloud.network.cisco.CiscoVnmcController#getDeviceName()
-	 */
     @Override
-	public String getDeviceName() {
+    public String getDeviceName() {
         return deviceName;
     }
-    
+
 }

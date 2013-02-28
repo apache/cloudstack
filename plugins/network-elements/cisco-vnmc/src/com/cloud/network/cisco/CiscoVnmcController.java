@@ -23,18 +23,18 @@ import com.cloud.org.Grouping;
 
 public interface CiscoVnmcController extends Grouping, InternalIdentity, Identity {
 
-	 long getId();
+    long getId();
 
-	 String getUuid();
+    String getUuid();
 
-	 void setUuid(String uuid);
+    void setUuid(String uuid);
 
-	 long getPhysicalNetworkId();
+    long getPhysicalNetworkId();
 
-	 long getHostId();
+    long getHostId();
 
-	 String getProviderName();
+    String getProviderName();
 
-	 String getDeviceName();
+    String getDeviceName();
 
 }

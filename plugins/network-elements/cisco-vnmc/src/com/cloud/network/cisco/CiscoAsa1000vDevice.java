@@ -23,16 +23,17 @@ import com.cloud.org.Grouping;
 
 public interface CiscoAsa1000vDevice extends Grouping, InternalIdentity, Identity {
 
-	 long getId();
+    long getId();
 
-	 String getUuid();
+    String getUuid();
 
-	 void setUuid(String uuid);
+    void setUuid(String uuid);
 
-	 long getPhysicalNetworkId();
+    long getPhysicalNetworkId();
 
-	 String getManagementIp();
+    String getManagementIp();
 
-	 String getInPortProfile();
+    String getInPortProfile();
 
+    long getClusterId();
 }

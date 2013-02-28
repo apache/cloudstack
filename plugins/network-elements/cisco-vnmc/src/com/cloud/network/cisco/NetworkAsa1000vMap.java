@@ -22,10 +22,10 @@ import com.cloud.org.Grouping;
 
 public interface NetworkAsa1000vMap extends Grouping, InternalIdentity {
 
-	 long getId();
+    long getId();
 
-	 long getNetworkId();
+    long getNetworkId();
 
-	 long getAsa1000vId();
+    long getAsa1000vId();
 
 }

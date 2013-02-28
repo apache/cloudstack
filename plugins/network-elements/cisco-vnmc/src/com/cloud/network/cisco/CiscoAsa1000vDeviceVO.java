@@ -39,73 +39,63 @@ public class CiscoAsa1000vDeviceVO implements CiscoAsa1000vDevice {
 
     @Column(name="physical_network_id")
     private long physicalNetworkId;
-    
+
     @Column(name="management_ip")
     private String managementIp;
-    
+
     @Column(name="in_Port_profile")
     private String inPortProfile;
 
-    
+    @Column(name="cluster_id")
+    private long clusterId;
+
     public CiscoAsa1000vDeviceVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
     public CiscoAsa1000vDeviceVO(long physicalNetworkId,
-            String managementIp, String inPortProfile) {
+            String managementIp, String inPortProfile, long clusterId) {
         super();
         this.physicalNetworkId = physicalNetworkId;
         this.managementIp = managementIp;
         this.inPortProfile = inPortProfile;
         this.uuid = UUID.randomUUID().toString();
+        this.clusterId = clusterId;
     }
 
-    /* (non-Javadoc)
-	 * @see com.cloud.network.cisco.CiscoVnmcController#getId()
-	 */
     @Override
 	public long getId() {
         return id;
     }
-    
-    /* (non-Javadoc)
-	 * @see com.cloud.network.cisco.CiscoVnmcController#getUuid()
-	 */
+
     @Override
 	public String getUuid() {
         return uuid;
     }
 
-    /* (non-Javadoc)
-	 * @see com.cloud.network.cisco.CiscoVnmcController#setUuid(java.lang.String)
-	 */
     @Override
 	public void setUuid(String uuid) {
         this.uuid = uuid;
     }
 
-    /* (non-Javadoc)
-	 * @see com.cloud.network.cisco.CiscoVnmcController#getPhysicalNetworkId()
-	 */
     @Override
 	public long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
 
-    /* (non-Javadoc)
-	 * @see com.cloud.network.cisco.CiscoVnmcController#getProviderName()
-	 */
     @Override
 	public String getManagementIp() {
         return managementIp;
     }
 
-    /* (non-Javadoc)
-	 * @see com.cloud.network.cisco.CiscoVnmcController#getDeviceName()
-	 */
     @Override
 	public String getInPortProfile() {
         return inPortProfile;
     }
-    
+
+    @Override
+    public long getClusterId() {
+        return clusterId;
+    }
+
 }

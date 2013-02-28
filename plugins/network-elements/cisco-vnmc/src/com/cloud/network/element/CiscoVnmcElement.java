@@ -261,24 +261,6 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             return false;
         }
 
-        List<ClusterVO> clusters = _clusterDao.listByDcHyType(zone.getId(), "VMware");
-        if (clusters.size() > 1) { //TODO: Actually zone should only have single Vmware cluster and no other HV clusters as Vnmc/Asa1kv requires N1kv switch
-            s_logger.error("Zone " + zone.getName() + " has multiple Vmware clusters, Cisco Vnmc device requires that zone has a single Vmware cluster");
-            return false;
-        }
-
-        ClusterVSMMapVO clusterVsmMap = _clusterVsmMapDao.findByClusterId(clusters.get(0).getId());
-        if (clusterVsmMap == null) {
-            s_logger.error("Vmware cluster " + clusters.get(0).getName() + " has no Cisco Nexus VSM device associated with it");
-            return false;
-        }
-
-        CiscoNexusVSMDeviceVO vsmDevice = _vsmDeviceDao.findById(clusterVsmMap.getVsmId());
-        if (vsmDevice == null) {
-            s_logger.error("Unable to load details of Cisco Nexus VSM device associated with cluster " + clusters.get(0).getName());
-            return false;
-        }
-
         List<CiscoVnmcControllerVO> devices = _ciscoVnmcDao.listByPhysicalNetwork(network.getPhysicalNetworkId());
         if (devices.isEmpty()) {
             s_logger.error("No Cisco Vnmc device on network " + network.getName());
@@ -314,6 +296,19 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
                 return false;
             }
 
+            ClusterVO asaCluster = _clusterDao.findById(assignedAsa.getClusterId());
+            ClusterVSMMapVO clusterVsmMap = _clusterVsmMapDao.findByClusterId(assignedAsa.getClusterId());
+            if (clusterVsmMap == null) {
+                s_logger.error("Vmware cluster " + asaCluster.getName() + " has no Cisco Nexus VSM device associated with it");
+                return false;
+            }
+
+            CiscoNexusVSMDeviceVO vsmDevice = _vsmDeviceDao.findById(clusterVsmMap.getVsmId());
+            if (vsmDevice == null) {
+                s_logger.error("Unable to load details of Cisco Nexus VSM device associated with cluster " + asaCluster.getName());
+                return false;
+            }
+
             CiscoVnmcControllerVO ciscoVnmcDevice = devices.get(0);
             HostVO ciscoVnmcHost = _hostDao.findById(ciscoVnmcDevice.getHostId());
             _hostDao.loadDetails(ciscoVnmcHost);
@@ -342,7 +337,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
                 s_logger.error("Failed to configure source NAT in Cisco VNMC device for network " + network.getName());
                 return false;
             }
-            
+
             // associate Asa 1000v instance with logical edge firewall
             if (!associateAsaWithLogicalEdgeFirewall(vlanId, assignedAsa.getManagementIp(), ciscoVnmcHost.getId())) {
                 s_logger.error("Failed to associate Cisco ASA 1000v (" + assignedAsa.getManagementIp() +
@@ -765,7 +760,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             throw new InvalidParameterValueException("Could not find phyical network with ID: " + physicalNetworkId);
         }
 
-        ciscoAsa1000vResource = new CiscoAsa1000vDeviceVO(physicalNetworkId, cmd.getManagementIp(), cmd.getInPortProfile());
+        ciscoAsa1000vResource = new CiscoAsa1000vDeviceVO(physicalNetworkId, cmd.getManagementIp(), cmd.getInPortProfile(), cmd.getClusterId());
         _ciscoAsa1000vDao.persist((CiscoAsa1000vDeviceVO)ciscoAsa1000vResource);
                 
         return ciscoAsa1000vResource;

@@ -32,27 +32,27 @@ public class NetworkAsa1000vMapDaoImpl extends GenericDaoBase<NetworkAsa1000vMap
     protected final SearchBuilder<NetworkAsa1000vMapVO> asa1000vSearch;
 
     public NetworkAsa1000vMapDaoImpl() {
-    	networkSearch = createSearchBuilder();
-    	networkSearch.and("networkId", networkSearch.entity().getNetworkId(), Op.EQ);
-    	networkSearch.done();
+        networkSearch = createSearchBuilder();
+        networkSearch.and("networkId", networkSearch.entity().getNetworkId(), Op.EQ);
+        networkSearch.done();
 
-    	asa1000vSearch = createSearchBuilder();
-    	asa1000vSearch.and("asa1000vId", asa1000vSearch.entity().getAsa1000vId(), Op.EQ);
-    	asa1000vSearch.done();
+        asa1000vSearch = createSearchBuilder();
+        asa1000vSearch.and("asa1000vId", asa1000vSearch.entity().getAsa1000vId(), Op.EQ);
+        asa1000vSearch.done();
     }
 
-	@Override
-	public NetworkAsa1000vMapVO findByNetworkId(long networkId) {
+    @Override
+    public NetworkAsa1000vMapVO findByNetworkId(long networkId) {
         SearchCriteria<NetworkAsa1000vMapVO> sc = networkSearch.create();
         sc.setParameters("networkId", networkId);
         return findOneBy(sc);
-	}
+    }
 
-	@Override
-	public NetworkAsa1000vMapVO findByAsa1000vId(long asa1000vId) {
+    @Override
+    public NetworkAsa1000vMapVO findByAsa1000vId(long asa1000vId) {
         SearchCriteria<NetworkAsa1000vMapVO> sc = asa1000vSearch.create();
         sc.setParameters("asa1000vId", asa1000vId);
         return findOneBy(sc);
-	}
+    }
 
 }

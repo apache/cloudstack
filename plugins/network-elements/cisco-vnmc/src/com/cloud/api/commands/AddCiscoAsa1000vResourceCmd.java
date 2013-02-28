@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
@@ -56,6 +57,9 @@ public class AddCiscoAsa1000vResourceCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ASA_INSIDE_PORT_PROFILE, type=CommandType.STRING, required = true, description="Nexus port profile associated with inside interface of ASA 1000v")
     private String inPortProfile;
 
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType = ClusterResponse.class, required=true, description="the Cluster ID")
+    private Long clusterId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -70,6 +74,10 @@ public class AddCiscoAsa1000vResourceCmd extends BaseCmd {
 
     public String getInPortProfile() {
         return inPortProfile;
+    }
+
+    public Long getClusterId() {
+        return clusterId;
     }
 
     /////////////////////////////////////////////////////
