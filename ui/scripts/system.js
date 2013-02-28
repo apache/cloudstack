@@ -9946,8 +9946,10 @@
         listView: {
           section: 'guest-IP-range',
           fields: {
-            startip: { label: 'label.start.IP' },
-            endip: { label: 'label.end.IP' }
+            startip: { label: 'IPv4 Start IP' },
+            endip: { label: 'IPv4 End IP' },
+            startipv6: { label: 'IPv6 Start IP' },
+            endipv6: { label: 'IPv6 End IP' }
           },
 
           dataProvider: function(args) {
@@ -9968,16 +9970,24 @@
               createForm: {
                 title: 'label.add.ip.range',
                 fields: {
-                  guestStartIp: { label: 'label.guest.start.ip' },
-                  guestEndIp: { label: 'label.guest.end.ip' }
+                  startipv4: { label: 'IPv4 Start IP' },
+                  endipv4: { label: 'IPv4 End IP' },
+                  startipv6: { label: 'IPv6 Start IP' },
+                  endipv6: { label: 'IPv6 End IP' }
                 }
               },
               action: function(args) {
                 var array2 = [];
-                array2.push("&startip=" + args.data.guestStartIp);
-                var endip = args.data.guestEndIp;
-                if(endip != null && endip.length > 0)
-                  array2.push("&endip=" + endip);
+                if(args.data.startipv4 != null && args.data.startipv4.length > 0)
+                  array2.push("&startip=" + args.data.startipv4);                
+                if(args.data.endipv4 != null && args.data.endipv4.length > 0)
+                  array2.push("&endip=" + args.data.endipv4);
+                
+                if(args.data.startipv6 != null && args.data.startipv6.length > 0)
+                    array2.push("&startipv6=" + args.data.startipv6);                
+                  if(args.data.endipv6 != null && args.data.endipv6.length > 0)
+                    array2.push("&endipv6=" + args.data.endipv6);
+                
                 $.ajax({
                   url: createURL("createVlanIpRange&forVirtualNetwork=false&networkid=" + args.context.networks[0].id + array2.join("")),
                   dataType: "json",
