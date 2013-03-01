@@ -43,10 +43,14 @@
       <artifactId>libvirt</artifactId>
       <version>0.4.9</version>
     </dependency>
+    <!-- jna is actually a dependency of libvirt, 
+         so be careful when upgrading this or libvirt as 
+         the versions should match
+     -->
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <version>3.5.1</version>
+      <version>3.2.4</version>
     </dependency>
   </dependencies>
   <build>
