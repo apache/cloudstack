@@ -31,17 +31,18 @@
 
             $(data).each(function() {
               var region = this;
+              var regionName = region.name;
               var $li = $('<li>').append($('<span>').html(_s(region.name)));
 
               $li.data('region-data', region);
 
               if (region.id == activeRegionID) {
                 $li.addClass('active');
-
-                $regionSwitcherButton.find('.title')
-                  .html(_s(region.name))
-                  .attr('title', _s(region.name));
               }
+              
+              $regionSwitcherButton.find('.title')
+                .html(regionName)
+                .attr('title', regionName);
               
               $regionList.append($li);
             });
