@@ -52,7 +52,7 @@
     <listitem>
       <para>Provide the following:</para>
       <itemizedlist>
-        <listitem>
+        <listitem id="volume-name">
           <para>Name and Description. Any desired name and a brief description that can be shown in
             the UI.</para>
         </listitem>
@@ -105,7 +105,7 @@
     </listitem>
     <listitem>
       <para>Wait until the status of the volume shows that the upload is complete. Click Instances -
-        Volumes, find the name you specified in step 5, and make sure the status is Uploaded.</para>
+          Volumes, find the name you specified in step <xref linkend="volume-name"/>, and make sure the status is Uploaded.</para>
     </listitem>
   </orderedlist>
 </section>
