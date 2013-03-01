@@ -47,7 +47,7 @@ shared_folders=`vboxmanage showvminfo $appliance | grep Name | grep Host | cut -
 # Remove any shared folder
 while [[ $shared_folders != "" ]]
 do
-  folder=`echo $folders|head -1`
+  folder=`echo $shared_folders | head -1`
   vboxmanage sharedfolder remove systemvmtemplate --name $folder
   shared_folders=`echo $shared_folders | grep -v $folder`
 done
