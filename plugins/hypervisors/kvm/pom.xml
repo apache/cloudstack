@@ -41,16 +41,12 @@
     <dependency>
       <groupId>org.libvirt</groupId>
       <artifactId>libvirt</artifactId>
-      <version>0.4.9</version>
+      <version>${cs.libvirt-java.version}</version>
     </dependency>
-    <!-- jna is actually a dependency of libvirt, 
-         so be careful when upgrading this or libvirt as 
-         the versions should match
-     -->
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <version>3.2.4</version>
+      <version>${cs.jna.version}</version>
     </dependency>
   </dependencies>
   <build>
