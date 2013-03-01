@@ -1,5 +1,6 @@
 package org.apache.cloudstack.affinity;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -12,10 +13,13 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.log4j.Logger;
 
 
+import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupRuleVO;
 import com.cloud.network.security.SecurityGroupVMMapVO;
@@ -23,10 +27,19 @@ import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.UserVmDao;
 
 @Local(value = { AffinityGroupService.class })
 public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGroupService, Manager {
@@ -42,6 +55,9 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
     @Inject
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
+
+    @Inject
+    private UserVmDao _userVmDao;
 
     @Override
     public AffinityGroup createAffinityGroup(String account, Long domainId, String affinityGroupName,
@@ -120,11 +136,58 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     }
 
     @Override
-    public List<AffinityGroup> listAffinityGroups(String account, Long domainId, Long affinityGroupId,
-            String affinityGroupName, String affinityGroupType, Long vmId) {
-        // TODO Auto-generated method stub
-        return null;
+    public Pair<List<? extends AffinityGroup>, Integer> listAffinityGroups(Long affinityGroupId, String affinityGroupName, String affinityGroupType, Long vmId, Long startIndex, Long pageSize) {
+        Filter searchFilter = new Filter(AffinityGroupVO.class, "id", Boolean.TRUE, startIndex, pageSize);
+
+        Account caller = UserContext.current().getCaller();
+
+        Long accountId = caller.getAccountId();
+        Long domainId = caller.getDomainId();
+
+        SearchBuilder<AffinityGroupVMMapVO> vmInstanceSearch = _affinityGroupVMMapDao.createSearchBuilder();
+        vmInstanceSearch.and("instanceId", vmInstanceSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
+
+        SearchBuilder<AffinityGroupVO> groupSearch = _affinityGroupDao.createSearchBuilder();
+        groupSearch.join("vmInstanceSearch", vmInstanceSearch, groupSearch.entity().getId(), vmInstanceSearch.entity()
+                .getAffinityGroupId(), JoinBuilder.JoinType.INNER);
+
+        SearchCriteria<AffinityGroupVO> sc = groupSearch.create();
+
+        if (accountId != null) {
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        }
+
+        if (domainId != null) {
+            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        }
+
+        if (affinityGroupId != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, affinityGroupId);
+        }
+
+        if (affinityGroupName != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, affinityGroupName);
+        }
+
+        if (affinityGroupType != null) {
+            sc.addAnd("type", SearchCriteria.Op.EQ, affinityGroupType);
+        }
+
+        if (vmId != null) {
+            UserVmVO userVM = _userVmDao.findById(vmId);
+            if (userVM == null) {
+                throw new InvalidParameterValueException("Unable to list affinity groups for virtual machine instance "
+                        + vmId + "; instance not found.");
+            }
+            _accountMgr.checkAccess(caller, null, true, userVM);
+            // add join to affinity_groups_vm_map
+            sc.setJoinParameters("vmInstanceSearch", "instanceId", vmId);
+        }
+
+        Pair<List<AffinityGroupVO>, Integer> result =  _affinityGroupDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends AffinityGroup>, Integer>(result.first(), result.second());
     }
+
 
     @Override
     public List<String> listAffinityGroupTypes() {
@@ -151,6 +214,11 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     @Override
     public String getName() {
         return _name;
+    }
+
+    @Override
+    public AffinityGroup getAffinityGroup(Long groupId) {
+        return _affinityGroupDao.findById(groupId);
     }
 
 }

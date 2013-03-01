@@ -21,17 +21,20 @@ import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
+import com.cloud.async.AsyncJob;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @APICommand(name = "createAffinityGroup", responseObject = AffinityGroupResponse.class, description = "Creates an affinity/anti-affinity group")
-public class CreateAffinityGroupCmd extends BaseCmd {
+public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAffinityGroupCmd.class.getName());
 
     private static final String s_name = "createaffinitygroupresponse";
@@ -112,8 +115,7 @@ public class CreateAffinityGroupCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        AffinityGroup group = _affinityGroupService.createAffinityGroup(accountName, domainId, affinityGroupName,
-                affinityGroupType, description);
+        AffinityGroup group = _affinityGroupService.getAffinityGroup(getEntityId());
         if (group != null) {
             AffinityGroupResponse response = _responseGenerator.createAffinityGroupResponse(group);
             response.setResponseName(getCommandName());
@@ -123,4 +125,43 @@ public class CreateAffinityGroupCmd extends BaseCmd {
                     + affinityGroupName);
         }
     }
+
+    @Override
+    public void create() throws ResourceAllocationException {
+        AffinityGroup result = _affinityGroupService.createAffinityGroup(accountName, domainId, affinityGroupName,
+                affinityGroupType, description);
+        if (result != null) {
+            setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create affinity group entity" + affinityGroupName);
+        }
+
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_AFFINITY_GROUP_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "creating Affinity Group";
+    }
+
+    @Override
+    public String getCreateEventType() {
+        return EventTypes.EVENT_AFFINITY_GROUP_CREATE;
+    }
+
+    @Override
+    public String getCreateEventDescription() {
+        return "creating Affinity Group";
+    }
+
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.AffinityGroup;
+    }
+
 }

@@ -3,6 +3,7 @@ package org.apache.cloudstack.affinity;
 import java.util.List;
 
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.utils.Pair;
 
 public interface AffinityGroupService {
 
@@ -22,7 +23,7 @@ public interface AffinityGroupService {
 
     /**
      * Creates an affinity/anti-affinity group.
-     * 
+     *
      * @param affinityGroupId
      * @param account
      * @param domainId
@@ -32,19 +33,19 @@ public interface AffinityGroupService {
     boolean deleteAffinityGroup(Long affinityGroupId, String account, Long domainId, String affinityGroupName)
             throws ResourceInUseException;
 
-    /**
-     * Lists Affinity Groups
-     *
+    /** Lists Affinity Groups in your account
      * @param account
      * @param domainId
      * @param affinityGroupId
      * @param affinityGroupName
      * @param affinityGroupType
      * @param vmId
+     * @param startIndex
+     * @param pageSize
      * @return
      */
-    List<AffinityGroup> listAffinityGroups(String account, Long domainId, Long affinityGroupId,
-            String affinityGroupName, String affinityGroupType, Long vmId);
+    Pair<List<? extends AffinityGroup>, Integer> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
+            String affinityGroupType, Long vmId, Long startIndex, Long pageSize);
 
 
     /**
@@ -53,5 +54,7 @@ public interface AffinityGroupService {
      * @return
      */
     List<String> listAffinityGroupTypes();
+
+    AffinityGroup getAffinityGroup(Long groupId);
 
 }
