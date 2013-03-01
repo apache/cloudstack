@@ -59,7 +59,7 @@ ACP=`ls /usr/share/cloudstack-agent/lib/* | tr '\n' ':'`
 
 # We need to append the JSVC daemon JAR to the classpath
 # AgentShell implements the JSVC daemon methods
-export CLASSPATH="/usr/share/java/commons-daemon.jar:$ACP:/etc/cloudstack/agent:/usr/share/cloudstack-common/scripts"
+export CLASSPATH="/usr/share/java/commons-daemon.jar:$ACP:/etc/cloudstack/agent"
 
 wait_for_network() {
     i=1
