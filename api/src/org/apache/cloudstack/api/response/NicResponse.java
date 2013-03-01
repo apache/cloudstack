@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.List;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -75,7 +77,10 @@ public class NicResponse extends BaseResponse {
     
     @SerializedName(ApiConstants.IP6_ADDRESS) @Param(description="the IPv6 address of network")
     private String ip6Address;
-    
+
+    @SerializedName("secondaryip") @Param(description="the Secondary ipv4 addr of nic")
+    private List<NicSecondaryIpResponse> secondaryIps;
+
     public String getId() {
         return id;
     }
@@ -167,4 +172,9 @@ public class NicResponse extends BaseResponse {
             return false;
         return true;
     }
+
+    public void setSecondaryIps(List<NicSecondaryIpResponse> ipList) {
+        this.secondaryIps = ipList;
+    }
+
 }
