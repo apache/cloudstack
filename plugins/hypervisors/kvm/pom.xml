@@ -45,7 +45,7 @@
     </dependency>
     <dependency>
        <groupId>net.java.dev.jna</groupId>
-       <artifactId>platform</artifactId>
+       <artifactId>jna</artifactId>
        <version>${cs.jna.version}</version>
        <scope>runtime</scope>
     </dependency>
