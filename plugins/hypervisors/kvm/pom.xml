@@ -44,11 +44,6 @@
       <version>${cs.libvirt-java.version}</version>
     </dependency>
     <dependency>
-      <groupId>net.java.dev.jna</groupId>
-      <artifactId>jna</artifactId>
-      <version>${cs.jna.version}</version>
-    </dependency>
-    <dependency>
        <groupId>net.java.dev.jna</groupId>
        <artifactId>platform</artifactId>
        <version>${cs.jna.version}</version>
