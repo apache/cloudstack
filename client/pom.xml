@@ -273,15 +273,9 @@
             </goals>
             <configuration>
               <target>
-                <exec executable="mkdir">
-                    <arg value="-p" />
-                    <arg value="${basedir}/target/generated-webapp/WEB-INF/classes/scripts" />
-                </exec>
-                <exec executable="cp">
-                    <arg value="-r" />
-                    <arg value="${basedir}/../scripts" />
-                    <arg value="${basedir}/target/generated-webapp/WEB-INF/classes/" />
-                </exec>
+                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts">
+                  <fileset dir="${basedir}/../scripts" />
+                </copy>
                 <copy
                   todir="${basedir}/target/generated-webapp/WEB-INF/">
                   <fileset dir="${basedir}/WEB-INF/">
