@@ -11076,7 +11076,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   display: inline-block;
   z-index: 2002;
   position: relative;
-  background: url(../images/bg-gradients.png) 0px -1px;
+  background: url(../images/bg-gradients.png) repeat-x 0px -867px;
   border: 1px solid #5E5E5E;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
@@ -11225,7 +11225,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .region-switcher .title {
   display: inline-block;
   float: right;
-  padding: 9px 9px 0 34px;
+  padding: 10px 9px 0 34px;
   color: #FFFFFF;
   font-size: 12px;
   font-weight: bold;
