@@ -113,7 +113,6 @@ Requires: libvirt
 Requires: bridge-utils
 Requires: ebtables
 Requires: jsvc
-Requires: jna
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
 Provides: cloud-agent
