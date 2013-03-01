@@ -20,10 +20,6 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-/**
- * @author Sheng Yang
- *
- */
 public interface UserIpv6Address extends ControlledEntity, Identity, InternalIdentity {
     enum State {
         Allocating, // The IP Address is being propagated to other network elements and is not ready for use yet.
