@@ -42,6 +42,15 @@ done
 machine_uuid=`vboxmanage showvminfo $appliance | grep UUID | head -1 | awk '{print $2}'`
 hdd_uuid=`vboxmanage showvminfo $appliance | grep vdi | head -1 | awk '{print $8}' | cut -d ')' -f 1`
 hdd_path=`vboxmanage list hdds | grep $appliance | grep vdi | cut -c 14-`
+shared_folders=`vboxmanage showvminfo $appliance | grep Name | grep Host | cut -c 8- | cut -d \' -f 1`
+
+# Remove any shared folder
+while [[ $shared_folders != "" ]]
+do
+  folder=`echo $folders|head -1`
+  vboxmanage sharedfolder remove systemvmtemplate --name $folder
+  shared_folders=`echo $shared_folders | grep -v $folder`
+done
 
 # Compact the virtual hdd
 vboxmanage modifyhd $hdd_uuid --compact
