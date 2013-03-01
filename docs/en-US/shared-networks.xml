@@ -25,8 +25,7 @@
     <title>Shared Networks</title>
     <para>A shared network can be accessed by virtual machines that belong to many different
         accounts. Network Isolation on shared networks is accomplished using techniques such as
-        security groups (supported only in basic zones in &PRODUCT; 3.0.3 and later
-        versions).</para>
+        security groups (supported only in basic zones).</para>
     <itemizedlist>
         <listitem><para>Shared Networks are created by the administrator</para></listitem>
         <listitem><para>Shared Networks can be designated to a certain domain</para></listitem>
