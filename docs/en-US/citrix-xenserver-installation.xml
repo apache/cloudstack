@@ -261,13 +261,13 @@ server 3.xenserver.pool.ntp.org
         <para>Connect FiberChannel cable to all hosts in the cluster and to the FiberChannel storage
           host.</para>
       </listitem>
-      <listitem>
+      <listitem id="rescan-scsi">
         <para>Rescan the SCSI bus. Either use the following command or use XenCenter to perform an
           HBA rescan.</para>
         <programlisting># scsi-rescan</programlisting>
       </listitem>
       <listitem>
-        <para>Repeat step 2 on every host.</para>
+          <para>Repeat step <xref linkend="rescan-scsi"/> on every host.</para>
       </listitem>
       <listitem>
         <para>Check to be sure you see the new SCSI disk.</para>
