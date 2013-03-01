@@ -106,16 +106,40 @@
     <testResources>
       <testResource>
         <directory>test/resources</directory>
+          <excludes>
+              <exclude>%regex[.*[0-9]*To[0-9]*.*Test.*]</exclude>
+          </excludes>
       </testResource>
     </testResources>
     <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>default-testCompile</id>
+                    <phase>test-compile</phase>
+                    <configuration>
+                        <testExcludes>
+                            <exclude>**/com/cloud/upgrade/*.java</exclude>
+                            <exclude>**/com/cloud/async/*.java</exclude>
+                        </testExcludes>
+                    </configuration>
+                    <goals>
+                        <goal>testCompile</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <argLine>-Xmx1024m</argLine>
           <excludes>
-            <exclude>com/cloud/upgrade/*</exclude>
+            <exclude>%regex[.*[0-9]*To[0-9]*.*Test.*]</exclude>
+              <exclude>com/cloud/upgrade/AdvanceZone223To224UpgradeTest</exclude>
+              <exclude>com/cloud/upgrade/AdvanceZone217To224UpgradeTest</exclude>
             <exclude>com/cloud/async/*</exclude>
             <exclude>com/cloud/cluster/*</exclude>
             <exclude>com/cloud/snapshot/*</exclude>
