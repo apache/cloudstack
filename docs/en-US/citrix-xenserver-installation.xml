@@ -269,7 +269,7 @@ server 3.xenserver.pool.ntp.org
       <listitem>
           <para>Repeat step <xref linkend="rescan-scsi"/> on every host.</para>
       </listitem>
-      <listitem>
+      <listitem id="verify-scsi">
         <para>Check to be sure you see the new SCSI disk.</para>
         <programlisting># ls /dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -l</programlisting>
         <para>The output should look like this, although the specific file name will be different
@@ -279,7 +279,7 @@ server 3.xenserver.pool.ntp.org
     </programlisting>
       </listitem>
       <listitem>
-        <para>Repeat step 4 on every host.</para>
+          <para>Repeat step <xref linkend="verify-scsi"/> on every host.</para>
       </listitem>
       <listitem>
         <para>On the storage server, run this command to get a unique ID for the new SR.</para>
