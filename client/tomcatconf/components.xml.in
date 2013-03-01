@@ -282,6 +282,7 @@ under the License.
         <dao name="CloudStackSvcOfferingDao" class="com.cloud.bridge.persist.dao.CloudStackSvcOfferingDaoImpl" singleton="false"/>
         <dao name="OfferingDao" class="com.cloud.bridge.persist.dao.OfferingDaoImpl" singleton="false"/>
         <dao name="CloudStackAccountDao" class="com.cloud.bridge.persist.dao.CloudStackAccountDaoImpl" singleton="false"/>
+        <dao name="CloudStackUserDao" class="com.cloud.bridge.persist.dao.CloudStackUserDaoImpl" singleton="false"/>
     </awsapi-ec2server>
     
     <awsapi-s3server class="com.cloud.bridge.service.S3RestServlet">
