@@ -35,7 +35,7 @@
     See Setting Usage Limits </para>
   <para>To upload a volume:</para>
   <orderedlist>
-    <listitem>
+    <listitem id="optional-hash">
       <para>(Optional) Create an MD5 hash (checksum) of the disk image file that you are going to
         upload. After uploading the data disk, &PRODUCT; will use this value to verify that no data
         corruption has occurred.</para>
@@ -99,7 +99,7 @@
           <para>http://yourFileServerIP/userdata/myDataDisk.vhd</para>
         </listitem>
         <listitem>
-          <para>MD5 checksum. (Optional) Use the hash that you created in step 1.</para>
+            <para>MD5 checksum. (Optional) Use the hash that you created in step <xref linkend="optional-hash"/>.</para>
         </listitem>
       </itemizedlist>
     </listitem>
