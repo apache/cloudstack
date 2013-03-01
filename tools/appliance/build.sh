@@ -17,7 +17,6 @@
 # under the License.
 
 set -x
-set -e
 
 appliance="systemvmtemplate"
 build_date=`date +%Y-%m-%d`
@@ -42,9 +41,9 @@ done
 machine_uuid=`vboxmanage showvminfo $appliance | grep UUID | head -1 | awk '{print $2}'`
 hdd_uuid=`vboxmanage showvminfo $appliance | grep vdi | head -1 | awk '{print $8}' | cut -d ')' -f 1`
 hdd_path=`vboxmanage list hdds | grep $appliance | grep vdi | cut -c 14-`
-shared_folders=`vboxmanage showvminfo $appliance | grep Name | grep Host`
 
 # Remove any shared folder
+shared_folders=`vboxmanage showvminfo $appliance | grep Name | grep Host`
 while [ "$shared_folders" != "" ]
 do
   vboxmanage sharedfolder remove systemvmtemplate --name "`echo $shared_folders | head -1 | cut -c 8- | cut -d \' -f 1`"
@@ -57,6 +56,9 @@ vboxmanage modifyhd $hdd_uuid --compact
 # Start exporting
 rm -fr dist *.ova *.vhd *.vdi *.qcow* *.bz2
 mkdir dist
+
+# Exit shell if exporting fails for any format
+set -e
 
 # Export for Xen
 vboxmanage internalcommands converttoraw "$hdd_path" img.raw
