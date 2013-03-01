@@ -29,7 +29,7 @@
         <para>You cannot upload a volume if the preconfigured volume limit has already been reached. The default limit for the cloud is set in the global configuration parameter max.account.volumes, but administrators can also set per-domain limits that are different from the global default. See Setting Usage Limits </para>
         <para>To upload a volume:</para>    
     <orderedlist>
-        <listitem><para>(Optional) Create an MD5 hash (checksum) of the disk image file that you are going to upload. After uploading the data disk, &PRODUCT; will use this value to verify that no data corruption has occurred.</para></listitem>
+        <listitem id="optional-hash"><para>(Optional) Create an MD5 hash (checksum) of the disk image file that you are going to upload. After uploading the data disk, &PRODUCT; will use this value to verify that no data corruption has occurred.</para></listitem>
         <listitem><para>Log in to the &PRODUCT; UI as an administrator or user</para></listitem>
         <listitem><para>In the left navigation bar, click Storage.</para></listitem>
         <listitem><para>Click Upload Volume.</para></listitem>
@@ -68,7 +68,7 @@
             </informaltable></listitem>                                
             <listitem><para>URL. The secure HTTP or HTTPS URL that &PRODUCT; can use to access your disk. The type of file at the URL must match the value chosen in Format. For example, if Format is VHD, the URL might look like the following:</para>
                 <para>http://yourFileServerIP/userdata/myDataDisk.vhd</para></listitem>
-            <listitem><para>MD5 checksum. (Optional) Use the hash that you created in step 1.</para></listitem>
+            <listitem><para>MD5 checksum. (Optional) Use the hash that you created in step <xref linkend="optional-hash"/>.</para></listitem>
         </itemizedlist>
         </listitem>
         <listitem><para>Wait until the status of the volume shows that the upload is complete. Click Instances - Volumes, find the name you specified in step 5, and make sure the status is Uploaded.</para></listitem>
