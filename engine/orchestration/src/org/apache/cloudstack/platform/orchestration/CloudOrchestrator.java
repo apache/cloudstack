@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.engine.cloud.entity.api.NetworkEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
-import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityFactory;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl;
 import org.apache.cloudstack.engine.cloud.entity.api.VMEntityManager;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
@@ -65,9 +64,6 @@ public class CloudOrchestrator implements OrchestrationService {
 
 	@Inject
 	private VMEntityManager vmEntityManager;
-
-    @Inject
-    private VirtualMachineEntityFactory _vmEntityFactory;
 
 	@Inject
 	private VirtualMachineManager _itMgr;
@@ -174,12 +170,7 @@ public class CloudOrchestrator implements OrchestrationService {
             }
         }
 
-    	VirtualMachineEntityImpl vmEntity = null;
-		try {
-			vmEntity = _vmEntityFactory.getObject();
-		} catch (Exception e) {
-			// add error handling here
-		}
+    	VirtualMachineEntityImpl vmEntity = ComponentContext.inject(VirtualMachineEntityImpl.class);
     	vmEntity.init(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, new ArrayList<String>(networkNicMap.keySet()));
         
     	
