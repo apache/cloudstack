@@ -1,12 +1,12 @@
-<configConfMo 
-dn="" 
-cookie="%cookie%" 
-inHierarchical="false"> 
-    <inConfig> 
-      <orgDatacenter 
-        descr="%descr%"
-        dn="%dn%"  
-        name="%name%" 
-        status="created"/> 
-    </inConfig> 
+<configConfMo
+  dn=""
+  cookie="%cookie%"
+  inHierarchical="false"> 
+  <inConfig> 
+    <orgDatacenter 
+      descr="%descr%"
+      dn="%dn%"  
+      name="%name%" 
+      status="created"/> 
+  </inConfig> 
 </configConfMo>

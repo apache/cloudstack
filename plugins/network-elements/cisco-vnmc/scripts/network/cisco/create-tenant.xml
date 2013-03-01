@@ -1,9 +1,11 @@
-<configConfMo  cookie="%cookie%"  inHierarchical="false"> 
-    <inConfig> 
-      <orgTenant 
-        descr="%descr%"  
-        dn="%dn%"  
-        name="%name%"  
-        status="created"/> 
-    </inConfig> 
+<configConfMo
+  cookie="%cookie%"
+  inHierarchical="false"> 
+  <inConfig> 
+    <orgTenant 
+      descr="%descr%"  
+      dn="%dn%"  
+      name="%name%"  
+      status="created"/> 
+  </inConfig> 
 </configConfMo> 

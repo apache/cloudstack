@@ -24,7 +24,11 @@ public interface CiscoVnmcConnection {
 
     public boolean createTenant(String tenantName) throws ExecutionException;
 
+    public boolean deleteTenant(String tenantName) throws ExecutionException;
+
     public boolean createTenantVDC(String tenantName) throws ExecutionException;
+
+    public boolean deleteTenantVDC(String tenantName) throws ExecutionException;
 
     public boolean createTenantVDCEdgeDeviceProfile(String tenantName)
             throws ExecutionException;
@@ -50,6 +54,9 @@ public interface CiscoVnmcConnection {
             String intfName) throws ExecutionException;
 
     public boolean createTenantVDCEdgeSecurityProfile(String tenantName)
+            throws ExecutionException;
+
+    public boolean deleteTenantVDCEdgeSecurityProfile(String tenantName)
             throws ExecutionException;
 
     public boolean createTenantVDCSourceNatIpPool(String tenantName, String identifier,
@@ -106,6 +113,9 @@ public interface CiscoVnmcConnection {
     public boolean createTenantVDCNatPolicySet(String tenantName)
             throws ExecutionException;
 
+    public boolean deleteTenantVDCNatPolicySet(String tenantName)
+            throws ExecutionException;
+    
     public boolean associateNatPolicySet(String tenantName)
             throws ExecutionException;
 
@@ -131,6 +141,9 @@ public interface CiscoVnmcConnection {
     public boolean createTenantVDCAclPolicySet(String tenantName, boolean ingress)
             throws ExecutionException;
 
+    public boolean deleteTenantVDCAclPolicySet(String tenantName, boolean ingress)
+            throws ExecutionException;
+
     public boolean associateAclPolicySet(String tenantName)
             throws ExecutionException;
 
@@ -138,9 +151,13 @@ public interface CiscoVnmcConnection {
             String insideIp, String insideSubnet, String outsideSubnet)
             throws ExecutionException;
 
+    public boolean deleteEdgeFirewall(String tenantName) throws ExecutionException;
+
     public Map<String, String> listUnAssocAsa1000v() throws ExecutionException;
 
     public boolean assocAsa1000v(String tenantName, String firewallDn)
             throws ExecutionException;
 
+    public boolean disassocAsa1000v(String tenantName, String firewallDn)
+            throws ExecutionException;
 }

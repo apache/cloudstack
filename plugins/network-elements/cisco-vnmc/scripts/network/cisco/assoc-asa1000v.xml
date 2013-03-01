@@ -11,6 +11,6 @@
 </configConfMo>
 
 <!--
-assignedToDn="fw/inst-1007"
-dn="org-root/org-TenantD/org-VDC-TenantD/efw-ASA-1000v-TenantD/binding"
+    assignedToDn="fw/inst-1007"
+    dn="org-root/org-TenantD/org-VDC-TenantD/efw-ASA-1000v-TenantD/binding"
 -->

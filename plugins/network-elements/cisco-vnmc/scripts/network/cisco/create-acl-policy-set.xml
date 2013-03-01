@@ -1,8 +1,7 @@
-
 <configConfMos
   cookie="%cookie%"
   inHierarchical="false">
-    <inConfigs>
+  <inConfigs>
     <pair key="%aclpolicysetdn%">
       <policyPolicySet
       descr=""
@@ -10,7 +9,7 @@
       name="%aclpolicysetname%"
       status="created"/>
     </pair>
-    </inConfigs>
+  </inConfigs>
 </configConfMos>
 
 <!--

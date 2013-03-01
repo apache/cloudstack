@@ -1,0 +1,12 @@
+<configConfMos
+  cookie="%cookie%"
+  inHierarchical="false">
+  <inConfigs>
+    <pair key="%dn%">
+      <orgTenant
+        dn="%dn%"
+        name="%name%"
+        status="deleted,modified"/>
+    </pair>
+  </inConfigs>
+</configConfMos>

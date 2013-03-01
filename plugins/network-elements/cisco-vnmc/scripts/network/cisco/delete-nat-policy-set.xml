@@ -1,0 +1,12 @@
+<configConfMos
+  cookie="%cookie%"
+  inHierarchical="false">
+  <inConfigs>
+    <pair key="%natpolicysetdn%">
+      <natpolicyNatPolicySet
+      dn="%natpolicysetdn%"
+      name="%natpolicysetname%"
+      status="deleted,modified"/>
+    </pair>
+  </inConfigs>
+</configConfMos>

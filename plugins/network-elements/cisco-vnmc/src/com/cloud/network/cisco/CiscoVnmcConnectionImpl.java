@@ -51,7 +51,9 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     private enum VnmcXml {
         LOGIN("login.xml", "mgmt-controller"),
         CREATE_TENANT("create-tenant.xml", "service-reg"),
+        DELETE_TENANT("delete-tenant.xml", "service-reg"),
         CREATE_VDC("create-vdc.xml", "service-reg"),
+        DELETE_VDC("delete-vdc.xml", "service-reg"),
 
         CREATE_EDGE_DEVICE_PROFILE("create-edge-device-profile.xml", "policy-mgr"),
         CREATE_EDGE_ROUTE_POLICY("create-edge-device-route-policy.xml", "policy-mgr"),
@@ -62,8 +64,10 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         RESOLVE_EDGE_DHCP_SERVER_POLICY("associate-dhcp-server.xml", "policy-mgr"),
 
         CREATE_EDGE_SECURITY_PROFILE("create-edge-security-profile.xml", "policy-mgr"),
+        DELETE_EDGE_SECURITY_PROFILE("delete-edge-security-profile.xml", "policy-mgr"),
 
         CREATE_NAT_POLICY_SET("create-nat-policy-set.xml", "policy-mgr"),
+        DELETE_NAT_POLICY_SET("delete-nat-policy-set.xml", "policy-mgr"),
         RESOLVE_NAT_POLICY_SET("associate-nat-policy-set.xml", "policy-mgr"),
         CREATE_NAT_POLICY("create-nat-policy.xml", "policy-mgr"),
         DELETE_NAT_POLICY("delete-nat-policy.xml", "policy-mgr"),
@@ -77,6 +81,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         CREATE_SOURCE_NAT_RULE("create-source-nat-rule.xml", "policy-mgr"),
 
         CREATE_ACL_POLICY_SET("create-acl-policy-set.xml", "policy-mgr"),
+        DELETE_ACL_POLICY_SET("delete-acl-policy-set.xml", "policy-mgr"),
         RESOLVE_ACL_POLICY_SET("associate-acl-policy-set.xml", "policy-mgr"),
         CREATE_ACL_POLICY("create-acl-policy.xml", "policy-mgr"),
         DELETE_ACL_POLICY("delete-acl-policy.xml", "policy-mgr"),
@@ -85,8 +90,11 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         DELETE_ACL_RULE("delete-acl-rule.xml", "policy-mgr"),
 
         CREATE_EDGE_FIREWALL("create-edge-firewall.xml", "resource-mgr"),
+        DELETE_EDGE_FIREWALL("delete-edge-firewall.xml", "resource-mgr"),
+
         LIST_UNASSOC_ASA1000V("list-unassigned-asa1000v.xml", "resource-mgr"),
-        ASSIGN_ASA1000V("assoc-asa1000v.xml", "resource-mgr");
+        ASSIGN_ASA1000V("assoc-asa1000v.xml", "resource-mgr"),
+        UNASSIGN_ASA1000V("disassoc-asa1000v.xml", "resource-mgr");
 
         private String scriptsDir = "scripts/network/cisco";
         private String xml;
@@ -234,25 +242,31 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return "EDSP-" + tenantName + "-Routes";//FIXME: this has to match DN somehow?
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenant(java.lang.String)
-     */
     @Override
     public boolean createTenant(String tenantName) throws ExecutionException {
-         String xml = VnmcXml.CREATE_TENANT.getXml();
-         String service = VnmcXml.CREATE_TENANT.getService();
-         xml = replaceXmlValue(xml, "cookie", _cookie);
-         xml = replaceXmlValue(xml, "descr", "Tenant for account " + tenantName);
-         xml = replaceXmlValue(xml, "name", tenantName);
-         xml = replaceXmlValue(xml, "dn", getDnForTenant(tenantName));
+        String xml = VnmcXml.CREATE_TENANT.getXml();
+        String service = VnmcXml.CREATE_TENANT.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "descr", "Tenant for account " + tenantName);
+        xml = replaceXmlValue(xml, "name", tenantName);
+        xml = replaceXmlValue(xml, "dn", getDnForTenant(tenantName));
 
-         String response =  sendRequest(service, xml);
-         return verifySuccess(response);
+        String response =  sendRequest(service, xml);
+        return verifySuccess(response);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDC(java.lang.String)
-     */
+    @Override
+    public boolean deleteTenant(String tenantName) throws ExecutionException {
+        String xml = VnmcXml.DELETE_TENANT.getXml();
+        String service = VnmcXml.DELETE_TENANT.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "name", tenantName);
+        xml = replaceXmlValue(xml, "dn", getDnForTenant(tenantName));
+
+        String response =  sendRequest(service, xml);
+        return verifySuccess(response);
+    }
+
     @Override
     public boolean createTenantVDC(String tenantName) throws ExecutionException {
         String xml = VnmcXml.CREATE_VDC.getXml();
@@ -263,46 +277,47 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "dn", getDnForTenantVDC(tenantName));
 
         String response =  sendRequest(service, xml);
+        return verifySuccess(response);
+    }
 
+    @Override
+    public boolean deleteTenantVDC(String tenantName) throws ExecutionException {
+        String xml = VnmcXml.DELETE_VDC.getXml();
+        String service = VnmcXml.DELETE_VDC.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "name", getNameForTenantVDC(tenantName));
+        xml = replaceXmlValue(xml, "dn", getDnForTenantVDC(tenantName));
+
+        String response =  sendRequest(service, xml);
+        return verifySuccess(response);
+    }
+
+    @Override
+    public boolean createTenantVDCEdgeDeviceProfile(String tenantName) throws ExecutionException {
+        String xml = VnmcXml.CREATE_EDGE_DEVICE_PROFILE.getXml();
+        String service = VnmcXml.CREATE_EDGE_DEVICE_PROFILE.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "descr", "Edge Device Profile for Tenant VDC" + tenantName);
+        xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceServiceProfile(tenantName));
+        xml = replaceXmlValue(xml, "dn", getDnForTenantVDCEdgeDeviceProfile(tenantName));
+
+        String response =  sendRequest(service, xml);
+        return verifySuccess(response);
+    }
+
+    @Override
+    public boolean createTenantVDCEdgeStaticRoutePolicy(String tenantName) throws ExecutionException {
+        String xml = VnmcXml.CREATE_EDGE_ROUTE_POLICY.getXml();
+        String service = VnmcXml.CREATE_EDGE_ROUTE_POLICY.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceRoutePolicy(tenantName));//FIXME: this has to match DN somehow?
+        xml = replaceXmlValue(xml, "routepolicydn", getDnForEdgeDeviceRoutingPolicy(tenantName));
+        xml = replaceXmlValue(xml, "descr", "Routing Policy for Edge Device for Tenant " + tenantName);
+
+        String response =  sendRequest(service, xml);
         return verifySuccess(response);
    }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCEdgeDeviceProfile(java.lang.String)
-     */
-    @Override
-    public boolean createTenantVDCEdgeDeviceProfile(String tenantName) throws ExecutionException {
-           String xml = VnmcXml.CREATE_EDGE_DEVICE_PROFILE.getXml();
-           String service = VnmcXml.CREATE_EDGE_DEVICE_PROFILE.getService();
-           xml = replaceXmlValue(xml, "cookie", _cookie);
-           xml = replaceXmlValue(xml, "descr", "Edge Device Profile for Tenant VDC" + tenantName);
-           xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceServiceProfile(tenantName));
-           xml = replaceXmlValue(xml, "dn", getDnForTenantVDCEdgeDeviceProfile(tenantName));
-
-           String response =  sendRequest(service, xml);
-
-           return verifySuccess(response);
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCEdgeStaticRoutePolicy(java.lang.String)
-     */
-    @Override
-    public boolean createTenantVDCEdgeStaticRoutePolicy(String tenantName) throws ExecutionException {
-          String xml = VnmcXml.CREATE_EDGE_ROUTE_POLICY.getXml();
-          String service = VnmcXml.CREATE_EDGE_ROUTE_POLICY.getService();
-          xml = replaceXmlValue(xml, "cookie", _cookie);
-          xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceRoutePolicy(tenantName));//FIXME: this has to match DN somehow?
-          xml = replaceXmlValue(xml, "routepolicydn", getDnForEdgeDeviceRoutingPolicy(tenantName));
-          xml = replaceXmlValue(xml, "descr", "Routing Policy for Edge Device for Tenant " + tenantName);
-
-          String response =  sendRequest(service, xml);
-          return verifySuccess(response);
-   }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCEdgeStaticRoute(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public boolean createTenantVDCEdgeStaticRoute(String tenantName, 
             String nextHopIp, String outsideIntf,
@@ -323,25 +338,19 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
          return verifySuccess(response);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#associateTenantVDCEdgeStaticRoutePolicy(java.lang.String)
-     */
     @Override
     public boolean associateTenantVDCEdgeStaticRoutePolicy(String tenantName) throws ExecutionException {
-         String xml = VnmcXml.RESOLVE_EDGE_ROUTE_POLICY.getXml();
-         String service = VnmcXml.RESOLVE_EDGE_ROUTE_POLICY.getService();
-         xml = replaceXmlValue(xml, "cookie", _cookie);
-         xml = replaceXmlValue(xml, "profilename", getNameForEdgeDeviceServiceProfile(tenantName));
-         xml = replaceXmlValue(xml, "profiledn", getDnForTenantVDC(tenantName) + "/edsp-" + getNameForEdgeDeviceServiceProfile(tenantName));
-         xml = replaceXmlValue(xml, "routepolicyname", getNameForEdgeDeviceRoutePolicy(tenantName));
+        String xml = VnmcXml.RESOLVE_EDGE_ROUTE_POLICY.getXml();
+        String service = VnmcXml.RESOLVE_EDGE_ROUTE_POLICY.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "profilename", getNameForEdgeDeviceServiceProfile(tenantName));
+        xml = replaceXmlValue(xml, "profiledn", getDnForTenantVDC(tenantName) + "/edsp-" + getNameForEdgeDeviceServiceProfile(tenantName));
+        xml = replaceXmlValue(xml, "routepolicyname", getNameForEdgeDeviceRoutePolicy(tenantName));
 
-         String response =  sendRequest(service, xml);
-         return verifySuccess(response);
+        String response =  sendRequest(service, xml);
+        return verifySuccess(response);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#associateTenantVDCEdgeDhcpPolicy(java.lang.String, java.lang.String)
-     */
     @Override
     public boolean associateTenantVDCEdgeDhcpPolicy(String tenantName, String intfName) throws ExecutionException {
         String xml = VnmcXml.RESOLVE_EDGE_DHCP_POLICY.getXml();
@@ -351,13 +360,9 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "insideintf", intfName);
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCEdgeDhcpPolicy(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public boolean createTenantVDCEdgeDhcpPolicy(String tenantName, 
             String startIp, String endIp, String subnet, String nameServerIp, String domain) throws ExecutionException {
@@ -381,9 +386,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return verifySuccess(response);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#associateTenantVDCEdgeDhcpServerPolicy(java.lang.String, java.lang.String)
-     */
     @Override
     public boolean associateTenantVDCEdgeDhcpServerPolicy(String tenantName, String intfName) throws ExecutionException {
         String xml = VnmcXml.RESOLVE_EDGE_DHCP_SERVER_POLICY.getXml();
@@ -397,9 +399,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return verifySuccess(response);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createTenantVDCEdgeSecurityProfile(java.lang.String)
-     */
     @Override
     public boolean createTenantVDCEdgeSecurityProfile(String tenantName) throws ExecutionException {
         String xml = VnmcXml.CREATE_EDGE_SECURITY_PROFILE.getXml();
@@ -412,9 +411,20 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "ingressref", "default-ingress"); //FIXME: allows everything
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
-   }
+    }
+
+    @Override
+    public boolean deleteTenantVDCEdgeSecurityProfile(String tenantName) throws ExecutionException {
+        String xml = VnmcXml.DELETE_EDGE_SECURITY_PROFILE.getXml();
+        String service = VnmcXml.DELETE_EDGE_SECURITY_PROFILE.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceSecurityProfile(tenantName));
+        xml = replaceXmlValue(xml, "espdn", getDnForTenantVDCEdgeSecurityProfile(tenantName));
+
+        String response =  sendRequest(service, xml);
+        return verifySuccess(response);
+    }
 
     private String getNameForSourceNatIpPool(String tenantName) {
         return "SNATIp-" + tenantName;
@@ -477,7 +487,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "ippoolname", getNameForSourceNatIpPool(tenantName));
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -506,7 +515,18 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "natpolicysetdn", getDnForNatPolicySet(tenantName));
 
         String response =  sendRequest(service, xml);
+        return verifySuccess(response);
+    }
 
+    @Override
+    public boolean deleteTenantVDCNatPolicySet(String tenantName) throws ExecutionException {
+        String xml = VnmcXml.DELETE_NAT_POLICY_SET.getXml();
+        String service = VnmcXml.DELETE_NAT_POLICY_SET.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "natpolicysetname", getNameForNatPolicySet(tenantName));
+        xml = replaceXmlValue(xml, "natpolicysetdn", getDnForNatPolicySet(tenantName));
+
+        String response =  sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -523,7 +543,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "natpolicysetname", getNameForNatPolicySet(tenantName));
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -565,7 +584,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "aclpolicyrefdn", getDnForAclPolicyRef(tenantName, identifier, ingress));
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -578,7 +596,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "aclpolicydn", getDnForAclPolicy(tenantName, identifier));
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -592,7 +609,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "aclpolicyrefdn", getDnForAclPolicyRef(tenantName, identifier, ingress));
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -606,7 +622,18 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "aclpolicysetdn", getDnForAclPolicySet(tenantName, ingress));
 
         String response =  sendRequest(service, xml);
+        return verifySuccess(response);
+    }
 
+    @Override
+    public boolean deleteTenantVDCAclPolicySet(String tenantName, boolean ingress) throws ExecutionException {
+        String xml = VnmcXml.DELETE_ACL_POLICY_SET.getXml();
+        String service = VnmcXml.DELETE_ACL_POLICY_SET.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "aclpolicysetname", getNameForAclPolicySet(tenantName, ingress));
+        xml = replaceXmlValue(xml, "aclpolicysetdn", getDnForAclPolicySet(tenantName, ingress));
+
+        String response =  sendRequest(service, xml);
         return verifySuccess(response);
     }
 
@@ -624,7 +651,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "natpolicysetname", getNameForNatPolicySet(tenantName));
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -648,7 +674,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "destip", destIp);
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -661,7 +686,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -693,7 +717,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "endport", endPort);
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -708,7 +731,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "ipvalue", ipAddress);
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -727,7 +749,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "order", Integer.toString(order));
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -739,7 +760,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "natpolicyname", name);
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -751,7 +771,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "natpolicyname", name);
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -835,7 +854,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "protocolvalue", protocol);
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -913,7 +931,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "srcip", sourceIp);
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
     }
 
@@ -966,13 +983,9 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         return getDnForEdgeFirewall(tenantName) + "/interface-" + getNameForEdgeInsideIntf(tenantName);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#createEdgeFirewall(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public boolean createEdgeFirewall(String tenantName, String publicIp, String insideIp, 
             String insideSubnet, String outsideSubnet) throws ExecutionException {
-
         String xml = VnmcXml.CREATE_EDGE_FIREWALL.getXml();
         String service = VnmcXml.CREATE_EDGE_FIREWALL.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
@@ -997,17 +1010,23 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "outsidesubnet", outsideSubnet);
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
-
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#listUnAssocAsa1000v()
-     */
+    @Override
+    public boolean deleteEdgeFirewall(String tenantName) throws ExecutionException {
+        String xml = VnmcXml.DELETE_EDGE_FIREWALL.getXml();
+        String service = VnmcXml.DELETE_EDGE_FIREWALL.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "edgefwname", getNameForEdgeFirewall(tenantName));
+        xml = replaceXmlValue(xml, "edgefwdn", getDnForEdgeFirewall(tenantName));
+
+        String response =  sendRequest(service, xml);
+        return verifySuccess(response);
+    }
+
     @Override
     public Map<String, String> listUnAssocAsa1000v() throws ExecutionException {
-
         String xml = VnmcXml.LIST_UNASSOC_ASA1000V.getXml();
         String service = VnmcXml.LIST_UNASSOC_ASA1000V.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
@@ -1025,15 +1044,10 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         }
 
         return result;
-
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.resource.CiscoVnmcConnection#assocAsa1000v(java.lang.String, java.lang.String)
-     */
     @Override
     public boolean assocAsa1000v(String tenantName, String firewallDn) throws ExecutionException {
-
         String xml = VnmcXml.ASSIGN_ASA1000V.getXml();
         String service = VnmcXml.ASSIGN_ASA1000V.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
@@ -1041,9 +1055,19 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "fwdn", firewallDn);
 
         String response =  sendRequest(service, xml);
-
         return verifySuccess(response);
+    }
 
+    @Override
+    public boolean disassocAsa1000v(String tenantName, String firewallDn) throws ExecutionException {
+        String xml = VnmcXml.UNASSIGN_ASA1000V.getXml();
+        String service = VnmcXml.UNASSIGN_ASA1000V.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "binddn", getDnForEdgeFirewall(tenantName) + "/binding");
+        xml = replaceXmlValue(xml, "fwdn", firewallDn);
+
+        String response =  sendRequest(service, xml);
+        return verifySuccess(response);
     }
 
     private String sendRequest(String service, String xmlRequest) throws ExecutionException {

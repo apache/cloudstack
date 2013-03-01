@@ -3,16 +3,16 @@
   inHierarchical="false">
     <inConfigs>
       <pair key="%edgefwdn%" >
-          <fwEdgeFirewall
+        <fwEdgeFirewall
           haMode="standalone"
           descr="%edgefwdescr%"
           dn="%edgefwdn%"
           name="%edgefwname%"
           status="created"/>
       </pair>
-      
+
       <pair key="%insideintfdn%">
-          <fwDataInterface
+        <fwDataInterface
           descr="ASA Inside Interface"
           dn="%insideintfdn%"
           ipAddressPrimary="%insideip%"
@@ -23,9 +23,9 @@
           role="inside"
           status="created"/>
       </pair>
-      
+
       <pair key="%outsideintfdn%">
-          <fwDataInterface
+        <fwDataInterface
           descr="ASA Outside interface "
           dn="%outsideintfdn%"
           ipAddressPrimary="%publicip%"
@@ -36,27 +36,27 @@
           role="outside"
           status="created"/>
       </pair>
-      
-     <pair key="%outsideintfsp%" >
-         <logicalInterfaceServiceProfileAssociation
-         descr=""
-         dn="%outsideintfsp%"
-         name=""
-         profileRef="%secprofileref%"
-         status="created"/>
-     </pair>
-     
-     <pair key="%deviceserviceprofiledn%" >
-         <logicalDeviceServiceProfileAssociation
-         descr=""
-         dn="%deviceserviceprofiledn%"
-         name=""
-         profileRef="%deviceserviceprofile%"
-         status="created"/>
-     </pair>
-   </inConfigs>
+
+      <pair key="%outsideintfsp%" >
+        <logicalInterfaceServiceProfileAssociation
+          descr=""
+          dn="%outsideintfsp%"
+          name=""
+          profileRef="%secprofileref%"
+          status="created"/>
+      </pair>
+
+      <pair key="%deviceserviceprofiledn%" >
+        <logicalDeviceServiceProfileAssociation
+          descr=""
+          dn="%deviceserviceprofiledn%"
+          name=""
+          profileRef="%deviceserviceprofile%"
+          status="created"/>
+      </pair>
+    </inConfigs>
 </configConfMos>
-                        
+  
 <!--
         edgefwdn="org-root/org-TenantD/org-VDC-TenantD/efw-ASA-1000v-TenantD"
         insideintfdn="org-root/org-TenantD/org-VDC-TenantD/efw-ASA-1000v-TenantD/interface-Edge_Inside"

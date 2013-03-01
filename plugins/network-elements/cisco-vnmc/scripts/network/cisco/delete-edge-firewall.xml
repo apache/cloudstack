@@ -1,0 +1,12 @@
+<configConfMos
+  cookie="%cookie%"
+  inHierarchical="false">
+  <inConfigs>
+    <pair key="%edgefwdn%">
+      <fwEdgeFirewall
+        dn="%edgefwdn%"
+        name="%edgefwname%"
+        status="deleted"/>
+      </pair>
+  </inConfigs>
+</configConfMos>

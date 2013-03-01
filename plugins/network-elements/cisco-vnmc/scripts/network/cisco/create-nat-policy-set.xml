@@ -2,7 +2,6 @@
   cookie="%cookie%"
   inHierarchical="false">
   <inConfigs>
-
     <pair key="%natpolicysetdn%">
       <natpolicyNatPolicySet
         adminState="enabled"
@@ -11,7 +10,6 @@
         name="%natpolicysetname%"
         status="created"/>
     </pair>
-
   </inConfigs>
 </configConfMos>
 

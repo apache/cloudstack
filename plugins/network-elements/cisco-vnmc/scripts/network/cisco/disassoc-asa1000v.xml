@@ -1,0 +1,12 @@
+<configConfMos
+  cookie="%cookie%"
+  inHierarchical="false">
+  <inConfigs>
+    <pair key="%binddn%">
+      <fwResourceBinding
+        assignedToDn="%fwdn%"
+        dn="%binddn%"
+        status="deleted"/>
+      </pair>
+    </inConfigs>
+</configConfMos>
