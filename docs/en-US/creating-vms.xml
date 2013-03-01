@@ -23,7 +23,7 @@
 <section id="creating-vms">
 		<title>Creating VMs</title>
 		<para>Virtual machines are usually created from a template. Users can also create blank virtual machines. A blank virtual machine is a virtual machine without an OS template. Users can attach an ISO file and install the OS from the CD/DVD-ROM.</para>
-	<note><para>Starting with v3.0.3, you can create a VM without starting it. You can determine whether the VM needs to be started as part of the VM deployment.  A new request parameter, startVM, is introduced in the deployVm API to support this feature.  For more information, see the Developer's Guide</para></note>	
+	<note><para>You can create a VM without starting it. You can determine whether the VM needs to be started as part of the VM deployment. A request parameter, startVM, in the deployVm API provides this feature.  For more information, see the Developer's Guide</para></note>	
 	<para>To create a VM from a template:</para>
 		<orderedlist>
 			<listitem><para>Log in to the &PRODUCT; UI as an administrator or user.</para></listitem>
