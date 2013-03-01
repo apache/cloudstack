@@ -28,14 +28,13 @@
     <para>The software that provides AWS API compatibility is installed along with &PRODUCT;. You must enable the services and perform some setup steps prior to using it.
     </para>
     <orderedlist>
-        <listitem><para>Set the global configuration parameters for each service to true. 
+        <listitem id="set-global-config"><para>Set the global configuration parameters for each service to true. 
                   See <xref linkend="global-config" />.</para></listitem>
         <listitem><para>Create a set of &PRODUCT; service offerings with names that match the Amazon service offerings.
                   You can do this through the &PRODUCT; UI as described in the Administration Guide.</para>
                   <warning><para>Be sure you have included the Amazon default service offering, m1.small. As well as any EC2 instance types that you will use.</para></warning>
         </listitem>
-        <listitem><para>If you did not already do so when you set the configuration parameter in step 1,
-                  restart the Management Server.</para>
+        <listitem><para>If you did not already do so when you set the configuration parameter in step <xref linkend="set-global-config"/>, restart the Management Server.</para>
                   <programlisting># service cloud-management restart</programlisting>
         </listitem>
     </orderedlist>
