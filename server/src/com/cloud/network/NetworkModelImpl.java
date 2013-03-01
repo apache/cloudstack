@@ -109,7 +109,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
@@ -171,8 +170,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     PrivateIpDao _privateIpDao;
     @Inject
     UserIpv6AddressDao _ipv6Dao;
-    @Inject
-    NicSecondaryIpDao _nicSecondaryIpDao;;
 
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
@@ -1627,8 +1624,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     public Set<Long> getAvailableIps(Network network, String requestedIp) {
         String[] cidr = network.getCidr().split("/");
         List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
-        List<String> secondaryIps = _nicSecondaryIpDao.listSecondaryIpAddressInNetwork(network.getId());
-        ips.addAll(secondaryIps);
         Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
         Set<Long> usedIps = new TreeSet<Long>(); 
         

@@ -201,7 +201,6 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -210,8 +209,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.NicSecondaryIpDao;
-import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -322,7 +319,6 @@ public class ApiDBUtils {
     static HostDetailsDao _hostDetailsDao;
     static VMSnapshotDao _vmSnapshotDao;
     static ClusterDetailsDao _clusterDetailsDao;
-    static NicSecondaryIpDao _nicSecondaryIpDao;
 
     @Inject private ManagementServer ms;
     @Inject public AsyncJobManager asyncMgr;
@@ -425,7 +421,6 @@ public class ApiDBUtils {
     @Inject private HostDetailsDao hostDetailsDao;
     @Inject private ClusterDetailsDao clusterDetailsDao;
     @Inject private VMSnapshotDao vmSnapshotDao;
-    @Inject private NicSecondaryIpDao nicSecondaryIpDao;
     @PostConstruct
     void init() {
         _ms = ms;
@@ -526,7 +521,6 @@ public class ApiDBUtils {
         _hostDetailsDao = hostDetailsDao;
         _clusterDetailsDao = clusterDetailsDao;
         _vmSnapshotDao = vmSnapshotDao;
-        _nicSecondaryIpDao = nicSecondaryIpDao;
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
     }
@@ -1524,9 +1518,5 @@ public class ApiDBUtils {
    
    public static Map<String, String> findHostDetailsById(long hostId){
 	   return _hostDetailsDao.findDetails(hostId);
-   }
-
-   public static List<NicSecondaryIpVO> findNicSecondaryIps(long nicId) {
-       return _nicSecondaryIpDao.listByNicId(nicId);
    }
 }

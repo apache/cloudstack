@@ -39,7 +39,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.net.Ip;
 import com.cloud.vm.VirtualMachine;
 
 @Local(value = {RulesManager.class, RulesService.class})
@@ -50,6 +49,14 @@ public class MockRulesManagerImpl extends ManagerBase implements RulesManager, R
 			Long ipId, Long id, Long vmId, Long start, Long size,
 			String accountName, Long domainId, Long projectId,
 			boolean isRecursive, boolean listAll) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public PortForwardingRule createPortForwardingRule(PortForwardingRule rule,
+			Long vmId, boolean openFirewall)
+			throws NetworkRuleConflictException {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -76,7 +83,7 @@ public class MockRulesManagerImpl extends ManagerBase implements RulesManager, R
 
 	@Override
 	public boolean enableStaticNat(long ipAddressId, long vmId, long networkId,
-			boolean isSystemVm, String ipAddr) throws NetworkRuleConflictException,
+			boolean isSystemVm) throws NetworkRuleConflictException,
 			ResourceUnavailableException {
 		// TODO Auto-generated method stub
 		return false;
@@ -302,13 +309,5 @@ public class MockRulesManagerImpl extends ManagerBase implements RulesManager, R
 		// TODO Auto-generated method stub
 		return "MockRulesManagerImpl";
 	}
-
-    @Override
-    public PortForwardingRule createPortForwardingRule(PortForwardingRule rule,
-            Long vmId, Ip vmIp, boolean openFirewall)
-            throws NetworkRuleConflictException {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
 }

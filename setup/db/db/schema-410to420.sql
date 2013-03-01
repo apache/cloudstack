@@ -112,24 +112,3 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'UserV
 
 -- Re-enable foreign key checking, at the end of the upgrade path
 SET foreign_key_checks = 1;
-
-
-CREATE TABLE nic_secondary_ips (
-  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-  `uuid` varchar(40),
-  `vmId` bigint unsigned COMMENT 'vm instance id',
-  `nicId` bigint unsigned NOT NULL,
-  `ip4_address` char(40) COMMENT 'ip4 address',
-  `ip6_address` char(40) COMMENT 'ip6 address',
-  `network_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
-  `created` datetime NOT NULL COMMENT 'date created',
-  `account_id` bigint unsigned NOT NULL COMMENT 'owner.  foreign key to   account table',
-  `domain_id` bigint unsigned NOT NULL COMMENT 'the domain that the owner belongs to',
-   PRIMARY KEY (`id`),
-   CONSTRAINT `fk_nic_secondary_ip__vmId` FOREIGN KEY `fk_nic_secondary_ip__vmId`(`vmId`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
-   CONSTRAINT `fk_nic_secondary_ip__networks_id` FOREIGN KEY `fk_nic_secondary_ip__networks_id`(`network_id`) REFERENCES `networks`(`id`),
-   CONSTRAINT `uc_nic_secondary_ip__uuid` UNIQUE (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-ALTER TABLE `cloud`.`nics` ADD COLUMN secondary_ip SMALLINT DEFAULT '0' COMMENT 'secondary ips configured for the nic';
-ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN dnat_vmip VARCHAR(40);

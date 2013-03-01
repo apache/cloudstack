@@ -49,7 +49,6 @@ import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -332,15 +331,4 @@ public interface NetworkManager  {
     int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
 
     LoadBalancingServiceProvider getLoadBalancingProviderForNetwork(Network network);
-
-
-    boolean isSecondaryIpSetForNic(long nicId);
-
-     public String allocateGuestIP(Account ipOwner, boolean isSystem, long zoneId, Long networkId, String requestedIp)
-     throws InsufficientAddressCapacityException;
-
-     boolean removeVmSecondaryIps(long vmId);
-
-    List<? extends Nic> listVmNics(Long vmId, Long nicId);
-
 }

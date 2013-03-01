@@ -326,11 +326,6 @@ addNicToVirtualMachine=15
 removeNicFromVirtualMachine=15
 updateDefaultNicForVirtualMachine=15
 
-####
-addIpToNic=15;
-removeIpFromNic=15;
-listNics=15;
-
 #### SSH key pair commands
 registerSSHKeyPair=15
 createSSHKeyPair=15

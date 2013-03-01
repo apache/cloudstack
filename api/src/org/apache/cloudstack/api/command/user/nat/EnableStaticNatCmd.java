@@ -59,9 +59,6 @@ public class EnableStaticNatCmd extends BaseCmd{
         description="The network of the vm the static nat will be enabled for." +
                 " Required when public Ip address is not associated with any Guest network yet (VPC case)")
     private Long networkId;
-    @Parameter(name = ApiConstants.VM_GUEST_IP, type = CommandType.STRING, required = false,
-    description = "VM guest nic Secondary ip address for the port forwarding rule")
-    private String vmSecondaryIp;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -73,13 +70,6 @@ public class EnableStaticNatCmd extends BaseCmd{
 
     public Long getVirtualMachineId() {
         return virtualMachineId;
-    }
-
-    public String getVmSecondaryIp() {
-        if (vmSecondaryIp == null) {
-            return null;
-        }
-        return vmSecondaryIp;
     }
 
     public long getNetworkId() {
@@ -120,7 +110,7 @@ public class EnableStaticNatCmd extends BaseCmd{
     @Override
     public void execute() throws ResourceUnavailableException{
         try {
-            boolean result = _rulesService.enableStaticNat(ipAddressId, virtualMachineId, getNetworkId(), false, getVmSecondaryIp());
+            boolean result = _rulesService.enableStaticNat(ipAddressId, virtualMachineId, getNetworkId(), false);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);

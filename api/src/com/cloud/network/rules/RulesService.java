@@ -25,7 +25,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
-import com.cloud.utils.net.Ip;
 
 public interface RulesService {
     Pair<List<? extends FirewallRule>, Integer> searchStaticNatRules(Long ipId, Long id, Long vmId, Long start, Long size, String accountName, Long domainId, Long projectId, boolean isRecursive, boolean listAll);
@@ -44,7 +43,7 @@ public interface RulesService {
      * @throws NetworkRuleConflictException
      *             if conflicts in the network rules are detected.
      */
-    PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, Ip vmIp, boolean openFirewall) throws NetworkRuleConflictException;
+    PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, boolean openFirewall) throws NetworkRuleConflictException;
 
     /**
      * Revokes a port forwarding rule
@@ -67,7 +66,7 @@ public interface RulesService {
 
     boolean applyPortForwardingRules(long ipAdddressId, Account caller) throws ResourceUnavailableException;
 
-    boolean enableStaticNat(long ipAddressId, long vmId, long networkId, boolean isSystemVm, String vmGuestIp) throws NetworkRuleConflictException, ResourceUnavailableException;
+    boolean enableStaticNat(long ipAddressId, long vmId, long networkId, boolean isSystemVm) throws NetworkRuleConflictException, ResourceUnavailableException;
 
     PortForwardingRule getPortForwardigRule(long ruleId);
 

@@ -94,9 +94,6 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
             description="The network of the vm the Port Forwarding rule will be created for. " +
                 "Required when public Ip address is not associated with any Guest network yet (VPC case)")
     private Long networkId;
-    @Parameter(name = ApiConstants.VM_GUEST_IP, type = CommandType.STRING, required = false,
-    description = "VM guest nic Secondary ip address for the port forwarding rule")
-    private String vmSecondaryIp;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -105,13 +102,6 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     public Long getIpAddressId() {
         return ipAddressId;
-    }
-
-    public Ip getVmSecondaryIp() {
-        if (vmSecondaryIp == null) {
-            return null;
-        }
-        return new Ip(vmSecondaryIp);
     }
 
     @Override
@@ -310,15 +300,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
             throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
         }
 
-        Ip privateIp = getVmSecondaryIp();
-        if (privateIp != null) {
-            if ( !privateIp.isIp4()) {
-                throw new InvalidParameterValueException("Invalid vm ip address");
-            }
-        }
-
         try {
-            PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId, privateIp, getOpenFirewall());
+            PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId, getOpenFirewall());
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException ex) {

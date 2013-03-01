@@ -82,10 +82,6 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="virutal machine id the ip address is assigned to (not null only for static nat Ip)")
     private String virtualMachineId;
 
-    @SerializedName("vmipaddress") @Param(description="virutal machine (dnat) ip address (not null only for static nat Ip)")
-    private String virtualMachineIp;
-
-
     @SerializedName("virtualmachinename") @Param(description="virutal machine name the ip address is assigned to (not null only for static nat Ip)")
     private String virtualMachineName;
 
@@ -187,10 +183,6 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
 
     public void setVirtualMachineId(String virtualMachineId) {
         this.virtualMachineId = virtualMachineId;
-    }
-
-    public void setVirtualMachineIp(String virtualMachineIp) {
-        this.virtualMachineIp = virtualMachineIp;
     }
 
     public void setVirtualMachineName(String virtualMachineName) {

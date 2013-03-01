@@ -360,7 +360,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     protected ProjectManager _projectMgr;
     @Inject
     protected ResourceManager _resourceMgr;
-
     @Inject
     protected NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
@@ -1359,13 +1358,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
             s_logger.warn("Failed to disable static nat for ip address " + ip
                     + " as a part of vm id=" + vmId
                     + " expunge because resource is unavailable", e);
-        }
-        //remove vm secondary ip addresses
-        if (_networkMgr.removeVmSecondaryIps(vmId)) {
-            s_logger.debug("Removed vm " + vmId + " secondary ip address of the VM Nics as a part of expunge process");
-        } else {
-            success = false;
-            s_logger.warn("Fail to remove secondary ip address  of vm " + vmId + " Nics as a part of expunge process");
         }
 
         return success;

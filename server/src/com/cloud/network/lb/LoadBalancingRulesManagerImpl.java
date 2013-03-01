@@ -623,7 +623,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         Set<Long> mappedInstanceIds = new HashSet<Long>();
         for (LoadBalancerVMMapVO mappedInstance : mappedInstances) {
             mappedInstanceIds.add(Long.valueOf(mappedInstance.getInstanceId()));
-            }
+        }
 
         List<UserVm> vmsToAdd = new ArrayList<UserVm>();
 

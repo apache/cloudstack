@@ -2165,9 +2165,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateVMSnapshotCmd.class);
         cmdList.add(RevertToSnapshotCmd.class);
         cmdList.add(DeleteVMSnapshotCmd.class);
-        cmdList.add(AddIpToVmNicCmd.class);
-        cmdList.add(RemoveIpFromVmNicCmd.class);
-        cmdList.add(ListNicsCmd.class);
         return cmdList;
     }
 

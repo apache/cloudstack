@@ -32,7 +32,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.vm.dao.NicSecondaryIpVO;
 
 @Component
 @Local(value=PortForwardingRulesDao.class)
@@ -56,7 +55,6 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.and("vmId", AllFieldsSearch.entity().getVirtualMachineId(), Op.EQ);
         AllFieldsSearch.and("purpose", AllFieldsSearch.entity().getPurpose(), Op.EQ);
-        AllFieldsSearch.and("dstIp", AllFieldsSearch.entity().getDestinationIpAddress(), Op.EQ);
         AllFieldsSearch.done();
         
         ApplicationSearch = createSearchBuilder();
@@ -149,12 +147,6 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         sc.setParameters("state", State.Revoke);
         sc.setParameters("purpose", Purpose.PortForwarding);
         
-        return listBy(sc);
-    }
-    @Override
-    public List<PortForwardingRuleVO> listByDestIpAddr(String ip4Address) {
-        SearchCriteria<PortForwardingRuleVO> sc = AllFieldsSearch.create();
-        sc.setParameters("address", ip4Address);
         return listBy(sc);
     }
   
