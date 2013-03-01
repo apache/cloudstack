@@ -71,6 +71,6 @@
             <listitem><para>MD5 checksum. (Optional) Use the hash that you created in step <xref linkend="optional-hash"/>.</para></listitem>
         </itemizedlist>
         </listitem>
-        <listitem><para>Wait until the status of the volume shows that the upload is complete. Click Instances - Volumes, find the name you specified in step 5, and make sure the status is Uploaded.</para></listitem>
+        <listitem><para>Wait until the status of the volume shows that the upload is complete. Click Instances - Volumes, find the name you specified in step <xref linkend="optional-hash"/>, and make sure the status is Uploaded.</para></listitem>
     </orderedlist>
 </section>
