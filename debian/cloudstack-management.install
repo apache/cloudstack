@@ -15,9 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/etc/cloud/server/*
-/etc/cloud/management/*
-/etc/init.d/cloud-management
+/etc/cloudstack/server/*
+/etc/cloudstack/management/*
+/etc/init.d/cloudstack-management
 /var/cache/cloudstack/management
 /var/cache/cloudstack/management/work
 /var/cache/cloudstack/management/temp

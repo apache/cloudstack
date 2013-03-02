@@ -57,6 +57,9 @@
   <bean id="BaremetalKickStartPxeService" class="com.cloud.baremetal.networkservice.BaremetalKickStartServiceImpl"/>
   <bean id="BaremetalPingPxeService" class="com.cloud.baremetal.networkservice.BareMetalPingServiceImpl" />
   <bean id="BaremetalPxeManager" class="com.cloud.baremetal.networkservice.BaremetalPxeManagerImpl" />
+  <bean id="UcsManager" class="com.cloud.ucs.manager.UcsManagerImpl" />
+  <bean id="UcsBladeDao" class="com.cloud.ucs.database.UcsBladeDaoImpl" />
+  <bean id="UcsManagerDao" class="com.cloud.ucs.database.UcsManagerDaoImpl" />
 
    
   <!--

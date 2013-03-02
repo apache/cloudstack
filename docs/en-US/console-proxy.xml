@@ -108,10 +108,10 @@
         <para>In the Update SSL Certificate screen of the &PRODUCT; UI, paste the following:</para>
         <itemizedlist>
           <listitem>
-            <para>Certificate from step 1(c).</para>
+            <para>The certificate you've just generated.</para>
           </listitem>
           <listitem>
-            <para>Private key from step 1(e).</para>
+            <para>The private key you've just generated.</para>
           </listitem>
           <listitem>
             <para>The desired new domain name; for example, company.com</para>

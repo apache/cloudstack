@@ -31,6 +31,7 @@
 
             $(data).each(function() {
               var region = this;
+              var regionName = region.name;
               var $li = $('<li>').append($('<span>').html(_s(region.name)));
 
               $li.data('region-data', region);
@@ -38,6 +39,10 @@
               if (region.id == activeRegionID) {
                 $li.addClass('active');
               }
+              
+              $regionSwitcherButton.find('.title')
+                .html(regionName)
+                .attr('title', regionName);
               
               $regionList.append($li);
             });
@@ -62,7 +67,8 @@
     var $regionSwitcherButton = $('<div>').addClass('region-switcher')
     .attr('title', 'Select region')
     .append(
-      $('<span>').addClass('icon').html('&nbsp;')
+      $('<span>').addClass('icon').html('&nbsp;'),
+      $('<span>').addClass('title').html('')
     );
 
     var closeRegionSelector = function(args) {
@@ -72,7 +78,6 @@
     };
 
     var switchRegion = function(url) {
-
       closeRegionSelector({
         complete: function() {
           $('#container').prepend($('<div>').addClass('loading-overlay'));

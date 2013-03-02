@@ -8950,7 +8950,8 @@
             name: { label: 'label.name' },
             ipaddress: { label: 'label.server' },
 						path: { label: 'label.path' },
-						clustername: { label: 'label.cluster'}
+						clustername: { label: 'label.cluster'},
+            scope:{label:'Scope'}
           },
 
           dataProvider: function(args) {
@@ -8991,6 +8992,51 @@
               createForm: {
                 title: 'label.add.primary.storage',
                 fields: {
+                  scope: {
+                    label: 'label.scope',
+                    select: function(args) {
+                      var scope = [
+                        { id: 'zone-wide', description: _l('label.zone.wide') },
+                        { id: 'cluster', description: _l('label.cluster') },
+                        { id: 'host', description: _l('label.host') }
+                      ];
+
+                      args.response.success({
+                        data: scope
+                      });
+
+                      args.$select.change(function() {
+                        var $form = $(this).closest('form');
+                        var scope = $(this).val();
+
+                        if(scope == 'zone-wide'){
+                            $form.find('.form-item[rel=podId]').hide();
+                            $form.find('.form-item[rel=clusterId]').hide();
+                            $form.find('.form-item[rel=hostId]').hide();
+
+
+                         }
+
+                        else if(scope == 'cluster'){
+
+                             $form.find('.form-item[rel=hostId]').hide();
+                             $form.find('.form-item[rel=podId]').css('display', 'inline-block');
+                             $form.find('.form-item[rel=clusterId]').css('display', 'inline-block');
+
+
+                         }
+
+                         else if(scope == 'host'){
+                            $form.find('.form-item[rel=podId]').css('display', 'inline-block');
+                            $form.find('.form-item[rel=clusterId]').css('display', 'inline-block');
+                            $form.find('.form-item[rel=hostId]').css('display', 'inline-block');
+
+                         }
+
+                        })
+
+                    }
+                  },
                   zoneid: {
                     label: 'Zone',
                     docID: 'helpPrimaryStorageZone',
@@ -9064,6 +9110,29 @@
                     }
                   },
 
+                  hostId: {
+                    label: 'label.host',
+                    validation: { required: true },
+                    dependsOn: 'clusterId',
+                    select: function(args) {
+                      $.ajax({
+                        url: createURL('listHosts'),
+                        data: {
+                          clusterid: args.clusterId
+                        },
+                        success: function(json) {
+                          var hosts = json.listhostsresponse.host ?
+                              json.listhostsresponse.host : [] 
+                          args.response.success({
+                            data: $.map(hosts, function(host) {
+                              return { id: host.id, description: host.name }
+                            })
+                          });
+                        }
+                      });
+                    }
+                  },
+
                   name: {
                     label: 'label.name',
                     docID: 'helpPrimaryStorageName',
@@ -9126,6 +9195,7 @@
                         var protocol = $(this).val();
                         if(protocol == null)
                           return;
+                       
 
                         if(protocol == "nfs") {
                           //$("#add_pool_server_container", $dialogAddPool).show();
@@ -9445,9 +9515,24 @@
 
               action: function(args) {
                 var array1 = [];
+                array1.push("&scope=" + todb(args.data.scope));
+
                 array1.push("&zoneid=" + args.data.zoneid);
-                array1.push("&podId=" + args.data.podId);
+            
+               if(args.data.scope == 'cluster'){
+
+                array1.push("&podid=" + args.data.podId);
                 array1.push("&clusterid=" + args.data.clusterId);
+
+               }
+
+                if(args.data.scope == 'host'){
+                array1.push("&podid=" + args.data.podId);
+                array1.push("&clusterid=" + args.data.clusterId);
+                array1.push("&hostid=" + args.data.hostId);
+
+               }
+
                 array1.push("&name=" + todb(args.data.name));
 
                 var server = args.data.server;

@@ -24,5 +24,18 @@
 
 <section id="using-vpn-with-mac">
     <title>Using VPN with Mac OS X</title>
-    <para>In Mac OS X, in Network Preferences - Advanced,  make sure Send all traffic over VPN connection is not checked.</para>
+    <para>First, be sure you've configured the VPN settings in your &PRODUCT; install. This section is only concerned with connecting via Mac OS X to your VPN.</para>
+    <para>Note, these instructions were written on Mac OS X 10.7.5. They may differ slightly in older or newer releases of Mac OS X.</para>
+    <orderedlist>
+        <listitem><para>On your Mac, open System Preferences and click Network.</para></listitem>
+        <listitem><para>Make sure Send all traffic over VPN connection is not checked.</para></listitem>
+        <listitem><para>If your preferences are locked, you'll need to click the lock in the bottom left-hand corner to make any changes and provide your administrator credentials.</para></listitem>
+        <listitem><para>You will need to create a new network entry. Click the plus icon on the bottom left-hand side and you'll see a dialog that says "Select the interface and enter a name for the new service." Select VPN from the Interface drop-down menu, and "L2TP over IPSec" for the VPN Type. Enter whatever you like within the "Service Name" field.</para></listitem>
+        <listitem><para>You'll now have a new network interface with the name of whatever you put in the "Service Name" field. For the purposes of this example, we'll assume you've named it "CloudStack." Click on that interface and provide the IP address of the interface for your VPN under the Server Address field, and the user name for your VPN under Account Name.</para></listitem>
+        <listitem><para>Click Authentication Settings, and add the user's password under User Authentication and enter the pre-shared IPSec key in the Shared Secret field under Machine Authentication. Click OK.</para></listitem>
+        <listitem><para>You may also want to click the "Show VPN status in menu bar" but that's entirely optional.</para></listitem>
+        <listitem><para>Now click "Connect" and you will be connected to the CloudStack VPN.</para></listitem>
+    </orderedlist>
+
+
 </section>

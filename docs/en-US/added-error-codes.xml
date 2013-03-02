@@ -24,7 +24,7 @@
 
 <section id="added-error-codes">
         <title>Added &PRODUCT; Error Codes</title>
-            <para>You can now find the &PRODUCT;-specific error code in the exception response for each type of exception. The following list of error codes is added to the new class named CSExceptionErrorCode.  These codes are applicable in &PRODUCT; 3.0.3 and later versions.</para>
+            <para>You can now find the &PRODUCT;-specific error code in the exception response for each type of exception. The following list of error codes is added to the new class named CSExceptionErrorCode.</para>
     <informaltable frame="all">
         <tgroup cols="3" align="left" colsep="1" rowsep="1">
             <colspec colname="c1" />
