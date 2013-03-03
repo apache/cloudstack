@@ -159,10 +159,12 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
         VmwareTrafficLabel guestTrafficLabelObj = new VmwareTrafficLabel(TrafficType.Guest);
         VmwareTrafficLabel publicTrafficLabelObj = new VmwareTrafficLabel(TrafficType.Public);
         Map<String, String> clusterDetails = _clusterDetailsDao.findDetails(clusterId);
+        DataCenterVO zone = _dcDao.findById(dcId);
+        NetworkType zoneType = zone.getNetworkType();
         _readGlobalConfigParameters();
 
         // Set default physical network end points for public and guest traffic
-        // Private traffic will be only on standard vSwitch for now. See below TODO.
+        // Private traffic will be only on standard vSwitch for now.
         if (useDVS) {
             // Parse url parameters for type of vswitch and name of vswitch specified at cluster level
             paramGuestVswitchType = _urlParams.get(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC);
@@ -171,13 +173,6 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
             paramPublicVswitchName = _urlParams.get(ApiConstants.VSWITCH_NAME_PUBLIC_TRAFFIC);
             defaultVirtualSwitchType = getDefaultVirtualSwitchType();
         }
-        // Get zone wide traffic labels for Guest traffic and Public traffic
-        guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
-        publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
-        
-        // Process traffic label information provided at zone level and cluster level
-        guestTrafficLabelObj = getTrafficInfo(TrafficType.Guest, guestTrafficLabel, defaultVirtualSwitchType, paramGuestVswitchType, paramGuestVswitchName, clusterId);
-        publicTrafficLabelObj = getTrafficInfo(TrafficType.Public, publicTrafficLabel, defaultVirtualSwitchType, paramPublicVswitchType, paramPublicVswitchName, clusterId);
 
         // Zone level vSwitch Type depends on zone level traffic labels
         //
@@ -196,28 +191,50 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
         // <VSWITCHTYPE> 'vmwaresvs' is for vmware standard vswitch
         // <VSWITCHTYPE> 'vmwaredvs' is for vmware distributed virtual switch
         // <VSWITCHTYPE> 'nexusdvs' is for cisco nexus distributed virtual switch
+        // Get zone wide traffic labels for Guest traffic and Public traffic
+        guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
 
-        // Configuration Check: A physical network cannot be shared by different types of virtual switches.
-        //
-        // Check if different vswitch types are chosen for same physical network
-        // 1. Get physical network for guest traffic - multiple networks
-        // 2. Get physical network for public traffic - single network
-        // See if 2 is in 1
-        //  if no - pass
-        //  if yes - compare publicTrafficLabelObj.getVirtualSwitchType() == guestTrafficLabelObj.getVirtualSwitchType()
-        //      true  - pass
-        //      false - throw exception - fail cluster add operation
-        List<? extends PhysicalNetwork> pNetworkListGuestTraffic = _netmgr.getPhysicalNtwksSupportingTrafficType(dcId, TrafficType.Guest);
-        List<? extends PhysicalNetwork> pNetworkListPublicTraffic = _netmgr.getPhysicalNtwksSupportingTrafficType(dcId, TrafficType.Public);
-        // Public network would be on single physical network hence getting first object of the list would suffice.
-        PhysicalNetwork pNetworkPublic = pNetworkListPublicTraffic.get(0);
-        if (pNetworkListGuestTraffic.contains(pNetworkPublic)) {
-            if (publicTrafficLabelObj.getVirtualSwitchType() != guestTrafficLabelObj.getVirtualSwitchType()) {
-                String msg = "Both public traffic and guest traffic is over same physical network " + pNetworkPublic +
-                        ". And virtual switch type chosen for each traffic is different" +
-                        ". A physical network cannot be shared by different types of virtual switches.";
+        // Process traffic label information provided at zone level and cluster level
+        guestTrafficLabelObj = getTrafficInfo(TrafficType.Guest, guestTrafficLabel, defaultVirtualSwitchType, paramGuestVswitchType, paramGuestVswitchName, clusterId);
+
+        if (zoneType == NetworkType.Advanced) {
+            // Get zone wide traffic label for Public traffic
+            publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
+
+            // Process traffic label information provided at zone level and cluster level
+            publicTrafficLabelObj = getTrafficInfo(TrafficType.Public, publicTrafficLabel, defaultVirtualSwitchType, paramPublicVswitchType, paramPublicVswitchName, clusterId);
+
+            // Configuration Check: A physical network cannot be shared by different types of virtual switches.
+            //
+            // Check if different vswitch types are chosen for same physical network
+            // 1. Get physical network for guest traffic - multiple networks
+            // 2. Get physical network for public traffic - single network
+            // See if 2 is in 1
+            //  if no - pass
+            //  if yes - compare publicTrafficLabelObj.getVirtualSwitchType() == guestTrafficLabelObj.getVirtualSwitchType()
+            //      true  - pass
+            //      false - throw exception - fail cluster add operation
+
+            List<? extends PhysicalNetwork> pNetworkListGuestTraffic = _netmgr.getPhysicalNtwksSupportingTrafficType(dcId, TrafficType.Guest);
+            List<? extends PhysicalNetwork> pNetworkListPublicTraffic = _netmgr.getPhysicalNtwksSupportingTrafficType(dcId, TrafficType.Public);
+            // Public network would be on single physical network hence getting first object of the list would suffice.
+            PhysicalNetwork pNetworkPublic = pNetworkListPublicTraffic.get(0);
+            if (pNetworkListGuestTraffic.contains(pNetworkPublic)) {
+                if (publicTrafficLabelObj.getVirtualSwitchType() != guestTrafficLabelObj.getVirtualSwitchType()) {
+                    String msg = "Both public traffic and guest traffic is over same physical network " + pNetworkPublic +
+                            ". And virtual switch type chosen for each traffic is different" +
+                            ". A physical network cannot be shared by different types of virtual switches.";
+                    s_logger.error(msg);
+                    throw new InvalidParameterValueException(msg);
+                }
+            }
+        } else {
+            // Distributed virtual switch is not supported in Basic zone for now.
+            // Private / Management network traffic is not yet supported over distributed virtual switch.
+            if (guestTrafficLabelObj.getVirtualSwitchType() != VirtualSwitchType.StandardVirtualSwitch) {
+                String msg = "Detected that Guest traffic is over Distributed virtual switch in Basic zone. Only Standard vSwitch is supported in Basic zone.";
                 s_logger.error(msg);
-                throw new InvalidParameterValueException(msg);
+                throw new DiscoveredWithErrorException(msg);
             }
         }
 
@@ -227,8 +244,6 @@ public class VmwareServerDiscoverer extends DiscovererBase implements
         }
 
         if (nexusDVS) {
-            DataCenterVO zone = _dcDao.findById(dcId);
-            NetworkType zoneType = zone.getNetworkType();
             if (zoneType != NetworkType.Basic) {
                 publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
                 if (publicTrafficLabel != null) {
