@@ -17,9 +17,11 @@
 
 package com.cloud.agent.api.routing;
 
-// details of site participating in the GLSB service
+// details of site participating in the GLSB service, represents configuration load balancer rule and the zone
+// in which the rule is configured
 public class SiteLoadBalancerConfig {
-// true if the site is local (GSLB provider receiving GlobalLoadBalancerConfigCommand is in same site)
+
+    // true if the site details are local to the zone receiving 'GlobalLoadBalancerConfigCommand'
     boolean local;
 
     // true if the site needs to be removed from GSLB service
@@ -34,8 +36,8 @@ public class SiteLoadBalancerConfig {
     // port corresponding to the site load balanced service
     String port;
 
-    // IP corresponding to the GSLB service provider in the site.
-    String gslbProviderIp;
+    // Private IP corresponding to the GSLB service provider in the site.
+    String gslbProviderPrivateIp;
 
     // Public IP corresponding to the GSLB service provider in the site.
     String gslbProviderPublicIp;
@@ -47,15 +49,12 @@ public class SiteLoadBalancerConfig {
         this.port = port;
     }
 
-    public SiteLoadBalancerConfig(String gslbProviderIp, String gslbProviderPublicIP, boolean local, boolean revoked,
-                                 String serviceType, String servicePublicIp, String port) {
-        this.gslbProviderIp = gslbProviderIp;
+    public SiteLoadBalancerConfig(String gslbProviderPublicIP, String gslbProviderPrivateIp, boolean local,
+                                  boolean revoked, String serviceType, String servicePublicIp, String port) {
+        this(revoked, serviceType, servicePublicIp, port);
+        this.gslbProviderPrivateIp = gslbProviderPrivateIp;
         this.gslbProviderPublicIp = gslbProviderPublicIP;
         this.local = local;
-        this.revoked = revoked;
-        this.serviceType = serviceType;
-        this.servicePublicIp = servicePublicIp;
-        this.port = port;
     }
 
     public String getServiceType() {
@@ -83,11 +82,11 @@ public class SiteLoadBalancerConfig {
     }
 
     public String getGslbProviderPrivateIp() {
-        return gslbProviderIp;
+        return gslbProviderPrivateIp;
     }
 
     public void setGslbProviderPrivateIp(String privateIp) {
-        this.gslbProviderIp = privateIp;
+        this.gslbProviderPrivateIp = privateIp;
     }
 
     public String getGslbProviderPublicIp() {

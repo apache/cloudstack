@@ -311,7 +311,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        // update the mapping of  gslb rule to Lb rule, to revoke state
+        // update the mapping of gslb rule to Lb rule, to revoke state
         for (Long lbRuleId : lbRuleIdsToremove) {
             GlobalLoadBalancerLbRuleMapVO removeGslbLbMap = _gslbLbMapDao.findByGslbRuleIdAndLbRuleId(gslbRuleId, lbRuleId);
             removeGslbLbMap.setRevoke(true);
@@ -354,7 +354,41 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
     @Override
     public GlobalLoadBalancerRule updateGlobalLoadBalancerRule(UpdateGlobalLoadBalancerRuleCmd updateGslbCmd) {
-        return null;
+
+        String algorithm = updateGslbCmd.getAlgorithm();
+        String stickyMethod = updateGslbCmd.getStickyMethod();
+        String description = updateGslbCmd.getDescription();
+
+        long gslbRuleId =  updateGslbCmd.getId();
+        GlobalLoadBalancerRuleVO gslbRule = _gslbRuleDao.findById(gslbRuleId);
+        if (gslbRule == null) {
+            throw new InvalidParameterValueException("Invalid global load balancer rule id: " + gslbRuleId);
+        }
+
+        UserContext ctx = UserContext.current();
+        Account caller = ctx.getCaller();
+
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, gslbRule);
+
+
+        if (!GlobalLoadBalancerRule.Algorithm.isValidAlgorithm(algorithm)) {
+            throw new InvalidParameterValueException("Invalid Algorithm: " + algorithm);
+        }
+
+        if (!GlobalLoadBalancerRule.Persistence.isValidPersistence(stickyMethod)) {
+            throw new InvalidParameterValueException("Invalid persistence: " + stickyMethod);
+        }
+
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        gslbRule.setAlgorithm(algorithm);
+        gslbRule.setPersistence(stickyMethod);
+        gslbRule.setDescription(description);
+        _gslbRuleDao.update(gslbRule.getId(), gslbRule);
+        txn.commit();
+
+        s_logger.debug("Updated global load balancer with id " + gslbRule.getUuid());
+        return gslbRule;
     }
 
     @Override
@@ -382,19 +416,31 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         Map<Long, SiteLoadBalancerConfig> zoneSiteLoadbalancerMap = new HashMap<Long, SiteLoadBalancerConfig>();
 
         List<GlobalLoadBalancerLbRuleMapVO> gslbLbMapVos = _gslbLbMapDao.listByGslbRuleId(gslbRuleId);
+
+        if (gslbLbMapVos == null || gslbLbMapVos.isEmpty()) {
+            return;
+        }
+
         for (GlobalLoadBalancerLbRuleMapVO gslbLbMapVo : gslbLbMapVos) {
+            // get the zone in which load balancer rule is deployed
             LoadBalancerVO loadBalancer = _lbDao.findById(gslbLbMapVo.getLoadBalancerId());
             Network network = _networkDao.findById(loadBalancer.getNetworkId());
+            long dataCenterId = network.getDataCenterId();
 
-            gslbSiteIds.add(network.getDataCenterId());
+            gslbSiteIds.add(dataCenterId);
 
             IPAddressVO ip = _ipAddressDao.findById(loadBalancer.getSourceIpAddressId());
             SiteLoadBalancerConfig siteLb = new SiteLoadBalancerConfig(gslbLbMapVo.isRevoke(), serviceType,
                     ip.getAddress().addr(), Integer.toString(loadBalancer.getDefaultPortStart()));
 
+            siteLb.setGslbProviderPublicIp(null);
+            siteLb.setGslbProviderPrivateIp(null);
+
             zoneSiteLoadbalancerMap.put(network.getDataCenterId(), siteLb);
         }
 
+        // loop through all the zones, participating in GSLB, and send GSLB config command
+        // to the GSLB service provider in the zone
         for (long zoneId: gslbSiteIds) {
 
             List<SiteLoadBalancerConfig> slbs = new ArrayList<SiteLoadBalancerConfig>();
@@ -405,9 +451,11 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
                 slbs.add(siteLb);
             }
 
+            gslbConfigCmd.setSiteLoadBalancers(slbs);
+
+            // get the host Id corresponding to GSLB service provider in the zone
             long zoneGslbProviderHosId = 0;
 
-            gslbConfigCmd.setSiteLoadBalancers(slbs);
             Answer answer = _agentMgr.easySend(zoneGslbProviderHosId, gslbConfigCmd);
             if (answer == null) {
 

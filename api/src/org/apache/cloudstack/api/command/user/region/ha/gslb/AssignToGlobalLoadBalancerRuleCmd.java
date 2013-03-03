@@ -47,7 +47,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = GlobalLoadBalancerResponse.class,
-            required=true, description="the ID of the load balancer rule")
+            required=true, description="the ID of the global load balancer rule")
     private Long id;
 
     @Parameter(name=ApiConstants.LOAD_BALANCER_RULE_LIST, type=CommandType.LIST, collectionType=CommandType.UUID,

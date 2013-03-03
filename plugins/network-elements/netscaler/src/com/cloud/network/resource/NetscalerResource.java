@@ -755,7 +755,7 @@ public class NetscalerResource implements ServerResource {
         String persistenceType = gslbCmd.getPersistenceType();
         String serviceType = gslbCmd.getServiceType();
         boolean forRevoke = gslbCmd.isForRevoke();
-        GlobalLoadBalancerConfigCommand.SiteLoadBalancer[] sites = gslbCmd.getSiteDetails();
+        List<SiteLoadBalancerConfig> sites = gslbCmd.getSiteDetails();
 
         String domainName = gslbCmd.getDomainName();
         String vserverName = GSLB.generateVirtualServerName(domainName);
@@ -768,7 +768,7 @@ public class NetscalerResource implements ServerResource {
                 GSLB.createVirtualServer(_netscalerService, vserverName, lbMethod, persistenceType, serviceType);
 
                 if (sites != null) { // check if there are any sites that are participating in global load balancing
-                    for (GlobalLoadBalancerConfigCommand.SiteLoadBalancer site : sites) {
+                    for (SiteLoadBalancerConfig site : sites) {
 
                         String sitePrivateIP = site.getGslbProviderPrivateIp();
                         String sitePublicIP =  site.getGslbProviderPublicIp();
@@ -822,7 +822,7 @@ public class NetscalerResource implements ServerResource {
                 GSLB.createVserverDomainBinding(_netscalerService, vserverName, domainName);
 
                 if (sites != null) {
-                    for (GlobalLoadBalancerConfigCommand.SiteLoadBalancer site : sites) {
+                    for (SiteLoadBalancerConfig site : sites) {
 
                         String sitePrivateIP = site.getGslbProviderPrivateIp();
                         String sitePublicIP =  site.getGslbProviderPublicIp();

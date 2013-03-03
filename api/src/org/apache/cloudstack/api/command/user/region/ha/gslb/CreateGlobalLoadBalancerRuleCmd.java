@@ -60,7 +60,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     private Long domainId;
 
     @Parameter(name=ApiConstants.GSLB_LB_METHOD, type=CommandType.STRING, required=false, description="load balancer algorithm (roundrobin, leastconn, proximity) " +
-            "that is used to distributed traffic across the zones participating in global server load balancing, if not specified defaults to 'round robin'")
+            "that method is used to distribute traffic across the zones participating in global server load balancing, if not specified defaults to 'round robin'")
     private String algorithm;
 
     @Parameter(name=ApiConstants.GSLB_STICKY_SESSION_METHOD, type=CommandType.STRING, required=false, description="session sticky method (sourceip) if not specified defaults to sourceip")
