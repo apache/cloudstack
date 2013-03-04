@@ -14,31 +14,19 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+from marvin.integration.lib.base import CloudStackEntity
+from marvin.cloudstackAPI import resetSSHKeyForVirtualMachine
 
-from marvin.integration.lib.base import Account
-import hashlib
-from marvin.integration.lib.factory.CloudStackBaseFactory import *
-from marvin.integration.lib.utils import random_gen
-
-class AccountFactory(CloudStackBaseFactory):
-
-    FACTORY_FOR = Account.Account
-
-    accounttype = 0
-    email = factory.LazyAttribute(lambda e: '{0}.{1}@cloudstack.org'.format(e.firstname, e.lastname).lower())
-    firstname = 'fname-'+random_gen()
-    lastname = 'lname-'+random_gen()
-    username = None
-
-    # Password Encoding
-    mdf = hashlib.md5()
-    mdf.update('password')
-    password = mdf.hexdigest()
-
-class AdminAccountFactory(AccountFactory):
-    accounttype = 1
+class SSHKeyForVirtualMachine(CloudStackEntity):
 
 
-class DomainAdminFactory(AccountFactory):
-    accounttype = 2
-    domainid = None
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+
+    def reset(self, apiclient, keypair, id, **kwargs):
+        cmd = resetSSHKeyForVirtualMachine.resetSSHKeyForVirtualMachineCmd()
+        cmd.id = id
+        cmd.keypair = keypair
+        [setattr(cmd, key, value) for key,value in kwargs.items]
+        sshkeyforvirtualmachine = apiclient.resetSSHKeyForVirtualMachine(cmd)
