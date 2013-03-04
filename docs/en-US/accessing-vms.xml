@@ -32,9 +32,9 @@
         </orderedlist>
         <para>To access a VM directly over the network:</para>
         <orderedlist>
-            <listitem><para>The VM must have some port open to incoming traffic. For example, in a basic zone, a new VM might be assigned to a security group which allows incoming traffic. This depends on what security group you picked when creating the VM. In other cases, you can open a port by setting up a port forwarding policy. See IP Forwarding and Firewalling.</para></listitem>
+            <listitem><para>The VM must have some port open to incoming traffic. For example, in a basic zone, a new VM might be assigned to a security group which allows incoming traffic. This depends on what security group you picked when creating the VM. In other cases, you can open a port by setting up a port forwarding policy. See <xref linkend="ip-forwarding-firewalling"/>.</para></listitem>
             <listitem><para>If a port is open but you can not access the VM using ssh, it’s possible that ssh is not already enabled on the VM. This will depend on whether ssh is enabled in the template you picked when creating the VM. Access the VM through the &PRODUCT; UI and enable ssh on the machine using the commands for the VM’s operating system.</para></listitem>
-            <listitem><para>If the network has an external firewall device, you will need to create a firewall rule to allow access. See IP Forwarding and Firewalling.</para></listitem>
+            <listitem><para>If the network has an external firewall device, you will need to create a firewall rule to allow access. See <xref linkend="ip-forwarding-firewalling"/>.</para></listitem>
         </orderedlist>
 </section>
 
