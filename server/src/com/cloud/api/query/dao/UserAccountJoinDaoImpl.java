@@ -22,22 +22,17 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.query.vo.InstanceGroupJoinVO;
+
 import com.cloud.api.query.vo.UserAccountJoinVO;
 
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.springframework.stereotype.Component;
 
-import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.InstanceGroup;
 
 
 @Component
@@ -58,7 +53,7 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
         vrIdSearch.done();
 
         vrAcctIdSearch = createSearchBuilder();
-        vrAcctIdSearch.and("accountid", vrAcctIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        vrAcctIdSearch.and("accountId", vrAcctIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         vrAcctIdSearch.done();
 
 
