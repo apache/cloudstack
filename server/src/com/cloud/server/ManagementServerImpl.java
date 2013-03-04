@@ -2110,7 +2110,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DestroyVMCmd.class);
         cmdList.add(GetVMPasswordCmd.class);
         cmdList.add(ListVMsCmd.class);
-        cmdList.add(ScaleVMCmd.class);
         cmdList.add(RebootVMCmd.class);
         cmdList.add(RemoveNicFromVMCmd.class);
         cmdList.add(ResetVMPasswordCmd.class);

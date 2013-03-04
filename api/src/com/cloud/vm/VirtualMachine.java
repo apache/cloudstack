@@ -41,7 +41,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         Destroyed(false, "VM is marked for destroy."),
         Expunging(true, "VM is being   expunged."),
         Migrating(true, "VM is being migrated.  host id holds to from host"),
-        Reconfiguring(true, "VM is being reconfigured to a new service offering"),
         Error(false, "VM is in error"),
         Unknown(false, "VM state is unknown."),
         Shutdowned(false, "VM is shutdowned from inside");
@@ -96,9 +95,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             s_fsm.addTransition(State.Running, VirtualMachine.Event.StopRequested, State.Stopping);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportShutdowned, State.Stopped);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportMigrated, State.Running);
-            s_fsm.addTransition(State.Running, VirtualMachine.Event.ReconfiguringRequested, State.Reconfiguring);
-            s_fsm.addTransition(State.Reconfiguring, VirtualMachine.Event.OperationSucceeded, State.Running);
-            s_fsm.addTransition(State.Reconfiguring, VirtualMachine.Event.OperationFailed, State.Running);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.MigrationRequested, State.Migrating);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationFailed, State.Running);
@@ -180,8 +176,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         AgentReportShutdowned,
         AgentReportMigrated,
         RevertRequested,
-        SnapshotRequested,
-        ReconfiguringRequested
+        SnapshotRequested
     };
 
     public enum Type {
@@ -298,9 +293,5 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
     HypervisorType getHypervisorType();
 
     public Map<String, String> getDetails();
-
-    public Boolean getSameHost();
-
-    public Long getNewSvcOfferingId();
 
 }

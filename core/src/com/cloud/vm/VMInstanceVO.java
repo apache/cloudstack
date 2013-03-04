@@ -151,12 +151,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Transient
     Map<String, String> details;
 
-    @Transient
-    Long newSvcOfferingId;
-
-    @Transient
-    Boolean sameHost;
-
     @Column(name="uuid")
     protected String uuid = UUID.randomUUID().toString();
     ;
@@ -485,23 +479,5 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	public Long getDiskOfferingId() {
 		return diskOfferingId;
 	}
-
-    @Override
-    public Long getNewSvcOfferingId() {
-        return newSvcOfferingId;
-    }
-
-    public void setNewSvcOfferingId(Long oldSvcOfferingId) {
-        this.newSvcOfferingId = oldSvcOfferingId;
-    }
-
-    @Override
-    public Boolean getSameHost() {
-        return sameHost;
-    }
-
-    public void setSameHost(Boolean sameHost) {
-        this.sameHost = sameHost;
-    }
 
 }

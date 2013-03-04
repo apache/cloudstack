@@ -265,21 +265,6 @@ public class MockVirtualMachineManagerImpl extends ManagerBase implements Virtua
         return null;
     }
 
-    @Override
-    public VMInstanceVO reConfigureVm(VMInstanceVO vm, ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public VMInstanceVO scale(Type vmType, VMInstanceVO vm, Long newSvcOfferingId) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, VirtualMachineMigrationException, ManagementServerException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public <T extends VMInstanceVO> T migrateForScale(T vm, long srcHostId, DeployDestination dest, Long newSvcOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
     /* (non-Javadoc)
      * @see com.cloud.vm.VirtualMachineManager#addVmToNetwork(com.cloud.vm.VirtualMachine, com.cloud.network.Network, com.cloud.vm.NicProfile)
      */

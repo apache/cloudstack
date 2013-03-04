@@ -41,8 +41,7 @@ public class ItWorkVO {
         Started,
         Release,
         Done,
-        Migrating,
-        Reconfiguring
+        Migrating
     }
     
     @Id

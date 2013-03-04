@@ -186,16 +186,4 @@ public interface VirtualMachineManager extends Manager {
      */
     VirtualMachineTO toVmTO(VirtualMachineProfile<? extends VMInstanceVO> profile);
 
-
-    VMInstanceVO reConfigureVm(VMInstanceVO vm, ServiceOffering newServiceOffering, boolean sameHost)
-            throws ResourceUnavailableException, ConcurrentOperationException;
-
-    VMInstanceVO scale(VirtualMachine.Type vmType, VMInstanceVO vm, Long newSvcOfferingId) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException,
-            VirtualMachineMigrationException, ManagementServerException;
-
-    <T extends VMInstanceVO> T migrateForScale(T vm, long srcHostId, DeployDestination dest, Long newSvcOfferingId)
-            throws ResourceUnavailableException, ConcurrentOperationException,
-            ManagementServerException, VirtualMachineMigrationException;
-
 }

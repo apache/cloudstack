@@ -59,7 +59,6 @@ public class EventTypes {
     public static final String EVENT_VM_REBOOT = "VM.REBOOT";
     public static final String EVENT_VM_UPDATE = "VM.UPDATE";
     public static final String EVENT_VM_UPGRADE = "VM.UPGRADE";
-    public static final String EVENT_VM_SCALE = "VM.SCALE";
     public static final String EVENT_VM_RESETPASSWORD = "VM.RESETPASSWORD";
     public static final String EVENT_VM_RESETSSHKEY = "VM.RESETSSHKEY";
     public static final String EVENT_VM_MIGRATE = "VM.MIGRATE";

@@ -25,7 +25,18 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
-import org.apache.cloudstack.api.command.user.vm.*;
+import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
+import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
+import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
+import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.springframework.stereotype.Component;
@@ -380,10 +391,6 @@ public class MockUserVmManagerImpl extends ManagerBase implements UserVmManager,
         return null;
     }
 
-    @Override
-    public UserVm upgradeVirtualMachine(ScaleVMCmd scaleVMCmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
 
 
     @Override

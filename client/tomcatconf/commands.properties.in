@@ -66,7 +66,6 @@ listVirtualMachines=15
 getVMPassword=15
 restoreVirtualMachine=15
 changeServiceForVirtualMachine=15
-scaleVirtualMachine=15
 assignVirtualMachine=1
 migrateVirtualMachine=1
 recoverVirtualMachine=7
