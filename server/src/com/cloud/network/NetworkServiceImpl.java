@@ -1940,6 +1940,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             // add VPCVirtualRouter as the defualt network service provider
             addDefaultVpcVirtualRouterToPhysicalNetwork(pNetwork.getId());
 
+            // add baremetal as the defualt network service provider
+            addDefaultBaremetalProvidersToPhysicalNetwork(pNetwork.getId());
+            
             txn.commit();
             return pNetwork;
         } catch (Exception ex) {
@@ -2773,8 +2776,18 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         return nsp;
     }
-
     
+    private PhysicalNetworkServiceProvider addDefaultBaremetalProvidersToPhysicalNetwork(long physicalNetworkId) {
+        PhysicalNetworkVO pvo = _physicalNetworkDao.findById(physicalNetworkId);
+        DataCenterVO dvo = _dcDao.findById(pvo.getDataCenterId());
+        if (dvo.getNetworkType() == NetworkType.Basic) {
+            addProviderToPhysicalNetwork(physicalNetworkId, "BaremetalDhcpProvider", null, null);
+            addProviderToPhysicalNetwork(physicalNetworkId, "BaremetalPxeProvider", null, null);
+            addProviderToPhysicalNetwork(physicalNetworkId, "BaremetaUserdataProvider", null, null);
+        }
+        return null;
+    }
+
     protected boolean isNetworkSystem(Network network) {
         NetworkOffering no = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
         if (no.isSystemOnly()) {
