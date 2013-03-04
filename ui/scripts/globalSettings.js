@@ -134,7 +134,7 @@
                     
                     title: 'Configure LDAP',
                     fields:{
-                        name:{label: 'Bind Username' , validation: {required:true} },
+                        name:{label: 'Bind DN' , validation: {required:true} },
                         password: {label: 'Bind Password', validation: {required: true },isPassword:true },
                         hostname: {label:'Hostname' , validation:{required:true}},
                         queryfilter: {label:'Query Filter' , validation: {required:true}},
