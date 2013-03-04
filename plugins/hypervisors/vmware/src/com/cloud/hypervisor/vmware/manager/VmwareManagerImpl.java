@@ -604,14 +604,17 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         if (url != null) {
             isoFile = new File(url.getPath());
         }
-        if (isoFile == null || !isoFile.exists()) {
-            isoFile = new File("/usr/lib64/cloud/common/" + "/vms/systemvm.iso");
-            if (!isoFile.exists()) {
-                isoFile = new File("/usr/lib/cloud/common/" + "/vms/systemvm.iso");
-            }
+
+        if(isoFile == null || !isoFile.exists()) {
+            isoFile = new File("/usr/share/cloudstack-common/vms/systemvm.iso");
         }
-        return isoFile;
-    }
+
+        assert(isoFile != null);
+        if(!isoFile.exists()) {
+               s_logger.error("Unable to locate systemvm.iso in your setup at " + isoFile.toString());
+         }
+         return isoFile;
+     }
 
     @Override
     public File getSystemVMKeyFile() {
@@ -620,14 +623,16 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         if ( url != null ){
             keyFile = new File(url.getPath());
         }
+
         if (keyFile == null || !keyFile.exists()) {
-            keyFile = new File("/usr/lib64/cloud/common" + "/scripts/vm/systemvm/id_rsa.cloud");
-            if (!keyFile.exists()) {
-                keyFile = new File("/usr/lib/cloud/common" + "/scripts/vm/systemvm/id_rsa.cloud");
-            }
+            keyFile = new File("/usr/share/cloudstack-common/scripts/vm/systemvm/id_rsa.cloud");
         }
-        return keyFile;
-    }    
+        assert(keyFile != null);
+        if(!keyFile.exists()) {
+               s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
+         }
+         return keyFile;
+     }
 
     private Runnable getHostScanTask() {
         return new Runnable() {
