@@ -38,33 +38,13 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import com.cloud.dc.*;
+import com.cloud.agent.api.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.Listener;
-import com.cloud.agent.api.AgentControlAnswer;
-import com.cloud.agent.api.AgentControlCommand;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CheckVirtualMachineAnswer;
-import com.cloud.agent.api.CheckVirtualMachineCommand;
-import com.cloud.agent.api.ClusterSyncAnswer;
-import com.cloud.agent.api.ClusterSyncCommand;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.MigrateAnswer;
-import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.PingRoutingCommand;
-import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.RebootAnswer;
-import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.StartAnswer;
-import com.cloud.agent.api.StartCommand;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupRoutingCommand.VmState;
-import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
@@ -2421,13 +2401,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (newServiceOffering == null) {
             throw new InvalidParameterValueException("Unable to find a service offering with id " + newServiceOfferingId);
         }
-		
-        // Check that the VM is stopped
-        if (!vmInstance.getState().equals(State.Stopped)) {
+
+        // Check that the VM is stopped / running
+        if (!(vmInstance.getState().equals(State.Stopped) || vmInstance.getState().equals(State.Running) )) {
             s_logger.warn("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
-            throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + " " +
-                    "in state " + vmInstance.getState()
-                    + "; make sure the virtual machine is stopped and not in an error state before upgrading.");
+            throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + " " + " in state " + vmInstance.getState()
+                    + "; make sure the virtual machine is stopped/running");
         }
 
         // Check if the service offering being upgraded to is what the VM is already running with
@@ -2678,4 +2657,276 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return true;
     }
 
-}
+    @Override
+    public VMInstanceVO scale(VirtualMachine.Type vmType, VMInstanceVO vm, Long newSvcOfferingId)
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, VirtualMachineMigrationException, ManagementServerException {
+
+        VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+
+        Long srcHostId = vm.getHostId();
+        Long oldSvcOfferingId = vm.getServiceOfferingId();
+        if (srcHostId == null) {
+            s_logger.debug("Unable to scale the vm because it doesn't have a host id: " + vm);
+            return vm;
+        }
+        Host host = _hostDao.findById(srcHostId);
+        DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
+        ExcludeList excludes = new ExcludeList();
+        excludes.addHost(vm.getHostId());
+        vm.setServiceOfferingId(newSvcOfferingId); // Need to find the destination host based on new svc offering
+
+        DeployDestination dest = null;
+
+        for (DeploymentPlanner planner : _planners) {
+            if (planner.canHandle(profile, plan, excludes)) {
+                dest = planner.plan(profile, plan, excludes);
+            } else {
+                continue;
+            }
+
+            if (dest != null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Planner " + planner + " found " + dest + " for scaling the vm to.");
+                }
+                break;
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Planner " + planner + " was unable to find anything.");
+            }
+        }
+
+        if (dest == null) {
+            throw new InsufficientServerCapacityException("Unable to find a server to scale the vm to.", host.getClusterId());
+        }
+
+        excludes.addHost(dest.getHost().getId());
+        VMInstanceVO vmInstance = null;
+        try {
+            vmInstance = migrateForScale(vm, srcHostId, dest, oldSvcOfferingId);
+        } catch (ResourceUnavailableException e) {
+            s_logger.debug("Unable to migrate to unavailable " + dest);
+            throw e;
+        } catch (ConcurrentOperationException e) {
+            s_logger.debug("Unable to migrate VM due to: " + e.getMessage());
+            throw e;
+        } catch (ManagementServerException e) {
+            s_logger.debug("Unable to migrate VM: " + e.getMessage());
+            throw e;
+        } catch (VirtualMachineMigrationException e) {
+            s_logger.debug("Got VirtualMachineMigrationException, Unable to migrate: " + e.getMessage());
+            if (vm.getState() == State.Starting) {
+                s_logger.debug("VM seems to be still Starting, we should retry migration later");
+                throw e;
+            } else {
+                s_logger.debug("Unable to migrate VM, VM is not in Running or even Starting state, current state: " + vm.getState().toString());
+            }
+        }
+        if (vmInstance != null) {
+            return vmInstance;
+        }else{
+            return null;
+        }
+    }
+
+        @Override
+        public VMInstanceVO reConfigureVm(VMInstanceVO vm , ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException {
+            ScaleVmCommand reconfigureCmd = new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(),
+                    newServiceOffering.getSpeed(), newServiceOffering.getRamSize(), newServiceOffering.getRamSize());
+
+            Long dstHostId = vm.getHostId();
+            ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Reconfiguring, vm.getType(), vm.getId());
+            work.setStep(Step.Prepare);
+            work.setResourceType(ItWorkVO.ResourceType.Host);
+            work.setResourceId(vm.getHostId());
+            work = _workDao.persist(work);
+            boolean success = false;
+            try {
+                vm.setNewSvcOfferingId(newServiceOffering.getId()); // Capacity update should be delta (new - old) offering
+                changeState(vm, Event.ReconfiguringRequested, dstHostId, work, Step.Reconfiguring);
+
+                Answer reconfigureAnswer = _agentMgr.send(vm.getHostId(), reconfigureCmd);
+                if (!reconfigureAnswer.getResult()) {
+                    s_logger.error("Unable to reconfigure due to " + reconfigureAnswer.getDetails());
+                    return null;
+                }
+
+                changeState(vm, VirtualMachine.Event.OperationSucceeded, dstHostId, work, Step.Done);
+                success = true;
+            } catch (OperationTimedoutException e) {
+                throw new AgentUnavailableException("Operation timed out on reconfiguring " + vm, dstHostId);
+            } catch (AgentUnavailableException e) {
+                throw e;
+            } catch (NoTransitionException e) {
+                s_logger.info("Unable to change the state : " + e.getMessage());
+                throw new ConcurrentOperationException("Unable to change the state : " + e.getMessage());
+            }finally{
+                work.setStep(Step.Done);
+                _workDao.update(work.getId(), work);
+                if(!success){
+                    try {
+                        stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
+                    } catch (NoTransitionException e) {
+                        s_logger.warn(e.getMessage());
+                    }
+                }
+            }
+
+            return vm;
+
+        }
+
+        @Override
+        public <T extends VMInstanceVO> T migrateForScale(T vm, long srcHostId, DeployDestination dest, Long oldSvcOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
+                VirtualMachineMigrationException {
+            s_logger.info("Migrating " + vm + " to " + dest);
+
+            Long newSvcOfferingId = vm.getServiceOfferingId();
+            long dstHostId = dest.getHost().getId();
+            Host fromHost = _hostDao.findById(srcHostId);
+            if (fromHost == null) {
+                s_logger.info("Unable to find the host to migrate from: " + srcHostId);
+                throw new CloudRuntimeException("Unable to find the host to migrate from: " + srcHostId);
+            }
+
+            if (fromHost.getClusterId().longValue() != dest.getCluster().getId()) {
+                s_logger.info("Source and destination host are not in same cluster, unable to migrate to host: " + dest.getHost().getId());
+                throw new CloudRuntimeException("Source and destination host are not in same cluster, unable to migrate to host: " + dest.getHost().getId());
+            }
+
+            VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
+
+            long vmId = vm.getId();
+            vm = vmGuru.findById(vmId);
+            if (vm == null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Unable to find the vm " + vm);
+                }
+                throw new ManagementServerException("Unable to find a virtual machine with id " + vmId);
+            }
+
+            if (vm.getState() != State.Running) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
+                }
+                throw new VirtualMachineMigrationException("VM is not Running, unable to migrate the vm currently " + vm + " , current state: " + vm.getState().toString());
+            }
+
+            short alertType = AlertManager.ALERT_TYPE_USERVM_MIGRATE;
+            if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
+                alertType = AlertManager.ALERT_TYPE_DOMAIN_ROUTER_MIGRATE;
+            } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
+                alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
+            }
+
+            VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+            _networkMgr.prepareNicForMigration(profile, dest);
+            this.volumeMgr.prepareForMigration(profile, dest);
+
+            VirtualMachineTO to = toVmTO(profile);
+            PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
+
+            ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Migrating, vm.getType(), vm.getId());
+            work.setStep(Step.Prepare);
+            work.setResourceType(ItWorkVO.ResourceType.Host);
+            work.setResourceId(dstHostId);
+            work = _workDao.persist(work);
+
+            PrepareForMigrationAnswer pfma = null;
+            try {
+                pfma = (PrepareForMigrationAnswer) _agentMgr.send(dstHostId, pfmc);
+                if (!pfma.getResult()) {
+                    String msg = "Unable to prepare for migration due to " + pfma.getDetails();
+                    pfma = null;
+                    throw new AgentUnavailableException(msg, dstHostId);
+                }
+            } catch (OperationTimedoutException e1) {
+                throw new AgentUnavailableException("Operation timed out", dstHostId);
+            } finally {
+                if (pfma == null) {
+                    work.setStep(Step.Done);
+                    _workDao.update(work.getId(), work);
+                }
+            }
+
+            vm.setLastHostId(srcHostId);
+            try {
+                if (vm == null || vm.getHostId() == null || vm.getHostId() != srcHostId || !changeState(vm, Event.MigrationRequested, dstHostId, work, Step.Migrating)) {
+                    s_logger.info("Migration cancelled because state has changed: " + vm);
+                    throw new ConcurrentOperationException("Migration cancelled because state has changed: " + vm);
+                }
+            } catch (NoTransitionException e1) {
+                s_logger.info("Migration cancelled because " + e1.getMessage());
+                throw new ConcurrentOperationException("Migration cancelled because " + e1.getMessage());
+            }
+
+            boolean migrated = false;
+            try {
+                boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
+                MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows);
+                mc.setHostGuid(dest.getHost().getGuid());
+
+                try {
+                    MigrateAnswer ma = (MigrateAnswer) _agentMgr.send(vm.getLastHostId(), mc);
+                    if (!ma.getResult()) {
+                        s_logger.error("Unable to migrate due to " + ma.getDetails());
+                        return null;
+                    }
+                } catch (OperationTimedoutException e) {
+                    if (e.isActive()) {
+                        s_logger.warn("Active migration command so scheduling a restart for " + vm);
+                        _haMgr.scheduleRestart(vm, true);
+                    }
+                    throw new AgentUnavailableException("Operation timed out on migrating " + vm, dstHostId);
+                }
+
+                try {
+                    vm.setServiceOfferingId(oldSvcOfferingId); // release capacity for the old service offering only
+                    if (!changeState(vm, VirtualMachine.Event.OperationSucceeded, dstHostId, work, Step.Started)) {
+                        throw new ConcurrentOperationException("Unable to change the state for " + vm);
+                    }
+                } catch (NoTransitionException e1) {
+                    throw new ConcurrentOperationException("Unable to change state due to " + e1.getMessage());
+                }
+
+                try {
+                    if (!checkVmOnHost(vm, dstHostId)) {
+                        s_logger.error("Unable to complete migration for " + vm);
+                        try {
+                            _agentMgr.send(srcHostId, new Commands(cleanup(vm.getInstanceName())), null);
+                        } catch (AgentUnavailableException e) {
+                            s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
+                        }
+                        cleanup(vmGuru, new VirtualMachineProfileImpl<T>(vm), work, Event.AgentReportStopped, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                        return null;
+                    }
+                } catch (OperationTimedoutException e) {
+                }
+
+                migrated = true;
+                return vm;
+            } finally {
+                if (!migrated) {
+                    s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm);
+
+                    _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), "Unable to migrate vm " + vm.getInstanceName() + " from host " + fromHost.getName() + " in zone "
+                            + dest.getDataCenter().getName() + " and pod " + dest.getPod().getName(), "Migrate Command failed.  Please check logs.");
+                    try {
+                        _agentMgr.send(dstHostId, new Commands(cleanup(vm.getInstanceName())), null);
+                    } catch (AgentUnavailableException ae) {
+                        s_logger.info("Looks like the destination Host is unavailable for cleanup");
+                    }
+
+                    try {
+                        stateTransitTo(vm, Event.OperationFailed, srcHostId);
+                    } catch (NoTransitionException e) {
+                        s_logger.warn(e.getMessage());
+                    }
+                }
+
+                work.setStep(Step.Done);
+                _workDao.update(work.getId(), work);
+            }
+        }
+
+
+    }

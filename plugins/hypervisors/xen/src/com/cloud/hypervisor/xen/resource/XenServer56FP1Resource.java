@@ -138,9 +138,14 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         record.actionsAfterShutdown = Types.OnNormalExit.DESTROY;
         record.memoryDynamicMax = vmSpec.getMaxRam();
         record.memoryDynamicMin = vmSpec.getMinRam();
-        record.memoryStaticMax = vmSpec.getMaxRam();
-        record.memoryStaticMin = vmSpec.getMinRam();
-        record.VCPUsMax = (long) vmSpec.getCpus();
+        record.memoryStaticMax = 8589934592L; //128GB
+        record.memoryStaticMin = 134217728L; //128MB
+        if (guestOsTypeName.toLowerCase().contains("windows")) {
+            record.VCPUsMax = (long) vmSpec.getCpus();
+        } else {
+            record.VCPUsMax = 32L;
+        }
+
         record.VCPUsAtStartup = (long) vmSpec.getCpus();
         record.consoles.clear();
 
