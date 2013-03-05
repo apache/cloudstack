@@ -90,6 +90,10 @@
       var $theadTable = $('<table>').appendTo($theadContainer).attr('nowrap', 'nowrap');
       var $thead = $table.find('thead').remove().appendTo($theadTable);
 
+      $theadContainer.append(
+        $('<div>').addClass('sub-header')
+      );
+
       return $thead;
     };
 
@@ -228,6 +232,10 @@
 
         $row.siblings().removeClass('selected');
         $row.addClass('selected');
+      },
+
+      toggleExpandToolbar: function() {
+        $table.toggleClass('expanded');
       }
     };
 

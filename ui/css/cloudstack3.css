@@ -259,6 +259,26 @@ table th div.ui-resizable-handle {
   float: right;
 }
 
+.data-table .sub-header {
+  width: 755px;
+  height: 27px;
+  background: url(../images/bg-gradients.png) repeat-x 0px 0px;
+  /*+placement:shift 0px 50px;*/
+  position: relative;
+  left: 0px;
+  top: 50px;
+  position: absolute;
+  display: none;
+}
+
+.data-table.expanded .sub-header {
+  display: block;
+}
+
+.data-table.expanded table.body {
+  margin-top: 77px !important;
+}
+
 /** Header, misc*/
 #header,
 #navigation {
