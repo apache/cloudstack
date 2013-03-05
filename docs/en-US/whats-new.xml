@@ -24,6 +24,7 @@
     API usage.</para>
   <section id="whats-new-in-api-4.1">
     <title>What's New in the API for 4.1</title>
+    <xi:include href="add-remove-nic.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     <xi:include href="vmx-settings-dev.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     <xi:include href="reset-ssh-key-dev.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     <xi:include href="changed-apicommands-4.1.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
