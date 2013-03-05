@@ -28,6 +28,7 @@ fi
 echo To backup called >> [RROUTER_LOG]
 [RROUTER_BIN_PATH]/disable_pubip.sh >> [RROUTER_LOG] 2>&1
 echo Disable public ip $? >> [RROUTER_LOG]
+[RROUTER_BIN_PATH]/services.sh stop >> [RROUTER_LOG] 2>&1
 [RROUTER_BIN_PATH]/primary-backup.sh backup >> [RROUTER_LOG] 2>&1
 echo Switch conntrackd mode backup $? >> [RROUTER_LOG]
 echo Status: BACKUP >> [RROUTER_LOG]
