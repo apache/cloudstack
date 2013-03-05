@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.storage.dao;
+package com.cloud.vm.dao;
 
 import java.io.IOException;
 

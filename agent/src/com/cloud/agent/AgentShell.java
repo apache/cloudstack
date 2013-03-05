@@ -612,8 +612,8 @@ public class AgentShell implements IAgentShell {
 
     public static void main(String[] args) {
         try {
-        	LogUtils.initLog4j("log4j-cloud.xml");
-        	
+            LogUtils.initLog4j("log4j-cloud.xml");
+
             AgentShell shell = new AgentShell();
             shell.init(args);
             shell.start();

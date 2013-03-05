@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.storage.resource;
@@ -85,11 +85,11 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         if(cmd.getContextParam("execid") != null) {
             answer.setContextParam("execid", cmd.getContextParam("execid"));
         }
-        
+
         if(cmd.getContextParam("checkpoint") != null) {
             answer.setContextParam("checkpoint", cmd.getContextParam("checkpoint"));
         }
-        
+
         if(cmd.getContextParam("checkpoint2") != null) {
             answer.setContextParam("checkpoint2", cmd.getContextParam("checkpoint2"));
         }
@@ -219,23 +219,23 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         }
 
         morHyperHost.setType(hostTokens[0]);
-        morHyperHost.set_value(hostTokens[1]);
+        morHyperHost.setValue(hostTokens[1]);
 
         if(morHyperHost.getType().equalsIgnoreCase("HostSystem")) {
             HostMO hostMo =  new HostMO(context, morHyperHost);
 
             try {
-                
+
                 ManagedObjectReference mor = hostMo.getHyperHostCluster();
                 ClusterMO clusterMo = new ClusterMO(hostMo.getContext(), mor);
                 List<Pair<ManagedObjectReference, String>> hostsInCluster = clusterMo.getClusterHosts();
                 for(Pair<ManagedObjectReference, String> hostPair : hostsInCluster) {
                     HostMO hostIteratorMo = new HostMO(hostMo.getContext(), hostPair.first());
-                    
+
                     VmwareHypervisorHostNetworkSummary netSummary = hostIteratorMo.getHyperHostNetworkSummary(
                             hostIteratorMo.getHostType() == VmwareHostType.ESXi ? cmd.getContextParam("manageportgroup") : cmd.getContextParam("serviceconsole"));
                     _resource.ensureOutgoingRuleForAddress(netSummary.getHostIp());
-                    
+
                     s_logger.info("Setup firewall rule for host: " + netSummary.getHostIp());
                 }
             } catch(Throwable e) {
@@ -253,7 +253,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     public String getWorkerName(VmwareContext context, Command cmd, int workerSequence) {
         assert(cmd.getContextParam("worker") != null);
         assert(workerSequence < 2);
-        
+
         if(workerSequence == 0)
             return cmd.getContextParam("worker");
         return cmd.getContextParam("worker2");
@@ -276,7 +276,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         assert(hostTokens.length == 2);
 
         morHyperHost.setType(hostTokens[0]);
-        morHyperHost.set_value(hostTokens[1]);
+        morHyperHost.setValue(hostTokens[1]);
 
         if(morHyperHost.getType().equalsIgnoreCase("HostSystem")) {
             HostMO hostMo =  new HostMO(context, morHyperHost);

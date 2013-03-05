@@ -104,7 +104,14 @@
   <bean id="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator">
     <property name="name" value="FirstFitRouting"/>
   </bean>
-
+  
+  <bean id="hypervisorTemplateAdapter" class="com.cloud.template.HypervisorTemplateAdapter">
+    <property name="name" value="HypervisorAdapter"/>
+  </bean> 
+  
+   <bean id="bareMetalTemplateAdapter" class="com.cloud.baremetal.BareMetalTemplateAdapter">
+    <property name="name" value="BareMetalAdapter"/>
+  </bean> 
   
   <!--
     Storage pool allocators
@@ -230,7 +237,7 @@
   <bean id="BareMetalPlanner" class="com.cloud.baremetal.manager.BareMetalPlanner">
     <property name="name" value="BareMetal Fit"/>
   </bean>
-
+    
   <bean id="BaremetalPlannerSelector" class="com.cloud.baremetal.manager.BaremetalPlannerSelector">
     <property name="name" value="BaremetalPlannerSelector"/>
   </bean>
@@ -298,7 +305,7 @@
   <bean id="OvmGuru" class="com.cloud.ovm.hypervisor.OvmGuru">
     <property name="name" value="OvmGuru"/>
   </bean>
-
+  
   <!--
   <bean id="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru">
     <property name="name" value="SimulatorGuru"/>

@@ -24,39 +24,39 @@ import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import com.vmware.vim25.ManagedObjectReference;
 
 public class HostDatastoreBrowserMO extends BaseMO {
-	
+
     private static final Logger s_logger = Logger.getLogger(HostDatastoreBrowserMO.class);
-	
+
 	public HostDatastoreBrowserMO(VmwareContext context, ManagedObjectReference morHostDatastoreBrowser) {
 		super(context, morHostDatastoreBrowser);
 	}
-	
+
 	public HostDatastoreBrowserMO(VmwareContext context, String morType, String morValue) {
 		super(context, morType, morValue);
 	}
-	
+
 	public void DeleteFile(String datastoreFullPath) throws Exception {
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - deleteFile(). target mor: " + _mor.get_value() + ", file datastore path: " + datastoreFullPath);
-		
+			s_logger.trace("vCenter API trace - deleteFile(). target mor: " + _mor.getValue() + ", file datastore path: " + datastoreFullPath);
+
 		_context.getService().deleteFile(_mor, datastoreFullPath);
-		
+
 		if(s_logger.isTraceEnabled())
 			s_logger.trace("vCenter API trace - deleteFile() done");
 	}
-	
+
 	public HostDatastoreBrowserSearchResults searchDatastore(String datastorePath, HostDatastoreBrowserSearchSpec searchSpec) throws Exception {
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - searchDatastore(). target mor: " + _mor.get_value() + ", file datastore path: " + datastorePath);
+			s_logger.trace("vCenter API trace - searchDatastore(). target mor: " + _mor.getValue() + ", file datastore path: " + datastorePath);
 
 		try {
-			ManagedObjectReference morTask = _context.getService().searchDatastore_Task(_mor, datastorePath, searchSpec);
-			
-			String result = _context.getServiceUtil().waitForTask(morTask);
-			if(result.equals("sucess")) {
+			ManagedObjectReference morTask = _context.getService().searchDatastoreTask(_mor, datastorePath, searchSpec);
+
+			boolean result = _context.getVimClient().waitForTask(morTask);
+			if(result) {
 				_context.waitForTaskProgressDone(morTask);
-				
-				return (HostDatastoreBrowserSearchResults)_context.getServiceUtil().getDynamicProperty(morTask, "info.result");
+
+				return (HostDatastoreBrowserSearchResults)_context.getVimClient().getDynamicProperty(morTask, "info.result");
 			} else {
 	        	s_logger.error("VMware searchDaastore_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
 			}
@@ -64,30 +64,30 @@ public class HostDatastoreBrowserMO extends BaseMO {
 			if(s_logger.isTraceEnabled())
 				s_logger.trace("vCenter API trace - searchDatastore() done");
 		}
-		
+
 		return null;
 	}
-	
+
 	public HostDatastoreBrowserSearchResults searchDatastore(String datastorePath, String fileName, boolean caseInsensitive) throws Exception {
 		HostDatastoreBrowserSearchSpec spec = new HostDatastoreBrowserSearchSpec();
 		spec.setSearchCaseInsensitive(caseInsensitive);
-		spec.setMatchPattern(new String[] { fileName });
+		spec.getMatchPattern().add(fileName);
 
 		return searchDatastore(datastorePath, spec);
 	}
-	
+
 	public HostDatastoreBrowserSearchResults searchDatastoreSubFolders(String datastorePath, HostDatastoreBrowserSearchSpec searchSpec) throws Exception {
 		if(s_logger.isTraceEnabled())
-			s_logger.trace("vCenter API trace - searchDatastoreSubFolders(). target mor: " + _mor.get_value() + ", file datastore path: " + datastorePath);
+			s_logger.trace("vCenter API trace - searchDatastoreSubFolders(). target mor: " + _mor.getValue() + ", file datastore path: " + datastorePath);
 
 		try {
-			ManagedObjectReference morTask = _context.getService().searchDatastoreSubFolders_Task(_mor, datastorePath, searchSpec);
-			
-			String result = _context.getServiceUtil().waitForTask(morTask);
-			if(result.equals("sucess")) {
+			ManagedObjectReference morTask = _context.getService().searchDatastoreSubFoldersTask(_mor, datastorePath, searchSpec);
+
+			boolean result = _context.getVimClient().waitForTask(morTask);
+			if(result) {
 				_context.waitForTaskProgressDone(morTask);
-				
-				return (HostDatastoreBrowserSearchResults)_context.getServiceUtil().getDynamicProperty(morTask, "info.result");
+
+				return (HostDatastoreBrowserSearchResults)_context.getVimClient().getDynamicProperty(morTask, "info.result");
 			} else {
 	        	s_logger.error("VMware searchDaastoreSubFolders_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
 			}
@@ -95,14 +95,14 @@ public class HostDatastoreBrowserMO extends BaseMO {
 			if(s_logger.isTraceEnabled())
 				s_logger.trace("vCenter API trace - searchDatastore() done");
 		}
-		
+
 		return null;
 	}
-	
+
 	public HostDatastoreBrowserSearchResults searchDatastoreSubFolders(String datastorePath, String folderName, boolean caseInsensitive) throws Exception {
 		HostDatastoreBrowserSearchSpec spec = new HostDatastoreBrowserSearchSpec();
 		spec.setSearchCaseInsensitive(caseInsensitive);
-		spec.setMatchPattern(new String[] { folderName });
+		spec.getMatchPattern().add(folderName);
 
 		return searchDatastore(datastorePath, spec);
 	}

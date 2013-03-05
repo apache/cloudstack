@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.hypervisor.vmware.manager;
@@ -67,6 +67,8 @@ import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VmwareHostType;
+import com.cloud.utils.ssh.SshHelper;
+import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.network.NetworkModel;
@@ -91,7 +93,6 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
 import com.google.gson.Gson;
-import com.vmware.apputils.vim25.ServiceUtil;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.HostConnectSpec;
 import com.vmware.vim25.ManagedObjectReference;
@@ -316,10 +317,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         s_logger.info("Preparing network on host " + hostMo.getContext().toString() + " for " + privateTrafficLabel);
-        HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
+            HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
 
     }
-    
+
     @Override
     public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId,
             String hostInventoryPath) throws Exception {
@@ -336,27 +337,28 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             List<ManagedObjectReference> returnedHostList = new ArrayList<ManagedObjectReference>();
 
             if(mor.getType().equals("ComputeResource")) {
-                ManagedObjectReference[] hosts = (ManagedObjectReference[])serviceContext.getServiceUtil().getDynamicProperty(mor, "host");
-                assert(hosts != null);
+                List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)serviceContext.getVimClient().getDynamicProperty(mor, "host");
+                assert(hosts != null && hosts.size() > 0);
 
                 // For ESX host, we need to enable host firewall to allow VNC access
-                HostMO hostMo = new HostMO(serviceContext, hosts[0]);
+                HostMO hostMo = new HostMO(serviceContext, hosts.get(0));
+
                 prepareHost(hostMo, privateTrafficLabel);
-                returnedHostList.add(hosts[0]);
+                returnedHostList.add(hosts.get(0));
                 return returnedHostList;
             } else if(mor.getType().equals("ClusterComputeResource")) {
-                ManagedObjectReference[] hosts = (ManagedObjectReference[])serviceContext.getServiceUtil().getDynamicProperty(mor, "host");
+                List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)serviceContext.getVimClient().getDynamicProperty(mor, "host");
                 assert(hosts != null);
 
-                if (hosts.length > 0) {
-                    AboutInfo about = (AboutInfo)(serviceContext.getServiceUtil().getDynamicProperty(hosts[0], "config.product"));
+                if (hosts.size() > 0) {
+                    AboutInfo about = (AboutInfo)(serviceContext.getVimClient().getDynamicProperty(hosts.get(0), "config.product"));
                     String version = about.getApiVersion();
                     int maxHostsPerCluster = _hvCapabilitiesDao.getMaxHostsPerCluster(HypervisorType.VMware, version);
-                    if (hosts.length > maxHostsPerCluster) {
+                    if (hosts.size() > maxHostsPerCluster) {
                         String msg = "vCenter cluster size is too big (current configured cluster size: " + maxHostsPerCluster + ")";
-                        s_logger.error(msg);
-                        throw new DiscoveredWithErrorException(msg);
-                    }
+                    s_logger.error(msg);
+                    throw new DiscoveredWithErrorException(msg);
+                }
                 }
 
                 for(ManagedObjectReference morHost: hosts) {
@@ -373,7 +375,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 returnedHostList.add(mor);
                 return returnedHostList;
             } else {
-                s_logger.error("Unsupport host type " + mor.getType() + ":" + mor.get_value() + " from inventory path: " + hostInventoryPath);
+                s_logger.error("Unsupport host type " + mor.getType() + ":" + mor.getValue() + " from inventory path: " + hostInventoryPath);
                 return null;
             }
         }
@@ -386,8 +388,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private ManagedObjectReference addHostToVCenterCluster(VmwareContext serviceContext, ManagedObjectReference morCluster,
             String host, String userName, String password) throws Exception {
 
-        ServiceUtil serviceUtil = serviceContext.getServiceUtil();
-        ManagedObjectReference morHost = serviceUtil.getDecendentMoRef(morCluster, "HostSystem", host);
+        VmwareClient vclient = serviceContext.getVimClient();
+        ManagedObjectReference morHost = vclient.getDecendentMoRef(morCluster, "HostSystem", host);
         if(morHost == null) {
             HostConnectSpec hostSpec = new HostConnectSpec();
             hostSpec.setUserName(userName);
@@ -395,16 +397,16 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             hostSpec.setHostName(host);
             hostSpec.setForce(true);		// forcely take over the host
 
-            ManagedObjectReference morTask = serviceContext.getService().addHost_Task(morCluster, hostSpec, true, null, null);
-            String taskResult = serviceUtil.waitForTask(morTask);
-            if(!taskResult.equals("sucess")) {
+            ManagedObjectReference morTask = serviceContext.getService().addHostTask(morCluster, hostSpec, true, null, null);
+            boolean taskResult = vclient.waitForTask(morTask);
+            if(!taskResult) {
                 s_logger.error("Unable to add host " + host + " to vSphere cluster due to " + TaskMO.getTaskFailureInfo(serviceContext, morTask));
                 throw new CloudRuntimeException("Unable to add host " + host + " to vSphere cluster due to " + taskResult);
             }
             serviceContext.waitForTaskProgressDone(morTask);
 
             // init morHost after it has been created
-            morHost = serviceUtil.getDecendentMoRef(morCluster, "HostSystem", host);
+            morHost = vclient.getDecendentMoRef(morCluster, "HostSystem", host);
             if(morHost == null) {
                 throw new CloudRuntimeException("Successfully added host into vSphere but unable to find it later on?!. Please make sure you are either using IP address or full qualified domain name for host");
             }
@@ -422,6 +424,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public String getSecondaryStorageStoreUrl(long dcId) {
+
         List<HostVO> secStorageHosts = _ssvmMgr.listSecondaryStorageHostsInOneZone(dcId);
         if(secStorageHosts.size() > 0)
             return secStorageHosts.get(0).getStorageUrl();
@@ -492,6 +495,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                         s_logger.info("Inject SSH key pairs before copying systemvm.iso into secondary storage");
                         _configServer.updateKeyPairs();
 
+
                         try {
                             FileUtil.copyfile(srcIso, destIso);
                         } catch(IOException e) {
@@ -533,11 +537,11 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         if (url != null) {
             isoFile = new File(url.getPath());
         }
-        
+
         if(isoFile == null || !isoFile.exists()) {
             isoFile = new File("/usr/share/cloudstack-common/vms/systemvm.iso");
         }
-        
+
         assert(isoFile != null);
         if(!isoFile.exists()) {
         	s_logger.error("Unable to locate systemvm.iso in your setup at " + isoFile.toString());
@@ -552,7 +556,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         if ( url != null ){
             keyFile = new File(url.getPath());
         }
-        
         if (keyFile == null || !keyFile.exists()) {
             keyFile = new File("/usr/share/cloudstack-common/scripts/vm/systemvm/id_rsa.cloud");
         }
@@ -838,7 +841,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         vsmMapVO = _vsmMapDao.findByClusterId(clusterId);
         long vsmId = 0;
         if (vsmMapVO != null) {
-            vsmId = vsmMapVO.getVsmId(); 
+            vsmId = vsmMapVO.getVsmId();
             s_logger.info("vsmId is " + vsmId);
             nexusVSM = _nexusDao.findById(vsmId);
             s_logger.info("Fetching nexus vsm credentials from database.");
@@ -846,7 +849,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         else {
             s_logger.info("Found empty vsmMapVO.");
             return null;
-        }        
+        }
 
         Map<String, String> nexusVSMCredentials = new HashMap<String, String>();
         if (nexusVSM != null) {

@@ -75,10 +75,9 @@ import javax.ejb.Local;
 import java.net.*;
 import java.util.List;
 
-@Component
 @Local(value=TemplateAdapter.class)
-public class HyervisorTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
-	private final static Logger s_logger = Logger.getLogger(HyervisorTemplateAdapter.class);
+public class HypervisorTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
+	private final static Logger s_logger = Logger.getLogger(HypervisorTemplateAdapter.class);
 	@Inject DownloadMonitor _downloadMonitor;
 	@Inject SecondaryStorageVmManager _ssvmMgr;
 	@Inject AgentManager _agentMgr;
@@ -96,7 +95,7 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 	private String validateUrl(String url) {
 		try {
 			URI uri = new URI(url);
-			if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") 
+			if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http")
 				&& !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
 				throw new IllegalArgumentException("Unsupported scheme for url: " + url);
 			}
@@ -117,34 +116,34 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 			} catch (UnknownHostException uhe) {
 				throw new IllegalArgumentException("Unable to resolve " + host);
 			}
-			
+
 			return uri.toString();
 		} catch (URISyntaxException e) {
 			throw new IllegalArgumentException("Invalid URL " + url);
 		}
 	}
-	
+
 	@Override
 	public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
 		TemplateProfile profile = super.prepare(cmd);
 		String url = profile.getUrl();
-		
+
 		if((!url.toLowerCase().endsWith("iso"))&&(!url.toLowerCase().endsWith("iso.zip"))&&(!url.toLowerCase().endsWith("iso.bz2"))
         		&&(!url.toLowerCase().endsWith("iso.gz"))){
         	throw new InvalidParameterValueException("Please specify a valid iso");
         }
-		
+
 		profile.setUrl(validateUrl(url));
 		return profile;
 	}
-	
+
 	@Override
 	public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
 		TemplateProfile profile = super.prepare(cmd);
 		String url = profile.getUrl();
-		
+
 		if((!url.toLowerCase().endsWith("vhd"))&&(!url.toLowerCase().endsWith("vhd.zip"))
-	        &&(!url.toLowerCase().endsWith("vhd.bz2"))&&(!url.toLowerCase().endsWith("vhd.gz")) 
+	        &&(!url.toLowerCase().endsWith("vhd.bz2"))&&(!url.toLowerCase().endsWith("vhd.gz"))
 	        &&(!url.toLowerCase().endsWith("qcow2"))&&(!url.toLowerCase().endsWith("qcow2.zip"))
 	        &&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz"))
 	        &&(!url.toLowerCase().endsWith("ova"))&&(!url.toLowerCase().endsWith("ova.zip"))
@@ -152,26 +151,26 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 	        &&(!url.toLowerCase().endsWith("img"))&&(!url.toLowerCase().endsWith("raw"))){
 	        throw new InvalidParameterValueException("Please specify a valid "+ cmd.getFormat().toLowerCase());
 	    }
-		
+
 		if ((cmd.getFormat().equalsIgnoreCase("vhd") && (!url.toLowerCase().endsWith("vhd") && !url.toLowerCase().endsWith("vhd.zip") && !url.toLowerCase().endsWith("vhd.bz2") && !url.toLowerCase().endsWith("vhd.gz") ))
 			|| (cmd.getFormat().equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith("qcow2") && !url.toLowerCase().endsWith("qcow2.zip") && !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz") ))
 			|| (cmd.getFormat().equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith("ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url.toLowerCase().endsWith("ova.gz")))
 			|| (cmd.getFormat().equalsIgnoreCase("raw") && (!url.toLowerCase().endsWith("img") && !url.toLowerCase().endsWith("raw")))) {
 	        throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is an invalid for the format " + cmd.getFormat().toLowerCase());
 		}
-		
+
 		profile.setUrl(validateUrl(url));
 		return profile;
 	}
-	
+
 	@Override
 	public VMTemplateVO create(TemplateProfile profile) {
 		VMTemplateVO template = persistTemplate(profile);
-		
+
 		if (template == null) {
 			throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());
 		}
-		
+
 		DataStore imageStore = this.storeMgr.getDataStore(profile.getImageStoreId(), DataStoreRole.Image);
 		
 		AsyncCallFuture<CommandResult> future = this.imageService.createTemplateAsync(this.imageFactory.getTemplate(template.getId()), imageStore);
@@ -185,18 +184,18 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
             throw new CloudRuntimeException("create template Failed", e);
         }
 		_resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
-		
+
         return template;
 	}
 
 	@Override @DB
 	public boolean delete(TemplateProfile profile) {
 		boolean success = true;
-    	
+
     	VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
     	Long zoneId = profile.getZoneId();
     	Long templateId = template.getId();
-        
+
     	String zoneName;
     	List<HostVO> secondaryStorageHosts;
     	if (!template.isCrossZones() && zoneId != null) {
@@ -207,9 +206,9 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
     		zoneName = "(all zones)";
     		secondaryStorageHosts = _ssvmMgr.listSecondaryStorageHostsInAllZones();
     	}
-    	
+
     	s_logger.debug("Attempting to mark template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);
-    	
+
 		// Make sure the template is downloaded to all the necessary secondary storage hosts
 		for (HostVO secondaryStorageHost : secondaryStorageHosts) {
 			long hostId = secondaryStorageHost.getId();
@@ -222,16 +221,16 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 				}
 			}
 		}
-		
+
 		Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
 		String eventType = "";
-		
+
 		if (template.getFormat().equals(ImageFormat.ISO)){
 			eventType = EventTypes.EVENT_ISO_DELETE;
 		} else {
 			eventType = EventTypes.EVENT_TEMPLATE_DELETE;
 		}
-		
+
 		// Iterate through all necessary secondary storage hosts and mark the template on each host as destroyed
 		for (HostVO secondaryStorageHost : secondaryStorageHosts) {
 			long hostId = secondaryStorageHost.getId();
@@ -252,21 +251,21 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
                     List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(templateId);
                     //check if there is any VM using this ISO.
                     if (userVmUsingIso == null || userVmUsingIso.isEmpty()) {
-                        if (installPath != null) {
-                            Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, new DeleteTemplateCommand(secondaryStorageHost.getStorageUrl(), installPath));
+                    if (installPath != null) {
+                        Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, new DeleteTemplateCommand(secondaryStorageHost.getStorageUrl(), installPath));
 
-                            if (answer == null || !answer.getResult()) {
-                                s_logger.debug("Failed to delete " + templateHostVO + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
-                            } else {
-                                _tmpltHostDao.remove(templateHostVO.getId());
-                                s_logger.debug("Deleted template at: " + installPath);
-                            }
+                        if (answer == null || !answer.getResult()) {
+                            s_logger.debug("Failed to delete " + templateHostVO + " due to " + ((answer == null) ? "answer is null" : answer.getDetails()));
                         } else {
                             _tmpltHostDao.remove(templateHostVO.getId());
+                            s_logger.debug("Deleted template at: " + installPath);
                         }
+                    } else {
+                        _tmpltHostDao.remove(templateHostVO.getId());
+                    }
                     }
 					VMTemplateZoneVO templateZone = _tmpltZoneDao.findByZoneTemplate(sZoneId, templateId);
-					
+
 					if (templateZone != null) {
 						_tmpltZoneDao.remove(templateZone.getId());
 					}
@@ -276,18 +275,18 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 					}
 				}
 			}
-			
+
 			if (!success) {
 				break;
 			}
 		}
-		
+
 		s_logger.debug("Successfully marked template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);
-		
+
 		// If there are no more non-destroyed template host entries for this template, delete it
 		if (success && (_tmpltHostDao.listByTemplateId(templateId).size() == 0)) {
 			long accountId = template.getAccountId();
-			
+
 			VMTemplateVO lock = _tmpltDao.acquireInLockTable(templateId);
 
 			try {
@@ -304,18 +303,18 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 					_tmpltDao.releaseFromLockTable(lock.getId());
 				}
 			}
-			
+
 			s_logger.debug("Removed template: " + template.getName() + " because all of its template host refs were marked as destroyed.");
 		}
-		
+
 		return success;
 	}
-	
+
 	public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
 		TemplateProfile profile = super.prepareDelete(cmd);
 		VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
 		Long zoneId = profile.getZoneId();
-		
+
 		if (template.getTemplateType() == TemplateType.SYSTEM) {
 			throw new InvalidParameterValueException("The DomR template cannot be deleted.");
 		}
@@ -323,18 +322,18 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 		if (zoneId != null && (_ssvmMgr.findSecondaryStorageHost(zoneId) == null)) {
 			throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
 		}
-		
+
 		return profile;
 	}
-	
+
 	public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
 		TemplateProfile profile = super.prepareDelete(cmd);
 		Long zoneId = profile.getZoneId();
-		
+
 		if (zoneId != null && (_ssvmMgr.findSecondaryStorageHost(zoneId) == null)) {
     		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
     	}
-		
+
 		return profile;
 	}
 }
