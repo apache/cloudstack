@@ -188,6 +188,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InputDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.hostNicType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.PhysicalDiskFormat;
@@ -3052,6 +3053,11 @@ ServerResource {
 
         SerialDef serial = new SerialDef("pty", null, (short) 0);
         devices.addDevice(serial);
+
+        if (vmTO.getType() != VirtualMachine.Type.User) {
+            VirtioSerialDef vserial = new VirtioSerialDef(vmTO.getName(), null);
+            devices.addDevice(vserial);
+        }
 
         ConsoleDef console = new ConsoleDef("pty", null, null, (short) 0);
         devices.addDevice(console);
