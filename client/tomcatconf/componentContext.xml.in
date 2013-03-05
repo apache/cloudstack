@@ -140,7 +140,7 @@
     <property name="name" value="Basic"/>
   </bean>
 
-  <bean id="hyervisorTemplateAdapter" class="com.cloud.template.HyervisorTemplateAdapter">
+  <bean id="HypervisorTemplateAdapter" class="com.cloud.template.HypervisorTemplateAdapter">
     <property name="name" value="HypervisorAdapter"/>
   </bean>
 
