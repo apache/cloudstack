@@ -36,7 +36,7 @@ fi
 if [ ! -z $3 ]; then
   interval=$3
 else
-  interval=10
+  interval=5
 fi
 
 if [ $interval -gt $2 ]; then
@@ -45,15 +45,22 @@ if [ $interval -gt $2 ]; then
 fi
 
 file=/opt/xensource/bin/heartbeat
-maxtries=$(($2 / $interval))
-tries=1
+lastdate=$(($(date +%s) + $interval))
 
-while [ $tries -le $maxtries ]
+while [ $(date +%s) -lt $(($lastdate + $2)) ]
 do
   sleep $interval
 
   if [ ! -f $file  ]
   then
+    continue
+  fi
+
+  # test heartbeat file
+  dirs=$(cat $file | grep "sr-mount\|VG_XenStorage")
+  if [ ! -n "$dirs" ];then
+    /usr/bin/logger -t heartbeat "Problem with heartbeat, no iSCSI or NFS mount defined in $file!"
+    lastdate=$(date +%s)
     continue
   fi
 
@@ -65,13 +72,13 @@ do
       hb=$dir/hb-$1
       date +%s | dd of=$hb count=100 bs=1 2>/dev/null
       if [ $? -ne 0 ]; then
-          /usr/bin/logger -t heartbeat "Potential problem with $hb: not reachable since $(($tries * $interval)) seconds"
-          tries=$(($tries + 1))
+        /usr/bin/logger -t heartbeat "Potential problem with $hb: not reachable since $(($(date +%s) - $lastdate)) seconds"
       else
-          tries=1
+        lastdate=$(date +%s)
       fi
     else
-      /usr/bin/logger -t heartbeat "Heartbeat dir not found for $dir"
+      /usr/bin/logger -t heartbeat "Potential problem with heartbeat, dir not found for $dir"
+      lastdate=$(date +%s)
       sed -i /${dir##/*/}/d $file
     fi
   done
@@ -85,17 +92,17 @@ do
       hb=$dir/hb-$1
       date +%s | dd of=$hb count=100 bs=1 2>/dev/null
       if [ $? -ne 0 ]; then
-          /usr/bin/logger -t heartbeat "Potential problem with $hb: not reachable since $(($tries * $interval)) seconds"
-          tries=$(($tries + 1))
+        /usr/bin/logger -t heartbeat "Potential problem with $hb: not reachable since $(($(date +%s) - $lastdate)) seconds"
       else
-          tries=1
+        lastdate=$(date +%s)
       fi
     else
-      /usr/bin/logger -t heartbeat "Heartbeat mount not found for $dir"
+      /usr/bin/logger -t heartbeat "Potential problem with heartbeat, mount not found for $dir"
+      lastdate=$(date +%s)
       sed -i /${dir##/*/}/d $file
     fi
   done
 done
 
-/usr/bin/logger -t heartbeat "Problem with $hb: not reachable for $2 seconds, rebooting system!"
+/usr/bin/logger -t heartbeat "Problem with $hb: not reachable for $(($(date +%s) - $lastdate)) seconds, rebooting system!"
 reboot -f
