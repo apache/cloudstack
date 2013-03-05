@@ -39,7 +39,7 @@ public class RecreatableFencer extends AdapterBase implements FenceBuilder {
     @Inject VolumeDao _volsDao;
     @Inject StoragePoolDao _poolDao;
     
-    protected RecreatableFencer() {
+    public RecreatableFencer() {
         super();
     }
 
@@ -56,7 +56,7 @@ public class RecreatableFencer extends AdapterBase implements FenceBuilder {
         for (VolumeVO vol : vols) {
             if (!vol.isRecreatable()) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to fence off volumes that are not recreatable: " + vol);
+                    s_logger.debug("Unable to f	ence off volumes that are not recreatable: " + vol);
                 }
                 return null;
             }
