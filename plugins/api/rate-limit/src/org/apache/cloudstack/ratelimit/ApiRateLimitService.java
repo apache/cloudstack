@@ -33,4 +33,6 @@ public interface ApiRateLimitService extends PluggableService{
     public void setTimeToLive(int timeToLive);
 
     public void setMaxAllowed(int max);
+
+    public void setEnabled(boolean enabled);
 }
