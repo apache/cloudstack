@@ -43,9 +43,9 @@ public class GlobalLoadBalancerDaoImpl extends GenericDaoBase<GlobalLoadBalancer
     }
 
     @Override
-    public List<GlobalLoadBalancerRuleVO> listByDomainName(String domainName) {
+    public GlobalLoadBalancerRuleVO findByDomainName(String domainName) {
         SearchCriteria<GlobalLoadBalancerRuleVO> sc = listByDomainSearch.create();
         sc.setParameters("gslbDomain", domainName);
-        return listBy(sc);
+        return findOneBy(sc);
     }
 }

@@ -24,5 +24,5 @@ import java.util.List;
 public interface GlobalLoadBalancerRuleDao extends GenericDao<GlobalLoadBalancerRuleVO, Long> {
 
     List<GlobalLoadBalancerRuleVO> listByRegionId(long regionId);
-    List<GlobalLoadBalancerRuleVO> listByDomainName(String domainName);
+    GlobalLoadBalancerRuleVO findByDomainName(String domainName);
 }

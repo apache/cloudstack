@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
-import java.security.spec.InvalidParameterSpecException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -260,7 +259,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         try {
             gslbServiceImpl.createGlobalLoadBalancerRule(createCmd);
-        } catch (InvalidParameterSpecException e) {
+        } catch (InvalidParameterValueException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid Algorithm"));
         }
     }
@@ -325,7 +324,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         try {
             gslbServiceImpl.createGlobalLoadBalancerRule(createCmd);
-        } catch (InvalidParameterSpecException e) {
+        } catch (InvalidParameterValueException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid persistence"));
         }
     }
@@ -390,7 +389,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         try {
             gslbServiceImpl.createGlobalLoadBalancerRule(createCmd);
-        } catch (InvalidParameterSpecException e) {
+        } catch (InvalidParameterValueException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid service type"));
         }
     }
@@ -447,9 +446,8 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         Field serviceDomainField = _class.getDeclaredField("serviceDomainName");
         serviceDomainField.setAccessible(true);
         serviceDomainField.set(createCmd, "gslb-rule-domain");
-        List<GlobalLoadBalancerRuleVO> gslbRules = new ArrayList<GlobalLoadBalancerRuleVO>();
-        gslbRules.add(new GlobalLoadBalancerRuleVO());
-        when(gslbServiceImpl._gslbRuleDao.listByDomainName("gslb-rule-domain")).thenReturn(gslbRules);
+        GlobalLoadBalancerRuleVO gslbRule = new GlobalLoadBalancerRuleVO();
+        when(gslbServiceImpl._gslbRuleDao.findByDomainName("gslb-rule-domain")).thenReturn(gslbRule);
 
         Field serviceTypeField = _class.getDeclaredField("serviceType");
         serviceTypeField.setAccessible(true);
@@ -457,8 +455,8 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         try {
             gslbServiceImpl.createGlobalLoadBalancerRule(createCmd);
-        } catch (InvalidParameterSpecException e) {
-            Assert.assertTrue(e.getMessage().contains("There exist a GSLB rule"));
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage().contains("Domain name is in use"));
         }
     }
 
@@ -591,7 +589,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         try {
             gslbServiceImpl.assignToGlobalLoadBalancerRule(assignCmd);
         } catch (InvalidParameterValueException e) {
-            Assert.assertTrue(e.getMessage().contains("Each load balancer rule specified should be in unique zone"));
+            Assert.assertTrue(e.getMessage().contains("Load balancer rule specified should be in unique zone"));
         }
     }
 
