@@ -29,14 +29,9 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
-import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
-import com.cloud.configuration.dao.ConfigurationDaoImpl;
-import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
-import com.cloud.host.dao.HostDetailsDaoImpl;
-import com.cloud.host.dao.HostTagsDaoImpl;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.StoragePoolDaoImpl;
 import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
@@ -52,8 +47,7 @@ import com.cloud.vm.UserVmManager;
 		VMTemplateDaoImpl.class,
 		HostDaoImpl.class,
 		DomainDaoImpl.class,
-		DataCenterDaoImpl.class,
-      	},
+		DataCenterDaoImpl.class},
         includeFilters={@Filter(value=Library.class, type=FilterType.CUSTOM)},
         useDefaultFilters=false
         )
