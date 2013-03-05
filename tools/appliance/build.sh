@@ -70,7 +70,7 @@ echo "$appliance exported for Xen: dist/$appliance-$build_date-$branch-xen.vhd.b
 
 # Export for KVM
 vboxmanage internalcommands converttoraw "$hdd_path" raw.img
-qemu-img convert -f raw -O qcow2 raw.img $appliance-$build_date-$branch-kvm.qcow2
+qemu-img convert -f raw -c -O qcow2 raw.img $appliance-$build_date-$branch-kvm.qcow2
 rm raw.img
 bzip2 $appliance-$build_date-$branch-kvm.qcow2
 echo "$appliance exported for KVM: dist/$appliance-$build_date-$branch-kvm.qcow2.bz2"
