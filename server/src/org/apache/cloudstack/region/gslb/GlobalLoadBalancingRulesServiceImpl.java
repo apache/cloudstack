@@ -82,7 +82,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_GLOBAL_LOAD_BALANCER_CREATE, eventDescription = "creating global load balancer")
+    @ActionEvent(eventType = EventTypes.EVENT_GLOBAL_LOAD_BALANCER_CREATE, eventDescription =
+            "creating global load balancer rule")
     public GlobalLoadBalancerRule createGlobalLoadBalancerRule(CreateGlobalLoadBalancerRuleCmd newGslb)
             throws InvalidParameterSpecException {
 
@@ -204,9 +205,12 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             }
 
             Network network = _networkDao.findById(loadBalancer.getNetworkId());
-            if (oldZones.contains(network.getDataCenterId())) {
+
+            if (oldZones != null && oldZones.contains(network.getDataCenterId()) ||
+                    newZones != null && newZones.contains(network.getDataCenterId())) {
                 throw new InvalidParameterValueException("Each load balancer rule specified should be in unique zone");
             }
+
             newZones.add(network.getDataCenterId());
         }
 
@@ -298,10 +302,6 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
             _accountMgr.checkAccess(caller, null, true, loadBalancer);
 
-            if (loadBalancer.getState() == LoadBalancer.State.Revoke) {
-                throw new InvalidParameterValueException("Load balancer ID " + loadBalancer.getUuid()  + " is in revoke state");
-            }
-
             if (oldLbRuleIds != null && !oldLbRuleIds.contains(loadBalancer.getId())) {
                 throw new InvalidParameterValueException("Load balancer ID " + loadBalancer.getUuid() + " is not assigned"
                         + " to global load balancer rule: " + gslbRule.getUuid());
@@ -347,7 +347,49 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     }
 
     @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_GLOBAL_LOAD_BALANCER_DELETE, eventDescription =
+            "Delete global load balancer rule")
     public boolean deleteGlobalLoadBalancerRule(DeleteGlobalLoadBalancerRuleCmd deleteGslbCmd) {
+
+        UserContext ctx = UserContext.current();
+        Account caller = ctx.getCaller();
+
+        long gslbRuleId =  deleteGslbCmd.getGlobalLoadBalancerId();
+        GlobalLoadBalancerRuleVO gslbRule = _gslbRuleDao.findById(gslbRuleId);
+        if (gslbRule == null) {
+            throw new InvalidParameterValueException("Invalid global load balancer rule id: " + gslbRuleId);
+        }
+
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, gslbRule);
+
+        if (gslbRule.getState() == GlobalLoadBalancerRule.State.Revoke) {
+            throw new InvalidParameterValueException("global load balancer rule id: " + gslbRuleId + " is already in revoked state");
+        }
+
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        List<GlobalLoadBalancerLbRuleMapVO> gslbLbMapVos = _gslbLbMapDao.listByGslbRuleId(gslbRuleId);
+        if (gslbLbMapVos != null) {
+            //mark all the GSLB-LB mapping to be in revoke state
+            for (GlobalLoadBalancerLbRuleMapVO gslbLbMap : gslbLbMapVos) {
+                gslbLbMap.setRevoke(true);
+            }
+        }
+
+        //mark the GSlb rule to be in revoke state
+        gslbRule.setState(GlobalLoadBalancerRule.State.Revoke);
+        _gslbRuleDao.update(gslbRuleId, gslbRule);
+
+        txn.commit();
+
+        // send the new configuration to back end
+        try {
+            applyGlobalLoadBalancerRuleConfig(gslbRuleId, true);
+        } catch (Exception e) {
+
+        }
 
         return false;
     }
