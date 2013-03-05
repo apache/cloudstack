@@ -460,7 +460,9 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
         String command = "deleteDomain";
         List<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new NameValuePair(ApiConstants.ID, domainUUID));
-        params.add(new NameValuePair(ApiConstants.CLEANUP, cleanup.toString()));
+        if(cleanup != null){
+            params.add(new NameValuePair(ApiConstants.CLEANUP, cleanup.toString()));
+        }
 
         int regionId = domain.getRegionId();
         if(getId() == regionId){
