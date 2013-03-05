@@ -175,7 +175,7 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
             }
             
             String copyTo = String.format("%s/%s", _tftpDir, cmd.getTemplateUuid());
-            String script = String.format("python /usr/bin/prepare_kickstart_kernel_initrd.py %s %s", cmd.getRepo(), copyTo);
+            String script = String.format("python /usr/bin/prepare_kickstart_kernel_initrd.py %s %s %s", cmd.getKernel(), cmd.getInitrd(), copyTo);
             
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, script)) {
                 return new Answer(cmd, false, "prepare kickstart at pxe server " + _ip + " failed, command:" + script);

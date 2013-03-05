@@ -151,4 +151,5 @@ public interface Nic extends Identity, InternalIdentity {
 	String getIp6Cidr();
 
 	String getIp6Address();
+    boolean getSecondaryIp();
 }

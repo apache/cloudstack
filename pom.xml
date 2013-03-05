@@ -382,8 +382,10 @@
               <exclude>tools/appliance/definitions/systemvmtemplate/definition.rb</exclude>
               <exclude>tools/appliance/definitions/systemvmtemplate/preseed.cfg</exclude>
               <exclude>tools/appliance/definitions/systemvmtemplate/zerodisk.sh</exclude>
+              <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
+              <exclude>tools/marvin/Marvin.egg-info/*</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>

@@ -211,18 +211,28 @@ public class PublicIp implements PublicIpAddress {
         _addr.setVpcId(vpcId);
     }
 
-	@Override
-	public String getIp6Gateway() {
-		return _vlan.getIp6Gateway();
-	}
+    @Override
+    public String getIp6Gateway() {
+        return _vlan.getIp6Gateway();
+    }
 
-	@Override
-	public String getIp6Cidr() {
-		return _vlan.getIp6Cidr();
-	}
+    @Override
+    public String getIp6Cidr() {
+        return _vlan.getIp6Cidr();
+    }
 
-	@Override
-	public String getIp6Range() {
-		return _vlan.getIp6Range();
-	}
+    @Override
+    public String getIp6Range() {
+        return _vlan.getIp6Range();
+    }
+
+    @Override
+    public String getVmIp() {
+        return _addr.getVmIp();
+    }
+
+    @Override
+    public void setVmIp(String vmIp) {
+        _addr.setVmIp(vmIp);
+    }
 }

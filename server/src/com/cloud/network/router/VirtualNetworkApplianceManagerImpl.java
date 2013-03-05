@@ -2318,8 +2318,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
       
                 if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.StaticNat, provider)) {
                     if (ip.isOneToOneNat()) {
-                            String dstIp = _networkModel.getIpInNetwork(ip.getAssociatedWithVmId(), guestNetworkId);
-                            StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), guestNetworkId, ip.getId(), dstIp, false);
+                            StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), guestNetworkId, ip.getId(), ip.getVmIp(), false);
                         staticNats.add(staticNat);
                     }
                 }

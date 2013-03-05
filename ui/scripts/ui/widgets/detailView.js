@@ -338,6 +338,8 @@
 
       $detailView.find('.tagger').find('input[type=text]').val('');
 
+      $('div.container div.panel div.detail-group .details .main-groups').find('.cidr').toolTip({ docID:'helpIPReservationCidr' , mode:'hover' , tooltip:'.tooltip-box' });
+
       var convertInputs = function($inputs) {
         // Save and turn back into labels
         $inputs.each(function() {
@@ -489,7 +491,11 @@
 
         return true;
       });
-	    
+	   
+         $('div.container div.panel div.detail-group .details .main-groups').find('.reservediprange').toolTip({ docID:'helpReservedIPRange' , mode:'hover' , tooltip:'.tooltip-box' });
+          $('div.container div.panel div.detail-group .details .main-groups').find('.networkcidr').toolTip({ docID:'helpIPReservationNetworkCidr' , mode:'hover' , tooltip:'.tooltip-box' });
+
+ 
 	    $detailView.find('td.value span').each(function() {
         var name = $(this).closest('tr').data('detail-view-field');
         var $value = $(this);

@@ -15,6 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 cloudStack.docs = {
+
+  //IP Reservation tooltips
+   helpIPReservationCidr: {
+     desc:'Edit CIDR when you want to configure IP Reservation in isolated guest Network',
+     externalLink:''
+
+   },
+
+  helpIPReservationNetworkCidr:{
+   desc:'The CIDR of the entire network when IP reservation is configured',
+   externalLink:' '
+
+   },
+
+  helpReservedIPRange:{
+     desc:'The IP Range which is not used by CloudStack to allocate to Guest VMs.Can be used for Non Cloudstack purposes.',
+     externalLink:''
+   },
+
   // Add account
   helpAccountUsername: {
   desc: 'Any desired login ID. Must be unique in the current domain. The same username can exist in other domains, including sub-domains.',

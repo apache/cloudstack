@@ -532,37 +532,36 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     private File getSystemVMPatchIsoFile() {
         // locate systemvm.iso
-        //URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
-        //File file = new File(url.getFile());
-        //File isoFile = new File(file.getParent() + "/vms/systemvm.iso");
         URL url = this.getClass().getClassLoader().getResource("vms/systemvm.iso");
         File isoFile = null;
         if (url != null) {
             isoFile = new File(url.getPath());
         }
-        if (isoFile == null || !isoFile.exists()) {
-            isoFile = new File("/usr/lib64/cloud/common/" + "/vms/systemvm.iso");
-            if (!isoFile.exists()) {
-                isoFile = new File("/usr/lib/cloud/common/" + "/vms/systemvm.iso");
-            }
+
+        if(isoFile == null || !isoFile.exists()) {
+            isoFile = new File("/usr/share/cloudstack-common/vms/systemvm.iso");
+        }
+
+        assert(isoFile != null);
+        if(!isoFile.exists()) {
+        	s_logger.error("Unable to locate systemvm.iso in your setup at " + isoFile.toString());
         }
         return isoFile;
     }
 
     @Override
     public File getSystemVMKeyFile() {
-       // URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
-       // File file = new File(url.getFile());
         URL url = this.getClass().getClassLoader().getResource("scripts/vm/systemvm/id_rsa.cloud");
         File keyFile = null;
         if ( url != null ){
             keyFile = new File(url.getPath());
         }
         if (keyFile == null || !keyFile.exists()) {
-            keyFile = new File("/usr/lib64/cloud/common" + "/scripts/vm/systemvm/id_rsa.cloud");
-            if (!keyFile.exists()) {
-                keyFile = new File("/usr/lib/cloud/common" + "/scripts/vm/systemvm/id_rsa.cloud");
-            }
+            keyFile = new File("/usr/share/cloudstack-common/scripts/vm/systemvm/id_rsa.cloud");
+        }
+        assert(keyFile != null);
+        if(!keyFile.exists()) {
+        	s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
         }
         return keyFile;
     }

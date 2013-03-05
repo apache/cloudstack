@@ -97,8 +97,8 @@ public class Transaction {
         /* FIXME: We need a better solution for this
          * Initialize encryption if we need it for db.properties
          */ 
-        /*EncryptionSecretKeyChecker enc = new EncryptionSecretKeyChecker();
-        enc.check();   */     
+        EncryptionSecretKeyChecker enc = new EncryptionSecretKeyChecker();
+        enc.check();  
     }
 
     private final LinkedList<StackElement> _stack;

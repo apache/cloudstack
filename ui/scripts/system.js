@@ -7598,7 +7598,6 @@
                             if(vSwitchEnabled) {
                   
                               items.push({ id:" nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
-
                               items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
                               items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
 
@@ -7609,10 +7608,8 @@
 
                              // items.push({id: "" , description:" " });
                             else{
-                              items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
                               items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
-
-                               
+                              items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
                               items.push({ id:" nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
                            }
 
@@ -7662,21 +7659,17 @@
 
 
                        if(vSwitchEnabled){
-                        items.push({ id:" nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
-
+                        items.push({ id:"nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
                         items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
                         items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"}); 
-                         
 
                        }
 
 
                        else{
-
-                            items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
-                        items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
-
-                        items.push({ id:" nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
+                           items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
+                           items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
+                           items.push({ id:"nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
 
  
                          }
