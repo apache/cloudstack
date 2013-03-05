@@ -170,9 +170,10 @@
     <module>engine</module>
     <module>plugins</module>
     <module>framework</module>
+    <module>services</module>
     <module>test</module>
     <module>client</module>
-    <module>services</module>
+    <module>setup</module>
   </modules>
 
   <dependencyManagement>
@@ -207,20 +208,6 @@
       <artifactId>spring-web</artifactId>
       <version>${org.springframework.version}</version>
     </dependency>
-    <!-- <dependency> <groupId>org.springframework</groupId> <artifactId>spring-expression</artifactId>
-      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
-      <artifactId>spring-beans</artifactId> <version>${org.springframework.version}</version>
-      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-aop</artifactId>
-      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
-      <artifactId>spring-context-support</artifactId> <version>${org.springframework.version}</version>
-      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-tx</artifactId>
-      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
-      <artifactId>spring-jdbc</artifactId> <version>${org.springframework.version}</version>
-      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-orm</artifactId>
-      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
-      <artifactId>spring-oxm</artifactId> <version>${org.springframework.version}</version>
-      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-webmvc</artifactId>
-      <version>${org.springframework.version}</version> </dependency> -->
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
@@ -252,15 +239,6 @@
 
   <build>
     <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
-    <testResources>
-      <testResource>
-        <directory>test/resources</directory>
-      </testResource>
-    </testResources>
-    <outputDirectory>${basedir}/${cs.target.dir}/classes</outputDirectory>
-    <testOutputDirectory>${basedir}/${cs.target.dir}/test-classes</testOutputDirectory>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -386,10 +364,6 @@
               <exclude>deps/XenServerJava/Makefile</exclude>
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
-              <exclude>services/console-proxy/server/conf/agent.properties</exclude>
-              <exclude>services/console-proxy/server/conf/environment.properties</exclude>
-              <exclude>services/secondary-storage/conf/agent.properties</exclude>
-              <exclude>services/secondary-storage/conf/environment.properties</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
               <exclude>tools/appliance/definitions/systemvmtemplate/base.sh</exclude>
               <exclude>tools/appliance/definitions/systemvmtemplate/cleanup.sh</exclude>
@@ -554,16 +528,6 @@
       <modules>
         <module>developer</module>
         <module>tools</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>impatient</id>
-      <properties>
-        <marvin.config>tools/devcloud/devcloud.cfg</marvin.config>
-      </properties>
-      <modules>
-        <module>developer</module>
-        <!--module>tools/devcloud</module -->
       </modules>
     </profile>
     <profile>
