@@ -56,13 +56,13 @@
         });
       },
 
-      'tooltip.addZone.dns1': function(args) {
+      'tooltip.addZone.ip4dns1': function(args) {
         args.response.success({
           text: 'message.installWizard.tooltip.addZone.dns1'
         });
       },
 
-      'tooltip.addZone.dns2': function(args) {
+      'tooltip.addZone.ip4dns2': function(args) {
         args.response.success({
           text: 'message.installWizard.tooltip.addZone.dns2'
         });
