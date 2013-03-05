@@ -54,10 +54,8 @@ install:
 	mkdir -p debian/tmp$(SYSCONFDIR)/init.d
 	mkdir -p debian/tmp/var/cache/$(PACKAGE)
 	mkdir -p debian/tmp/var/log/$(PACKAGE)
-	mkdir -p debian/tmp/var/lib/cloud
+	mkdir -p debian/tmp/var/lib/$(PACKAGE)
 	mkdir -p debian/tmp/usr/bin
-	mkdir -p debian/tmp/usr/share/cloud
-	mkdir -p debian/tmp/usr/lib/cloud
 
 	# cloudstack-agent
 	mkdir debian/tmp$(SYSCONFDIR)/$(PACKAGE)/agent
@@ -81,8 +79,8 @@ install:
 	mkdir debian/tmp/var/cache/$(PACKAGE)/management/work
 	mkdir debian/tmp/var/cache/$(PACKAGE)/management/temp
 	mkdir debian/tmp/var/log/$(PACKAGE)/ipallocator
-	mkdir debian/tmp/var/lib/cloud/management
-	mkdir debian/tmp/var/lib/cloud/mnt
+	mkdir debian/tmp/var/lib/$(PACKAGE)/management
+	mkdir debian/tmp/var/lib/$(PACKAGE)/mnt
 	cp -r client/target/utilities/scripts/db/* debian/tmp/usr/share/$(PACKAGE)-management/setup/
 	cp -r client/target/cloud-client-ui-4.2.0-SNAPSHOT/* debian/tmp/usr/share/$(PACKAGE)-management/webapps/client/
 	cp server/target/conf/* debian/tmp$(SYSCONFDIR)/$(PACKAGE)/server/

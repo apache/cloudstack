@@ -22,8 +22,8 @@
 /var/cache/cloudstack/management/work
 /var/cache/cloudstack/management/temp
 /var/log/cloudstack/management
-/var/lib/cloud/mnt
-/var/lib/cloud/management
+/var/lib/cloudstack/mnt
+/var/lib/cloudstack/management
 /usr/bin/cloud-update-xenserver-licenses
 /usr/bin/cloud-setup-management
 /usr/bin/cloud-setup-databases
