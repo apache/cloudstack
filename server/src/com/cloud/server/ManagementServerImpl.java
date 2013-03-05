@@ -2510,6 +2510,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String userPublicTemplateEnabled = _configs.get(Config.AllowPublicUserTemplates.key());
 
         // add some parameters UI needs to handle API throttling
+        boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(Config.ApiLimitEnabled.key()));
         Integer apiLimitInterval = Integer.valueOf(_configDao.getValue(Config.ApiLimitInterval.key()));
         Integer apiLimitMax = Integer.valueOf(_configDao.getValue(Config.ApiLimitMax.key()));
 
@@ -2521,8 +2522,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("projectInviteRequired", _projectMgr.projectInviteRequired());
         capabilities.put("allowusercreateprojects", _projectMgr.allowUserToCreateProject());
         capabilities.put("customDiskOffMaxSize", diskOffMaxSize);
-        capabilities.put("apiLimitInterval", apiLimitInterval);
-        capabilities.put("apiLimitMax", apiLimitMax);
+        if (apiLimitEnabled) {
+            capabilities.put("apiLimitInterval", apiLimitInterval);
+            capabilities.put("apiLimitMax", apiLimitMax);
+        }
 
         return capabilities;
     }
