@@ -32,7 +32,7 @@
             <para>The following diagram shows the architecture of the SandBox mode.</para>
             <mediaobject>
                 <imageobject>
-                    <imagedata fileref="./images/DevCloud.png" />
+                    <imagedata fileref="./images/DevCloud.png" scale="50"/>
                 </imageobject>
                 <textobject>
                     <phrase>DevCloud.png: Schematic of the DevCloud SandBox architecture</phrase>
@@ -49,7 +49,7 @@
             <para>The following schematic shows the architecture of the Host-Only mode.</para>
             <mediaobject>
                 <imageobject>
-                    <imagedata fileref="./images/DevCloud-hostonly.png" />
+                    <imagedata fileref="./images/DevCloud-hostonly.png" scale="50"/>
                 </imageobject>
                 <textobject>
                     <phrase>DevCloud-hostonly.png: Schematic of the DevCloud host-only architecture </phrase>
