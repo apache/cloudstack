@@ -37,5 +37,33 @@
     <listitem>
       <para>addBaremetalHost (Adds a new host.)</para>
     </listitem>
+    <listitem>
+      <para>addNicToVirtualMachine (Adds a new NIC to the specified VM on a selected
+        network.)</para>
+    </listitem>
+    <listitem>
+      <para>removeNicFromVirtualMachine (Removes the specified NIC from a selected VM.)</para>
+    </listitem>
+    <listitem>
+      <para>updateDefaultNicForVirtualMachine (Updates the specified NIC to be the default one for a
+        selected VM.)</para>
+    </listitem>
+    <listitem>
+      <para>addRegion (Registers a Region into another Region.)</para>
+    </listitem>
+    <listitem>
+      <para>updateRegion (Updates Region details: ID, Name, Endpoint, User API Key, and User Secret
+        Key.)</para>
+    </listitem>
+    <listitem>
+      <para>removeRegion (Removes a Region from current Region.)</para>
+    </listitem>
+    <listitem>
+      <para>listRegions (Get all the Regions. They can be filtered by using the ID or Name.)</para>
+    </listitem>
+    <listitem>
+      <para>getUser (This API can only be used by the Admin. Get user details by using the API Key.)
+      </para>
+    </listitem>
   </itemizedlist>
 </section>
