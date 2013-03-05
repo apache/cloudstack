@@ -41,7 +41,8 @@ import com.cloud.hypervisor.vmware.mo.DistributedVirtualSwitchMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.PropertiesUtil;
-import com.vmware.apputils.version.ExtendedAppUtil;
+import com.vmware.vim25.HostIpConfig;
+import com.vmware.vim25.HostVirtualNicSpec;
 import com.vmware.vim25.ArrayOfManagedObjectReference;
 import com.vmware.vim25.DVPortgroupConfigInfo;
 import com.vmware.vim25.DVPortgroupConfigSpec;
@@ -924,7 +925,7 @@ public class TestVMWare {
 	}
     private DatacenterMO setupDatacenterObject(String serverAddress, String dcMor) {
         VmwareContext context = new VmwareContext(cb, serverAddress);
-
+	
         ManagedObjectReference morDc = new ManagedObjectReference();
         morDc.setType("Datacenter");
         morDc.set_value(dcMor);
@@ -1307,7 +1308,7 @@ public class TestVMWare {
             // Test addDvNic
             // Test deleteDvNic
             // client.testDvNicOperations();
-
+		
 			cb.disConnect();
 		} catch (Exception e) {
 			e.printStackTrace();

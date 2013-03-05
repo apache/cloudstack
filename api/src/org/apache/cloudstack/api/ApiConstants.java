@@ -454,6 +454,11 @@ public class ApiConstants {
     public static final String GUEST_VM_CIDR = "guestvmcidr";
     public static final String NETWORK_CIDR = "networkcidr";
     public static final String RESERVED_IP_RANGE = "reservediprange";
+    public static final String UCS_MANAGER_ID = "ucsmanagerid";
+    public static final String UCS_PROFILE_DN = "profiledn";
+    public static final String UCS_BLADE_DN = "bladedn";
+    public static final String UCS_BLADE_ID = "bladeid";
+    public static final String VM_GUEST_IP = "vmguestip";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

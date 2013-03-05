@@ -48,7 +48,6 @@
   <bean id="consoleProxyManagerImpl" class="com.cloud.consoleproxy.ConsoleProxyManagerImpl" />
   <bean id="securityGroupManagerImpl2" class="com.cloud.network.security.SecurityGroupManagerImpl2" />
   <bean id="premiumSecondaryStorageManagerImpl" class="com.cloud.secstorage.PremiumSecondaryStorageManagerImpl" />
-  <!-- <bean id="randomlyIncreasingVMInstanceDaoImpl" class="com.cloud.vm.dao.RandomlyIncreasingVMInstanceDaoImpl" /> -->
   <bean id="userVmDaoImpl" class="com.cloud.vm.dao.UserVmDaoImpl" />
   <bean id="ipv6AddressManagerImpl" class="com.cloud.network.Ipv6AddressManagerImpl" />
 
@@ -58,6 +57,9 @@
   <bean id="BaremetalKickStartPxeService" class="com.cloud.baremetal.networkservice.BaremetalKickStartServiceImpl"/>
   <bean id="BaremetalPingPxeService" class="com.cloud.baremetal.networkservice.BareMetalPingServiceImpl" />
   <bean id="BaremetalPxeManager" class="com.cloud.baremetal.networkservice.BaremetalPxeManagerImpl" />
+  <bean id="UcsManager" class="com.cloud.ucs.manager.UcsManagerImpl" />
+  <bean id="UcsBladeDao" class="com.cloud.ucs.database.UcsBladeDaoImpl" />
+  <bean id="UcsManagerDao" class="com.cloud.ucs.database.UcsManagerDaoImpl" />
 
    
   <!--
@@ -102,7 +104,14 @@
   <bean id="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator">
     <property name="name" value="FirstFitRouting"/>
   </bean>
-
+  
+  <bean id="hypervisorTemplateAdapter" class="com.cloud.template.HypervisorTemplateAdapter">
+    <property name="name" value="HypervisorAdapter"/>
+  </bean> 
+  
+   <bean id="bareMetalTemplateAdapter" class="com.cloud.baremetal.BareMetalTemplateAdapter">
+    <property name="name" value="BareMetalAdapter"/>
+  </bean> 
   
   <!--
     Storage pool allocators
@@ -131,7 +140,7 @@
     <property name="name" value="Basic"/>
   </bean>
 
-  <bean id="hyervisorTemplateAdapter" class="com.cloud.template.HyervisorTemplateAdapter">
+  <bean id="HypervisorTemplateAdapter" class="com.cloud.template.HypervisorTemplateAdapter">
     <property name="name" value="HypervisorAdapter"/>
   </bean>
 
@@ -228,7 +237,7 @@
   <bean id="BareMetalPlanner" class="com.cloud.baremetal.manager.BareMetalPlanner">
     <property name="name" value="BareMetal Fit"/>
   </bean>
-
+    
   <bean id="BaremetalPlannerSelector" class="com.cloud.baremetal.manager.BaremetalPlannerSelector">
     <property name="name" value="BaremetalPlannerSelector"/>
   </bean>
@@ -296,7 +305,7 @@
   <bean id="OvmGuru" class="com.cloud.ovm.hypervisor.OvmGuru">
     <property name="name" value="OvmGuru"/>
   </bean>
-
+  
   <!--
   <bean id="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru">
     <property name="name" value="SimulatorGuru"/>

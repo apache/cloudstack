@@ -12,6 +12,8 @@
 
 DEBVERS := $(shell dpkg-parsechangelog | sed -n -e 's/^Version: //p')
 VERSION := $(shell echo '$(DEBVERS)' | sed -e 's/^[[:digit:]]*://' -e 's/[~-].*//')
+PACKAGE = $(shell dh_listpackages|head -n 1|cut -d '-' -f 1)
+SYSCONFDIR = "/etc"
 
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
@@ -48,85 +50,83 @@ install:
 	dh_prep -s
 
 	# Common packages
-	mkdir -p debian/tmp/etc/cloud
-	mkdir -p debian/tmp/etc/init.d
-	mkdir -p debian/tmp/var/cache/cloudstack
-	mkdir -p debian/tmp/var/log/cloudstack
-	mkdir -p debian/tmp/var/lib/cloud
+	mkdir -p debian/tmp$(SYSCONFDIR)/$(PACKAGE)
+	mkdir -p debian/tmp$(SYSCONFDIR)/init.d
+	mkdir -p debian/tmp/var/cache/$(PACKAGE)
+	mkdir -p debian/tmp/var/log/$(PACKAGE)
+	mkdir -p debian/tmp/var/lib/$(PACKAGE)
 	mkdir -p debian/tmp/usr/bin
-	mkdir -p debian/tmp/usr/share/cloud
-	mkdir -p debian/tmp/usr/lib/cloud
 
 	# cloudstack-agent
-	mkdir debian/tmp/etc/cloud/agent
-	mkdir debian/tmp/var/log/cloudstack/agent
-	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-4.2.0-SNAPSHOT.jar debian/tmp/usr/share/cloudstack-agent/lib/cloudstack-agent-kvm.jar
-	install -D packaging/debian/init/cloud-agent debian/tmp/etc/init.d/
+	mkdir debian/tmp$(SYSCONFDIR)/$(PACKAGE)/agent
+	mkdir debian/tmp/var/log/$(PACKAGE)/agent
+	install -D agent/target/cloud-agent-4.2.0-SNAPSHOT.jar debian/tmp/usr/share/$(PACKAGE)-agent/lib/$(PACKAGE)-agent.jar
+	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-4.2.0-SNAPSHOT.jar debian/tmp/usr/share/$(PACKAGE)-agent/lib/
+	install -D plugins/hypervisors/kvm/target/dependencies/* debian/tmp/usr/share/$(PACKAGE)-agent/lib/
+	install -D packaging/debian/init/cloud-agent debian/tmp$(SYSCONFDIR)/init.d/$(PACKAGE)-agent
 	install -D agent/bindir/cloud-setup-agent.in debian/tmp/usr/bin/cloud-setup-agent
 	install -D agent/bindir/cloud-ssh.in debian/tmp/usr/bin/cloud-ssh
-	cp agent/target/transformed/* debian/tmp/etc/cloud/agent
+	install -D agent/target/transformed/* debian/tmp$(SYSCONFDIR)/$(PACKAGE)/agent
 
 	# cloudstack-management
-	mkdir debian/tmp/etc/cloud/server
-	mkdir debian/tmp/etc/cloud/management
-	mkdir -p debian/tmp/usr/share/cloudstack-management
-	mkdir -p debian/tmp/usr/share/cloudstack-management/webapps/client
-	mkdir debian/tmp/usr/share/cloudstack-management/setup
-	mkdir debian/tmp/var/log/cloudstack/management
-	mkdir debian/tmp/var/cache/cloudstack/management
-	mkdir debian/tmp/var/cache/cloudstack/management/work
-	mkdir debian/tmp/var/cache/cloudstack/management/temp
-	mkdir debian/tmp/var/log/cloudstack/ipallocator
-	mkdir debian/tmp/var/lib/cloud/management
-	mkdir debian/tmp/var/lib/cloud/mnt
-	cp -r client/target/utilities/scripts/db/* debian/tmp/usr/share/cloudstack-management/setup/
-	cp -r client/target/cloud-client-ui-4.2.0-SNAPSHOT/* debian/tmp/usr/share/cloudstack-management/webapps/client/
-	cp server/target/conf/* debian/tmp/etc/cloud/server/
-	cp client/target/conf/* debian/tmp/etc/cloud/management/
-	ln -s tomcat6-nonssl.conf debian/tmp/etc/cloud/management/tomcat6.conf
-	mkdir -p debian/tmp/etc/cloud/management/Catalina/localhost/client
-	install -D packaging/debian/init/cloud-management debian/tmp/etc/init.d/cloud-management
+	mkdir debian/tmp$(SYSCONFDIR)/$(PACKAGE)/server
+	mkdir debian/tmp$(SYSCONFDIR)/$(PACKAGE)/management
+	mkdir -p debian/tmp/usr/share/$(PACKAGE)-management
+	mkdir -p debian/tmp/usr/share/$(PACKAGE)-management/webapps/client
+	mkdir debian/tmp/usr/share/$(PACKAGE)-management/setup
+	mkdir debian/tmp/var/log/$(PACKAGE)/management
+	mkdir debian/tmp/var/cache/$(PACKAGE)/management
+	mkdir debian/tmp/var/cache/$(PACKAGE)/management/work
+	mkdir debian/tmp/var/cache/$(PACKAGE)/management/temp
+	mkdir debian/tmp/var/log/$(PACKAGE)/ipallocator
+	mkdir debian/tmp/var/lib/$(PACKAGE)/management
+	mkdir debian/tmp/var/lib/$(PACKAGE)/mnt
+	cp -r client/target/utilities/scripts/db/* debian/tmp/usr/share/$(PACKAGE)-management/setup/
+	cp -r client/target/cloud-client-ui-4.2.0-SNAPSHOT/* debian/tmp/usr/share/$(PACKAGE)-management/webapps/client/
+	cp server/target/conf/* debian/tmp$(SYSCONFDIR)/$(PACKAGE)/server/
+	cp client/target/conf/* debian/tmp$(SYSCONFDIR)/$(PACKAGE)/management/
+	ln -s tomcat6-nonssl.conf debian/tmp$(SYSCONFDIR)/$(PACKAGE)/management/tomcat6.conf
+	mkdir -p debian/tmp$(SYSCONFDIR)/$(PACKAGE)/management/Catalina/localhost/client
+	install -D packaging/debian/init/cloud-management debian/tmp$(SYSCONFDIR)/init.d/$(PACKAGE)-management
 	install -D client/bindir/cloud-update-xenserver-licenses.in debian/tmp/usr/bin/cloud-update-xenserver-licenses
-	install -D server/target/cloud-server-4.2.0-SNAPSHOT.jar debian/tmp/usr/share/cloudstack-management/lib/cloudstack-server.jar
-	ln -s /usr/share/tomcat6/bin debian/tmp/usr/share/cloudstack-management/bin
-	ln -s ../../../etc/cloud/management debian/tmp/usr/share/cloudstack-management/conf
-	ln -s /usr/share/tomcat6/lib debian/tmp/usr/share/cloudstack-management/lib
-	ln -s ../../../var/log/cloudstack/management debian/tmp/usr/share/cloudstack-management/logs
-	ln -s ../../../var/cache/cloudstack/management/temp debian/tmp/usr/share/cloudstack-management/temp
-	ln -s ../../../var/cache/cloudstack/management/work debian/tmp/usr/share/cloudstack-management/work
+	install -D server/target/cloud-server-4.2.0-SNAPSHOT.jar debian/tmp/usr/share/$(PACKAGE)-management/lib/$(PACKAGE)-server.jar
+	ln -s /usr/share/tomcat6/bin debian/tmp/usr/share/$(PACKAGE)-management/bin
+	ln -s ../../..$(SYSCONFDIR)/$(PACKAGE)/management debian/tmp/usr/share/$(PACKAGE)-management/conf
+	ln -s /usr/share/tomcat6/lib debian/tmp/usr/share/$(PACKAGE)-management/lib
+	ln -s ../../../var/log/$(PACKAGE)/management debian/tmp/usr/share/$(PACKAGE)-management/logs
+	ln -s ../../../var/cache/$(PACKAGE)/management/temp debian/tmp/usr/share/$(PACKAGE)-management/temp
+	ln -s ../../../var/cache/$(PACKAGE)/management/work debian/tmp/usr/share/$(PACKAGE)-management/work
 
 	# cloudstack-common
-	mkdir -p debian/tmp/usr/share/cloudstack-common
-	mkdir debian/tmp/usr/share/cloudstack-common/scripts
-	mkdir debian/tmp/usr/share/cloudstack-common/setup
-	cp -r scripts/installer debian/tmp/usr/share/cloudstack-common/scripts
-	cp -r scripts/network debian/tmp/usr/share/cloudstack-common/scripts
-	cp -r scripts/storage debian/tmp/usr/share/cloudstack-common/scripts
-	cp -r scripts/util debian/tmp/usr/share/cloudstack-common/scripts
-	cp -r scripts/vm debian/tmp/usr/share/cloudstack-common/scripts
+	mkdir -p debian/tmp/usr/share/$(PACKAGE)-common
+	mkdir debian/tmp/usr/share/$(PACKAGE)-common/scripts
+	mkdir debian/tmp/usr/share/$(PACKAGE)-common/setup
+	cp -r scripts/installer debian/tmp/usr/share/$(PACKAGE)-common/scripts
+	cp -r scripts/network debian/tmp/usr/share/$(PACKAGE)-common/scripts
+	cp -r scripts/storage debian/tmp/usr/share/$(PACKAGE)-common/scripts
+	cp -r scripts/util debian/tmp/usr/share/$(PACKAGE)-common/scripts
+	cp -r scripts/vm debian/tmp/usr/share/$(PACKAGE)-common/scripts
 	install -D client/target/utilities/bin/cloud-migrate-databases debian/tmp/usr/bin
 	install -D client/target/utilities/bin/cloud-set-guest-password debian/tmp/usr/bin
 	install -D client/target/utilities/bin/cloud-set-guest-sshkey debian/tmp/usr/bin
 	install -D client/target/utilities/bin/cloud-setup-databases debian/tmp/usr/bin
 	install -D client/target/utilities/bin/cloud-setup-management debian/tmp/usr/bin
-	install -D services/console-proxy/server/dist/systemvm.iso debian/tmp/usr/share/cloudstack-common/vms/systemvm.iso
-	install -D core/target/cloud-core-4.2.0-SNAPSHOT.jar debian/tmp/usr/share/cloudstack-common/lib/cloudstack-core.jar
-	install -D api/target/cloud-api-4.2.0-SNAPSHOT.jar debian/tmp/usr/share/cloudstack-common/lib/cloudstack-api.jar
+	install -D services/console-proxy/server/dist/systemvm.iso debian/tmp/usr/share/$(PACKAGE)-common/vms/systemvm.iso
 
 	# cloudstack-python
 	mkdir -p debian/tmp/usr/lib/python2.7/dist-packages
 	cp -r python/lib/cloud* debian/tmp/usr/lib/python2.7/dist-packages
 
 	# cloudstack-usage
-	mkdir debian/tmp/etc/cloud/usage
-	mkdir debian/tmp/var/log/cloudstack/usage
-	install -D usage/target/cloud-usage-4.2.0-SNAPSHOT.jar debian/tmp/usr/share/cloudstack-usage/lib/cloudstack-usage.jar
-	cp usage/target/transformed/* debian/tmp/etc/cloud/usage/
-	ln -s ../management/db.properties debian/tmp/etc/cloud/usage/db.properties
-	install -D packaging/debian/init/cloud-usage debian/tmp/etc/init.d
+	mkdir debian/tmp$(SYSCONFDIR)/$(PACKAGE)/usage
+	mkdir debian/tmp/var/log/$(PACKAGE)/usage
+	install -D usage/target/cloud-usage-4.2.0-SNAPSHOT.jar debian/tmp/usr/share/$(PACKAGE)-usage/lib/$(PACKAGE)-usage.jar
+	cp usage/target/transformed/* debian/tmp$(SYSCONFDIR)/$(PACKAGE)/usage/
+	ln -s ../management/db.properties debian/tmp$(SYSCONFDIR)/$(PACKAGE)/usage/db.properties
+	install -D packaging/debian/init/cloud-usage debian/tmp$(SYSCONFDIR)/init.d/$(PACKAGE)-usage
 
 	# cloudstack-awsapi
-	mkdir debian/tmp/var/log/cloudstack/awsapi
+	mkdir debian/tmp/var/log/$(PACKAGE)/awsapi
 
 	dh_installdirs
 	dh_install

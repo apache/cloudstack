@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.mo.SnapshotDescriptor.SnapshotInfo;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.testcase.Log4jEnabledTestCase;
 import com.google.gson.Gson;

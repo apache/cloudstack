@@ -22,10 +22,11 @@ import com.cloud.agent.api.Command;
 
 public class PrepareKickstartPxeServerCommand extends Command {
     private String ksFile;
-    private String repo;
     private String templateUuid;
     private String mac;
     private String ksDevice;
+    private String kernel;
+    private String initrd;
     
     @Override
     public boolean executeInSequence() {
@@ -40,12 +41,20 @@ public class PrepareKickstartPxeServerCommand extends Command {
         this.ksFile = ksFile;
     }
 
-    public String getRepo() {
-        return repo;
+    public String getKernel() {
+        return kernel;
     }
 
-    public void setRepo(String repo) {
-        this.repo = repo;
+    public void setKernel(String kernel) {
+        this.kernel = kernel;
+    }
+    
+    public String getInitrd() {
+        return initrd;
+    }
+
+    public void setInitrd(String initrd) {
+        this.initrd = initrd;
     }
 
     public String getTemplateUuid() {

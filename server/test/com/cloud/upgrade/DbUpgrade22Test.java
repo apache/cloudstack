@@ -16,12 +16,14 @@
 // under the License.
 package com.cloud.upgrade;
 
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ AdvanceZone217To224UpgradeTest.class, AdvanceZone223To224UpgradeTest.class, PortForwarding218To224UpgradeTest.class, InstanceGroup218To224UpgradeTest.class,
         BasicZone218To224UpgradeTest.class, UsageEvents218To224UpgradeTest.class })
+@Ignore("maven-sure-fire discovered")
 public class DbUpgrade22Test {
 
 }

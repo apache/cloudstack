@@ -909,10 +909,8 @@
 
                   //  items.push({id: " ", description: " "});
                        else{
+                     items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
                     items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
-                    items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
-
-                     
                     items.push({ id:" nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
 
                    }
@@ -923,7 +921,7 @@
                  },
 
           vSwitchPublicName:{
-                label:'vSwitch Public Traffic Name',
+                label:'Public Traffic vSwitch Name',
                 dependsOn:'overridepublictraffic',
                 isHidden:true
 
@@ -961,8 +959,7 @@
 
                             if(vSwitchEnabled) {
 
-                              items.push({ id:" nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
-
+                              items.push({ id:"nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
                               items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
                               items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
 
@@ -972,10 +969,9 @@
                               }
                else{
 
-               items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
                items.push({id: "vmwaredvs", description: "VMware vNetwork Distributed Virtual Switch"});
-
-               items.push({ id:" nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
+               items.push({id: "vmwaresvs", description: "VMware vNetwork Standard Virtual Switch"});
+               items.push({ id:"nexusdvs" , description: "Cisco Nexus 1000v Distributed Virtual Switch"});
 
                 }
                                     args.response.success({data: items});
@@ -986,7 +982,7 @@
                },
 
          vSwitchGuestName:{
-               label:'vSwitch Guest Traffic Name',
+               label:'Guest Traffic vSwitch Name',
                dependsOn:'overrideguesttraffic',
                isHidden:true
 

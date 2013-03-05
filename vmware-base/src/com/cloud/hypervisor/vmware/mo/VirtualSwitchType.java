@@ -29,14 +29,12 @@ public enum VirtualSwitchType {
     public final static String nexusDistributedVirtualSwitch = "nexusdvs";
 
     public static VirtualSwitchType getType(String vSwitchType) {
-        if (vSwitchType == null) {
+        if (vSwitchType == null || vSwitchType.equalsIgnoreCase(vmwareStandardVirtualSwitch)) {
             return VirtualSwitchType.StandardVirtualSwitch;
-        } else if (vSwitchType.equalsIgnoreCase(vmwareStandardVirtualSwitch)) {
-            return VirtualSwitchType.VMwareDistributedVirtualSwitch;
         } else if (vSwitchType.equalsIgnoreCase(vmwareDistributedVirtualSwitch)) {
-            return VirtualSwitchType.NexusDistributedVirtualSwitch;
+            return VirtualSwitchType.VMwareDistributedVirtualSwitch;
         } else if (vSwitchType.equalsIgnoreCase(nexusDistributedVirtualSwitch)) {
-            return VirtualSwitchType.StandardVirtualSwitch;
+            return VirtualSwitchType.NexusDistributedVirtualSwitch;
         }
         return VirtualSwitchType.None;
     }

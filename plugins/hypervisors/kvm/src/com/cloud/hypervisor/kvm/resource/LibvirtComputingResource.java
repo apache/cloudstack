@@ -41,6 +41,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -276,7 +278,11 @@ ServerResource {
     private String _mountPoint = "/mnt";
     StorageLayer _storage;
     private KVMStoragePoolManager _storagePoolMgr;
-    private VifDriver _vifDriver;
+
+    private VifDriver _defaultVifDriver;
+    private Map<TrafficType, VifDriver> _trafficTypeVifDrivers;
+    protected static final String DEFAULT_OVS_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
+    protected static final String DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
         private final Map<String, String> map = new HashMap<String, String>();
@@ -775,24 +781,66 @@ ServerResource {
         params.put("libvirt.host.bridges", bridges);
         params.put("libvirt.host.pifs", _pifs);
 
-        // Load the vif driver
-        String vifDriverName = (String) params.get("libvirt.vif.driver");
-        if (vifDriverName == null) {
-            if (_bridgeType == BridgeType.OPENVSWITCH) {
-                s_logger.info("No libvirt.vif.driver specififed. Defaults to OvsVifDriver.");
-                vifDriverName = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
-            } else {
-            s_logger.info("No libvirt.vif.driver specififed. Defaults to BridgeVifDriver.");
-            vifDriverName = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
-        }
-        }
-
         params.put("libvirt.computing.resource", this);
 
+        configureVifDrivers(params);
+
+        return true;
+    }
+
+    protected void configureVifDrivers(Map<String, Object> params)
+            throws ConfigurationException {
+        final String LIBVIRT_VIF_DRIVER = "libvirt.vif.driver";
+
+        _trafficTypeVifDrivers = new HashMap<TrafficType, VifDriver>();
+
+        // Load the default vif driver
+        String defaultVifDriverName = (String) params.get(LIBVIRT_VIF_DRIVER);
+        if (defaultVifDriverName == null) {
+            if (_bridgeType == BridgeType.OPENVSWITCH) {
+                s_logger.info("No libvirt.vif.driver specified. Defaults to OvsVifDriver.");
+                defaultVifDriverName = DEFAULT_OVS_VIF_DRIVER_CLASS_NAME;
+            } else {
+                s_logger.info("No libvirt.vif.driver specified. Defaults to BridgeVifDriver.");
+                defaultVifDriverName = DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME;
+            }
+        }
+        _defaultVifDriver = getVifDriverClass(defaultVifDriverName, params);
+
+        // Load any per-traffic-type vif drivers
+        for (Map.Entry<String, Object> entry : params.entrySet())
+        {
+            String k = entry.getKey();
+            String vifDriverPrefix = LIBVIRT_VIF_DRIVER + ".";
+
+            if(k.startsWith(vifDriverPrefix)){
+                // Get trafficType
+                String trafficTypeSuffix = k.substring(vifDriverPrefix.length());
+
+                // Does this suffix match a real traffic type?
+                TrafficType trafficType = TrafficType.getTrafficType(trafficTypeSuffix);
+                if(!trafficType.equals(TrafficType.None)){
+                    // Get vif driver class name
+                    String vifDriverClassName = (String) entry.getValue();
+                    // if value is null, ignore
+                    if(vifDriverClassName != null){
+                        // add traffic type to vif driver mapping to Map
+                        _trafficTypeVifDrivers.put(trafficType,
+                                getVifDriverClass(vifDriverClassName, params));
+                    }
+                }
+            }
+        }
+    }
+
+    protected VifDriver getVifDriverClass(String vifDriverClassName, Map<String, Object> params)
+            throws ConfigurationException {
+        VifDriver vifDriver;
+
         try {
-            Class<?> clazz = Class.forName(vifDriverName);
-            _vifDriver = (VifDriver) clazz.newInstance();
-            _vifDriver.configure(params);
+            Class<?> clazz = Class.forName(vifDriverClassName);
+            vifDriver = (VifDriver) clazz.newInstance();
+            vifDriver.configure(params);
         } catch (ClassNotFoundException e) {
             throw new ConfigurationException("Unable to find class for libvirt.vif.driver " + e);
         } catch (InstantiationException e) {
@@ -800,8 +848,28 @@ ServerResource {
         } catch (Exception e) {
             throw new ConfigurationException("Failed to initialize libvirt.vif.driver " + e);
         }
+        return vifDriver;
+    }
 
-        return true;
+    protected VifDriver getVifDriver(TrafficType trafficType){
+        VifDriver vifDriver = _trafficTypeVifDrivers.get(trafficType);
+
+        if(vifDriver == null){
+            vifDriver = _defaultVifDriver;
+        }
+
+        return vifDriver;
+    }
+
+    protected List<VifDriver> getAllVifDrivers(){
+        Set<VifDriver> vifDrivers = new HashSet<VifDriver>();
+
+        vifDrivers.add(_defaultVifDriver);
+        vifDrivers.addAll(_trafficTypeVifDrivers.values());
+
+        ArrayList<VifDriver> vifDriverList = new ArrayList<VifDriver>(vifDrivers);
+
+        return vifDriverList;
     }
 
     private void getPifs() {
@@ -1443,7 +1511,7 @@ ServerResource {
         }
 
         Domain vm = getDomain(conn, vmName);
-        vm.attachDevice(_vifDriver.plug(nicTO, "Other PV (32-bit)").toString());
+        vm.attachDevice(getVifDriver(nicTO.getType()).plug(nicTO, "Other PV (32-bit)").toString());
     }
 
     private PlugNicAnswer execute(PlugNicCommand cmd) {
@@ -1462,7 +1530,7 @@ ServerResource {
                 }
                 nicnum++;
             }
-            vm.attachDevice(_vifDriver.plug(nic, "Other PV (32-bit)").toString());
+            vm.attachDevice(getVifDriver(nic.getType()).plug(nic, "Other PV (32-bit)").toString());
             return new PlugNicAnswer(cmd, true, "success");
         } catch (Exception e) {
             String msg = " Plug Nic failed due to " + e.toString();
@@ -2560,7 +2628,11 @@ ServerResource {
         } else {
             destroy_network_rules_for_vm(conn, vmName);
             for (InterfaceDef iface : ifaces) {
-                _vifDriver.unplug(iface);
+                // We don't know which "traffic type" is associated with
+                // each interface at this point, so inform all vif drivers
+                for(VifDriver vifDriver : getAllVifDrivers()){
+                    vifDriver.unplug(iface);
+                }
             }
             cleanupVM(conn, vmName,
                     getVnetId(VirtualMachineName.getVnet(vmName)));
@@ -2580,7 +2652,7 @@ ServerResource {
         try {
             Connect conn = LibvirtConnection.getConnection();
             for (NicTO nic : nics) {
-                _vifDriver.plug(nic, null);
+                getVifDriver(nic.getType()).plug(nic, null);
             }
 
             /* setup disks, e.g for iso */
@@ -2794,7 +2866,11 @@ ServerResource {
                     }
                 }
                 for (InterfaceDef iface: ifaces) {
-                    _vifDriver.unplug(iface);
+                    // We don't know which "traffic type" is associated with
+                    // each interface at this point, so inform all vif drivers
+                    for(VifDriver vifDriver : getAllVifDrivers()){
+                        vifDriver.unplug(iface);
+                    }
                 }
             }
 
@@ -3231,7 +3307,7 @@ ServerResource {
     private void createVif(LibvirtVMDef vm, NicTO nic)
             throws InternalErrorException, LibvirtException {
         vm.getDevices().addDevice(
-                _vifDriver.plug(nic, vm.getGuestOSType()).toString());
+                getVifDriver(nic.getType()).plug(nic, vm.getGuestOSType()).toString());
     }
 
     protected CheckSshAnswer execute(CheckSshCommand cmd) {

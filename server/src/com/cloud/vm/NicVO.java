@@ -122,6 +122,9 @@ public class NicVO implements Nic {
     @Column(name = "uuid")
     String uuid = UUID.randomUUID().toString();
 
+    @Column(name = "secondary_ip")
+    boolean secondaryIp;
+
     public NicVO(String reserver, Long instanceId, long configurationId, VirtualMachine.Type vmType) {
         this.reserver = reserver;
         this.instanceId = instanceId;
@@ -349,4 +352,12 @@ public class NicVO implements Nic {
 	public void setIp6Cidr(String ip6Cidr) {
 		this.ip6Cidr = ip6Cidr;
 	}
+
+    public boolean getSecondaryIp() {
+        return secondaryIp;
+    }
+
+    public void setSecondaryIp(boolean secondaryIp) {
+        this.secondaryIp = secondaryIp;
+    }
 }

@@ -49,7 +49,6 @@
   <bean id="consoleProxyManagerImpl" class="com.cloud.consoleproxy.ConsoleProxyManagerImpl" />
   <bean id="securityGroupManagerImpl2" class="com.cloud.network.security.SecurityGroupManagerImpl2" />
   <bean id="premiumSecondaryStorageManagerImpl" class="com.cloud.secstorage.PremiumSecondaryStorageManagerImpl" />
-  <!-- <bean id="randomlyIncreasingVMInstanceDaoImpl" class="com.cloud.vm.dao.RandomlyIncreasingVMInstanceDaoImpl" /> -->
   <bean id="userVmDaoImpl" class="com.cloud.vm.dao.UserVmDaoImpl" />
 
   <bean id="ipv6AddressManagerImpl" class="com.cloud.network.Ipv6AddressManagerImpl" />
@@ -111,6 +110,14 @@
   <bean id="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator">
     <property name="name" value="FirstFitRouting"/>
   </bean>
+  
+  <bean id="hypervisorTemplateAdapter" class="com.cloud.template.HypervisorTemplateAdapter">
+    <property name="name" value="HypervisorAdapter"/>
+  </bean> 
+  
+   <bean id="bareMetalTemplateAdapter" class="com.cloud.baremetal.BareMetalTemplateAdapter">
+    <property name="name" value="BareMetalAdapter"/>
+  </bean> 
   
   <!--
     Storage pool allocators
@@ -241,7 +248,7 @@
   <bean id="BareMetalPlanner" class="com.cloud.baremetal.manager.BareMetalPlanner">
     <property name="name" value="BareMetal Fit"/>
   </bean>
-
+    
   <!--
     Network Gurus
   -->
@@ -286,7 +293,7 @@
   <bean id="KVMGuru" class="com.cloud.hypervisor.KVMGuru">
     <property name="name" value="KVMGuru"/>
   </bean>
-
+  
   <bean id="OvmGuru" class="com.cloud.ovm.hypervisor.OvmGuru">
     <property name="name" value="OvmGuru"/>
   </bean>
@@ -294,7 +301,7 @@
   <bean id="VMwareGuru" class="com.cloud.hypervisor.guru.VMwareGuru">
     <property name="name" value="VMwareGuru"/>
   </bean>
-
+  
   <bean id="BaremetalGuru" class="com.cloud.baremetal.manager.BareMetalGuru">
     <property name="name" value="BaremetalGuru"/>
   </bean>

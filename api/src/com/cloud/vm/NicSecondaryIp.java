@@ -14,23 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.ucs.manager;
+package com.cloud.vm;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-public class ListUcsProfileResponse extends BaseResponse {
-    @SerializedName(ApiConstants.UCS_DN) @Param(description="the dn of ucs profile")
-    private String dn;
-
-    public String getDn() {
-        return dn;
-    }
-
-    public void setDn(String dn) {
-        this.dn = dn;
-    }
+/**
+ * Nic represents one nic on the VM.
+ */
+public interface NicSecondaryIp  extends ControlledEntity, Identity, InternalIdentity {
+    /**
+     * @return id in the CloudStack database
+     */
+    long getId();
+    long getNicId();
+    String getIp4Address();
+    long getNetworkId();
+    long getVmId();
 }
