@@ -667,6 +667,13 @@
       );
     }
 
+    // Checkbox selection
+    $thead.find('tr').prepend(
+      $('<th>')
+        .addClass('row-selection')
+        .html('&nbsp;')
+    );
+
     return $thead;
   };
 
@@ -1011,6 +1018,25 @@
       $tr.data('jsonObj', dataItem);
       $tr.data('list-view-action-filter', options.actionFilter);
 
+      
+      // Add checkbox selection
+      $tr.prepend(
+        $('<td>').addClass('row-selection').append(
+          $('<input>').attr({
+            type: 'checkbox',
+            name: 'list-view-action-select'
+          }).click(function() {
+              var $rowSelectionCheckbox = $(this);
+
+              if (($rowSelectionCheckbox.is(':checked') &&
+                   $tbody.find('.row-selection input:checked').size() == 1) ||
+                  !$tbody.find('.row-selection input:checked').size()) {
+                $tbody.closest('.data-table').dataTable('toggleExpandToolbar');
+              }
+            })
+        )
+      );
+
       if (actions && renderActionCol(actions)) {
         var allowedActions = $.map(actions, function(value, key) {
           return key;
@@ -1049,6 +1075,7 @@
             $('<span>').addClass('icon').html('&nbsp;')
           )
           .appendTo($tr);
+
         $quickView.mouseover(
           // Show quick view
           function() {
@@ -1062,6 +1089,7 @@
             var itemID = $tr.data('list-view-item-id');
             var jsonObj = $tr.data('json-obj');
             var $loading = $('<div>').addClass('loading-overlay').appendTo($detailsContainer);
+            var $rowSelection = $tr.find('td.row-selection');
 
             if ($tr.hasClass('loading')) return;
 
@@ -1070,7 +1098,9 @@
               $('<span>').html(_l('label.quickview') + ': '),
               $('<span>').addClass('title').html(
                 cloudStack.concat(
-                  $tr.find('td:first span').html(), 30
+                  $rowSelection.size() ?
+                   $tr.find('td:first').next().find('span').html() :
+                   $tr.find('td:first span').html(), 30
                 )
               ).attr({
                 title: $tr.find('td:first span').html()
@@ -1660,8 +1690,12 @@
       var jsonObj = $target.closest('tr').data('jsonObj');
       var detailViewArgs;
       var detailViewPresent = ($target.closest('div.data-table tr td').size() &&
-                               $target.closest('div.data-table tr td').index() == 0 &&
-                               listViewData.detailView && !$target.closest('div.edit').size());
+                               ((!$target.closest('div.data-table').find('td.row-selection:first').size() &&
+                                 ($target.closest('div.data-table tr td').index() == 0)) ||
+                                ($target.closest('div.data-table').find('tr td.row-selection:first').size() &&
+                                 $target.closest('div.data-table tr td').index() == 1)) &&
+                               listViewData.detailView && !$target.closest('div.edit').size() &&
+                               !$target.closest('td.row-selection').size());
       var uiCustom = args.uiCustom == true ? true : false;
 
       // Click on first item will trigger detail view (if present)

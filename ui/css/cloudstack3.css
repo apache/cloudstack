@@ -193,6 +193,14 @@ table tbody tr.loading td.quick-view .loading {
   background-position: center center;
 }
 
+/** Multiple select table cell*/
+table tbody td.row-selection,
+table thead th.row-selection {
+  width: 34px;
+  min-width: 34px;
+  max-width: 34px;
+}
+
 /** Row styling*/
 table tbody tr {
   border-left: 1px solid #C4C5C5;

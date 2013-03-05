@@ -236,6 +236,8 @@
 
       toggleExpandToolbar: function() {
         $table.toggleClass('expanded');
+
+        return $table;
       }
     };
 
