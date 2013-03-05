@@ -91,9 +91,6 @@
     <cs.reflections.version>0.9.8</cs.reflections.version>
     <cs.java-ipv6.version>0.10</cs.java-ipv6.version>
     <cs.replace.properties>build/replace.properties</cs.replace.properties>
-    <!-- jna is a dependecy of libvirt, check libvirt
-         version requirements before changing -->
-    <cs.jna.version>3.2.4</cs.jna.version>
     <cs.libvirt-java.version>0.4.9</cs.libvirt-java.version>
   </properties>
 
