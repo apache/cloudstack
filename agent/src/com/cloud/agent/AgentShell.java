@@ -553,6 +553,9 @@ public class AgentShell implements IAgentShell {
 
     public void start() {
         try {
+            /* By default we only search for log4j.xml */
+            LogUtils.initLog4j("log4j-cloud.xml");
+
             System.setProperty("java.net.preferIPv4Stack", "true");
 
             String instance = getProperty(null, "instance");
@@ -612,8 +615,6 @@ public class AgentShell implements IAgentShell {
 
     public static void main(String[] args) {
         try {
-            LogUtils.initLog4j("log4j-cloud.xml");
-
             AgentShell shell = new AgentShell();
             shell.init(args);
             shell.start();
