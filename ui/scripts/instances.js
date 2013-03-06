@@ -1243,7 +1243,7 @@
               }
             ],
             viewAll: {
-              path: 'network.ipAddresses',
+              path: 'network.secondaryNicIps',
               attachTo: 'ipaddress',
               title: function(args) {
                 var title = _l('label.menu.ipaddresses') + ' - ' + args.context.nics[0].name;
