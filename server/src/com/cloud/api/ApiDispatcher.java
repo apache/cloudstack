@@ -372,8 +372,8 @@ public class ApiDispatcher {
         if (internalId == null) {
             if (s_logger.isDebugEnabled())
                 s_logger.debug("Object entity uuid = " + uuid + " does not exist in the database.");
-            throw new InvalidParameterValueException("Invalid parameter value=" + uuid
-                + " due to incorrect long value format, or entity was not found as it may have been deleted, or due to incorrect parameter annotation for the field in api cmd.");
+            throw new InvalidParameterValueException("Invalid parameter " + annotation.name() + " value=" + uuid
+                + " due to incorrect long value format, or entity does not exist or due to incorrect parameter annotation for the field in api cmd class.");
         }
         return internalId;
     }
