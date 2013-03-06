@@ -84,6 +84,7 @@ import com.sun.mail.smtp.SMTPTransport;
 @Local(value={AlertManager.class})
 public class AlertManagerImpl extends ManagerBase implements AlertManager {
     private static final Logger s_logger = Logger.getLogger(AlertManagerImpl.class.getName());
+    private static final Logger s_alertsLogger = Logger.getLogger("org.apache.cloudstack.alerts");
 
     private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
 
@@ -256,6 +257,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
         try {
             if (_emailAlert != null) {
                 _emailAlert.sendAlert(alertType, dataCenterId, podId, null, subject, body);
+            } else {
+                s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: "
+                    + podId + " // clusterId:: " + null + " // message:: " + subject );
             }
         } catch (Exception ex) {
             s_logger.error("Problem sending email alert", ex);
@@ -789,6 +793,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager {
 
         // TODO:  make sure this handles SSL transport (useAuth is true) and regular
         public void sendAlert(short alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content) throws MessagingException, UnsupportedEncodingException {
+            s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " +
+                podId + " // clusterId:: " + null + " // message:: " + subject);
             AlertVO alert = null;
             if ((alertType != AlertManager.ALERT_TYPE_HOST) &&
                     (alertType != AlertManager.ALERT_TYPE_USERVM) &&
