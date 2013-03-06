@@ -34,6 +34,36 @@
 
     return elemData;
   };
+
+  var instanceSecondaryIPSubselect = function(args) {
+    var instance = args.context.instances[0];
+    var network = args.context.networks[0];
+    var nic = $.grep(instance.nic, function(nic) {
+      return nic.networkid = network.id;
+    })[0]
+
+    // Get NIC IPs
+    $.ajax({
+      url: createURL('listNics'),
+      data: {
+        virtualmachineid: instance.id,
+        nicId: nic.id
+      },
+      success: function(json) {
+        var nic = json.listnics.nic[0];
+        var ips = nic.secondaryip ? nic.secondaryip : [];
+
+        args.response.success({
+          data: $(ips).map(function(index, ip) {
+            return {
+              id: ip.ipaddress,
+              description: ip.ipaddress
+            } ;
+          })
+        });
+      }
+    })
+  };
   
   var ipChangeNotice = function() {
     cloudStack.dialog.confirm({
@@ -1095,7 +1125,7 @@
               addRow: 'true',
               messages: {
                 confirm: function(args) {
-                  'message.acquire.new.ip';
+                  return 'message.acquire.new.ip';
                 },
                 notification: function(args) {
                   return 'label.acquire.new.ip';
@@ -1138,7 +1168,7 @@
                 virtualmachineid: args.context.instances[0].id
               },
               success: function(json) {
-                var ips = json.listnics.nic[0].secondaryip
+                var ips = json.listnics.nic ? json.listnics.nic[0].secondaryip : [];
 
                 args.response.success({
                   data: $(ips).map(function(index, ip) {
@@ -1632,6 +1662,7 @@
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         filters: false,
+                        subselect: instanceSecondaryIPSubselect,
                         dataProvider: function(args) {
                           var data = {
                             page: args.page,
@@ -2374,7 +2405,22 @@
                   loadBalancing: {
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
+                        fields: {
+                          name: { label: 'label.name' },
+                          displayname: { label: 'label.display.name' },
+                          zonename: { label: 'label.zone.name' },
+                          state: {
+                            label: 'label.state',
+                            indicator: {
+                              'Running': 'on',
+                              'Stopped': 'off',
+                              'Destroyed': 'off',
+                              'Error': 'off'
+                            }
+                          }
+                        },
                         filters: false,
+                        subselect: instanceSecondaryIPSubselect,
                         dataProvider: function(args) {
                           var itemData = $.isArray(args.context.multiRule) && args.context.multiRule[0]['_itemData'] ?
                             args.context.multiRule[0]['_itemData'] : [];
@@ -2957,6 +3003,7 @@
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         filters: false,
+                        subselect: instanceSecondaryIPSubselect,
                         dataProvider: function(args) {
                           var networkid;
 													if('vpc' in args.context) 
