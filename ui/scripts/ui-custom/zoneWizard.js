@@ -623,10 +623,7 @@
                                 }).html('GRE'),
                                                                 $('<option>').attr({
                                                                         value: 'STT'
-                                                                }).html('STT'),
-                                                                $('<option>').attr({
-                                                                        value: 'VNS'
-                                                                }).html('VNS')
+                                                                }).html('STT')
 
 							)
 						)
