@@ -256,6 +256,7 @@ chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/plugins
 install -D packaging/centos63/cloud-agent.rc ${RPM_BUILD_ROOT}%{_sysconfdir}/init.d/%{name}-agent
 install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/agent.properties
 install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/environment.properties
@@ -395,6 +396,7 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/agent
 %dir %{_localstatedir}/log/%{name}/agent
 %attr(0644,root,root) %{_datadir}/%{name}-agent/lib/*.jar
+%dir %{_datadir}/%{name}-agent/plugins
 %doc LICENSE
 %doc NOTICE
 

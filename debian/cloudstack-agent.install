@@ -23,3 +23,4 @@
 /usr/bin/cloud-ssh
 /var/log/cloudstack/agent
 /usr/share/cloudstack-agent/lib/*
+/usr/share/cloudstack-agent/plugins

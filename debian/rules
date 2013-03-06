@@ -56,10 +56,13 @@ install:
 	mkdir -p debian/tmp/var/log/$(PACKAGE)
 	mkdir -p debian/tmp/var/lib/$(PACKAGE)
 	mkdir -p debian/tmp/usr/bin
+	mkdir -p debian/tmp/usr/share
 
 	# cloudstack-agent
 	mkdir debian/tmp$(SYSCONFDIR)/$(PACKAGE)/agent
 	mkdir debian/tmp/var/log/$(PACKAGE)/agent
+	mkdir debian/tmp/usr/share/$(PACKAGE)-agent
+	mkdir debian/tmp/usr/share/$(PACKAGE)-agent/plugins
 	install -D agent/target/cloud-agent-4.2.0-SNAPSHOT.jar debian/tmp/usr/share/$(PACKAGE)-agent/lib/$(PACKAGE)-agent.jar
 	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-4.2.0-SNAPSHOT.jar debian/tmp/usr/share/$(PACKAGE)-agent/lib/
 	install -D plugins/hypervisors/kvm/target/dependencies/* debian/tmp/usr/share/$(PACKAGE)-agent/lib/
