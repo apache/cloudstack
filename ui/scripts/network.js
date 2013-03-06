@@ -620,7 +620,7 @@
 								  var data = {
 									  id: args.context.networks[0].id,		
 									  name: args.data.name,
-										displaytext: args.data.displaytext,
+										displaytext: args.data.displaytext
 									};
 								
                   //args.data.networkdomain is null when networkdomain field is hidden
@@ -628,13 +628,13 @@
 									  $.extend(data, {
 										  networkdomain: args.data.networkdomain
 										});
-									} 
+									}
 
-                 if(args.data.cidr !="" ){
-                                          $.extend(data, {
-                                                              guestvmcidr: args.data.cidr
-                                           });
-                                  }
+                  if(args.data.cidr !="" ){
+                    $.extend(data, {
+                      guestvmcidr: args.data.cidr
+                    });
+                  }
 
                   //args.data.networkofferingid is null when networkofferingid field is hidden
                   if(args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid) {
@@ -1606,7 +1606,10 @@
                     success: function(json) {
                       args.response.success({
                         _custom: {
-                          jobId: json.addiptonicresponse.jobid
+                          getUpdatedItem: function(data) {
+
+                          },
+                          jobId: json.addiptovmnicresponse.jobid
                         }
                       });
                     }
@@ -1676,11 +1679,18 @@
                 url: createURL('listNics'),
                 data: {
                   nicId: args.context.nics[0].id,
-                  vmId: args.context.instances[0].id
+                  virtualmachineid: args.context.instances[0].id
                 },
                 success: function(json) {
+                  var ips = json.listnics.nic[0].secondaryip
+
                   args.response.success({
-                    data: json.listnicsresponse.nic[0].ipAddresses
+                    data: $(ips).map(function(index, ip) {
+                      return $.extend(ip, {
+                        zonename: args.context.instances[0].zonename,
+                        virtualmachinedisplayname: args.context.instances[0].displayname
+                      });
+                    })
                   });
                 }
               });
