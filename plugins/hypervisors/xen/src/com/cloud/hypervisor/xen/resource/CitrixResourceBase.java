@@ -118,6 +118,7 @@ import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
+import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
@@ -597,6 +598,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((DeleteVMSnapshotCommand)cmd);
         } else if (clazz == RevertToVMSnapshotCommand.class) {
             return execute((RevertToVMSnapshotCommand)cmd);
+        } else if (clazz == NetworkRulesVmSecondaryIpCommand.class) {
+            return execute((NetworkRulesVmSecondaryIpCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -1468,7 +1471,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     for (NicTO nic : nics) {
                         if ( nic.isSecurityGroupEnabled() || nic.getIsolationUri() != null
                                 && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
-                            result = callHostPlugin(conn, "vmops", "default_network_rules", "vmName", vmName, "vmIP", nic.getIp(), "vmMAC", nic.getMac(), "vmID", Long.toString(vmSpec.getId()));
+                            List<String> nicSecIps = nic.getNicSecIps();
+                            String secIpsStr;
+                            StringBuilder sb = new StringBuilder();
+                            if (nicSecIps != null) {
+                                for (String ip : nicSecIps) {
+                                    sb.append(ip).append(":");
+                                }
+                                secIpsStr = sb.toString();
+                            } else {
+                                secIpsStr = "0:";
+                            }
+                            result = callHostPlugin(conn, "vmops", "default_network_rules", "vmName", vmName, "vmIP", nic.getIp(), "vmMAC", nic.getMac(), "vmID", Long.toString(vmSpec.getId()), "secIps", secIpsStr);
 
                             if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
                                 s_logger.warn("Failed to program default network rules for " + vmName+" on nic with ip:"+nic.getIp()+" mac:"+nic.getMac());
@@ -5454,7 +5468,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 "signature", cmd.getSignature(),
                 "seqno", Long.toString(cmd.getSeqNum()),
                 "deflated", "true",
-                "rules", cmd.compressStringifiedRules());
+                "rules", cmd.compressStringifiedRules(),
+                "secIps", cmd.getSecIpsString());
 
         if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
             s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
@@ -7501,6 +7516,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
                 success = false;
             }
+        }
+
+        return new Answer(cmd, success, "");
+    }
+
+    private Answer execute(NetworkRulesVmSecondaryIpCommand cmd) {
+        boolean success = true;
+        Connection conn = getConnection();
+
+        String result = callHostPlugin(conn, "vmops", "network_rules_vmSecondaryIp", "vmName", cmd.getVmName(), "vmMac", cmd.getVmMac(), "vmSecIp", cmd.getVmSecIp(), "action",
+                cmd.getAction());
+        if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+            success = false;
         }
 
         return new Answer(cmd, success, "");

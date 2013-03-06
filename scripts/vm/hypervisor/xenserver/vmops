@@ -610,6 +610,7 @@ def destroy_network_rules_for_vm(session, args):
         util.SMlog("Ignoring failure to delete egress chain " + vmchain_egress)
     
     remove_rule_log_for_vm(vm_name)
+    remove_secip_log_for_vm(vm_name)
     
     if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-', 'l-'] ]:
         return 'true'
@@ -749,6 +750,43 @@ def default_arp_antispoof(vm_chain, vifs, vm_ip, vm_mac):
 
     return 'true'
 
+
+@echo
+def network_rules_vmSecondaryIp(session, args):
+    vm_name = args.pop('vmName')
+    vm_mac = args.pop('vmMac')
+    ip_secondary = args.pop('vmSecIp')
+    action = args.pop('action')
+    util.SMlog("vmMac = "+ vm_mac)
+    util.SMlog("vmName = "+ vm_name)
+    #action = "-A"
+    util.SMlog("action = "+ action)
+    try:
+        vm = session.xenapi.VM.get_by_name_label(vm_name)
+        if len(vm) != 1:
+             return 'false'
+        vm_rec = session.xenapi.VM.get_record(vm[0])
+        vm_vifs = vm_rec.get('VIFs')
+        vifnums = [session.xenapi.VIF.get_record(vif).get('device') for vif in vm_vifs]
+        domid = vm_rec.get('domid')
+    except:
+        util.SMlog("### Failed to get domid or vif list for vm  ##" + vm_name)
+        return 'false'
+
+    if domid == '-1':
+        util.SMlog("### Failed to get domid for vm (-1):  " + vm_name)
+        return 'false'
+
+    vifs = ["vif" + domid + "." + v for v in vifnums]
+    #vm_name =  '-'.join(vm_name.split('-')[:-1])
+    vmchain = chain_name(vm_name)
+    add_to_ipset(vmchain, [ip_secondary], action)
+
+    #add arptables rules for the secondary ip
+    arp_rules_vmip(vmchain, vifs, [ip_secondary], vm_mac, action)
+
+    return 'true'
+
 @echo
 def default_network_rules_systemvm(session, args):
     vm_name = args.pop('vmName')
@@ -798,6 +836,55 @@ def default_network_rules_systemvm(session, args):
         util.SMlog("Failed to log default network rules for systemvm, ignoring")
     return 'true'
 
+@echo
+def create_ipset_forvm (ipsetname):
+    result = True
+    try:
+        util.SMlog("Creating ipset chain .... " + ipsetname)
+        util.pread2(['ipset', '-F', ipsetname])
+        util.pread2(['ipset', '-X', ipsetname])
+        util.pread2(['ipset', '-N', ipsetname, 'iphash'])
+    except:
+        util.SMlog("ipset chain not exists creating.... " + ipsetname)
+        util.pread2(['ipset', '-N', ipsetname, 'iphash'])
+
+    return result
+
+@echo
+def add_to_ipset(ipsetname, ips, action):
+    result = True
+    for ip in ips:
+        try:
+            util.SMlog("vm ip " + ip)
+            util.pread2(['ipset', action, ipsetname, ip])
+        except:
+            util.SMlog("vm ip alreday in ip set" + ip)
+            continue
+
+    return result
+
+@echo
+def arp_rules_vmip (vm_chain, vifs, ips, vm_mac, action):
+    try:
+        if action == "-A":
+            action = "-I"
+        for vif in vifs:
+            for vm_ip in ips:
+                #accept any arp requests to this vm as long as the request is for this vm's ip
+                util.pread2(['arptables',  action, vm_chain, '-o', vif, '--opcode', 'Request', '--destination-ip', vm_ip, '-j', 'ACCEPT'])
+                #accept any arp replies to this vm as long as the mac and ip matches
+                util.pread2(['arptables',  action, vm_chain, '-o', vif, '--opcode', 'Reply', '--destination-mac', vm_mac, '--destination-ip', vm_ip, '-j', 'ACCEPT'])
+                #accept arp replies into the bridge as long as the source mac and ips match the vm
+                util.pread2(['arptables',  action, vm_chain, '-i', vif, '--opcode', 'Reply', '--source-mac',  vm_mac, '--source-ip',  vm_ip, '-j', 'ACCEPT'])
+                #accept any arp requests from this vm. In the future this can be restricted to deny attacks on hosts
+                #also important to restrict source ip and src mac in these requests as they can be used to update arp tables on destination
+                util.pread2(['arptables',  action, vm_chain, '-i', vif, '--opcode', 'Request',  '--source-mac',  vm_mac, '--source-ip',  vm_ip, '-j', 'RETURN'])
+    except:
+        util.SMlog("Failed to program arptables  rules for ip")
+        return 'false'
+
+    return 'true'
+
 
 @echo
 def default_network_rules(session, args):
@@ -805,6 +892,8 @@ def default_network_rules(session, args):
     vm_ip = args.pop('vmIP')
     vm_id = args.pop('vmID')
     vm_mac = args.pop('vmMAC')
+    sec_ips = args.pop("secIps")
+    action = "-A"
     
     try:
         vm = session.xenapi.VM.get_by_name_label(vm_name)
@@ -854,6 +943,32 @@ def default_network_rules(session, args):
     except:
         util.pread2(['iptables', '-F', vmchain_default])        
 
+    vmipset = vm_name
+    #create ipset and add vm ips to that ip set
+    if create_ipset_forvm(vmipset) == False:
+       util.SMlog(" failed to create ipset for rule " + str(tokens))
+       return 'false'
+
+    #add primary nic ip to ipset
+    if add_to_ipset(vmipset, [vm_ip], action ) == False:
+       util.SMlog(" failed to add vm " + vm_ip + " ip to set ")
+       return 'false'
+
+    #add secodnary nic ips to ipset
+    secIpSet = "1"
+    ips = sec_ips.split(':')
+    ips.pop()
+    if ips[0] == "0":
+        secIpSet = "0";
+
+    if secIpSet == "1":
+        util.SMlog("Adding ipset for secondary ips")
+        add_to_ipset(vmipset, ips, action)
+        if write_secip_log_for_vm(vm_name, sec_ips, vm_id) == False:
+            util.SMlog("Failed to log default network rules, ignoring")
+
+    keyword = '--' + get_ipset_keyword()
+
     try:
         for v in vifs:
             util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
@@ -861,16 +976,22 @@ def default_network_rules(session, args):
 
         #don't let vm spoof its ip address
         for v in vifs:
-            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip,'-p', 'udp', '--dport', '53', '-j', 'RETURN'])
-            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', '!', vm_ip, '-j', 'DROP'])
-            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '--destination', '!', vm_ip, '-j', 'DROP'])
-            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', vmchain_egress])
+            #util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip,'-p', 'udp', '--dport', '53', '-j', 'RETURN'])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-m', 'set', keyword, vmipset, 'src', '-p', 'udp', '--dport', '53', '-j', 'RETURN'])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-m', 'set', '!', keyword, vmipset, 'src', '-j', 'DROP'])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-m', 'set', '!', keyword, vmipset, 'dst', '-j', 'DROP'])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-m', 'set', keyword, vmipset, 'src', '-j', vmchain_egress])
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v,  '-j', vmchain])
     except:
         util.SMlog("Failed to program default rules for vm " + vm_name)
         return 'false'
     
     default_arp_antispoof(vmchain, vifs, vm_ip, vm_mac)
+    #add default arp rules for secondary ips;
+    if secIpSet == "1":
+        util.SMlog("Adding arp rules for sec ip")
+        arp_rules_vmip(vmchain, vifs, ips, vm_mac, action)
+
     default_ebtables_antispoof_rules(vmchain, vifs, vm_ip, vm_mac)
     
     if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, '_initial_', '-1', vm_mac) == False:
@@ -994,10 +1115,45 @@ def network_rules_for_rebooted_vm(session, vmName):
     destroy_arptables_rules(vmchain)
     [vm_ip, vm_mac] = get_vm_mac_ip_from_log(vmchain)
     default_arp_antispoof(vmchain, vifs, vm_ip, vm_mac)
+
+    #check wether the vm has secondary ips
+    if is_secondary_ips_set(vm_name) == True:
+        vmips = get_vm_sec_ips(vm_name)
+        #add arp rules for the secondaryp ip
+        for ip in vmips:
+            arp_rules_vmip(vmchain, vifs, [ip], vm_mac, "-A")
+
+
     default_ebtables_antispoof_rules(vmchain, vifs, vm_ip, vm_mac)
     rewrite_rule_log_for_vm(vm_name, curr_domid)
     return True
 
+
+
+@echo
+def get_vm_sec_ips(vm_name):
+    logfilename = "/var/run/cloud/" + vm_name +".ip"
+
+    lines = (line.rstrip() for line in open(logfilename))
+    for line in lines:
+        try:
+            [_vmName,_vmIP,_vmID] = line.split(',')
+            break
+        except ValueError,v:
+            [_vmName,_vmIP,_vmID] = line.split(',')
+
+    _vmIPS = _vmIP.split(":")[:-1]
+    return _vmIPS
+
+@echo
+def is_secondary_ips_set(vm_name):
+    logfilename = "/var/run/cloud/" + vm_name +".ip"
+    if not os.path.exists(logfilename):
+        return False
+
+    return True
+
+@echo
 def rewrite_rule_log_for_vm(vm_name, new_domid):
     logfilename = "/var/run/cloud/" + vm_name +".log"
     if not os.path.exists(logfilename):
@@ -1194,6 +1350,39 @@ def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
         
     return [reprogramDefault, reprogramChain, rewriteLog]
     
+@echo
+def write_secip_log_for_vm (vmName, secIps, vmId):
+    vm_name = vmName
+    logfilename = "/var/run/cloud/"+vm_name+".ip"
+    util.SMlog("Writing log to " + logfilename)
+    logf = open(logfilename, 'w')
+    output = ','.join([vmName, secIps, vmId])
+    result = True
+
+    try:
+        logf.write(output)
+        logf.write('\n')
+    except:
+        util.SMlog("Failed to write to rule log file " + logfilename)
+        result = False
+
+    logf.close()
+
+    return result
+
+@echo
+def remove_secip_log_for_vm(vmName):
+    vm_name = vmName
+    logfilename = "/var/run/cloud/"+vm_name+".ip"
+
+    result = True
+    try:
+        os.remove(logfilename)
+    except:
+        util.SMlog("Failed to delete rule log file " + logfilename)
+        result = False
+
+    return result
 
 @echo
 def write_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno, vmMac='ff:ff:ff:ff:ff:ff'):
@@ -1289,6 +1478,7 @@ def network_rules(session, args):
     vm_mac = args.get('vmMAC')
     signature = args.pop('signature')
     seqno = args.pop('seqno')
+    sec_ips = args.pop("secIps")
     deflated = 'false'
     if 'deflated' in args:
         deflated = args.pop('deflated')
@@ -1469,6 +1659,7 @@ if __name__ == "__main__":
                             "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules,
                             "destroy_network_rules_for_vm":destroy_network_rules_for_vm, 
                             "default_network_rules_systemvm":default_network_rules_systemvm, 
+                            "network_rules_vmSecondaryIp":network_rules_vmSecondaryIp,
                             "get_rule_logs_for_vms":get_rule_logs_for_vms, 
                             "setLinkLocalIP":setLinkLocalIP,
                             "cleanup_rules":cleanup_rules,
