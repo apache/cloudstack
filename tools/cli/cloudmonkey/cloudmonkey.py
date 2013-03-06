@@ -42,7 +42,7 @@ except ImportError, e:
 try:
     from precache import apicache
 except ImportError:
-    apicache = {}
+    apicache = {'count': 0, 'verbs': [], 'asyncapis': []}
 
 try:
     import readline
@@ -327,11 +327,14 @@ class CloudMonkeyShell(cmd.Cmd, object):
         it rollbacks last datastore or api precached datastore.
         """
         response = self.make_request("listApis")
-        self.apicache = monkeycache(response)
         if response is None:
-            monkeyprint("Failed to sync apis, check your config")
+            monkeyprint("Failed to sync apis, please check your config?")
+            monkeyprint("Note: `sync` requires api discovery service enabled" +
+                        " on the CloudStack management server")
             return
+        self.apicache = monkeycache(response)
         savecache(self.apicache, self.cache_file)
+        monkeyprint("%s APIs discovered and cached" % self.apicache["count"])
         self.loadcache()
 
     def do_api(self, args):
