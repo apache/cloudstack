@@ -38,8 +38,8 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
 import javax.xml.ws.BindingProvider;
-import com.sun.xml.internal.ws.transport.http.client.CookieJar;
-import com.sun.xml.internal.ws.client.BindingProviderProperties;
+//import com.sun.xml.internal.ws.transport.http.client.CookieJar;
+//import com.sun.xml.internal.ws.client.BindingProviderProperties;
 
 import org.apache.log4j.Logger;
 
@@ -381,12 +381,14 @@ public class VmwareContext {
 			long totalBytesDownloaded, ActionDelegate progressUpdater) throws Exception {
 		HttpURLConnection conn = getRawHTTPConnection(urlString);
 
+		/* TODO: need to find a way working for JDK7 since CookieJar is not available in JDK7.
 		CookieJar cookie = getServiceCookie();
         if ( cookie == null ){
             s_logger.error("No cookie is found in vwware web service request context!");
             throw new Exception("No cookie is found in vmware web service request context!");
         }
 		cookie.applyRelevantCookies(conn);
+		*/
 	    conn.setDoInput(true);
 	    conn.setDoOutput(true);
 	    conn.setAllowUserInteraction(true);
@@ -537,11 +539,7 @@ public class VmwareContext {
 	}
 
 	public HttpURLConnection getHTTPConnection(String urlString, String httpMethod) throws Exception {
-		CookieJar cookie = getServiceCookie();
-		if ( cookie == null ){
-		    s_logger.error("No cookie is found in vmware web service request context!");
-            throw new Exception("No cookie is found in vmware web service request context!");
-		}
+
 	    HostnameVerifier hv = new HostnameVerifier() {
 	    	@Override
             public boolean verify(String urlHostName, SSLSession session) {
@@ -556,7 +554,14 @@ public class VmwareContext {
 	    conn.setDoInput(true);
 	    conn.setDoOutput(true);
 	    conn.setAllowUserInteraction(true);
+	    /* TODO: need to find a way to work for JDK7 since CookieJar is not available in JDK7.
+        CookieJar cookie = getServiceCookie();
+        if ( cookie == null ){
+            s_logger.error("No cookie is found in vmware web service request context!");
+            throw new Exception("No cookie is found in vmware web service request context!");
+        }
 	    cookie.applyRelevantCookies(conn);
+	    */
 	    conn.setRequestMethod(httpMethod);
         connectWithRetry(conn);
 	    return conn;
@@ -575,11 +580,13 @@ public class VmwareContext {
 	    return (HttpURLConnection)url.openConnection();
 	}
 
+	/*TODO: find a way to get session cookie from a WS call
 	private CookieJar getServiceCookie() throws Exception {
 		VimPortType port = getService();
         Map<String, Object> ctxt = ((BindingProvider) port).getRequestContext();
         return (CookieJar)ctxt.get(BindingProviderProperties.HTTP_COOKIE_JAR);
 	}
+	*/
 
 	private static void connectWithRetry(HttpURLConnection conn) throws Exception {
 	    boolean connected = false;
