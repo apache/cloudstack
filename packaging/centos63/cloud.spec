@@ -394,7 +394,6 @@ fi
 %attr(0755,root,root) %{_sysconfdir}/init.d/%{name}-agent
 %config(noreplace) %{_sysconfdir}/%{name}/agent
 %dir %{_localstatedir}/log/%{name}/agent
-%attr(0644,root,root) %{_datadir}/%{name}-agent/*.jar
 %attr(0644,root,root) %{_datadir}/%{name}-agent/lib/*.jar
 %doc LICENSE
 %doc NOTICE
