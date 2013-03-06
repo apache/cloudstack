@@ -118,7 +118,7 @@ class Services:
                     "password": "password",
                     "ipaddress": "192.168.100.21"
                 },
-            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+            "ostype": 'CentOS 5.3 (64-bit)',
             # CentOS 5.3 (64-bit)
             "sleep": 60,
             "timeout": 10,
@@ -160,7 +160,7 @@ class TestDefaultSecurityGroupEgress(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -318,7 +318,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -475,7 +475,7 @@ class TestDefaultGroupEgress(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -675,7 +675,7 @@ class TestDefaultGroupEgressAfterDeploy(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -857,7 +857,7 @@ class TestRevokeEgressRule(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -1118,7 +1118,7 @@ class TestInvalidAccountAuthroize(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -1239,7 +1239,7 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -1486,7 +1486,7 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -1782,7 +1782,7 @@ class TestStartStopVMWithEgressRule(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -1993,7 +1993,7 @@ class TestInvalidParametersForEgress(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -2179,7 +2179,7 @@ class TestEgressAfterHostMaintainance(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["domainid"] = cls.domain.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id

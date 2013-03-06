@@ -79,14 +79,14 @@ class Services:
                           "name": "testISO",
                           "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
                           # Source URL where ISO is located
-                          "ostypeid": 'bc66ada0-99e7-483b-befc-8fb0c2129b70',
+                          "ostype": 'CentOS 5.3 (64-bit)',
                           },
                          "custom_volume": {
                                            "customdisksize": 2,
                                            "diskname": "Custom disk",
                         },
                         "sleep": 50,
-                        "ostypeid": 'bc66ada0-99e7-483b-befc-8fb0c2129b70',
+                        "ostype": 'CentOS 5.3 (64-bit)',
                         "mode": 'advanced',
                     }
 
@@ -108,7 +108,7 @@ class TestAttachVolume(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -378,7 +378,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -623,7 +623,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -814,7 +814,7 @@ class TestVolumes(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -1054,7 +1054,7 @@ class TestDeployVmWithCustomDisk(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id

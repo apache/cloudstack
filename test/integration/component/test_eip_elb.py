@@ -81,7 +81,7 @@ class Services:
                                        "username": 'nsroot',
                                        "password": 'nsroot'
                                 },
-                         "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                         "ostype": 'CentOS 5.3 (64-bit)',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
@@ -100,7 +100,7 @@ class TestEIP(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
@@ -922,7 +922,7 @@ class TestELB(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id

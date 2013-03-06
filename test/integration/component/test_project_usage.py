@@ -75,7 +75,7 @@ class Services:
                         "templates": {
                                     "displaytext": 'Template',
                                     "name": 'Template',
-                                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                                    "ostype": 'CentOS 5.3 (64-bit)',
                                     "templatefilter": 'self',
                                     "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.qcow2.bz2"
                                 },
@@ -87,7 +87,7 @@ class Services:
                                   "isextractable": True,
                                   "isfeatured": True,
                                   "ispublic": True,
-                                  "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                                  "ostype": 'CentOS 5.3 (64-bit)',
                                 },
                         "lbrule": {
                                    "name": "SSH",
@@ -105,7 +105,7 @@ class Services:
                                    "username": "test",
                                    "password": "test",
                                 },
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                        "ostype": 'CentOS 5.3 (64-bit)',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -129,7 +129,7 @@ class TestVmUsage(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -323,7 +323,7 @@ class TestPublicIPUsage(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -497,7 +497,7 @@ class TestVolumeUsage(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
         cls.services["server"]["diskoffering"] = cls.disk_offering.id
@@ -678,7 +678,7 @@ class TestTemplateUsage(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
         cls.account = Account.create(
@@ -996,7 +996,7 @@ class TestLBRuleUsage(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -1179,7 +1179,7 @@ class TestSnapshotUsage(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -1355,7 +1355,7 @@ class TestNatRuleUsage(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -1537,7 +1537,7 @@ class TestVpnUsage(cloudstackTestCase):
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
