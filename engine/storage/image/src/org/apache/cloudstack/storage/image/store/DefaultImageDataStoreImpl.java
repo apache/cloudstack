@@ -51,7 +51,7 @@ public class DefaultImageDataStoreImpl implements ImageDataStore {
     protected ImageDataStoreProvider provider;
     boolean needDownloadToCacheStorage = false;
 
-    protected DefaultImageDataStoreImpl() {
+    public DefaultImageDataStoreImpl() {
      
     }
     

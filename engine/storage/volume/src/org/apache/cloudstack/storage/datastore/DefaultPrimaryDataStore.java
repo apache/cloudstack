@@ -77,7 +77,7 @@ public class DefaultPrimaryDataStore implements PrimaryDataStore {
 
     private VolumeDao volumeDao;
 
-    protected DefaultPrimaryDataStore() {
+    public	 DefaultPrimaryDataStore() {				
        
     }
     

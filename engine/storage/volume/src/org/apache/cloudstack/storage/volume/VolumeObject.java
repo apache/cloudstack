@@ -51,7 +51,7 @@ public class VolumeObject implements VolumeInfo {
     ObjectInDataStoreManager ojbectInStoreMgr;
     private Object payload;
 
-    protected VolumeObject() {
+    public VolumeObject() {
         _volStateMachine = Volume.State.getStateMachine();
     }
     

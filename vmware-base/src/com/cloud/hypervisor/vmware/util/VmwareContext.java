@@ -38,8 +38,6 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
 import javax.xml.ws.BindingProvider;
-import com.sun.xml.internal.ws.transport.http.client.CookieJar;
-import com.sun.xml.internal.ws.client.BindingProviderProperties;
 
 import org.apache.log4j.Logger;
 
@@ -381,12 +379,12 @@ public class VmwareContext {
 			long totalBytesDownloaded, ActionDelegate progressUpdater) throws Exception {
 		HttpURLConnection conn = getRawHTTPConnection(urlString);
 
-		CookieJar cookie = getServiceCookie();
+		String cookie = _vimClient.getServiceCookie();
         if ( cookie == null ){
             s_logger.error("No cookie is found in vwware web service request context!");
             throw new Exception("No cookie is found in vmware web service request context!");
         }
-		cookie.applyRelevantCookies(conn);
+        conn.addRequestProperty("Cookie", cookie);
 	    conn.setDoInput(true);
 	    conn.setDoOutput(true);
 	    conn.setAllowUserInteraction(true);
@@ -537,7 +535,7 @@ public class VmwareContext {
 	}
 
 	public HttpURLConnection getHTTPConnection(String urlString, String httpMethod) throws Exception {
-		CookieJar cookie = getServiceCookie();
+		String cookie = _vimClient.getServiceCookie();
 		if ( cookie == null ){
 		    s_logger.error("No cookie is found in vmware web service request context!");
             throw new Exception("No cookie is found in vmware web service request context!");
@@ -556,7 +554,7 @@ public class VmwareContext {
 	    conn.setDoInput(true);
 	    conn.setDoOutput(true);
 	    conn.setAllowUserInteraction(true);
-	    cookie.applyRelevantCookies(conn);
+	    conn.addRequestProperty("Cookie", cookie);
 	    conn.setRequestMethod(httpMethod);
         connectWithRetry(conn);
 	    return conn;
@@ -573,12 +571,6 @@ public class VmwareContext {
 	    HttpsURLConnection.setDefaultHostnameVerifier(hv);
 	    URL url = new URL(urlString);
 	    return (HttpURLConnection)url.openConnection();
-	}
-
-	private CookieJar getServiceCookie() throws Exception {
-		VimPortType port = getService();
-        Map<String, Object> ctxt = ((BindingProvider) port).getRequestContext();
-        return (CookieJar)ctxt.get(BindingProviderProperties.HTTP_COOKIE_JAR);
 	}
 
 	private static void connectWithRetry(HttpURLConnection conn) throws Exception {

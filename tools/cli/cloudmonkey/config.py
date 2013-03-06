@@ -99,6 +99,7 @@ def read_config(get_attr, set_attr):
         print "Welcome! Using `set` configure the necessary settings:"
         print " ".join(sorted(config_options))
         print "Config file:", config_file
+        print "After setting up, run the `sync` command to sync apis\n"
 
     missing_keys = []
     for section in config_fields.keys():

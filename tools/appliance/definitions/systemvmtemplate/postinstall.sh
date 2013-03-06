@@ -136,6 +136,8 @@ EOF
   cat >> /etc/locale.gen  << EOF
 en_US.UTF-8 UTF-8
 EOF
+
+  locale-gen en_US.UTF-8
 }
 
 do_fixes() {

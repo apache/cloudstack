@@ -26,4 +26,5 @@
   <title>Tools</title>
   <xi:include href="devcloud.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="marvin.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="cloudmonkey.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>

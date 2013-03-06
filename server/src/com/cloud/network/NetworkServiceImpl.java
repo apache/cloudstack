@@ -113,6 +113,7 @@ import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.*;
@@ -2175,9 +2176,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             
             // add VPCVirtualRouter as the defualt network service provider
             addDefaultVpcVirtualRouterToPhysicalNetwork(pNetwork.getId());
-            
-            // add baremetal pxe/dhcp provider to the physical network
-            addDefaultBaremetalProvidersToPhysicalNetwork(pNetwork.getId());
 
             txn.commit();
             return pNetwork;
@@ -2978,36 +2976,28 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, Network.Provider.VirtualRouter.getName(), null, null);
         // add instance of the provider
-        VirtualRouterElement element = (VirtualRouterElement) _networkModel.getElementImplementingProvider(Network.Provider.VirtualRouter.getName());
-        if (element == null) {
+        NetworkElement networkElement = _networkModel.getElementImplementingProvider(Network.Provider.VirtualRouter.getName());
+        if (networkElement == null) {
             throw new CloudRuntimeException("Unable to find the Network Element implementing the VirtualRouter Provider");
         }
+        
+        VirtualRouterElement element = (VirtualRouterElement)networkElement;
         element.addElement(nsp.getId(), VirtualRouterProviderType.VirtualRouter);
 
         return nsp;
-    }
-    
-    
-    private PhysicalNetworkServiceProvider addDefaultBaremetalProvidersToPhysicalNetwork(long physicalNetworkId) {
-        PhysicalNetworkVO pvo = _physicalNetworkDao.findById(physicalNetworkId);
-        DataCenterVO dvo = _dcDao.findById(pvo.getDataCenterId());
-        if (dvo.getNetworkType() == NetworkType.Basic) {
-            addProviderToPhysicalNetwork(physicalNetworkId, "BaremetalDhcpProvider", null, null);
-            addProviderToPhysicalNetwork(physicalNetworkId, "BaremetalPxeProvider", null, null);
-            addProviderToPhysicalNetwork(physicalNetworkId, "BaremetaUserdataProvider", null, null);
-        }
-        return null;
     }
     
     protected PhysicalNetworkServiceProvider addDefaultVpcVirtualRouterToPhysicalNetwork(long physicalNetworkId) {
 
         PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, 
                 Network.Provider.VPCVirtualRouter.getName(), null, null);
-        // add instance of the provider
-        VpcVirtualRouterElement element = (VpcVirtualRouterElement) _networkModel.getElementImplementingProvider(Network.Provider.VPCVirtualRouter.getName());
-        if (element == null) {
+ 
+        NetworkElement networkElement =  _networkModel.getElementImplementingProvider(Network.Provider.VPCVirtualRouter.getName());
+        if (networkElement == null) {
             throw new CloudRuntimeException("Unable to find the Network Element implementing the VPCVirtualRouter Provider");
         }
+        
+        VpcVirtualRouterElement element = (VpcVirtualRouterElement)networkElement;
         element.addElement(nsp.getId(), VirtualRouterProviderType.VPCVirtualRouter);
 
         return nsp;

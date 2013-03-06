@@ -68,6 +68,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -118,7 +119,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
 
-    protected final static Map<Class<?>, GenericDaoBase<?, ? extends Serializable>> s_daoMaps = new ConcurrentHashMap<Class<?>, GenericDaoBase<?, ? extends Serializable>>(71);
+    protected final static Map<Class<?>, GenericDao<?, ? extends Serializable>> s_daoMaps = new ConcurrentHashMap<Class<?>, GenericDao<?, ? extends Serializable>>(71);
 
     protected Class<T> _entityBeanType;
     protected String _table;
@@ -128,8 +129,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     protected Field[] _embeddedFields;
 
     // This is private on purpose.  Everyone should use createPartialSelectSql()
-    private final Pair<StringBuilder, Attribute[]> _partialSelectSql;
-    private final Pair<StringBuilder, Attribute[]> _partialQueryCacheSelectSql;
+    private Pair<StringBuilder, Attribute[]> _partialSelectSql;
+    private Pair<StringBuilder, Attribute[]> _partialQueryCacheSelectSql;
     protected StringBuilder _discriminatorClause;
     protected Map<String, Object> _discriminatorValues;
     protected String _selectByIdSql;
@@ -141,11 +142,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     protected Pair<String, Attribute> _removed;
     protected Pair<String, Attribute[]> _removeSql;
     protected List<Pair<String, Attribute[]>> _deleteSqls;
-    protected final Map<String, Attribute[]> _idAttributes;
-    protected final Map<String, TableGenerator> _tgs;
-    protected final Map<String, Attribute> _allAttributes;
-    protected final List<Attribute> _ecAttributes;
-    protected final Map<Pair<String, String>, Attribute> _allColumns;
+    protected Map<String, Attribute[]> _idAttributes;
+    protected Map<String, TableGenerator> _tgs;
+    protected Map<String, Attribute> _allAttributes;
+    protected List<Attribute> _ecAttributes;
+    protected Map<Pair<String, String>, Attribute> _allColumns;
     protected Enhancer _enhancer;
     protected Factory _factory;
     protected Enhancer _searchEnhancer;
@@ -159,9 +160,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     protected static final SequenceFetcher s_seqFetcher = SequenceFetcher.getInstance();
 
-    public static <J> GenericDaoBase<? extends J, ? extends Serializable> getDao(Class<J> entityType) {
+    public static <J> GenericDao<? extends J, ? extends Serializable> getDao(Class<J> entityType) {
         @SuppressWarnings("unchecked")
-        GenericDaoBase<? extends J, ? extends Serializable> dao = (GenericDaoBase<? extends J, ? extends Serializable>)s_daoMaps.get(entityType);
+        GenericDao<? extends J, ? extends Serializable> dao = (GenericDao<? extends J, ? extends Serializable>)s_daoMaps.get(entityType);
         assert dao != null : "Unable to find DAO for " + entityType + ".  Are you sure you waited for the DAO to be initialized before asking for it?";
         return dao;
     }
@@ -192,13 +193,15 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                     ( (Class<?>)((Class<?>)t).getGenericSuperclass()).getGenericSuperclass()).getActualTypeArguments()[0];
         }
 
-        s_daoMaps.put(_entityBeanType, this);
+/*        
+        s_daoMaps.put(_entityBeanType, ComponentContext.getComponent(this.getClass()));
         Class<?>[] interphaces = _entityBeanType.getInterfaces();
         if (interphaces != null) {
             for (Class<?> interphace : interphaces) {
-                s_daoMaps.put(interphace, this);
+                s_daoMaps.put(interphace, ComponentContext.getComponent(this.getClass()));
             }
         }
+*/  
         _table = DbUtil.getTableName(_entityBeanType);
 
         final SqlGenerator generator = new SqlGenerator(_entityBeanType);
@@ -1747,6 +1750,25 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
+        Class<?> daoInterface = null;
+        for(Class<?> intf : this.getClass().getInterfaces()) {
+        	if(GenericDao.class.isAssignableFrom(intf)) {
+        		daoInterface = intf;
+        		break;
+        	}
+        }
+ 
+        if(daoInterface != null) {
+        	s_logger.info("Register dao interface in GenericDaoBase entity-DAO map. " + daoInterface.getName());
+	        s_daoMaps.put(_entityBeanType, (GenericDao<?, ? extends Serializable>) ComponentContext.getComponent(daoInterface));
+	        Class<?>[] interphaces = _entityBeanType.getInterfaces();
+	        if (interphaces != null) {
+	            for (Class<?> interphace : interphaces) {
+	                s_daoMaps.put(interphace,  (GenericDao<?, ? extends Serializable>) ComponentContext.getComponent(daoInterface));
+	            }
+	        }
+	    }
+       
         final String value = (String)params.get("lock.timeout");
         _timeoutSeconds = NumbersUtil.parseInt(value, 300);
 

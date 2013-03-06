@@ -26,6 +26,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -56,13 +57,13 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
-public class AgentMonitor extends Thread implements Listener {
+public class AgentMonitor extends Thread implements AgentMonitorService {
     private static Logger s_logger = Logger.getLogger(AgentMonitor.class);
     private static Logger status_Logger = Logger.getLogger(Status.class);
     private long _pingTimeout;
     @Inject private HostDao _hostDao;
     private boolean _stop;
-    @Inject private AgentManagerImpl _agentMgr;
+    @Inject private AgentManager _agentMgr;
     @Inject private VMInstanceDao _vmDao;
     @Inject private DataCenterDao _dcDao = null;
     @Inject private HostPodDao _podDao = null;
@@ -296,4 +297,8 @@ public class AgentMonitor extends Thread implements Listener {
         return -1;
     }
 
+    public void startMonitoring() {
+    	start();
+    }
 }
+

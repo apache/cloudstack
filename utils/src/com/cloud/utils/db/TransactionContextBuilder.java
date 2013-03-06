@@ -33,16 +33,8 @@ public class TransactionContextBuilder implements MethodInterceptor {
 	public Object AroundAnyMethod(ProceedingJoinPoint call) throws Throwable {
 		MethodSignature methodSignature = (MethodSignature)call.getSignature();
         Method targetMethod = methodSignature.getMethod();	
-        if(needToIntercept(targetMethod)) {
-        	Transaction txn = null;
-        	try {
-        		Signature s = call.getSignature();
-        		String name = s.getName();
-        		txn = Transaction.open(name);
-        	} catch (Throwable e) {
-        		s_logger.debug("Failed to open transaction: " + e.toString());
-        		throw e;
-        	}
+        if(true) { // TODO ??? needToIntercept(targetMethod)) {
+			Transaction txn = Transaction.open(call.getSignature().getName());
 			Object ret = null;
 			try {
 				 ret = call.proceed();

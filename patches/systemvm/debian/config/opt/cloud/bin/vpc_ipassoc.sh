@@ -56,6 +56,18 @@ remove_routing() {
 }
 
 add_an_ip () {
+  # need to wait for eth device to appear before configuring it
+  timer=0
+  while ! `grep -q $ethDev /proc/net/dev` ; do
+    logger -t cloud "$(basename $0):Waiting for interface $ethDev to appear, $timer seconds"
+    sleep 1;
+    if [ $timer -gt 15 ]; then
+      logger -t cloud "$(basename $0):interface $ethDev never appeared"
+      break
+    fi
+    timer=$[timer + 1]
+  done
+
   logger -t cloud "$(basename $0):Adding ip $pubIp on interface $ethDev"
   sudo ip link show $ethDev | grep "state DOWN" > /dev/null
   local old_state=$?

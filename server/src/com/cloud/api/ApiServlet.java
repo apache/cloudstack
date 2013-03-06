@@ -50,7 +50,7 @@ public class ApiServlet extends HttpServlet {
     public static final Logger s_logger = Logger.getLogger(ApiServlet.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
-    @Inject ApiServer _apiServer;
+    @Inject ApiServerService _apiServer;
     @Inject AccountService _accountMgr;
 
     public ApiServlet() {
