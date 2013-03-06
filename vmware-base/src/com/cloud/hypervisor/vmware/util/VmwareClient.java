@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.vmware.util;
 
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,6 +27,12 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.HttpsURLConnection;
 import javax.xml.ws.BindingProvider;
+import javax.xml.ws.handler.MessageContext;
+
+import org.apache.http.cookie.Cookie;
+import org.apache.http.cookie.CookieOrigin;
+import org.apache.http.impl.cookie.BrowserCompatSpec;
+import org.apache.http.message.BasicHeader;
 
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.InvalidCollectorVersionFaultMsg;
@@ -94,6 +101,7 @@ public class VmwareClient {
     private VimService vimService;
     private VimPortType vimPort;
     private ServiceContent serviceContent;
+    private String serviceCookie;
     private final String SVC_INST_NAME = "ServiceInstance";
 
     private boolean isConnected = false;
@@ -133,6 +141,22 @@ public class VmwareClient {
         ctxt.put("com.sun.xml.internal.ws.connect.timeout", 600000);
 
         serviceContent = vimPort.retrieveServiceContent(SVC_INST_REF);
+
+        // Extract a cookie. See vmware sample program com.vmware.httpfileaccess.GetVMFiles
+        URL urlUrl = new URL(url);
+        Map<String, List<String>> headers = (Map<String, List<String>>) ((BindingProvider) vimPort)
+                .getResponseContext().get(MessageContext.HTTP_RESPONSE_HEADERS);
+        for (String header_raw_value : (List<String>) headers.get("Set-cookie")) {
+            List<Cookie> cookies = new BrowserCompatSpec().parse(
+                    new BasicHeader("Set-cookie", header_raw_value),
+                    new CookieOrigin(urlUrl.getHost(), urlUrl.getPort(), 
+                            urlUrl.getPath(), true));
+            if (cookies.size() > 0) {
+                serviceCookie = cookies.get(0).getValue();
+                break;
+            }
+        }
+        
         vimPort.login(serviceContent.getSessionManager(), userName, password, null);
         isConnected = true;
 
@@ -164,6 +188,13 @@ public class VmwareClient {
      */
     public ServiceContent getServiceContent() {
         return serviceContent;
+    }
+
+    /**
+     * @return cookie used in service connection
+     */
+    public String getServiceCookie() {
+        return serviceCookie;
     }
 
     /**
