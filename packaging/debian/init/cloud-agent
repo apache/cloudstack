@@ -55,7 +55,7 @@ for jdir in $JDK_DIRS; do
 done
 export JAVA_HOME
 
-ACP=`ls /usr/share/cloudstack-agent/lib/* | tr '\n' ':' | sed s'/.$//'`
+ACP=`ls /usr/share/cloudstack-agent/lib/*.jar | tr '\n' ':' | sed s'/.$//'`
 
 # We need to append the JSVC daemon JAR to the classpath
 # AgentShell implements the JSVC daemon methods
