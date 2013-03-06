@@ -1037,6 +1037,8 @@
             allowedActions: allowedActions
           }
         );
+
+        $listView.trigger('cloudStack.listView.addRow', { $tr: $tr });
       }
 
       // Add quick view
