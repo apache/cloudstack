@@ -41,7 +41,62 @@
 						account: { label: 'label.account' },
             created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
           },
-										
+					actions: {
+            // Remove multiple events
+            remove: {
+              label: 'Delete multiple',
+              isHeader: true,
+              addRow: false,
+              messages: {
+                notification: function(args) {
+                  return 'Remove events';
+                }
+              },
+              createForm: {
+                desc: '',
+                fields: {
+                  type: { label: 'By event type' },
+                  date: { label: 'By date range' }
+                }
+              },
+              action: function(args) {
+                //
+                args.response.success();
+                //
+
+                // Reloads window with events removed
+                $(window).trigger('cloudStack.fullRefresh');
+              }
+            },
+
+            // Archive multiple events
+            archive: {
+              label: 'Archive multiple',
+              isHeader: true,
+              addRow: false,
+              messages: {
+                notification: function(args) {
+                  return 'Archive events';
+                }
+              },
+              createForm: {
+                desc: '',
+                fields: {
+                  type: { label: 'By event type' },
+                  date: { label: 'By date range' }
+                }
+              },
+              action: function(args) {
+                //
+                args.response.success();
+                //
+
+                // Reloads window with events removed
+                $(window).trigger('cloudStack.fullRefresh');
+              }
+            }
+
+          },
 					advSearchFields: {	
             level: {
 						  label: 'label.level',
@@ -132,6 +187,47 @@
           },
 					detailView: {
             name: 'label.details',
+            actions: {
+
+              // Remove single event
+              remove: {
+                label: 'Delete',
+                messages: {
+                  notification: function(args) {
+                    return 'Remove event';
+                  },
+                  confirm: function() {
+                    return 'Are you sure you want to remove this event?';
+                  }
+                },
+                action: function(args) {
+                  //
+                  args.response.success();
+                  //
+                }
+              },
+
+              // Archive single event
+              archive: {
+                label: 'Archive',
+                messages: {
+                  notification: function(args) {
+                    return 'Remove events';
+                  },
+                  confirm: function() {
+                    return 'Please confirm that you want to archive this event.';
+                  }
+                },
+                action: function(args) {
+                  //
+                  args.response.success();
+                  //
+
+                  // Reloads window with item archived
+                  $(window).trigger('cloudStack.fullRefresh');
+                }
+              }
+            },
             tabs: {
               details: {
                 title: 'label.details',
