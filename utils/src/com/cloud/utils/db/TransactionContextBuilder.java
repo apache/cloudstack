@@ -32,8 +32,8 @@ public class TransactionContextBuilder implements MethodInterceptor {
 	
 	public Object AroundAnyMethod(ProceedingJoinPoint call) throws Throwable {
 		MethodSignature methodSignature = (MethodSignature)call.getSignature();
-        Method targetMethod = methodSignature.getMethod();	
-        if(true) { // TODO ??? needToIntercept(targetMethod)) {
+        Method targetMethod = methodSignature.getMethod();
+        if(needToIntercept(targetMethod, call.getTarget())) {
 			Transaction txn = Transaction.open(call.getSignature().getName());
 			Object ret = null;
 			try {
@@ -50,7 +50,7 @@ public class TransactionContextBuilder implements MethodInterceptor {
 	public Object invoke(MethodInvocation method) throws Throwable {
 		Method targetMethod = method.getMethod();
 		
-        if(needToIntercept(targetMethod)) {
+        if(needToIntercept(targetMethod, method.getThis())) {
 			Transaction txn = Transaction.open(targetMethod.getName());
 			Object ret = null;
 			try {
@@ -63,13 +63,25 @@ public class TransactionContextBuilder implements MethodInterceptor {
         return method.proceed();
 	}
 	
-	private boolean needToIntercept(Method method) {
+	private boolean needToIntercept(Method method, Object target) {
         DB db = method.getAnnotation(DB.class);
         if (db != null) {
             return true;
         }
         
         Class<?> clazz = method.getDeclaringClass();
+        if(clazz.isInterface()) {
+        	clazz = target.getClass();
+        	for(Method m : clazz.getMethods()) {
+        		// it is supposed that we need to check against type arguments,
+        		// this can be simplified by just checking method name
+        		if(m.getName().equals(method.getName())) {
+        			if(m.getAnnotation(DB.class) != null)
+        				return true;
+        		}
+        	}
+        }
+        
         do {
             db = clazz.getAnnotation(DB.class);
             if (db != null) {
