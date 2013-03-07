@@ -468,57 +468,6 @@
       // Change action label
       $listView.find('th.actions').html(_l('Select'));
 
-      // Add sub-select
-      if (instances.listView.subselect) {
-        $listView.bind('cloudStack.listView.addRow', function(event, data) {
-          var $tr = data.$tr;
-          var $td = $tr.find('td.first');
-          var $select = $('<div></div>').addClass('subselect').append(
-            $('<select>')
-          ).hide();
-          var $selectionArea = $tr.find('td:last').find('input');
-
-          $td.append($select);
-
-          // Show and populate selection
-          $selectionArea.change(function() {
-            if ($(this).is(':checked')) {
-              // Populate data
-              instances.listView.subselect({
-                context: $.extend(true, {}, context, {
-                  instances: [$tr.data('json-obj')]
-                }),
-                response: {
-                  success: function(args) {
-                    var data = args.data;
-
-                    if (data.length) {
-                      $(data).map(function(index, item) {
-                        var $option = $('<option>');
-
-                        $option.attr('value', item.id);
-                        $option.append(item.description);
-                        $option.appendTo($select.find('select'));
-                      });
-                      $select.show();
-                    } else {
-                      $select.hide();
-                    }
-                  }
-                }
-              });
-
-              if ($(this).is('input[type=radio]')) {
-                $(this).closest('tr').siblings().find('input[type=radio]').change();
-              } 
-            } else {
-              $select.find('option').remove();
-              $select.hide();
-            }
-          });
-        });
-      }
-
       var $dataList = $listView.addClass('multi-edit-add-list').dialog({
         dialogClass: 'multi-edit-add-list panel',
         width: 825,
