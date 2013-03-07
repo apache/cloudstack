@@ -2785,6 +2785,16 @@
                           action: cloudStack.lbStickyPolicy.dialog()
                         }
                       },
+          
+                      'health-check':{
+                          label:'Health Check',
+                          custom:{
+                             buttonLabel:'Configure',
+                             action:cloudStack.uiCustom.healthCheck()
+
+                           }
+                        },
+
                       'autoScale': {
                         label: 'AutoScale',
                         custom: {
