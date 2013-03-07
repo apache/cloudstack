@@ -29,4 +29,8 @@
 	<para>Users can create snapshots manually or by setting up automatic recurring snapshot policies. Users can also create disk volumes from snapshots, which may be attached to a VM like any other disk volume. Snapshots of both root disks and data disks are supported. However, &PRODUCT; does not currently support booting a VM from a recovered root disk. A disk recovered from snapshot of a root disk is treated as a regular data disk; the data on recovered disk can be accessed by attaching the disk to a VM.</para>
 	<para>A completed snapshot is copied from primary storage to secondary storage, where it is stored until deleted or purged by newer snapshot.</para>
     <xi:include href="snapshot-throttling.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="automatic-snapshot-creation-retention.xml" xmlns:xi="http://www.w3.org/2001/XInclude" /> 
+    <xi:include href="incremental-snapshots-backup.xml" xmlns:xi="http://www.w3.org/2001/XInclude" /> 
+    <xi:include href="volume-status.xml" xmlns:xi="http://www.w3.org/2001/XInclude" /> 
+    <xi:include href="snapshot-restore.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>
