@@ -19,7 +19,7 @@
   under the License.
 -->
 <section id="management-server-lb">
-  <title>Setting Zone VLAN and Running VM Maximums</title>
+  <title>Management Server Load Balancing</title>
   <para>&PRODUCT; can use a load balancer to provide a virtual IP for multiple Management
     Servers. The administrator is responsible for creating the load balancer rules for the
     Management Servers. The application requires persistence or stickiness across multiple sessions.
@@ -57,5 +57,48 @@
         </row>
       </tbody>
     </tgroup>
-  </informaltable>
+</informaltable>
+    <section id="toplogy-requirements">
+        <title>Topology Requirements</title>
+        <section id="security-req">
+            <title>Security Requirements</title>
+            <para>The public Internet must not be able to access port 8096 or port 8250 on the Management Server.</para>
+        </section>
+        <section id="runtime-req">
+            <title>Internal Communication Requirements</title>
+            <itemizedlist>
+                <listitem><para>The Management Servers communicate with each other to coordinate tasks. This communication uses TCP on ports 8250 and 9090.</para></listitem>
+                <listitem><para>The console proxy VMs connect to all hosts in the zone over the management traffic network. Therefore the management traffic network of any given pod in the zone must have connectivity to the management traffic network of all other pods in the zone.</para></listitem>
+                <listitem><para>The secondary storage VMs and console proxy VMs connect to the Management Server on port 8250. If you are using multiple Management Servers, the load balanced IP address of the Management Servers on port 8250 must be reachable.</para></listitem>
+            </itemizedlist>
+        </section>
+        <section id="storage-network-topology-req">
+            <title>Storage Network Topology Requirements</title>
+            <para>The secondary storage NFS export is mounted by the secondary storage VM. Secondary storage traffic goes over the management traffic network, even if there is a separate storage network. Primary storage traffic goes over the storage network, if available. If you choose to place secondary storage NFS servers on the storage network, you must make sure there is a route from the management traffic network to the storage network.</para>
+        </section>
+        <section id="external-firewall-topology-req">
+            <title>External Firewall Topology Requirements</title>
+            <para>When external firewall integration is in place, the public IP VLAN must still be trunked to the Hosts. This is required to support the Secondary Storage VM and Console Proxy VM.</para>
+        </section>
+        <section id="advanced-zone-topology-req">
+            <title>Advanced Zone Topology Requirements</title>
+            <para>With Advanced Networking, separate subnets must be used for private and public networks.</para>
+        </section>
+        <section id="xenserver-topology-req">
+            <title>XenServer Topology Requirements</title>
+            <para>The Management Servers communicate with XenServer hosts on ports 22 (ssh), 80 (HTTP), and 443 (HTTPs).</para>
+        </section>
+        <section id="vmware-topology-req">
+            <title>VMware Topology Requirements</title>
+            <itemizedlist>
+                <listitem><para>The Management Server and secondary storage VMs must be able to access vCenter and all ESXi hosts in the zone.  To allow the necessary access through the firewall, keep port 443 open.</para></listitem>
+                <listitem><para>The Management Servers communicate with VMware vCenter servers on port 443 (HTTPs).</para></listitem>
+                <listitem><para>The Management Servers communicate with the System VMs on port 3922 (ssh) on the management traffic network.</para></listitem>
+            </itemizedlist>
+        </section>
+        <section id="kvm-topology-req">
+            <title>KVM Topology Requirements</title>
+            <para>The Management Servers communicate with KVM hosts on port 22 (ssh).</para>
+        </section>
+    </section>
 </section>
