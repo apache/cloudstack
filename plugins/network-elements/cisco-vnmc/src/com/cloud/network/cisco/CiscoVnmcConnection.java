@@ -76,7 +76,12 @@ public interface CiscoVnmcConnection {
 
     public boolean createTenantVDCDNatRule(String tenantName,
             String identifier, String policyIdentifier,
-            String sourceIp)
+            String publicIp)
+            throws ExecutionException;
+
+    public boolean createTenantVDCIngressAclRuleForDNat(String tenantName,
+            String identifier, String policyIdentifier,
+            String publicIp)
             throws ExecutionException;
 
     public boolean createTenantVDCDNatPolicy(String tenantName, String identifier)
@@ -97,8 +102,14 @@ public interface CiscoVnmcConnection {
 
     public boolean createTenantVDCPFRule(String tenantName,
             String identifier, String policyIdentifier,
-            String protocol, String sourceIp,
-            String startSourcePort, String endSourcePort)
+            String protocol, String publicIp,
+            String startPort, String endPort)
+            throws ExecutionException;
+
+    public boolean createTenantVDCIngressAclRuleForPF(String tenantName,
+            String identifier, String policyIdentifier,
+            String protocol, String publicIp,
+            String startPort, String endPort)
             throws ExecutionException;
 
     public boolean createTenantVDCPFPolicy(String tenantName, String identifier)

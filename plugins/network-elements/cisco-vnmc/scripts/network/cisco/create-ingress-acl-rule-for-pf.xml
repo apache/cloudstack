@@ -57,12 +57,12 @@
       <policyNetworkExpression
         dn="%aclruledn%/rule-cond-3/nw-expr2"
         id="2"
-        opr="range"
+        opr="eq"
         status="created"/>
     </pair>
     <pair key="%aclruledn%/rule-cond-3/nw-expr2/nw-attr-qual">
       <policyNwAttrQualifier
-        attrEp="source"
+        attrEp="destination"
         dn="%aclruledn%/rule-cond-3/nw-expr2/nw-attr-qual"
         status="created"/>
     </pair>
@@ -75,18 +75,7 @@
         name=""
         placement="begin"
         status="created"
-        value="%sourcestartip%"/>
-    </pair>
-    <pair key="%aclruledn%/rule-cond-3/nw-expr2/nw-ip-3">
-      <policyIPAddress
-        dataType="string"
-        descr=""
-        dn="%aclruledn%/rule-cond-3/nw-expr2/nw-ip-3"
-        id="3"
-        name=""
-        placement="end"
-        status="created"
-        value="%sourceendip%"/>
+        value="%ip%"/>
     </pair>
 
     <pair key="%aclruledn%/rule-cond-4">
@@ -100,7 +89,7 @@
       <policyNetworkExpression
         dn="%aclruledn%/rule-cond-4/nw-expr2"
         id="2"
-        opr="eq"
+        opr="range"
         status="created"/>
     </pair>
     <pair key="%aclruledn%/rule-cond-4/nw-expr2/nw-attr-qual">
@@ -109,61 +98,29 @@
         dn="%aclruledn%/rule-cond-4/nw-expr2/nw-attr-qual"
         status="created"/>
     </pair>
-    <pair key="%aclruledn%/rule-cond-4/nw-expr2/nw-ip-2">
-      <policyIPAddress
-        dataType="string"
-        descr=""
-        dn="%aclruledn%/rule-cond-4/nw-expr2/nw-ip-2"
-        id="2"
-        name=""
-        placement="none"
-        status="created"
-        value="%destip%"/>
-    </pair>
-
-    <pair key="%aclruledn%/rule-cond-5">
-      <policyRuleCondition
-        dn="%aclruledn%/rule-cond-5"
-        id="5"
-        order="unspecified"
-        status="created"/>
-    </pair>
-    <pair key="%aclruledn%/rule-cond-5/nw-expr2">
-      <policyNetworkExpression
-        dn="%aclruledn%/rule-cond-5/nw-expr2"
-        id="2"
-        opr="range"
-        status="created"/>
-    </pair>
-    <pair key="%aclruledn%/rule-cond-5/nw-expr2/nw-attr-qual">
-      <policyNwAttrQualifier
-        attrEp="destination"
-        dn="%aclruledn%/rule-cond-5/nw-expr2/nw-attr-qual"
-        status="created"/>
-    </pair>
-    <pair key="%aclruledn%/rule-cond-5/nw-expr2/nw-port-2">
+    <pair key="%aclruledn%/rule-cond-4/nw-expr2/nw-port-2">
       <policyNetworkPort
         appType="Other"
         dataType="string"
         descr=""
-        dn="%aclruledn%/rule-cond-5/nw-expr2/nw-port-2"
+        dn="%aclruledn%/rule-cond-4/nw-expr2/nw-port-2"
         id="2"
         name=""
         placement="begin"
         status="created"
-        value="%deststartport%"/>
+        value="%startport%"/>
     </pair>
-    <pair key="%aclruledn%/rule-cond-5/nw-expr2/nw-port-3">
+    <pair key="%aclruledn%/rule-cond-4/nw-expr2/nw-port-3">
       <policyNetworkPort
         appType="Other"
         dataType="string"
         descr=""
-        dn="%aclruledn%/rule-cond-5/nw-expr2/nw-port-3"
+        dn="%aclruledn%/rule-cond-4/nw-expr2/nw-port-3"
         id="3"
         name=""
         placement="end"
         status="created"
-        value="%destendport%"/>
+        value="%endport%"/>
     </pair>
 
   </inConfigs>
@@ -174,10 +131,8 @@
     aclrulename="dummy"
     descr=value
     actiontype="drop" or "permit"
-    protocolvalue = "TCP" or UDP or ICMP
-    sourcestartip="source start ip"
-    sourceendip="source end ip"
-    deststartport="start port at destination"
-    destendport="end port at destination"
-    destinationip="public ip at destination"
+    protocolvalue="TCP" or "UDP"
+    ip="public ip at destination"
+    startport="start port at destination"
+    endport="end port at destination"
 --!>

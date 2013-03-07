@@ -16,8 +16,8 @@
     <pair key="%natruledn%/nat-action">
       <natpolicyNatAction
         actionType="static"
-        destTranslatedIpPool=""
-        destTranslatedPortPool=""
+        destTranslatedIpPool="%ippoolname%"
+        destTranslatedPortPool="%portpoolname%"
         dn="%natruledn%/nat-action"
         id="0"
         isBidirectionalEnabled="yes"
@@ -25,8 +25,8 @@
         isNoProxyArpEnabled="no"
         isRoundRobinIpEnabled="no"
         srcTranslatedIpPatPool=""
-        srcTranslatedIpPool="%ippoolname%"
-        srcTranslatedPortPool="%portpoolname%"
+        srcTranslatedIpPool=""
+        srcTranslatedPortPool=""
         status="created"/>
     </pair>
 
@@ -39,7 +39,7 @@
     </pair>
     <pair key="%natruledn%/rule-cond-2/nw-expr2/nw-attr-qual">
       <policyNwAttrQualifier
-        attrEp="source"
+        attrEp="destination"
         dn="%natruledn%/rule-cond-2/nw-expr2/nw-attr-qual"
         status="created"/>
     </pair>
@@ -59,7 +59,7 @@
         name=""
         placement="none"
         status="created"
-        value="%srcip%"/>
+        value="%ip%"/>
     </pair>
 
     <pair key="%natruledn%/rule-cond-3">
@@ -71,7 +71,7 @@
     </pair>
     <pair key="%natruledn%/rule-cond-3/nw-expr2/nw-attr-qual">
       <policyNwAttrQualifier
-        attrEp="source"
+        attrEp="destination"
         dn="%natruledn%/rule-cond-3/nw-expr2/nw-attr-qual"
         status="created"/>
     </pair>
@@ -92,7 +92,7 @@
         name=""
         placement="begin"
         status="created"
-        value="%srcportstart%"/>
+        value="%startport%"/>
     </pair>
     <pair key="%natruledn%/rule-cond-3/nw-expr2/nw-port-3">
       <policyNetworkPort
@@ -104,7 +104,7 @@
         name=""
         placement="end"
         status="created"
-        value="%srcportend%"/>
+        value="%endport%"/>
     </pair>
 
     <pair key="%natruledn%/rule-cond-4">
@@ -142,8 +142,8 @@
     descr=value
     ippoolname="ccc"
     portpoolname="ddd"
-    srcip="10.147.30.230"
-    srcportstart="22"
-    srcportend="22"
+    ip="10.147.30.230"
+    startport="22"
+    endport="22"
     protocolvalue="TCP"
 --!>

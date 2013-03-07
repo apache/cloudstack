@@ -1,0 +1,64 @@
+<configConfMos
+  cookie="%cookie%"
+  inHierarchical="false">
+  <inConfigs>
+
+    <pair key="%aclruledn%">
+      <policyRule
+        descr="%descr%"
+        dn="%aclruledn%"
+        name="%aclrulename%"
+        order="300"
+        status="created"/>
+    </pair>
+
+    <pair key="%aclruledn%/rule-action-0">
+      <fwpolicyAction
+        actionType="%actiontype%"
+        dn="%aclruledn%/rule-action-0"
+        id="0"
+        status="created"/>
+    </pair>
+
+    <pair key="%aclruledn%/rule-cond-2">
+      <policyRuleCondition
+        dn="%aclruledn%/rule-cond-2"
+        id="2"
+        order="unspecified"
+        status="created"/>
+    </pair>
+    <pair key="%aclruledn%/rule-cond-2/nw-expr2">
+      <policyNetworkExpression
+        dn="%aclruledn%/rule-cond-2/nw-expr2"
+        id="2"
+        opr="eq"
+        status="created"/>
+    </pair>
+    <pair key="%aclruledn%/rule-cond-2/nw-expr2/nw-attr-qual">
+      <policyNwAttrQualifier
+        attrEp="destination"
+        dn="%aclruledn%/rule-cond-2/nw-expr2/nw-attr-qual"
+        status="created"/>
+    </pair>
+    <pair key="%aclruledn%/rule-cond-2/nw-expr2/nw-ip-2">
+      <policyIPAddress
+        dataType="string"
+        descr=""
+        dn="%aclruledn%/rule-cond-2/nw-expr2/nw-ip-2"
+        id="2"
+        name=""
+        placement="none"
+        status="created"
+        value="%ip%"/>
+    </pair>
+
+  </inConfigs>
+</configConfMos>
+
+<!--
+    aclruledn="org-root/org-vlan-123/org-VDC-vlan-123/pol-test_policy/rule-dummy"
+    aclrulename="dummy"
+    descr=value
+    actiontype="drop" or "permit"
+    ip="public ip at destination"
+--!>

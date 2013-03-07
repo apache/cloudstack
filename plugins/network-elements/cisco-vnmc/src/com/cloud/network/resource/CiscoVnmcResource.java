@@ -347,9 +347,9 @@ public class CiscoVnmcResource implements ServerResource{
             for (String publicIp : publicIpRulesMap.keySet()) {
                 String policyIdentifier = publicIp.replace('.', '-');
 
-                if (!_connection.deleteTenantVDCAclPolicy(tenant, policyIdentifier)) {
+                /*if (!_connection.deleteTenantVDCAclPolicy(tenant, policyIdentifier)) {
                     throw new Exception("Failed to delete ACL ingress policy in VNMC for guest network with vlan " + vlanId);
-                }
+                }*/
                 // TODO for egress
 
                 if (!_connection.createTenantVDCAclPolicy(tenant, policyIdentifier, true)) {
@@ -368,8 +368,12 @@ public class CiscoVnmcResource implements ServerResource{
                         String[] result = cidr.split("\\/");
                         assert (result.length == 2) : "Something is wrong with source cidr " + cidr;
                         long size = Long.valueOf(result[1]);
-                        String externalStartIp = NetUtils.getIpRangeStartIpFromCidr(result[0], size);
-                        String externalEndIp = NetUtils.getIpRangeEndIpFromCidr(result[0], size);
+                        String externalStartIp = result[0];
+                        String externalEndIp = result[0];
+                        if (size < 32) {
+                            externalStartIp = NetUtils.getIpRangeStartIpFromCidr(result[0], size);
+                            externalEndIp = NetUtils.getIpRangeEndIpFromCidr(result[0], size);
+                        }
 
                         if (!_connection.createIngressAclRule(tenant,
                                 Long.toString(rule.getId()), policyIdentifier,
@@ -425,9 +429,9 @@ public class CiscoVnmcResource implements ServerResource{
             for (String publicIp : publicIpRulesMap.keySet()) {
                 String policyIdentifier = publicIp.replace('.', '-');
 
-                if (!_connection.deleteTenantVDCDNatPolicy(tenant, policyIdentifier)) {
-                    throw new Exception("Failed to delete ACL ingress policy in VNMC for guest network with vlan " + vlanId);
-                }
+                /*if (!_connection.deleteTenantVDCDNatPolicy(tenant, policyIdentifier)) {
+                    throw new Exception("Failed to delete DNAT policy in VNMC for guest network with vlan " + vlanId);
+                }*/
 
                 if (!_connection.createTenantVDCDNatPolicy(tenant, policyIdentifier)) {
                     throw new Exception("Failed to create DNAT policy in VNMC for guest network with vlan " + vlanId);
@@ -436,9 +440,17 @@ public class CiscoVnmcResource implements ServerResource{
                     throw new Exception("Failed to associate DNAT policy with NAT policy set in VNMC for guest network with vlan " + vlanId);
                 }
 
+                if (!_connection.createTenantVDCAclPolicy(tenant, policyIdentifier, true)) {
+                    throw new Exception("Failed to create ACL ingress policy in VNMC for guest network with vlan " + vlanId);
+                }
+                if (!_connection.createTenantVDCAclPolicyRef(tenant, policyIdentifier, true)) {
+                    throw new Exception("Failed to associate ACL ingress policy with ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
+                }
+
                 for (StaticNatRuleTO rule : publicIpRulesMap.get(publicIp)) {
                     if (rule.revoked()) {
-                        //_connection.deleteDNatRule(tenant, Long.toString(rule.getId()), publicIp);
+                        //_connection.deleteDNatRule(tenant, Long.toString(rule.getId()), policyIdentifier);
+                        //_connection.deleteAclRule(tenant, Long.toString(rule.getId()), policyIdentifier);
                     } else {
                         if (!_connection.createTenantVDCDNatIpPool(tenant, policyIdentifier + "-" + rule.getId(), rule.getDstIp())) {
                             throw new Exception("Failed to create DNAT ip pool in VNMC for guest network with vlan " + vlanId);
@@ -447,6 +459,11 @@ public class CiscoVnmcResource implements ServerResource{
                         if (!_connection.createTenantVDCDNatRule(tenant,
                                 Long.toString(rule.getId()), policyIdentifier, rule.getSrcIp())) {
                             throw new Exception("Failed to create DNAT rule in VNMC for guest network with vlan " + vlanId);
+                        }
+
+                        if (!_connection.createTenantVDCIngressAclRuleForDNat(tenant,
+                                Long.toString(rule.getId()), policyIdentifier, rule.getSrcIp())) {
+                            throw new Exception("Failed to create ACL ingress rule for DNAT in VNMC for guest network with vlan " + vlanId);
                         }
                     }
                 }
@@ -495,9 +512,9 @@ public class CiscoVnmcResource implements ServerResource{
             for (String publicIp : publicIpRulesMap.keySet()) {
                 String policyIdentifier = publicIp.replace('.', '-');
 
-                if (!_connection.deleteTenantVDCPFPolicy(tenant, policyIdentifier)) {
+                /*if (!_connection.deleteTenantVDCPFPolicy(tenant, policyIdentifier)) {
                     throw new Exception("Failed to delete ACL ingress policy in VNMC for guest network with vlan " + vlanId);
-                }
+                }*/
 
                 if (!_connection.createTenantVDCPFPolicy(tenant, policyIdentifier)) {
                     throw new Exception("Failed to create PF policy in VNMC for guest network with vlan " + vlanId);
@@ -506,9 +523,17 @@ public class CiscoVnmcResource implements ServerResource{
                     throw new Exception("Failed to associate PF policy with NAT policy set in VNMC for guest network with vlan " + vlanId);
                 }
 
+                if (!_connection.createTenantVDCAclPolicy(tenant, policyIdentifier, true)) {
+                    throw new Exception("Failed to create ACL ingress policy in VNMC for guest network with vlan " + vlanId);
+                }
+                if (!_connection.createTenantVDCAclPolicyRef(tenant, policyIdentifier, true)) {
+                    throw new Exception("Failed to associate ACL ingress policy with ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
+                }
+
                 for (PortForwardingRuleTO rule : publicIpRulesMap.get(publicIp)) {
                     if (rule.revoked()) {
-                        //_connection.deletePFRule(tenant, Long.toString(rule.getId()), publicIp);
+                        //_connection.deletePFRule(tenant, Long.toString(rule.getId()), policyIdentifier);
+                        //_connection.deleteAclRule(tenant, Long.toString(rule.getId()), policyIdentifier);
                     } else {
                         if (!_connection.createTenantVDCPFIpPool(tenant, policyIdentifier + "-" + rule.getId(), rule.getDstIp())) {
                             throw new Exception("Failed to create PF ip pool in VNMC for guest network with vlan " + vlanId);
@@ -524,6 +549,13 @@ public class CiscoVnmcResource implements ServerResource{
                                 rule.getProtocol().toUpperCase(), rule.getSrcIp(),
                                 Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
                             throw new Exception("Failed to create PF rule in VNMC for guest network with vlan " + vlanId);
+                        }
+
+                        if (!_connection.createTenantVDCIngressAclRuleForPF(tenant,
+                                Long.toString(rule.getId()), policyIdentifier,
+                                rule.getProtocol().toUpperCase(), rule.getSrcIp(),
+                                Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
+                            throw new Exception("Failed to create ACL ingress rule for PF in VNMC for guest network with vlan " + vlanId);
                         }
                     }
                 }

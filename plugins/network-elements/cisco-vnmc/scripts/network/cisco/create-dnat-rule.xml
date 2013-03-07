@@ -16,7 +16,7 @@
     <pair key="%natruledn%/nat-action">
       <natpolicyNatAction
         actionType="static"
-        destTranslatedIpPool=""
+        destTranslatedIpPool="%ippoolname%"
         destTranslatedPortPool=""
         dn="%natruledn%/nat-action"
         id="0"
@@ -25,7 +25,7 @@
         isNoProxyArpEnabled="no"
         isRoundRobinIpEnabled="no"
         srcTranslatedIpPatPool=""
-        srcTranslatedIpPool="%ippoolname%"
+        srcTranslatedIpPool=""
         srcTranslatedPortPool=""
         status="created"/>
     </pair>
@@ -39,7 +39,7 @@
     </pair>
     <pair key="%natruledn%/rule-cond-2/nw-expr2/nw-attr-qual">
       <policyNwAttrQualifier
-        attrEp="source"
+        attrEp="destination"
         dn="%natruledn%/rule-cond-2/nw-expr2/nw-attr-qual"
         status="created"/>
     </pair>
@@ -59,7 +59,7 @@
         name=""
         placement="none"
         status="created"
-        value="%srcip%"/>
+        value="%ip%"/>
     </pair>
 
   </inConfigs>
@@ -70,5 +70,5 @@
     natrulename="bbb"
     descr=value
     ippoolname="ccc"
-    srcip="10.147.30.230"
+    ip="10.147.30.230"
 --!>

@@ -77,7 +77,9 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         CREATE_IP_POOL("create-ip-pool.xml", "policy-mgr"),
 
         CREATE_PF_RULE("create-pf-rule.xml", "policy-mgr"),
+        CREATE_INGRESS_ACL_RULE_FOR_PF("create-ingress-acl-rule-for-pf.xml", "policy-mgr"),
         CREATE_DNAT_RULE("create-dnat-rule.xml", "policy-mgr"),
+        CREATE_INGRESS_ACL_RULE_FOR_DNAT("create-ingress-acl-rule-for-dnat.xml", "policy-mgr"),
         CREATE_SOURCE_NAT_RULE("create-source-nat-rule.xml", "policy-mgr"),
 
         CREATE_ACL_POLICY_SET("create-acl-policy-set.xml", "policy-mgr"),
@@ -662,9 +664,9 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         String xml = VnmcXml.CREATE_INGRESS_ACL_RULE.getXml();
         String service = VnmcXml.CREATE_INGRESS_ACL_RULE.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
-        //xml = replaceXmlValue(xml, "descr", "Ingress ACL policy for Tenant VDC" + tenantName);
         xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
         xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
+        xml = replaceXmlValue(xml, "descr", "Ingress ACL policy for Tenant VDC" + tenantName);
         xml = replaceXmlValue(xml, "actiontype", "permit");
         xml = replaceXmlValue(xml, "protocolvalue", protocol);
         xml = replaceXmlValue(xml, "sourcestartip", sourceStartIp);
@@ -838,8 +840,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     @Override
     public boolean createTenantVDCPFRule(String tenantName,
             String identifier, String policyIdentifier,
-            String protocol, String sourceIp,
-            String startSourcePort, String endSourcePort) throws ExecutionException {
+            String protocol, String publicIp,
+            String startPort, String endPort) throws ExecutionException {
         String xml = VnmcXml.CREATE_PF_RULE.getXml();
         String service = VnmcXml.CREATE_PF_RULE.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
@@ -848,10 +850,30 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "descr", "PF rule for Tenant VDC " + tenantName);
         xml = replaceXmlValue(xml, "ippoolname", getNameForPFIpPool(tenantName, policyIdentifier + "-" + identifier));
         xml = replaceXmlValue(xml, "portpoolname", getNameForPFPortPool(tenantName, policyIdentifier + "-" + identifier));
-        xml = replaceXmlValue(xml, "srcip", sourceIp);
-        xml = replaceXmlValue(xml, "srcportstart", startSourcePort);
-        xml = replaceXmlValue(xml, "srcportend", endSourcePort);
+        xml = replaceXmlValue(xml, "ip", publicIp);
+        xml = replaceXmlValue(xml, "startport", startPort);
+        xml = replaceXmlValue(xml, "endport", endPort);
         xml = replaceXmlValue(xml, "protocolvalue", protocol);
+
+        String response =  sendRequest(service, xml);
+        return verifySuccess(response);
+    }
+
+    @Override
+    public boolean createTenantVDCIngressAclRuleForPF(String tenantName,
+            String identifier, String policyIdentifier, String protocol,
+            String publicIp, String startPort, String endPort)
+            throws ExecutionException {
+        String xml = VnmcXml.CREATE_INGRESS_ACL_RULE_FOR_PF.getXml();
+        String service = VnmcXml.CREATE_INGRESS_ACL_RULE_FOR_PF.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "natruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
+        xml = replaceXmlValue(xml, "natrulename", getNameForAclRule(tenantName, identifier));
+        xml = replaceXmlValue(xml, "descr", "ACL rule for Tenant VDC " + tenantName);
+        xml = replaceXmlValue(xml, "protocolvalue", protocol);
+        xml = replaceXmlValue(xml, "ip", publicIp);
+        xml = replaceXmlValue(xml, "startport", startPort);
+        xml = replaceXmlValue(xml, "endport", endPort);
 
         String response =  sendRequest(service, xml);
         return verifySuccess(response);
@@ -919,7 +941,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
     @Override
     public boolean createTenantVDCDNatRule(String tenantName,
-            String identifier, String policyIdentifier, String sourceIp)
+            String identifier, String policyIdentifier, String publicIp)
             throws ExecutionException {
         String xml = VnmcXml.CREATE_DNAT_RULE.getXml();
         String service = VnmcXml.CREATE_DNAT_RULE.getService();
@@ -928,7 +950,23 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "natrulename", getNameForDNatRule(tenantName, identifier));
         xml = replaceXmlValue(xml, "descr", "DNAT rule for Tenant VDC " + tenantName);
         xml = replaceXmlValue(xml, "ippoolname", getNameForDNatIpPool(tenantName, policyIdentifier + "-" + identifier));
-        xml = replaceXmlValue(xml, "srcip", sourceIp);
+        xml = replaceXmlValue(xml, "ip", publicIp);
+
+        String response =  sendRequest(service, xml);
+        return verifySuccess(response);
+    }
+
+    @Override
+    public boolean createTenantVDCIngressAclRuleForDNat(String tenantName,
+            String identifier, String policyIdentifier, String publicIp)
+            throws ExecutionException {
+        String xml = VnmcXml.CREATE_INGRESS_ACL_RULE_FOR_DNAT.getXml();
+        String service = VnmcXml.CREATE_INGRESS_ACL_RULE_FOR_DNAT.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "natruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
+        xml = replaceXmlValue(xml, "natrulename", getNameForAclRule(tenantName, identifier));
+        xml = replaceXmlValue(xml, "descr", "ACL rule for Tenant VDC " + tenantName);
+        xml = replaceXmlValue(xml, "ip", publicIp);
 
         String response =  sendRequest(service, xml);
         return verifySuccess(response);
