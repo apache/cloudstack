@@ -345,8 +345,8 @@
               <exclude>**/*.patch</exclude>
               <exclude>**/.classpath</exclude>
               <exclude>**/.project</exclude>
+              <exclude>**/.idea/**</exclude>
               <exclude>**/*.iml</exclude>
-              <exclude>**/WEB-INF/**</exclude>
               <exclude>**/.settings/**</exclude>
               <exclude>.metadata/**</exclude>
               <exclude>.git/**</exclude>
@@ -363,7 +363,7 @@
               <exclude>**/*.zip</exclude>
               <exclude>**/target/**</exclude>
               <exclude>**/.vagrant</exclude>
-              <exclude>awsapi/overlays/*.info</exclude>
+              <exclude>awsapi/overlays/**</exclude>
               <exclude>build/build.number</exclude>
               <exclude>services/console-proxy/server/js/jquery.js</exclude>
               <exclude>debian/compat</exclude>
@@ -438,7 +438,6 @@
               <exclude>patches/systemvm/debian/config/var/www/html/userdata/.htaccess</exclude>
               <exclude>patches/systemvm/debian/config/var/www/html/latest/.htaccess</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
-
             </excludes>
           </configuration>
         </plugin>
