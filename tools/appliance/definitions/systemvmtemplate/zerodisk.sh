@@ -1,6 +1,7 @@
 # Clean up stuff copied in by veewee
 rm -fv /root/*.iso
 rm -fv /root/base.sh /root/cleanup.sh /root/postinstall.sh /root/zerodisk.sh
+rm -fv .veewee_version .veewee_params .vbox_version
 
 echo "Cleaning up"
 
