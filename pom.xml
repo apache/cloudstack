@@ -363,6 +363,7 @@
               <exclude>**/*.zip</exclude>
               <exclude>**/target/**</exclude>
               <exclude>**/.vagrant</exclude>
+              <exclude>awsapi/overlays/*.info</exclude>
               <exclude>build/build.number</exclude>
               <exclude>services/console-proxy/server/js/jquery.js</exclude>
               <exclude>debian/compat</exclude>
