@@ -603,8 +603,16 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             throw new CloudRuntimeException("No home directory was detected for the user '" + username + "'. Please check the profile of this user.");
         }
 
-        File privkeyfile = new File(homeDir + "/.ssh/id_rsa");
-        File pubkeyfile = new File(homeDir + "/.ssh/id_rsa.pub");
+        // Using non-default file names (id_rsa.cloud and id_rsa.cloud.pub) in developer mode. This is to prevent SSH keys overwritten for user running management server
+        File privkeyfile = null;
+        File pubkeyfile = null;
+        if (devel) {
+            privkeyfile = new File(homeDir + "/.ssh/id_rsa.cloud");
+            pubkeyfile = new File(homeDir + "/.ssh/id_rsa.cloud.pub");
+        } else {
+            privkeyfile = new File(homeDir + "/.ssh/id_rsa");
+            pubkeyfile = new File(homeDir + "/.ssh/id_rsa.pub");
+        }
 
         if (already == null || already.isEmpty()) {
             if (s_logger.isInfoEnabled()) {
@@ -661,13 +669,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             }
 
         } else {
-            s_logger.info("Keypairs already in database");
-            if (username.equalsIgnoreCase("cloud")) {
-                s_logger.info("Keypairs already in database, updating local copy");
-                updateKeyPairsOnDisk(homeDir);
-            } else {
-                s_logger.info("Keypairs already in database, skip updating local copy (not running as cloud user)");
-            }
+            s_logger.info("Keypairs already in database, updating local copy");
+            updateKeyPairsOnDisk(homeDir);
         }
         s_logger.info("Going to update systemvm iso with generated keypairs if needed");
         try {
@@ -726,14 +729,22 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     private void updateKeyPairsOnDisk(String homeDir) {
         File keyDir = new File(homeDir + "/.ssh");
+        Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
         if (!keyDir.isDirectory()) {
             s_logger.warn("Failed to create " + homeDir + "/.ssh for storing the SSH keypars");
             keyDir.mkdir();
         }
         String pubKey = _configDao.getValue("ssh.publickey");
         String prvKey = _configDao.getValue("ssh.privatekey");
-        writeKeyToDisk(prvKey, homeDir + "/.ssh/id_rsa");
-        writeKeyToDisk(pubKey, homeDir + "/.ssh/id_rsa.pub");
+
+        // Using non-default file names (id_rsa.cloud and id_rsa.cloud.pub) in developer mode. This is to prevent SSH keys overwritten for user running management server
+        if( devel ) {
+            writeKeyToDisk(prvKey, homeDir + "/.ssh/id_rsa.cloud");
+            writeKeyToDisk(pubKey, homeDir + "/.ssh/id_rsa.cloud.pub");
+        } else {
+            writeKeyToDisk(prvKey, homeDir + "/.ssh/id_rsa");
+            writeKeyToDisk(pubKey, homeDir + "/.ssh/id_rsa.pub");
+        }
     }
 
     protected void injectSshKeysIntoSystemVmIsoPatch(String publicKeyPath, String privKeyPath) {
