@@ -628,7 +628,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         ResourceType resourceType = null;
 
         if (typeId != null) {
-            for (ResourceType type : resourceTypes) {
+            for (ResourceType type : Resource.ResourceType.values()) {
                 if (type.getOrdinal() == typeId.intValue()) {
                     resourceType = type;
                 }
