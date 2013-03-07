@@ -28,10 +28,7 @@ import javax.management.NotCompliantMBeanException;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
-import org.springframework.aop.framework.ProxyFactory;
-import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -39,7 +36,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.db.TransactionContextBuilder;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.mgmt.ManagementBean;
 
@@ -55,15 +51,6 @@ public class ComponentContext implements ApplicationContextAware {
 
     private static ApplicationContext s_appContext;  
 
-    private static Advisor s_advisor;
-    private static ProxyFactory s_pf;
-    static {
-        s_advisor = new DefaultPointcutAdvisor(new MatchAnyMethodPointcut(),
-                new TransactionContextBuilder());
-        s_pf = new ProxyFactory();
-        s_pf.addAdvisor(s_advisor);
-    }
-    
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
     	s_logger.info("Setup Spring Application context");
@@ -216,8 +203,17 @@ public class ComponentContext implements ApplicationContextAware {
     }
     
     public static <T> T inject(Class<T> clz) {
-        T instance = s_appContext.getAutowireCapableBeanFactory().createBean(clz);
-        return instance;
+        T instance;
+		try {
+			instance = clz.newInstance();
+	        return inject(instance);
+		} catch (InstantiationException e) {
+			s_logger.error("Unhandled InstantiationException", e);
+			throw new RuntimeException("Unable to instantiate object of class " + clz.getName() + ", make sure it has public constructor");
+		} catch (IllegalAccessException e) {
+			s_logger.error("Unhandled IllegalAccessException", e);
+			throw new RuntimeException("Unable to instantiate object of class " + clz.getName() + ", make sure it has public constructor");
+		}
     }
 
     public static <T> T inject(Object instance) {
@@ -225,9 +221,5 @@ public class ComponentContext implements ApplicationContextAware {
         AutowireCapableBeanFactory  beanFactory = s_appContext.getAutowireCapableBeanFactory();
         beanFactory.autowireBean(instance);
         return (T)instance;
-/*
-        s_pf.setTarget(instance);
-        return (T)s_pf.getProxy();        
-*/  
     }
 }
