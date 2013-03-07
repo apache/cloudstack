@@ -3099,6 +3099,10 @@
                           openfirewall: false
                         };
 
+                        if (args.itemData[0]._subselect) {
+                          data.vmguestip = args.itemData[0]._subselect;
+                        }
+
                         if('vpc' in args.context) { //from VPC section
                           if(args.data.tier == null) {
                             args.response.error('Tier is required');
