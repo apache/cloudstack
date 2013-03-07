@@ -474,7 +474,7 @@
           var $tr = data.$tr;
           var $td = $tr.find('td.first');
           var $select = $('<div></div>').addClass('subselect').append(
-            $('<select></select>')
+            $('<select>')
           ).hide();
           var $selectionArea = $tr.find('td:last').find('input');
 
@@ -500,14 +500,17 @@
                         $option.append(item.description);
                         $option.appendTo($select.find('select'));
                       });
-
+                      $select.show();
                     } else {
                       $select.hide();
                     }
                   }
                 }
               });
-              $select.show();
+
+              if ($(this).is('input[type=radio]')) {
+                $(this).closest('tr').siblings().find('input[type=radio]').change();
+              } 
             } else {
               $select.find('option').remove();
               $select.hide();
