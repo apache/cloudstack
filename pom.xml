@@ -346,6 +346,7 @@
               <exclude>**/.classpath</exclude>
               <exclude>**/.project</exclude>
               <exclude>**/*.iml</exclude>
+              <exclude>**/WEB-INF/**</exclude>
               <exclude>**/.settings/**</exclude>
               <exclude>.metadata/**</exclude>
               <exclude>.git/**</exclude>
