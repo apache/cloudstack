@@ -1,3 +1,18 @@
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package org.apache.cloudstack.region.gslb;
 
 import com.cloud.agent.AgentManager;
@@ -12,6 +27,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.net.Ip;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.AssignToGlobalLoadBalancerRuleCmd;
@@ -456,7 +472,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         try {
             gslbServiceImpl.createGlobalLoadBalancerRule(createCmd);
         } catch (InvalidParameterValueException e) {
-            Assert.assertTrue(e.getMessage().contains("Domain name is in use"));
+            Assert.assertTrue(e.getMessage().contains("Domain name " + "gslb-rule-domain" + "is in use"));
         }
     }
 
@@ -498,6 +514,9 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         Field networkIdField = LoadBalancerVO.class.getSuperclass().getDeclaredField("networkId");
         networkIdField.setAccessible(true);
         networkIdField.set(lbRule, new Long(1));
+        Field sourceIpAddressId = LoadBalancerVO.class.getSuperclass().getDeclaredField("sourceIpAddressId");
+        sourceIpAddressId.setAccessible(true);
+        sourceIpAddressId.set(lbRule, new Long(1));
 
         when(gslbServiceImpl._lbDao.findById(new Long(1))).thenReturn(lbRule);
         Field lbRules = _class.getDeclaredField("loadBalancerRulesIds");
@@ -511,6 +530,9 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         dcID.setAccessible(true);
         dcID.set(networkVo, new Long(1));
         when(gslbServiceImpl._networkDao.findById(new Long(1))).thenReturn(networkVo);
+
+        IPAddressVO ip = new IPAddressVO(new Ip("10.1.1.1"), 1, 1,1 ,true);
+        when(gslbServiceImpl._ipAddressDao.findById(new Long(1))).thenReturn(ip);
 
         try {
             gslbServiceImpl.assignToGlobalLoadBalancerRule(assignCmd);
@@ -668,6 +690,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         gslbServiceImpl._globalConfigDao = Mockito.mock(ConfigurationDao.class);
         gslbServiceImpl._ipAddressDao = Mockito.mock(IPAddressDao.class);
         gslbServiceImpl._agentMgr = Mockito.mock(AgentManager.class);
+        gslbServiceImpl._gslbProvider = Mockito.mock(GslbServiceProvider.class);
 
         RemoveFromGlobalLoadBalancerRuleCmd removeFromGslbCmd = new RemoveFromGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = removeFromGslbCmd.getClass().getSuperclass();
@@ -692,6 +715,9 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         Field idField = LoadBalancerVO.class.getSuperclass().getDeclaredField("id");
         idField.setAccessible(true);
         idField.set(lbRule, new Long(1));
+        Field sourceIpAddressId = LoadBalancerVO.class.getSuperclass().getDeclaredField("sourceIpAddressId");
+        sourceIpAddressId.setAccessible(true);
+        sourceIpAddressId.set(lbRule, new Long(1));
 
         when(gslbServiceImpl._lbDao.findById(new Long(1))).thenReturn(lbRule);
         Field lbRules = _class.getDeclaredField("loadBalancerRulesIds");
@@ -712,6 +738,9 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         when(gslbServiceImpl._gslbLbMapDao.listByGslbRuleId(new Long(1))).thenReturn(listSslbLbMap);
 
         when(gslbServiceImpl._gslbLbMapDao.findByGslbRuleIdAndLbRuleId(new Long(1), new Long(1))).thenReturn(gslbLbMap);
+
+        IPAddressVO ip = new IPAddressVO(new Ip("10.1.1.1"), 1, 1,1 ,true);
+        when(gslbServiceImpl._ipAddressDao.findById(new Long(1))).thenReturn(ip);
 
         gslbServiceImpl.removeFromGlobalLoadBalancerRule(removeFromGslbCmd);
     }
@@ -856,7 +885,12 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
                 "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Active);
         when(gslbServiceImpl._gslbRuleDao.findById(new Long(1))).thenReturn(gslbRule);
 
-        when(gslbServiceImpl._gslbLbMapDao.listByGslbRuleId(new Long(1))).thenReturn(null);
+        GlobalLoadBalancerLbRuleMapVO gslbLbMap = new GlobalLoadBalancerLbRuleMapVO();
+        gslbLbMap.setGslbLoadBalancerId(1);
+        gslbLbMap.setLoadBalancerId(1);
+        List<GlobalLoadBalancerLbRuleMapVO>  gslbLbMapList = new ArrayList<GlobalLoadBalancerLbRuleMapVO>();
+        gslbLbMapList.add(gslbLbMap);
+        when(gslbServiceImpl._gslbLbMapDao.listByGslbRuleId(new Long(1))).thenReturn(gslbLbMapList);
 
         try {
             gslbServiceImpl.deleteGlobalLoadBalancerRule(deleteCmd);

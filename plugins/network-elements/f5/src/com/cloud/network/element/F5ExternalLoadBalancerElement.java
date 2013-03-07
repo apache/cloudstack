@@ -16,28 +16,8 @@
 // under the License.
 package com.cloud.network.element;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-
-import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
-import org.apache.log4j.Logger;
-
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.commands.AddExternalLoadBalancerCmd;
-import com.cloud.api.commands.AddF5LoadBalancerCmd;
-import com.cloud.api.commands.ConfigureF5LoadBalancerCmd;
-import com.cloud.api.commands.DeleteExternalLoadBalancerCmd;
-import com.cloud.api.commands.DeleteF5LoadBalancerCmd;
-import com.cloud.api.commands.ListExternalLoadBalancersCmd;
-import com.cloud.api.commands.ListF5LoadBalancerNetworksCmd;
-import com.cloud.api.commands.ListF5LoadBalancersCmd;
+import com.cloud.api.commands.*;
 import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -46,35 +26,17 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientNetworkCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.*;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.network.ExternalLoadBalancerDeviceManager;
-import com.cloud.network.ExternalLoadBalancerDeviceManagerImpl;
-import com.cloud.network.Network;
+import com.cloud.network.*;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.PublicIpAddress;
-import com.cloud.network.dao.ExternalLoadBalancerDeviceDao;
-import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
-import com.cloud.network.dao.NetworkExternalLoadBalancerVO;
-import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.*;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.resource.F5BigIpResource;
@@ -88,6 +50,13 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
+import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import java.util.*;
 
 @Local(value = {NetworkElement.class, LoadBalancingServiceProvider.class, IpDeployer.class})
 public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, IpDeployer, F5ExternalLoadBalancerElementService, ExternalLoadBalancerDeviceManager {
@@ -294,7 +263,8 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         pNetwork = physicalNetworks.get(0);
 
         String deviceType = NetworkDevice.F5BigIpLoadBalancer.getName();
-        lbDeviceVO = addExternalLoadBalancer(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, new F5BigIpResource());
+        lbDeviceVO = addExternalLoadBalancer(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(),
+                deviceType, new F5BigIpResource(), false);
 
         if (lbDeviceVO != null) {
             lbHost = _hostDao.findById(lbDeviceVO.getHostId());
@@ -347,7 +317,8 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
             throw new InvalidParameterValueException("Invalid F5 load balancer device type");
         }
 
-        return addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, new F5BigIpResource());
+        return addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(),
+                deviceName, new F5BigIpResource(), false);
 
     }
 

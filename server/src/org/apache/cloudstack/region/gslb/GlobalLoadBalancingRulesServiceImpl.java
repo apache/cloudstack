@@ -18,7 +18,6 @@
 package org.apache.cloudstack.region.gslb;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.routing.GlobalLoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SiteLoadBalancerConfig;
 import com.cloud.configuration.Config;
@@ -26,6 +25,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.dao.*;
 import com.cloud.network.rules.LoadBalancer;
@@ -79,6 +79,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     IPAddressDao _ipAddressDao;
     @Inject
     AgentManager _agentMgr;
+    @Inject
+    GslbServiceProvider _gslbProvider;
 
     @Override
     @DB
@@ -114,7 +116,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
         GlobalLoadBalancerRuleVO gslbRuleWithDomainName = _gslbRuleDao.findByDomainName(domainName);
         if (gslbRuleWithDomainName != null) {
-            throw new InvalidParameterValueException("Domain name is in use");
+            throw new InvalidParameterValueException("Domain name " + domainName + "is in use");
         }
 
         Region region = _regionDao.findById(regionId);
@@ -123,7 +125,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         }
 
         if (!region.checkIfServiceEnabled(Region.Service.Gslb)) {
-            throw new InvalidParameterValueException("GSLB service is not enabled in region : " + region.getName());
+            throw new CloudRuntimeException("GSLB service is not enabled in region : " + region.getName());
         }
 
         Transaction txn = Transaction.currentTxn();
@@ -187,7 +189,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
          *     caller has access to the rule
          *     check rule is not revoked
          *     no two rules are in same zone
-         *     rule is already assigned to gslb rule
+         *     rule is not already assigned to gslb rule
          */
         for (Long lbRuleId : newLbRuleIds) {
 
@@ -235,17 +237,17 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         }
 
         // mark the gslb rule state as add
-        if (gslbRule.getState() == GlobalLoadBalancerRule.State.Staged) {
+        if (gslbRule.getState() == GlobalLoadBalancerRule.State.Staged || gslbRule.getState() ==
+                GlobalLoadBalancerRule.State.Active ) {
             gslbRule.setState(GlobalLoadBalancerRule.State.Add);
             _gslbRuleDao.update(gslbRule.getId(), gslbRule);
         }
 
         txn.commit();
 
-        s_logger.debug("Updated the global load balancer rule: " + gslbRuleId + " in database");
-
+        boolean success = false;
         try {
-            s_logger.debug("Configuring global load balancer rule configuration on the gslb service providers ");
+            s_logger.debug("Configuring gslb rule configuration on the gslb service providers in the participating zones");
 
             // apply the gslb rule on to the back end gslb service providers on zones participating in gslb
             applyGlobalLoadBalancerRuleConfig(gslbRuleId, false);
@@ -254,10 +256,17 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             gslbRule.setState(GlobalLoadBalancerRule.State.Active);
             _gslbRuleDao.update(gslbRule.getId(), gslbRule);
 
-            return true;
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to configure gslb config due to " + e.getMessage());
+            success = true;
+
+        } catch (ResourceUnavailableException e) {
+
         }
+
+        if (!success) {
+            throw new CloudRuntimeException("Failed to apply gslb config");
+        }
+
+        return  success;
     }
 
     @Override
@@ -339,8 +348,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
         txn.commit();
 
-        s_logger.debug("Updated the global load balancer rule: " + gslbRuleId + " in database");
-
+        boolean success = false;
         try {
             s_logger.debug("Attempting to configure global load balancer rule configuration on the gslb service providers ");
 
@@ -350,13 +358,16 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             // on success set state to Active
             gslbRule.setState(GlobalLoadBalancerRule.State.Active);
             _gslbRuleDao.update(gslbRule.getId(), gslbRule);
-
-            return true;
-        } catch (Exception e) {
+            success = true;
+        } catch (ResourceUnavailableException e) {
 
         }
 
-        return false;
+        if (!success) {
+            throw new CloudRuntimeException("Failed to update removed load balancer details from gloabal load balancer");
+        }
+
+        return success;
     }
 
     @Override
@@ -397,14 +408,20 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
         txn.commit();
 
-        // send the new configuration to back end
+        boolean success = false;
         try {
-            applyGlobalLoadBalancerRuleConfig(gslbRuleId, true);
-        } catch (Exception e) {
+            if (gslbLbMapVos != null) {
+                applyGlobalLoadBalancerRuleConfig(gslbRuleId, true);
+            }
+            success = true;
+        } catch (ResourceUnavailableException e) {
 
         }
 
-        return false;
+        if (!success) {
+            throw new CloudRuntimeException("Failed to update the gloabal load balancer");
+        }
+        return success;
     }
 
     @Override
@@ -453,7 +470,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             _gslbRuleDao.update(gslbRule.getId(), gslbRule);
 
             return gslbRule;
-        } catch (Exception e) {
+        } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException("Failed to configure gslb config due to " + e.getMessage());
         }
     }
@@ -463,32 +480,36 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         return null;
     }
 
-    private void applyGlobalLoadBalancerRuleConfig(long gslbRuleId, boolean revoke) {
+    private boolean applyGlobalLoadBalancerRuleConfig(long gslbRuleId, boolean revoke) throws ResourceUnavailableException {
 
         GlobalLoadBalancerRuleVO gslbRule = _gslbRuleDao.findById(gslbRuleId);
+        assert(gslbRule != null);
 
-        String domainName = gslbRule.getGslbDomain();
         String lbMethod = gslbRule.getAlgorithm();
         String persistenceMethod = gslbRule.getUuid();
         String serviceType = gslbRule.getServiceType();
 
+        // each Gslb rule will have a FQDN, formed from the domain name associated with the gslb rule
+        // and the deployment DNS name
+        String domainName = gslbRule.getGslbDomain();
         String providerDnsName = _globalConfigDao.getValue(Config.CloudDnsName.name());
         String gslbFqdn = domainName + providerDnsName;
 
         GlobalLoadBalancerConfigCommand gslbConfigCmd = new GlobalLoadBalancerConfigCommand(gslbFqdn,
                 lbMethod, persistenceMethod, serviceType, revoke);
 
+        // list of the zones participating in global load balancing
         List<Long> gslbSiteIds = new ArrayList<Long>();
 
+        // map of the zone and info corresponding to the load balancer configured in the zone
         Map<Long, SiteLoadBalancerConfig> zoneSiteLoadbalancerMap = new HashMap<Long, SiteLoadBalancerConfig>();
 
         List<GlobalLoadBalancerLbRuleMapVO> gslbLbMapVos = _gslbLbMapDao.listByGslbRuleId(gslbRuleId);
 
-        if (gslbLbMapVos == null || gslbLbMapVos.isEmpty()) {
-            return;
-        }
+        assert (gslbLbMapVos != null && !gslbLbMapVos.isEmpty());
 
         for (GlobalLoadBalancerLbRuleMapVO gslbLbMapVo : gslbLbMapVos) {
+
             // get the zone in which load balancer rule is deployed
             LoadBalancerVO loadBalancer = _lbDao.findById(gslbLbMapVo.getLoadBalancerId());
             Network network = _networkDao.findById(loadBalancer.getNetworkId());
@@ -500,8 +521,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             SiteLoadBalancerConfig siteLb = new SiteLoadBalancerConfig(gslbLbMapVo.isRevoke(), serviceType,
                     ip.getAddress().addr(), Integer.toString(loadBalancer.getDefaultPortStart()));
 
-            siteLb.setGslbProviderPublicIp(null);
-            siteLb.setGslbProviderPrivateIp(null);
+            siteLb.setGslbProviderPublicIp(_gslbProvider.getProviderPublicIp(dataCenterId));
+            siteLb.setGslbProviderPrivateIp(_gslbProvider.getProviderPrivateIp(dataCenterId));
 
             zoneSiteLoadbalancerMap.put(network.getDataCenterId(), siteLb);
         }
@@ -519,19 +540,23 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             }
 
             gslbConfigCmd.setSiteLoadBalancers(slbs);
-
-            // get the host Id corresponding to GSLB service provider in the zone
-            long zoneGslbProviderHosId = 0;
-
-            Answer answer = _agentMgr.easySend(zoneGslbProviderHosId, gslbConfigCmd);
-            if (answer == null) {
-
+            try {
+                _gslbProvider.applyGlobalLoadBalancerRule(zoneId, gslbConfigCmd);
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Failed to configure GSLB rul in the zone " + zoneId + " due to " + e.getMessage());
+                throw new CloudRuntimeException("Failed to configure GSLB rul in the zone");
             }
         }
+
+        return true;
     }
 
     private boolean checkGslbServiceEnabledInZone(long zoneId) {
-        //TODO: check if zone is enabled for GSLB service
-        return true;
+
+        if (_gslbProvider == null) {
+            throw new CloudRuntimeException("No GSLB provider is available");
+        }
+
+        return _gslbProvider.isServiceEnabledInZone(zoneId);
     }
 }
