@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.agent.api;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Command for creating a logical edge firewall in VNMC
  */
@@ -25,6 +28,7 @@ public class CreateLogicalEdgeFirewallCommand extends Command {
     private String _internalIp;
     private String _publicSubnet;
     private String _internalSubnet;
+    private List<String> _publicGateways;
 
     public CreateLogicalEdgeFirewallCommand(long vlanId,
             String publicIp, String internalIp,
@@ -35,6 +39,7 @@ public class CreateLogicalEdgeFirewallCommand extends Command {
         this._internalIp = internalIp;
         this._publicSubnet = publicSubnet;
         this.setInternalSubnet(internalSubnet);
+        _publicGateways = new ArrayList<String>();
     }
 
     @Override
@@ -81,4 +86,9 @@ public class CreateLogicalEdgeFirewallCommand extends Command {
     public void setInternalSubnet(String _internalSubnet) {
         this._internalSubnet = _internalSubnet;
     }
+
+    public List<String> getPublicGateways() {
+        return _publicGateways;
+    }
+
 }

@@ -7,7 +7,7 @@
     <pair key="%aclpolicyrefdn%">
       <policyPolicyNameRef
         dn="%aclpolicyrefdn%"
-        order="100"
+        order="%order%"
         policyName="%aclpolicyname%"
         status="created"/>
     </pair>

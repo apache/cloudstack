@@ -182,7 +182,7 @@ public class CiscoVnmcResource implements ServerResource{
 
     }
 
-    public StartupCommand[] initialize() {   
+    public StartupCommand[] initialize() {
         StartupExternalFirewallCommand cmd = new StartupExternalFirewallCommand();
         cmd.setName(_name);
         cmd.setDataCenter(_zoneId);
@@ -581,6 +581,26 @@ public class CiscoVnmcResource implements ServerResource{
         return execute(cmd, _numRetries);
     }
 
+    private void createEdgeDeviceProfile(String tenant, List<String> gateways, Long vlanId) throws Exception {
+        // create edge device profile
+        if (!_connection.createTenantVDCEdgeDeviceProfile(tenant))
+            throw new Exception("Failed to create tenant edge device profile in VNMC for guest network with vlan " + vlanId);
+
+        // create edge static route policy
+        if (!_connection.createTenantVDCEdgeStaticRoutePolicy(tenant))
+            throw new Exception("Failed to create tenant edge static route policy in VNMC for guest network with vlan " + vlanId);
+
+        // create edge static route for all gateways
+        for (String gateway : gateways) {
+            if (!_connection.createTenantVDCEdgeStaticRoute(tenant, gateway, "0.0.0.0", "0.0.0.0"))
+                throw new Exception("Failed to create tenant edge static route in VNMC for guest network with vlan " + vlanId);
+        }
+
+        // associate edge 
+        if (!_connection.associateTenantVDCEdgeStaticRoutePolicy(tenant))
+            throw new Exception("Failed to associate edge static route policy with edge device profile in VNMC for guest network with vlan " + vlanId);
+    }
+
     private Answer execute(CreateLogicalEdgeFirewallCommand cmd, int numRetries) {
         String tenant = "vlan-" + cmd.getVlanId();
         try {
@@ -595,6 +615,9 @@ public class CiscoVnmcResource implements ServerResource{
             // create edge security profile
             if (!_connection.createTenantVDCEdgeSecurityProfile(tenant))
                 throw new Exception("Failed to create tenant edge security profile in VNMC for guest network with vlan " + cmd.getVlanId());
+
+            // create edge device profile and associated route
+            createEdgeDeviceProfile(tenant, cmd.getPublicGateways(), cmd.getVlanId());
 
             // create logical edge firewall
             if (!_connection.createEdgeFirewall(tenant, cmd.getPublicIp(), cmd.getInternalIp(), cmd.getPublicSubnet(), cmd.getInternalSubnet()))

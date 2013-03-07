@@ -37,8 +37,7 @@ public interface CiscoVnmcConnection {
             throws ExecutionException;
 
     public boolean createTenantVDCEdgeStaticRoute(String tenantName,
-            String nextHopIp, String outsideIntf, String destination,
-            String netmask) throws ExecutionException;
+            String nextHopIp, String destination, String netmask) throws ExecutionException;
 
     public boolean associateTenantVDCEdgeStaticRoutePolicy(String tenantName)
             throws ExecutionException;

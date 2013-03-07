@@ -1,0 +1,11 @@
+<configResolveChildren
+  cookie="%cookie%"
+  inDn="%dn%"
+  inHierarchical="true">
+  <inFilter>
+  </inFilter>
+</configResolveChildren>
+
+<!--
+  dn="org-root/org-vlan-517/org-VDC-vlan-517/natpol-DNAT-vlan-517-10-147-30-235"
+--!>

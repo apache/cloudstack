@@ -1,14 +1,14 @@
-<configConfMo 
-cookie="%cookie%"
-inHierarchical="false"> 
-    <inConfig> 
-      <policyEdgeDeviceServiceProfile 
+<configConfMo
+  cookie="%cookie%"
+  inHierarchical="false"> 
+  <inConfig> 
+    <policyEdgeDeviceServiceProfile 
       addrTranslationTimeout="10800" 
       descr="%descr%" 
       dn="%dn%" 
       name="%name%"
       status="created" 
       vpn=""/> 
-    </inConfig> 
+  </inConfig> 
 </configConfMo>
-<!--dn="org-root/org-TestTenant3/org-Tenant3-VDC/edsp-Tenant3-Edge-Device-Profile" -->
+<!-- dn="org-root/org-TestTenant3/org-Tenant3-VDC/edsp-Tenant3-Edge-Device-Profile" -->

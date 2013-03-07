@@ -8,7 +8,7 @@
         descr="%descr%"
         dn="%aclruledn%"
         name="%aclrulename%"
-        order="300"
+        order="%order%"
         status="created"/>
     </pair>
 

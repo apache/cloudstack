@@ -1,15 +1,15 @@
-<configConfMo 
-dn="" 
-cookie="%cookie%" 
-inHierarchical="false">
-    <inConfig>
-      <policyEdgeDeviceServiceProfile
-            addrTranslationTimeout="10800"
-            dn="%profiledn%"
-            ipAudit=""
-            name="%profilename%"
-            routing="%routepolicyname%"
-            status="modified"
-            vpn=""/>
-    </inConfig>
+<configConfMo
+  dn=""
+  cookie="%cookie%"
+  inHierarchical="false">
+  <inConfig>
+    <policyEdgeDeviceServiceProfile
+      addrTranslationTimeout="10800"
+      dn="%dn%"
+      ipAudit=""
+      name="%name%"
+      routing="%routepolicyname%"
+      status="modified"
+      vpn=""/>
+  </inConfig>
 </configConfMo>

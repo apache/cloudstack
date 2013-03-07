@@ -60,6 +60,7 @@ import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.VlanDao;
@@ -116,6 +117,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkElement.class)
@@ -159,7 +161,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     @Inject
     NetworkAsa1000vMapDao _networkAsa1000vMapDao;
 
-    private boolean canHandle(Network network) {
+    protected boolean canHandle(Network network) {
         if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
             return false; //TODO: should handle VxLAN as well
         }
@@ -206,8 +208,11 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     }
 
     private boolean createLogicalEdgeFirewall(long vlanId, String gateway,
-            String publicIp, long hostId) {
+            String publicIp, List<String> publicGateways, long hostId) {
         CreateLogicalEdgeFirewallCommand cmd = new CreateLogicalEdgeFirewallCommand(vlanId, publicIp, gateway, "255.255.255.0", "255.255.255.0");
+        for (String publicGateway : publicGateways) {
+            cmd.getPublicGateways().add(publicGateway);
+        }
         Answer answer = _agentMgr.easySend(hostId, cmd);
         return answer.getResult();
     }
@@ -318,8 +323,16 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             String vlan = network.getBroadcastUri().getHost();
             long vlanId = Long.parseLong(vlan);
 
+            List<VlanVO> vlanVOList = _vlanDao.listVlansByPhysicalNetworkId(network.getPhysicalNetworkId());
+            List<String> publicGateways = new ArrayList<String>();
+            for (VlanVO vlanVO : vlanVOList) {
+                publicGateways.add(vlanVO.getVlanGateway());
+            }
+
             // create logical edge firewall in VNMC
-            if (!createLogicalEdgeFirewall(vlanId, network.getGateway(), sourceNatIp.getAddress().addr(), ciscoVnmcHost.getId())) {
+            //String insideIp = _networkMgr.acquireGuestIpAddress(network, null);
+            //if (!createLogicalEdgeFirewall(vlanId, insideIp, sourceNatIp.getAddress().addr(), ciscoVnmcHost.getId())) {
+            if (!createLogicalEdgeFirewall(vlanId, network.getGateway(), sourceNatIp.getAddress().addr(), publicGateways, ciscoVnmcHost.getId())) {
                 s_logger.error("Failed to create logical edge firewall in Cisco VNMC device for network " + network.getName());
                 return false;
             }
@@ -364,7 +377,16 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException {
-        //Ensure that there is an ASA 1000v assigned to this network
+        if (vm.getType() != Type.User) {
+            return false;
+        }
+
+        // ensure that there is an ASA 1000v assigned to this network
+        NetworkAsa1000vMapVO asaForNetwork = _networkAsa1000vMapDao.findByNetworkId(network.getId());
+        if (asaForNetwork == null) {
+            return false;
+        }
+
         return true;
     }
 
@@ -373,16 +395,21 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             VirtualMachineProfile<? extends VirtualMachine> vm,
             ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
     public boolean shutdown(Network network, ReservationContext context,
             boolean cleanup) throws ConcurrentOperationException,
             ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+
+        unassignAsa1000vFromNetwork(network);
+        // disassociateAsaFromLogicalEdgeFirewall()
+        // delete ACL and NAT policies
+        // delete logical edge firewall
+        // delete tenant/VDC
+
+        return true;
     }
 
     @Override
@@ -416,8 +443,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     @Override
     public boolean destroy(Network network, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
@@ -574,11 +600,9 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         return responseList;
     }
 
-    
     @Override
     public IpDeployer getIpDeployer(Network network) {
-        // TODO Auto-generated method stub
-        return null;
+        return this;
     }
 
     @Override
@@ -878,4 +902,10 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         return null;
     }
 
+    private void unassignAsa1000vFromNetwork(Network network) {
+        NetworkAsa1000vMapVO networkAsaMap = _networkAsa1000vMapDao.findByNetworkId(network.getId());
+        if (networkAsaMap != null) {
+            _networkAsa1000vMapDao.remove(networkAsaMap.getId());
+        }
+    }
 }

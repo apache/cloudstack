@@ -1,0 +1,14 @@
+
+<orgResolveInScope
+  dn="%vdcdn%"
+  cookie="%cookie%"
+  inClass="policyRuleBasedPolicy"
+  inSingleLevel="false"
+  inHierarchical="false">
+    <inFilter>
+    </inFilter>
+</orgResolveInScope>
+
+<!--
+    vdcdn="org-root/org-vlan-123/org-VDC-vlan-123"
+--!>

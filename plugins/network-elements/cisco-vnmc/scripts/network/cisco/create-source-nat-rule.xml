@@ -8,7 +8,7 @@
           descr="%descr%"
           dn="%natruledn%"
           name="%natrulename%"
-          order="100"
+          order="%order%"
           status="created"/>
       </pair>
 
