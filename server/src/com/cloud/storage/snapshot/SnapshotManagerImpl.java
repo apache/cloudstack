@@ -482,11 +482,13 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     public void deleteSnapshotsForVolume (String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId ){
         SwiftTO swift = _swiftMgr.getSwiftTO();
         S3TO s3 = _s3Mgr.getS3TO();
+        VolumeVO volume = _volumeDao.findById(volumeId);
+        StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
 
         checkObjectStorageConfiguration(swift, s3);
 
         DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-                swift, s3, secondaryStoragePoolUrl, dcId, accountId, volumeId,
+                pool, swift, s3, secondaryStoragePoolUrl, dcId, accountId, volumeId,
                 null, true);
         try {
             Answer ans = _agentMgr.sendToSSVM(dcId, cmd);
@@ -909,8 +911,11 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         checkObjectStorageConfiguration(swift, s3);
 
+        VolumeVO volume = _volumeDao.findById(volumeId);
+        StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+
         DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-                swift, s3, secondaryStoragePoolUrl, dcId, accountId, volumeId,
+                pool, swift, s3, secondaryStoragePoolUrl, dcId, accountId, volumeId,
                 backupOfSnapshot, false);
         Answer answer = _agentMgr.sendToSSVM(dcId, cmd);
 
@@ -1062,10 +1067,12 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
             checkObjectStorageConfiguration(swift, s3);
 
+            StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+
             if (swift == null && s3 == null) {
                 for (HostVO ssHost : ssHosts) {
                     DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-                            null, null, ssHost.getStorageUrl(), dcId,
+                            pool, null, null, ssHost.getStorageUrl(), dcId,
                             accountId, volumeId, "", true);
                     Answer answer = null;
                     try {
@@ -1084,7 +1091,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 }
             } else {
                 DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(
-                        swift, s3, "", dcId, accountId, volumeId, "", true);
+                        pool, swift, s3, "", dcId, accountId, volumeId, "", true);
                 Answer answer = null;
                 try {
                     answer = _agentMgr.sendToSSVM(dcId, cmd);
