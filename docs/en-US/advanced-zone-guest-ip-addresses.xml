@@ -11,9 +11,7 @@
     to you under the Apache License, Version 2.0 (the
     "License"); you may not use this file except in compliance
     with the License.  You may obtain a copy of the License at
-    
     http://www.apache.org/licenses/LICENSE-2.0
-    
     Unless required by applicable law or agreed to in writing,
     software distributed under the License is distributed on an
     "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,6 +20,12 @@
     under the License.
 -->
 <section id="advanced-zone-guest-ip-addresses">
-    <title>Advanced Zone Guest IP Addresses</title>
-    <para>When advanced networking is used, the administrator can create additional networks for use by the guests.  These networks can span the zone and be available to all accounts, or they can be scoped to a single account, in which case only the named account may create guests that attach to these networks.  The networks are defined by a VLAN ID, IP range, and gateway.  The administrator may provision thousands of these networks if desired.</para>
+  <title>Advanced Zone Guest IP Addresses</title>
+  <para>When advanced networking is used, the administrator can create additional networks for use
+    by the guests. These networks can span the zone and be available to all accounts, or they can be
+    scoped to a single account, in which case only the named account may create guests that attach
+    to these networks. The networks are defined by a VLAN ID, IP range, and gateway. The
+    administrator may provision thousands of these networks if desired. Additionally, the
+    administrator can reserve a part of the IP address space for non-&PRODUCT; VMs and
+    servers.</para>
 </section>
