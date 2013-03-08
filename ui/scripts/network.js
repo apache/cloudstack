@@ -1934,8 +1934,7 @@
                   $.ajax({
                     url: createURL('listPublicIpAddresses'),
                     data: {
-                      id: args.context.ipAddresses[0].id,
-                      listAll: true
+                      id: args.context.ipAddresses[0].id
                     },
                     dataType: "json",
                     async: true,
