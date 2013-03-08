@@ -29,35 +29,13 @@
         <ulink url="http://incubator.apache.org/cloudstack/downloads.html">
         Apache CloudStack project download page</ulink>. 
     </para>
-    <para>
-        You'll notice several links under the 'Latest release' section. 
-    </para>    
-        <orderedlist>
-            <listitem>
-                <para>
-                    <ulink url="http://www.apache.org/dyn/closer.cgi/dist/incubator/cloudstack/releases/4.0.0-incubating/apache-cloudstack-4.0.0-incubating-src.tar.bz2">
-                        apache-cloudstack-4.0.0-incubating-src.tar.bz2</ulink>
-                        - This is the link to the release itself.
-                </para>
-            </listitem>
-            <listitem>
-                <para>
-                    <ulink url="http://www.apache.org/dist/incubator/cloudstack/releases/4.0.0-incubating/apache-cloudstack-4.0.0-incubating-src.tar.bz2.asc">PGP</ulink>
-                        - This is a detached cryptographic signature that can be used to help
-                        verify the authenticity of the release.
-                </para>
-            </listitem>
-            <listitem>
-                <para>
-                    <ulink url="http://www.apache.org/dist/incubator/cloudstack/releases/4.0.0-incubating/apache-cloudstack-4.0.0-incubating-src.tar.bz2.md5">MD5</ulink>
-                        - An MD5 hash of the release to aid in verify the validity of the release download.
-                </para>
-            </listitem>
-            <listitem>
-                <para>
-                    <ulink url="http://www.apache.org/dist/incubator/cloudstack/releases/4.0.0-incubating/apache-cloudstack-4.0.0-incubating-src.tar.bz2.sha">SHA512</ulink>
-                        - A SHA512 hash of the release to aid in verify the validity of the release download.
-                </para>
-            </listitem>
-        </orderedlist>
+    <para>Prior releases are available via archive.apache.org at <ulink url="http://archive.apache.org/dist/incubator/cloudstack/releases/">http://archive.apache.org/dist/incubator/cloudstack/releases/</ulink>.
+    </para>
+    <para>You'll notice several links under the 'Latest release' section. A link to a file ending in <filename>tar.bz2</filename>, as well as a PGP/GPG signature, MD5, and SHA512 file.</para>
+    <itemizedlist>
+        <listitem><para>The <filename>tar.bz2</filename> file contains the Bzip2-compressed tarball with the source code.</para></listitem>
+        <listitem><para>The <filename>.asc</filename> file is a detached cryptographic signature that can be used to help verify the authenticity of the release.</para></listitem>
+        <listitem><para>The <filename>.md5</filename> file is an MD5 hash of the release to aid in verify the validity of the release download.</para></listitem>
+        <listitem><para>The <filename>.sha</filename> file is a SHA512 hash of the release to aid in verify the validity of the release download.</para></listitem>
+    </itemizedlist>
 </section>
