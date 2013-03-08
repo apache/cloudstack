@@ -218,13 +218,9 @@ listZones=15
 #### events commands
 listEvents=15
 listEventTypes=15
-archiveEvents=15
-deleteEvents=15
 
 #### alerts commands
 listAlerts=3
-archiveAlerts=1
-deleteAlerts=1
 
 #### system capacity commands
 listCapacity=3

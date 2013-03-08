@@ -30,5 +30,4 @@ public interface Alert extends Identity, InternalIdentity {
     Date getCreatedDate();
     Date getLastSent();
     Date getResolved();
-    boolean getArchived();
 }
