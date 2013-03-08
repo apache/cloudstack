@@ -64,7 +64,7 @@ public class UpdateAccountCmd extends BaseCmd{
     private Map details;
 
     @Inject RegionService _regionService;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -98,7 +98,6 @@ public class UpdateAccountCmd extends BaseCmd{
         Map params = (Map) (paramsCollection.toArray())[0];
         return params;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

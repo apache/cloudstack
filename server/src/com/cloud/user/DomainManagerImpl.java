@@ -161,7 +161,6 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
         }
 
-
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
@@ -471,8 +470,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         // check if domain exists in the system
         DomainVO domain = _domainDao.findById(domainId);
         if (domain == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find domain with specified domain id");
-        	ex.addProxyObject(domain, domainId, "domainId");            
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find domain with specified domain id");
+            ex.addProxyObject(domain, domainId, "domainId");
             throw ex;
         } else if (domain.getParent() == null && domainName != null) {
             // check if domain is ROOT domain - and deny to edit it with the new name
@@ -494,7 +493,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             if (!domains.isEmpty() && !sameDomain) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName + "' since it already exists in the system");
                 ex.addProxyObject(domain, domainId, "domainId");                
-            	throw ex;
+                throw ex;
             }
         }
 
@@ -552,5 +551,5 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             _domainDao.update(dom.getId(), dom);
         }
     }
-    
+
 }

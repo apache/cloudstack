@@ -53,7 +53,7 @@ public class UpdateDomainCmd extends BaseCmd {
     private String networkDomain;
 
     @Inject RegionService _regionService;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -88,7 +88,7 @@ public class UpdateDomainCmd extends BaseCmd {
     public void execute(){
         UserContext.current().setEventDetails("Domain Id: "+getId());
         Domain domain =  _regionService.updateDomain(this);
-        
+
         if (domain != null) {
             DomainResponse response = _responseGenerator.createDomainResponse(domain);
             response.setResponseName(getCommandName());

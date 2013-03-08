@@ -47,7 +47,7 @@ public class EnableUserCmd extends BaseCmd {
     private Long id;
 
     @Inject RegionService _regionService;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ public class EnableUserCmd extends BaseCmd {
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
         UserAccount user = _regionService.enableUser(this);
-        
+
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());
