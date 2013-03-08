@@ -1444,8 +1444,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         List<StoragePoolVO> matchingVMPools = _storagePoolDao
                 .findPoolsByTags(vmRootVolumePool.getDataCenterId(),
                         vmRootVolumePool.getPodId(),
-                        vmRootVolumePool.getClusterId(), volumeTags,
-                        isVolumeOnSharedPool);
+                        vmRootVolumePool.getClusterId(), volumeTags
+                        );
         
         boolean moveVolumeNeeded = true;
         if (matchingVMPools.size() == 0) {

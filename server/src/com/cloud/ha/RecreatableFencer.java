@@ -21,12 +21,12 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VMInstanceVO;
@@ -37,7 +37,7 @@ import com.cloud.vm.VirtualMachine;
 public class RecreatableFencer extends AdapterBase implements FenceBuilder {
     private static final Logger s_logger = Logger.getLogger(RecreatableFencer.class);
     @Inject VolumeDao _volsDao;
-    @Inject StoragePoolDao _poolDao;
+    @Inject PrimaryDataStoreDao _poolDao;
     
     public RecreatableFencer() {
         super();

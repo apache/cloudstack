@@ -22,6 +22,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -31,7 +32,6 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -39,7 +39,7 @@ import com.cloud.vm.VirtualMachineProfile;
 @Component
 public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
 	private static final Logger s_logger = Logger.getLogger(ZoneWideStoragePoolAllocator.class);
-	@Inject StoragePoolDao _storagePoolDao; 
+	@Inject PrimaryDataStoreDao _storagePoolDao; 
 	@Inject DataStoreManager dataStoreMgr; 
 	
 	@Override

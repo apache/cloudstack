@@ -29,6 +29,7 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -53,7 +54,6 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -84,7 +84,7 @@ public class VMSnapshotManagerTest {
     @Mock HypervisorGuruManager _hvGuruMgr;
     @Mock AccountManager _accountMgr;
     @Mock GuestOSDao _guestOSDao;
-    @Mock StoragePoolDao _storagePoolDao;
+    @Mock PrimaryDataStoreDao _storagePoolDao;
     @Mock SnapshotDao _snapshotDao;
     @Mock VirtualMachineManager _itMgr;
     @Mock ConfigurationDao _configDao;

@@ -532,7 +532,7 @@ public class AncientPrimaryDataStoreLifeCycleImpl implements
             // if they dont, then just stop all vms on this one
             List<StoragePoolVO> upPools = primaryDataStoreDao
                     .listByStatusInZone(pool.getDataCenterId(),
-                            DataStoreStatus.Up);
+                            StoragePoolStatus.Up);
             boolean restart = true;
             if (upPools == null || upPools.size() == 0) {
                 restart = false;

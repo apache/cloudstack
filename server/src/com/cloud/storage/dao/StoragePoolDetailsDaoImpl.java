@@ -22,9 +22,10 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.springframework.stereotype.Component;
 
-import com.cloud.storage.StoragePoolDetailVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;

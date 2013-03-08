@@ -109,6 +109,7 @@ import org.apache.cloudstack.api.command.user.vpn.*;
 import org.apache.cloudstack.api.command.user.zone.*;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
@@ -220,7 +221,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -355,7 +355,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private GuestOSCategoryDao _guestOSCategoryDao;
     @Inject
-    private StoragePoolDao _poolDao;
+    private PrimaryDataStoreDao _poolDao;
     @Inject
     private NetworkDao _networkDao;
     @Inject

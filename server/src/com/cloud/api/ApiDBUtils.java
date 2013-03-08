@@ -45,6 +45,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.springframework.stereotype.Component;
 
@@ -254,7 +255,7 @@ public class ApiDBUtils {
     static HostPodDao _podDao;
     static ServiceOfferingDao _serviceOfferingDao;
     static SnapshotDao _snapshotDao;
-    static StoragePoolDao _storagePoolDao;
+    static PrimaryDataStoreDao _storagePoolDao;
     static VMTemplateDao _templateDao;
     static VMTemplateDetailsDao _templateDetailsDao;
     static VMTemplateHostDao _templateHostDao;
@@ -357,7 +358,7 @@ public class ApiDBUtils {
     @Inject private HostPodDao podDao;
     @Inject private ServiceOfferingDao serviceOfferingDao;
     @Inject private SnapshotDao snapshotDao;
-    @Inject private StoragePoolDao storagePoolDao;
+    @Inject private PrimaryDataStoreDao storagePoolDao;
     @Inject private VMTemplateDao templateDao;
     @Inject private VMTemplateDetailsDao templateDetailsDao;
     @Inject private VMTemplateHostDao templateHostDao;

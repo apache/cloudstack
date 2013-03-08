@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -49,7 +50,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
@@ -61,7 +61,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
     private final static Logger s_logger = Logger.getLogger(RecreateHostAllocator.class);
     
     @Inject HostPodDao _podDao;
-    @Inject StoragePoolDao _poolDao;
+    @Inject PrimaryDataStoreDao _poolDao;
     @Inject ClusterDao _clusterDao;
     @Inject VolumeDao _volsDao;
     @Inject DataCenterDao _dcDao;
