@@ -47,6 +47,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 
@@ -125,6 +126,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
@@ -188,6 +190,7 @@ import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.keystore.KeystoreManager;
 import com.cloud.network.IpAddress;
+import com.cloud.network.as.ConditionVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -262,6 +265,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -295,7 +299,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
     @Inject
-    private AccountManager _accountMgr;
+    public AccountManager _accountMgr;
     @Inject
     private AgentManager _agentMgr;
     @Inject
@@ -311,7 +315,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private SecondaryStorageVmDao _secStorageVmDao;
     @Inject
-    private EventDao _eventDao;
+    public EventDao _eventDao;
     @Inject
     private DataCenterDao _dcDao;
     @Inject
@@ -347,7 +351,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private AccountDao _accountDao;
     @Inject
-    private AlertDao _alertDao;
+    public AlertDao _alertDao;
     @Inject
     private CapacityDao _capacityDao;
     @Inject
@@ -371,6 +375,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private AsyncJobManager _asyncMgr;
     private int _purgeDelay;
+    private int _alertPurgeDelay;
     @Inject
     private InstanceGroupDao _vmGroupDao;
     @Inject
@@ -417,6 +422,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     EventUtils	_forceEventUtilsRef;
 */
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
+    private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
     private KeystoreManager _ksMgr;
 
     private Map<String, String> _configs;
@@ -444,6 +450,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _purgeDelay = NumbersUtil.parseInt(_configs.get("event.purge.delay"), 0);
         if (_purgeDelay != 0) {
             _eventExecutor.scheduleAtFixedRate(new EventPurgeTask(), cleanup, cleanup, TimeUnit.SECONDS);
+        }
+
+        //Alerts purge configurations
+        int alertPurgeInterval = NumbersUtil.parseInt(_configDao.getValue(Config.AlertPurgeInterval.key()),
+                60 * 60 * 24); // 1 day.
+        _alertPurgeDelay = NumbersUtil.parseInt(_configDao.getValue(Config.AlertPurgeDelay.key()), 0);
+        if (_alertPurgeDelay != 0) {
+            _alertExecutor.scheduleAtFixedRate(new AlertPurgeTask(), alertPurgeInterval, alertPurgeInterval,
+                    TimeUnit.SECONDS);
         }
 
         String[] availableIds = TimeZone.getAvailableIDs();
@@ -536,6 +551,42 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         return _eventDao.search(sc, null);
+    }
+
+    @Override
+    public boolean archiveEvents(ArchiveEventsCmd cmd) {
+        List<Long> ids = cmd.getIds();
+        boolean result =true;
+
+        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getOlderThan(), cmd.getEntityOwnerId());
+        ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
+        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, sameOwnerEvents);
+
+        if (ids != null && events.size() < ids.size()) {
+            result = false;
+            return result;
+        }
+        _eventDao.archiveEvents(events);
+        return result;
+    }
+
+    @Override
+    public boolean deleteEvents(DeleteEventsCmd cmd) {
+        List<Long> ids = cmd.getIds();
+        boolean result =true;
+
+        List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getOlderThan(), cmd.getEntityOwnerId());
+        ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
+        _accountMgr.checkAccess(UserContext.current().getCaller(), null, true, sameOwnerEvents);
+
+        if (ids != null && events.size() < ids.size()) {
+            result = false;
+            return result;
+        }
+        for (EventVO event : events) {
+        _eventDao.remove(event.getId());
+        }
+        return result;
     }
 
     private Date massageDate(Date date, int hourOfDay, int minute, int second) {
@@ -1663,8 +1714,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.addAnd("type", SearchCriteria.Op.EQ, type);
         }
 
+        sc.addAnd("archived", SearchCriteria.Op.EQ, false);
         Pair<List<AlertVO>, Integer> result = _alertDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends Alert>, Integer>(result.first(), result.second());
+    }
+
+    @Override
+    public boolean archiveAlerts(ArchiveAlertsCmd cmd) {
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), null);
+        boolean result = _alertDao.archiveAlert(cmd.getIds(), cmd.getType(), cmd.getOlderThan(), zoneId);
+        return result;
+    }
+
+    @Override
+    public boolean deleteAlerts(DeleteAlertsCmd cmd) {
+        Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), null);
+        boolean result = _alertDao.deleteAlert(cmd.getIds(), cmd.getType(), cmd.getOlderThan(), zoneId);
+        return result;
     }
 
     @Override
@@ -2168,6 +2234,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AddIpToVmNicCmd.class);
         cmdList.add(RemoveIpFromVmNicCmd.class);
         cmdList.add(ListNicsCmd.class);
+        cmdList.add(ArchiveAlertsCmd.class);
+        cmdList.add(DeleteAlertsCmd.class);
+        cmdList.add(ArchiveEventsCmd.class);
+        cmdList.add(DeleteEventsCmd.class);
         return cmdList;
     }
 
@@ -2205,6 +2275,39 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
+    protected class AlertPurgeTask implements Runnable {
+        @Override
+        public void run() {
+            try {
+                GlobalLock lock = GlobalLock.getInternLock("AlertPurge");
+                if (lock == null) {
+                    s_logger.debug("Couldn't get the global lock");
+                    return;
+                }
+                if (!lock.lock(30)) {
+                    s_logger.debug("Couldn't lock the db");
+                    return;
+                }
+                try {
+                    final Calendar purgeCal = Calendar.getInstance();
+                    purgeCal.add(Calendar.DAY_OF_YEAR, - _alertPurgeDelay);
+                    Date purgeTime = purgeCal.getTime();
+                    s_logger.debug("Deleting alerts older than: " + purgeTime.toString());
+                    List<AlertVO> oldAlerts = _alertDao.listOlderAlerts(purgeTime);
+                    s_logger.debug("Found " + oldAlerts.size() + " events to be purged");
+                    for (AlertVO alert : oldAlerts) {
+                        _alertDao.expunge(alert.getId());
+                    }
+                } catch (Exception e) {
+                    s_logger.error("Exception ", e);
+                } finally {
+                    lock.unlock();
+                }
+            } catch (Exception e) {
+                s_logger.error("Exception ", e);
+            }
+        }
+    }
 
     @Override
     public Pair<List<StoragePoolVO>, Integer> searchForStoragePools(Criteria c) {

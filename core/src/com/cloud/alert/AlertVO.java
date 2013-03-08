@@ -28,9 +28,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="alert")
@@ -68,16 +66,19 @@ public class AlertVO implements Alert {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name="resolved", updatable=true, nullable=true)
     private Date resolved;
-    
+
     @Column(name="uuid")
     private String uuid;
 
+    @Column(name="archived")
+    private boolean archived;
+
     public AlertVO() {
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
     public AlertVO(Long id) {
         this.id = id;
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -103,12 +104,12 @@ public class AlertVO implements Alert {
     }
 
     public Long getClusterId() {
-		return clusterId;
-	}
-	public void setClusterId(Long clusterId) {
-		this.clusterId = clusterId;
-	}
-	@Override
+        return clusterId;
+    }
+    public void setClusterId(Long clusterId) {
+        this.clusterId = clusterId;
+    }
+    @Override
     public Long getPodId() {
         return podId;
     }
@@ -164,10 +165,19 @@ public class AlertVO implements Alert {
     
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
+    }
+
+    @Override
+    public boolean getArchived() {
+        return archived;
+    }
+
+    public void setArchived(Boolean archived) {
+        this.archived = archived;
     }
 }
