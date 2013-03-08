@@ -52,14 +52,22 @@
       success: function(json) {
         var nic = json.listnics.nic[0];
         var ips = nic.secondaryip ? nic.secondaryip : [];
+        var ipSelection = [];
+
+        // Add primary IP as default
+        ipSelection.push({ id: -1, description: nic.ipaddress + ' (Primary)' });
+
+        // Add secondary IPs
+        $(ips).map(function(index, ip) {
+          ipSelection.push({
+            id: ip.ipaddress,
+            description: ip.ipaddress
+          });
+        }); 
+
 
         args.response.success({
-          data: $(ips).map(function(index, ip) {
-            return {
-              id: ip.ipaddress,
-              description: ip.ipaddress
-            };
-          })
+          data: ipSelection
         });
       }
     })
@@ -3098,7 +3106,7 @@
                           openfirewall: false
                         };
 
-                        if (args.itemData[0]._subselect) {
+                        if (args.itemData[0]._subselect && args.itemData[0]._subselect != -1) {
                           data.vmguestip = args.itemData[0]._subselect;
                         }
 
