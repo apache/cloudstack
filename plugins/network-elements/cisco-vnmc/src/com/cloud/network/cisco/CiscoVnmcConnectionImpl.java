@@ -92,7 +92,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         LIST_ACL_POLICIES("list-acl-policies.xml", "policy-mgr"),
         CREATE_ACL_POLICY_REF("create-acl-policy-ref.xml", "policy-mgr"),
         CREATE_INGRESS_ACL_RULE("create-ingress-acl-rule.xml", "policy-mgr"),
-        DELETE_ACL_RULE("delete-acl-rule.xml", "policy-mgr"),
+
+        DELETE_RULE("delete-rule.xml", "policy-mgr"),
 
         LIST_CHILDREN("list-children.xml", "policy-mgr"),
 
@@ -632,7 +633,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         String xml = VnmcXml.CREATE_ACL_POLICY_SET.getXml();
         String service = VnmcXml.CREATE_ACL_POLICY_SET.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
-        //xml = replaceXmlValue(xml, "descr", "ACL policy set for Tenant VDC " + tenantName);
+        xml = replaceXmlValue(xml, "descr", "ACL policy set for Tenant VDC " + tenantName);
         xml = replaceXmlValue(xml, "aclpolicysetname", getNameForAclPolicySet(tenantName, ingress));
         xml = replaceXmlValue(xml, "aclpolicysetdn", getDnForAclPolicySet(tenantName, ingress));
 
@@ -670,7 +671,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     @Override
-    public boolean createIngressAclRule(String tenantName,
+    public boolean createTenantVDCIngressAclRule(String tenantName,
             String identifier, String policyIdentifier,
             String protocol, String sourceStartIp, String sourceEndIp,
             String destStartPort, String destEndPort, String destIp) throws ExecutionException {
@@ -700,15 +701,10 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     @Override
-    public boolean deleteAclRule(String tenantName, String identifier, String policyIdentifier) throws ExecutionException {
-        String xml = VnmcXml.DELETE_ACL_RULE.getXml();
-        String service = VnmcXml.DELETE_ACL_RULE.getService();
-        xml = replaceXmlValue(xml, "cookie", _cookie);
-        xml = replaceXmlValue(xml, "aclruledn", getDnForAclRule(tenantName, identifier, policyIdentifier));
-        xml = replaceXmlValue(xml, "aclrulename", getNameForAclRule(tenantName, identifier));
-
-        String response =  sendRequest(service, xml);
-        return verifySuccess(response);
+    public boolean deleteTenantVDCAclRule(String tenantName, String identifier, String policyIdentifier) throws ExecutionException {
+        return deleteTenantVDCRule(
+                getDnForAclRule(tenantName, identifier, policyIdentifier),
+                getNameForAclRule(tenantName, identifier));
     }
 
     private String getNameForPFPortPool(String tenantName, String identifier) {
@@ -791,6 +787,17 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         xml = replaceXmlValue(xml, "cookie", _cookie);
         xml = replaceXmlValue(xml, "natpolicydn", policyDn);
         xml = replaceXmlValue(xml, "natpolicyname", name);
+
+        String response =  sendRequest(service, xml);
+        return verifySuccess(response);
+    }
+
+    private boolean deleteTenantVDCRule(String ruledn, String ruleName) throws ExecutionException {
+        String xml = VnmcXml.DELETE_RULE.getXml();
+        String service = VnmcXml.DELETE_RULE.getService();
+        xml = replaceXmlValue(xml, "cookie", _cookie);
+        xml = replaceXmlValue(xml, "ruledn", ruledn);
+        xml = replaceXmlValue(xml, "rulename", ruleName);
 
         String response =  sendRequest(service, xml);
         return verifySuccess(response);
@@ -929,6 +936,14 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     @Override
+    public boolean deleteTenantVDCPFRule(String tenantName, String identifier,
+            String policyIdentifier) throws ExecutionException {
+        return deleteTenantVDCRule(
+                getDnForPFRule(tenantName, identifier, policyIdentifier),
+                getNameForPFRule(tenantName, identifier));
+    }
+
+    @Override
     public boolean createTenantVDCIngressAclRuleForPF(String tenantName,
             String identifier, String policyIdentifier, String protocol,
             String publicIp, String startPort, String endPort)
@@ -1038,6 +1053,15 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
         String response =  sendRequest(service, xml);
         return verifySuccess(response);
+    }
+
+    @Override
+    public boolean deleteTenantVDCDNatRule(String tenantName,
+            String identifier, String policyIdentifier)
+            throws ExecutionException {
+        return deleteTenantVDCRule(
+                getDnForDNatRule(tenantName, identifier, policyIdentifier),
+                getNameForDNatRule(tenantName, identifier));
     }
 
     @Override

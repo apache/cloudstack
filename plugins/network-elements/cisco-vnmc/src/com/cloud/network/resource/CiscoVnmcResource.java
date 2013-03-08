@@ -71,10 +71,6 @@ public class CiscoVnmcResource implements ServerResource{
     private String _password;
     private String _guid;
     private Integer _numRetries;
-    private String _publicZone;
-    private String _privateZone;
-    private String _publicInterface;
-    private String _privateInterface;
 
     CiscoVnmcConnectionImpl _connection;
 
@@ -139,26 +135,6 @@ public class CiscoVnmcResource implements ServerResource{
             if (_password == null) {
                 throw new ConfigurationException("Unable to find password");
             }            
-
-            _publicInterface = (String) params.get("publicinterface");
-            if (_publicInterface == null) {
-                //throw new ConfigurationException("Unable to find public interface.");
-            }
-
-            _privateInterface = (String) params.get("privateinterface");
-            if (_privateInterface == null) {
-                //throw new ConfigurationException("Unable to find private interface.");
-            }
-
-            _publicZone = (String) params.get("publiczone");
-            if (_publicZone == null) {
-                _publicZone = "untrust";
-            }
-
-            _privateZone = (String) params.get("privatezone");
-            if (_privateZone == null) {
-                _privateZone = "trust";
-            }
 
             _guid = (String)params.get("guid");
             if (_guid == null) {
@@ -265,6 +241,20 @@ public class CiscoVnmcResource implements ServerResource{
         return new IpAssocAnswer(cmd, results);
     }
 
+    private String[] getIpRangeFromCidr(String cidr) {
+        String[] result = new String[2];
+        String[] cidrData = cidr.split("\\/");
+        assert (cidrData.length == 2) : "Something is wrong with source cidr " + cidr;
+        long size = Long.valueOf(cidrData[1]);
+        result[0] = cidrData[0];
+        result[1] = cidrData[0];
+        if (size < 32) {
+            result[0] = NetUtils.getIpRangeStartIpFromCidr(cidrData[0], size);
+            result[1] = NetUtils.getIpRangeEndIpFromCidr(cidrData[0], size);
+        }
+        return result;
+    }
+
     /*
      * Source NAT
      */
@@ -285,6 +275,7 @@ public class CiscoVnmcResource implements ServerResource{
             if (!_connection.createTenantVDCSourceNatPolicy(tenant, policyIdentifier)) {
                 throw new Exception("Failed to create source NAT policy in VNMC for guest network with vlan " + vlanId);
             }
+
             if (!_connection.createTenantVDCSourceNatPolicyRef(tenant, policyIdentifier)) {
                 throw new Exception("Failed to associate source NAT policy with NAT policy set in VNMC for guest network with vlan " + vlanId);
             }
@@ -293,13 +284,8 @@ public class CiscoVnmcResource implements ServerResource{
                 throw new Exception("Failed to create source NAT ip pool in VNMC for guest network with vlan " + vlanId);
             }
 
-            String cidr = cmd.getContextParam(NetworkElementCommand.GUEST_NETWORK_CIDR);
-            String[] result = cidr.split("\\/");
-            assert (result.length == 2) : "Something is wrong with guest cidr " + cidr;
-            long size = Long.valueOf(result[1]);
-            String startIp = NetUtils.getIpRangeStartIpFromCidr(result[0], size);
-            String endIp = NetUtils.getIpRangeEndIpFromCidr(result[0], size);
-            if (!_connection.createTenantVDCSourceNatRule(tenant, policyIdentifier, startIp, endIp)) {
+            String[] ipRange = getIpRangeFromCidr(cmd.getContextParam(NetworkElementCommand.GUEST_NETWORK_CIDR));
+            if (!_connection.createTenantVDCSourceNatRule(tenant, policyIdentifier, ipRange[0], ipRange[1])) {
                 throw new Exception("Failed to create source NAT rule in VNMC for guest network with vlan " + vlanId);
             }
 
@@ -362,22 +348,14 @@ public class CiscoVnmcResource implements ServerResource{
 
                 for (FirewallRuleTO rule : publicIpRulesMap.get(publicIp)) {
                     if (rule.revoked()) {
-                        //_connection.deleteAclRule(tenant, Long.toString(rule.getId()), publicIp);
-                    } else {
-                        String cidr = rule.getSourceCidrList().get(0);
-                        String[] result = cidr.split("\\/");
-                        assert (result.length == 2) : "Something is wrong with source cidr " + cidr;
-                        long size = Long.valueOf(result[1]);
-                        String externalStartIp = result[0];
-                        String externalEndIp = result[0];
-                        if (size < 32) {
-                            externalStartIp = NetUtils.getIpRangeStartIpFromCidr(result[0], size);
-                            externalEndIp = NetUtils.getIpRangeEndIpFromCidr(result[0], size);
+                        if (!_connection.deleteTenantVDCAclRule(tenant, Long.toString(rule.getId()), publicIp)) {
+                            throw new Exception("Failed to delete ACL ingress rule in VNMC for guest network with vlan " + vlanId);
                         }
-
-                        if (!_connection.createIngressAclRule(tenant,
+                    } else {
+                        String[] externalIpRange = getIpRangeFromCidr(rule.getSourceCidrList().get(0));
+                        if (!_connection.createTenantVDCIngressAclRule(tenant,
                                 Long.toString(rule.getId()), policyIdentifier,
-                                rule.getProtocol().toUpperCase(), externalStartIp, externalEndIp,
+                                rule.getProtocol().toUpperCase(), externalIpRange[0], externalIpRange[1],
                                 Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]), publicIp)) {
                             throw new Exception("Failed to create ACL ingress rule in VNMC for guest network with vlan " + vlanId);
                         }
@@ -426,6 +404,10 @@ public class CiscoVnmcResource implements ServerResource{
                 throw new Exception("Failed to create NAT policy set in VNMC for guest network with vlan " + vlanId);
             }
 
+            if (!_connection.createTenantVDCAclPolicySet(tenant, true)) {
+                throw new Exception("Failed to create ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
+            }
+
             for (String publicIp : publicIpRulesMap.keySet()) {
                 String policyIdentifier = publicIp.replace('.', '-');
 
@@ -449,8 +431,13 @@ public class CiscoVnmcResource implements ServerResource{
 
                 for (StaticNatRuleTO rule : publicIpRulesMap.get(publicIp)) {
                     if (rule.revoked()) {
-                        //_connection.deleteDNatRule(tenant, Long.toString(rule.getId()), policyIdentifier);
-                        //_connection.deleteAclRule(tenant, Long.toString(rule.getId()), policyIdentifier);
+                        if (!_connection.deleteTenantVDCDNatRule(tenant, Long.toString(rule.getId()), policyIdentifier)) {
+                            throw new Exception("Failed to delete DNAT rule in VNMC for guest network with vlan " + vlanId);
+                        }
+
+                        if (!_connection.deleteTenantVDCAclRule(tenant, Long.toString(rule.getId()), policyIdentifier)) {
+                            throw new Exception("Failed to delete ACL ingress rule for DNAT in VNMC for guest network with vlan " + vlanId);
+                        }
                     } else {
                         if (!_connection.createTenantVDCDNatIpPool(tenant, policyIdentifier + "-" + rule.getId(), rule.getDstIp())) {
                             throw new Exception("Failed to create DNAT ip pool in VNMC for guest network with vlan " + vlanId);
@@ -509,6 +496,10 @@ public class CiscoVnmcResource implements ServerResource{
                 throw new Exception("Failed to create NAT policy set in VNMC for guest network with vlan " + vlanId);
             }
 
+            if (!_connection.createTenantVDCAclPolicySet(tenant, true)) {
+                throw new Exception("Failed to create ACL ingress policy set in VNMC for guest network with vlan " + vlanId);
+            }
+
             for (String publicIp : publicIpRulesMap.keySet()) {
                 String policyIdentifier = publicIp.replace('.', '-');
 
@@ -532,13 +523,17 @@ public class CiscoVnmcResource implements ServerResource{
 
                 for (PortForwardingRuleTO rule : publicIpRulesMap.get(publicIp)) {
                     if (rule.revoked()) {
-                        //_connection.deletePFRule(tenant, Long.toString(rule.getId()), policyIdentifier);
-                        //_connection.deleteAclRule(tenant, Long.toString(rule.getId()), policyIdentifier);
+                        if (!_connection.deleteTenantVDCPFRule(tenant, Long.toString(rule.getId()), policyIdentifier)) {
+                            throw new Exception("Failed to delete PF rule in VNMC for guest network with vlan " + vlanId);
+                        }
+
+                        if (!_connection.deleteTenantVDCAclRule(tenant, Long.toString(rule.getId()), policyIdentifier)) {
+                            throw new Exception("Failed to delete ACL ingress rule for PF in VNMC for guest network with vlan " + vlanId);
+                        }
                     } else {
                         if (!_connection.createTenantVDCPFIpPool(tenant, policyIdentifier + "-" + rule.getId(), rule.getDstIp())) {
                             throw new Exception("Failed to create PF ip pool in VNMC for guest network with vlan " + vlanId);
                         }
-
                         if (!_connection.createTenantVDCPFPortPool(tenant, policyIdentifier + "-" + rule.getId(),
                                 Integer.toString(rule.getDstPortRange()[0]), Integer.toString(rule.getDstPortRange()[1]))) {
                             throw new Exception("Failed to create PF port pool in VNMC for guest network with vlan " + vlanId);

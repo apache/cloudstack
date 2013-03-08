@@ -4,7 +4,7 @@
   <inConfigs>
     <pair key="%aclpolicysetdn%">
       <policyPolicySet
-      descr=""
+      descr="%descr%"
       dn="%aclpolicysetdn%"
       name="%aclpolicysetname%"
       status="created"/>

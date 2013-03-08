@@ -1,17 +1,13 @@
-
 <configConfMos
   cookie="%cookie%"
   inHierarchical="false">
   <inConfigs>
-
-    <pair key="%aclruledn%">
+    <pair key="%ruledn%">
       <policyRule
         descr=""
-        dn="%aclruledn%"
-        name="%aclrulename%"
-        order="300"
+        dn="%ruledn%"
+        name="%rulename%"
         status="deleted"/>
     </pair>
-
   </inConfigs>
 </configConfMos>

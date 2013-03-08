@@ -78,6 +78,10 @@ public interface CiscoVnmcConnection {
             String publicIp)
             throws ExecutionException;
 
+    public boolean deleteTenantVDCDNatRule(String tenantName,
+            String identifier, String policyIdentifier)
+            throws ExecutionException;
+
     public boolean createTenantVDCIngressAclRuleForDNat(String tenantName,
             String identifier, String policyIdentifier,
             String publicIp)
@@ -105,6 +109,10 @@ public interface CiscoVnmcConnection {
             String startPort, String endPort)
             throws ExecutionException;
 
+    public boolean deleteTenantVDCPFRule(String tenantName,
+            String identifier, String policyIdentifier)
+            throws ExecutionException;
+
     public boolean createTenantVDCIngressAclRuleForPF(String tenantName,
             String identifier, String policyIdentifier,
             String protocol, String publicIp,
@@ -129,15 +137,14 @@ public interface CiscoVnmcConnection {
     public boolean associateNatPolicySet(String tenantName)
             throws ExecutionException;
 
-    public boolean createIngressAclRule(String tenantName,
+    public boolean createTenantVDCIngressAclRule(String tenantName,
             String identifier, String policyIdentifier,
             String protocol, String sourceStartIp, String sourceEndIp,
             String destStartPort, String destEndPort, String destIp)
             throws ExecutionException;
 
-    public boolean deleteAclRule(String policyIdentifier,
-            String identifier, String destIp)
-            throws ExecutionException;
+    public boolean deleteTenantVDCAclRule(String tenantName,
+            String identifier, String policyIdentifier) throws ExecutionException;
 
     public boolean createTenantVDCAclPolicy(String tenantName, String identifier,
             boolean ingress) throws ExecutionException;
