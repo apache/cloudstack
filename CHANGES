@@ -3,33 +3,277 @@ Apache CloudStack (Incubating) CHANGES
 
 Full release notes for each release are located in the project's documentation website:  http://incubator.apache.org/cloudstack/docs
 
-Version 4.0.0-incubating
+Version 4.1.0-incubating
 ------------------------
 
-This is the first release of CloudStack from within the Apache Software Foundation.
+This is the second major release of CloudStack from within the Apache Software Foundation. 
 
 Build Tool Changes:
 
- * The project now uses a combination of maven3 and ant for building
- * License header auditing is now implemented via the Apache RAT Maven plugin
- * Some integrations have been disabled in the default build, due to the license types of our dependencies (See README.md for details on how to build with the optional capabilities)
+ * The project now uses Maven 3 exclusively to build. 
 
 New Features:
+* CLOUDSTACK-101: OVS support in KVM
+* CLOUDSTACK-132: Mash up marvin into an interactive auto-completing API shell for CloudStack
+* CLOUDSTACK-241: AWS Style Regions
+* CLOUDSTACK-297: Reset SSH Key to access VM (similar to reset password)
+* CLOUDSTACK-299: Egress firewall rules for guest network
+* CLOUDSTACK-306: Support SRX & F5 inline mode
+* CLOUDSTACK-618: API request throttling to avoid malicious attacks on MS per account through frequent API request.
+* CLOUDSTACK-637: AutoScale
+* CLOUDSTACK-644: Resize volumes feature
+* CLOUDSTACK-706: Persistent Networks without running a VM
+* CLOUDSTACK-726: Implement L3 Router functionality in Nicira Nvp Plugin
+* CLOUDSTACK-780: Additional VMX Settings
+* CLOUDSTACK-926: ApiDiscoverService: Implement a plugin mechanism that exposes the list of APIs through a discovery service on the management server
 
- * Inter-VLAN Routing (VPC)
- * Site-to-Site VPN
- * Local Storage Support for Data Volumes
- * Virtual Resource Tagging
- * Secure Console Access on XenServer
- * Added the ability to create a VM without immediately starting it (via API)
- * Upload an Existing Volume to a Virtual Machine
- * Dedicated High-Availability Hosts
- * Support for Amazon Web Services API (formerly a separate package)
- * AWS API Extensions to include Tagging
- * Support for Nicira NVP (L2)
- * Ceph RBD Support for KVM
- * Support for Caringo as Secondary Storage
- * KVM Hypervisor support upgraded to work with Ubuntu 12.04 and RHEL 6.3
+Bug Fixes:
+
+* CLOUDSTACK-1600 Typo in dpkg-buildpackage command
+* CLOUDSTACK-1574 updateResourceCount API is failed saying to specify valida resource type even after parsing the valid resource type
+* CLOUDSTACK-1562 Replace the short-cut solution of supportting @DB with the formal one
+* CLOUDSTACK-1541 NPE while deleting snapshot :Unexpected exception while executing org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotCmd
+* CLOUDSTACK-1521 Redundant router: Services are not stopped when switch to BACKUP state
+* CLOUDSTACK-1509 Failed to implement network elements and resources while provisioning for persistent network(createVlanIpRange to an account]
+* CLOUDSTACK-1496 List API Performance: listAccounts failing with OOME for high values of pagesize (>1000 )
+* CLOUDSTACK-1487 cloudstack-setup-agent fails to set private.network.device on KVM host add
+* CLOUDSTACK-1485 Add Baremetal Provider back to 4.1 branch
+* CLOUDSTACK-1484 "API Throttling : api.throttling.enabled, Global setting missing"
+* CLOUDSTACK-1473 deleteDomain is failing with NPE
+* CLOUDSTACK-1470 unhandled exception executing api command: deployVirtualMachine
+* CLOUDSTACK-1469 kvm agent: agent service fails to start up
+* CLOUDSTACK-1465 List Zones returns null under create instance when logged is as user
+* CLOUDSTACK-1449 listAccounts and listProjectAccounts API lists all the users not account-specific users for each account returned
+* CLOUDSTACK-1447 [UI]Persistent Status is not displayed for VPC Tiers
+* CLOUDSTACK-1436 4.1 management server fails to start from RPM build artifacts
+* CLOUDSTACK-1429 single account is unable to use same vnet across multiple physical networks
+* CLOUDSTACK-1425 unhandled exception executing api command: migrateVirtualMachine & recoverVirtualMachine
+* CLOUDSTACK-1420 Ensure trademarks are properly attributed in publican brand.
+* CLOUDSTACK-1419 Apache-ify and apply trademark logos in the UI
+* CLOUDSTACK-1418 "As regular user , we are not allowed to deploy VM on a shared network."
+* CLOUDSTACK-1417 "When invalid values are passed to createNetwork() , error message does not indicate the parameter name that has invalid values."
+* CLOUDSTACK-1414 Redundant router: BACKUP switch cancelled due to lock timeout after a glitch in network
+* CLOUDSTACK-1403 Storage and console-proxy related error
+* CLOUDSTACK-1402 listRouters API response doesn't return linklocal IP and public IP details
+* CLOUDSTACK-1399 Unhandled exception executing api command: stopVirtualMachine
+* CLOUDSTACK-1397 Static Nat configuration is failing with NPE
+* CLOUDSTACK-1391 EventBus is not getting injected after javelin merge
+* CLOUDSTACK-1383 Deploying basic zone on 4.1 fails in NPE
+* CLOUDSTACK-1382 "vm deploy fails with Error ""cannot find DeployPlannerSelector for vm"""
+* CLOUDSTACK-1375 deploydb failing with acs master
+* CLOUDSTACK-1369 "Ipv6 - In dual Stack network , guest VM does not have the Ipv6 address of the router programmed in /etc/resolv.conf for DNS resolution."
+* CLOUDSTACK-1367 NPE noticed in logs while AgentMonitor is monitoring the host ping interval
+* CLOUDSTACK-1357 "Autoscale: Provisioned VMs from Netscaler not being added to lb vserver, provserver fails with provserver_err_asynctaskpoll"
+* CLOUDSTACK-1350 Management server Stop and start causes previously downloaded ISOs and templates to redownload & reinstall
+* CLOUDSTACK-1347 "Not able to delete network. Error - ""Unable to insert queue item into database, DB is full?"""
+* CLOUDSTACK-1346 "Check to see if external devices are used in the network, is hardcoded for specific devices"
+* CLOUDSTACK-1345 BigSwitch plugin introduces 'VNS' isolation in UI without backend implementation
+* CLOUDSTACK-1344 Typo in use.external.dns setting description
+* CLOUDSTACK-1343 Porting Baremetal related UI changes to ACS
+* CLOUDSTACK-1341 URL for the KEYs file is wrong in the installation guide
+* CLOUDSTACK-1339 ASF 4.1: Management server becomes unresponsive
+* CLOUDSTACK-1338 Deploy VM failed using ISO
+* CLOUDSTACK-1334 vmware.root.disk.controller doesn't work.
+* CLOUDSTACK-1332 IPV6 - Router and guest Vms should be able to use an IPV6 address for external DNS entry.
+* CLOUDSTACK-1331 Upgrade fails for a 2.2.14 Zone having multiple guest networks using network_tags and Public Vlan
+* CLOUDSTACK-1330 ec2-run-instances - When -n option is used to deploy multiple Vms API returns error even though few of the Vms have been deployed successfully.
+* CLOUDSTACK-1320 Routers naming convention is changed to hostname
+* CLOUDSTACK-1319 createCustomerVpnGateway response gives TypeError: json.createvpncustomergatewayresponse is undefined
+* CLOUDSTACK-1315 [F5-SRX-InlineMode] Network implement failed with Run time Exception during network upgrade from VR to SRX-F5
+* CLOUDSTACK-1313 Working with Volumes Section Is Missing
+* CLOUDSTACK-1312 "Fix rolling upgrades from 4.0 to 4.1 in 4.1 release, fix db schemas to be same as 4.0"
+* CLOUDSTACK-1307 Noticed NPE when we put host in maintenance mode in clustered management setup
+* CLOUDSTACK-1303 Ipv6 - java.lang.NullPointerException when executing listnetworks() and deployVirtualMachine() after extending the Ipv4 range of a dual stack network.
+* CLOUDSTACK-1300 section in wrong order in installation guide
+* CLOUDSTACK-1299 Errors in 4.5.5 section of installation guide
+* CLOUDSTACK-1295 NPE in usage parsers due to missing @Component inject
+* CLOUDSTACK-1289 [F5-SRX-InlineMode] Usage stats are not generated for Juniper SRX Firewall in inlinemode
+* CLOUDSTACK-1288 [F5-SRX-InlineMode] classCastException during network restart with cleanup option true
+* CLOUDSTACK-1277 ApiResponseHelper.createUserVmResponse failed to populate password field set from UserVm object
+* CLOUDSTACK-1272 Autoscale: createAutoScaleVmProfile fails due to unable to retrieve Service Offering id
+* CLOUDSTACK-1267 KVM's cloudstack-agent service doesn't log (log4j)
+* CLOUDSTACK-1265 logrotate dnsmasq configuration is wrong
+* CLOUDSTACK-1262 "Failed to Prepare Secondary Storage in VMware,"
+* CLOUDSTACK-1251 Baremetal zone doesn't need primary/secondary storage in UI wizard
+* CLOUDSTACK-1243 Failed to cleanup account :java.lang.NullPointerException
+* CLOUDSTACK-1242 [F5-SRX-InlineMode] Failed to create LB rule with F5-SRX inlinemode deployement
+* CLOUDSTACK-1241 Network apply rules logic is broken
+* CLOUDSTACK-1237 "Register Template fails with ""Cannot find template adapter for XenServer"""
+* CLOUDSTACK-1234 Unable to start KVM agent with 4.1 build
+* CLOUDSTACK-1233 Veewee configuration files are inappropriately identified as ASLv2 licensed files
+* CLOUDSTACK-1232 "Ipv6 - Guest Vms are not able to get Ipaddress when executing dhclient command when using ""/96"" network."
+* CLOUDSTACK-1226 Error while running Cloudstack-setup-databases
+* CLOUDSTACK-1223 Exception while starting jetty server: org.springframework.beans.factory.BeanCreationException Error creating bean with name 'apiServer':
+* CLOUDSTACK-1222 API rate limit configs: removed double quote in upgrade script
+* CLOUDSTACK-1220 Ipv6 - Better error message when deploy Vm fails to get a free Ip address.
+* CLOUDSTACK-1219 Ipv6 - Provide better error messages when deploying a Vm with Ip an address that is outside the network's ip range / if the ip address already is assigned to another Vm.
+* CLOUDSTACK-1216 UUID is null for admin and failed to register user key with 4.1
+* CLOUDSTACK-1210 Make all pluggable services return list of api cmd classes
+* CLOUDSTACK-1206 Failure in Copy of System templates
+* CLOUDSTACK-1205 Ipv6 - Ubuntu 12.10 guest Vms looses default route (after it expiration time ~ 30 mts) when ipv6.autoconfig parameters are disabled except for net.ipv6.conf.lo.autoconf which is enabled.
+* CLOUDSTACK-1204 Fail to create advance zone due to fail to add host
+* CLOUDSTACK-1201 "Failed to create ssh key for user ""cloud"" /var/lib/cloud/management/.ssh/id_rsa and failed to start management server"
+* CLOUDSTACK-1190 Make APIChecker interface throw a single sensible exception
+* CLOUDSTACK-1181 mvn deploy db failing with NPE
+* CLOUDSTACK-1176 Issue with snapshots(create/list)
+* CLOUDSTACK-1174 Snapshots related SQL error
+* CLOUDSTACK-1173 ConsoleProxyResource instantiation exception
+* CLOUDSTACK-1168 Create firewall rule broken
+* CLOUDSTACK-1163 Failed with NPE while creating firewall rule
+* CLOUDSTACK-1161 Differences between 4.1 and master in ongoing-config-of-external-firewalls-lb.xml
+* CLOUDSTACK-1154 Account/Users related API failed due to RegionService inject exception
+* CLOUDSTACK-1153 "Ipv6 - Vm deployment fails with ""n must be positive"" error."
+* CLOUDSTACK-1152 Missing tag in host-add.xml
+* CLOUDSTACK-1141 "Ipv6 - After network restart (and reboot router) , we do not see the existing vms dnsentries not being programmed in the router."
+* CLOUDSTACK-1138 "Providing invalid values for gateway, netmask etc in the zoneWizard blocks the VLAN container to load , throwing an error"
+* CLOUDSTACK-1123 ListStoragePools API broken by refactor
+* CLOUDSTACK-1113 "Ipv6 - Not able to deploy a new VM in this network because of ""Unable to allocate Unique Ipv6 address"""
+* CLOUDSTACK-1112 "Errors in ""Prepare the System VM Template"""
+* CLOUDSTACK-1111 Ipv6 - listRouters() does not return guestipaddress/
+* CLOUDSTACK-1109 "Ipv6 - Unable to expunge User Vms that are ""Destroyed""."
+* CLOUDSTACK-1108 Ipv6 - Not able to restart Networks.
+* CLOUDSTACK-1107 Ipv6 - Unable to extend Ip range for a Ipv6 network using craeteVlanIpRange() command - Error code 530 returned.
+* CLOUDSTACK-1105 "IpV6 - listVirtualMachines() does not return netmask ,gateway,ipaddress."
+* CLOUDSTACK-1104 Ipv6 - listVlanIpRanges() returns error 530.
+* CLOUDSTACK-1103 "IpV6 - listNetwork() command does not retrun gateway,netmask,cidr"
+* CLOUDSTACK-1095 Ipv6 - dhclient command needs to be run manually on the Vms to get the Ipv6 address.
+* CLOUDSTACK-1088 EnableStaticNat error will clear the data in database
+* CLOUDSTACK-1087 Update the Developer Guide for ASFCS 4.1 Release
+* CLOUDSTACK-1083 listUsageRecords api: removed project results in NPE
+* CLOUDSTACK-1082 UI doesn't throw any error message when trying to delete ip range from a network that is in use
+* CLOUDSTACK-1079 Deploying AWSAPI with mvn -pl :cloud-awsapi jetty:run fails
+* CLOUDSTACK-1070 javelin: NPE on executing registerIso API
+* CLOUDSTACK-1064 A type error occurs when trying to add account/register template....
+* CLOUDSTACK-1063 "SG Enabled Advanced Zone - ""Add Guest Networks"" - When user tries to add a guest Network with scope as ""Account"" , he should NOT be presented with ""Offering for shared security group enabled"""
+* CLOUDSTACK-1057 regression of changeServiceForVirtualMachine API - fails to find service offering by serviceOfferingId parameter
+* CLOUDSTACK-1056 S3 secondary storage fails to upload systemvm template due to KVMHA directory
+* CLOUDSTACK-1055 "The overlay still exists when the ""Recurring Snapshots"" dialog is canceled by pressing esc key."
+* CLOUDSTACK-1051 API dispatcher unable to find objectVO corresponding to DeleteTemplatecmd
+* CLOUDSTACK-1050 No Documentation on Adding a Load Balancer Rule
+* CLOUDSTACK-1037 "Make cloudmonkey awesome-er: Online help docs and api discovery, better colored output, parameter value autocompletion"
+* CLOUDSTACK-1029 Enter the token to specified project is malfunctioned
+* CLOUDSTACK-1027 """Update SSL certificate"" button should properly reflect it's functionality"
+* CLOUDSTACK-1024 Regression: Unable to add Xenserver host with latest build
+* CLOUDSTACK-1021 the vlan is not creat to right nic. when i creat multi guest network.
+* CLOUDSTACK-1016 Not able to deploy VM.
+* CLOUDSTACK-1014 Merge ManagementServer and ManagementServerExt
+* CLOUDSTACK-1013 running cloudstack overwrites default public/private ssh keys
+* CLOUDSTACK-1011 KVM host getting disconnected in cluster environment
+* CLOUDSTACK-1010 Host count and Secondary storage count always shows 1 in UI
+* CLOUDSTACK-1002 Not able to start VM.
+* CLOUDSTACK-995  Not able to add the KVM host.
+* CLOUDSTACK-993  """admin"" user is not getting created when management server is started."
+* CLOUDSTACK-987  Sections missing in Working With Snapshots
+* CLOUDSTACK-985  Different MAC address for RvR caused issue in short term network outrage
+* CLOUDSTACK-978  TypeError: instance.displayname is undefined while adding VM's to the LB rule.
+* CLOUDSTACK-968  marvin: vlan should be an attribute of the physical_network and not the zone
+* CLOUDSTACK-959  Missing sub-sections in document section System Service Offerings
+* CLOUDSTACK-938  s2s VPN trouble
+* CLOUDSTACK-928  [Simulator] Latency for Agent Commands - change unit of wait from seconds to milliseconds
+* CLOUDSTACK-863  Non-printable characters (ASCII control character) such as %00 or %0025 are getting stored in raw/non encoded form in the database.
+* CLOUDSTACK-819  Create Account/User API logging password in access logs
+* CLOUDSTACK-799  [Load Test] Check router statistics falls behind in gathering stats by more than 2 times the set value
+* CLOUDSTACK-798  Move usage related cmd classes from cloud-server to cloud-api
+* CLOUDSTACK-736  Integration smoke tests: Fix check for vm name for the deployvm smoke test
+* CLOUDSTACK-734  api_refactoring: CreateAccountCmd fails to send response due to NPE in service layer
+* CLOUDSTACK-725  UI: Error when the Egress rules tab is selected for a network
+* CLOUDSTACK-721  Bytes sent/received in user statistics is empty (CloudStack 4.0)
+* CLOUDSTACK-720  Fail to load a png image when accessing the web console
+* CLOUDSTACK-717  cloudmonkey fails to parse/print response
+* CLOUDSTACK-693  Adding a VPC virtual router to a NiciraNVP enabled network fails
+* CLOUDSTACK-691  A warning dialog box shows after reloading the welcome page
+* CLOUDSTACK-689  RVR: Stop pending flag is not cleared when user start the disconnected router from another host
+* CLOUDSTACK-683  Image Is Missing in the Accessing VM Section
+* CLOUDSTACK-660  Network Traffic Labels are not functional in Marvin
+* CLOUDSTACK-648  The normal users could change their own login password
+* CLOUDSTACK-639  API Refactoring: Adapters for ACL
+* CLOUDSTACK-617  Unable to edit a Sub domain
+* CLOUDSTACK-614  "ListTemplates API is not returning ""Enable SSH Key"" attribute for any given template"
+* CLOUDSTACK-606  Starting VM fails with 'ConcurrentOperationException' in a clustered MS scenario
+* CLOUDSTACK-605  Host physical CPU is incorrectly calculated for Vmware hosts
+* CLOUDSTACK-599  DhcpEntryCommand fails on Router VM on CS4.0 and vSphere5 with Advanced Network Zone
+* CLOUDSTACK-596  DeployVM command takes a lot of time to return job id
+* CLOUDSTACK-584  "typos in ""Apache_CloudStack-4.0.0-incubating-CloudStack_Nicira_NVP_Guide-en-US"""
+* CLOUDSTACK-573  "NPE at ""com.cloud.network.NetworkManagerImpl.networkOfferingIsConfiguredForExternalNetworking(NetworkManagerImpl.java:4345)"" when create network from the network offering having NULL provider for the service"
+* CLOUDSTACK-572  SG Enabled Advanced Zone - Not able to deploy a VM in an account specific shared network.
+* CLOUDSTACK-560  Usage server doesn't work in 4.0.0 due to missing db changes
+* CLOUDSTACK-556  Erratic window behavior in Quick View tooltip
+* CLOUDSTACK-553  "SRX - When adding SRX device make ""Public Network"" - default to ""untrusted"" and ""Private Network"" - default to ""trusted"" as un-editable fields."
+* CLOUDSTACK-552  ]Quick view details for a volume displays scroll bar in place of name of the volume when the name of the volume has more no of characters
+* CLOUDSTACK-539  Cropped Text in UI under Quick View
+* CLOUDSTACK-536  remove citrix cloudpatform from 4.0 build - CloudStack is ASF project
+* CLOUDSTACK-527  List API performance optimization by using DB views and removing UUID conversion.
+* CLOUDSTACK-522  Log requests in cloudmonkey's log file
+* CLOUDSTACK-520  Dependency jar names mismatch with install-non-oss.sh
+* CLOUDSTACK-518  API refactoring -- change @Parameter annotation and remove the @IdentityMapper annotation
+* CLOUDSTACK-514  Marvin and Cloudmonkey don't work when an API target uses https or an alternate path
+* CLOUDSTACK-510  Add button not visible when adding public IPs to physical network
+* CLOUDSTACK-508  CLVM copies template to primary storage unnecessarily
+* CLOUDSTACK-507  fix api docs for listSSHKeyPairs
+* CLOUDSTACK-504  Duplicate guest password scripts in codebase
+* CLOUDSTACK-501  Apidocs and marvin does not know how to handle Autoscaling docs
+* CLOUDSTACK-500  Passwd-server iptables rules are dropped on domr on fresh start or on reboot
+* CLOUDSTACK-499  cloudmonkey CLI can't accept complex parameters
+* CLOUDSTACK-493  2.2.x-3.0 DB upgrade support for Advance SG enabled networks
+* CLOUDSTACK-481  Installation Guide Doc Error
+* CLOUDSTACK-467  Developer's Guide points to cloud.com for API reference
+* CLOUDSTACK-465  French language file quotes are dropping javascript syntax errors
+* CLOUDSTACK-464  "Regression in AWSAPI docs, entire sections removed"
+* CLOUDSTACK-462  A few corrections to make to the 4.0.0 installation guide
+* CLOUDSTACK-459  [Optional Public IP assignment for EIP with Basic Zone] Associate IP Checkbox in Create Network Offering Dialog is Displayed When Elastic LB is Selected
+* CLOUDSTACK-456  License tag in SPEC isn't what RPM is expecting
+* CLOUDSTACK-448  SSVM bootstrap failure on XenServer hosts with E3 CPU
+* CLOUDSTACK-446  "Host going to alert state, if you are adding already added host"
+* CLOUDSTACK-441  Running mgmt server using jetty fails to start api server
+* CLOUDSTACK-435  Vmware network labels are ignored when creating a Zone using basic networking
+* CLOUDSTACK-427  Change hardcoded step number references to dynamic links
+* CLOUDSTACK-424  Updated userdata not propagating to the VR.
+* CLOUDSTACK-417  Handle password server securely to run on port 8080 on VR
+* CLOUDSTACK-416  XCP 1.6beta2 (61002c) - can't add a host
+* CLOUDSTACK-404  Update docs on the usage of cloud-setup-databases
+* CLOUDSTACK-398  Install Guide: Section 11.17.3 (Using VPN with Mac OSX): Not complete?
+* CLOUDSTACK-397  Install Guide: Section 11.1 (Guest Traffic): Diagram is the wrong diagram
+* CLOUDSTACK-390  Install Guide: Section 4.5.7 (Prepare the System VM Template): Links go to cloud.com
+* CLOUDSTACK-378  mavenize marvin on master
+* CLOUDSTACK-377  provide deployment config access to marvin's testcase
+* CLOUDSTACK-373  "static NAT and Firewall is not working on external firewall device SRX, it needs to be implemented"
+* CLOUDSTACK-369  ASF 4.0 - unable to support XenServer 6.1 host
+* CLOUDSTACK-364  Docs point to download.cloud.com for AWS API script
+* CLOUDSTACK-361  Wrong creation of guest networks on a KVM host in Multiple Physical Networks with guest traffic
+* CLOUDSTACK-359  PropagateResourceEventCommand failes in cluster configuration
+* CLOUDSTACK-357  "ISOs can be deleted while still attached to a running VM, and they subsequently cannot be detached from a running VM"
+* CLOUDSTACK-355  "Fix ""count"" in a bunch of API commands"
+* CLOUDSTACK-348  deleteNetwork does not clean up network resource count correctly
+* CLOUDSTACK-347  listNetworks API: return vlan information only when the caller is ROOT admin
+* CLOUDSTACK-346  Cannot add Vmware cluster with class loader conflict exception
+* CLOUDSTACK-335  KVM VPC load balancer not working
+* CLOUDSTACK-333  When Datacenter name in VCenter has spaces Primary Storage (VMFS) discovery will fail
+* CLOUDSTACK-332  """count"" property in list* API response should be equal to how many entries in database, not how many objects in API response"
+* CLOUDSTACK-318  Adding XenServer Host Fails - 6.0.2 fails with 4.0.0
+* CLOUDSTACK-304  Add synchronization for createSnapshot command per host basis
+* CLOUDSTACK-293  "We do awful, hacky things in our spec file for client"
+* CLOUDSTACK-290  3.0.0 template also needed for 2.2.14 to 3.0.5 direct upgrade.
+* CLOUDSTACK-284  listVirtualMachines does not return deleted machines when zone is specified
+* CLOUDSTACK-279  deleteProject fails when executed by the regular user (works fine for root/domain admin)
+* CLOUDSTACK-274  Two error codes mapped to same value in API
+* CLOUDSTACK-271  updatePhysicalNetwork dies with an NPE when the vlan range is empty
+* CLOUDSTACK-256  "vpn:As an admin user , not able to delete VPN user which is present in a regular user's network."
+* CLOUDSTACK-250  Incorrect description of maintenance mode in admin guide
+* CLOUDSTACK-249  Add host id to failed VM deploy alerts
+* CLOUDSTACK-235  Network rate can be set in 2 places. Clarify docs on how this works.
+* CLOUDSTACK-232  Zone infrastructure chart -- disable resource total display
+* CLOUDSTACK-228  UI provides an option to reconnect a disconnected host - ServerApiException is thrown on an attempt
+* CLOUDSTACK-227  ReconnectHostCmd: NullPointerException: Unable to get host Information for XenServer 6.0.2 host - on intentionally changing the traffic labels on the physical network
+* CLOUDSTACK-226  UpdatePhysicalNetworkcommand failed due to java.sql.BatchUpdateException ; Tried to extend the existing Guest VLAN Range of one physical network into the Guest VLAN range of the other physical network
+* CLOUDSTACK-225  API Docs: Request params repeated with different descriptions
+* CLOUDSTACK-222  Admin UI prompts to restart Management server with cancel edit operation
+* CLOUDSTACK-178  Expose name parameter of VM in list Vm view.
+* CLOUDSTACK-130  Clarify docs on tags parameter in API reference
+* CLOUDSTACK-119  Move Agent-Simulator in to the hypervisor plugin model
+* CLOUDSTACK-118  "Status of host resorce stuck in ""ErrorInMaintenance"""
+* CLOUDSTACK-95   IP address allocation not working when a user tries to allocate IP addresses in a Project.
+* CLOUDSTACK-70   Improve Network Restart Behaviour for Basic Zone: Restarting Network Fails
+* CLOUDSTACK-46   Remnants of mycloud remain
 
 Security Fixes:
 
