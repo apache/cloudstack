@@ -263,6 +263,7 @@ CREATE TABLE  `cloud`.`region` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
 INSERT INTO `cloud`.`region` values ('1','Local','http://localhost:8080/client/api','','');
 
 ALTER TABLE `cloud`.`account` ADD COLUMN `region_id` int unsigned NOT NULL DEFAULT '1';

@@ -397,6 +397,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("startId", sb.entity().getStartId(), SearchCriteria.Op.EQ);
         sb.and("createDate", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
+        sb.and("archived", sb.entity().getArchived(), SearchCriteria.Op.EQ);
 
         SearchCriteria<EventJoinVO> sc = sb.create();
         // building ACL condition
@@ -429,6 +430,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         } else if (endDate != null) {
             sc.setParameters("createDateL", endDate);
         }
+
+        sc.setParameters("archived", false);
 
         Pair<List<EventJoinVO>, Integer> eventPair = null;
         // event_view will not have duplicate rows for each event, so searchAndCount should be good enough.

@@ -19,6 +19,7 @@ package org.apache.cloudstack.storage.allocator;
 import java.io.IOException;
 
 import org.apache.cloudstack.storage.allocator.StorageAllocatorTestConfiguration.Library;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -33,7 +34,6 @@ import com.cloud.dc.dao.DataCenterDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.dao.StoragePoolDaoImpl;
 import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
 import com.cloud.storage.dao.VMTemplateDaoImpl;
 import com.cloud.utils.component.SpringComponentScanUtils;
@@ -43,7 +43,7 @@ import com.cloud.vm.UserVmManager;
 @Configuration
 @ComponentScan(basePackageClasses={
 		StoragePoolDetailsDaoImpl.class,
-		StoragePoolDaoImpl.class,
+		PrimaryDataStoreDaoImpl.class,
 		VMTemplateDaoImpl.class,
 		HostDaoImpl.class,
 		DomainDaoImpl.class,

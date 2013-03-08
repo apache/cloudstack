@@ -29,6 +29,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -43,7 +44,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
@@ -55,7 +55,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public abstract class AbstractStoragePoolAllocator extends AdapterBase implements StoragePoolAllocator {
 	private static final Logger s_logger = Logger.getLogger(AbstractStoragePoolAllocator.class);
     @Inject StorageManager storageMgr;
-    protected @Inject StoragePoolDao _storagePoolDao;
+    protected @Inject PrimaryDataStoreDao _storagePoolDao;
     @Inject VolumeDao _volumeDao;
     @Inject ConfigurationDao _configDao;
     @Inject ClusterDao _clusterDao;

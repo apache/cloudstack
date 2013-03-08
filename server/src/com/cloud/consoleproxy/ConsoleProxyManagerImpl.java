@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
@@ -115,7 +116,6 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.template.TemplateManager;
@@ -221,7 +221,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Inject
     NetworkOfferingDao _networkOfferingDao;
     @Inject
-    StoragePoolDao _storagePoolDao;
+    PrimaryDataStoreDao _storagePoolDao;
     @Inject
     UserVmDetailsDao _vmDetailsDao;
     @Inject

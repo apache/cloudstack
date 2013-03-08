@@ -1164,7 +1164,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager{
         if (vpcElements == null) {
             vpcElements = new ArrayList<VpcProvider>();
             vpcElements.add((VpcProvider)_ntwkModel.getElementImplementingProvider(Provider.VPCVirtualRouter.getName()));
-            vpcElements.add((VpcProvider)_ntwkModel.getElementImplementingProvider(Provider.VPCNetscaler.getName()));
         }
 
         if (vpcElements == null) {

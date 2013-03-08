@@ -864,8 +864,8 @@ public class LibvirtVMDef {
             virtioSerialBuilder.append("<channel type='unix'>\n");
             virtioSerialBuilder.append("<source mode='bind' path='" + _path
                                         + "/" + _name + ".agent'/>\n");
-            virtioSerialBuilder.append("<target type='virtio' name='org.qemu.guest_agent.0'/>\n");
-            virtioSerialBuilder.append("<address type='virtio-serial' controller='0' bus='0' port='1'/>\n");
+            virtioSerialBuilder.append("<target type='virtio' name='" + _name + ".vport'/>\n");
+            virtioSerialBuilder.append("<address type='virtio-serial'/>\n");
             virtioSerialBuilder.append("</channel>\n");
             return virtioSerialBuilder.toString();
         }

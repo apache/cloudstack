@@ -72,7 +72,7 @@ public class UpdateUserCmd extends BaseCmd {
     private String username;
 
     @Inject RegionService _regionService;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -136,7 +136,7 @@ public class UpdateUserCmd extends BaseCmd {
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
         UserAccount user = _regionService.updateUser(this);
-        
+
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());

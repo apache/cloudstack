@@ -30,6 +30,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,14 +57,11 @@ import com.cloud.org.Managed.ManagedState;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolDetailVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.StoragePoolDao;
-import com.cloud.storage.dao.StoragePoolDetailsDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.DiskProfile;
@@ -71,7 +71,7 @@ import com.cloud.vm.VirtualMachineProfile;
 @ContextConfiguration(locations = "classpath:/storageContext.xml")
 public class StorageAllocatorTest {
 	@Inject
-	StoragePoolDao storagePoolDao;
+	PrimaryDataStoreDao storagePoolDao;
 	@Inject
 	StorageManager storageMgr;
 	@Inject

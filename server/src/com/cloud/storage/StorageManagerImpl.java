@@ -1395,7 +1395,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         List<StoragePoolVO> spes = _storagePoolDao.listBy(
                 primaryStorage.getDataCenterId(), primaryStorage.getPodId(),
-                primaryStorage.getClusterId());
+                primaryStorage.getClusterId(), ScopeType.CLUSTER);
         for (StoragePoolVO sp : spes) {
             if (sp.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
                 throw new CloudRuntimeException(

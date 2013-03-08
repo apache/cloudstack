@@ -763,8 +763,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account")
-    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
-            Map<String, String> details) {
+    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType,
+                                         Long domainId, String networkDomain, Map<String, String> details) {
 
         if (accountName == null) {
             accountName = userName;
@@ -806,27 +806,26 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         }
 
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
 
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
+        // create account
+        AccountVO account = createAccount(accountName, accountType, domainId, networkDomain, details, UUID.randomUUID().toString(), _regionMgr.getId());
+        long accountId = account.getId();
 
-            // create account
-            AccountVO account = createAccount(accountName, accountType, domainId, networkDomain, details);
-            long accountId = account.getId();
+        // create the first user for the account
+        UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone);
 
-            // create the first user for the account
-            UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone);
+        if (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            // set registration token
+            byte[] bytes = (domainId + accountName + userName + System.currentTimeMillis()).getBytes();
+            String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
+            user.setRegistrationToken(registrationToken);
+        }
+        txn.commit();
 
-            if (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-                // set registration token
-                byte[] bytes = (domainId + accountName + userName + System.currentTimeMillis()).getBytes();
-                String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
-                user.setRegistrationToken(registrationToken);
-            }
-            txn.commit();
-            //check success
-            return _userAccountDao.findById(user.getId());
-
+        //check success
+        return _userAccountDao.findById(user.getId());
     }
 
     @Override
@@ -858,8 +857,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
         }
-
-        return createUser(account.getId(), userName, password, firstName, lastName, email, timeZone);
+        UserVO user = null;
+        user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone);
+        return user;
     }
 
     @Override
@@ -1646,7 +1646,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @DB
-    public AccountVO createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details) {
+    public AccountVO createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details, String uuid, int regionId) {
         // Validate domain
         Domain domain = _domainMgr.getDomain(domainId);
         if (domain == null) {
@@ -1690,7 +1690,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        AccountVO account = _accountDao.persist(new AccountVO(accountName, domainId, networkDomain, accountType, _accountDao.getRegionId()));
+        AccountVO account = _accountDao.persist(new AccountVO(accountName, domainId, networkDomain, accountType, uuid, regionId));
 
         if (account == null) {
             throw new CloudRuntimeException("Failed to create account name " + accountName + " in domain id=" + domainId);
@@ -1730,7 +1730,30 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new CloudRuntimeException("Failed to encode password");
         }
 
-        UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone, _userDao.getRegionId()));
+        UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone, UUID.randomUUID().toString(), _regionMgr.getId()));
+
+        return user;
+    }
+
+    //ToDo Add events??
+    public UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String uuid, int regionId) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
+        }
+
+        String encodedPassword = null;
+        for (Iterator<UserAuthenticator> en = _userAuthenticators.iterator(); en.hasNext();) {
+            UserAuthenticator authenticator = en.next();
+            encodedPassword = authenticator.encode(password);
+            if (encodedPassword != null) {
+                break;
+            }
+        }
+        if (encodedPassword == null) {
+            throw new CloudRuntimeException("Failed to encode password");
+        }
+
+        UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone, uuid, regionId));
 
         return user;
     }

@@ -22,7 +22,7 @@
  under the License.
 -->
 
-<section id="globally-configured-limit">
+<section id="globally-configured-limits">
     <title>Globally Configured Limits</title>
     <para>In a zone, the guest virtual network has a 24 bit CIDR by default. This limits the guest virtual network to 254 running instances. It can be adjusted as needed, but this must be done before any instances are created in the zone. For example, 10.1.1.0/22 would provide for ~1000 addresses.</para>
     <para>The following table lists limits set in the Global Configuration:</para>

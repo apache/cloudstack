@@ -50,7 +50,7 @@ public class DisableUserCmd extends BaseAsyncCmd {
     private Long id;
 
     @Inject RegionService _regionService;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -93,7 +93,7 @@ public class DisableUserCmd extends BaseAsyncCmd {
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
         UserAccount user = _regionService.disableUser(this);
-        
+
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());

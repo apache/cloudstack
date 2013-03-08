@@ -45,6 +45,7 @@ import org.apache.cloudstack.api.command.admin.storage.AddS3Cmd;
 import org.apache.cloudstack.api.command.admin.storage.ListS3sCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -117,7 +118,6 @@ import com.cloud.storage.Swift;
 import com.cloud.storage.SwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.s3.S3Manager;
@@ -193,7 +193,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     protected GuestOSCategoryDao             _guestOSCategoryDao;
     @Inject
-    protected StoragePoolDao                _storagePoolDao;
+    protected PrimaryDataStoreDao                _storagePoolDao;
     @Inject
     protected DataCenterIpAddressDao         _privateIPAddressDao;
     @Inject

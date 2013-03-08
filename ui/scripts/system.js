@@ -7725,10 +7725,13 @@
 
                 var clusterName = args.data.name;
 
-                if(args.data.cpuovercommit != "")
-                    array1.push("&cpuovercommitratio=" + todb(args.data.cpuovercommit));
+                if(args.data.cpuovercommit != "" && args.data.cpuovercommit > 0 ){
+                   
+                     array1.push("&cpuovercommitratio=" + todb(args.data.cpuovercommit));
 
-                 if(args.data.memoryovercommit != "")
+                   }
+
+                 if(args.data.memoryovercommit != "" && args.data.memoryovercommit > 0)
                     array1.push("&memoryovercommitratio=" + todb(args.data.memoryovercommit));
 
                 if(args.data.hypervisor == "VMware") {
@@ -8989,7 +8992,7 @@
                     label: 'label.scope',
                     select: function(args) {
                       var scope = [
-                        { id: 'zone-wide', description: _l('label.zone.wide') },
+                        { id: 'zone', description: _l('label.zone.wide') },
                         { id: 'cluster', description: _l('label.cluster') },
                         { id: 'host', description: _l('label.host') }
                       ];
@@ -9002,7 +9005,7 @@
                         var $form = $(this).closest('form');
                         var scope = $(this).val();
 
-                        if(scope == 'zone-wide'){
+                        if(scope == 'zone'){
                             $form.find('.form-item[rel=podId]').hide();
                             $form.find('.form-item[rel=clusterId]').hide();
                             $form.find('.form-item[rel=hostId]').hide();

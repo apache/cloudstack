@@ -37,6 +37,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -92,7 +93,6 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.s3.S3Manager;
@@ -158,7 +158,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     @Inject
     protected SnapshotDao _snapshotDao;
     @Inject
-    protected StoragePoolDao _storagePoolDao;
+    protected PrimaryDataStoreDao _storagePoolDao;
     @Inject
     protected EventDao _eventDao;
     @Inject

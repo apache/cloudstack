@@ -28,6 +28,7 @@ import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMEntityDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
@@ -50,7 +51,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.dao.AccountDao;
@@ -101,7 +101,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
     protected VolumeDao _volsDao;
     
     @Inject
-    protected StoragePoolDao _storagePoolDao;
+    protected PrimaryDataStoreDao _storagePoolDao;
     @Inject
     DataStoreManager dataStoreMgr;
     

@@ -20,6 +20,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.ScopeType;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
@@ -75,7 +76,8 @@ public class StoragePoolMonitor implements Listener {
             StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
             if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||
                     scCmd.getHypervisorType() == HypervisorType.VMware || scCmd.getHypervisorType() ==  HypervisorType.Simulator || scCmd.getHypervisorType() == HypervisorType.Ovm) {
-                List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId());
+                List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER);
+                pools.addAll(_poolDao.findZoneWideStoragePoolsByTags(host.getDataCenterId(), null));
                 for (StoragePoolVO pool : pools) {
                     if (pool.getStatus() != StoragePoolStatus.Up) {
                         continue;

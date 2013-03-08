@@ -859,35 +859,29 @@ public class VirtualRoutingResource implements Manager {
     }
 
     public void assignVpcIpToRouter(final String routerIP, final boolean add, final String pubIP,
-            final String nicname, final String gateway, final String netmask, final String subnet) throws Exception {
-        try {
-            String args = "";
+            final String nicname, final String gateway, final String netmask, final String subnet) throws InternalErrorException {
+        String args = "";
 
-            if (add) {
-                args += " -A ";
-            } else {
-                args += " -D ";
-            }
+        if (add) {
+            args += " -A ";
+        } else {
+            args += " -D ";
+        }
 
-            args += " -l ";
-            args += pubIP;
-            args += " -c ";
-            args += nicname;
-            args += " -g ";
-            args += gateway;
-            args += " -m ";
-            args += netmask;
-            args += " -n ";
-            args += subnet;
+        args += " -l ";
+        args += pubIP;
+        args += " -c ";
+        args += nicname;
+        args += " -g ";
+        args += gateway;
+        args += " -m ";
+        args += netmask;
+        args += " -n ";
+        args += subnet;
 
-            String result = routerProxy("vpc_ipassoc.sh", routerIP, args);
-            if (result != null) {
-                throw new InternalErrorException("KVM plugin \"vpc_ipassoc\" failed:"+result);
-            }
-        } catch (Exception e) {
-            String msg = "Unable to assign public IP address due to " + e.toString();
-            s_logger.warn(msg, e);
-            throw new Exception(msg);
+        String result = routerProxy("vpc_ipassoc.sh", routerIP, args);
+        if (result != null) {
+            throw new InternalErrorException("KVM plugin \"vpc_ipassoc\" failed:"+result);
         }
     }
 

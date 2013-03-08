@@ -343,7 +343,8 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
 
     @Override
     public Account createAccount(String accountName, short accountType,
-            Long domainId, String networkDomain, Map details) {
+            Long domainId, String networkDomain, Map details, String uuid,
+            int regionId) {
         // TODO Auto-generated method stub
         return null;
     }

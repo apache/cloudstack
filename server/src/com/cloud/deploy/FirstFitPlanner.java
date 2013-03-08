@@ -29,6 +29,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
@@ -67,7 +68,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
@@ -96,7 +96,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     @Inject protected VolumeDao _volsDao;
     @Inject protected CapacityManager _capacityMgr;
     @Inject protected ConfigurationDao _configDao;
-    @Inject protected StoragePoolDao _storagePoolDao;
+    @Inject protected PrimaryDataStoreDao _storagePoolDao;
     @Inject protected CapacityDao _capacityDao;
     @Inject protected AccountManager _accountMgr;
     @Inject protected StorageManager _storageMgr;

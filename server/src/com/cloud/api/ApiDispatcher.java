@@ -50,6 +50,8 @@ import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.Validate;
+import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
+import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -391,7 +393,7 @@ public class ApiDispatcher {
                 // This piece of code is for maintaining backward compatibility
                 // and support both the date formats(Bug 9724)
                 // Do the date messaging for ListEventsCmd only
-                if (cmdObj instanceof ListEventsCmd) {
+                if (cmdObj instanceof ListEventsCmd || cmdObj instanceof DeleteEventsCmd || cmdObj instanceof ArchiveEventsCmd) {
                     boolean isObjInNewDateFormat = isObjInNewDateFormat(paramObj.toString());
                     if (isObjInNewDateFormat) {
                         DateFormat newFormat = BaseCmd.NEW_INPUT_FORMAT;
@@ -406,6 +408,8 @@ public class ApiDispatcher {
                                 date = messageDate(date, 0, 0, 0);
                             } else if (field.getName().equals("endDate")) {
                                 date = messageDate(date, 23, 59, 59);
+                            } else if (field.getName().equals("olderThan")) {
+                                date = messageDate(date, 0, 0, 0);
                             }
                             field.set(cmdObj, date);
                         }

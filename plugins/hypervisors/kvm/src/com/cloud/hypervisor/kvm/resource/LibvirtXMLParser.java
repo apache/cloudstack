@@ -19,6 +19,7 @@ package com.cloud.hypervisor.kvm.resource;
 import java.io.IOException;
 import java.io.StringReader;
 
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
@@ -40,13 +41,14 @@ public class LibvirtXMLParser extends DefaultHandler {
     protected boolean _initialized = false;
 
     public LibvirtXMLParser() {
-
         try {
             _sp = s_spf.newSAXParser();
             _initialized = true;
-        } catch (Exception ex) {
+        } catch (ParserConfigurationException e) {
+            s_logger.trace("Ignoring xml parser error.", e);
+        } catch (SAXException e) {
+            s_logger.trace("Ignoring xml parser error.", e);
         }
-
     }
 
     public boolean parseDomainXML(String domXML) {

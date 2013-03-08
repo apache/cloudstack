@@ -49,7 +49,7 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     private Long id;
 
     @Inject RegionService _regionService;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -96,7 +96,7 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Account Id: "+getId());
- 
+
         boolean	result = _regionService.deleteUserAccount(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

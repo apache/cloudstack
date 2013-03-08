@@ -78,6 +78,7 @@ public class CreateAccountCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
     private Map<String, String> details;
 
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -149,7 +150,8 @@ public class CreateAccountCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
-        UserAccount userAccount = _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(), getDomainId(), getNetworkDomain(), getDetails());
+        UserAccount userAccount = _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(),
+                getDomainId(), getNetworkDomain(), getDetails());
         if (userAccount != null) {
             AccountResponse response = _responseGenerator.createUserAccountResponse(userAccount);
             response.setResponseName(getCommandName());

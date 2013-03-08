@@ -37,6 +37,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+
 import com.cloud.dc.*;
 import org.apache.log4j.Logger;
 
@@ -128,7 +130,6 @@ import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
@@ -216,7 +217,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected DataCenterDao _dcDao;
     @Inject
-    protected StoragePoolDao _storagePoolDao;
+    protected PrimaryDataStoreDao _storagePoolDao;
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
     @Inject

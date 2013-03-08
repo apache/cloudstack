@@ -459,6 +459,7 @@ public class ApiConstants {
     public static final String UCS_BLADE_DN = "bladedn";
     public static final String UCS_BLADE_ID = "bladeid";
     public static final String VM_GUEST_IP = "vmguestip";
+    public static final String OLDER_THAN = "olderthan";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

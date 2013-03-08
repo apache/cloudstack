@@ -17,11 +17,11 @@
 package com.cloud.hypervisor.vmware.util;
 
 import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
@@ -29,10 +29,6 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.handler.MessageContext;
 
-import org.apache.http.cookie.Cookie;
-import org.apache.http.cookie.CookieOrigin;
-import org.apache.http.impl.cookie.BrowserCompatSpec;
-import org.apache.http.message.BasicHeader;
 
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.InvalidCollectorVersionFaultMsg;
@@ -143,20 +139,15 @@ public class VmwareClient {
         serviceContent = vimPort.retrieveServiceContent(SVC_INST_REF);
 
         // Extract a cookie. See vmware sample program com.vmware.httpfileaccess.GetVMFiles
-        URL urlUrl = new URL(url);
         Map<String, List<String>> headers = (Map<String, List<String>>) ((BindingProvider) vimPort)
                 .getResponseContext().get(MessageContext.HTTP_RESPONSE_HEADERS);
-        for (String header_raw_value : (List<String>) headers.get("Set-cookie")) {
-            List<Cookie> cookies = new BrowserCompatSpec().parse(
-                    new BasicHeader("Set-cookie", header_raw_value),
-                    new CookieOrigin(urlUrl.getHost(), urlUrl.getPort(), 
-                            urlUrl.getPath(), true));
-            if (cookies.size() > 0) {
-                serviceCookie = cookies.get(0).getValue();
-                break;
-            }
-        }
-        
+        List<String> cookies = (List<String>) headers.get("Set-cookie");
+        String cookieValue = cookies.get(0);
+        StringTokenizer tokenizer = new StringTokenizer(cookieValue, ";");
+        cookieValue = tokenizer.nextToken();
+        String pathData = "$" + tokenizer.nextToken();
+        serviceCookie = "$Version=\"1\"; " + cookieValue + "; " + pathData;
+
         vimPort.login(serviceContent.getSessionManager(), userName, password, null);
         isConnected = true;
 

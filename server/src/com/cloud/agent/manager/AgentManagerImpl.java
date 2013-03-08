@@ -39,6 +39,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -100,7 +101,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageService;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
@@ -172,7 +172,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Inject
     protected ConfigurationDao _configDao = null;
     @Inject
-    protected StoragePoolDao _storagePoolDao = null;
+    protected PrimaryDataStoreDao _storagePoolDao = null;
     @Inject
     protected StoragePoolHostDao _storagePoolHostDao = null;
     @Inject

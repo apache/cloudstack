@@ -819,7 +819,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 }
             } else {
                 s_logger.debug("Revoking a rule for an inline load balancer that has not been programmed yet.");
-                return null;
+                nic.setNic(null);
+                return nic;
             }
         }
         
@@ -877,9 +878,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 MappingNic nic = getLoadBalancingIpNic(zone, network, rule.getSourceIpAddressId(), revoked, null);
                 mappingStates.add(nic.getState());
                 NicVO loadBalancingIpNic = nic.getNic();
-                        if (loadBalancingIpNic == null) {
-                        continue;
-                    }
+                if (loadBalancingIpNic == null) {
+                	continue;
+                }
 
                 // Change the source IP address for the load balancing rule to be the load balancing IP address
                 srcIp = loadBalancingIpNic.getIp4Address();

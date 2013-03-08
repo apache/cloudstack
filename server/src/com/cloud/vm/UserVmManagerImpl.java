@@ -52,6 +52,7 @@ import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -180,7 +181,6 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
@@ -317,7 +317,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Use
     @Inject
     protected ClusterDao _clusterDao;
     @Inject
-    protected StoragePoolDao _storagePoolDao;
+    protected PrimaryDataStoreDao _storagePoolDao;
     @Inject
     protected SecurityGroupManager _securityGroupMgr;
     @Inject

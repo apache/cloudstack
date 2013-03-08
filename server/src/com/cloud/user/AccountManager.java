@@ -47,14 +47,14 @@ public interface AccountManager extends AccountService {
     
     boolean deleteAccount(AccountVO account, long callerUserId, Account caller);
 
-    boolean cleanupAccount(AccountVO account, long callerUserId, Account caller);
+	boolean cleanupAccount(AccountVO account, long callerUserId, Account caller);
 
-    Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId);
-
-    Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details);
-
-    UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone);
-
+	Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId);
+	
+	Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details, String uuid, int regionId);
+	
+	UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone);
+	
     /**
      * Logs out a user
      * @param userId

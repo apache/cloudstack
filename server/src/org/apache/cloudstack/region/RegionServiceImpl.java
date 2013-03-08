@@ -16,13 +16,13 @@
 // under the License.
 package org.apache.cloudstack.region;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
+import com.cloud.domain.Domain;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
+import com.cloud.user.UserAccount;
+import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.EnableAccountCmd;
@@ -34,24 +34,14 @@ import org.apache.cloudstack.api.command.admin.user.DisableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.EnableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.command.user.region.ListRegionsCmd;
-import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.domain.Domain;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.DomainManager;
-import com.cloud.user.UserAccount;
-import com.cloud.user.UserContext;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
-import com.cloud.utils.component.Manager;
-import com.cloud.utils.component.ManagerBase;
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.List;
+import java.util.Map;
 
 @Component
 @Local(value = { RegionService.class })
@@ -59,19 +49,7 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
     public static final Logger s_logger = Logger.getLogger(RegionServiceImpl.class);
 
     @Inject
-    private RegionDao _regionDao;
-    @Inject
-    private AccountDao _accountDao;
-    @Inject
-    private UserDao _userDao;
-    @Inject
-    private DomainDao _domainDao;    
-    @Inject
     private RegionManager _regionMgr;
-    @Inject
-    private AccountManager _accountMgr;
-    @Inject
-    private DomainManager _domainMgr;
 
     private String _name;
 
@@ -137,7 +115,7 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
      */ 
     @Override
     public boolean deleteUserAccount(DeleteAccountCmd cmd) {
-        return _accountMgr.deleteUserAccount(cmd.getId());
+        return _regionMgr.deleteUserAccount(cmd.getId());
     }
 
     /**
@@ -145,7 +123,7 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
      */
     @Override
     public Account updateAccount(UpdateAccountCmd cmd) {
-        return _accountMgr.updateAccount(cmd);
+        return _regionMgr.updateAccount(cmd);
     }
 
     /**
@@ -153,12 +131,7 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
      */ 
     @Override
     public Account disableAccount(DisableAccountCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException {
-        Account result = null;
-        if(cmd.getLockRequested())
-            result = _accountMgr.lockAccount(cmd.getAccountName(), cmd.getDomainId(), cmd.getId());
-        else
-            result = _accountMgr.disableAccount(cmd.getAccountName(), cmd.getDomainId(), cmd.getId());
-        return result;
+        return _regionMgr.disableAccount(cmd.getAccountName(), cmd.getDomainId(), cmd.getId(), cmd.getLockRequested());
     }
 
     /**
@@ -166,7 +139,7 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
      */
     @Override
     public Account enableAccount(EnableAccountCmd cmd) {
-        return _accountMgr.enableAccount(cmd.getAccountName(), cmd.getDomainId(), cmd.getId());
+        return _regionMgr.enableAccount(cmd.getAccountName(), cmd.getDomainId(), cmd.getId());
     }
 
     /**
@@ -174,7 +147,7 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
      */ 
     @Override
     public boolean deleteUser(DeleteUserCmd cmd) {
-        return _accountMgr.deleteUser(cmd);
+        return _regionMgr.deleteUser(cmd);
     }
 
     /**
@@ -182,7 +155,7 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
      */
     @Override
     public Domain updateDomain(UpdateDomainCmd cmd) {
-        return _domainMgr.updateDomain(cmd);
+        return _regionMgr.updateDomain(cmd);
     }
 
     /**
@@ -190,7 +163,7 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
      */ 
     @Override
     public boolean deleteDomain(DeleteDomainCmd cmd) {
-        return _domainMgr.deleteDomain(cmd.getId(), cmd.getCleanup());
+        return _regionMgr.deleteDomain(cmd.getId(), cmd.getCleanup());
     }
 
     /**
@@ -198,7 +171,7 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
      */
     @Override
     public UserAccount updateUser(UpdateUserCmd cmd){
-        return _accountMgr.updateUser(cmd);
+        return _regionMgr.updateUser(cmd);
     }
 
     /**
@@ -206,7 +179,7 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
      */ 
     @Override
     public UserAccount disableUser(DisableUserCmd cmd) {
-        return _accountMgr.disableUser(cmd.getId());
+        return _regionMgr.disableUser(cmd.getId());
     }
 
     /**
@@ -214,6 +187,7 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
      */ 
     @Override
     public UserAccount enableUser(EnableUserCmd cmd) {
-        return _accountMgr.enableUser(cmd.getId());
+        return _regionMgr.enableUser(cmd.getId());
     }
+
 }

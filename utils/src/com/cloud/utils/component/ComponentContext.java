@@ -28,10 +28,7 @@ import javax.management.NotCompliantMBeanException;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
-import org.springframework.aop.framework.ProxyFactory;
-import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -39,7 +36,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.db.TransactionContextBuilder;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.mgmt.ManagementBean;
 

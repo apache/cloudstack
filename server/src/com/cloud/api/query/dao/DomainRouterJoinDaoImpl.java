@@ -170,6 +170,29 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
     public DomainRouterResponse setDomainRouterResponse(DomainRouterResponse vrData, DomainRouterJoinVO vr) {
         long nic_id = vr.getNicId();
         if (nic_id > 0) {
+            TrafficType ty = vr.getTrafficType();
+            if (ty != null) {
+                // legacy code, public/control/guest nic info is kept in
+                // nics response object
+                if (ty == TrafficType.Public) {
+                    vrData.setPublicIp(vr.getIpAddress());
+                    vrData.setPublicMacAddress(vr.getMacAddress());
+                    vrData.setPublicNetmask(vr.getNetmask());
+                    vrData.setGateway(vr.getGateway());
+                    vrData.setPublicNetworkId(vr.getNetworkUuid());
+                } else if (ty == TrafficType.Control) {
+                    vrData.setLinkLocalIp(vr.getIpAddress());
+                    vrData.setLinkLocalMacAddress(vr.getMacAddress());
+                    vrData.setLinkLocalNetmask(vr.getNetmask());
+                    vrData.setLinkLocalNetworkId(vr.getNetworkUuid());
+                } else if (ty == TrafficType.Guest) {
+                    vrData.setGuestIpAddress(vr.getIpAddress());
+                    vrData.setGuestMacAddress(vr.getMacAddress());
+                    vrData.setGuestNetmask(vr.getNetmask());
+                    vrData.setGuestNetworkId(vr.getNetworkUuid());
+                    vrData.setNetworkDomain(vr.getNetworkDomain());
+                }
+            }
             NicResponse nicResponse = new NicResponse();
             nicResponse.setId(vr.getNicUuid());
             nicResponse.setIpaddress(vr.getIpAddress());

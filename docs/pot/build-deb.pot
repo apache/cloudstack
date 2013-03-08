@@ -62,7 +62,7 @@ msgstr ""
 #. Tag: screen
 #, no-c-format
 msgid "\n"
-"<command>$ dpkg-buildpackge -uc -us</command>\n"
+"<command>$ dpkg-buildpackage -uc -us</command>\n"
 ""
 msgstr ""
 

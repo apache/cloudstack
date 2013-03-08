@@ -44,6 +44,7 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcConext;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.motion.DataMotionService;
 import org.apache.cloudstack.storage.snapshot.SnapshotObject;
 import org.apache.cloudstack.storage.snapshot.SnapshotStateMachineManager;
@@ -71,7 +72,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.s3.S3Manager;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -96,7 +96,7 @@ public class AncientSnasphotStrategy implements SnapshotStrategy {
 	@Inject
 	protected UserVmDao _vmDao;
 	@Inject
-	protected StoragePoolDao _storagePoolDao;
+	protected PrimaryDataStoreDao _storagePoolDao;
 	@Inject
 	protected ClusterDao _clusterDao;
 	@Inject
