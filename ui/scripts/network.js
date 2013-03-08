@@ -51,7 +51,7 @@
       },
       success: function(json) {
         var nic = json.listnics.nic[0];
-        var ips = nic.secondaryip ? targetNic.secondaryip : [];
+        var ips = nic.secondaryip ? nic.secondaryip : [];
 
         args.response.success({
           data: $(ips).map(function(index, ip) {
