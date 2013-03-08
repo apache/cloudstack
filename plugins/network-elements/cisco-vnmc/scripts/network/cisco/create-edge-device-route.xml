@@ -2,7 +2,7 @@
   cookie="%cookie%"
   inHierarchical="false">
   <inConfigs>
-    <pair key="%routedn%">
+    <pair key="%routepolicydn%/sroute-2">
       <routeStaticRoute
         dn="%routepolicydn%/sroute-2"
         id="2"

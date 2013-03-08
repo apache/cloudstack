@@ -328,16 +328,14 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         String xml = VnmcXml.CREATE_EDGE_ROUTE.getXml();
         String service = VnmcXml.CREATE_EDGE_ROUTE.getService();
         xml = replaceXmlValue(xml, "cookie", _cookie);
-        xml = replaceXmlValue(xml, "name", getNameForEdgeDeviceRoutePolicy(tenantName));
+        xml = replaceXmlValue(xml, "routepolicydn", getDnForEdgeDeviceRoutingPolicy(tenantName));
         xml = replaceXmlValue(xml, "nexthop", nextHopIp);
         xml = replaceXmlValue(xml, "nexthopintf", getNameForEdgeOutsideIntf(tenantName));
         xml = replaceXmlValue(xml, "destination", destination);
         xml = replaceXmlValue(xml, "netmask", netmask);
 
-        //TODO: this adds default route, make it more generic
-
-         String response =  sendRequest(service, xml);
-         return verifySuccess(response);
+        String response =  sendRequest(service, xml);
+        return verifySuccess(response);
     }
 
     @Override
