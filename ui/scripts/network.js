@@ -2420,7 +2420,6 @@
                           }
                         },
                         filters: false,
-                        subselect: instanceSecondaryIPSubselect,
                         dataProvider: function(args) {
                           var itemData = $.isArray(args.context.multiRule) && args.context.multiRule[0]['_itemData'] ?
                             args.context.multiRule[0]['_itemData'] : [];
