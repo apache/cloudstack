@@ -1685,7 +1685,7 @@
                             args.response.success({ data: null });
                             return;             
                           }
-                          
+
                           if('vpc' in args.context) {
                             if($tierSelect.size() && $tierSelect.val() != '-1' ){ 
                               data.networkid = $tierSelect.val();
@@ -1737,6 +1737,10 @@
 												ipaddressid: args.context.ipAddresses[0].id,
 												virtualmachineid: args.context.instances[0].id
 											};
+
+                      if (args._subselect && args._subselect != -1) {
+                        data.vmguestip = args._subselect;
+                      }
 											
 											if('vpc' in args.context) {
 											  if(args.tierID == '-1') {
