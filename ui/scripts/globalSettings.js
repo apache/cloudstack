@@ -137,7 +137,7 @@
                         name:{label: 'Bind DN' , validation: {required:true} },
                         password: {label: 'Bind Password', validation: {required: true },isPassword:true },
                         hostname: {label:'Hostname' , validation:{required:true}},
-                        queryfilter: {label:'Query Filter' , validation: {required:true}},
+                        queryfilter: {label:'Query Filter' , validation: {required:true} , docID:'helpLdapQueryFilter'},
                         searchbase: {label:'SearchBase',validation:{required:true}},
                         ssl:  {
                                label:'SSL' ,

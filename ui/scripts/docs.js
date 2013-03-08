@@ -16,6 +16,15 @@
 // under the License.
 cloudStack.docs = {
 
+ //Ldap
+  helpLdapQueryFilter: {
+
+  desc:'Query filter is used to find a mapped user in the external LDAP server.Cloudstack provides some wildchars to represent the unique attributes in its database . Example - If Cloudstack account-name is same as the LDAP uid, then following will be a valid filter: Queryfilter :  (&(uid=%u) ,  Queryfilter: .incase of Active Directory , Email _ID :(&(mail=%e)) , displayName :(&(displayName=%u)',
+
+  externalLink:''
+ },
+
+
   //IP Reservation tooltips
    helpIPReservationCidr: {
      desc:'Edit CIDR when you want to configure IP Reservation in isolated guest Network',
