@@ -39,8 +39,8 @@
     var instance = args.context.instances[0];
     var network = args.context.networks[0];
     var nic = $.grep(instance.nic, function(nic) {
-      return nic.networkid = network.id;
-    })[0]
+      return nic.networkid == network.id;
+    })[0];
 
     // Get NIC IPs
     $.ajax({
@@ -51,14 +51,14 @@
       },
       success: function(json) {
         var nic = json.listnics.nic[0];
-        var ips = nic.secondaryip ? nic.secondaryip : [];
+        var ips = nic.secondaryip ? targetNic.secondaryip : [];
 
         args.response.success({
           data: $(ips).map(function(index, ip) {
             return {
               id: ip.ipaddress,
               description: ip.ipaddress
-            } ;
+            };
           })
         });
       }
