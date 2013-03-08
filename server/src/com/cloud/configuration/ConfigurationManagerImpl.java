@@ -2330,10 +2330,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, 
                 endIP, vlanGateway, vlanNetmask, vlanId, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
 
+        txn.commit();
         if (associateIpRangeToAccount) {
             _networkMgr.associateIpAddressListToAccount(userId, vlanOwner.getId(), zoneId, vlan.getId(), null);
         }
-        txn.commit();
 
         // Associate ips to the network
         if (associateIpRangeToAccount) {
