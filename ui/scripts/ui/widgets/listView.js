@@ -1048,6 +1048,7 @@
       if (subselect) {
         var $td = $tr.find('td.first');
         var $select = $('<div></div>').addClass('subselect').append(
+          $('<span>').html('Use IP:'),
           $('<select>')
         ).hide();
         var $selectionArea = $tr.find('td:last').find('input');
@@ -1078,6 +1079,8 @@
                   } else {
                     $select.hide();
                   }
+
+                  $listView.find('.data-table').dataTable('refresh');
                 }
               }
             });

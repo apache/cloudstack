@@ -7311,6 +7311,33 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   background: #C3E0FC;
 }
 
+/*List-view: subselect dropdown*/
+.list-view .subselect {
+  width: 116px;
+  display: block;
+  float: left;
+  background: url(../images/bg-gradients.png) 0px -42px;
+  padding: 0;
+  margin: 8px 0 1px 7px;
+  clear: both;
+  border: 1px solid #A8A7A7;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+}
+
+.list-view .subselect span {
+  margin: 4px 0 0 12px;
+}
+
+.list-view .subselect select {
+  width: 85%;
+  margin: 5px 0 4px;
+  font-size: 10px;
+}
+
 /*Multi-edit*/
 div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBalancer div.multi-edit form table.multi-edit thead tr th,
 div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBalancer div.multi-edit form table.multi-edit tbody tr td {
