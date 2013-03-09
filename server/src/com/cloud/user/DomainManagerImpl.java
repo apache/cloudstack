@@ -365,7 +365,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
         SearchBuilder<DomainVO> sb = _domainDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("level", sb.entity().getLevel(), SearchCriteria.Op.EQ);
         sb.and("path", sb.entity().getPath(), SearchCriteria.Op.LIKE);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
@@ -379,7 +379,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         }
 
         if (domainName != null) {
-            sc.setParameters("name", "%" + domainName + "%");
+            sc.setParameters("name", domainName);
         }
 
         if (level != null) {
@@ -492,7 +492,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
             if (!domains.isEmpty() && !sameDomain) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName + "' since it already exists in the system");
-                ex.addProxyObject(domain, domainId, "domainId");                
+                ex.addProxyObject(domain, domainId, "domainId");
                 throw ex;
             }
         }
