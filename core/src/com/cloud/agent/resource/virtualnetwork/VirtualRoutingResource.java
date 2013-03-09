@@ -600,6 +600,10 @@ public class VirtualRoutingResource implements Manager {
         	command.add("-6", cmd.getVmIp6Address());
         	command.add("-u", cmd.getDuid());
         }
+        
+        if (!cmd.isDefault()) {
+        	command.add("-z");
+        }
 
         final String result = command.execute();
         return new Answer(cmd, result==null, result);

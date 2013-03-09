@@ -1780,6 +1780,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         	args += " -u " + cmd.getDuid();
         }
         
+        if (!cmd.isDefault()) {
+        	args += " -z";
+        }
+        
         String result = callHostPlugin(conn, "vmops", "saveDhcpEntry", "args", args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "DhcpEntry failed");
