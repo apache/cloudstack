@@ -1104,9 +1104,8 @@
                     name: { label: 'label.name' },
                     type: { label: 'label.type' },
                     vlan: { label: 'label.vlan.id' },
-                    cidr: { label: 'IPv4 CIDR' },
-                    ip6cidr: { label: 'IPv6 CIDR'}
-                    //scope: { label: 'label.scope' }
+                    cidr: { label: 'label.cidr' },
+                    scope: { label: 'label.scope' }
                   },
                   actions: {
                     add: {
@@ -1353,12 +1352,12 @@
 																  if(this.id == selectedNetworkOfferingId) {																	  
 																		if(this.guestiptype == "Isolated") { //*** Isolated	***															  
 																			if(this.specifyipranges == false) {
-																				$form.find('.form-item[rel=startipv4]').hide();
-																				$form.find('.form-item[rel=endipv4]').hide();
+																				$form.find('.form-item[rel=guestStartIp]').hide();
+																				$form.find('.form-item[rel=guestEndIp]').hide();
 																			}
 																			else {
-																				$form.find('.form-item[rel=startipv4]').css('display', 'inline-block');
-																				$form.find('.form-item[rel=endipv4]').css('display', 'inline-block');
+																				$form.find('.form-item[rel=guestStartIp]').css('display', 'inline-block');
+																				$form.find('.form-item[rel=guestEndIp]').css('display', 'inline-block');
 																			}																					
                                       
 																		  var includingSourceNat = false;
@@ -1370,20 +1369,20 @@
 																				}
 																			}																			
 																			if(includingSourceNat == true) { //Isolated with SourceNat
-																			  cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=ip4gateway]'));	//make ip4gateway optional 	                                      							
-                                        cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=ip4Netmask]'));	//make ip4Netmask optional  		
+																			  cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=guestGateway]'));	//make guestGateway optional 	                                      							
+                                        cloudStack.dialog.createFormField.validation.required.remove($form.find('.form-item[rel=guestNetmask]'));	//make guestNetmask optional  		
 																			}
 																			else { //Isolated with no SourceNat
-																			  cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=ip4gateway]'));	  //make ip4gateway required		
-																			  cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=ip4Netmask]'));	  //make ip4Netmask required
+																			  cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=guestGateway]'));	  //make guestGateway required		
+																			  cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=guestNetmask]'));	  //make guestNetmask required
 																			}																
 																		}
 																		else {  //*** Shared ***
-																			$form.find('.form-item[rel=startipv4]').css('display', 'inline-block');
-																			$form.find('.form-item[rel=endipv4]').css('display', 'inline-block');																			
+																			$form.find('.form-item[rel=guestStartIp]').css('display', 'inline-block');
+																			$form.find('.form-item[rel=guestEndIp]').css('display', 'inline-block');																			
 																			
-                                      cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=ip4gateway]'));	  //make ip4gateway required		
-																			cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=ip4Netmask]'));	  //make ip4Netmask required			
+                                      cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=guestGateway]'));	  //make guestGateway required		
+																			cloudStack.dialog.createFormField.validation.required.add($form.find('.form-item[rel=guestNetmask]'));	  //make guestNetmask required			
 																		}
 																		
 																		if(this.specifyvlan == false) {
@@ -1401,47 +1400,24 @@
                             }
                           },
 
-                          //IPv4 (begin)
-                          ip4gateway: {
-                            label: 'IPv4 Gateway',
+                          guestGateway: {
+                            label: 'label.guest.gateway',
                             docID: 'helpGuestNetworkZoneGateway'
                           },
-                          ip4Netmask: {
-                            label: 'IPv4 Netmask',
+                          guestNetmask: {
+                            label: 'label.guest.netmask',
                             docID: 'helpGuestNetworkZoneNetmask'
                           },
-                          startipv4: { 
-							label: 'IPv4 Start IP', 
-							validation: { required: true },
+                          guestStartIp: { 
+													  label: 'label.guest.start.ip', 
+														validation: { required: true },
                             docID: 'helpGuestNetworkZoneStartIP'
-						  },
-                          endipv4: { 
-							label: 'IPv4 End IP', 
-							validation: { required: true },
+													},
+                          guestEndIp: { 
+													  label: 'label.guest.end.ip', 
+														validation: { required: true },
                             docID: 'helpGuestNetworkZoneEndIP'
-						  },
-						//IPv4 (end)
-						  
-						//IPv6 (begin)
-                          ip6gateway: {
-                            label: 'IPv6 Gateway',
-                            docID: 'helpGuestNetworkZoneGateway'
-                          },
-                          ip6cidr: {
-                            label: 'IPv6 CIDR'
-                          },
-                          startipv6: { 
-							label: 'IPv6 Start IP', 
-							validation: { required: true },
-                            docID: 'helpGuestNetworkZoneStartIP'
-						  },
-                          endipv6: { 
-							label: 'IPv6 End IP', 
-							validation: { required: true },
-                            docID: 'helpGuestNetworkZoneEndIP'
-						  },
-						//IPv6 (end)
-						  
+													},
                           networkdomain: {
                             label: 'label.network.domain',
                             docID: 'helpGuestNetworkZoneNetworkDomain'
@@ -1497,28 +1473,16 @@
 													array1.push("&acltype=domain"); //server-side will make it Root domain (i.e. domainid=1)
 												}
 
-												//IPv4 (begin)
-											    if(args.data.ip4gateway != null && args.data.ip4gateway.length > 0)
-												  array1.push("&gateway=" + args.data.ip4gateway);
-												if(args.data.ip4Netmask != null && args.data.ip4Netmask.length > 0)
-												  array1.push("&netmask=" + args.data.ip4Netmask);
-												if(($form.find('.form-item[rel=startipv4]').css("display") != "none") && (args.data.startipv4 != null && args.data.startipv4.length > 0))
-												  array1.push("&startip=" + args.data.startipv4);
-												if(($form.find('.form-item[rel=endipv4]').css("display") != "none") && (args.data.endipv4 != null && args.data.endipv4.length > 0))
-												  array1.push("&endip=" + args.data.endipv4);
-												//IPv4 (end)
-												
-												//IPv6 (begin)
-											    if(args.data.ip6gateway != null && args.data.ip6gateway.length > 0)
-												  array1.push("&gateway=" + args.data.ip6gateway);
-												if(args.data.ip6cidr != null && args.data.ip6cidr.length > 0)
-												  array1.push("&netmask=" + args.data.ip6cidr);
-												if(($form.find('.form-item[rel=startipv6]').css("display") != "none") && (args.data.startipv6 != null && args.data.startipv6.length > 0))
-												  array1.push("&startip=" + args.data.startipv6);
-												if(($form.find('.form-item[rel=endipv6]').css("display") != "none") && (args.data.endipv6 != null && args.data.endipv6.length > 0))
-												  array1.push("&endip=" + args.data.endipv6);
-												//IPv6 (end)
-												
+											  if(args.data.guestGateway != null && args.data.guestGateway.length > 0)
+												  array1.push("&gateway=" + args.data.guestGateway);
+												if(args.data.guestNetmask != null && args.data.guestNetmask.length > 0)
+												  array1.push("&netmask=" + args.data.guestNetmask);
+
+												if(($form.find('.form-item[rel=guestStartIp]').css("display") != "none") && (args.data.guestStartIp != null && args.data.guestStartIp.length > 0))
+												  array1.push("&startip=" + args.data.guestStartIp);
+												if(($form.find('.form-item[rel=guestEndIp]').css("display") != "none") && (args.data.guestEndIp != null && args.data.guestEndIp.length > 0))
+												  array1.push("&endip=" + args.data.guestEndIp);
+
 												if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
 													array1.push("&networkdomain=" + todb(args.data.networkdomain));
 
@@ -1877,13 +1841,9 @@
                               label: 'label.network.offering.id'
                             },
 
-                            gateway: { label: 'IPv4 Gateway' },
+                            gateway: { label: 'label.gateway' },
                             //netmask: { label: 'label.netmask' },
-                            cidr: { label: 'IPv4 CIDR' },
-                            
-                            ip6gateway: { label: 'IPv6 Gateway' },
-                            ip6cidr: { label: 'IPv6 CIDR' },
-                            
+                            cidr: { label: 'label.cidr' },
                             networkdomaintext: {
                               label: 'label.network.domain'
                             },
@@ -9690,10 +9650,8 @@
         listView: {
           section: 'guest-IP-range',
           fields: {
-            startip: { label: 'IPv4 Start IP' },
-            endip: { label: 'IPv4 End IP' },
-            startipv6: { label: 'IPv6 Start IP' },
-            endipv6: { label: 'IPv6 End IP' }
+            startip: { label: 'label.start.IP' },
+            endip: { label: 'label.end.IP' }
           },
 
           dataProvider: function(args) {
@@ -9714,24 +9672,16 @@
               createForm: {
                 title: 'label.add.ip.range',
                 fields: {
-                  startipv4: { label: 'IPv4 Start IP' },
-                  endipv4: { label: 'IPv4 End IP' },
-                  startipv6: { label: 'IPv6 Start IP' },
-                  endipv6: { label: 'IPv6 End IP' }
+                  guestStartIp: { label: 'label.guest.start.ip' },
+                  guestEndIp: { label: 'label.guest.end.ip' }
                 }
               },
               action: function(args) {
                 var array2 = [];
-                if(args.data.startipv4 != null && args.data.startipv4.length > 0)
-                  array2.push("&startip=" + args.data.startipv4);                
-                if(args.data.endipv4 != null && args.data.endipv4.length > 0)
-                  array2.push("&endip=" + args.data.endipv4);
-                
-                if(args.data.startipv6 != null && args.data.startipv6.length > 0)
-                    array2.push("&startipv6=" + args.data.startipv6);                
-                  if(args.data.endipv6 != null && args.data.endipv6.length > 0)
-                    array2.push("&endipv6=" + args.data.endipv6);
-                
+                array2.push("&startip=" + args.data.guestStartIp);
+                var endip = args.data.guestEndIp;
+                if(endip != null && endip.length > 0)
+                  array2.push("&endip=" + endip);
                 $.ajax({
                   url: createURL("createVlanIpRange&forVirtualNetwork=false&networkid=" + args.context.networks[0].id + array2.join("")),
                   dataType: "json",
