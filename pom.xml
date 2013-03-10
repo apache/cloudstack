@@ -1,14 +1,23 @@
-<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
-  license agreements. See the NOTICE file distributed with this work for additional 
-  information regarding copyright ownership. The ASF licenses this file to you under 
-  the Apache License, Version 2.0 (the "License"); you may not use this file except 
-  in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
-  Unless required by applicable law or agreed to in writing, software distributed under 
-  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
-  OF ANY KIND, either express or implied. See the License for the specific language 
-  governing permissions and limitations under the License. -->
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements. See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership. The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied. See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -19,14 +28,14 @@
 
   <groupId>org.apache.cloudstack</groupId>
   <artifactId>cloudstack</artifactId>
-  <version>4.3.0-SNAPSHOT</version>
+  <version>4.2.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
   <description>Apache CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
   <url>http://www.cloudstack.org</url>
   <scm>
-    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/cloudstack.git</connection>
-    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/cloudstack.git</developerConnection>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</developerConnection>
   </scm>
   <issueManagement>
     <system>jira</system>
@@ -34,6 +43,7 @@
   </issueManagement>
 
   <properties>
+    <!--skipTests>true</skipTests-->
     <cs.jdk.version>1.6</cs.jdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -54,7 +64,7 @@
     <cs.jpa.version>2.0.0</cs.jpa.version>
     <cs.jasypt.version>1.9.0</cs.jasypt.version>
     <cs.trilead.version>build213-svnkit-1.3-patch</cs.trilead.version>
-    <cs.ehcache.version>2.6.6</cs.ehcache.version>
+    <cs.ehcache.version>1.5.0</cs.ehcache.version>
     <cs.gson.version>1.7.1</cs.gson.version>
     <cs.guava.version>14.0-rc1</cs.guava.version>
     <cs.xapi.version>5.6.100-1-SNAPSHOT</cs.xapi.version>
@@ -73,9 +83,9 @@
     <cs.jstl.version>1.2</cs.jstl.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
     <cs.vmware.api.version>5.1</cs.vmware.api.version>
-    <org.springframework.version>3.2.4.RELEASE</org.springframework.version>
+    <org.springframework.version>3.1.2.RELEASE</org.springframework.version>
     <cs.mockito.version>1.9.5</cs.mockito.version>
-    <cs.aws.sdk.version>1.3.22</cs.aws.sdk.version>
+    <cs.aws.sdk.version>1.3.21.1</cs.aws.sdk.version>
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-io.version>1.4</cs.commons-io.version>
     <cs.reflections.version>0.9.8</cs.reflections.version>
@@ -100,49 +110,40 @@
   <mailingLists>
     <mailingList>
       <name>Apache CloudStack User List</name>
-      <subscribe>users-subscribe@cloudstack.apache.org</subscribe>
-      <unsubscribe>users-unsubscribe@cloudstack.apache.org</unsubscribe>
-      <post>users@cloudstack.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/cloudstack-users</archive>
-      <otherArchives>
-        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-users</otherArchive>
-      </otherArchives>
+      <subscribe>cloudstack-users-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>cloudstack-users-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>cloudstack-users@incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-users</archive>
     </mailingList>
     <mailingList>
       <name>Apache CloudStack Developer List</name>
-      <subscribe>dev-subscribe@cloudstack.apache.org</subscribe>
-      <unsubscribe>dev-unsubscribe@cloudstack.apache.org</unsubscribe>
-      <post>dev@cloudstack.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/cloudstack-dev</archive>
-      <otherArchives>
-        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-dev</otherArchive>
-      </otherArchives>
+      <subscribe>cloudstack-dev-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>cloudstack-dev-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>cloudstack-dev@incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-dev</archive>
     </mailingList>
     <mailingList>
       <name>Apache CloudStack Commits List</name>
-      <subscribe>commits-subscribe@cloudstack.apache.org</subscribe>
-      <unsubscribe>commits-unsubscribe@cloudstack.apache.org</unsubscribe>
-      <post>commits@cloudstack.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/cloudstack-commits</archive>
-      <otherArchives>
-        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-commits</otherArchive>
-      </otherArchives>
+      <subscribe>cloudstack-commits-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>cloudstack-commits-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>cloudstack-commits@incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-commits</archive>
     </mailingList>
   </mailingLists>
 
   <developers>
     <developer>
       <name>The Apache CloudStack Team</name>
-      <email>dev@cloudstack.apache.org</email>
-      <url>http://cloudstack.apache.org/</url>
+      <email>cloudstack-dev@incubator.apache.org</email>
+      <url>http://incubator.apache.org/projects/cloudstack.html</url>
       <organization>Apache Software Foundation</organization>
       <organizationUrl>http://apache.org/</organizationUrl>
     </developer>
   </developers>
 
   <ciManagement>
-    <system>Jenkins</system>
-    <url>http://builds.apache.org/</url>
+    <system>Jenkin</system>
+    <url>http://jenkins.cloudstack.org/</url>
   </ciManagement>
 
   <licenses>
@@ -172,231 +173,15 @@
     <module>test</module>
     <module>client</module>
     <module>services</module>
-    <module>maven-standard</module>
-    <module>quickcloud</module>
   </modules>
 
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <groupId>mysql</groupId>
-        <artifactId>mysql-connector-java</artifactId>
-        <version>${cs.mysql.version}</version>
-        <scope>provided,test</scope>
-      </dependency>
-      <dependency>
-        <groupId>log4j</groupId>
-        <artifactId>log4j</artifactId>
-        <version>${cs.log4j.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-context</artifactId>
-        <version>${org.springframework.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>cglib</groupId>
-        <artifactId>cglib-nodep</artifactId>
-        <version>${cs.cglib.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>commons-dbcp</groupId>
-        <artifactId>commons-dbcp</artifactId>
-        <version>${cs.dbcp.version}</version>
-        <exclusions>
-          <exclusion>
-            <artifactId>commons-pool</artifactId>
-            <groupId>commons-pool</groupId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>net.sf.ehcache</groupId>
-        <artifactId>ehcache-core</artifactId>
-        <version>${cs.ehcache.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>commons-pool</groupId>
-        <artifactId>commons-pool</artifactId>
-        <version>${cs.pool.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>commons-codec</groupId>
-        <artifactId>commons-codec</artifactId>
-        <version>${cs.codec.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.bouncycastle</groupId>
-        <artifactId>bcprov-jdk16</artifactId>
-        <version>${cs.bcprov.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.jcraft</groupId>
-        <artifactId>jsch</artifactId>
-        <version>${cs.jsch.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jasypt</groupId>
-        <artifactId>jasypt</artifactId>
-        <version>${cs.jasypt.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.trilead</groupId>
-        <artifactId>trilead-ssh2</artifactId>
-        <version>${cs.trilead.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk</artifactId>
-        <version>${cs.aws.sdk.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>log4j</groupId>
-        <artifactId>apache-log4j-extras</artifactId>
-        <version>${cs.log4j.extras.version}</version>
-        <exclusions>
-          <exclusion>
-            <artifactId>log4j</artifactId>
-            <groupId>log4j</groupId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>javax.ejb</groupId>
-        <artifactId>ejb-api</artifactId>
-        <version>${cs.ejb.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.googlecode.java-ipv6</groupId>
-        <artifactId>java-ipv6</artifactId>
-        <version>${cs.java-ipv6.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>commons-configuration</groupId>
-        <artifactId>commons-configuration</artifactId>
-        <version>${cs.configuration.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>commons-io</groupId>
-        <artifactId>commons-io</artifactId>
-        <version>${cs.commons-io.version}</version>
-      </dependency>
-      <!-- Test dependency in mysql for db tests -->
-      <dependency>
-        <groupId>org.reflections</groupId>
-        <artifactId>reflections</artifactId>
-        <version>${cs.reflections.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.owasp.esapi</groupId>
-        <artifactId>esapi</artifactId>
-        <version>2.0.1</version>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.persistence</groupId>
-        <artifactId>javax.persistence</artifactId>
-        <version>${cs.jpa.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-web</artifactId>
-        <version>${org.springframework.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>javax.servlet</groupId>
-        <artifactId>servlet-api</artifactId>
-        <version>${cs.servlet.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.httpcomponents</groupId>
-        <artifactId>httpcore</artifactId>
-        <version>${cs.httpcore.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.httpcomponents</groupId>
-        <artifactId>httpclient</artifactId>
-        <version>${cs.httpcore.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.thoughtworks.xstream</groupId>
-        <artifactId>xstream</artifactId>
-        <version>${cs.xstream.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>javax.mail</groupId>
-        <artifactId>mail</artifactId>
-        <version>${cs.mail.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>jstl</groupId>
-        <artifactId>jstl</artifactId>
-        <version>${cs.jstl.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-aop</artifactId>
-        <version>${org.springframework.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-beans</artifactId>
-        <version>${org.springframework.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.code.gson</groupId>
-        <artifactId>gson</artifactId>
-        <version>${cs.gson.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>${cs.guava.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.servicemix.bundles</groupId>
-        <artifactId>org.apache.servicemix.bundles.snmp4j</artifactId>
-        <version>2.1.0_1</version>
-      </dependency>
-      <dependency>
-        <groupId>org.aspectj</groupId>
-        <artifactId>aspectjtools</artifactId>
-        <version>1.7.0</version>
-      </dependency>
-      <dependency>
-        <groupId>org.aspectj</groupId>
-        <artifactId>aspectjweaver</artifactId>
-        <version>1.7.0</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.axis</groupId>
-        <artifactId>axis</artifactId>
-        <version>${cs.axis.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>commons-daemon</groupId>
-        <artifactId>commons-daemon</artifactId>
-        <version>${cs.daemon.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.axis</groupId>
-        <artifactId>axis-jaxrpc</artifactId>
-        <version>${cs.axis.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>wsdl4j</groupId>
-        <artifactId>wsdl4j</artifactId>
-        <version>1.4</version>
-      </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-api</artifactId>
-        <version>1.7.5</version>
-      </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-log4j12</artifactId>
-        <version>1.7.5</version>
-      </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${cs.mysql.version}</version>
+        </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -406,23 +191,62 @@
       <artifactId>junit</artifactId>
       <version>${cs.junit.version}</version>
       <scope>test</scope>
-    </dependency>
+	</dependency>
+	<dependency>
+	  <groupId>org.springframework</groupId>
+	  <artifactId>spring-core</artifactId>
+	  <version>${org.springframework.version}</version>
+	</dependency>
     <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-all</artifactId>
-      <version>1.9.5</version>
-      <scope>test</scope>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+      <version>${org.springframework.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
-      <artifactId>spring-test</artifactId>
+      <artifactId>spring-web</artifactId>
       <version>${org.springframework.version}</version>
-      <scope>test</scope>
+    </dependency>
+    <!-- <dependency> <groupId>org.springframework</groupId> <artifactId>spring-expression</artifactId>
+      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
+      <artifactId>spring-beans</artifactId> <version>${org.springframework.version}</version>
+      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-aop</artifactId>
+      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
+      <artifactId>spring-context-support</artifactId> <version>${org.springframework.version}</version>
+      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-tx</artifactId>
+      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId> <version>${org.springframework.version}</version>
+      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-orm</artifactId>
+      <version>${org.springframework.version}</version> </dependency> <dependency> <groupId>org.springframework</groupId>
+      <artifactId>spring-oxm</artifactId> <version>${org.springframework.version}</version>
+      </dependency> <dependency> <groupId>org.springframework</groupId> <artifactId>spring-webmvc</artifactId>
+      <version>${org.springframework.version}</version> </dependency> -->
+    <dependency>
+	<groupId>org.mockito</groupId>
+	<artifactId>mockito-all</artifactId>
+	<version>1.9.5</version>
+        <scope>test</scope>
+    </dependency>
+	<dependency>
+	  <groupId>org.springframework</groupId>
+	  <artifactId>spring-test</artifactId>
+	  <version>${org.springframework.version}</version>
+	  <scope>test</scope>
+	</dependency>
+    <dependency>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjrt</artifactId>
+      <version>1.7.1</version>
     </dependency>
     <dependency>
-      <groupId>javax.inject</groupId>
-      <artifactId>javax.inject</artifactId>
-      <version>1</version>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjweaver</artifactId>
+      <version>1.7.1</version>
+    </dependency>
+    <dependency>
+        <groupId>javax.inject</groupId>
+        <artifactId>javax.inject</artifactId>
+        <version>1</version>
     </dependency>
   </dependencies>
 
@@ -430,11 +254,6 @@
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
-    <resources>
-      <resource>
-        <directory>${basedir}/resources</directory>
-      </resource>
-    </resources>
     <testResources>
       <testResource>
         <directory>test/resources</directory>
@@ -450,7 +269,7 @@
             <excludeDefaultDirectories>true</excludeDefaultDirectories>
             <filesets>
               <fileset>
-                <directory>${cs.target.dir}</directory>
+                <directory>target</directory>
                 <includes>
                   <include>**/*</include>
                 </includes>
@@ -498,8 +317,12 @@
               <pluginExecutions>
                 <pluginExecution>
                   <pluginExecutionFilter>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-antrun-plugin</artifactId>
+                    <groupId>
+                      org.apache.maven.plugins
+                    </groupId>
+                    <artifactId>
+                      maven-antrun-plugin
+                    </artifactId>
                     <versionRange>[1.7,)</versionRange>
                     <goals>
                       <goal>run</goal>
@@ -519,13 +342,9 @@
           <version>2.0</version>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-antrun-plugin</artifactId>
-          <version>1.7</version>
-        </plugin>
-        <plugin>
           <groupId>org.apache.rat</groupId>
           <artifactId>apache-rat-plugin</artifactId>
+          <version>0.8</version>
           <configuration>
             <numUnapprovedLicenses>0</numUnapprovedLicenses>
             <excludeSubProjects>false</excludeSubProjects>
@@ -572,10 +391,11 @@
               <exclude>services/secondary-storage/conf/agent.properties</exclude>
               <exclude>services/secondary-storage/conf/environment.properties</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
-              <exclude>tools/appliance/definitions/devcloud/*</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/*</exclude>
-              <exclude>tools/appliance/definitions/systemvm64template/*</exclude>
-              <exclude>tools/appliance/definitions/builtin/*</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate/base.sh</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate/cleanup.sh</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate/definition.rb</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate/preseed.cfg</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate/zerodisk.sh</exclude>
               <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
@@ -638,8 +458,6 @@
               <exclude>systemvm/patches/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
               <exclude>tools/transifex/.tx/config</exclude>
               <exclude>tools/marvin/marvin/sandbox/advanced/sandbox.cfg</exclude>
-              <exclude>tools/ngui/static/bootstrap/*</exclude>
-              <exclude>tools/ngui/static/js/lib/*</exclude>
             </excludes>
           </configuration>
         </plugin>
@@ -650,41 +468,41 @@
           <configuration>
             <source>${cs.jdk.version}</source>
             <target>${cs.jdk.version}</target>
-            <fork>true</fork>
-            <meminitial>128m</meminitial>
-            <maxmem>512m</maxmem>
-            <compilerArgument>-XDignore.symbol.file=true</compilerArgument>
+			<fork>true</fork>
+		<meminitial>128m</meminitial>
+		<maxmem>512m</maxmem>
+		<compilerArgument>-XDignore.symbol.file=true</compilerArgument>
           </configuration>
         </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>2.4</version>
-          <configuration>
-            <archive>
-              <manifest>
-                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-              </manifest>
-            </archive>
-          </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>build-helper-maven-plugin</artifactId>
-          <version>1.7</version>
-          <executions>
-            <execution>
-              <id>remove-old-installers</id>
-              <goals>
-                <goal>remove-project-artifact</goal>
-              </goals>
-              <configuration>
-                <removeAll>true</removeAll>
-              </configuration>
-            </execution>
-          </executions>
-        </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <id>remove-old-installers</id>
+            <goals>
+              <goal>remove-project-artifact</goal>
+            </goals>
+            <configuration>
+              <removeAll>true</removeAll>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
@@ -730,9 +548,9 @@
     </profile>
     <profile>
       <id>developer</id>
-      <properties>
-        <marvin.config>tools/devcloud/devcloud.cfg</marvin.config>
-      </properties>
+        <properties>
+            <marvin.config>tools/devcloud/devcloud.cfg</marvin.config>
+        </properties>
       <modules>
         <module>developer</module>
         <module>tools</module>
@@ -759,5 +577,113 @@
         <module>vmware-base</module>
       </modules>
     </profile>
+    <profile>
+          <id>simulator</id>
+          <activation>
+              <property>
+                  <name>deploydb-simulator</name>
+              </property>
+          </activation>
+          <build>
+              <plugins>
+                  <plugin>
+                      <groupId>org.codehaus.mojo</groupId>
+                      <artifactId>properties-maven-plugin</artifactId>
+                      <version>1.0-alpha-2</version>
+                      <executions>
+                          <execution>
+                              <phase>initialize</phase>
+                              <goals>
+                                  <goal>read-project-properties</goal>
+                              </goals>
+                              <configuration>
+                                  <files>
+                                      <file>${project.basedir}/utils/conf/db.properties</file>
+                                      <file>${project.basedir}/utils/conf/db.properties.override</file>
+                                  </files>
+                                  <quiet>true</quiet>
+                              </configuration>
+                          </execution>
+                      </executions>
+                  </plugin>
+                  <!-- DatabaseCreator driver here -->
+                  <plugin>
+                      <groupId>org.codehaus.mojo</groupId>
+                      <artifactId>exec-maven-plugin</artifactId>
+                      <version>1.2.1</version>
+                      <dependencies>
+                          <!-- specify the dependent jdbc driver here -->
+                          <dependency>
+                              <groupId>mysql</groupId>
+                              <artifactId>mysql-connector-java</artifactId>
+                              <version>${cs.mysql.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>commons-dbcp</groupId>
+                              <artifactId>commons-dbcp</artifactId>
+                              <version>${cs.dbcp.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>commons-pool</groupId>
+                              <artifactId>commons-pool</artifactId>
+                              <version>${cs.pool.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>org.jasypt</groupId>
+                              <artifactId>jasypt</artifactId>
+                              <version>${cs.jasypt.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>org.apache.cloudstack</groupId>
+                              <artifactId>cloud-utils</artifactId>
+                              <version>${project.version}</version>
+                          </dependency>
+                          <dependency>
+                              <groupId>org.apache.cloudstack</groupId>
+                              <artifactId>cloud-server</artifactId>
+                              <version>${project.version}</version>
+                          </dependency>
+                      </dependencies>
+                      <executions>
+                          <execution>
+                              <phase>process-resources</phase>
+                              <id>create-schema</id>
+                              <goals>
+                                  <goal>java</goal>
+                              </goals>
+                          </execution>
+                      </executions>
+                      <configuration>
+                          <includeProjectDependencies>false</includeProjectDependencies>
+                          <includePluginDependencies>true</includePluginDependencies>
+                          <executableDependency>
+                              <groupId>org.apache.cloudstack</groupId>
+                              <artifactId>cloud-server</artifactId>
+                          </executableDependency>
+                          <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+                          <arguments>
+                              <!-- db properties file -->
+                              <argument>${project.basedir}/utils/conf/db.properties</argument>
+                              <argument>${project.basedir}/utils/conf/db.properties.override</argument>
+                              <!-- simulator sql files -->
+                              <argument>${basedir}/target/db/create-schema-simulator.sql</argument>
+                              <argument>${basedir}/target/db/templates.simulator.sql</argument>
+                              <!-- database upgrade-->
+                              <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
+                              <argument>--database=simulator</argument>
+                              <argument>--rootpassword=${db.root.password}</argument>
+                              <!-- enable verbosity by -v or dash-dash-verbose -->
+                          </arguments>
+                          <systemProperties>
+                              <systemProperty>
+                                  <key>catalina.home</key>
+                                  <value>${project.basedir}/utils</value>
+                              </systemProperty>
+                          </systemProperties>
+                      </configuration>
+                  </plugin>
+              </plugins>
+          </build>
+      </profile>
   </profiles>
 </project>
