@@ -219,6 +219,11 @@
         <artifactId>cloud-engine-storage-volume</artifactId>
         <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -481,21 +486,6 @@
     </pluginManagement>
   </build>
   <profiles>
-    <profile>
-        <id>simulator</id>
-        <activation>
-            <property>
-                <name>simulator</name>
-            </property>
-        </activation>
-        <dependencies>
-            <dependency>
-                <groupId>org.apache.cloudstack</groupId>
-                <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-        </dependencies>
-    </profile>
     <profile>
       <id>netapp</id>
       <activation>

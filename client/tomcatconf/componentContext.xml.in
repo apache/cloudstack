@@ -215,11 +215,9 @@
     <property name="name" value="KVM Agent"/>
   </bean>
 
-  <!--
   <bean id="SimulatorDiscoverer" class="com.cloud.resource.SimulatorDiscoverer">
-    <property name="name" value="KVM Agent"/>
+    <property name="name" value="Simulator Agent"/>
   </bean>
-  -->
 
 
   <bean id="BareMetalDiscoverer" class="com.cloud.baremetal.manager.BareMetalDiscoverer">
@@ -318,11 +316,9 @@
     <property name="name" value="OvmGuru"/>
   </bean>
   
-  <!--
   <bean id="SimulatorGuru" class="com.cloud.simulator.SimulatorGuru">
     <property name="name" value="SimulatorGuru"/>
   </bean>
-  -->
 
   <bean id="BaremetalGuru" class="com.cloud.baremetal.manager.BareMetalGuru">
     <property name="name" value="BaremetalGuru"/>
