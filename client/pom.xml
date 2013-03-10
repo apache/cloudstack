@@ -248,7 +248,6 @@
               <maxIdleTime>60000</maxIdleTime>
             </connector>
           </connectors>
-          <jvmArgs>-XX:MaxPermSize=512m -Xmx2g</jvmArgs>
           <webXml>${project.build.directory}/${project.build.finalName}/WEB-INF/web.xml</webXml>
           <webAppSourceDirectory>${project.build.directory}/${project.build.finalName}</webAppSourceDirectory>
           <webAppConfig>
