@@ -16,11 +16,6 @@
 // under the License.
 package com.cloud.network.dao;
 
-import java.util.List;
-import javax.ejb.Local;
-
-import org.springframework.stereotype.Component;
-
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO.LBDeviceAllocationState;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.utils.db.DB;
@@ -28,6 +23,10 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import java.util.List;
 
 @Component
 @Local(value=ExternalLoadBalancerDeviceDao.class) @DB(txn=false)
@@ -37,6 +36,7 @@ public class ExternalLoadBalancerDeviceDaoImpl extends GenericDaoBase<ExternalLo
     final SearchBuilder<ExternalLoadBalancerDeviceVO> allocationStateSearch;
     final SearchBuilder<ExternalLoadBalancerDeviceVO> deviceStatusSearch;
     final SearchBuilder<ExternalLoadBalancerDeviceVO> deviceManagedTypeSearch;
+    final SearchBuilder<ExternalLoadBalancerDeviceVO> gslbProviderSearch;
 
     public ExternalLoadBalancerDeviceDaoImpl() {
         super();
@@ -67,6 +67,12 @@ public class ExternalLoadBalancerDeviceDaoImpl extends GenericDaoBase<ExternalLo
         deviceManagedTypeSearch.and("providerName", deviceManagedTypeSearch.entity().getProviderName(), Op.EQ);
         deviceManagedTypeSearch.and("managedType", deviceManagedTypeSearch.entity().getIsManagedDevice(), Op.EQ);
         deviceManagedTypeSearch.done();
+
+        gslbProviderSearch = createSearchBuilder();
+        gslbProviderSearch.and("physicalNetworkId", gslbProviderSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        gslbProviderSearch.and("providerName", gslbProviderSearch.entity().getProviderName(), Op.EQ);
+        gslbProviderSearch.and("gslbProvider", gslbProviderSearch.entity().getGslbProvider(), Op.EQ);
+
     }
 
     public List<ExternalLoadBalancerDeviceVO> listByPhysicalNetwork(long physicalNetworkId) {
@@ -108,5 +114,14 @@ public class ExternalLoadBalancerDeviceDaoImpl extends GenericDaoBase<ExternalLo
         sc.setParameters("providerName", providerName);
         sc.setParameters("managedType", managed);
         return search(sc, null);
+    }
+
+    @Override
+    public ExternalLoadBalancerDeviceVO findGslbServiceProvider(long physicalNetworkId, String providerName) {
+        SearchCriteria<ExternalLoadBalancerDeviceVO> sc = gslbProviderSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        sc.setParameters("providerName", providerName);
+        sc.setParameters("gslbProvider", true);
+        return findOneBy(sc);
     }
 }

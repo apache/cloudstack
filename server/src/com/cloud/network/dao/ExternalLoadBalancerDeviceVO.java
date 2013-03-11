@@ -68,6 +68,12 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
     @Column(name="is_gslb_provider")
     private boolean gslbProvider;
 
+    @Column(name="gslb_site_publicip")
+    private String gslbSitePublicIP;
+
+    @Column(name="gslb_site_privateip")
+    private String gslbSitePrivateIP;
+
     @Column(name = "parent_host_id")
     private long parentHostId;
 
@@ -101,6 +107,8 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
         this.state = LBDeviceState.Enabled;
         this.uuid = UUID.randomUUID().toString();
         this.gslbProvider = gslbProvider;
+        this.gslbSitePublicIP = null;
+        this.gslbSitePrivateIP = null;
         if (device_name.equalsIgnoreCase(ExternalNetworkDeviceManager.NetworkDevice.NetscalerSDXLoadBalancer.getName())) {
             this.allocationState = LBDeviceAllocationState.Provider;
         }
@@ -191,6 +199,22 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
 
     public void setGslbProvider(boolean gslbProvider) {
         gslbProvider = gslbProvider;
+    }
+
+    public void setGslbSitePublicIP(String gslbSitePublicIP) {
+        this.gslbSitePublicIP = gslbSitePublicIP;
+    }
+
+    public String getGslbSitePublicIP() {
+        return gslbSitePublicIP;
+    }
+
+    public void setGslbSitePrivateIP(String gslbSitePrivateIP) {
+        this.gslbSitePrivateIP = gslbSitePrivateIP;
+    }
+
+    public String getGslbSitePrivateIP() {
+        return gslbSitePrivateIP;
     }
 
     public String getUuid() {

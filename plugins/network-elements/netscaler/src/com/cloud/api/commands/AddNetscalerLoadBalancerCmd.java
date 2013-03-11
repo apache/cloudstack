@@ -56,8 +56,16 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     private String deviceType;
 
     @Parameter(name = ApiConstants.GSLB_PROVIDER, type = CommandType.BOOLEAN, required = false,
-            description = "true if NetScaler device bieng added is for providing GSLB service")
+            description = "true if NetScaler device being added is for providing GSLB service")
     private boolean  isGslbProvider;
+
+    @Parameter(name = ApiConstants.GSLB_PROVIDER_PUBLIC_IP, type = CommandType.STRING, required = false,
+            description = "public IP of the site")
+    private String gslbSitePublicIp;
+
+    @Parameter(name = ApiConstants.GSLB_PROVIDER_PRIVATE_IP, type = CommandType.STRING, required = false,
+            description = "public IP of the site")
+    private String gslbSitePrivateIp;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -85,6 +93,14 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public boolean isGslbProvider() {
         return isGslbProvider;
+    }
+
+    public String getSitePublicIp() {
+        return gslbSitePublicIp;
+    }
+
+    public String getSitePrivateIp() {
+        return gslbSitePrivateIp;
     }
 
     /////////////////////////////////////////////////////

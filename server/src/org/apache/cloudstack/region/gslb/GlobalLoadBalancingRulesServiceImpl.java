@@ -80,7 +80,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
     @Inject
     AgentManager _agentMgr;
     @Inject
-    GslbServiceProvider _gslbProvider;
+    protected GslbServiceProvider _gslbProvider;
 
     @Override
     @DB
@@ -521,8 +521,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             SiteLoadBalancerConfig siteLb = new SiteLoadBalancerConfig(gslbLbMapVo.isRevoke(), serviceType,
                     ip.getAddress().addr(), Integer.toString(loadBalancer.getDefaultPortStart()));
 
-            siteLb.setGslbProviderPublicIp(_gslbProvider.getProviderPublicIp(dataCenterId));
-            siteLb.setGslbProviderPrivateIp(_gslbProvider.getProviderPrivateIp(dataCenterId));
+            siteLb.setGslbProviderPublicIp(_gslbProvider.getZoneGslbProviderPublicIp(dataCenterId));
+            siteLb.setGslbProviderPrivateIp(_gslbProvider.getZoneGslbProviderPrivateIp(dataCenterId));
 
             zoneSiteLoadbalancerMap.put(network.getDataCenterId(), siteLb);
         }

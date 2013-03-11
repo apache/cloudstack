@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.region;
 
-public interface RegionServiceProvider {
+import com.cloud.utils.component.Adapter;
+
+public interface RegionServiceProvider extends Adapter {
 
 }

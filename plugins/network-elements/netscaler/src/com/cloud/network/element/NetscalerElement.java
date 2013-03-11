@@ -80,7 +80,7 @@ import javax.inject.Inject;
 import java.net.URI;
 import java.util.*;
 
-@Local(value = {NetworkElement.class, StaticNatServiceProvider.class, LoadBalancingServiceProvider.class})
+@Local(value = {NetworkElement.class, StaticNatServiceProvider.class, LoadBalancingServiceProvider.class, GslbServiceProvider.class})
 public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider,
         NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer, StaticNatServiceProvider,
         GslbServiceProvider {
@@ -305,8 +305,26 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             throw new InvalidParameterValueException(msg);
         }
 
+        if (cmd.isGslbProvider()) {
+
+            if (!deviceName.equals(NetworkDevice.NetscalerVPXLoadBalancer.getName()) &&
+                    !deviceName.equals(NetworkDevice.NetscalerMPXLoadBalancer.getName())) {
+                String msg = "Only Netscaler VPX or MPX load balancers can be specified as GSLB service provider";
+                s_logger.debug(msg);
+                throw new InvalidParameterValueException(msg);
+            }
+
+            if (cmd.getSitePublicIp() == null || cmd.getSitePrivateIp() == null) {
+                String msg = "Public and Privae IP needs to provided for NetScaler that will be GSLB provider";
+                s_logger.debug(msg);
+                throw new InvalidParameterValueException(msg);
+            }
+        }
+
         ExternalLoadBalancerDeviceVO lbDeviceVO = addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(),
-                cmd.getUsername(), cmd.getPassword(), deviceName, new NetscalerResource(), cmd.isGslbProvider());
+                cmd.getUsername(), cmd.getPassword(), deviceName, new NetscalerResource(), cmd.isGslbProvider(),
+                cmd.getSitePublicIp(), cmd.getSitePrivateIp());
+
         return lbDeviceVO;
     }
 
@@ -791,17 +809,17 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
     @Override
     public boolean isServiceEnabledInZone(long zoneId) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     @Override
-    public String getProviderPublicIp(long zoneId) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public String getZoneGslbProviderPublicIp(long zoneId) {
+        return null;
     }
 
     @Override
-    public String getProviderPrivateIp(long zoneId) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public String getZoneGslbProviderPrivateIp(long zoneId) {
+        return null;
     }
 
     @Override
@@ -814,6 +832,6 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         if (answer == null) {
 
         }
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 }

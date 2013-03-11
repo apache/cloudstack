@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.network.dao;
 
-import java.util.List;
-
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO.LBDeviceAllocationState;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.utils.db.GenericDao;
+
+import java.util.List;
 
 public interface ExternalLoadBalancerDeviceDao extends GenericDao<ExternalLoadBalancerDeviceVO, Long> {
 
@@ -64,4 +64,11 @@ public interface ExternalLoadBalancerDeviceDao extends GenericDao<ExternalLoadBa
      * @return list of ExternalLoadBalancerDeviceVO for the devices in to this physical network of a managed type
      */
     List<ExternalLoadBalancerDeviceVO> listByProviderAndManagedType(long physicalNetworkId, String provider_name, boolean managed);
+
+    /**
+     * Find the external load balancer device that is provisioned as GSLB service provider in the pyshical network
+     * @param physicalNetworkId physical Network Id
+     * @return ExternalLoadBalancerDeviceVO for the device acting as GSLB provider in the physical network
+     */
+    ExternalLoadBalancerDeviceVO findGslbServiceProvider(long physicalNetworkId, String providerName);
 }

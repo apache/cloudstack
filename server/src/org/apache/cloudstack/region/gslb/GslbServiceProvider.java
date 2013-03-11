@@ -26,9 +26,9 @@ public interface GslbServiceProvider extends RegionServiceProvider {
 
     public boolean isServiceEnabledInZone(long zoneId);
 
-    public String getProviderPublicIp(long zoneId);
+    public String getZoneGslbProviderPublicIp(long zoneId);
 
-    public String getProviderPrivateIp(long zoneId);
+    public String getZoneGslbProviderPrivateIp(long zoneId);
 
     public boolean applyGlobalLoadBalancerRule(long zoneId, GlobalLoadBalancerConfigCommand gslbConfigCmd)
             throws ResourceUnavailableException;
