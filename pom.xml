@@ -381,6 +381,11 @@
               <exclude>tools/appliance/definitions/systemvmtemplate/definition.rb</exclude>
               <exclude>tools/appliance/definitions/systemvmtemplate/preseed.cfg</exclude>
               <exclude>tools/appliance/definitions/systemvmtemplate/zerodisk.sh</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate64/base.sh</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate64/cleanup.sh</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate64/definition.rb</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate64/preseed.cfg</exclude>
+              <exclude>tools/appliance/definitions/systemvmtemplate64/zerodisk.sh</exclude>
               <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
