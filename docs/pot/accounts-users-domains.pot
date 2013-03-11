@@ -1,0 +1,100 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Accounts, Users, and Domains"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Accounts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "An account typically represents a customer of the service provider or a department in a large organization. Multiple users can exist in an account."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Domains"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Accounts are grouped by domains. Domains usually contain multiple accounts that have some logical relationship to each other and a set of delegated administrators with some authority over the domain and its subdomains. For example, a service provider with several resellers could create a domain for each reseller."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For each account created, the Cloud installation creates three different types of user accounts: root administrator, domain administrator, and user."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Users"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Users are like aliases in the account. Users in the same account are not isolated from each other, but they are isolated from users in other accounts. Most installations need not surface the notion of users; they just have one user per account. The same user cannot belong to multiple accounts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Username is unique in a domain across accounts in that domain. The same username can exist in other domains, including sub-domains. Domain name can repeat only if the full pathname from root is unique. For example, you can create root/d1, as well as root/foo/d1, and root/sales/d1."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Administrators are accounts with special privileges in the system. There may be multiple administrators in the system. Administrators can create or delete other administrators, and change the password for any user in the system."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Domain Administrators"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Domain administrators can perform administrative operations for users who belong to that domain. Domain administrators do not have visibility into physical servers or other domains."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Root Administrator"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Root administrators have complete access to the system, including managing templates, service offerings, customer care administrators, and domains"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The resources belong to the account, not individual users in that account. For example, billing, resource limits, and so on are maintained by the account, not the users. A user can operate on any resource in the account provided the user has privileges for that operation. The privileges are determined by the role."
+msgstr ""
+

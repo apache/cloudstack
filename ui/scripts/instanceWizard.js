@@ -360,14 +360,11 @@
 					canusefordeploy: true
         };
 				
-				// step5ContainerType of Advanced SG-enabled zone is 'select-security-group', so won't come into this block
-				/*
 				if(selectedZoneObj.networktype == 'Advanced' && selectedZoneObj.securitygroupsenabled == true) {
 				  $.extend(networkData, {
 					  type: 'Shared'
 					});
-				}
-				*/
+				}				
 				
         if (!(cloudStack.context.projects && cloudStack.context.projects[0])) {
           networkData.domainid = g_domainid;
@@ -386,22 +383,31 @@
           }
         });
         
+				var networkObjsToPopulate = [];
         $.ajax({
           url: createURL('listNetworks'),
           data: networkData,
           async: false,
           success: function(json) {
-            networkObjs = json.listnetworksresponse.network ? json.listnetworksresponse.network : [];
-
+            networkObjs = json.listnetworksresponse.network ? json.listnetworksresponse.network : [];            
 						if(networkObjs.length > 0) {
 						  for(var i = 0; i < networkObjs.length; i++) {
 								var networkObj = networkObjs[i];    
+								var includingSecurityGroup = false;
 								var serviceObjArray = networkObj.service;
 								for(var k = 0; k < serviceObjArray.length; k++) {
 									if(serviceObjArray[k].name == "SecurityGroup") {
-									  networkObjs[i].type = networkObjs[i].type + ' (sg)';																		
+									  networkObjs[i].type = networkObjs[i].type + ' (sg)';	
+                    includingSecurityGroup = true;
+										break;   								
 									}
-								}
+								}								
+								//for Advanced SG-enabled zone, list only SG network offerings 
+								if(selectedZoneObj.networktype == 'Advanced' && selectedZoneObj.securitygroupsenabled == true) {
+									if(includingSecurityGroup == false)
+										continue; //skip to next network offering
+								}										
+								networkObjsToPopulate.push(networkObj);		
 							}
             }						
           }
@@ -439,7 +445,7 @@
         args.response.success({
           type: 'select-network',
           data: {            
-            networkObjs: networkObjs,
+            networkObjs: networkObjsToPopulate,
             securityGroups: [],
             networkOfferings: networkOfferingObjs,
             vpcs: vpcObjs

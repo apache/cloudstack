@@ -24,6 +24,7 @@ import java.util.Set;
 
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -249,5 +250,11 @@ public interface NetworkModel {
     
     boolean isNetworkInlineMode(Network network);
 
-	Vlan getVlanForNetwork(long networkId);
+	boolean isIP6AddressAvailableInNetwork(long networkId);
+
+	boolean isIP6AddressAvailableInVlan(long vlanId);
+
+	void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException;
+
+	void checkRequestedIpAddresses(long networkId, String ip4, String ip6) throws InvalidParameterValueException;
 }

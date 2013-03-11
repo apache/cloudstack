@@ -1,0 +1,70 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Set Database Buffer Pool Size"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "It is important to provide enough memory space for the MySQL database to cache data and indexes:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Edit the Tomcat configuration file:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "/etc/my.cnf"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Insert the following line in the [mysqld] section, below the datadir line. Use a value that is appropriate for your situation. We recommend setting the buffer pool at 40% of RAM if MySQL is on the same server as the management server or 70% of RAM if MySQL has a dedicated server. The following example assumes a dedicated server with 1024M of RAM."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "innodb_buffer_pool_size=700M"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the MySQL service."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service mysqld restart"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For more information about the buffer pool, see \"The InnoDB Buffer Pool\" at <ulink url=\"http://dev.mysql.com/doc/refman/5.5/en/innodb-buffer-pool.html\">MySQL Reference Manual</ulink>."
+msgstr ""
+

@@ -19,6 +19,8 @@ package com.cloud.storage;
 import java.net.URI;
 import java.util.Map;
 
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
 import com.cloud.exception.DiscoveryException;
 import com.cloud.utils.component.Adapter;
 

@@ -1,0 +1,45 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:12:00\n"
+"PO-Revision-Date: 2013-02-02T20:12:00\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Using Swift for Secondary Storage"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A volume provides storage to a guest VM. The volume can provide for a root disk or an additional data disk. &PRODUCT; supports additional volumes for guest VMs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Volumes are created for a specific hypervisor type. A volume that has been attached to guest using one hypervisor type (e.g, XenServer) may not be attached to a guest that is using another hypervisor type (e.g. vSphere, KVM). This is because the different hypervisors use different disk image formats."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; defines a volume as a unit of storage available to a guest VM. Volumes are either root disks or data disks. The root disk has \"/\" in the file system and is usually the boot device. Data disks provide for additional storage (e.g. As \"/opt\" or \"D:\"). Every guest VM has a root disk, and VMs can also optionally have a data disk. End users can mount multiple data disks to guest VMs. Users choose data disks from the disk offerings created by administrators. The user can create a template from a volume as well; this is the standard procedure for private template creation. Volumes are hypervisor-specific: a volume from one hypervisor type may not be used on a guest of another hypervisor type."
+msgstr ""
+

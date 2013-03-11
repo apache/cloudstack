@@ -119,7 +119,7 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Volume Id: "+getId()+" VmId: "+getVirtualMachineId());
-        Volume result = _userVmService.attachVolumeToVM(this);
+        Volume result = _volumeService.attachVolumeToVM(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);
             response.setResponseName(getCommandName());

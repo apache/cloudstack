@@ -166,13 +166,11 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
 
     @Override
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 }

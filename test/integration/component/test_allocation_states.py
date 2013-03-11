@@ -22,6 +22,7 @@ from marvin.cloudstackAPI import *
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
+from nose.plugins.attrib import attr
 import datetime
 
 
@@ -74,7 +75,7 @@ class Services:
                                     "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                     "templatefilter": 'self',
                         },
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                        "ostype": 'CentOS 5.3 (64-bit)',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -87,7 +88,7 @@ class TestAllocationState(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.api_client = super(
-                               TestResources,
+                               TestAllocationState,
                                cls
                                ).getClsTestClient().getApiClient()
         cls.services = Services().services

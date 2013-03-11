@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.TemplateProfile;
@@ -65,5 +66,5 @@ public interface TemplateAdapter extends Adapter {
     public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, Integer bits,
             Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic, Boolean featured,
             Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType,
-            String chksum, Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshKeyEnabled) throws ResourceAllocationException;	
+            String chksum, Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshKeyEnabled, String imageStoreUuid) throws ResourceAllocationException;	
 }

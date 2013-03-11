@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -19,27 +19,17 @@ package com.cloud.api;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -66,7 +56,6 @@ import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import com.cloud.event.ActionEventUtils;
-import com.cloud.utils.ReflectUtil;
 import org.apache.cloudstack.acl.APILimitChecker;
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
@@ -150,10 +139,10 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-public class ApiServer implements HttpRequestHandler {
+public class ApiServer implements HttpRequestHandler, ApiServerService {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
@@ -167,13 +156,10 @@ public class ApiServer implements HttpRequestHandler {
     @Inject private ConfigurationDao _configDao;
 
     @Inject List<PluggableService> _pluggableServices;
-
     @Inject List<APIChecker> _apiAccessCheckers;
 
-    private Account _systemAccount = null;
-    private User _systemUser = null;
     @Inject private RegionManager _regionMgr = null;
-    
+
     private static int _workerCount = 0;
     private static ApiServer s_instance = null;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
@@ -195,9 +181,6 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     public void init() {
-        _systemAccount = _accountMgr.getSystemAccount();
-        _systemUser = _accountMgr.getSystemUser();
-
         Integer apiPort = null; // api port, null by default
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, "integration.api.port");
@@ -221,11 +204,16 @@ public class ApiServer implements HttpRequestHandler {
             }
         }
 
-        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class,
-                new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
+        Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
+        for(PluggableService pluggableService: _pluggableServices)
+            cmdClasses.addAll(pluggableService.getCommands());
 
         for(Class<?> cmdClass: cmdClasses) {
-            String apiName = cmdClass.getAnnotation(APICommand.class).name();
+            APICommand at = cmdClass.getAnnotation(APICommand.class);
+            if (at == null) {
+                throw new CloudRuntimeException(String.format("%s is claimed as a API command, but it doesn't have @APICommand annotation", cmdClass.getName()));
+            }
+            String apiName = at.name();
             if (_apiNameCmdClassMap.containsKey(apiName)) {
                 s_logger.error("API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
                 continue;
@@ -290,9 +278,9 @@ public class ApiServer implements HttpRequestHandler {
 
             try {
                 // always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
-                UserContext.registerContext(_systemUser.getId(), _systemAccount, null, true);
+                UserContext.registerContext(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, true);
                 sb.insert(0, "(userId=" + User.UID_SYSTEM + " accountId=" + Account.ACCOUNT_ID_SYSTEM + " sessionId=" + null + ") ");
-                String responseText = handleRequest(parameterMap, true, responseType, sb);
+                String responseText = handleRequest(parameterMap, responseType, sb);
                 sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
 
                 writeResponse(response, responseText, HttpStatus.SC_OK, responseType, null);
@@ -312,7 +300,7 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     @SuppressWarnings("rawtypes")
-    public String handleRequest(Map params, boolean decode, String responseType, StringBuffer auditTrailSb) throws ServerApiException {
+    public String handleRequest(Map params, String responseType, StringBuffer auditTrailSb) throws ServerApiException {
         String response = null;
         String[] command = null;
         try {
@@ -338,22 +326,13 @@ public class ApiServer implements HttpRequestHandler {
                         continue;
                     }
                     String[] value = (String[]) params.get(key);
-
-                    String decodedValue = null;
-                    if (decode) {
-                        try {
-                            decodedValue = URLDecoder.decode(value[0], "UTF-8");
-                        } catch (UnsupportedEncodingException usex) {
-                            s_logger.warn(key + " could not be decoded, value = " + value[0]);
-                            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, key + " could not be decoded, received value " + value[0]);
-                        } catch (IllegalArgumentException iae) {
-                            s_logger.warn(key + " could not be decoded, value = " + value[0]);
-                            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, key + " could not be decoded, received value " + value[0] + " which contains illegal characters eg.%");
-                        }
-                    } else {
-                        decodedValue = value[0];
+                    // fail if parameter value contains ASCII control (non-printable) characters
+                    String newValue = StringUtils.stripControlCharacters(value[0]);
+                    if ( !newValue.equals(value[0]) ) {
+                        throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Received value " + value[0] + " for parameter "
+                                + key + " is invalid, contains illegal ASCII non-printable characters");
                     }
-                    paramMap.put(key, decodedValue);
+                    paramMap.put(key, value[0]);
                 }
 
                 Class<?> cmdClass = getCmdClass(command[0]);
@@ -521,22 +500,22 @@ public class ApiServer implements HttpRequestHandler {
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
             // For those listXXXCommand which we have already created DB views, this step is not needed since async job is joined in their db views.
-            if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
-                    && !(cmdObj instanceof ListSecurityGroupsCmd)
-                    && !(cmdObj instanceof ListTagsCmd)
-                    && !(cmdObj instanceof ListEventsCmd)
-                    && !(cmdObj instanceof ListVMGroupsCmd)
-                    && !(cmdObj instanceof ListProjectsCmd)
-                    && !(cmdObj instanceof ListProjectAccountsCmd)
-                    && !(cmdObj instanceof ListProjectInvitationsCmd)
-                    && !(cmdObj instanceof ListHostsCmd)
-                    && !(cmdObj instanceof ListVolumesCmd)
-                    && !(cmdObj instanceof ListUsersCmd)
-                    && !(cmdObj instanceof ListAccountsCmd)
-                    && !(cmdObj instanceof ListStoragePoolsCmd)
-                    && !(cmdObj instanceof ListDiskOfferingsCmd)
-                    && !(cmdObj instanceof ListServiceOfferingsCmd)
-                    && !(cmdObj instanceof ListZonesByCmd)
+            if (realCmdObj instanceof BaseListCmd && !(realCmdObj instanceof ListVMsCmd) && !(realCmdObj instanceof ListRoutersCmd)
+                    && !(realCmdObj instanceof ListSecurityGroupsCmd)
+                    && !(realCmdObj instanceof ListTagsCmd)
+                    && !(realCmdObj instanceof ListEventsCmd)
+                    && !(realCmdObj instanceof ListVMGroupsCmd)
+                    && !(realCmdObj instanceof ListProjectsCmd)
+                    && !(realCmdObj instanceof ListProjectAccountsCmd)
+                    && !(realCmdObj instanceof ListProjectInvitationsCmd)
+                    && !(realCmdObj instanceof ListHostsCmd)
+                    && !(realCmdObj instanceof ListVolumesCmd)
+                    && !(realCmdObj instanceof ListUsersCmd)
+                    && !(realCmdObj instanceof ListAccountsCmd)
+                    && !(realCmdObj instanceof ListStoragePoolsCmd)
+                    && !(realCmdObj instanceof ListDiskOfferingsCmd)
+                    && !(realCmdObj instanceof ListServiceOfferingsCmd)
+                    && !(realCmdObj instanceof ListZonesByCmd)
                     ) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }
@@ -617,13 +596,13 @@ public class ApiServer implements HttpRequestHandler {
                 try{
                     checkCommandAvailable(user, commandName);
                 }
-                catch (PermissionDeniedException ex){
-                    s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
-                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
-                }
                 catch (RequestLimitException ex){
                     s_logger.debug(ex.getMessage());
                     throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
+                }
+                catch (PermissionDeniedException ex){
+                    s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
+                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
                 return true;
             } else {
@@ -1026,7 +1005,7 @@ public class ApiServer implements HttpRequestHandler {
 
         } catch (Exception e) {
             s_logger.error("Exception responding to http request", e);
-        }            				
+        }
         return responseText;
     }
 
@@ -1038,7 +1017,7 @@ public class ApiServer implements HttpRequestHandler {
         if (ex == null){
             // this call should not be invoked with null exception
             return getSerializedApiError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Some internal error happened", apiCommandParams, responseType);
-        }            				
+        }
         try {
             if (ex.getErrorCode() == ApiErrorCode.UNSUPPORTED_ACTION_ERROR || apiCommandParams == null || apiCommandParams.isEmpty()) {
                 responseName = "errorresponse";
@@ -1064,7 +1043,7 @@ public class ApiServer implements HttpRequestHandler {
             if (idList != null) {
                 for (int i=0; i < idList.size(); i++) {
                     apiResponse.addProxyObject(idList.get(i));
-                }            				
+                }
             }
             // Also copy over the cserror code and the function/layer in which
             // it was thrown.
@@ -1074,7 +1053,7 @@ public class ApiServer implements HttpRequestHandler {
             responseText = ApiResponseSerializer.toSerializedString(apiResponse, responseType);
 
         } catch (Exception e) {
-            s_logger.error("Exception responding to http request", e);            
+            s_logger.error("Exception responding to http request", e);
         }
         return responseText;
     }

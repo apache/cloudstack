@@ -26,20 +26,20 @@ import com.cloud.utils.db.GenericDao;
 
 public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 	CapacityVO findByHostIdType(Long hostId, short capacityType);
-	List<Long> listClustersInZoneOrPodByHostCapacities(long id, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone, float cpuOverprovisioningFactor);
-	List<Long> listHostsWithEnoughCapacity(int requiredCpu, long requiredRam, Long clusterId, String hostType, float cpuOverprovisioningFactor);	
+	List<Long> listClustersInZoneOrPodByHostCapacities(long id, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone);
+	List<Long> listHostsWithEnoughCapacity(int requiredCpu, long requiredRam, Long clusterId, String hostType);
 	boolean removeBy(Short capacityType, Long zoneId, Long podId, Long clusterId, Long hostId);
 	List<SummedCapacity> findByClusterPodZone(Long zoneId, Long podId, Long clusterId);
 	List<SummedCapacity> findNonSharedStorageForClusterPodZone(Long zoneId,Long podId, Long clusterId);
-	Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, short capacityType, boolean isZone, float cpuOverprovisioningFactor);
+	Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, short capacityType, boolean isZone);
 	List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId);
 	
-    List<Long> listPodsByHostCapacities(long zoneId, int requiredCpu, long requiredRam, short capacityType, float cpuOverprovisioningFactor);
-    Pair<List<Long>, Map<Long, Double>> orderPodsByAggregateCapacity(long zoneId, short capacityType, float cpuOverprovisioningFactor);
+    List<Long> listPodsByHostCapacities(long zoneId, int requiredCpu, long requiredRam, short capacityType);
+    Pair<List<Long>, Map<Long, Double>> orderPodsByAggregateCapacity(long zoneId, short capacityType);
     List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId,
             Long podId, Long clusterId, String resourceState);
     List<SummedCapacity> listCapacitiesGroupedByLevelAndType(Integer capacityType, Long zoneId, Long podId, Long clusterId, int level, Long limit);  
     void updateCapacityState(Long dcId, Long podId, Long clusterId,
             Long hostId, String capacityState);
-	List<Long> listClustersCrossingThreshold(short capacityType, Long zoneId, Float disableThreshold, long computeRequested, Float overProvFactor);
+	List<Long> listClustersCrossingThreshold(short capacityType, Long zoneId, Float disableThreshold, long computeRequested);
 }

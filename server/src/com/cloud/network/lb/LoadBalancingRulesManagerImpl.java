@@ -1158,6 +1158,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         assert(purpose == Purpose.LoadBalancing): "LB Manager asked to handle non-LB rules";
         boolean handled = false;
         for (LoadBalancingServiceProvider lbElement: _lbProviders) {
+            Provider provider = lbElement.getProvider();
+            boolean  isLbProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Lb, provider);
+            if (!isLbProvider) {
+                continue;
+            }
             handled = lbElement.applyLBRules(network, (List<LoadBalancingRule>) rules);
             if (handled)
                 break;

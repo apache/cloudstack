@@ -264,6 +264,8 @@ public interface ConfigurationService {
 
 	boolean removeLDAP(LDAPRemoveCmd cmd);
 
+    LDAPConfigCmd listLDAPConfig(LDAPConfigCmd cmd);
+
     /**
      * @param offering
      * @return

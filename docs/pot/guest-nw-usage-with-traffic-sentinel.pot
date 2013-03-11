@@ -1,0 +1,90 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Guest Network Usage Integration for Traffic Sentinel"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To collect usage data for a guest network, &PRODUCT; needs to pull the data from an external network statistics collector installed on the network. Metering statistics for guest networks are available through &PRODUCT;’s integration with inMon Traffic Sentinel."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Traffic Sentinel is a network traffic usage data collection package. &PRODUCT; can feed statistics from Traffic Sentinel into its own usage records, providing a basis for billing users of cloud infrastructure. Traffic Sentinel uses the traffic monitoring protocol sFlow. Routers and switches generate sFlow records and provide them for collection by Traffic Sentinel, then &PRODUCT; queries the Traffic Sentinel database to obtain this information"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To construct the query, &PRODUCT; determines what guest IPs were in use during the current query interval. This includes both newly assigned IPs and IPs that were assigned in a previous time period and continued to be in use. &PRODUCT; queries Traffic Sentinel for network statistics that apply to these IPs during the time period they remained allocated in &PRODUCT;. The returned data is correlated with the customer account that owned each IP and the timestamps when IPs were assigned and released in order to create billable metering records in &PRODUCT;. When the Usage Server runs, it collects this data."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To set up the integration between &PRODUCT; and Traffic Sentinel:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On your network infrastructure, install Traffic Sentinel and configure it to gather traffic data. For installation and configuration steps, see inMon documentation at <ulink url=\"http://inmon.com.\">Traffic Sentinel Documentation</ulink>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Traffic Sentinel UI, configure Traffic Sentinel to accept script querying from guest users. &PRODUCT; will be the guest user performing the remote queries to gather network usage for one or more IP addresses."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click File &gt; Users &gt; Access Control &gt; Reports Query, then select Guest from the drop-down list."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On &PRODUCT;, add the Traffic Sentinel host by calling the &PRODUCT; API command addTrafficMonitor. Pass in the URL of the Traffic Sentinel as protocol + host + port (optional); for example, http://10.147.28.100:8080. For the addTrafficMonitor command syntax, see the API Reference at <ulink url=\"http://incubator.apache.org/cloudstack/docs/api/index.html\">API Documentation</ulink>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For information about how to call the &PRODUCT; API, see the Developer’s Guide at <ulink url=\"http://incubator.apache.org/cloudstack/docs/en-US/Apache_CloudStack/4.0.0-incubating/html/API_Developers_Guide/index.html\">CloudStack API Developer's Guide</ulink>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as administrator."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select Configuration from the Global Settings page, and set the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "direct.network.stats.interval: How often you want &PRODUCT; to query Traffic Sentinel."
+msgstr ""
+

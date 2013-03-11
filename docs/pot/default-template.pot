@@ -1,0 +1,79 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "The Default Template"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; includes a CentOS template. This template is downloaded by the Secondary Storage VM after the primary and secondary storage are configured. You can use this template in your production deployment or you can delete it and use custom templates."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The root password for the default template is \"password\"."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A default template is provided for each of XenServer, KVM, and vSphere. The templates that are downloaded depend on the hypervisor type that is available in your cloud. Each template is approximately 2.5 GB physical size."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The default template includes the standard iptables rules, which will block most access to the template excluding ssh."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# iptables --list\n"
+"Chain INPUT (policy ACCEPT)\n"
+"target     prot opt source               destination\n"
+"RH-Firewall-1-INPUT  all  --  anywhere             anywhere\n"
+"\n"
+"Chain FORWARD (policy ACCEPT)\n"
+"target     prot opt source               destination\n"
+"RH-Firewall-1-INPUT  all  --  anywhere             anywhere\n"
+"\n"
+"Chain OUTPUT (policy ACCEPT)\n"
+"target     prot opt source               destination\n"
+"\n"
+"Chain RH-Firewall-1-INPUT (2 references)\n"
+"target     prot opt source               destination\n"
+"ACCEPT     all  --  anywhere             anywhere\n"
+"ACCEPT     icmp --  anywhere        anywhere       icmp any\n"
+"ACCEPT     esp  --  anywhere        anywhere\n"
+"ACCEPT     ah   --  anywhere        anywhere\n"
+"ACCEPT     udp  --  anywhere        224.0.0.251    udp dpt:mdns\n"
+"ACCEPT     udp  --  anywhere        anywhere       udp dpt:ipp\n"
+"ACCEPT     tcp  --  anywhere        anywhere       tcp dpt:ipp\n"
+"ACCEPT     all  --  anywhere        anywhere       state RELATED,ESTABLISHED\n"
+"ACCEPT     tcp  --  anywhere        anywhere       state NEW tcp dpt:ssh\n"
+"REJECT     all  --  anywhere        anywhere       reject-with icmp-host-\n"
+""
+msgstr ""
+

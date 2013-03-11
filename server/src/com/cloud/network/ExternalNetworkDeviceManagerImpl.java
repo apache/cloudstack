@@ -25,7 +25,6 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
@@ -37,14 +36,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.api.ApiDBUtils;
-import com.cloud.baremetal.ExternalDhcpManager;
-import com.cloud.baremetal.PxeServerManager;
-import com.cloud.baremetal.PxeServerManager.PxeServerType;
-import com.cloud.baremetal.PxeServerProfile;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.host.Host;
@@ -63,8 +55,6 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.server.api.response.NwDeviceDhcpResponse;
-import com.cloud.server.api.response.PxePingResponse;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
@@ -77,8 +67,6 @@ import com.cloud.vm.dao.NicDao;
 @Local(value = {ExternalNetworkDeviceManager.class})
 public class ExternalNetworkDeviceManagerImpl extends ManagerBase implements ExternalNetworkDeviceManager {
 
-    @Inject ExternalDhcpManager _dhcpMgr;
-    @Inject PxeServerManager _pxeMgr;
     @Inject AgentManager _agentMgr;
     @Inject NetworkModel _networkMgr;
     @Inject HostDao _hostDao;
@@ -121,80 +109,12 @@ public class ExternalNetworkDeviceManagerImpl extends ManagerBase implements Ext
 
         Collection paramsCollection = paramList.values();
         HashMap params = (HashMap) (paramsCollection.toArray())[0];
-        if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.ExternalDhcp.getName())) {
-            //Long zoneId = _identityService.getIdentityId("data_center", (String) params.get(ApiConstants.ZONE_ID));
-            //Long podId = _identityService.getIdentityId("host_pod_ref", (String)params.get(ApiConstants.POD_ID));
-            Long zoneId = Long.valueOf((String) params.get(ApiConstants.ZONE_ID));
-            Long podId = Long.valueOf((String)params.get(ApiConstants.POD_ID));
-            String type = (String) params.get(ApiConstants.DHCP_SERVER_TYPE);
-            String url = (String) params.get(ApiConstants.URL);
-            String username = (String) params.get(ApiConstants.USERNAME);
-            String password = (String) params.get(ApiConstants.PASSWORD);
-
-            return _dhcpMgr.addDhcpServer(zoneId, podId, type, url, username, password);
-        } else if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.PxeServer.getName())) {
-            Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
-            Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
-            //Long zoneId = _identityService.getIdentityId("data_center", (String) params.get(ApiConstants.ZONE_ID));
-            //Long podId = _identityService.getIdentityId("host_pod_ref", (String)params.get(ApiConstants.POD_ID));
-            String type = (String) params.get(ApiConstants.PXE_SERVER_TYPE);
-            String url = (String) params.get(ApiConstants.URL);
-            String username = (String) params.get(ApiConstants.USERNAME);
-            String password = (String) params.get(ApiConstants.PASSWORD);
-            String pingStorageServerIp = (String) params.get(ApiConstants.PING_STORAGE_SERVER_IP);
-            String pingDir = (String) params.get(ApiConstants.PING_DIR);
-            String tftpDir = (String) params.get(ApiConstants.TFTP_DIR);
-            String pingCifsUsername = (String) params.get(ApiConstants.PING_CIFS_USERNAME);
-            String pingCifsPassword = (String) params.get(ApiConstants.PING_CIFS_PASSWORD);
-            PxeServerProfile profile = new PxeServerProfile(zoneId, podId, url, username, password, type, pingStorageServerIp, pingDir, tftpDir,
-                    pingCifsUsername, pingCifsPassword);
-            return _pxeMgr.addPxeServer(profile);
-        } else {
-            throw new CloudRuntimeException("Unsupported network device type:" + cmd.getDeviceType());
-        }
+        return null;
     }
 
     @Override
     public NetworkDeviceResponse getApiResponse(Host device) {
-        NetworkDeviceResponse response;
-        HostVO host = (HostVO)device;
-        _hostDao.loadDetails(host);
-        if (host.getType() == Host.Type.ExternalDhcp) {
-            NwDeviceDhcpResponse r = new NwDeviceDhcpResponse();
-            r.setZoneId(host.getDataCenterId());
-            r.setPodId(host.getPodId());
-            r.setUrl(host.getPrivateIpAddress());
-            r.setType(host.getDetail("type"));
-            response = r;
-        } else if (host.getType() == Host.Type.PxeServer) {
-            String pxeType = host.getDetail("type");
-            if (pxeType.equalsIgnoreCase(PxeServerType.PING.getName())) {
-                PxePingResponse r = new PxePingResponse();
-                DataCenter zone = ApiDBUtils.findZoneById(host.getDataCenterId());
-                if (zone != null) {
-                    r.setZoneId(zone.getUuid());
-                }
-                if (host.getPodId() != null) {
-                    Pod pod = ApiDBUtils.findPodById(host.getPodId());
-                    if (pod != null) {
-                        r.setPodId(pod.getUuid());
-                    }
-                }
-                r.setUrl(host.getPrivateIpAddress());
-                r.setType(pxeType);
-                r.setStorageServerIp(host.getDetail("storageServer"));
-                r.setPingDir(host.getDetail("pingDir"));
-                r.setTftpDir(host.getDetail("tftpDir"));
-                response = r;
-            } else {
-                throw new CloudRuntimeException("Unsupported PXE server type:" + pxeType);
-            }
-        } else {
-            throw new CloudRuntimeException("Unsupported network device type:" + host.getType());
-        }
-
-        response.setId(device.getUuid());
-        return response;
+        return null;
     }
 
     private List<Host> listNetworkDevice(Long zoneId, Long physicalNetworkId, Long podId, Host.Type type) {

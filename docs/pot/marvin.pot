@@ -1,0 +1,45 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Marvin"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Marvin is the &PRODUCT; automation framework. It originated as a tool for integration testing but is now also used to build DevCloud as well as to provide a Python &PRODUCT; API binding."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Marvin's complete documenation is on the wiki at <ulink url=\"https://cwiki.apache.org/CLOUDSTACK/testing-with-python.html\">https://cwiki.apache.org/CLOUDSTACK/testing-with-python.html</ulink>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The source code is located at <emphasis>tools/marvin</emphasis>"
+msgstr ""
+

@@ -16,8 +16,8 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import static com.cloud.utils.StringUtils.*;
-import static com.cloud.utils.db.DbUtil.*;
+import static com.cloud.utils.StringUtils.join;
+import static com.cloud.utils.db.DbUtil.closeResources;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -34,10 +34,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.api.BaseCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.DomainVO;
@@ -55,11 +57,10 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.tags.ResourceTagVO;
-import com.cloud.tags.dao.ResourceTagsDaoImpl;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
-
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -68,7 +69,9 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -122,14 +125,15 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     private SearchBuilder<VMTemplateVO> PublicIsoSearch;
     private SearchBuilder<VMTemplateVO> UserIsoSearch;
     private GenericSearchBuilder<VMTemplateVO, Long> CountTemplatesByAccount;
+    private SearchBuilder<VMTemplateVO> updateStateSearch;
 
-    @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject ResourceTagDao _tagsDao;
 
 
     private String routerTmpltName;
     private String consoleProxyTmpltName;
     
-    protected VMTemplateDaoImpl() {
+    public VMTemplateDaoImpl() {
     }
     
     @Override
@@ -378,6 +382,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		CountTemplatesByAccount.and("account", CountTemplatesByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
 		CountTemplatesByAccount.and("removed", CountTemplatesByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
 		CountTemplatesByAccount.done();
+		
+        updateStateSearch = this.createSearchBuilder();
+        updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
+        updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
+        updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
+        updateStateSearch.done();
 
 		return result;
 	}
@@ -1073,4 +1083,39 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         return templateZonePairList;
     }
 
+    @Override
+    public boolean updateState(TemplateState currentState, TemplateEvent event,
+            TemplateState nextState, VMTemplateVO vo, Object data) {
+        Long oldUpdated = vo.getUpdatedCount();
+        Date oldUpdatedTime = vo.getUpdated();
+    
+        
+        SearchCriteria<VMTemplateVO> sc = updateStateSearch.create();
+        sc.setParameters("id", vo.getId());
+        sc.setParameters("state", currentState);
+        sc.setParameters("updatedCount", vo.getUpdatedCount());
+
+        vo.incrUpdatedCount();
+
+        UpdateBuilder builder = getUpdateBuilder(vo);
+        builder.set(vo, "state", nextState);
+        builder.set(vo, "updated", new Date());
+
+        int rows = update((VMTemplateVO) vo, sc);
+        if (rows == 0 && s_logger.isDebugEnabled()) {
+            VMTemplateVO dbVol = findByIdIncludingRemoved(vo.getId());
+            if (dbVol != null) {
+                StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
+                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState()).append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
+                        .append(dbVol.getUpdated());
+                str.append(": New Data={id=").append(vo.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatecount=").append(vo.getUpdatedCount())
+                        .append("; updatedTime=").append(vo.getUpdated());
+                str.append(": stale Data={id=").append(vo.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatecount=").append(oldUpdated)
+                        .append("; updatedTime=").append(oldUpdatedTime);
+            } else {
+                s_logger.debug("Unable to update objectIndatastore: id=" + vo.getId() + ", as there is no such object exists in the database anymore");
+            }
+        }
+        return rows > 0;
+    }
 }

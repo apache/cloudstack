@@ -25,15 +25,19 @@ import javax.inject.Inject;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.network.Network;
+import com.cloud.network.dao.RouterNetworkDao;
 import com.cloud.network.dao.RouterNetworkDaoImpl;
 import com.cloud.network.dao.RouterNetworkVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.UserStatisticsDaoImpl;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -57,10 +61,10 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     protected SearchBuilder<DomainRouterVO> HostUpSearch;
     protected SearchBuilder<DomainRouterVO> StateNetworkTypeSearch;
     protected SearchBuilder<DomainRouterVO> OutsidePodSearch;
-    @Inject HostDaoImpl _hostsDao;
-    @Inject RouterNetworkDaoImpl _routerNetworkDao;
-    @Inject UserStatisticsDaoImpl _userStatsDao;
-    @Inject NetworkOfferingDaoImpl _offDao;
+    @Inject HostDao _hostsDao;
+    @Inject RouterNetworkDao _routerNetworkDao;
+    @Inject UserStatisticsDao _userStatsDao;
+    @Inject NetworkOfferingDao _offDao;
     protected SearchBuilder<DomainRouterVO> VpcSearch;
     
     public DomainRouterDaoImpl() {

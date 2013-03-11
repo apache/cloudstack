@@ -75,6 +75,7 @@ under the License.
                 <option value="ru_RU"><fmt:message key="label.lang.russian"/></option>
                 <option value="fr_FR"><fmt:message key="label.lang.french"/></option>
                 <option value="pt_BR"><fmt:message key="label.lang.brportugese"/></option>
+                <option value="ko_KR"><fmt:message key="label.lang.korean"/></option>
               </select>
             </div>
           </div>
@@ -1606,8 +1607,9 @@ under the License.
     <script src="lib/date.js" type="text/javascript"></script>
     <script src="lib/jquery.cookies.js" type="text/javascript"></script>
     <script src="lib/jquery.md5.js" type="text/javascript" ></script>
-		
-    <script src="lib/excanvas.js"></script>
+    <script src="lib/require.js" type="text/javascript"></script>
+
+    <script src="lib/excanvas.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.flot.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.colorhelpers.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.flot.crosshair.js" type="text/javascript"></script>
@@ -1654,6 +1656,8 @@ under the License.
     <script type="text/javascript" src="scripts/instanceWizard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/instances.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/events.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/regions.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/regions.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/ipRules.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/enableStaticNAT.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/securityRules.js?t=<%=now%>"></script>
@@ -1673,6 +1677,12 @@ under the License.
     <script type="text/javascript" src="scripts/system.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/domains.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/docs.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/vm_snapshots.js?t=<%=now%>"></script>  
+
+    <!-- Plugins -->
+    <script type="text/javascript" src="scripts/ui-custom/plugins.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="plugins/plugins.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/plugins.js?t=<%=now%>"></script>
   </body>
 </html>
 <jsp:include page="dictionary.jsp" />

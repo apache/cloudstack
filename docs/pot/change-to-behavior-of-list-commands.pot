@@ -1,0 +1,170 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Change to Behavior of List Commands"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "There was a major change in how our List* API commands work in CloudStack 3.0 compared to 2.2.x. The rules below apply only for managed resources – those that belong to an account, domain, or project. They are irrelevant for the List* commands displaying unmanaged (system) resources, such as hosts, clusters, and external network resources."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When no parameters are passed in to the call, the caller sees only resources owned by the caller (even when the caller is the administrator). Previously, the administrator saw everyone else's resources by default."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When accountName and domainId are passed in:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The caller sees the resources dedicated to the account specified."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If the call is executed by a regular user, the user is authorized to specify only the user's own account and domainId."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If the caller is a domain administrator, CloudStack performs an authorization check to see whether the caller is permitted to view resources for the given account and domainId."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When projectId is passed in, only resources belonging to that project are listed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When domainId is passed in, the call returns only resources belonging to the domain specified. To see the resources of subdomains, use the parameter isRecursive=true. Again, the regular user can see only resources owned by that user, the root administrator can list anything, and a domain administrator is authorized to see only resources of the administrator's own domain and subdomains."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To see all resources the caller is authorized to see, except for Project resources, use the parameter listAll=true."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To see all Project resources the caller is authorized to see, use the parameter projectId=-1."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "There is one API command that doesn't fall under the rules above completely: the listTemplates command. This command has its own flags defining the list rules:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listTemplates Flag"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Description"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "featured"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Returns templates that have been marked as featured and public."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "self"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Returns templates that have been registered or created by the calling user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "selfexecutable"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Same as self, but only returns templates that are ready to be deployed with."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "sharedexecutable"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ready templates that have been granted to the calling user by another user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "executable"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Templates that are owned by the calling user, or public templates, that can be used to deploy a new VM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "community"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Returns templates that have been marked as public but not featured."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "all"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Returns all templates (only usable by admins)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; UI on a general view will display all resources that the logged-in user is authorized to see, except for project resources. To see the project resources, select the project view."
+msgstr ""
+

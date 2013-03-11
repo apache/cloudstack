@@ -1,0 +1,131 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configure package repository"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; is only distributed from source from the official mirrors. However, members of the CloudStack community may build convenience binaries so that users can install Apache CloudStack without needing to build from source."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you didn't follow the steps to build your own packages from source in the sections for <xref linkend=\"sect-source-buildrpm\" /> or <xref linkend=\"sect-source-builddebs\" /> you may find pre-built DEB and RPM packages for your convience linked from the <ulink url=\"http://incubator.apache.org/cloudstack/downloads.html\">downloads</ulink> page."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "These repositories contain both the Management Server and KVM Hypervisor packages."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "DEB package repository"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can add a DEB package repository to your apt sources with the following commands. Please note that only packages for Ubuntu 12.04 LTS (precise) are being built at this time."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Use your preferred editor and open (or create) <filename>/etc/apt/sources.list.d/cloudstack.list</filename>. Add the community provided repository to the file:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "deb http://cloudstack.apt-get.eu/ubuntu precise 4.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "We now have to add the public key to the trusted keys."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>$</prompt> <command>wget</command> -O - http://cloudstack.apt-get.eu/release.asc|apt-key add -"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now update your local apt cache."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>$</prompt> <command>apt-get</command> update"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Your DEB package repository should now be configured and ready for use."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "RPM package repository"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "There is a RPM package repository for &PRODUCT; so you can easily install on RHEL based platforms."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you're using an RPM-based system, you'll want to add the Yum repository so that you can install &PRODUCT; with Yum."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Yum repository information is found under <filename>/etc/yum.repos.d</filename>. You'll see several <filename>.repo</filename> files in this directory, each one denoting a specific repository."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To add the &PRODUCT; repository, create <filename>/etc/yum.repos.d/cloudstack.repo</filename> and insert the following information."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"[cloudstack]\n"
+"name=cloudstack\n"
+"baseurl=<replaceable>http://cloudstack.apt-get.eu/rhel/4.0/</replaceable>\n"
+"enabled=1\n"
+"gpgcheck=0\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now you should be able to install CloudStack using Yum."
+msgstr ""
+

@@ -17,14 +17,12 @@
 package com.cloud.exception;
 
 import com.cloud.utils.SerialVersionUID;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * Exception thrown if number of requests is over api rate limit set.
- * @author minc
  *
  */
-public class RequestLimitException extends CloudRuntimeException {
+public class RequestLimitException extends PermissionDeniedException {
 
     private static final long serialVersionUID = SerialVersionUID.AccountLimitException;
 

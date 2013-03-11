@@ -1,0 +1,60 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Getting the release"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can download the latest &PRODUCT; release from the <ulink url=\"http://incubator.apache.org/cloudstack/downloads.html\"> Apache CloudStack project download page</ulink>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You'll notice several links under the 'Latest release' section."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<ulink url=\"http://www.apache.org/dyn/closer.cgi/dist/incubator/cloudstack/releases/4.0.0-incubating/apache-cloudstack-4.0.0-incubating-src.tar.bz2\"> apache-cloudstack-4.0.0-incubating-src.tar.bz2</ulink> - This is the link to the release itself."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<ulink url=\"http://www.apache.org/dist/incubator/cloudstack/releases/4.0.0-incubating/apache-cloudstack-4.0.0-incubating-src.tar.bz2.asc\">PGP</ulink> - This is a detached cryptographic signature that can be used to help verify the authenticity of the release."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<ulink url=\"http://www.apache.org/dist/incubator/cloudstack/releases/4.0.0-incubating/apache-cloudstack-4.0.0-incubating-src.tar.bz2.md5\">MD5</ulink> - An MD5 hash of the release to aid in verify the validity of the release download."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<ulink url=\"http://www.apache.org/dist/incubator/cloudstack/releases/4.0.0-incubating/apache-cloudstack-4.0.0-incubating-src.tar.bz2.sha\">SHA512</ulink> - A SHA512 hash of the release to aid in verify the validity of the release download."
+msgstr ""
+

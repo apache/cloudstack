@@ -20,6 +20,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
+import org.springframework.stereotype.Component;
 
 import com.cloud.bridge.model.CloudStackUserVO;
 import com.cloud.bridge.util.EncryptionSecretKeyCheckerUtil;
@@ -28,6 +29,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={CloudStackUserDao.class})
 public class CloudStackUserDaoImpl extends GenericDaoBase<CloudStackUserVO, String> implements CloudStackUserDao {
     public static final Logger logger = Logger.getLogger(CloudStackUserDaoImpl.class);

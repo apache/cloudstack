@@ -1,0 +1,95 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Install the Management Server on the First Host"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The first step in installation, whether you are installing the Management Server on one host or many, is to install the software on a single node."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you are planning to install the Management Server on multiple nodes for high availability, do not proceed to the additional nodes yet. That step will come later."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; Management server can be installed using either RPM or DEB packages. These packages will depend on everything you need to run the Management server."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Downloading vhd-util"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This procedure is required only for installations where XenServer is installed on the hypervisor hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Before setting up the Management Server, download vhd-util from <ulink url=\"http://download.cloud.com.s3.amazonaws.com/tools/vhd-util\">vhd-util</ulink>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If the Management Server is RHEL or CentOS, copy vhd-util to /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If the Management Server is Ubuntu, copy vhd-util to /usr/lib/cloud/common/scripts/vm/hypervisor/xenserver/vhd-util."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Install on CentOS/RHEL"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "We start by installing the required packages:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "yum install cloud-client"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Install on Ubuntu"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "apt-get install cloud-client"
+msgstr ""
+

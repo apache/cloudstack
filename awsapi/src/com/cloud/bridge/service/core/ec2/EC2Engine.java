@@ -25,9 +25,12 @@ import java.security.SignatureException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -443,25 +446,35 @@ public class EC2Engine extends ManagerBase {
      */
     public EC2DescribeSnapshotsResponse handleRequest( EC2DescribeSnapshots request ) 
     {
-        EC2DescribeVolumesResponse volumes = new EC2DescribeVolumesResponse();
         EC2SnapshotFilterSet sfs = request.getFilterSet();
         EC2TagKeyValue[] tagKeyValueSet = request.getResourceTagSet();
 
         try { 
-            // -> query to get the volume size for each snapshot
             EC2DescribeSnapshotsResponse response = listSnapshots( request.getSnapshotSet(),
                     getResourceTags(tagKeyValueSet));
             if (response == null) {
                 return new EC2DescribeSnapshotsResponse();
             }
             EC2Snapshot[] snapshots = response.getSnapshotSet();
-            for (EC2Snapshot snap : snapshots) {
-                volumes = listVolumes(snap.getVolumeId(), null, volumes, null);
-                EC2Volume[] volSet = volumes.getVolumeSet();
-                if (0 < volSet.length) snap.setVolumeSize(volSet[0].getSize());
-                volumes.reset();
+            // -> query to get the volume size for each snapshot
+            HashMap<String, Long> volumeIdSize = new HashMap<String, Long>();
+            for( EC2Snapshot snap : snapshots ) {
+                Boolean duplicateVolume = false;
+                Long size = null;
+                if ( volumeIdSize.containsKey(snap.getVolumeId()) ) {
+                    size = volumeIdSize.get(snap.getVolumeId());
+                    duplicateVolume = true;
+                    break;
+                }
+                if ( !duplicateVolume ) {
+                    EC2DescribeVolumesResponse volumes = new EC2DescribeVolumesResponse();
+                    volumes = listVolumes(snap.getVolumeId(), null, volumes, null);
+                    EC2Volume[] volumeSet = volumes.getVolumeSet();
+                    if (volumeSet.length > 0) size = volumeSet[0].getSize();
+                    volumeIdSize.put(snap.getVolumeId(), size);
+                }
+                snap.setVolumeSize(size);
             }
-
             if ( null == sfs )
                 return response;
             else return sfs.evaluate( response );
@@ -535,32 +548,6 @@ public class EC2Engine extends ManagerBase {
     }
 
 
-    /** REST API calls this method.
-     * Modify an existing template
-     * 
-     * @param request
-     * @return
-     */
-    public boolean modifyImageAttribute( EC2Image request ) 
-    {
-        // TODO: This is incomplete
-        EC2DescribeImagesResponse images = new EC2DescribeImagesResponse();
-
-        try {
-            images = listTemplates( request.getId(), images );
-            EC2Image[] imageSet = images.getImageSet();
-
-            CloudStackTemplate resp = getApi().updateTemplate(request.getId(), null, request.getDescription(), null, imageSet[0].getName(), null, null);
-            if (resp != null) {
-                return true;
-            }
-            return false;
-        } catch( Exception e ) {
-            logger.error( "EC2 ModifyImage - ", e);
-            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
-        }
-    }
-
 
     /**
      * Modify an existing template
@@ -572,32 +559,35 @@ public class EC2Engine extends ManagerBase {
     {
         try {
             if(request.getAttribute().equals(ImageAttribute.launchPermission)){
-
-                String accounts = "";
-                Boolean isPublic = null;
-                EC2ModifyImageAttribute.Operation operation = request.getLaunchPermOperation();
-
-                List<String> accountOrGroupList = request.getLaunchPermissionAccountsList();
-                if(accountOrGroupList != null && !accountOrGroupList.isEmpty()){
-                    boolean first = true;
-                    for(String accountOrGroup : accountOrGroupList){
-                        if("all".equalsIgnoreCase(accountOrGroup)){
-                            if(operation.equals(EC2ModifyImageAttribute.Operation.add)){
-                                isPublic = true;
+                EC2ImageLaunchPermission[] launchPermissions = request.getLaunchPermissionSet();
+                for (EC2ImageLaunchPermission launchPermission : launchPermissions) {
+                    String accounts = "";
+                    Boolean isPublic = null;
+                    EC2ImageLaunchPermission.Operation operation =  launchPermission.getLaunchPermOp();
+                    List<String> accountOrGroupList = launchPermission.getLaunchPermissionList();
+                    if(accountOrGroupList != null && !accountOrGroupList.isEmpty()){
+                        boolean first = true;
+                        for(String accountOrGroup : accountOrGroupList){
+                            if("all".equalsIgnoreCase(accountOrGroup)){
+                                if(operation.equals(EC2ImageLaunchPermission.Operation.add)){
+                                    isPublic = true;
+                                }else{
+                                    isPublic = false;
+                                }
                             }else{
-                                isPublic = false;
+                                if(!first){
+                                    accounts = accounts + ",";
+                                }
+                                accounts = accounts + accountOrGroup;
+                                first = false;
                             }
-                        }else{
-                            if(!first){
-                                accounts = accounts + ",";
-                            }
-                            accounts = accounts + accountOrGroup;
-                            first = false;
                         }
                     }
+                    CloudStackInfoResponse resp = getApi().updateTemplatePermissions(request.getImageId(), accounts, null, null, isPublic, operation.toString());
+                    if (!resp.getSuccess())
+                        return false;
                 }
-                CloudStackInfoResponse resp = getApi().updateTemplatePermissions(request.getImageId(), accounts, null, null, isPublic, operation.toString());
-                return resp.getSuccess();
+                return true;
             }else if(request.getAttribute().equals(ImageAttribute.description)){
                 CloudStackTemplate resp = getApi().updateTemplate(request.getImageId(), null, request.getDescription(), null, null, null, null);
                 if (resp != null) {
@@ -647,59 +637,6 @@ public class EC2Engine extends ManagerBase {
 
         return imageAtts;
     }
-
-
-
-    /**
-     * If given a specific list of snapshots of interest, then only values from those snapshots are returned.
-     * 
-     * @param interestedShots - can be null, should be a subset of all snapshots
-     */
-    private EC2DescribeSnapshotsResponse listSnapshots( String[] interestedShots, List<CloudStackKeyValue> resourceTagSet ) throws Exception {
-        EC2DescribeSnapshotsResponse snapshots = new EC2DescribeSnapshotsResponse();
-
-        List<CloudStackSnapshot> cloudSnaps;
-        if (interestedShots == null || interestedShots.length == 0) {
-            cloudSnaps = getApi().listSnapshots(null, null, null, null, null, null, null, null, null, resourceTagSet);
-        } else {
-            cloudSnaps = new ArrayList<CloudStackSnapshot>();
-
-            for(String id : interestedShots) {
-                List<CloudStackSnapshot> tmpList = getApi().listSnapshots(null, null, id, null, null, null, null,
-                        null, null, resourceTagSet);
-                cloudSnaps.addAll(tmpList);
-            }
-        }
-
-        if (cloudSnaps == null) { 
-            return null;
-        }
-
-        for(CloudStackSnapshot cloudSnapshot : cloudSnaps) {
-            EC2Snapshot shot  = new EC2Snapshot();
-            shot.setId(cloudSnapshot.getId());
-            shot.setName(cloudSnapshot.getName());
-            shot.setVolumeId(cloudSnapshot.getVolumeId());
-            shot.setType(cloudSnapshot.getSnapshotType());
-            shot.setState(cloudSnapshot.getState());
-            shot.setCreated(cloudSnapshot.getCreated());
-            shot.setAccountName(cloudSnapshot.getAccountName());
-            shot.setDomainId(cloudSnapshot.getDomainId());
-
-            List<CloudStackKeyValue> resourceTags = cloudSnapshot.getTags();
-            for(CloudStackKeyValue resourceTag : resourceTags) {
-                EC2TagKeyValue param = new EC2TagKeyValue();
-                param.setKey(resourceTag.getKey());
-                if (resourceTag.getValue() != null)
-                    param.setValue(resourceTag.getValue());
-                shot.addResourceTag(param);
-            }
-
-            snapshots.addSnapshot(shot);
-        }
-        return snapshots;
-    }
-
 
     // handlers
     /**
@@ -843,7 +780,10 @@ public class EC2Engine extends ManagerBase {
      */
     public boolean releaseAddress(EC2ReleaseAddress request) {
         try {
-            CloudStackIpAddress cloudIp = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null).get(0);
+            List<CloudStackIpAddress> cloudIps = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null);
+            if (cloudIps == null)
+                throw new EC2ServiceException(ServerError.InternalError, "Specified ipAddress doesn't exist");
+            CloudStackIpAddress cloudIp = cloudIps.get(0);
             CloudStackInfoResponse resp = getApi().disassociateIpAddress(cloudIp.getId());
             if (resp != null) {
                 return resp.getSuccess();
@@ -863,8 +803,17 @@ public class EC2Engine extends ManagerBase {
      */
     public boolean associateAddress( EC2AssociateAddress request ) {
         try {
-            CloudStackIpAddress cloudIp = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null).get(0);
-            CloudStackUserVm cloudVm = getApi().listVirtualMachines(null, null, true, null, null, null, null, request.getInstanceId(), null, null, null, null, null, null, null, null, null).get(0);
+            List<CloudStackIpAddress> cloudIps = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null);
+            if (cloudIps == null)
+                throw new EC2ServiceException(ServerError.InternalError, "Specified ipAddress doesn't exist");
+            CloudStackIpAddress cloudIp = cloudIps.get(0);
+
+            List<CloudStackUserVm> vmList = getApi().listVirtualMachines(null, null, true, null, null, null, null,
+                    request.getInstanceId(), null, null, null, null, null, null, null, null, null);
+            if (vmList == null || vmList.size() == 0) {
+                throw new EC2ServiceException(ServerError.InternalError, "Specified instance-id doesn't exist");
+            }
+            CloudStackUserVm cloudVm = vmList.get(0);
 
             CloudStackInfoResponse resp = getApi().enableStaticNat(cloudIp.getId(), cloudVm.getId());
             if (resp != null) {
@@ -885,7 +834,11 @@ public class EC2Engine extends ManagerBase {
      */
     public boolean disassociateAddress( EC2DisassociateAddress request ) {
         try {
-            CloudStackIpAddress cloudIp = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null).get(0);
+            List<CloudStackIpAddress> cloudIps = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null);
+            if (cloudIps == null)
+                throw new EC2ServiceException(ServerError.InternalError, "Specified ipAddress doesn't exist");
+            CloudStackIpAddress cloudIp = cloudIps.get(0);
+
             CloudStackInfoResponse resp = getApi().disableStaticNat(cloudIp.getId());
             if (resp != null) {
                 return resp.getSuccess();
@@ -1120,12 +1073,8 @@ public class EC2Engine extends ManagerBase {
             EC2AvailabilityZonesFilterSet azfs = request.getFilterSet();
             if ( null == azfs )
                 return availableZones;
-            else {
-                List<String> matchedAvailableZones = azfs.evaluate(availableZones);
-                if (matchedAvailableZones.isEmpty())
-                    return new EC2DescribeAvailabilityZonesResponse();
-                return listZones(matchedAvailableZones.toArray(new String[0]), null);
-            }
+            else
+                return azfs.evaluate(availableZones);
         } catch( EC2ServiceException error ) {
             logger.error( "EC2 DescribeAvailabilityZones - ", error);
             throw error;
@@ -1189,6 +1138,7 @@ public class EC2Engine extends ManagerBase {
                 resp.setState(vol.getState());
                 resp.setType(vol.getVolumeType());
                 resp.setVMState(vol.getVirtualMachineState());
+                resp.setAttachmentState(mapToAmazonVolumeAttachmentState(vol.getVirtualMachineState()));
                 resp.setZoneName(vol.getZoneName());
                 return resp;
             }
@@ -1275,6 +1225,7 @@ public class EC2Engine extends ManagerBase {
                 resp.setState(vol.getState());
                 resp.setType(vol.getVolumeType());
                 resp.setVMState(vol.getVirtualMachineState());
+                resp.setAttachmentState("detached");
                 resp.setZoneName(vol.getZoneName());
                 return resp;
             }
@@ -1472,45 +1423,53 @@ public class EC2Engine extends ManagerBase {
 
             // now actually deploy the vms
             for( int i=0; i < createInstances; i++ ) {
-                CloudStackUserVm resp = getApi().deployVirtualMachine(svcOffering.getId(), 
-                        request.getTemplateId(), zoneId, null, null, null, null, 
-                        null, null, null, request.getKeyName(), null, (network != null ? network.getId() : null), 
-                        null, constructList(request.getGroupSet()), request.getSize().longValue(), request.getUserData());
-                EC2Instance vm = new EC2Instance();
-                vm.setId(resp.getId().toString());
-                vm.setName(resp.getName());
-                vm.setZoneName(resp.getZoneName());
-                vm.setTemplateId(resp.getTemplateId().toString());
-                if (resp.getSecurityGroupList() != null && resp.getSecurityGroupList().size() > 0) {
-                    // TODO, we have a list of security groups, just return the first one?
-                    List<CloudStackSecurityGroup> securityGroupList = resp.getSecurityGroupList();
-                    for (CloudStackSecurityGroup securityGroup : securityGroupList) {
-                        vm.addGroupName(securityGroup.getName());
+                try{
+                    CloudStackUserVm resp = getApi().deployVirtualMachine(svcOffering.getId(), 
+                            request.getTemplateId(), zoneId, null, null, null, null, 
+                            null, null, null, request.getKeyName(), null, (network != null ? network.getId() : null), 
+                            null, constructList(request.getGroupSet()), request.getSize().longValue(), request.getUserData());
+                    EC2Instance vm = new EC2Instance();
+                    vm.setId(resp.getId().toString());
+                    vm.setName(resp.getName());
+                    vm.setZoneName(resp.getZoneName());
+                    vm.setTemplateId(resp.getTemplateId().toString());
+                    if (resp.getSecurityGroupList() != null && resp.getSecurityGroupList().size() > 0) {
+                        List<CloudStackSecurityGroup> securityGroupList = resp.getSecurityGroupList();
+                        for (CloudStackSecurityGroup securityGroup : securityGroupList) {
+                            EC2SecurityGroup param = new EC2SecurityGroup();
+                            param.setId(securityGroup.getId());
+                            param.setName(securityGroup.getName());
+                            vm.addGroupName(param);
+                        }
                     }
-                }
-                vm.setState(resp.getState());
-                vm.setCreated(resp.getCreated());
-                List <CloudStackNic> nicList = resp.getNics();
-                for (CloudStackNic nic : nicList) {
-                    if (nic.getIsDefault()) {
-                        vm.setPrivateIpAddress(nic.getIpaddress());
-                        break;
+                    vm.setState(resp.getState());
+                    vm.setCreated(resp.getCreated());
+                    List <CloudStackNic> nicList = resp.getNics();
+                    for (CloudStackNic nic : nicList) {
+                        if (nic.getIsDefault()) {
+                            vm.setPrivateIpAddress(nic.getIpaddress());
+                            break;
+                        }
                     }
+                    vm.setIpAddress(resp.getIpAddress());
+                    vm.setAccountName(resp.getAccountName());
+                    vm.setDomainId(resp.getDomainId());
+                    vm.setHypervisor(resp.getHypervisor());
+                    vm.setServiceOffering( svcOffering.getName());
+                    vm.setKeyPairName(resp.getKeyPairName());
+                    instances.addInstance(vm);
+                    countCreated++;
+                }catch(Exception e){
+                    logger.error("Failed to deploy VM number: "+ (i+1) +" due to error: "+e.getMessage());
+                    break;
                 }
-                vm.setIpAddress(resp.getIpAddress());
-                vm.setAccountName(resp.getAccountName());
-                vm.setDomainId(resp.getDomainId());
-                vm.setHypervisor(resp.getHypervisor());
-                vm.setServiceOffering( svcOffering.getName());
-                vm.setKeyPairName(resp.getKeyPairName());
-                instances.addInstance(vm);
-                countCreated++;
             }    		
 
             if (0 == countCreated) {
                 // TODO, we actually need to destroy left-over VMs when the exception is thrown
-                throw new EC2ServiceException(ServerError.InsufficientInstanceCapacity, "Insufficient Instance Capacity" );
+                throw new EC2ServiceException(ServerError.InternalError, "Failed to deploy instances" );
             }
+            logger.debug("Could deploy "+ countCreated + " VM's successfully");
 
             return instances;
         } catch( Exception e ) {
@@ -1572,6 +1531,7 @@ public class EC2Engine extends ManagerBase {
         // -> first determine the current state of each VM (becomes it previous state)
         try {   
             String[] instanceSet = request.getInstancesSet();
+            Boolean forced = request.getForce();
 
             EC2DescribeInstancesResponse previousState = listVirtualMachines( instanceSet, null, null );
             virtualMachines = previousState.getInstanceSet();
@@ -1593,7 +1553,7 @@ public class EC2Engine extends ManagerBase {
                         instances.addInstance(vm);
                         continue;
                     }
-                    resp = getApi().stopVirtualMachine(vm.getId(), false);
+                    resp = getApi().stopVirtualMachine(vm.getId(), forced);
                     if(logger.isDebugEnabled())
                         logger.debug("Stopping VM " + vm.getId() + " job " + resp.getJobId());
                 }
@@ -1701,11 +1661,16 @@ public class EC2Engine extends ManagerBase {
                 ec2Vol.setSize(vol.getSize());
                 ec2Vol.setType(vol.getVolumeType());
 
-                if(vol.getVirtualMachineId() != null)
+                if(vol.getVirtualMachineId() != null) {
                     ec2Vol.setInstanceId(vol.getVirtualMachineId());
+                    if (vol.getVirtualMachineState() != null) {
+                        ec2Vol.setVMState(vol.getVirtualMachineState());
+                        ec2Vol.setAttachmentState(mapToAmazonVolumeAttachmentState(vol.getVirtualMachineState()));
+                    }
+                } else {
+                    ec2Vol.setAttachmentState("detached");
+                }
 
-                if(vol.getVirtualMachineState() != null)
-                    ec2Vol.setVMState(vol.getVirtualMachineState());
                 ec2Vol.setZoneName(vol.getZoneName());
 
                 List<CloudStackKeyValue> resourceTags = vol.getTags();
@@ -1749,9 +1714,11 @@ public class EC2Engine extends ManagerBase {
 
         zones = listZones(interestedZones, domainId);
 
-        if (zones == null || zones.getZoneIdAt( 0 ) == null) 
+        if (zones == null || zones.getAvailabilityZoneSet().length == 0)
             throw new EC2ServiceException(ClientError.InvalidParameterValue, "Unknown zoneName value - " + zoneName);
-        return zones.getZoneIdAt(0);
+
+        EC2AvailabilityZone[] zoneSet = zones.getAvailabilityZoneSet();
+        return zoneSet[0].getId();
     }
 
 
@@ -1826,24 +1793,31 @@ public class EC2Engine extends ManagerBase {
      * 
      * @return EC2DescribeAvailabilityZonesResponse
      */
-    private EC2DescribeAvailabilityZonesResponse listZones(String[] interestedZones, String domainId) throws Exception 
-    {    
+    private EC2DescribeAvailabilityZonesResponse listZones(String[] interestedZones, String domainId)
+            throws Exception  {
         EC2DescribeAvailabilityZonesResponse zones = new EC2DescribeAvailabilityZonesResponse();
 
         List<CloudStackZone> cloudZones = getApi().listZones(true, domainId, null, null);
-
-        if(cloudZones != null) {
+        if(cloudZones != null && cloudZones.size() > 0) {
             for(CloudStackZone cloudZone : cloudZones) {
-                if ( null != interestedZones && 0 < interestedZones.length ) {
-                    for( int j=0; j < interestedZones.length; j++ ) {
-                        if (interestedZones[j].equalsIgnoreCase( cloudZone.getName())) {
-                            zones.addZone(cloudZone.getId().toString(), cloudZone.getName());
+                boolean matched = false;
+                if (interestedZones.length > 0) {
+                    for (String zoneName : interestedZones){
+                        if (zoneName.equalsIgnoreCase( cloudZone.getName())) {
+                            matched = true;
                             break;
                         }
                     }
-                } else { 
-                    zones.addZone(cloudZone.getId().toString(), cloudZone.getName());
+                } else {
+                    matched = true;
                 }
+                if (!matched) continue;
+                EC2AvailabilityZone ec2Zone = new EC2AvailabilityZone();
+                ec2Zone.setId(cloudZone.getId().toString());
+                ec2Zone.setMessage(cloudZone.getAllocationState());
+                ec2Zone.setName(cloudZone.getName());
+
+                zones.addAvailabilityZone(ec2Zone);
             }
         }
         return zones;
@@ -1906,10 +1880,12 @@ public class EC2Engine extends ManagerBase {
                 }
 
                 if (cloudVm.getSecurityGroupList() != null && cloudVm.getSecurityGroupList().size() > 0) {
-                    // TODO, we have a list of security groups, just return the first one?
                     List<CloudStackSecurityGroup> securityGroupList = cloudVm.getSecurityGroupList();
                     for (CloudStackSecurityGroup securityGroup : securityGroupList) {
-                        ec2Vm.addGroupName(securityGroup.getName());
+                        EC2SecurityGroup param = new EC2SecurityGroup();
+                        param.setId(securityGroup.getId());
+                        param.setName(securityGroup.getName());
+                        ec2Vm.addGroupName(param);
                     }
                 }
 
@@ -2008,7 +1984,7 @@ public class EC2Engine extends ManagerBase {
      * @throws ParserConfigurationException
      * @throws ParseException
      */
-    public EC2DescribeSecurityGroupsResponse listSecurityGroups( String[] interestedGroups ) throws Exception {
+    private EC2DescribeSecurityGroupsResponse listSecurityGroups( String[] interestedGroups ) throws Exception {
         try {
             EC2DescribeSecurityGroupsResponse groupSet = new EC2DescribeSecurityGroupsResponse();
 
@@ -2107,6 +2083,53 @@ public class EC2Engine extends ManagerBase {
             return addressSet;
         } catch(Exception e) {
             logger.error( "List Addresses - ", e);
+            throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
+        }
+    }
+
+    private EC2DescribeSnapshotsResponse listSnapshots( String[] snapshotIds, List<CloudStackKeyValue> resourceTagSet) throws Exception {
+        try {
+            EC2DescribeSnapshotsResponse snapshotSet = new EC2DescribeSnapshotsResponse();
+
+            List<CloudStackSnapshot> snapshots = getApi().listSnapshots(null, null, null, null, null, null, null, null, null, resourceTagSet);
+            if ( snapshots != null && snapshots.size() > 0) {
+                for ( CloudStackSnapshot snapshot : snapshots) {
+                    boolean matched = false;
+                    if ( snapshotIds.length > 0) {
+                        for ( String snapshotId : snapshotIds) {
+                            if (snapshot.getId().equalsIgnoreCase(snapshotId)) {
+                                matched = true;
+                                break;
+                            }
+                        }
+                    } else matched = true;
+
+                    if (!matched) continue ;
+
+                    EC2Snapshot ec2Snapshot = new EC2Snapshot();
+                    ec2Snapshot.setId(snapshot.getId());
+                    ec2Snapshot.setName(snapshot.getName());
+                    ec2Snapshot.setVolumeId(snapshot.getVolumeId());
+                    ec2Snapshot.setType(snapshot.getSnapshotType());
+                    ec2Snapshot.setState(snapshot.getState());
+                    ec2Snapshot.setCreated(snapshot.getCreated());
+                    ec2Snapshot.setAccountName(snapshot.getAccountName());
+                    ec2Snapshot.setDomainId(snapshot.getDomainId());
+
+                    List<CloudStackKeyValue> resourceTags = snapshot.getTags();
+                    for( CloudStackKeyValue resourceTag : resourceTags) {
+                        EC2TagKeyValue param = new EC2TagKeyValue();
+                        param.setKey(resourceTag.getKey());
+                        if ( resourceTag.getValue() != null)
+                            param.setValue(resourceTag.getValue());
+                        ec2Snapshot.addResourceTag(param);
+                    }
+                    snapshotSet.addSnapshot(ec2Snapshot);
+                }
+            }
+            return snapshotSet;
+        } catch(Exception e) {
+            logger.error( "List Snapshots - ", e);
             throw new EC2ServiceException(ServerError.InternalError, e.getMessage());
         }
     }
@@ -2406,6 +2429,25 @@ public class EC2Engine extends ManagerBase {
         if (state.equalsIgnoreCase( "Destroy"   )) return "deleting";
 
         return "error"; 
+    }
+
+    /**
+     * Map CloudStack VM state to Amazon volume attachment state
+     *
+     * @param CloudStack VM state
+     * @return Amazon Volume attachment state
+     */
+    private String mapToAmazonVolumeAttachmentState (String vmState) {
+        if ( vmState.equalsIgnoreCase("Running") || vmState.equalsIgnoreCase("Stopping") ||
+                vmState.equalsIgnoreCase("Stopped") ) {
+            return "attached";
+        }
+        else if (vmState.equalsIgnoreCase("Starting")) {
+            return "attaching";
+        }
+        else { // VM state is 'destroyed' or 'error' or other
+            return "detached";
+        }
     }
 
     /**

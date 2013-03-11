@@ -1,0 +1,153 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Enabling the EC2 and S3 Compatible Interface"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The software that provides AWS API compatibility is installed along with &PRODUCT;. You must enable the services and perform some setup steps prior to using it."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set the global configuration parameters for each service to true. See <xref linkend=\"global-config\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create a set of &PRODUCT; service offerings with names that match the Amazon service offerings. You can do this through the &PRODUCT; UI as described in the Administration Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Be sure you have included the Amazon default service offering, m1.small. As well as any EC2 instance types that you will use."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you did not already do so when you set the configuration parameter in step 1, restart the Management Server."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-management restart"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following sections provides details to perform these steps"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Enabling the Services"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To enable the EC2 and S3 compatible services you need to set the configuration variables <emphasis>enable.ec2.api</emphasis> and <emphasis>enable.s3.api</emphasis> to true. You do not have to enable both at the same time. Enable the ones you need. This can be done via the &PRODUCT; GUI by going in <emphasis>Global Settings</emphasis> or via the API."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The snapshot below shows you how to use the GUI to enable these services"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<mediaobject> <imageobject> <imagedata fileref=\"./images/ec2-s3-configuration.png\" /> </imageobject> <textobject> <phrase>Use the GUI to set the configuration variable to <emphasis>true</emphasis></phrase> </textobject> </mediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Using the &PRODUCT; API, the easiest is to use the so-called integration port on which you can make unauthenticated calls. In Global Settings set the port to 8096 and subsequently call the <emphasis>updateConfiguration</emphasis> method. The following urls shows you how:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"            http://localhost:8096/client/api?command=updateConfiguration&amp;name=enable.ec2.api&amp;value=true\n"
+"            http://localhost:8096/client/api?command=updateConfiguration&amp;name=enable.ec2.api&amp;value=true\n"
+"            "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Once you have enabled the services, restart the server."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Creating EC2 Compatible Service Offerings"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You will also need to define compute service offerings with names compatible with the <ulink url=\"http://aws.amazon.com/ec2/instance-types/\"> Amazon EC2 instance types</ulink> API names (e.g m1.small,m1.large). This can be done via the &PRODUCT; GUI. Go under <emphasis>Service Offerings</emphasis> select <emphasis>Compute offering</emphasis> and either create a new compute offering or modify an existing one, ensuring that the name matches an EC2 instance type API name. The snapshot below shows you how:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<mediaobject> <imageobject> <imagedata fileref=\"./images/compute-service-offerings.png\" /> </imageobject> <textobject> <phrase>Use the GUI to set the name of a compute service offering to an EC2 instance type API name.</phrase> </textobject> </mediaobject>"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Modifying the AWS API Port"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) The AWS API listens for requests on port 7080. If you prefer AWS API to listen on another port, you can change it as follows:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Edit the files /etc/cloud/management/server.xml, /etc/cloud/management/server-nonssl.xml, and /etc/cloud/management/server-ssl.xml."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In each file, find the tag &lt;Service name=\"Catalina7080\"&gt;. Under this tag, locate &lt;Connector executor=\"tomcatThreadPool-internal\" port= ....&lt;."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Change the port to whatever port you want to use, then save the files."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you re-install &PRODUCT;, you will have to re-enable the services and if need be update the port."
+msgstr ""
+

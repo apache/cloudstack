@@ -68,7 +68,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         DomainRouterResponse routerResponse = new DomainRouterResponse();
         routerResponse.setId(router.getUuid());
         routerResponse.setZoneId(router.getDataCenterUuid());
-        routerResponse.setName(router.getHostName());
+        routerResponse.setName(router.getName());
         routerResponse.setTemplateId(router.getTemplateUuid());
         routerResponse.setCreated(router.getCreated());
         routerResponse.setState(router.getState());
@@ -116,6 +116,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
                 nicResponse.setNetworkid(router.getNetworkUuid());
                 nicResponse.setNetworkName(router.getNetworkName());
                 nicResponse.setMacAddress(router.getMacAddress());
+                nicResponse.setIp6Address(router.getIp6Address());
+                nicResponse.setIp6Gateway(router.getIp6Gateway());
+                nicResponse.setIp6Cidr(router.getIp6Cidr());
                 if (router.getBroadcastUri() != null) {
                     nicResponse.setBroadcastUri(router.getBroadcastUri().toString());
                 }
@@ -148,6 +151,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setDns1(router.getDns1());
         routerResponse.setDns2(router.getDns2());
 
+        routerResponse.setIp6Dns1(router.getIp6Dns1());
+        routerResponse.setIp6Dns2(router.getIp6Dns2());
+
         routerResponse.setVpcId(router.getVpcUuid());
 
         // set async job
@@ -164,6 +170,29 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
     public DomainRouterResponse setDomainRouterResponse(DomainRouterResponse vrData, DomainRouterJoinVO vr) {
         long nic_id = vr.getNicId();
         if (nic_id > 0) {
+            TrafficType ty = vr.getTrafficType();
+            if (ty != null) {
+                // legacy code, public/control/guest nic info is kept in
+                // nics response object
+                if (ty == TrafficType.Public) {
+                    vrData.setPublicIp(vr.getIpAddress());
+                    vrData.setPublicMacAddress(vr.getMacAddress());
+                    vrData.setPublicNetmask(vr.getNetmask());
+                    vrData.setGateway(vr.getGateway());
+                    vrData.setPublicNetworkId(vr.getNetworkUuid());
+                } else if (ty == TrafficType.Control) {
+                    vrData.setLinkLocalIp(vr.getIpAddress());
+                    vrData.setLinkLocalMacAddress(vr.getMacAddress());
+                    vrData.setLinkLocalNetmask(vr.getNetmask());
+                    vrData.setLinkLocalNetworkId(vr.getNetworkUuid());
+                } else if (ty == TrafficType.Guest) {
+                    vrData.setGuestIpAddress(vr.getIpAddress());
+                    vrData.setGuestMacAddress(vr.getMacAddress());
+                    vrData.setGuestNetmask(vr.getNetmask());
+                    vrData.setGuestNetworkId(vr.getNetworkUuid());
+                    vrData.setNetworkDomain(vr.getNetworkDomain());
+                }
+            }
             NicResponse nicResponse = new NicResponse();
             nicResponse.setId(vr.getNicUuid());
             nicResponse.setIpaddress(vr.getIpAddress());
@@ -171,6 +200,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             nicResponse.setNetmask(vr.getNetmask());
             nicResponse.setNetworkid(vr.getNetworkUuid());
             nicResponse.setMacAddress(vr.getMacAddress());
+            nicResponse.setIp6Address(vr.getIp6Address());
+            nicResponse.setIp6Gateway(vr.getIp6Gateway());
+            nicResponse.setIp6Cidr(vr.getIp6Cidr());
             if (vr.getBroadcastUri() != null) {
                 nicResponse.setBroadcastUri(vr.getBroadcastUri().toString());
             }

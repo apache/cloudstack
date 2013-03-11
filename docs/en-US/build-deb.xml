@@ -51,7 +51,7 @@
        and packaging them into DEBs by issuing the following command.
     </para>
 <screen>
-<command>$ dpkg-buildpackge -uc -us</command>
+<command>$ dpkg-buildpackage -uc -us</command>
 </screen>
 
 <para>

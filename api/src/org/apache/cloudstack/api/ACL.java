@@ -22,9 +22,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ FIELD })
 public @interface ACL {
+
+    AccessType accessType() default AccessType.ListEntry;
 
     boolean checkKeyAccess() default false;
     boolean checkValueAccess() default false;

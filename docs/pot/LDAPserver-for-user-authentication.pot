@@ -1,0 +1,60 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:55\n"
+"PO-Revision-Date: 2013-02-02T20:11:55\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Using an LDAP Server for User Authentication"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can use an external LDAP server such as Microsoft Active Directory or ApacheDS to authenticate &PRODUCT; end-users. Just map &PRODUCT; accounts to the corresponding LDAP accounts using a query filter. The query filter is written using the query syntax of the particular LDAP server, and can include special wildcard characters provided by &PRODUCT; for matching common values such as the user’s email address and name. &PRODUCT; will search the external LDAP directory tree starting at a specified base directory and return the distinguished name (DN) and password of the matching user. This information along with the given password is used to authenticate the user.."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To set up LDAP authentication in &PRODUCT;, call the &PRODUCT; API command ldapConfig and provide the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hostname or IP address and listening port of the LDAP server"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Base directory and query filter"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Search user DN credentials, which give &PRODUCT; permission to search on the LDAP server"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "SSL keystore and password, if SSL is used"
+msgstr ""
+

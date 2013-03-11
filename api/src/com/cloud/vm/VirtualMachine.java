@@ -112,7 +112,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             s_fsm.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging);
         }
-
+        
         public static boolean isVmStarted(State oldState, Event e, State newState) {
             if (oldState == State.Starting && newState == State.Running) {
                 return true;
@@ -174,7 +174,9 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         OperationFailedToError,
         OperationRetry,
         AgentReportShutdowned,
-        AgentReportMigrated
+        AgentReportMigrated,
+        RevertRequested,
+        SnapshotRequested
     };
 
     public enum Type {

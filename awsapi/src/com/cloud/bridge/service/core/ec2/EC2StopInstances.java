@@ -23,6 +23,7 @@ public class EC2StopInstances {
 
 	private List<String> instancesSet = new ArrayList<String>();    // a list of strings identifying instances
     private boolean destroyInstances;                               // we are destroying the instances rather than stopping them
+    private Boolean force = false;
 	
 	public EC2StopInstances() {
 		destroyInstances = false;
@@ -43,5 +44,13 @@ public class EC2StopInstances {
 	public boolean getDestroyInstances() {
 		return this.destroyInstances;
 	}
+
+    public void setForce( Boolean force ) {
+        this.force = force;
+    }
+
+    public Boolean getForce() {
+        return this.force;
+    }
 	
 }

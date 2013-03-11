@@ -148,6 +148,20 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     @Column(name="vpcTotal")
     private Long vpcTotal;
 
+
+    @Column(name="cpuLimit")
+    private Long cpuLimit;
+
+    @Column(name="cpuTotal")
+    private Long cpuTotal;
+
+
+    @Column(name="memoryLimit")
+    private Long memoryLimit;
+
+    @Column(name="memoryTotal")
+    private Long memoryTotal;
+
     @Column(name="job_id")
     private long jobId;
 
@@ -445,7 +459,6 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     }
 
 
-
     public Long getVpcTotal() {
         return vpcTotal;
     }
@@ -453,6 +466,25 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     public void setVpcTotal(Long vpcTotal) {
         this.vpcTotal = vpcTotal;
+    }
+
+
+    public Long getCpuTotal() {
+        return cpuTotal;
+    }
+
+
+    public void setCpuTotal(Long cpuTotal) {
+        this.cpuTotal = cpuTotal;
+    }
+
+    public Long getMemoryTotal() {
+        return memoryTotal;
+    }
+
+
+    public void setMemoryTotal(Long memoryTotal) {
+        this.memoryTotal = memoryTotal;
     }
 
 
@@ -533,6 +565,26 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     public void setVpcLimit(Long vpcLimit) {
         this.vpcLimit = vpcLimit;
+    }
+
+
+    public Long getCpuLimit() {
+        return cpuLimit;
+    }
+
+
+    public void setCpuLimit(Long cpuLimit) {
+        this.cpuLimit = cpuLimit;
+    }
+
+
+    public Long getMemoryLimit() {
+        return memoryLimit;
+    }
+
+
+    public void setMemoryLimit(Long memoryLimit) {
+        this.memoryLimit = memoryLimit;
     }
 
 

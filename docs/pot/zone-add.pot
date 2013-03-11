@@ -1,0 +1,155 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:12:00\n"
+"PO-Revision-Date: 2013-02-02T20:12:00\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding a Zone"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "These steps assume you have already logged in to the &PRODUCT; UI. See <xref linkend=\"log-in\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) If you are going to use Swift for cloud-wide secondary storage, you need to add it before you add zones."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as administrator."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If this is your first time visiting the UI, you will see the guided tour splash screen. Choose “Experienced user.” The Dashboard appears."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Global Settings."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the search box, type swift.enable and click the search button."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the edit button and set swift.enable to true. <inlinemediaobject> <imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> </imageobject> <textobject><phrase>edit-icon.png: button to modify data</phrase></textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-management restart"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Refresh the &PRODUCT; UI browser tab and log back in."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Infrastructure."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On Zones, click View More."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) If you are using Swift storage, click Enable Swift. Provide the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">URL.</emphasis> The Swift URL."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Account.</emphasis> The Swift account."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Username.</emphasis> The Swift account’s username."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Key.</emphasis> The Swift key."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Zone. The zone creation wizard will appear."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Choose one of the following network types:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Basic.</emphasis> For AWS-style networking. Provides a single network where each VM instance is assigned an IP directly from the network. Guest isolation can be provided through layer-3 means such as security groups (IP address source filtering)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Advanced.</emphasis> For more sophisticated network topologies. This network model provides the most flexibility in defining guest networks and providing custom network offerings such as firewall, VPN, or load balancer support."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For more information about the network types, see Network Setup."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The rest of the steps differ depending on whether you chose Basic or Advanced. Continue with the steps that apply to you:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"basic-zone-configuration\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"advanced-zone-configuration\" />"
+msgstr ""
+

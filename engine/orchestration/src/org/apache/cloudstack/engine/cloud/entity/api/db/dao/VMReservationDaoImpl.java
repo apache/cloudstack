@@ -43,7 +43,7 @@ public class VMReservationDaoImpl extends GenericDaoBase<VMReservationVO, Long> 
 
     protected SearchBuilder<VMReservationVO> VmIdSearch;
     
-    @Inject protected VolumeReservationDaoImpl _volumeReservationDao;
+    @Inject protected VolumeReservationDao _volumeReservationDao;
     
     public VMReservationDaoImpl() {
     }

@@ -20,7 +20,6 @@ import com.cloud.user.Account;
 
 /**
  * Interface to define how an api limit store should work.
- * @author minc
  *
  */
 public interface LimitStore {

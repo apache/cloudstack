@@ -19,11 +19,12 @@ package com.cloud.server;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
 import com.cloud.event.EventVO;
 import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.vm.VirtualMachine;

@@ -48,6 +48,7 @@ import com.cloud.agent.dao.StorageComponent;
 import com.cloud.agent.dao.impl.PropertiesStorage;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.ProcessUtil;
 import com.cloud.utils.PropertiesUtil;
@@ -552,6 +553,9 @@ public class AgentShell implements IAgentShell {
 
     public void start() {
         try {
+            /* By default we only search for log4j.xml */
+            LogUtils.initLog4j("log4j-cloud.xml");
+
             System.setProperty("java.net.preferIPv4Stack", "true");
 
             String instance = getProperty(null, "instance");

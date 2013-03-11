@@ -66,10 +66,6 @@ under the License.
             <!--adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/-->
             <!--adapter name="FirstFit" class="com.cloud.agent.manager.allocator.impl.FirstFitAllocator"/-->
         </adapters>
-        <adapters key="com.cloud.storage.allocator.StoragePoolAllocator">
-            <adapter name="LocalStorage" class="com.cloud.storage.allocator.LocalStoragePoolAllocator"/>
-            <adapter name="Storage" class="com.cloud.storage.allocator.FirstFitStoragePoolAllocator"/>
-        </adapters>
         <adapters key="com.cloud.agent.manager.allocator.PodAllocator">
             <adapter name="User First" class="com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator"/>
         </adapters>
@@ -286,6 +282,7 @@ under the License.
         <dao name="CloudStackSvcOfferingDao" class="com.cloud.bridge.persist.dao.CloudStackSvcOfferingDaoImpl" singleton="false"/>
         <dao name="OfferingDao" class="com.cloud.bridge.persist.dao.OfferingDaoImpl" singleton="false"/>
         <dao name="CloudStackAccountDao" class="com.cloud.bridge.persist.dao.CloudStackAccountDaoImpl" singleton="false"/>
+        <dao name="CloudStackUserDao" class="com.cloud.bridge.persist.dao.CloudStackUserDaoImpl" singleton="false"/>
     </awsapi-ec2server>
     
     <awsapi-s3server class="com.cloud.bridge.service.S3RestServlet">

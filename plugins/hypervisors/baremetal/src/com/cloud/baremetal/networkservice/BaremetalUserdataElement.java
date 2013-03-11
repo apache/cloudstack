@@ -149,7 +149,7 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
     @Override
     public boolean canEnableIndividualServices() {
         // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
 
@@ -162,14 +162,12 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
 
     @Override
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
 }

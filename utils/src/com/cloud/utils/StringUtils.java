@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.owasp.esapi.StringUtilities;
+
 // StringUtils exists in Apache Commons Lang, but rather than import the entire JAR to our system, for now
 // just implement the method needed
 public class StringUtils {
@@ -150,6 +152,9 @@ public class StringUtils {
         return cleanResult;
     }
 
+    public static String stripControlCharacters(String s) {
+        return StringUtilities.stripControls(s);
+    }
 
     public static int formatForOutput(String text, int start, int columns, char separator) {
         if (start >= text.length()) {

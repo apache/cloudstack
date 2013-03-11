@@ -124,6 +124,10 @@ public class VolumeTO implements InternalIdentity {
     public String getOsType() {
         return guestOsType;
     }
+    
+    public void setPath(String path){
+        this.path = path;
+    }
 
     @Override
     public String toString() {

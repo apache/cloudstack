@@ -847,7 +847,7 @@
 																				}
 																			}
 																		});
-																	}, 3000);
+																	}, g_queryAsyncJobResultInterval);
 																},
 																error: function(XMLHttpResponse) {
 																	args.response.error(parseXMLHttpResponse(XMLHttpResponse));
@@ -900,7 +900,7 @@
 																				}
 																			}
 																		});
-																	}, 3000);
+																	}, g_queryAsyncJobResultInterval);
 																},
 																error: function(XMLHttpResponse) {
 																	args.response.error(parseXMLHttpResponse(XMLHttpResponse));
@@ -915,7 +915,7 @@
                       }
                     }
                   });
-                }, 3000);
+                }, g_queryAsyncJobResultInterval);
               },
               error: function(XMLHttpResponse) {
                 args.response.error(parseXMLHttpResponse(XMLHttpResponse));
@@ -986,7 +986,7 @@
 																				}
 																			}
 																		});
-																	}, 3000);
+																	}, g_queryAsyncJobResultInterval);
 																},
 																error: function(XMLHttpResponse) {
 																	args.response.error(parseXMLHttpResponse(XMLHttpResponse));
@@ -1040,7 +1040,7 @@
 																				}
 																			}
 																		});
-																	}, 3000);
+																	}, g_queryAsyncJobResultInterval);
 																},
 																error: function(XMLHttpResponse) {
 																	args.response.error(parseXMLHttpResponse(XMLHttpResponse));
@@ -1058,7 +1058,7 @@
                       args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                     }
                   });
-                }, 3000);
+                }, g_queryAsyncJobResultInterval);
               }
             });
           });
@@ -1144,7 +1144,7 @@
 											}
 										}
 									});
-								}, 3000);
+								}, g_queryAsyncJobResultInterval);
 							},
 							error: function(XMLHttpResponse) {
 								args.response.error(parseXMLHttpResponse(XMLHttpResponse));
@@ -1214,7 +1214,7 @@
 											}
 										}
 									});
-								}, 3000);
+								}, g_queryAsyncJobResultInterval);
 							},
 							error: function(XMLHttpResponse) {
 								args.response.error(parseXMLHttpResponse(XMLHttpResponse));
@@ -1283,7 +1283,7 @@
                     }
                   }
                 });
-              }, 3000);
+              }, g_queryAsyncJobResultInterval);
             },
             error: function(XMLHttpResponse) {
               args.response.error(parseXMLHttpResponse(XMLHttpResponse));
@@ -1328,7 +1328,7 @@
 											}
 										}
 									});
-								}, 3000);
+								}, g_queryAsyncJobResultInterval);
 							},
 							error: function(XMLHttpResponse) {
 								args.response.error(parseXMLHttpResponse(XMLHttpResponse));
@@ -1370,7 +1370,7 @@
 											}
 										}
 									});
-								}, 3000);
+								}, g_queryAsyncJobResultInterval);
 							},
 							error: function(XMLHttpResponse) {
 								args.response.error(parseXMLHttpResponse(XMLHttpResponse));

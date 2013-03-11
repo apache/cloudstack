@@ -1,0 +1,80 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Load Balancer Policy or Port Forwarding Rule Usage Record Format"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "account - name of the account"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "accountid - ID of the account"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "domainid - ID of the domain in which this account resides"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "zoneid - Zone where the usage occurred"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "description - A string describing what the usage record is tracking"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usage - String representation of the usage, including the units of usage (e.g. 'Hrs' for hours)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usagetype - A number representing the usage type (see Usage Types)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "rawusage - A number representing the actual usage in hours"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usageid - ID of the load balancer policy or port forwarding rule"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "startdate, enddate - The range of time for which the usage is aggregated; see Dates in the Usage Record"
+msgstr ""
+

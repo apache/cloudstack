@@ -39,7 +39,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Host DB view.
- * @author minc
  *
  */
 @Entity

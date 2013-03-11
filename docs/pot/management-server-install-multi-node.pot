@@ -1,0 +1,110 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Prepare and Start Additional Management Servers"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For your second and subsequent Management Servers, you will install the Management Server software, connect it to the database, and set up the OS for the Management Server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Perform the steps in <xref linkend=\"prepare-os\" /> and <xref linkend=\"sect-source-buildrpm\" /> or <xref linkend=\"sect-source-builddebs\" /> as appropriate."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This step is required only for installations where XenServer is installed on the hypervisor hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Download vhd-util from <ulink url=\"http://download.cloud.com.s3.amazonaws.com/tools/vhd-util\">vhd-util</ulink>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If the Management Server is RHEL or CentOS, copy vhd-util to /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If the Management Server is Ubuntu, copy vhd-util to /usr/lib/cloud/common/scripts/vm/hypervisor/xenserver/vhd-util."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that necessary services are started and set to start on boot."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> service rpcbind start\n"
+"<prompt>#</prompt> service nfs start\n"
+"<prompt>#</prompt> chkconfig nfs on\n"
+"<prompt>#</prompt> chkconfig rpcbind on\n"
+""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure the database client. Note the absence of the --deploy-as argument in this case. (For more details about the arguments to this command, see <xref linkend=\"management-server-install-db-external\" />.)"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> cloud-setup-databases cloud:<replaceable>dbpassword</replaceable>@<replaceable>dbhost</replaceable> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable>\n"
+"      "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure the OS and start the Management Server:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> cloud-setup-management"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Management Server on this node should now be running."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat these steps on each additional Management Server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Be sure to configure a load balancer for the Management Servers. See Management Server Load Balancing."
+msgstr ""
+

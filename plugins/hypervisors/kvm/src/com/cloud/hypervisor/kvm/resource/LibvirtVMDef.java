@@ -116,6 +116,7 @@ public class LibvirtVMDef {
         private int _currentMem = -1;
         private String _memBacking;
         private int _vcpu = -1;
+        private boolean _memBalloning= false;
 
         public void setMemorySize(long mem) {
             _mem = mem;
@@ -133,6 +134,10 @@ public class LibvirtVMDef {
             _vcpu = vcpu;
         }
 
+        public void setMemBalloning(boolean turnon){
+              _memBalloning = turnon;
+        }
+
         @Override
         public String toString() {
             StringBuilder resBuidler = new StringBuilder();
@@ -144,6 +149,9 @@ public class LibvirtVMDef {
             if (_memBacking != null) {
                 resBuidler.append("<memoryBacking>" + "<" + _memBacking + "/>"
                         + "</memoryBacking>\n");
+            }
+            if (_memBalloning){
+                resBuidler.append("<devices>\n" + "<memballoon model='virtio'/>\n" + "</devices>\n");
             }
             if (_vcpu != -1) {
                 resBuidler.append("<vcpu>" + _vcpu + "</vcpu>\n");
@@ -835,6 +843,31 @@ public class LibvirtVMDef {
             }
             serialBuidler.append("</serial>\n");
             return serialBuidler.toString();
+        }
+    }
+
+    public static class VirtioSerialDef {
+        private final String _name;
+        private String _path;
+
+        public VirtioSerialDef(String name, String path) {
+            _name = name;
+            _path = path;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder virtioSerialBuilder = new StringBuilder();
+            if(_path == null) {
+                _path = "/var/lib/libvirt/qemu";
+            }
+            virtioSerialBuilder.append("<channel type='unix'>\n");
+            virtioSerialBuilder.append("<source mode='bind' path='" + _path
+                                        + "/" + _name + ".agent'/>\n");
+            virtioSerialBuilder.append("<target type='virtio' name='" + _name + ".vport'/>\n");
+            virtioSerialBuilder.append("<address type='virtio-serial'/>\n");
+            virtioSerialBuilder.append("</channel>\n");
+            return virtioSerialBuilder.toString();
         }
     }
 

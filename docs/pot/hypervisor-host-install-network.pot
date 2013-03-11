@@ -1,0 +1,313 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configure the network bridges"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This is a very important section, please make sure you read this thoroughly."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This section details how to configure bridges using the native implementation in Linux. Please refer to the next section if you intend to use OpenVswitch"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In order to forward traffic to your instances you will need at least two bridges: <emphasis>public</emphasis> and <emphasis>private</emphasis>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "By default these bridges are called <emphasis>cloudbr0</emphasis> and <emphasis>cloudbr1</emphasis>, but you do have to make sure they are available on each hypervisor."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The most important factor is that you keep the configuration consistent on all your hypervisors."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Network example"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "There are many ways to configure your network. In the Basic networking mode you should have two (V)LAN's, one for your private network and one for the public network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "We assume that the hypervisor has one NIC (eth0) with three tagged VLAN's:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN 100 for management of the hypervisor"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN 200 for public network of the instances (cloudbr0)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN 300 for private network of the instances (cloudbr1)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On VLAN 100 we give the Hypervisor the IP-Address 192.168.42.11/24 with the gateway 192.168.42.1"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Hypervisor and Management server don't have to be in the same subnet!"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring the network bridges"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "It depends on the distribution you are using how to configure these, below you'll find examples for RHEL/CentOS and Ubuntu."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The goal is to have two bridges called 'cloudbr0' and 'cloudbr1' after this section. This should be used as a guideline only. The exact configuration will depend on your network layout."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Configure in RHEL or CentOS"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The required packages were installed when libvirt was installed, we can proceed to configuring the network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "First we configure eth0"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/sysconfig/network-scripts/ifcfg-eth0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure it looks similair to:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "DEVICE=eth0\n"
+"HWADDR=00:04:xx:xx:xx:xx\n"
+"ONBOOT=yes\n"
+"HOTPLUG=no\n"
+"BOOTPROTO=none\n"
+"TYPE=Ethernet"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "We now have to configure the three VLAN interfaces:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/sysconfig/network-scripts/ifcfg-eth0.100"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "DEVICE=eth0.100\n"
+"HWADDR=00:04:xx:xx:xx:xx\n"
+"ONBOOT=yes\n"
+"HOTPLUG=no\n"
+"BOOTPROTO=none\n"
+"TYPE=Ethernet\n"
+"VLAN=yes\n"
+"IPADDR=192.168.42.11\n"
+"GATEWAY=192.168.42.1\n"
+"NETMASK=255.255.255.0"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/sysconfig/network-scripts/ifcfg-eth0.200"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "DEVICE=eth0.200\n"
+"HWADDR=00:04:xx:xx:xx:xx\n"
+"ONBOOT=yes\n"
+"HOTPLUG=no\n"
+"BOOTPROTO=none\n"
+"TYPE=Ethernet\n"
+"VLAN=yes\n"
+"BRIDGE=cloudbr0"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/sysconfig/network-scripts/ifcfg-eth0.300"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "DEVICE=eth0.300\n"
+"HWADDR=00:04:xx:xx:xx:xx\n"
+"ONBOOT=yes\n"
+"HOTPLUG=no\n"
+"BOOTPROTO=none\n"
+"TYPE=Ethernet\n"
+"VLAN=yes\n"
+"BRIDGE=cloudbr1"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now we have the VLAN interfaces configured we can add the bridges on top of them."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/sysconfig/network-scripts/ifcfg-cloudbr0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now we just configure it is a plain bridge without an IP-Adress"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "DEVICE=cloudbr0\n"
+"TYPE=Bridge\n"
+"ONBOOT=yes\n"
+"BOOTPROTO=none\n"
+"IPV6INIT=no\n"
+"IPV6_AUTOCONF=no\n"
+"DELAY=5\n"
+"STP=yes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "We do the same for cloudbr1"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/sysconfig/network-scripts/ifcfg-cloudbr1"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "DEVICE=cloudbr1\n"
+"TYPE=Bridge\n"
+"ONBOOT=yes\n"
+"BOOTPROTO=none\n"
+"IPV6INIT=no\n"
+"IPV6_AUTOCONF=no\n"
+"DELAY=5\n"
+"STP=yes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "With this configuration you should be able to restart the network, although a reboot is recommended to see if everything works properly."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure you have an alternative way like IPMI or ILO to reach the machine in case you made a configuration error and the network stops functioning!"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Configure in Ubuntu"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All the required packages were installed when you installed libvirt, so we only have to configure the network."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/network/interfaces"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Modify the interfaces file to look like this:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "auto lo\n"
+"iface lo inet loopback\n"
+"\n"
+"# The primary network interface\n"
+"auto eth0.100\n"
+"iface eth0.100 inet static\n"
+"    address 192.168.42.11\n"
+"    netmask 255.255.255.240\n"
+"    gateway 192.168.42.1\n"
+"    dns-nameservers 8.8.8.8 8.8.4.4\n"
+"    dns-domain lab.example.org\n"
+"\n"
+"# Public network\n"
+"auto cloudbr0\n"
+"iface cloudbr0 inet manual\n"
+"    bridge_ports eth0.200\n"
+"    bridge_fd 5\n"
+"    bridge_stp off\n"
+"    bridge_maxwait 1\n"
+"\n"
+"# Private network\n"
+"auto cloudbr1\n"
+"iface cloudbr1 inet manual\n"
+"    bridge_ports eth0.300\n"
+"    bridge_fd 5\n"
+"    bridge_stp off\n"
+"    bridge_maxwait 1"
+msgstr ""
+

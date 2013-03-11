@@ -536,12 +536,23 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         switch (purpose){
         case Firewall:
             for (FirewallServiceProvider fwElement: _firewallElements) {
+                Network.Provider provider = fwElement.getProvider();
+                boolean  isFwProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, provider);
+                if (!isFwProvider) {
+                    continue;
+                }
                 handled = fwElement.applyFWRules(network, rules);
                 if (handled)
                     break;
             }
+            break;
         case PortForwarding:
             for (PortForwardingServiceProvider element: _pfElements) {
+                Network.Provider provider = element.getProvider();
+                boolean  isPfProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.PortForwarding, provider);
+                if (!isPfProvider) {
+                    continue;
+                }
                 handled = element.applyPFRules(network, (List<PortForwardingRule>) rules);
                 if (handled)
                     break;
@@ -549,6 +560,11 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             break;
         case StaticNat:
             for (StaticNatServiceProvider element: _staticNatElements) {
+                Network.Provider provider = element.getProvider();
+                boolean  isSnatProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.StaticNat, provider);
+                if (!isSnatProvider) {
+                    continue;
+                }
                 handled = element.applyStaticNats(network, (List<? extends StaticNat>) rules);
                 if (handled)
                     break;
@@ -556,6 +572,11 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             break;
         case NetworkACL:
             for (NetworkACLServiceProvider element: _networkAclElements) {
+                Network.Provider provider = element.getProvider();
+                boolean  isAclProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.NetworkACL, provider);
+                if (!isAclProvider) {
+                    continue;
+                }
                 handled = element.applyNetworkACLs(network, rules);
                 if (handled)
                     break;

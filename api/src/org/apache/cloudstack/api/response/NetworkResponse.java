@@ -52,8 +52,14 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.NETMASK) @Param(description="the network's netmask")
     private String netmask;
 
-    @SerializedName(ApiConstants.CIDR) @Param(description="the cidr the network")
+    @SerializedName(ApiConstants.CIDR) @Param(description="Cloudstack managed address space, all CloudStack managed VMs get IP address from CIDR")
     private String cidr;
+
+    @SerializedName(ApiConstants.NETWORK_CIDR) @Param(description="the network CIDR of the guest network configured with IP reservation. It is the summation of CIDR and RESERVED_IP_RANGE")
+    private String networkCidr;
+
+    @SerializedName(ApiConstants.RESERVED_IP_RANGE) @Param(description="the network's IP range not to be used by CloudStack guest VMs and can be used for non CloudStack purposes")
+    private String reservedIpRange;
 
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the network")
     private String zoneId;
@@ -287,6 +293,14 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setCidr(String cidr) {
         this.cidr = cidr;
+    }
+
+    public void setNetworkCidr(String networkCidr) {
+        this.networkCidr = networkCidr;
+    }
+
+    public void setReservedIpRange(String reservedIpRange) {
+        this.reservedIpRange = reservedIpRange;
     }
 
     public void setRestartRequired(Boolean restartRequired) {

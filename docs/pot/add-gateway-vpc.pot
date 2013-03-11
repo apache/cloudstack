@@ -1,0 +1,145 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding a Private Gateway to a VPC"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A private gateway can be added by the root admin only. The VPC private network has 1:1 relationship with the NIC of the physical network. No gateways with duplicated VLAN and IP are allowed in the same data center."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All the VPCs that you have created for the account is listed in the page."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Configure button of the VPC to which you want to configure load balancing rules."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The VPC page is displayed where all the tiers you created are listed in a diagram."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Settings icon."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following options are displayed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "IP Addresses"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Private Gateways"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network ACLs"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select Private Gateways."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Gateways page is displayed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add new gateway:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Specify the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Physical Network</emphasis>: The physical network you have created in the zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">IP Address</emphasis>: The IP address associated with the VPC gateway."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Gateway</emphasis>: The gateway through which the traffic is routed to and from the VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Netmask</emphasis>: The netmask associated with the VPC gateway."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">VLAN</emphasis>: The VLAN associated with the VPC gateway."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The new gateway appears in the list. You can repeat these steps to add more gateway for this VPC."
+msgstr ""
+

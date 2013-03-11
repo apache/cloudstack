@@ -19,6 +19,7 @@
 package org.apache.cloudstack.engine.cloud.entity.api;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
@@ -36,6 +37,7 @@ import com.cloud.exception.CloudException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.vm.VirtualMachineProfile;
 
 
 /**
@@ -104,7 +106,7 @@ public interface VirtualMachineEntity extends CloudStackEntity {
      * @param reservationId reservation id from reserve call.
      * 
      */
-    void deploy(String reservationId, String caller) throws InsufficientCapacityException, ResourceUnavailableException;
+    void deploy(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
 
     /**
      * Stop the virtual machine

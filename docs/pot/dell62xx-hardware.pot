@@ -1,0 +1,82 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Dell 62xx"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following steps show how a Dell 62xx is configured for zone-level layer-3 switching. These steps assume VLAN 201 is used to route untagged private IPs for pod 1, and pod 1’s layer-2 switch is connected to Ethernet port 1/g1."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Dell 62xx Series switch supports up to 1024 VLANs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure all the VLANs in the database."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vlan database\n"
+"vlan 200-999\n"
+"exit"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure Ethernet port 1/g1."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "interface ethernet 1/g1\n"
+"switchport mode general\n"
+"switchport general pvid 201\n"
+"switchport general allowed vlan add 201 untagged\n"
+"switchport general allowed vlan add 300-999 tagged\n"
+"exit"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The statements configure Ethernet port 1/g1 as follows:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN 201 is the native untagged VLAN for port 1/g1."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All VLANs (300-999) are passed to all the pod-level layer-2 switches."
+msgstr ""
+

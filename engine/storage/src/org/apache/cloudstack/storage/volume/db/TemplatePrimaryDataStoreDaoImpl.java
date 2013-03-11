@@ -20,9 +20,9 @@ package org.apache.cloudstack.storage.volume.db;
 
 import java.util.Date;
 
-import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.Event;
-import org.apache.cloudstack.storage.volume.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 

@@ -129,6 +129,18 @@ desetup_passwdsvcs() {
 }
 
 create_guest_network() {
+  # need to wait for eth device to appear before configuring it
+  timer=0
+  while ! `grep -q $dev /proc/net/dev` ; do
+    logger -t cloud "$(basename $0):Waiting for interface $dev to appear, $timer seconds"
+    sleep 1;
+    if [ $timer -gt 15 ]; then
+      logger -t cloud "$(basename $0):interface $dev never appeared"
+      break
+    fi
+    timer=$[timer + 1]
+  done
+
   logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
   # setup ip configuration
   sudo ip addr add dev $dev $ip/$mask brd +

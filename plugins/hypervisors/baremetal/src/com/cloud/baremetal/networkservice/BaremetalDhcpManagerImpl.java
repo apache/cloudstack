@@ -319,6 +319,9 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
 
 	@Override
 	public List<Class<?>> getCommands() {
-		return null;
+	    List<Class<?>> cmds = new ArrayList<Class<?>>();
+	    cmds.add(AddBaremetalDhcpCmd.class);
+	    cmds.add(ListBaremetalDhcpCmd.class);
+		return cmds;
 	}
 }

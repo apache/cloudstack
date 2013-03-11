@@ -1,0 +1,618 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:12:00\n"
+"PO-Revision-Date: 2013-02-02T20:12:00\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "VMware vSphere Installation and Configuration"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you want to use the VMware vSphere hypervisor to run guest virtual machines, install vSphere on the host(s) in your cloud."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Preparation Checklist for VMware"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For a smoother installation, gather the following information before you start:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Information listed in <xref linkend=\"vmware-vcenter-checklist\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Information listed in <xref linkend=\"vmware-network-checklist\" />"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "vCenter Checklist"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You will need the following information about vCenter."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter Requirement"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Value"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Notes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter User"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This user must have admin privileges."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter User Password"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Password for the above user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter Datacenter Name"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name of the datacenter."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter Cluster Name"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name of the cluster."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Networking Checklist for VMware"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You will need the following information about VLAN."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN Information"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ESXi VLAN"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN on which all your ESXi hypervisors reside."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ESXI VLAN IP Address"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "IP Address Range in the ESXi VLAN. One address per Virtual Router is used from this range."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ESXi VLAN IP Gateway"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ESXi VLAN Netmask"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Management Server VLAN"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN on which the &PRODUCT; Management server is installed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public VLAN"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN for the Public Network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public VLAN Gateway"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public VLAN Netmask"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public VLAN IP Address Range"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Range of Public IP Addresses available for &PRODUCT; use. These addresses will be used for virtual router on &PRODUCT; to route private traffic to external networks."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN Range for Customer use"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A contiguous range of non-routable VLANs. One VLAN will be assigned for each customer."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "vSphere Installation Steps"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you haven't already, you'll need to download and purchase vSphere from the VMware Website (<ulink url=\"https://www.vmware.com/tryvmware/index.php?p=vmware-vsphere&amp;lp=1\">https://www.vmware.com/tryvmware/index.php?p=vmware-vsphere&amp;lp=1</ulink>) and install it by following the VMware vSphere Installation Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Following installation, perform the following configuration, which are described in the next few sections:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Required"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Optional"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ESXi host setup"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NIC bonding"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure host physical networking, virtual switch, vCenter Management Network, and extended port range"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Multipath storage"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare storage for iSCSI"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure clusters in vCenter and add hosts to them, or add hosts without clusters to vCenter"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "ESXi Host setup"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All ESXi hosts should enable CPU hardware virtualization support in BIOS. Please note hardware virtualization support is not enabled by default on most servers."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Physical Host Networking"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You should have a plan for cabling the vSphere hosts. Proper network configuration is required before adding a vSphere host to &PRODUCT;. To configure an ESXi host, you can use vClient to add it as standalone host to vCenter first. Once you see the host appearing in the vCenter inventory tree, click the host node in the inventory tree, and navigate to the Configuration tab."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the host configuration tab, click the \"Hardware/Networking\" link to bring up the networking configuration page as above."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Configure Virtual Switch"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A default virtual switch vSwitch0 is created. &PRODUCT; requires all ESXi hosts in the cloud to use the same set of virtual switch names. If you change the default virtual switch name, you will need to configure one or more &PRODUCT; configuration variables as well."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Separating Traffic"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; allows you to use vCenter to configure three separate networks per ESXi host. These networks are identified by the name of the vSwitch they are connected to. The allowed networks for configuration are public (for traffic to/from the public internet), guest (for guest-guest traffic), and private (for management and usually storage traffic). You can use the default virtual switch for all three, or create one or two other vSwitches for those traffic types."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you want to separate traffic in this way you should first create and configure vSwitches in vCenter according to the vCenter instructions. Take note of the vSwitch names you have used for each traffic type. You will configure &PRODUCT; to use these vSwitches."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Increasing Ports"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "By default a virtual switch on ESXi hosts is created with 56 ports. We recommend setting it to 4088, the maximum number of ports allowed. To do that, click the \"Properties...\" link for virtual switch (note this is not the Properties link for Networking)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In vSwitch properties dialog, select the vSwitch and click Edit. You should see the following dialog:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In this dialog, you can change the number of switch ports. After you've done that, ESXi hosts are required to reboot in order for the setting to take effect."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Configure vCenter Management Network"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the vSwitch properties dialog box, you may see a vCenter management network. This same network will also be used as the &PRODUCT; management network. &PRODUCT; requires the vCenter management network to be configured properly. Select the management network item in the dialog, then click Edit."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure the following values are set:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VLAN ID set to the desired ID"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vMotion enabled."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Management traffic enabled."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If the ESXi hosts have multiple VMKernel ports, and ESXi is not using the default value \"Management Network\" as the management network name, you must follow these guidelines to configure the management network port group so that &PRODUCT; can find it:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Use one label for the management network port across all ESXi hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the &PRODUCT; UI, go to Configuration - Global Settings and set vmware.management.portgroup to the management network label from the ESXi hosts."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Extend Port Range for &PRODUCT; Console Proxy"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Applies only to VMware vSphere version 4.x)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You need to extend the range of firewall ports that the console proxy works with on the hosts. This is to enable the console proxy to work with VMware-based VMs. The default additional port range is 59000-60000. To extend the port range, log in to the VMware ESX service console on each host and run the following commands:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"esxcfg-firewall -o 59000-60000,tcp,in,vncextras\n"
+"esxcfg-firewall -o 59000-60000,tcp,out,vncextras\n"
+"        "
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Configure NIC Bonding for vSphere"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NIC bonding on vSphere hosts may be done according to the vSphere installation guide."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Storage Preparation for vSphere (iSCSI only)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Use of iSCSI requires preparatory work in vCenter. You must add an iSCSI target and create an iSCSI datastore."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you are using NFS, skip this section."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Enable iSCSI initiator for ESXi hosts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In vCenter, go to hosts and Clusters/Configuration, and click Storage Adapters link. You will see:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select iSCSI software adapter and click Properties."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Configure... button."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Check Enabled to enable the initiator."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK to save."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Add iSCSI target"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Under the properties dialog, add the iSCSI target info:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat these steps for all ESXi hosts in the cluster."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Create an iSCSI datastore"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You should now create a VMFS datastore. Follow these steps to do so:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select Home/Inventory/Datastores."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Right click on the datacenter node."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Choose Add Datastore... command."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Follow the wizard to create a iSCSI datastore."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This procedure should be done on one host in the cluster. It is not necessary to do this on all hosts."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Multipathing for vSphere (Optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Storage multipathing on vSphere nodes may be done according to the vSphere installation guide."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Add Hosts or Configure Clusters (vSphere)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Use vCenter to create a vCenter cluster and add your desired hosts to the cluster. You will later add the entire cluster to &PRODUCT;. (see <xref linkend=\"add-clusters-vsphere\" />)."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Applying Hotfixes to a VMware vSphere Host"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Disconnect the VMware vSphere cluster from &PRODUCT;. It should remain disconnected long enough to apply the hotfix on the host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as root."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "See <xref linkend=\"log-in\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Navigate to the VMware cluster, click Actions, and select Unmanage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Watch the cluster status until it shows Unmanaged."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Perform the following on each of the ESXi hosts in the cluster:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Move each of the ESXi hosts in the cluster to maintenance mode."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that all the VMs are migrated to other hosts in that cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If there is only one host in that cluster, shutdown all the VMs and move the host into maintenance mode."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Apply the patch on the ESXi host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the host if prompted."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Cancel the maintenance mode on the host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Reconnect the cluster to &PRODUCT;:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Navigate to the VMware cluster, click Actions, and select Manage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Watch the status to see that all the hosts come up. It might take several minutes for the hosts to come up."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Alternatively, verify the host state is properly synchronized and updated in the &PRODUCT; database."
+msgstr ""
+

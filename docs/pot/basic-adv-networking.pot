@@ -1,0 +1,195 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Basic and Advanced Networking"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; provides two styles of networking:."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Basic"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For AWS-style networking. Provides a single network where guest isolation can be provided through layer-3 means such as security groups (IP address source filtering)."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Advanced"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For more sophisticated network topologies. This network model provides the most flexibility in defining guest networks, but requires more configuration steps than basic networking."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Each zone has either basic or advanced networking. Once the choice of networking model for a zone has been made and configured in &PRODUCT;, it can not be changed. A zone is either basic or advanced for its entire lifetime."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following table compares the networking features in the two networking models."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Networking Feature"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Basic Network"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Advanced Network"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Number of networks"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Single network"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Multiple networks"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Firewall type"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Physical"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Physical and Virtual"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Load balancer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Isolation type"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Layer 3"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Layer 2 and Layer 3"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VPN support"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "No"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Yes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Port forwarding"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "1:1 NAT"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Source NAT"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Userdata"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network usage monitoring"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "sFlow / netFlow at physical router"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hypervisor and Virtual Router"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "DNS and DHCP"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The two types of networking may be in use in the same cloud. However, a given zone must use either Basic Networking or Advanced Networking."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Different types of network traffic can be segmented on the same physical network. Guest traffic can also be segmented by account. To isolate traffic, you can use separate VLANs. If you are using separate VLANs on a single physical network, make sure the VLAN tags are in separate numerical ranges."
+msgstr ""
+

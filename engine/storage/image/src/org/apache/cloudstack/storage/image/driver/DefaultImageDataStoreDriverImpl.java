@@ -34,15 +34,15 @@ import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.endpoint.EndPointSelector;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
-import org.apache.cloudstack.storage.image.db.ImageDataDao;
-import org.apache.cloudstack.storage.image.db.ImageDataVO;
+
+import com.cloud.storage.dao.VMTemplateDao;
 
 //http-read-only based image store
 public class DefaultImageDataStoreDriverImpl implements ImageDataStoreDriver {
     @Inject
     EndPointSelector selector;
     @Inject
-    ImageDataDao imageDataDao;
+    VMTemplateDao imageDataDao;
     public DefaultImageDataStoreDriverImpl() {
     }
 
@@ -116,4 +116,11 @@ public class DefaultImageDataStoreDriverImpl implements ImageDataStoreDriver {
         // TODO Auto-generated method stub
         
     }
+
+	@Override
+	public void resize(DataObject data,
+			AsyncCompletionCallback<CreateCmdResult> callback) {
+		// TODO Auto-generated method stub
+		
+	}
 }

@@ -1,0 +1,85 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:12:00\n"
+"PO-Revision-Date: 2013-02-02T20:12:00\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "XenServer and Maintenance Mode"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer, you can take a server offline temporarily by using the Maintenance Mode feature in XenCenter. When you place a server into Maintenance Mode, all running VMs are automatically migrated from it to another host in the same pool. If the server is the pool master, a new master will also be selected for the pool. While a server is Maintenance Mode, you cannot create or start any VMs on it."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">To place a server in Maintenance Mode:</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Resources pane, select the server, then do one of the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Right-click, then click Enter Maintenance Mode on the shortcut menu."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On the Server menu, click Enter Maintenance Mode"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Enter Maintenance Mode"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The server's status in the Resources pane shows when all running VMs have been successfully migrated off the server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">To take a server out of Maintenance Mode:</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Right-click, then click Exit Maintenance Mode on the shortcut menu."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On the Server menu, click Exit Maintenance Mode"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Exit Maintenance Mode"
+msgstr ""
+

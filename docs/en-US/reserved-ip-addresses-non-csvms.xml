@@ -1,0 +1,163 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="reserved-ip-addresses-non-csvms">
+  <title>IP Reservation in Isolated Guest Networks</title>
+  <para>In isolated guest networks, a part of the guest IP address space can be reserved for
+    non-&PRODUCT; VMs or physical servers. To do so, you configure a range of Reserved IP addresses
+    by specifying the CIDR when a guest network is in Implemented state. If your customers wish to
+    have non-&PRODUCT; controlled VMs or physical servers on the same network, they can share a part
+    of the IP address space that is primarily provided to the guest network.</para>
+  <para>In an Advanced zone, an IP address range or a CIDR is assigned to a network when the network
+    is defined. The &PRODUCT; virtual router acts as the DHCP server and uses CIDR for assigning IP
+    addresses to the guest VMs. If you decide to reserve IP ranges for non-&PRODUCT; purposes, you
+    can specify a part of the IP address range or the CIDR that should only be allocated by the DHCP
+    service of the virtual router to the guest VMs created in &PRODUCT;. The remaining IPs in that
+    network are called Reserved IP Range. When IP reservation is configured, the administrator can
+    add additional VMs or physical servers that are not part of &PRODUCT; to the same network and
+    assign them the Reserved IP addresses. &PRODUCT; guest VMs cannot acquire IPs from the Reserved
+    IP Range.</para>
+  <section id="ip-reserve-consider">
+    <title>IP Reservation Considerations</title>
+    <para>Consider the following before you reserve an IP range for non-&PRODUCT; machines:</para>
+    <itemizedlist>
+      <listitem>
+        <para>IP Reservation can be applied only when the network is in Implemented state.</para>
+      </listitem>
+      <listitem>
+        <para>No IP Reservation is done by default.</para>
+      </listitem>
+      <listitem>
+        <para>Guest VM CIDR you specify must be a subset of the network CIDR.</para>
+      </listitem>
+      <listitem>
+        <para>Specify a valid Guest VM CIDR. IP Reservation is applied only if no active IPs exist
+          outside the Guest VM CIDR. </para>
+        <para>You cannot apply IP Reservation if any VM is alloted with an IP address that is
+          outside the Guest VM CIDR.</para>
+      </listitem>
+      <listitem>
+        <para>To reset an existing IP Reservation, apply IP reservation by specifying the value of
+          network CIDR in the CIDR field.</para>
+        <para>For example, the following table describes three scenarios of guest network
+          creation:</para>
+        <informaltable>
+          <tgroup cols="5" align="left" colsep="1" rowsep="1">
+            <colspec colnum="1" colname="c1" colwidth="33.0pt"/>
+            <colspec colnum="2" colname="c2" colwidth="84.75pt"/>
+            <colspec colnum="3" colname="c3" colwidth="97.5pt"/>
+            <colspec colnum="4" colname="c4" colwidth="129.0pt"/>
+            <colspec colnum="5" colname="c5" colwidth="336.0pt"/>
+            <thead>
+              <row>
+                <entry><para>Case</para></entry>
+                <entry><para> CIDR</para></entry>
+                <entry><para>Network CIDR</para></entry>
+                <entry><para>Reserved IP Range for Non-&PRODUCT; VMs</para></entry>
+                <entry><para>Description</para></entry>
+              </row>
+            </thead>
+            <tbody>
+              <row>
+                <entry><para>1</para></entry>
+                <entry><para>10.1.1.0/24</para></entry>
+                <entry><para> None</para></entry>
+                <entry><para>None</para></entry>
+                <entry><para>No IP Reservation.</para></entry>
+              </row>
+              <row>
+                <entry><para>2</para></entry>
+                <entry><para>10.1.1.0/26</para></entry>
+                <entry><para>10.1.1.0/24</para></entry>
+                <entry><para>10.1.1.64 to 10.1.1.254</para></entry>
+                <entry><para>IP Reservation configured by the UpdateNetwork API with
+                    guestvmcidr=10.1.1.0/26 or enter 10.1.1.0/26 in the CIDR field in the
+                  UI.</para></entry>
+              </row>
+              <row>
+                <entry><para>3</para></entry>
+                <entry><para>10.1.1.0/24</para></entry>
+                <entry><para>None</para></entry>
+                <entry><para>None</para></entry>
+                <entry><para>Removing IP Reservation by the UpdateNetwork API with
+                    guestvmcidr=10.1.1.0/24 or enter 10.1.1.0/24 in the CIDR field in the UI.
+                  </para></entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </informaltable>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section id="ip-reserv-limition">
+    <title>Limitations</title>
+    <itemizedlist>
+      <listitem>
+        <para>The IP Reservation is not supported if active IPs that are found outside the Guest VM
+          CIDR. </para>
+      </listitem>
+      <listitem>
+        <para>Upgrading network offering which causes a change in CIDR (such as upgrading an
+          offering with no external devices to one with external devices) IP Reservation becomes
+          void if any. Reconfigure IP Reservation in the new re-implemeted network.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section id="best-practice-ipreserv">
+    <title>Best Practices</title>
+    <para>Apply IP Reservation to the guest network as soon as the network state changes to
+      Implemented. If you apply reservation soon after the first guest VM is deployed, lesser
+      conflicts occurs while applying reservation. </para>
+  </section>
+  <section id="reserve-ip">
+    <title>Reserving an IP Range</title>
+    <orderedlist>
+      <listitem>
+        <para>Log in to the &PRODUCT; UI as an administrator or end user.</para>
+      </listitem>
+      <listitem>
+        <para>In the left navigation, choose Network.</para>
+      </listitem>
+      <listitem>
+        <para>Click the name of the network you want to modify.</para>
+      </listitem>
+      <listitem>
+        <para>In the Details tab, click Edit.<inlinemediaobject>
+            <imageobject>
+              <imagedata fileref="./images/edit-icon.png"/>
+            </imageobject>
+            <textobject>
+              <phrase>edit-icon.png: button to edit a network</phrase>
+            </textobject>
+          </inlinemediaobject></para>
+        <para>The CIDR field changes to editable one.</para>
+      </listitem>
+      <listitem>
+        <para>In CIDR, specify the Guest VM CIDR.</para>
+      </listitem>
+      <listitem>
+        <para>Click Apply.</para>
+        <para>Wait for the update to complete. The Network CIDR and the Reserved IP Range are
+          displayed on the Details page.</para>
+      </listitem>
+    </orderedlist>
+  </section>
+</section>

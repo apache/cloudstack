@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.engine.cloud.entity.api;
 
+import com.cloud.utils.component.ComponentContext;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.stereotype.Component;
 
@@ -24,7 +25,7 @@ public class VirtualMachineEntityFactory implements FactoryBean<VirtualMachineEn
 
 	@Override
 	public VirtualMachineEntityImpl getObject() throws Exception {
-		return new VirtualMachineEntityImpl();
+        return ComponentContext.inject(VirtualMachineEntityImpl.class.newInstance());
 	}
 
 	@Override

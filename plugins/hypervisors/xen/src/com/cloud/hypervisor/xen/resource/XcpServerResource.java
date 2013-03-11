@@ -72,17 +72,17 @@ public class XcpServerResource extends CitrixResourceBase {
     }
 
     @Override
-    protected void setMemory(Connection conn, VM vm, long memsize) throws XmlRpcException, XenAPIException {
+    protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
 
         vm.setMemoryStaticMin(conn, 33554432L);
-        vm.setMemoryDynamicMin(conn, 33554432L);
-        vm.setMemoryDynamicMax(conn, 33554432L);
+        //vm.setMemoryDynamicMin(conn, 33554432L);
+        //vm.setMemoryDynamicMax(conn, 33554432L);
         vm.setMemoryStaticMax(conn, 33554432L);
 
-        vm.setMemoryStaticMax(conn, memsize);
-        vm.setMemoryDynamicMax(conn, memsize);
-        vm.setMemoryDynamicMin(conn, memsize);
-        vm.setMemoryStaticMin(conn, memsize);
+        //vm.setMemoryStaticMax(conn, maxMemsize );
+        vm.setMemoryDynamicMax(conn, maxMemsize );
+        vm.setMemoryDynamicMin(conn, minMemsize );
+        //vm.setMemoryStaticMin(conn,  maxMemsize );
     }
     
 
@@ -99,7 +99,7 @@ public class XcpServerResource extends CitrixResourceBase {
             return answer;
         } catch (Exception ex) {
             s_logger.warn("Failed to get network usage stats due to ", ex);
-            return new NetworkUsageAnswer(cmd, ex); 
+            return new NetworkUsageAnswer(cmd, ex);
         }
     }
 

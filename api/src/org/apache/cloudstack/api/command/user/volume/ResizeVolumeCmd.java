@@ -133,7 +133,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Volume Id: " + getEntityId() + " to size " + getSize() + "G");
-    	Volume volume = _storageService.resizeVolume(this);
+    	Volume volume = _volumeService.resizeVolume(this);
     	if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
             //FIXME - have to be moved to ApiResponseHelper

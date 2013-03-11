@@ -34,21 +34,21 @@
           },
           label: 'state.Destroyed'
         }
-      },			
+      },
 			preFilter: function(args) {
 				var hiddenFields = [];
-				if(!isAdmin()) {				
+				if(!isAdmin()) {
 					hiddenFields.push('instancename');
-				}			
+				}
 				return hiddenFields;
-			},			
-      fields: {      
+			},
+      fields: {
 				name: { label: 'label.name' },
 				instancename: { label: 'label.internal.name' },
 				displayname: { label: 'label.display.name' },
         zonename: { label: 'label.zone.name' },
         state: {
-          label: 'label.state',         
+          label: 'label.state',
           indicator: {
             'Running': 'on',
             'Stopped': 'off',
@@ -57,18 +57,18 @@
           }
         }
       },
-			
+
 			advSearchFields: {
 				name: { label: 'Name' },
-				zoneid: { 
-					label: 'Zone',							
-					select: function(args) {							  					
+				zoneid: {
+					label: 'Zone',
+					select: function(args) {
 						$.ajax({
 							url: createURL('listZones'),
 							data: {
 								listAll: true
 							},
-							success: function(json) {									  
+							success: function(json) {
 								var zones = json.listzonesresponse.zone;
 
 								args.response.success({
@@ -81,16 +81,16 @@
 								});
 							}
 						});
-					}						
-				},	
-				
-				domainid: {					
-				  label: 'Domain',					
+					}
+				},
+
+				domainid: {
+				  label: 'Domain',
 					select: function(args) {
 					  if(isAdmin() || isDomainAdmin()) {
 							$.ajax({
 								url: createURL('listDomains'),
-								data: { 
+								data: {
 									listAll: true,
 									details: 'min'
 								},
@@ -120,21 +120,21 @@
 						else
 						  return true;
 					}
-				},		
-        account: { 
+				},
+        account: {
 				  label: 'Account',
           isHidden: function(args) {
 					  if(isAdmin() || isDomainAdmin())
 						  return false;
 						else
 						  return true;
-					}			
+					}
 				},
-				
+
 				tagKey: { label: 'Tag Key' },
-				tagValue: { label: 'Tag Value' }						
-			},						
-			
+				tagValue: { label: 'Tag Value' }
+			},
+
       // List view actions
       actions: {
         // Add instance wizard
@@ -145,9 +145,9 @@
             custom: cloudStack.uiCustom.instanceWizard(cloudStack.instanceWizard)
           },
 
-          messages: {            
-            notification: function(args) {              
-              return 'label.vm.add'; 
+          messages: {
+            notification: function(args) {
+              return 'label.vm.add';
             }
           },
           notification: {
@@ -158,49 +158,49 @@
 
       dataProvider: function(args) {
 			  var data = {};
-				listViewDataProvider(args, data);		
-				        				
+				listViewDataProvider(args, data);
+
 				if(args.filterBy != null) {	//filter dropdown
 					if(args.filterBy.kind != null) {
 						switch(args.filterBy.kind) {
-						case "all":						  						
+						case "all":
 							break;
 						case "mine":
 							if (!args.context.projects) {
 							  $.extend(data, {
-								  domainid: g_domainid, 
+								  domainid: g_domainid,
 									account: g_account
-								});		
-              }								
+								});
+              }
 							break;
 						case "running":
 						  $.extend(data, {
 							  state: 'Running'
-							});						
+							});
 							break;
 						case "stopped":
 						  $.extend(data, {
 							  state: 'Stopped'
-							});	
+							});
 							break;
 						case "destroyed":
 						  $.extend(data, {
 							  state: 'Destroyed'
-							});									
+							});
 							break;
 						}
-					}					
+					}
 				}
-								
-        if("hosts" in args.context) {          
+
+        if("hosts" in args.context) {
 					$.extend(data, {
 					  hostid: args.context.hosts[0].id
 					});
 				}
-					 							
+
         $.ajax({
           url: createURL('listVirtualMachines'),
-          data: data,          
+          data: data,
           success: function(json) {
             var items = json.listvirtualmachinesresponse.virtualmachine;
            // Code for hiding "Expunged VMs"
@@ -231,7 +231,34 @@
 
       detailView: {
         name: 'Instance details',
-        viewAll: { path: 'storage.volumes', label: 'label.volumes' },
+        viewAll: [
+          { path: 'storage.volumes', label: 'label.volumes' },
+          { path: 'vmsnapshots', label: 'label.snapshots' },
+          {
+            path: '_zone.hosts',
+            label: 'label.hosts',
+            preFilter: function(args) {
+              return isAdmin();
+            },
+            updateContext: function(args) {
+              var instance = args.context.instances[0];
+              var zone;
+
+              $.ajax({
+                url: createURL('listZones'),
+                data: {
+                  id: instance.zoneid
+                },
+                async: false,
+                success: function(json) {
+                  zone = json.listzonesresponse.zone[0]
+                }
+              });
+
+              return { zones: [zone] };
+            }
+          }
+        ],
         tabFilter: function(args) {
           var hiddenTabs = [];
 					
@@ -409,6 +436,70 @@
               poll: pollAsyncJobResult
             }
           },
+
+          snapshot: {
+            messages: {
+              notification: function(args) {
+                return 'label.action.vmsnapshot.create';
+              }
+            },
+            label: 'label.action.vmsnapshot.create',
+            addRow: 'false',
+            createForm: {
+              title: 'label.action.vmsnapshot.create',
+              fields: {
+                name: {
+                  label: 'label.name',
+                  isInput: true
+                },
+                description: {
+                  label: 'label.description',
+                  isTextarea: true
+                },
+                snapshotMemory: {
+                  label: 'label.vmsnapshot.memory',
+                  isBoolean: true,
+                  isChecked: false
+                }
+              }
+            },
+            action: function(args) {
+              var array1 = [];
+              array1.push("&snapshotmemory=" + (args.data.snapshotMemory == "on"));
+              var displayname = args.data.name;
+              if (displayname != null && displayname.length > 0) {
+                array1.push("&name=" + todb(displayname));
+              }
+              var description = args.data.description;
+              if (description != null && description.length > 0) {
+                array1.push("&description=" + todb(description));
+              }
+              $.ajax({
+                url: createURL("createVMSnapshot&virtualmachineid=" + args.context.instances[0].id + array1.join("")),
+                dataType: "json",
+                async: true,
+                success: function(json) {
+                  var jid = json.createvmsnapshotresponse.jobid;
+                  args.response.success({
+                    _custom: {
+                      jobId: jid,
+                      getUpdatedItem: function(json) {
+                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                      },
+                      getActionFilter: function() {
+                        return vmActionfilter;
+                      }
+                    }
+                  });
+                }
+              });
+          
+            },
+            notification: {
+              pool: pollAsyncJobResult
+            }
+          },          
+
           destroy: {
             label: 'label.action.destroy.instance',
             compactLabel: 'label.destroy',
@@ -1232,6 +1323,7 @@
     else if (jsonObj.state == 'Running') {     
       allowedActions.push("stop");
       allowedActions.push("restart");
+      allowedActions.push("snapshot");
       allowedActions.push("destroy");
       allowedActions.push("changeService");
       allowedActions.push("reset");
@@ -1257,7 +1349,7 @@
       allowedActions.push("start");
       allowedActions.push("destroy");
       allowedActions.push("reset");
-
+      allowedActions.push("snapshot");
       if(isAdmin())
         allowedActions.push("migrateToAnotherStorage");
 

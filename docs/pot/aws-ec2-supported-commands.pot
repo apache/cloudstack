@@ -1,0 +1,665 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Supported AWS API Calls"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following Amazon EC2 commands are supported by &PRODUCT; when the AWS API compatible interface is enabled. For a few commands, there are differences between the &PRODUCT; and Amazon EC2 versions, and these differences are noted. The underlying SOAP call for each command is also given, for those who have built tools using those calls."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Elastic IP API mapping"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "EC2 command"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "SOAP call"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "&PRODUCT; API call"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-allocate-address"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "AllocateAddress"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "associateIpAddress"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-associate-address"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "AssociateAddress"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "enableStaticNat"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-describe-addresses"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DescribeAddresses"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "listPublicIpAddresses"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-diassociate-address"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DisassociateAddress"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "disableStaticNat"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-release-address"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ReleaseAddress"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "disassociateIpAddress"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Availability Zone API mapping"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-describe-availability-zones"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DescribeAvailabilityZones"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "listZones"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Images API mapping"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-create-image"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "CreateImage"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "createTemplate"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-deregister"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DeregisterImage"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DeleteTemplate"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-describe-images"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DescribeImages"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "listTemplates"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-register"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "RegisterImage"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "registerTemplate"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Image Attributes API mapping"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-describe-image-attribute"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DescribeImageAttribute"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "listTemplatePermissions"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-modify-image-attribute"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ModifyImageAttribute"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "updateTemplatePermissions"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-reset-image-attribute"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ResetImageAttribute"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Instances API mapping"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-describe-instances"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DescribeInstances"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "listVirtualMachines"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-run-instances"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "RunInstances"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "deployVirtualMachine"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-reboot-instances"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "RebootInstances"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "rebootVirtualMachine"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-start-instances"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "StartInstances"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "startVirtualMachine"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-stop-instances"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "StopInstances"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "stopVirtualMachine"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-terminate-instances"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "TerminateInstances"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "destroyVirtualMachine"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Instance Attributes Mapping"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-describe-instance-attribute"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DescribeInstanceAttribute"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Keys Pairs Mapping"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-add-keypair"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "CreateKeyPair"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "createSSHKeyPair"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-delete-keypair"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DeleteKeyPair"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "deleteSSHKeyPair"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-describe-keypairs"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DescribeKeyPairs"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "listSSHKeyPairs"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-import-keypair"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ImportKeyPair"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "registerSSHKeyPair"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Passwords API Mapping"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-get-password"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "GetPasswordData"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "getVMPassword"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Security Groups API Mapping"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-authorize"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "AuthorizeSecurityGroupIngress"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "authorizeSecurityGroupIngress"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-add-group"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "CreateSecurityGroup"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "createSecurityGroup"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-delete-group"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DeleteSecurityGroup"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "deleteSecurityGroup"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-describe-group"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DescribeSecurityGroups"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "listSecurityGroups"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-revoke"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "RevokeSecurityGroupIngress"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "revokeSecurityGroupIngress"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Snapshots API Mapping"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-create-snapshot"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "CreateSnapshot"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "createSnapshot"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-delete-snapshot"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DeleteSnapshot"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "deleteSnapshot"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-describe-snapshots"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DescribeSnapshots"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "listSnapshots"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Volumes API Mapping"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-attach-volume"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "AttachVolume"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "attachVolume"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-create-volume"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "CreateVolume"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "createVolume"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-delete-volume"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DeleteVolume"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "deleteVolume"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-describe-volume"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DescribeVolume"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "listVolumes"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-detach-volume"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "DetachVolume"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "detachVolume"
+msgstr ""
+

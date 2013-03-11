@@ -1,0 +1,170 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Converting a Hyper-V VM to a Template"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To convert a Hyper-V VM to a XenServer-compatible &PRODUCT; template, you will need a standalone XenServer host with an attached NFS VHD SR. Use whatever XenServer version you are using with &PRODUCT;, but use XenCenter 5.6 FP1 or SP2 (it is backwards compatible to 5.6). Additionally, it may help to have an attached NFS ISO SR."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For Linux VMs, you may need to do some preparation in Hyper-V before trying to get the VM to work in XenServer. Clone the VM and work on the clone if you still want to use the VM in Hyper-V. Uninstall Hyper-V Integration Components and check for any references to device names in /etc/fstab:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "From the linux_ic/drivers/dist directory, run make uninstall (where \"linux_ic\" is the path to the copied Hyper-V Integration Components files)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restore the original initrd from backup in /boot/ (the backup is named *.backup0)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Remove the \"hdX=noprobe\" entries from /boot/grub/menu.lst."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Check /etc/fstab for any partitions mounted by device name. Change those entries (if any) to mount by LABEL or UUID (get that information with the \"blkid\" command).."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The next step is make sure the VM is not running in Hyper-V, then get the VHD into XenServer. There are two options for doing this."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Option one:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Import the VHD using XenCenter. In XenCenter, go to Tools&gt;Virtual Appliance Tools&gt;Disk Image Import."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the VHD, then click Next."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name the VM, choose the NFS VHD SR under Storage, enable \"Run Operating System Fixups\" and choose the NFS ISO SR."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Next, then Finish. A VM should be created."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Option two"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run XenConvert, under From choose VHD, under To choose XenServer. Click Next."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Input the XenServer host info, then click Next."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name the VM, then click Next, then Convert. A VM should be created"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Once you have a VM created from the Hyper-V VHD, prepare it using the following steps:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Boot the VM, uninstall Hyper-V Integration Services, and reboot."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Install XenServer Tools, then reboot."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare the VM as desired. For example, run sysprep on Windows VMs. See <xref linkend=\"create-windows-template\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Either option above will create a VM in HVM mode. This is fine for Windows VMs, but Linux VMs may not perform optimally. Converting a Linux VM to PV mode will require additional steps and will vary by distribution."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Shut down the VM and copy the VHD from the NFS storage to a web server; for example, mount the NFS share on the web server and copy it, or from the XenServer host use sftp or scp to upload it to the web server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In &PRODUCT;, create a new template using the following values:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "URL. Give the URL for the VHD"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "OS Type. Use the appropriate OS. For PV mode on CentOS, choose Other PV (32-bit) or Other PV (64-bit). This choice is available only for XenServer."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hypervisor. XenServer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Format. VHD"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The template will be created, and you can create instances from it."
+msgstr ""
+

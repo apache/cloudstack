@@ -31,7 +31,7 @@ public class SnapshotVO implements Snapshot {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private final long id = -1;
+    private long id;
 
     @Column(name="data_center_id")
     long dataCenterId;
@@ -59,7 +59,7 @@ public class SnapshotVO implements Snapshot {
     @Expose
     @Column(name="status", updatable = true, nullable=false)
     @Enumerated(value=EnumType.STRING)
-    private State status;
+    private State state;
 
     @Column(name="snapshot_type")
     short snapshotType;
@@ -117,7 +117,7 @@ public class SnapshotVO implements Snapshot {
         this.snapshotType = snapshotType;
         this.typeDescription = typeDescription;
         this.size = size;
-        this.status = State.Creating;
+        this.state = State.Allocated;
         this.prevSnapshotId = 0;
         this.hypervisorType = hypervisorType;
         this.version = "2.2";
@@ -175,7 +175,7 @@ public class SnapshotVO implements Snapshot {
     }
 
     @Override
-    public Type getType() {
+    public Type getRecurringType() {
         if (snapshotType < 0 || snapshotType >= Type.values().length) {
             return null;
         }
@@ -245,11 +245,12 @@ public class SnapshotVO implements Snapshot {
 
     @Override
     public State getState() {
-        return status;
+        return state;
     }
 
-	public void setStatus(State status) {
-        this.status = status;
+
+	public void setState(State state) {
+        this.state = state;
     }
 
     public String getBackupSnapshotId(){

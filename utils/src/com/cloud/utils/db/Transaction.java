@@ -93,6 +93,12 @@ public class Transaction {
         } catch (Exception e) {
             s_logger.error("Unable to register mbean for transaction", e);
         }
+        
+        /* FIXME: We need a better solution for this
+         * Initialize encryption if we need it for db.properties
+         */ 
+        EncryptionSecretKeyChecker enc = new EncryptionSecretKeyChecker();
+        enc.check();  
     }
 
     private final LinkedList<StackElement> _stack;
@@ -1006,10 +1012,7 @@ public class Transaction {
 
     public static void initDataSource(String propsFileName) {
         try {
-            File dbPropsFile = new File(propsFileName);
-            if (!dbPropsFile.exists()) {
-                dbPropsFile = PropertiesUtil.findConfigFile(propsFileName);
-            }
+            File dbPropsFile = PropertiesUtil.findConfigFile(propsFileName);
             final Properties dbProps;
             if (EncryptionSecretKeyChecker.useEncryption()) {
                 StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();
@@ -1021,6 +1024,9 @@ public class Transaction {
                 dbProps.load(new FileInputStream(dbPropsFile));
             } catch (IOException e) {
                 s_logger.fatal("Unable to load db properties file, pl. check the classpath and file path configuration", e);
+                return;
+            } catch (NullPointerException e) {
+                s_logger.fatal("Unable to locate db properties file within classpath or absolute path: " + propsFileName);
                 return;
             }
 

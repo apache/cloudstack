@@ -1,0 +1,90 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Log In to the UI"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; provides a web-based UI that can be used by both administrators and end users. The appropriate version of the UI is displayed depending on the credentials used to log in. The UI is available in popular browsers including IE7, IE8, IE9, Firefox 3.5+, Firefox 4, Safari 4, and Safari 5. The URL is: (substitute your own management server IP address)"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "http://&lt;management-server-ip-address&gt;:8080/client"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On a fresh Management Server installation, a guided tour splash screen appears. On later visits, you’ll see a login screen where you specify the following to proceed to your Dashboard:"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Username"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The user ID of your account. The default username is admin."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Password"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The password associated with the user ID. The password for the default username is password."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Domain"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you are a root user, leave this field blank."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you are a user in the sub-domains, enter the full path to the domain, excluding the root domain."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For example, suppose multiple levels are created under the root domain, such as Comp1/hr. The users in the Comp1 domain should enter Comp1 in the Domain field, whereas the users in the Comp1/sales domain should enter Comp1/sales."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For more guidance about the choices that appear when you log in to this UI, see Logging In as the Root Administrator."
+msgstr ""
+

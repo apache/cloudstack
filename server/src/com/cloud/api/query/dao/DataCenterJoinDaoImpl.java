@@ -70,6 +70,8 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
             zoneResponse.setDns1(dataCenter.getDns1());
             zoneResponse.setDns2(dataCenter.getDns2());
+            zoneResponse.setIp6Dns1(dataCenter.getIp6Dns1());
+            zoneResponse.setIp6Dns2(dataCenter.getIp6Dns2());
             zoneResponse.setInternalDns1(dataCenter.getInternalDns1());
             zoneResponse.setInternalDns2(dataCenter.getInternalDns2());
             // FIXME zoneResponse.setVlan(dataCenter.get.getVnet());

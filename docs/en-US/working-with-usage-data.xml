@@ -31,4 +31,5 @@
     <xi:include href="usage-types.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="example-response-from-listUsageRecords.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="dates-in-usage-record.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="globally-configured-limits.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>

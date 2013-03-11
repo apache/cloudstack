@@ -1,0 +1,165 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring Access Control List"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Define Network Access Control List (ACL) on the VPC virtual router to control incoming (ingress) and outgoing (egress) traffic between the VPC tiers, and the tiers and Internet. By default, all incoming and outgoing traffic to the guest networks is blocked. To open the ports, you must create a new network ACL. The network ACLs can be created for the tiers only if the NetworkACL service is supported."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All the VPCs that you have created for the account is listed in the page."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Settings icon."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following options are displayed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "IP Addresses"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Gateways"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network ACLs"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select Network ACLs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Network ACLs page is displayed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Network ACLs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To add an ACL rule, fill in the following fields to specify what kind of network traffic is allowed in this tier."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">CIDR</emphasis>: The CIDR acts as the Source CIDR for the Ingress rules, and Destination CIDR for the Egress rules. To accept traffic only from or to the IP addresses within a particular address block, enter a CIDR or a comma-separated list of CIDRs. The CIDR is the base IP address of the incoming traffic. For example, 192.168.0.0/22. To allow all CIDRs, set to 0.0.0.0/0."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Protocol</emphasis>: The networking protocol that sources use to send traffic to the tier. The TCP and UDP protocols are typically used for data exchange and end-user communications. The ICMP protocol is typically used to send error messages or network monitoring data."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Start Port</emphasis>, <emphasis role=\"bold\">End Port</emphasis> (TCP, UDP only): A range of listening ports that are the destination for the incoming traffic. If you are opening a single port, use the same number in both fields."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Select Tier</emphasis>: Select the tier for which you want to add this ACL rule."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">ICMP Type</emphasis>, <emphasis role=\"bold\">ICMP Code</emphasis> (ICMP only): The type of message and error code that will be sent."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Traffic Type</emphasis>: Select the traffic type you want to apply."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Egress</emphasis>: To add an egress rule, select Egress from the Traffic type drop-down box and click Add. This specifies what type of traffic is allowed to be sent out of VM instances in this tier. If no egress rules are specified, all traffic from the tier is allowed out at the VPC virtual router. Once egress rules are specified, only the traffic specified in egress rules and the responses to any traffic that has been allowed in through an ingress rule are allowed out. No egress rule is required for the VMs in a tier to communicate with each other."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Ingress</emphasis>: To add an ingress rule, select Ingress from the Traffic type drop-down box and click Add. This specifies what network traffic is allowed into the VM instances in this tier. If no ingress rules are specified, then no traffic will be allowed in, except for responses to any traffic that has been allowed out through an egress rule."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "By default, all incoming and outgoing traffic to the guest networks is blocked. To open the ports, create a new network ACL."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add. The ACL rule is added."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To view the list of ACL rules you have added, click the desired tier from the Network ACLs page, then select the Network ACL tab."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can edit the tags assigned to the ACL rules and delete the ACL rules you have created. Click the appropriate button in the Actions column."
+msgstr ""
+

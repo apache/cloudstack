@@ -366,6 +366,15 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#listLDAPConfig(org.apache.cloudstack.api.commands.LDAPConfigCmd)
+     */
+    @Override
+    public LDAPConfigCmd listLDAPConfig(LDAPConfigCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationService#isOfferingForVpc(com.cloud.offering.NetworkOffering)
      */
     @Override
@@ -424,7 +433,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA,
-            boolean limitResourceUse, String tags, Long domainId, String hostTag, Integer networkRate) {
+            boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -599,7 +608,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId, NetworkType zoneType,
-            String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled) {
+            String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1, String ip6Dns2) {
         // TODO Auto-generated method stub
         return null;
     }

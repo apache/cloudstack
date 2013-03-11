@@ -1,0 +1,100 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Hosts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A host is a single computer. Hosts provide the computing resources that run the guest virtual machines. Each host has hypervisor software installed on it to manage the guest VMs. For example, a Linux KVM-enabled server, a Citrix XenServer server, and an ESXi server are hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The host is the smallest organizational unit within a &PRODUCT; deployment. Hosts are contained within clusters, clusters are contained within pods, and pods are contained within zones."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hosts in a &PRODUCT; deployment:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Provide the CPU, memory, storage, and networking resources needed to host the virtual machines"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Interconnect using a high bandwidth TCP/IP network and connect to the Internet"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "May reside in multiple data centers across different geographic locations"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "May have different capacities (different CPU speeds, different amounts of RAM, etc.), although the hosts within a cluster must all be homogeneous"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Additional hosts can be added at any time to provide more capacity for guest VMs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; automatically detects the amount of CPU and memory resources provided by the Hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hosts are not visible to the end user. An end user cannot determine which host their guest has been assigned to."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For a host to function in &PRODUCT;, you must do the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Install hypervisor software on the host"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Assign an IP address to the host"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure the host is connected to the &PRODUCT; Management Server"
+msgstr ""
+

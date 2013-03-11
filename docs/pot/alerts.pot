@@ -1,0 +1,165 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Alerts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following is the list of alert type numbers. The current alerts can be found by calling listAlerts."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "MEMORY = 0"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "CPU = 1"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "STORAGE =2"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "STORAGE_ALLOCATED = 3"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "PUBLIC_IP = 4"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "PRIVATE_IP = 5"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "HOST = 6"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "USERVM = 7"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "DOMAIN_ROUTER = 8"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "CONSOLE_PROXY = 9"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "ROUTING = 10// lost connection to default route (to the gateway)"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "STORAGE_MISC = 11 // lost connection to default route (to the gateway)"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "USAGE_SERVER = 12 // lost connection to default route (to the gateway)"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "MANAGMENT_NODE = 13 // lost connection to default route (to the gateway)"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "DOMAIN_ROUTER_MIGRATE = 14"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "CONSOLE_PROXY_MIGRATE = 15"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "USERVM_MIGRATE = 16"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "VLAN = 17"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "SSVM = 18"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "USAGE_SERVER_RESULT = 19"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "STORAGE_DELETE = 20;"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "UPDATE_RESOURCE_COUNT = 21; //Generated when we fail to update the resource count"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "USAGE_SANITY_RESULT = 22;"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "DIRECT_ATTACHED_PUBLIC_IP = 23;"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "LOCAL_STORAGE = 24;"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "RESOURCE_LIMIT_EXCEEDED = 25; //Generated when the resource limit exceeds the limit. Currently used for recurring snapshots only"
+msgstr ""
+

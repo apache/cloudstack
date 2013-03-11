@@ -31,4 +31,6 @@ public interface HypervisorCapabilitiesDao extends GenericDao<HypervisorCapabili
     Long getMaxGuestsLimit(HypervisorType hypervisorType, String hypervisorVersion);
 
     Integer getMaxDataVolumesLimit(HypervisorType hypervisorType, String hypervisorVersion);
+
+    Integer getMaxHostsPerCluster(HypervisorType hypervisorType, String hypervisorVersion);
 }

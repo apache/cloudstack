@@ -1,0 +1,75 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting Per-Project Resource Limits"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; root administrator or the domain administrator of the domain where the project resides can set new resource limits for an individual project. The project owner can set resource limits only if the owner is also a domain or root administrator."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The new limits must be below the global default limits set by the &PRODUCT; administrator (as described in <xref linkend=\"set-resource-limits-for-projects\" />). If the project already owns more of a given type of resource than the new maximum, the resources are not affected; however, the project can not add any new resources of that type until the total drops below the new limit."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in as administrator to the &PRODUCT; UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Projects."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Projects."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the project you want to work with."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Resources tab. This tab lists the current maximum amount that the project is allowed to own for each type of resource."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Type new values for one or more resources."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Apply."
+msgstr ""
+

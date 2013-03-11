@@ -18,9 +18,14 @@
  */
 package org.apache.cloudstack.storage.image.datastore;
 
+import java.util.List;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.image.ImageDataStoreDriver;
 
 public interface ImageDataStoreManager {
     ImageDataStore getImageDataStore(long dataStoreId);
+    ImageDataStore getImageDataStore(String uuid);
+    List<DataStore> getList();
     boolean registerDriver(String uuid, ImageDataStoreDriver driver);
 }

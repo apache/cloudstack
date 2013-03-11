@@ -35,6 +35,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Resource;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.Account;
 
@@ -74,11 +75,12 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccountPod;
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccount;
     protected GenericSearchBuilder<UserVmVO, Long> PodsHavingVmsForAccount;
-    
+
     protected SearchBuilder<UserVmVO> UserVmSearch;
+    protected SearchBuilder<UserVmVO> UserVmByIsoSearch;
     protected Attribute _updateTimeAttr;
     // ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
-    @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject ResourceTagDao _tagsDao;
    
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT = "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') " +
     		"GROUP BY pod_id HAVING count(id) > 0 ORDER BY count(id) DESC";
@@ -194,7 +196,10 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         AccountDataCenterVirtualSearch.and("dc", AccountDataCenterVirtualSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         AccountDataCenterVirtualSearch.join("nicSearch", nicSearch, AccountDataCenterVirtualSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         AccountDataCenterVirtualSearch.done();
-       
+
+        UserVmByIsoSearch = createSearchBuilder();
+        UserVmByIsoSearch.and("isoId", UserVmByIsoSearch.entity().getIsoId(), SearchCriteria.Op.EQ);
+        UserVmByIsoSearch.done();
 
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
@@ -248,10 +253,17 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     public List<UserVmVO> listByHostId(Long id) {
         SearchCriteria<UserVmVO> sc = HostSearch.create();
         sc.setParameters("host", id);
-        
+
         return listBy(sc);
     }
-    
+
+    @Override
+    public List<UserVmVO> listByIsoId(Long isoId) {
+        SearchCriteria<UserVmVO> sc = UserVmByIsoSearch.create();
+        sc.setParameters("isoId", isoId);
+        return listBy(sc);
+    }
+
     @Override
     public List<UserVmVO> listUpByHostId(Long hostId) {
         SearchCriteria<UserVmVO> sc = HostUpSearch.create();
@@ -285,7 +297,9 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         if (UserVmSearch == null) {
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
-            nicSearch.and("ip4Address", nicSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);
+            nicSearch.and().op("ip4Address", nicSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);
+            nicSearch.or("ip6Address", nicSearch.entity().getIp6Address(), SearchCriteria.Op.NNULL);
+            nicSearch.cp();
 
             UserVmSearch = createSearchBuilder();
             UserVmSearch.and("states", UserVmSearch.entity().getState(), SearchCriteria.Op.IN);

@@ -1,0 +1,360 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Basic Zone Configuration"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After you select Basic in the Add Zone wizard and click Next, you will be asked to enter the following details. Then click Next."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name.</emphasis> A name for the zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">DNS 1 and 2.</emphasis> These are DNS servers for use by guest VMs in the zone. These DNS servers will be accessed via the public network you will add later. The public IP addresses for the zone must have a route to the DNS server named here."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Internal DNS 1 and Internal DNS 2.</emphasis> These are DNS servers for use by system VMs in the zone (these are VMs used by &PRODUCT; itself, such as virtual routers, console proxies, and Secondary Storage VMs.) These DNS servers will be accessed via the management traffic network interface of the System VMs. The private IP address you provide for the pods must have a route to the internal DNS server named here."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Hypervisor.</emphasis> (Introduced in version 3.0.1) Choose the hypervisor for the first cluster in the zone. You can add clusters with different hypervisors later, after you finish adding the zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Network Offering.</emphasis> Your choice here determines what network services will be available on the network for guest VMs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network Offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Description"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "DefaultSharedNetworkOfferingWithSGService"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you want to enable security groups for guest traffic isolation, choose this. (See Using Security Groups to Control Traffic to VMs.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "DefaultSharedNetworkOffering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you do not need security groups, choose this."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "DefaultSharedNetscalerEIPandELBNetworkOffering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you have installed a Citrix NetScaler appliance as part of your zone network, and you will be using its Elastic IP and Elastic Load Balancing features, choose this. With the EIP and ELB features, a basic zone with security groups enabled can offer 1:1 static NAT and load balancing."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Network Domain.</emphasis> (Optional) If you want to assign a special domain name to the guest VM network, specify the DNS suffix."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Public.</emphasis> A public zone is available to all users. A zone that is not public will be assigned to a particular domain. Only users in that domain will be allowed to create guest VMs in this zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Choose which traffic types will be carried by the physical network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The traffic types are management, public, guest, and storage traffic. For more information about the types, roll over the icons to display their tool tips, or see Basic Zone Network Traffic Types. This screen starts out with some traffic types already assigned. To add more, drag and drop traffic types onto the network. You can also change the network name if desired."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Introduced in version 3.0.1) Assign a network traffic label to each traffic type on the physical network. These labels must match the labels you have already defined on the hypervisor host. To assign each label, click the Edit button under the traffic type icon. A popup dialog appears where you can type the label, then click OK."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "These traffic labels will be defined only for the hypervisor selected for the first cluster. For all other hypervisors, the labels can be configured after the zone is created."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Next."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(NetScaler only) If you chose the network offering for NetScaler, you have an additional screen to fill out. Provide the requested details to set up the NetScaler, then click Next."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">IP address.</emphasis> The NSIP (NetScaler IP) address of the NetScaler device."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Username/Password.</emphasis> The authentication credentials to access the device. &PRODUCT; uses these credentials to access the device."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Type.</emphasis> NetScaler device type that is being added. It could be NetScaler VPX, NetScaler MPX, or NetScaler SDX. For a comparison of the types, see About Using a NetScaler Load Balancer."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Public interface.</emphasis> Interface of NetScaler that is configured to be part of the public network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Private interface.</emphasis> Interface of NetScaler that is configured to be part of the private network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Number of retries.</emphasis> Number of times to attempt a command on the device before considering the operation failed. Default is 2."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Capacity.</emphasis> Number of guest networks/accounts that will share this NetScaler device."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Dedicated.</emphasis> When marked as dedicated, this device will be dedicated to a single account. When Dedicated is checked, the value in the Capacity field has no significance – implicitly, its value is 1."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(NetScaler only) Configure the IP range for public traffic. The IPs in this range will be used for the static NAT capability which you enabled by selecting the network offering for NetScaler with EIP and ELB. Enter the following details, then click Add. If desired, you can repeat this step to add more IP ranges. When done, click Next."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Gateway.</emphasis> The gateway in use for these IP addresses."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Netmask.</emphasis> The netmask associated with this IP range."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">VLAN.</emphasis> The VLAN that will be used for public traffic."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Start IP/End IP.</emphasis> A range of IP addresses that are assumed to be accessible from the Internet and will be allocated for access to guest VMs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a new zone, &PRODUCT; adds the first pod for you. You can always add more pods later. For an overview of what a pod is, see <xref linkend=\"about-pods\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first pod, enter the following, then click Next:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Pod Name.</emphasis> A name for the pod."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Reserved system gateway.</emphasis> The gateway for the hosts in that pod."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Reserved system netmask.</emphasis> The network prefix that defines the pod's subnet. Use CIDR notation."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Start/End Reserved System IP.</emphasis> The IP range in the management network that &PRODUCT; uses to manage various system VMs, such as Secondary Storage VMs, Console Proxy VMs, and DHCP. For more information, see System Reserved IP Addresses."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure the network for guest traffic. Provide the following, then click Next:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Guest gateway.</emphasis> The gateway that the guests should use."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Guest netmask.</emphasis> The netmask in use on the subnet the guests will use."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Guest start IP/End IP.</emphasis> Enter the first and last IP addresses that define a range that &PRODUCT; can assign to guests."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "We strongly recommend the use of multiple NICs. If multiple NICs are used, they may be in a different subnet."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If one NIC is used, these IPs should be in the same CIDR as the pod CIDR."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a new pod, &PRODUCT; adds the first cluster for you. You can always add more clusters later. For an overview of what a cluster is, see About Clusters."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first cluster, enter the following, then click Next:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Hypervisor.</emphasis> (Version 3.0.0 only; in 3.0.1, this field is read only) Choose the type of hypervisor software that all hosts in this cluster will run. If you choose VMware, additional fields appear so you can give information about a vSphere cluster. For vSphere servers, we recommend creating the cluster of hosts in vCenter and then adding the entire cluster to &PRODUCT;. See Add Cluster: vSphere."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Cluster name.</emphasis> Enter a name for the cluster. This can be text of your choosing and is not used by &PRODUCT;."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a new cluster, &PRODUCT; adds the first host for you. You can always add more hosts later. For an overview of what a host is, see About Hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When you add a hypervisor host to &PRODUCT;, the host must not have any VMs already running."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Before you can configure the host, you need to install the hypervisor software on the host. You will need to know which version of the hypervisor software version is supported by &PRODUCT; and what additional configuration is required to ensure the host will work with &PRODUCT;. To find these installation details, see:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Citrix XenServer Installation and Configuration"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VMware vSphere Installation and Configuration"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "KVM vSphere Installation and Configuration"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first host, enter the following, then click Next:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Host Name.</emphasis> The DNS name or IP address of the host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Username.</emphasis> The username is root."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Password.</emphasis> This is the password for the user named above (from your XenServer or KVM install)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Host Tags.</emphasis> (Optional) Any labels that you use to categorize hosts for ease of maintenance. For example, you can set this to the cloud's HA tag (set in the ha.tag global configuration parameter) if you want this host to be used only for VMs with the \"high availability\" feature enabled. For more information, see HA-Enabled Virtual Machines as well as HA for Hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a new cluster, &PRODUCT; adds the first primary storage server for you. You can always add more servers later. For an overview of what primary storage is, see About Primary Storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first primary storage server, enter the following, then click Next:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name.</emphasis> The name of the storage device."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Protocol.</emphasis> For XenServer, choose either NFS, iSCSI, or PreSetup. For KVM, choose NFS, SharedMountPoint,CLVM, or RBD. For vSphere choose either VMFS (iSCSI or FiberChannel) or NFS. The remaining fields in the screen vary depending on what you choose here."
+msgstr ""
+

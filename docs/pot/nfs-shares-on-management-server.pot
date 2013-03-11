@@ -1,0 +1,240 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Using the Management Server as the NFS Server"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This section tells how to set up NFS shares for primary and secondary storage on the same node with the Management Server. This is more typical of a trial installation, but is technically possible in a larger deployment. It is assumed that you will have less than 16TB of storage on the host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The exact commands for the following steps may vary depending on your operating system version."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu/Debian systems, you'll need to install the nfs-kernel-server package:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"$ sudo apt-get install nfs-kernel-server\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On the Management Server host, create two directories that you will use for primary and secondary storage. For example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"# mkdir -p /export/primary\n"
+"# mkdir -p /export/secondary\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the new directories as NFS exports, edit /etc/exports. Export the NFS share(s) with rw,async,no_root_squash. For example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# vi /etc/exports"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Insert the following line."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "/export  *(rw,async,no_root_squash)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Export the /export directory."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# exportfs -a"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Edit the /etc/sysconfig/nfs file."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# vi /etc/sysconfig/nfs"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Uncomment the following lines:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"LOCKD_TCPPORT=32803\n"
+"LOCKD_UDPPORT=32769\n"
+"MOUNTD_PORT=892\n"
+"RQUOTAD_PORT=875\n"
+"STATD_PORT=662\n"
+"STATD_OUTGOING_PORT=2020\n"
+"            "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Edit the /etc/sysconfig/iptables file."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# vi /etc/sysconfig/iptables"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Add the following lines at the beginning of the INPUT chain where &lt;NETWORK&gt; is the network that you'll be using:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 111 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 111 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 2049 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 32803 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 32769 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 892 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 892 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 875 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 875 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 662 -j ACCEPT\n"
+"-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 662 -j ACCEPT                \n"
+"            "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following commands:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"# service iptables restart\n"
+"# service iptables save\n"
+"            "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If NFS v4 communication is used between client and server, add your domain to /etc/idmapd.conf on both the hypervisor host and Management Server."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# vi /etc/idmapd.conf"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Remove the character # from the beginning of the Domain line in idmapd.conf and replace the value in the file with your own domain. In the example below, the domain is company.com."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "Domain = company.com"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Reboot the Management Server host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Two NFS shares called /export/primary and /export/secondary are now set up."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "It is recommended that you test to be sure the previous steps have been successful."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the hypervisor host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Be sure NFS and rpcbind are running. The commands might be different depending on your OS. For example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"# service rpcbind start\n"
+"# service nfs start\n"
+"# chkconfig nfs on\n"
+"# chkconfig rpcbind on\n"
+"# reboot                        \n"
+"                    "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log back in to the hypervisor host and try to mount the /export directories. For example (substitute your own management server name):"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"# mkdir /primarymount\n"
+"# mount -t nfs &lt;management-server-name&gt;:/export/primary /primarymount\n"
+"# umount /primarymount\n"
+"# mkdir /secondarymount\n"
+"# mount -t nfs &lt;management-server-name&gt;:/export/secondary /secondarymount\n"
+"# umount /secondarymount                        \n"
+"                    "
+msgstr ""
+

@@ -23,7 +23,7 @@
 
     $($form.serializeArray()).each(function() {
       var dataItem = data[this.name];
-      var value = this.value;
+      var value = this.value.toString();
 
       if (options.escapeSlashes) {
         value = value.replace(/\//g, '__forwardSlash__');
@@ -31,9 +31,9 @@
 
       if (!dataItem) {
         data[this.name] = value;
-      } else if (dataItem && !$(dataItem).size()) {
+      } else if (dataItem && !$.isArray(dataItem)) {
         data[this.name] = [dataItem, value];
-      } else {
+      } else if($.isArray(dataItem)){
         dataItem.push(value);
       }
     });

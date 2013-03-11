@@ -1,0 +1,140 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Signing API Requests"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Whether you access the CloudStack API with HTTP or HTTPS, it must still be signed so that CloudStack can verify the caller has been authenticated and authorized to execute the command. Make sure that you have both the API Key and Secret Key provided by the CloudStack administrator for your account before proceeding with the signing process."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To show how to sign a request, we will re-use the previous example."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "http://http://localhost:8080/client/api?command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Breaking this down, we have several distinct parts to this URL."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Base URL: This is the base URL to the CloudStack Management Server."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "http://localhost:8080"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "API Path: This is the path to the API Servlet that processes the incoming requests."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "/client/api?"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Command String: This part of the query string comprises of the command, its parameters, and the API Key that identifies the account."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "As with all query string parameters of field-value pairs, the \"field\" component is case insensitive while all \"value\" values are case sensitive."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Signature: This is the hashed signature of the Base URL that is generated using a combination of the user’s Secret Key and the HMAC SHA-1 hashing algorithm."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Every API request has the format Base URL+API Path+Command String+Signature."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To generate the signature."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For each field-value pair (as separated by a '&amp;') in the Command String, URL encode each value so that it can be safely sent via HTTP GET."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure all spaces are encoded as \"%20\" rather than \"+\"."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Lower case the entire Command String and sort it alphabetically via the field for each field-value pair. The result of this step would look like the following."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "apikey=mivr6x7u6bn_sdahobpjnejpgest35exq-jb8cg20yi3yaxxcgpyuairmfi_ejtvwz0nukkjbpmy3y2bcikwfq&amp;command=deployvirtualmachine&amp;diskofferingid=1&amp;serviceofferingid=1&amp;templateid=2&amp;zoneid=4"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Take the sorted Command String and run it through the HMAC SHA-1 hashing algorithm (most programming languages offer a utility method to do this) with the user’s Secret Key. Base64 encode the resulting byte array in UTF-8 so that it can be safely transmitted via HTTP. The final string produced after Base64 encoding should be \"Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D\"."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "By reconstructing the final URL in the format Base URL+API Path+Command String+Signature, the final URL should look like:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "http://localhost:8080/client/api?command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D"
+msgstr ""
+

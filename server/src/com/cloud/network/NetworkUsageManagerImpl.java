@@ -44,9 +44,6 @@ import com.cloud.agent.api.RecurringNetworkUsageCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupTrafficMonitorCommand;
 import com.cloud.agent.manager.Commands;
-import com.cloud.api.commands.AddTrafficMonitorCmd;
-import com.cloud.api.commands.DeleteTrafficMonitorCmd;
-import com.cloud.api.commands.ListTrafficMonitorsCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -71,6 +68,10 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+
+import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
+import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.user.AccountManager;
@@ -93,7 +94,7 @@ import com.cloud.utils.net.MacAddress;
 
 @Component
 @Local(value = {NetworkUsageManager.class})
-public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsageManager, ResourceStateAdapter {
+public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsageService, NetworkUsageManager, ResourceStateAdapter {
     public enum NetworkUsageResourceName {
         TrafficSentinel;
     }
@@ -209,17 +210,6 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
     public List<HostVO> listTrafficMonitors(ListTrafficMonitorsCmd cmd) {
         long zoneId = cmd.getZoneId();
         return _resourceMgr.listAllHostsInOneZoneByType(Host.Type.TrafficMonitor, zoneId);
-    }
-
-    @Override
-    public TrafficMonitorResponse getApiResponse(Host trafficMonitor) {
-        Map<String, String> tmDetails = _detailsDao.findDetails(trafficMonitor.getId());
-        TrafficMonitorResponse response = new TrafficMonitorResponse();
-        response.setId(trafficMonitor.getUuid());
-        response.setIpAddress(trafficMonitor.getPrivateIpAddress());
-        response.setNumRetries(tmDetails.get("numRetries"));
-        response.setTimeout(tmDetails.get("timeout"));
-        return response;
     }
 
     @Override

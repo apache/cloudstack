@@ -1,0 +1,75 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Cloud Infrastructure Overview"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Management Server manages one or more zones (typically, datacenters) containing host computers where guest virtual machines will run. The cloud infrastructure is organized as follows:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Zone: Typically, a zone is equivalent to a single datacenter. A zone consists of one or more pods and secondary storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Pod: A pod is usually one rack of hardware that includes a layer-2 switch and one or more clusters."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Cluster: A cluster consists of one or more hosts and primary storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Host: A single compute node within a cluster. The hosts are where the actual cloud services run in the form of guest virtual machines."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Primary storage is associated with a cluster, and it stores the disk volumes for all the VMs running on hosts in that cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Secondary storage is associated with a zone, and it stores templates, ISO images, and disk volume snapshots."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">More Information</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For more information, see documentation on cloud infrastructure concepts."
+msgstr ""
+

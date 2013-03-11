@@ -26,17 +26,18 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.usage.UsagePortForwardingRuleVO;
 import com.cloud.usage.UsageServer;
-import com.cloud.usage.UsageTypes;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsagePortForwardingRuleDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
+import org.springframework.stereotype.Component;
 
-
+@Component
 public class PortForwardingUsageParser {
     public static final Logger s_logger = Logger.getLogger(PortForwardingUsageParser.class.getName());
     
@@ -49,7 +50,7 @@ public class PortForwardingUsageParser {
     @PostConstruct
     void init() {
     	m_usageDao = _usageDao;
-    	_usagePFRuleDao = _usagePFRuleDao;
+    	m_usagePFRuleDao = _usagePFRuleDao;
     }
     
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {

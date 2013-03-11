@@ -1,0 +1,160 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting Up Invitations"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; can be set up either so that project administrators can add people directly to a project, or so that it is necessary to send an invitation which the recipient must accept. The invitation can be sent by email or through the user’s &PRODUCT; account. If you want administrators to use invitations to add members to projects, turn on and set up the invitations feature in &PRODUCT;."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in as administrator to the &PRODUCT; UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Global Settings."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the search box, type project and click the search button."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the search box, type project and click the search button.<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/search-button.png\" /> </imageobject> <textobject><phrase>searchbutton.png: Searches projects</phrase></textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the search results, you will see a few other parameters you need to set to control how invitations behave. The table below shows global configuration parameters related to project invitations. Click the edit button to set each parameter"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configuration Parameters"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Description"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "project.invite.required"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set to true to turn on the invitations feature."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "project.email.sender"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The email address to show in the From field of invitation emails."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "project.invite.timeout"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Amount of time to allow for a new member to respond to the invitation."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.host"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name of the host that acts as an email server to handle invitations."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.password"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) Password required by the SMTP server. You must also set project.smtp.username and set project.smtp.useAuth to true."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.port"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "SMTP server’s listening port."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.useAuth"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set to true if the SMTP server requires a username and password."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "project.smtp.username"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) User name required by the SMTP server for authentication. You must also set project.smtp.password and set project.smtp.useAuth to true.."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "service cloud-management restart"
+msgstr ""
+

@@ -1,0 +1,175 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Globally Configured Limits"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a zone, the guest virtual network has a 24 bit CIDR by default. This limits the guest virtual network to 254 running instances. It can be adjusted as needed, but this must be done before any instances are created in the zone. For example, 10.1.1.0/22 would provide for ~1000 addresses."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following table lists limits set in the Global Configuration:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Parameter Name"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Definition"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "max.account.public.ips"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Number of public IP addresses that can be owned by an account"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "max.account.snapshots"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Number of snapshots that can exist for an account"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "max.account.templates"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Number of templates that can exist for an account"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "max.account.user.vms"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Number of virtual machine instances that can exist for an account"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "max.account.volumes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Number of disk volumes that can exist for an account"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "max.template.iso.size"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Maximum size for a downloaded template or ISO in GB"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "max.volume.size.gb"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Maximum size for a volume in GB"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "network.throttling.rate"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Default data transfer rate in megabits per second allowed per user (supported on XenServer)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "snapshot.max.hourly"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Maximum recurring hourly snapshots to be retained for a volume. If the limit is reached, early snapshots from the start of the hour are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring hourly snapshots can not be scheduled"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "snapshot.max.daily"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Maximum recurring daily snapshots to be retained for a volume. If the limit is reached, snapshots from the start of the day are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring daily snapshots can not be scheduled"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "snapshot.max.weekly"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Maximum recurring weekly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the week are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring weekly snapshots can not be scheduled"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "snapshot.max.monthly"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Maximum recurring monthly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the month are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring monthly snapshots can not be scheduled."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To modify global configuration parameters, use the global configuration screen in the &PRODUCT; UI. See Setting Global Configuration Parameters"
+msgstr ""
+

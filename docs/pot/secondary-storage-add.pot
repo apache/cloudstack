@@ -1,0 +1,95 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Add Secondary Storage"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "System Requirements for Secondary Storage"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NFS storage appliance or Linux NFS server"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) OpenStack Object Storage (Swift) (see http://swift.openstack.org)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "100GB minimum capacity"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A secondary storage device must be located in the same zone as the guest VMs it serves."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Each Secondary Storage server must be available to all hosts in the zone."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Adding Secondary Storage"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When you create a new zone, the first secondary storage is added as part of that procedure. You can add secondary storage servers at any time to add more servers to an existing zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Be sure there is nothing stored on the server. Adding the server to &PRODUCT; will destroy any existing data."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you are going to use Swift for cloud-wide secondary storage, you must add the Swift storage to &PRODUCT; before you add the local zone secondary storage servers. See <xref linkend=\"zone-add\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To prepare for local zone secondary storage, you should have created and mounted an NFS share during Management Server installation. <phrase condition=\"install\">See <xref linkend=\"prepare-nfs-shares\" />.</phrase><phrase condition=\"admin\">See Preparing NFS Shares in the Installation Guide.</phrase>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure you prepared the system VM template during Management Server installation. <phrase condition=\"install\">See <xref linkend=\"prepare-system-vm-template\" />.</phrase><phrase condition=\"admin\">See Prepare the System VM Template in the Installation Guide.</phrase>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now that the secondary storage server for per-zone storage is prepared, add it to &PRODUCT;. Secondary storage is added as part of the procedure for adding a new zone. See <xref linkend=\"zone-add\" />."
+msgstr ""
+

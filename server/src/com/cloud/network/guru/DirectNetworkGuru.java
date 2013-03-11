@@ -173,6 +173,8 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         if (profile != null) {
             profile.setDns1(dc.getDns1());
             profile.setDns2(dc.getDns2());
+            profile.setIp6Dns1(dc.getIp6Dns1());
+            profile.setIp6Dns2(dc.getIp6Dns2());
         }
     }
 

@@ -1,0 +1,240 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:12:00\n"
+"PO-Revision-Date: 2013-02-02T20:12:00\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Virtual Private Clouds"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; Virtual Private Cloud is a private, isolated part of &PRODUCT;. A VPC can have its own virtual network topology that resembles a traditional physical network. You can launch VMs in the virtual network that can have private addresses in the range of your choice, for example: 10.0.0.0/16. You can define network tiers within your VPC network range, which in turn enables you to group similar kinds of instances based on IP address range."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For example, if a VPC has the private range 10.0.0.0/16, its guest networks can have the network ranges 10.0.1.0/24, 10.0.2.0/24, 10.0.3.0/24, and so on."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Major Components of a VPC:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A VPC is comprised of the following network components:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">VPC</emphasis>: A VPC acts as a container for multiple isolated networks that can communicate with each other via its virtual router."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Network Tiers</emphasis>: Each tier acts as an isolated network with its own VLANs and CIDR list, where you can place groups of resources, such as VMs. The tiers are segmented by means of VLANs. The NIC of each tier acts as its gateway."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Virtual Router</emphasis>: A virtual router is automatically created and started when you create a VPC. The virtual router connect the tiers and direct traffic among the public gateway, the VPN gateways, and the NAT instances. For each tier, a corresponding NIC and IP exist in the virtual router. The virtual router provides DNS and DHCP services through its IP."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Public Gateway</emphasis>: The traffic to and from the Internet routed to the VPC through the public gateway. In a VPC, the public gateway is not exposed to the end user; therefore, static routes are not support for the public gateway."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Private Gateway</emphasis>: All the traffic to and from a private network routed to the VPC through the private gateway. For more information, see <xref linkend=\"add-gateway-vpc\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">VPN Gateway</emphasis>: The VPC side of a VPN connection."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Site-to-Site VPN Connection</emphasis>: A hardware-based VPN connection between your VPC and your datacenter, home network, or co-location facility. For more information, see <xref linkend=\"site-to-site-vpn\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Customer Gateway</emphasis>: The customer side of a VPN Connection. For more information, see <xref linkend=\"create-vpn-customer-gateway\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">NAT Instance</emphasis>: An instance that provides Port Address Translation for instances to access the Internet via the public gateway. For more information, see <xref linkend=\"enable-disable-static-nat-vpc\" />."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Network Architecture in a VPC"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a VPC, the following four basic options of network architectures are present:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VPC with a public gateway only"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VPC with public and private gateways"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VPC with public and private gateways and site-to-site VPN access"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VPC with a private gateway only and site-to-site VPN access"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Connectivity Options for a VPC"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can connect your VPC to:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Internet through the public gateway."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The corporate datacenter by using a site-to-site VPN connection through the VPN gateway."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Both the Internet and your corporate datacenter by using both the public gateway and a VPN gateway."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "VPC Network Considerations"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Consider the following before you create a VPC:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A VPC, by default, is created in the enabled state."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A VPC can be created in Advance zone only, and can't belong to more than one zone at a time."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The default number of VPCs an account can create is 20. However, you can change it by using the max.account.vpcs global parameter, which controls the maximum number of VPCs an account is allowed to create."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The default number of tiers an account can create within a VPC is 3. You can configure this number by using the vpc.max.networks parameter."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Each tier should have an unique CIDR in the VPC. Ensure that the tier's CIDR should be within the VPC CIDR range."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A tier belongs to only one VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All network tiers inside the VPC should belong to the same account."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When a VPC is created, by default, a SourceNAT IP is allocated to it. The Source NAT IP is released only when the VPC is removed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A public IP can be used for only one purpose at a time. If the IP is a sourceNAT, it cannot be used for StaticNAT or port forwarding."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The instances only have a private IP address that you provision. To communicate with the Internet, enable NAT to an instance that you launch in your VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Only new networks can be added to a VPC. The maximum number of networks per VPC is limited by the value you specify in the vpc.max.networks parameter. The default value is three."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The load balancing service can be supported by only one tier inside the VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If an IP address is assigned to a tier:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "That IP can't be used by more than one tier at a time in the VPC. For example, if you have tiers A and B, and a public IP1, you can create a port forwarding rule by using the IP either for A or B, but not for both."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "That IP can't be used for StaticNAT, load balancing, or port forwarding rules for another guest network inside the VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Remote access VPN is not supported in VPC networks."
+msgstr ""
+

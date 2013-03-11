@@ -1,0 +1,65 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Amazon Web Services Compatible Interface"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; can translate Amazon Web Services (AWS) API calls to native &PRODUCT; API calls so that users can continue using existing AWS-compatible tools. This translation service runs as a separate web application in the same tomcat server as the management server of &PRODUCT;, listening on a different port. The Amazon Web Services (AWS) compatible interface provides the EC2 SOAP and Query APIs as well as the S3 REST API."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This service was previously enabled by separate software called CloudBridge. It is now fully integrated with the &PRODUCT; management server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The compatible interface for the EC2 Query API and the S3 API are Work In Progress. The S3 compatible API offers a way to store data on the management server file system, it is not an implementation of the S3 backend."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Limitations"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Supported only in zones that use basic networking."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Available in fresh installations of &PRODUCT;. Not available through upgrade of previous versions."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Features such as Elastic IP (EIP) and Elastic Load Balacing (ELB) are only available in an infrastructure with a Citrix NetScaler device. Users accessing a Zone with a NetScaler device will need to use a NetScaler-enabled network offering (DefaultSharedNetscalerEIP and ELBNetworkOffering)."
+msgstr ""
+

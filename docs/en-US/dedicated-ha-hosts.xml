@@ -24,7 +24,7 @@
 
 <section id="dedicated-ha-hosts">
     <title>Dedicated HA Hosts</title>
-    <para>(v3.0.3 and greater) One or more hosts can be designated for use only by HA-enabled VMs that are restarting due to a host failure. Setting up a pool of such dedicated HA hosts as the recovery destination for all HA-enabled VMs is useful to:</para>
+    <para>One or more hosts can be designated for use only by HA-enabled VMs that are restarting due to a host failure. Setting up a pool of such dedicated HA hosts as the recovery destination for all HA-enabled VMs is useful to:</para>
     <itemizedlist>
         <listitem><para>Make it easier to determine which VMs have been restarted as part of the &PRODUCT; high-availability function. If a VM is running on a dedicated HA host, then it must be an HA-enabled VM whose original host failed. (With one exception: It is possible for an administrator to manually migrate any VM to a dedicated HA host.).</para></listitem>
         <listitem><para>Keep HA-enabled VMs from restarting on hosts which may be reserved for other purposes.</para></listitem>

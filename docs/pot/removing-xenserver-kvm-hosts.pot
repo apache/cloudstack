@@ -1,0 +1,60 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Removing XenServer and KVM Hosts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A node cannot be removed from a cluster until it has been placed in maintenance mode. This will ensure that all of the VMs on it have been migrated to other Hosts. To remove a Host from the cloud:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Place the node in maintenance mode."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "See <xref linkend=\"scheduled-maintenance-maintenance-mode-hosts\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For KVM, stop the cloud-agent service."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Use the UI option to remove the node."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Then you may power down the Host, re-use its IP address, re-install it, etc"
+msgstr ""
+

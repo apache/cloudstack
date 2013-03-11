@@ -43,8 +43,17 @@ public class ServerApiException extends CloudRuntimeException {
         super(description, cause);
         _errorCode = errorCode;
         _description = description;
-        if (cause instanceof CloudRuntimeException || cause instanceof CloudException ) {
+        if (cause instanceof CloudRuntimeException) {
             CloudRuntimeException rt = (CloudRuntimeException) cause;
+            ArrayList<String> idList = rt.getIdProxyList();
+            if (idList != null) {
+                for (int i = 0; i < idList.size(); i++) {
+                    addProxyObject(idList.get(i));
+                }
+            }
+            setCSErrorCode(rt.getCSErrorCode());
+        } else if (cause instanceof CloudException) {
+            CloudException rt = (CloudException) cause;
             ArrayList<String> idList = rt.getIdProxyList();
             if (idList != null) {
                 for (int i = 0; i < idList.size(); i++) {

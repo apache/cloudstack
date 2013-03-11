@@ -20,6 +20,9 @@ public interface DataStore {
     DataStoreDriver getDriver();
     DataStoreRole getRole();
     long getId();
+    String getUuid();
     String getUri();
     Scope getScope();
+    DataObject create(DataObject obj);
+    boolean delete(DataObject obj);
 }

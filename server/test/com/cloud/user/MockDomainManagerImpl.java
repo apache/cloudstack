@@ -137,24 +137,24 @@ public class MockDomainManagerImpl extends ManagerBase implements DomainManager,
         return null;
     }
 
-	@Override
-	public Domain createDomain(String name, Long parentId,
-			String networkDomain, String domainUUID, Integer regionId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Domain createDomain(String name, Long parentId,
+            String networkDomain) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Domain updateDomain(UpdateDomainCmd cmd) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Domain updateDomain(UpdateDomainCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Domain createDomain(String name, Long parentId, Long ownerId,
-			String networkDomain, String domainUUID, Integer regionId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Domain createDomain(String name, Long parentId, Long ownerId,
+            String networkDomain) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

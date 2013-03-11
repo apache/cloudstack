@@ -30,6 +30,7 @@ import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -53,8 +54,8 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     protected final SearchBuilder<FirewallRuleVO> SystemRuleSearch;
     protected final GenericSearchBuilder<FirewallRuleVO, Long> RulesByIpCount;
 
-    @Inject protected FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao;
-    @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject protected FirewallRulesCidrsDao _firewallRulesCidrsDao;
+    @Inject ResourceTagDao _tagsDao;
     @Inject IPAddressDao _ipDao;
 
     protected FirewallRulesDaoImpl() {

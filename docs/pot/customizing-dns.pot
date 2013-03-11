@@ -1,0 +1,85 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Customizing the Network Domain Name"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The root administrator can optionally assign a custom DNS suffix at the level of a network, account, domain, zone, or entire &PRODUCT; installation, and a domain administrator can do so within their own domain. To specify a custom domain name and put it into effect, follow these steps."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set the DNS suffix at the desired scope"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "At the network level, the DNS suffix can be assigned through the UI when creating a new network, as described in <xref linkend=\"add-additional-guest-network\" /> or with the updateNetwork command in the &PRODUCT; API."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "At the account, domain, or zone level, the DNS suffix can be assigned with the appropriate &PRODUCT; API commands: createAccount, editAccount, createDomain, editDomain, createZone, or editZone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "At the global level, use the configuration parameter guest.domain.suffix. You can also use the &PRODUCT; API command updateConfiguration. After modifying this global configuration, restart the Management Server to put the new setting into effect."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To make the new DNS suffix take effect for an existing network, call the &PRODUCT; API command updateNetwork. This step is not necessary when the DNS suffix was specified while creating a new network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The source of the network domain that is used depends on the following rules."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For all networks, if a network domain is specified as part of a network's own configuration, that value is used."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For an account-specific network, the network domain specified for the account is used. If none is specified, the system looks for a value in the domain, zone, and global configuration, in that order."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For a domain-specific network, the network domain specified for the domain is used. If none is specified, the system looks for a value in the zone and global configuration, in that order."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For a zone-specific network, the network domain specified for the zone is used. If none is specified, the system looks for a value in the global configuration."
+msgstr ""
+

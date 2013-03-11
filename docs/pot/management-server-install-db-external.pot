@@ -1,0 +1,219 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Install the Database on a Separate Node"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This section describes how to install MySQL on a standalone machine, separate from the Management Server. This technique is intended for a deployment that includes several Management Server nodes. If you have a single-node Management Server deployment, you will typically use the same node for MySQL. See <xref linkend=\"management-server-install-db-local\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The management server doesn't require a specific distribution for the MySQL node. You can use a distribution or Operating System of your choice. Using the same distribution as the management server is recommended, but not required. See <xref linkend=\"management-server-system-requirements\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Install MySQL from the package repository from your distribution:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL or CentOS:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "yum install mysql-server"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "apt-get install mysql-server"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Edit the MySQL configuration (/etc/my.cnf or /etc/mysql/my.cnf, depending on your OS) and insert the following lines in the [mysqld] section. You can put these lines below the datadir line. The max_connections parameter should be set to 350 multiplied by the number of Management Servers you are deploying. This example assumes two Management Servers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu, you can also create /etc/mysql/conf.d/cloudstack.cnf file and add these directives there. Don't forget to add [mysqld] on the first line of the file."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "innodb_rollback_on_timeout=1\n"
+"innodb_lock_wait_timeout=600\n"
+"max_connections=700\n"
+"log-bin=mysql-bin\n"
+"binlog-format = 'ROW'\n"
+"bind-address = 0.0.0.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Start or restart MySQL to put the new configuration into effect."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL/CentOS, MySQL doesn't automatically start after installation. Start it manually."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "service mysqld start"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu, restart MySQL."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "service mysqld restart"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(CentOS and RHEL only; not required on Ubuntu)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL and CentOS, MySQL does not set a root password by default. It is very strongly recommended that you set a root password as a security precaution."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following command to secure your installation. You can answer \"Y\" to all questions except \"Disallow root login remotely?\". Remote root login is required to set up the databases."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mysql_secure_installation"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If a firewall is present on the system, open TCP port 3306 so external MySQL connections can be established."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu, UFW is the default firewall. Open the port with this command:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "ufw allow mysql"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL/CentOS:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Edit the /etc/sysconfig/iptables file and add the following line at the beginning of the INPUT chain."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "-A INPUT -p tcp --dport 3306 -j ACCEPT"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now reload the iptables rules."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "service iptables restart"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Return to the root shell on your first Management Server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set up the database. The following command creates the cloud user on the database."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In dbpassword, specify the password to be assigned to the cloud user. You can choose to provide no password."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In deploy-as, specify the username and password of the user deploying the database. In the following command, it is assumed the root user is deploying the database and creating the cloud user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) For encryption_type, use file or web to indicate the technique used to pass in the database encryption password. Default: file. See <xref linkend=\"about-password-encryption\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) For management_server_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; properties file. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) For database_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; database. Default: password. It is highly recommended that you replace this with a more secure value. See <xref linkend=\"about-password-encryption\" />."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "cloud-setup-databases cloud:&lt;dbpassword&gt;@&lt;ip address mysql server&gt; \\\n"
+"--deploy-as=root:&lt;password&gt; \\\n"
+"-e &lt;encryption_type&gt; \\\n"
+"-m &lt;management_server_key&gt; \\\n"
+"-k &lt;database_key&gt;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When this script is finished, you should see a message like “Successfully initialized the database.”"
+msgstr ""
+

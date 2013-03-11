@@ -1,0 +1,70 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Resizing Volumes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; does not provide the ability to resize root disks or data disks; the disk size is fixed based on the template used to create the VM. However, the tool <ulink url=\"http://vmtoolkit.com/files/folders/converters/entry87.aspx/\"> VHD Resizer</ulink>), while not officially supported by Cloud.com or Citrix, might provide a workaround. To increase disk size with VHD Resizer:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Get the VHD from the secondary storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Import it into VHD Resizer."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Resize the VHD."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Upload the new VHD."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create a new VM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Take a snapshot, then create a new template from that snapshot."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For more information, see <ulink url=\"http://support.citrix.com/article/CTX118608/\"> How to Resize a Provisioning Server 5 Virtual Disk </ulink> at the Citrix Knowledge Center"
+msgstr ""
+

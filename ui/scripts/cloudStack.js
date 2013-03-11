@@ -19,18 +19,26 @@
     home: 'dashboard',
 
     sectionPreFilter: function(args) {
+      var sections = [];
+
       if(isAdmin()) {
-        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "system", "global-settings", "configuration", "projects", "regions"];
       }
       else if(isDomainAdmin()) {
-        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "projects"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "domains", "events", "projects"];
       }
       else if (g_userProjectsEnabled) {
-        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "projects"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events", "projects"];
       }
       else { //normal user
-        return ["dashboard", "instances", "storage", "network", "templates", "accounts", "events"];
+        sections = ["dashboard", "instances", "storage", "network", "templates", "accounts", "events"];
       }
+
+      if (cloudStack.plugins.length) {
+        sections.push('plugins');
+      }
+
+      return sections;
     },
     sections: {
       /**
@@ -46,10 +54,12 @@
       accounts: {},
 			
       domains: {}, //domain-admin and root-admin only
-			
+
+      regions: {}, //root-admin only
       system: {},  //root-admin only     
       'global-settings': {}, //root-admin only     
-      configuration: {} //root-admin only    
+      configuration: {}, //root-admin only
+      plugins: {}
     }
   });
 
@@ -156,6 +166,13 @@
             $.cookie('userProjectsEnabled', g_userProjectsEnabled, { expires: 1 });
 			
             g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
+						
+            if(json.listcapabilitiesresponse.capability.apilimitinterval != null && json.listcapabilitiesresponse.capability.apilimitmax != null) {						
+							var intervalLimit = ((json.listcapabilitiesresponse.capability.apilimitinterval * 1000) / json.listcapabilitiesresponse.capability.apilimitmax ) * 3; //multiply 3 to be on safe side
+							//intervalLimit = 9999; //this line is for testing only, comment it before check in
+							if(intervalLimit > g_queryAsyncJobResultInterval)
+								g_queryAsyncJobResultInterval = intervalLimit;						
+						}
 						
             userValid = true;
           },
@@ -283,7 +300,14 @@
                 $.cookie('userProjectsEnabled', g_userProjectsEnabled, { expires: 1 });
 				
                 g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
-
+								
+								if(json.listcapabilitiesresponse.capability.apilimitinterval != null && json.listcapabilitiesresponse.capability.apilimitmax != null) {
+									var intervalLimit = ((json.listcapabilitiesresponse.capability.apilimitinterval * 1000) / json.listcapabilitiesresponse.capability.apilimitmax ) * 3; //multiply 3 to be on safe side
+									//intervalLimit = 8888; //this line is for testing only, comment it before check in
+									if(intervalLimit > g_queryAsyncJobResultInterval)
+										g_queryAsyncJobResultInterval = intervalLimit;		
+								}
+								
                 args.response.success({
                   data: {
                     user: $.extend(true, {}, loginresponse, {

@@ -1,0 +1,60 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Network Service Providers"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For the most up-to-date list of supported network service providers, see the &PRODUCT; UI or call listNetworkServiceProviders."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A service provider (also called a network element) is hardware or virtual appliance that makes a network service possible; for example, a firewall appliance can be installed in the cloud to provide firewall service. On a single network, multiple providers can provide the same network service. For example, a firewall service may be provided by Cisco or Juniper devices in the same physical network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can have multiple instances of the same service provider in a network (say, more than one Juniper SRX device)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If different providers are set up to provide the same service on the network, the administrator can create network offerings so users can specify which network service provider they prefer (along with the other choices offered in network offerings). Otherwise, &PRODUCT; will choose which provider to use whenever the service is called for."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Supported Network Service Providers"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; ships with an internal list of the supported service providers, and you can choose from this list when creating a network offering."
+msgstr ""
+

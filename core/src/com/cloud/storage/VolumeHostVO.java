@@ -29,11 +29,13 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-//import com.cloud.storage.VMVolumeStorageResourceAssoc.Status;
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDaoBase;
-import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Join table for storage hosts and volumes
@@ -41,7 +43,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  */
 @Entity
 @Table(name="volume_host_ref")
-public class VolumeHostVO implements InternalIdentity {
+public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	Long id;
@@ -99,6 +101,16 @@ public class VolumeHostVO implements InternalIdentity {
     @Column(name="destroyed")
     boolean destroyed = false;
     
+    @Column(name="update_count", updatable = true, nullable=false)
+    protected long updatedCount;
+    
+    @Column(name = "updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    Date updated;
+    
+    @Column(name = "state")
+    @Enumerated(EnumType.STRING)
+    ObjectInDataStoreStateMachine.State state;
 	
     public String getInstallPath() {
 		return installPath;
@@ -187,6 +199,7 @@ public class VolumeHostVO implements InternalIdentity {
 		super();
 		this.hostId = hostId;
 		this.volumeId = volumeId;
+		this.state = ObjectInDataStoreStateMachine.State.Allocated;
 	}
 
 	public VolumeHostVO(long hostId, long volumeId, long zoneId, Date lastUpdated,
@@ -308,5 +321,27 @@ public class VolumeHostVO implements InternalIdentity {
     public String toString() {
 	    return new StringBuilder("VolumeHost[").append(id).append("-").append(volumeId).append("-").append(hostId).append(installPath).append("]").toString();
 	}
+    
+    public long getUpdatedCount() {
+        return this.updatedCount;
+    }
+    
+    public void incrUpdatedCount() {
+        this.updatedCount++;
+    }
+
+    public void decrUpdatedCount() {
+        this.updatedCount--;
+    }
+    
+    public Date getUpdated() {
+        return updated;
+    }
+
+    @Override
+    public ObjectInDataStoreStateMachine.State getState() {
+        // TODO Auto-generated method stub
+        return this.state;
+    }
 
 }

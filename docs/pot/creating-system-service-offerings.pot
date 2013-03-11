@@ -1,0 +1,130 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a New System Service Offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To create a system service offering:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in with admin privileges to the &PRODUCT; UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Service Offerings."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Select Offering, choose System Offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add System Service Offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the dialog, make the following choices:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name. Any desired name for the system offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Description. A short description of the offering that can be displayed to users"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "System VM Type. Select the type of system virtual machine that this offering is intended to support."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Storage type. The type of disk that should be allocated. Local allocates from storage attached directly to the host where the system VM is running. Shared allocates from storage accessible via NFS."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "# of CPU cores. The number of cores which should be allocated to a system VM with this offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CPU (in MHz). The CPU speed of the cores that the system VM is allocated. For example, \"2000\" would provide for a 2 GHz clock."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Memory (in MB). The amount of memory in megabytes that the system VM should be allocated. For example, \"2048\" would provide for a 2 GB RAM allocation."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network Rate. Allowed data transfer rate in MB per second."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Offer HA. If yes, the administrator can choose to have the system VM be monitored and as highly available as possible."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Storage Tags. The tags that should be associated with the primary storage used by the system VM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Host Tags. (Optional) Any tags that you use to organize your hosts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CPU cap. Whether to limit the level of CPU usage even if spare capacity is available."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public. Indicate whether the service offering should be available all domains or only some domains. Choose Yes to make it available to all domains. Choose No to limit the scope to a subdomain; &PRODUCT; will then prompt for the subdomain's name."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add."
+msgstr ""
+

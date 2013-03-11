@@ -1,0 +1,111 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Building RPMs"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "While we have defined, and you have presumably already installed the bootstrap prerequisites, there are a number of build time prerequisites that need to be resolved. &PRODUCT; uses maven for dependency resolution. You can resolve the buildtime depdencies for CloudStack by running the following command:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>$</prompt> <command>mvn</command> -P deps"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now that we have resolved the dependencies we can move on to building &PRODUCT; and packaging them into RPMs by issuing the following command."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>$</prompt> <command>./waf</command> rpm"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Once this completes, you should find assembled RPMs in <filename>artifacts/rpmbuild/RPMS/x86_64</filename>"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a yum repo"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "While RPMs is an ideal packaging format - it's most easily consumed from yum repositories over a network. We'll move into the directory with the newly created RPMs by issuing the following command:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>$</prompt> <command>cd</command> artifacts/rpmbuild/RPMS/x86_64"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Next we'll issue a command to create the repository metadata by issuing the following command:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>$</prompt> <command>createrepo</command> ./"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The files and directories within our current working directory can now be uploaded to a web server and serve as a yum repository"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring your systems to use your new yum repository"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now that your yum repository is populated with RPMs and metadata we need to configure our machines that need to install CloudStack. We will create a file at <filename>/etc/yum.repos.d/cloudstack.repo</filename> with the following content:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"[apache-cloudstack]\n"
+"name=Apache CloudStack\n"
+"baseurl=http://<replaceable>webserver.tld/path/to/repo</replaceable>\n"
+"enabled=1\n"
+"gpgcheck=0\n"
+""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Completing this step will allow you to easily install CloudStack on a number of machines across the network."
+msgstr ""
+

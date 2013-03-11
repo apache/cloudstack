@@ -1,0 +1,70 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Prepare NFS Shares"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; needs a place to keep primary and secondary storage (see Cloud Infrastructure Overview). Both of these can be NFS shares. This section tells how to set up the NFS shares before adding the storage to &PRODUCT;."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Alternative Storage"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NFS is not the only option for primary or secondary storage. For example, you may use a Ceph RDB cluster, GlusterFS, iSCSI, and otthers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The requirements for primary and secondary storage are described in:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"about-primary-storage\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"about-secondary-storage\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A production installation typically uses a separate NFS server. See <xref linkend=\"nfs-shares-on-separate-server\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can also use the Management Server node as the NFS server. This is more typical of a trial installation, but is technically possible in a larger deployment. See <xref linkend=\"nfs-shares-on-management-server\" />."
+msgstr ""
+

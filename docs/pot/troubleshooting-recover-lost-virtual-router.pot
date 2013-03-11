@@ -1,0 +1,85 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Recovering a Lost Virtual Router"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Symptom"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A virtual router is running, but the host is disconnected. A virtual router no longer functions as expected."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Cause"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Virtual router is lost or down."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Solution"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you are sure that a virtual router is down forever, or no longer functions as expected, destroy it. You must create one afresh while keeping the backup router up and running (it is assumed this is in a redundant router setup):"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Force stop the router. Use the stopRouter API with forced=true parameter to do so."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Before you continue with destroying this router, ensure that the backup router is running. Otherwise the network connection will be lost."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Destroy the router by using the destroyRouter API."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Recreate the missing router by using the restartNetwork API with cleanup=false parameter. For more information about redundant router setup, see Creating a New Network Offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For more information about the API syntax, see the API Reference at <ulink url=\"http://docs.cloudstack.org/CloudStack_Documentation/API_Reference%3A_CloudStack\" />API Reference."
+msgstr ""
+

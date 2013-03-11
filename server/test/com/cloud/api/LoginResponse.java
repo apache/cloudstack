@@ -24,8 +24,6 @@ import com.google.gson.annotations.SerializedName;
 /**
  * Login Response object
  *
- * @author Min Chen
- *
  */
 public class LoginResponse extends BaseResponse {
 

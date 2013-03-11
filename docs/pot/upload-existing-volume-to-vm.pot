@@ -1,0 +1,150 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Uploading an Existing Volume to a Virtual Machine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Existing data can be made accessible to a virtual machine. This is called uploading a volume to the VM. For example, this is useful to upload data from a local file system and attach it to a VM. Root administrators, domain administrators, and end users can all upload existing volumes to VMs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The upload is performed using HTTP. The uploaded volume is placed in the zone's secondary storage"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You cannot upload a volume if the preconfigured volume limit has already been reached. The default limit for the cloud is set in the global configuration parameter max.account.volumes, but administrators can also set per-domain limits that are different from the global default. See Setting Usage Limits"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To upload a volume:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) Create an MD5 hash (checksum) of the disk image file that you are going to upload. After uploading the data disk, &PRODUCT; will use this value to verify that no data corruption has occurred."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or user"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Upload Volume."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Provide the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name and Description. Any desired name and a brief description that can be shown in the UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Availability Zone. Choose the zone where you want to store the volume. VMs running on hosts in this zone can attach the volume."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Format. Choose one of the following to indicate the disk image format of the volume."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hypervisor"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Disk Image Format"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VHD"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VMware"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "OVA"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "KVM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "QCOW2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "URL. The secure HTTP or HTTPS URL that &PRODUCT; can use to access your disk. The type of file at the URL must match the value chosen in Format. For example, if Format is VHD, the URL might look like the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "http://yourFileServerIP/userdata/myDataDisk.vhd"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "MD5 checksum. (Optional) Use the hash that you created in step 1."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Wait until the status of the volume shows that the upload is complete. Click Instances - Volumes, find the name you specified in step 5, and make sure the status is Uploaded."
+msgstr ""
+

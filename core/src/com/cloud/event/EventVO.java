@@ -29,74 +29,75 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="event")
 public class EventVO implements Event {
-	@Id
+    @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-	private long id = -1;
+    private long id = -1;
 
-	@Column(name="type")
-	private String type;
-	
-	@Enumerated(value=EnumType.STRING)
-	@Column(name="state")
+    @Column(name="type")
+    private String type;
+
+    @Enumerated(value=EnumType.STRING)
+    @Column(name="state")
     private State state = State.Completed;
 
-	@Column(name="description", length=1024)
-	private String description;
+    @Column(name="description", length=1024)
+    private String description;
 
-	@Column(name=GenericDao.CREATED_COLUMN)
-	private Date createDate;
+    @Column(name=GenericDao.CREATED_COLUMN)
+    private Date createDate;
 
     @Column(name="user_id")
     private long userId;
 
-	@Column(name="account_id")
-	private long accountId;
+    @Column(name="account_id")
+    private long accountId;
 
     @Column(name="domain_id")
     private long domainId;
 
-	@Column(name="level")
-	private String level = LEVEL_INFO;
-	
-	@Column(name="start_id")
+    @Column(name="level")
+    private String level = LEVEL_INFO;
+
+    @Column(name="start_id")
     private long startId;
 
-	@Column(name="parameters", length=1024)
-	private String parameters;
-	
-	@Column(name="uuid")
-	private String uuid;
+    @Column(name="parameters", length=1024)
+    private String parameters;
 
-	@Transient
-	private int totalSize;
+    @Column(name="uuid")
+    private String uuid;
 
-	public static final String LEVEL_INFO = "INFO";
-	public static final String LEVEL_WARN = "WARN";
-	public static final String LEVEL_ERROR = "ERROR";
-	
-	public EventVO() {
-		this.uuid = UUID.randomUUID().toString();
-	}
-	
-	public long getId() {
-		return id;
-	}
-	@Override
+    @Column(name="archived")
+    private boolean archived;
+
+    @Transient
+    private int totalSize;
+
+    public static final String LEVEL_INFO = "INFO";
+    public static final String LEVEL_WARN = "WARN";
+    public static final String LEVEL_ERROR = "ERROR";
+
+    public EventVO() {
+        this.uuid = UUID.randomUUID().toString();
+    }
+
+    public long getId() {
+        return id;
+    }
+    @Override
     public String getType() {
-		return type;
-	}
-	public void setType(String type) {
-		this.type = type;
-	}
-	@Override
+        return type;
+    }
+    public void setType(String type) {
+        this.type = type;
+    }
+    @Override
     public State getState() {
         return state;
     }
@@ -105,27 +106,27 @@ public class EventVO implements Event {
         this.state = state;
     }
 
-	@Override
+    @Override
     public String getDescription() {
-		return description;
-	}
-	public void setDescription(String description) {
-		this.description = description;
-	}
-	@Override
+        return description;
+    }
+    public void setDescription(String description) {
+        this.description = description;
+    }
+    @Override
     public Date getCreateDate() {
-		return createDate;
-	}
-	public void setCreatedDate(Date createdDate) {
-	    createDate = createdDate;
-	}
-	@Override
+        return createDate;
+    }
+    public void setCreatedDate(Date createdDate) {
+        createDate = createdDate;
+    }
+    @Override
     public long getUserId() {
-		return userId;
-	}
-	public void setUserId(long userId) {
-		this.userId = userId;
-	}
+        return userId;
+    }
+    public void setUserId(long userId) {
+        this.userId = userId;
+    }
     @Override
     public long getAccountId() {
         return accountId;
@@ -165,21 +166,29 @@ public class EventVO implements Event {
         this.startId = startId;
     }
 
-	@Override
+    @Override
     public String getParameters() {
-		return parameters;
-	}
-	public void setParameters(String parameters) {
-		this.parameters = parameters;
-	}
-	
-	@Override
-	public String getUuid() {
-		return this.uuid;
-	}
-	
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
+        return parameters;
+    }
+    public void setParameters(String parameters) {
+        this.parameters = parameters;
+    }
 
+    @Override
+    public String getUuid() {
+        return this.uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    @Override
+    public boolean getArchived() {
+        return archived;
+    }
+
+    public void setArchived(Boolean archived) {
+        this.archived = archived;
+    }
 }

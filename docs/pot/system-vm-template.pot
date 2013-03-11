@@ -1,0 +1,70 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "The System VM Template"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The System VMs come from a single template. The System VM has the following characteristics:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Debian 6.0 (\"Squeeze\"), 2.6.32 kernel with the latest security patches from the Debian security APT repository"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Has a minimal set of packages installed thereby reducing the attack surface"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "32-bit for enhanced performance on Xen/VMWare"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "pvops kernel with Xen PV drivers, KVM virtio drivers, and VMware tools for optimum performance on all hypervisors"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Xen tools inclusion allows performance monitoring"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Latest versions of HAProxy, iptables, IPsec, and Apache from debian repository ensures improved security and speed"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Latest version of JRE from Sun/Oracle ensures improved security and speed"
+msgstr ""
+

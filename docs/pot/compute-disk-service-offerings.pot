@@ -1,0 +1,95 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Compute and Disk Service Offerings"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A service offering is a set of virtual hardware features such as CPU core count and speed, memory, and disk size. The &PRODUCT; administrator can set up various offerings, and then end users choose from the available offerings when they create a new VM. A service offering includes the following elements:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CPU, memory, and network resource guarantees"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "How resources are metered"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "How the resource usage is charged"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "How often the charges are generated"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For example, one service offering might allow users to create a virtual machine instance that is equivalent to a 1 GHz Intel® Core™ 2 CPU, with 1 GB memory at $0.20/hour, with network traffic metered at $0.10/GB. Based on the user’s selected offering, &PRODUCT; emits usage records that can be integrated with billing systems. &PRODUCT; separates service offerings into compute offerings and disk offerings. The computing service offering specifies:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Guest CPU"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Guest RAM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Guest Networking type (virtual or direct)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tags on the root disk"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The disk offering specifies:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Disk size (optional). An offering without a disk size will allow users to pick their own"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tags on the data disk"
+msgstr ""
+

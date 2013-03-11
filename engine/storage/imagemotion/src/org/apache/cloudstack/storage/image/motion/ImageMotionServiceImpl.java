@@ -23,18 +23,12 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.ImageService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.db.ObjectInDataStoreVO;
-import org.apache.cloudstack.storage.image.ImageService;
-import org.apache.cloudstack.storage.image.TemplateInfo;
-import org.apache.cloudstack.storage.volume.TemplateOnPrimaryDataStoreInfo;
-import org.apache.cloudstack.storage.volume.VolumeService;
-import org.springframework.stereotype.Component;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 
-@Component
 public class ImageMotionServiceImpl implements ImageMotionService {
     @Inject
     List<ImageMotionStrategy> motionStrategies;

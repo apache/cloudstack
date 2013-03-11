@@ -1,0 +1,50 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "&PRODUCT; API"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; API is a low level API that has been used to implement the &PRODUCT; web UIs. It is also a good basis for implementing other popular APIs such as EC2/S3 and emerging DMTF standards."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Many &PRODUCT; API calls are asynchronous. These will return a Job ID immediately when called. This Job ID can be used to query the status of the job later. Also, status calls on impacted resources will provide some indication of their state."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The API has a REST-like query basis and returns results in XML or JSON."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "See <ulink url=\"http://docs.cloudstack.org/CloudStack_Documentation/Developer's_Guide%3A_CloudStack\">the Developer’s Guide</ulink> and <ulink url=\"http://docs.cloudstack.org/CloudStack_Documentation/API_Reference%3A_CloudStack\">the API Reference</ulink>."
+msgstr ""
+

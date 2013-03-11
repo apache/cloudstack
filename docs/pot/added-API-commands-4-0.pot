@@ -1,0 +1,259 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Added API Commands in 4.0.0-incubating"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createCounter (Adds metric counter)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteCounter (Deletes a counter)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listCounters (List the counters)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createCondition (Creates a condition)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteCondition (Removes a condition)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listConditions (List Conditions for the specific user)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createTags. Add tags to one or more resources. Example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "command=createTags\n"
+"&amp;resourceIds=1,10,12\n"
+"&amp;resourceType=userVm\n"
+"&amp;tags[0].key=region\n"
+"&amp;tags[0].value=canada\n"
+"&amp;tags[1].key=city\n"
+"&amp;tags[1].value=Toronto				"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteTags. Remove tags from one or more resources. Example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "command=deleteTags\n"
+"&amp;resourceIds=1,12\n"
+"&amp;resourceType=Snapshot\n"
+"&amp;tags[0].key=city								"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listTags (Show currently defined resource tags)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createVPC (Creates a VPC)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVPCs (Lists VPCs)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVPC (Deletes a VPC)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateVPC (Updates a VPC)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "restartVPC (Restarts a VPC)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createVPCOffering (Creates VPC offering)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateVPCOffering (Updates VPC offering)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVPCOffering (Deletes VPC offering)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVPCOfferings (Lists VPC offerings)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createPrivateGateway (Creates a private gateway)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listPrivateGateways (List private gateways)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deletePrivateGateway (Deletes a Private gateway)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createNetworkACL (Creates a ACL rule the given network (the network has to belong to VPC))"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteNetworkACL (Deletes a Network ACL)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listNetworkACLs (Lists all network ACLs)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createStaticRoute (Creates a static route)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteStaticRoute (Deletes a static route)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listStaticRoutes (Lists all static routes)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createVpnCustomerGateway (Creates site to site vpn customer gateway)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createVpnGateway (Creates site to site vpn local gateway)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createVpnConnection (Create site to site vpn connection)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVpnCustomerGateway (Delete site to site vpn customer gateway)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVpnGateway (Delete site to site vpn gateway)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVpnConnection (Delete site to site vpn connection)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateVpnCustomerGateway (Update site to site vpn customer gateway)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "resetVpnConnection (Reset site to site vpn connection)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVpnCustomerGateways (Lists site to site vpn customer gateways)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVpnGateways (Lists site 2 site vpn gateways)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVpnConnections (Lists site to site vpn connection gateways)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "enableCiscoNexusVSM (Enables Nexus 1000v dvSwitch in &PRODUCT;.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "disableCiscoNexusVSM (Disables Nexus 1000v dvSwitch in &PRODUCT;.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteCiscoNexusVSM (Deletes Nexus 1000v dvSwitch in &PRODUCT;.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listCiscoNexusVSMs (Lists the control VLAN ID, packet VLAN ID, and data VLAN ID, as well as the IP address of the Nexus 1000v dvSwitch.)"
+msgstr ""
+

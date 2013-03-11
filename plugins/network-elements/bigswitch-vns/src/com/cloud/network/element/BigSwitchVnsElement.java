@@ -88,7 +88,9 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import org.springframework.stereotype.Component;
 
+@Component
 @Local(value = {NetworkElement.class, ConnectivityProvider.class})
 public class BigSwitchVnsElement extends AdapterBase implements
              BigSwitchVnsElementService, ConnectivityProvider, ResourceStateAdapter {

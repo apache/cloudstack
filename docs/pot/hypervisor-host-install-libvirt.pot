@@ -1,0 +1,140 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Install and Configure libvirt"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; uses libvirt for managing virtual machines. Therefore it is vital that libvirt is configured correctly. Libvirt is a dependency of cloud-agent and should already be installed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In order to have live migration working libvirt has to listen for unsecured TCP connections. We also need to turn off libvirts attempt to use Multicast DNS advertising. Both of these settings are in <filename>/etc/libvirt/libvirtd.conf</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set the following paramaters:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "listen_tls = 0"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "listen_tcp = 1"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "tcp_port = 16059"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "auth_tcp = \"none\""
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mdns_adv = 0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Turning on \"listen_tcp\" in libvirtd.conf is not enough, we have to change the parameters as well:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL or CentOS modify <filename>/etc/sysconfig/libvirtd</filename>:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Uncomment the following line:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "#LIBVIRTD_ARGS=\"--listen\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu: modify <filename>/etc/init/libvirt-bin.conf</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Change the following line (at the end of the file):"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "exec /usr/sbin/libvirtd -d"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "to (just add -l)"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "exec /usr/sbin/libvirtd -d -l"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart libvirt"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In RHEL or CentOS:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ service libvirtd restart</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Ubuntu:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ service libvirt-bin restart</command>"
+msgstr ""
+

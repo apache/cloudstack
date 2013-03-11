@@ -70,5 +70,7 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
     public Long countAllocatedVMsForAccount(long accountId);
 
     Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> userVmData);
+
+    List<UserVmVO> listByIsoId(Long isoId);
    
 }

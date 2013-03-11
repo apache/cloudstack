@@ -21,15 +21,12 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.springframework.stereotype.Component;
-
 import com.cloud.utils.component.AdapterBase;
 
 /**
  * Use this UserAuthenticator if users are already authenticated outside
  * 
  */
-@Component
 @Local(value={UserAuthenticator.class})
 public abstract class DefaultUserAuthenticator extends AdapterBase implements UserAuthenticator {
 	private String _name = null;

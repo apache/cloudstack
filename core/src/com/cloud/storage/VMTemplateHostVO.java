@@ -29,8 +29,10 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+
 import com.cloud.utils.db.GenericDaoBase;
-import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * Join table for storage hosts and templates
@@ -38,7 +40,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  */
 @Entity
 @Table(name="template_host_ref")
-public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
+public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, DataObjectInStore {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	Long id;
@@ -89,6 +91,18 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
     
     @Column(name="destroyed")
     boolean destroyed = false;
+    
+    @Column(name="update_count", updatable = true, nullable=false)
+    protected long updatedCount;
+    
+    @Column(name = "updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    Date updated;
+    
+    @Column(name = "state")
+    @Enumerated(EnumType.STRING)
+    ObjectInDataStoreStateMachine.State state;
+    
     
 	@Override
     public String getInstallPath() {
@@ -162,6 +176,7 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
 		super();
 		this.hostId = hostId;
 		this.templateId = templateId;
+		this.state = ObjectInDataStoreStateMachine.State.Allocated;
 	}
 
 	public VMTemplateHostVO(long hostId, long templateId, Date lastUpdated,
@@ -281,5 +296,27 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
     public String toString() {
 	    return new StringBuilder("TmplHost[").append(id).append("-").append(templateId).append("-").append(hostId).append(installPath).append("]").toString();
 	}
+
+    @Override
+    public ObjectInDataStoreStateMachine.State getState() {
+        // TODO Auto-generated method stub
+        return this.state;
+    }
+    
+    public long getUpdatedCount() {
+        return this.updatedCount;
+    }
+    
+    public void incrUpdatedCount() {
+        this.updatedCount++;
+    }
+
+    public void decrUpdatedCount() {
+        this.updatedCount--;
+    }
+    
+    public Date getUpdated() {
+        return updated;
+    }
 
 }

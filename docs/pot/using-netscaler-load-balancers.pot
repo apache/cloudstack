@@ -1,0 +1,110 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:12:00\n"
+"PO-Revision-Date: 2013-02-02T20:12:00\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Using a NetScaler Load Balancer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Citrix NetScaler is supported as an external network element for load balancing in zones that use advanced networking (also called advanced zones). Set up an external load balancer when you want to provide load balancing through means other than &PRODUCT;’s provided virtual router."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The NetScaler can be set up in direct (outside the firewall) mode. It must be added before any load balancing rules are deployed on guest VMs in the zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The functional behavior of the NetScaler with &PRODUCT; is the same as described in the &PRODUCT; documentation for using an F5 external load balancer. The only exception is that the F5 supports routing domains, and NetScaler does not. NetScaler can not yet be used as a firewall."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Citrix NetScaler comes in three varieties. The following table summarizes how these variants are treated in &PRODUCT;."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NetScaler ADC Type"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Description of Capabilities"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; Supported Features"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "MPX"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Physical appliance. Capable of deep packet inspection. Can act as application firewall and load balancer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In advanced zones, load balancer functionality fully supported without limitation. In basic zones, static NAT, elastic IP (EIP), and elastic load balancing (ELB) are also provided"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VPX"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Virtual appliance. Can run as VM on XenServer, ESXi, and Hyper-V hypervisors. Same functionality as MPX"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Supported only on ESXi. Same functional support as for MPX. &PRODUCT; will treat VPX and MPX as the same device type"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "SDX"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Physical appliance. Can create multiple fully isolated VPX instances on a single appliance to support multi-tenant usage"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; will dynamically provision, configure, and manage the lifecycle of VPX instances on the SDX. Provisioned instances are added into &PRODUCT; automatically – no manual configuration by the administrator is required. Once a VPX instance is added into &PRODUCT;, it is treated the same as a VPX on an ESXi host."
+msgstr ""
+

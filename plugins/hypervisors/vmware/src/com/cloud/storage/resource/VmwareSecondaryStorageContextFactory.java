@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.storage.resource;
@@ -20,45 +20,44 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.vmware.apputils.version.ExtendedAppUtil;
 
 public class VmwareSecondaryStorageContextFactory {
 	private static volatile int s_seq = 1;
-	
+
 	private static Map<String, VmwareContext> s_contextMap = new HashMap<String, VmwareContext>();
-	
+
 	public static void initFactoryEnvironment() {
 		System.setProperty("axis.socketSecureFactory", "org.apache.axis.components.net.SunFakeTrustSocketFactory");
 	}
-	
+
 	public static VmwareContext create(String vCenterAddress, String vCenterUserName, String vCenterPassword) throws Exception {
 		assert(vCenterAddress != null);
 		assert(vCenterUserName != null);
 		assert(vCenterPassword != null);
-		
+
 		VmwareContext context = null;
-		
+
 		synchronized(s_contextMap) {
 			context = s_contextMap.get(vCenterAddress);
 			if(context == null) {
 				String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
-				String[] params = new String[] {"--url", serviceUrl, "--username", vCenterUserName, "--password", vCenterPassword };
-				ExtendedAppUtil appUtil = ExtendedAppUtil.initialize(vCenterAddress + "-" + s_seq++, params);
-				
-				appUtil.connect();
-				context = new VmwareContext(appUtil, vCenterAddress);
+				//String[] params = new String[] {"--url", serviceUrl, "--username", vCenterUserName, "--password", vCenterPassword };
+				VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
+				vimClient.connect(serviceUrl, vCenterUserName, vCenterPassword);
+				context = new VmwareContext(vimClient, vCenterAddress);
 				context.registerStockObject("username", vCenterUserName);
 				context.registerStockObject("password", vCenterPassword);
-				
+
 				s_contextMap.put(vCenterAddress, context);
 			}
 		}
-		
+
 		assert(context != null);
 		return context;
 	}
-	
+
 	public static void invalidate(VmwareContext context) {
 		synchronized(s_contextMap) {
             for(Iterator<Map.Entry<String, VmwareContext>> entryIter = s_contextMap.entrySet().iterator(); entryIter.hasNext();) {
@@ -68,7 +67,7 @@ public class VmwareSecondaryStorageContextFactory {
                 }
 			}
 		}
-		
+
 		context.close();
 	}
 }

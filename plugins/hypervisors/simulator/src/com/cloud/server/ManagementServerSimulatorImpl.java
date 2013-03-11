@@ -21,7 +21,7 @@ import java.util.List;
 
 import com.cloud.api.commands.ConfigureSimulator;
 
-public class ManagementServerSimulatorImpl extends ManagementServerExtImpl {
+public class ManagementServerSimulatorImpl extends ManagementServerImpl {
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = super.getCommands();

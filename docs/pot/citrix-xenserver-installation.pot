@@ -1,0 +1,1195 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Citrix XenServer Installation for &PRODUCT;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you want to use the Citrix XenServer hypervisor to run guest virtual machines, install XenServer 6.0 or XenServer 6.0.2 on the host(s) in your cloud. For an initial installation, follow the steps below. If you have previously installed XenServer and want to upgrade to another version, see <xref linkend=\"xenserver-version-upgrading\" />."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "System Requirements for XenServer Hosts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The host must be certified as compatible with one of the following. See the Citrix Hardware Compatibility Guide: <ulink url=\"http://hcl.xensource.com\">http://hcl.xensource.com</ulink>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 5.6 SP2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 6.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 6.0.2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You must re-install Citrix XenServer if you are going to re-use a host from a previous install."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Must support HVM (Intel-VT or AMD-V enabled)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Be sure all the hotfixes provided by the hypervisor vendor are applied. Track the release of hypervisor patches through your hypervisor vendor’s support channel, and apply patches as soon as possible after they are released. &PRODUCT; will not track or notify you of required hypervisor patches. It is essential that your hosts are completely up to date with the provided hypervisor patches. The hypervisor vendor is likely to refuse to support any system that is not up to date with patches."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All hosts within a cluster must be homogenous. The CPUs must be of the same type, count, and feature flags."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Must support HVM (Intel-VT or AMD-V enabled in BIOS)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "64-bit x86 CPU (more cores results in better performance)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hardware virtualization support required"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4 GB of memory"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "36 GB of local disk"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "At least 1 NIC"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Statically allocated IP Address"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When you deploy &PRODUCT;, the hypervisor host must not have any VMs already running"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The lack of up-do-date hotfixes can lead to data corruption and lost VMs."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "XenServer Installation Steps"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "From <ulink url=\"https://www.citrix.com/English/ss/downloads/\">https://www.citrix.com/English/ss/downloads/</ulink>, download the appropriate version of XenServer for your &PRODUCT; version (see <xref linkend=\"system-requirements-xenserver-hosts\" />). Install it using the Citrix XenServer Installation Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After installation, perform the following configuration steps, which are described in the next few sections:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Required"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Optional"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"config-xenserver-dom0-memory\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-support-pkg-installation\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-username-password\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set up SR if not using NFS, iSCSI, or local disk; see <xref linkend=\"xenserver-primary-storage-setup\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-time-sync\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-iscsi-multipath-setup\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-get-deploy-license\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"xenserver-physical-network-setup\" />"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Configure XenServer dom0 Memory"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure the XenServer dom0 settings to allocate more memory to dom0. This can enable XenServer to handle larger numbers of virtual machines. We recommend 2940 MB of RAM for XenServer dom0. For instructions on how to do this, see <ulink url=\"http://support.citrix.com/article/CTX126531\">http://support.citrix.com/article/CTX126531</ulink>. The article refers to XenServer 5.6, but the same information applies to XenServer 6.0."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Username and Password"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All XenServers in a cluster must have the same username and password as configured in &PRODUCT;."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Time Synchronization"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The host must be set to use NTP. All hosts in a pod must have the same time."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Install NTP."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# yum install ntp"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Edit the NTP configuration file to point to your NTP server."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# vi /etc/ntp.conf"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Add one or more server lines in this file with the names of the NTP servers you want to use. For example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "server 0.xenserver.pool.ntp.org\n"
+"server 1.xenserver.pool.ntp.org\n"
+"server 2.xenserver.pool.ntp.org\n"
+"server 3.xenserver.pool.ntp.org\n"
+"    "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the NTP client."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service ntpd restart"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure NTP will start again upon reboot."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# chkconfig ntpd on"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Licensing"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Citrix XenServer Free version provides 30 days usage without a license. Following the 30 day trial, XenServer requires a free activation and license. You can choose to install a license now or skip this step. If you skip this step, you will need to install a license when you activate and license the XenServer."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Getting and Deploying a License"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you choose to install a license now you will need to use the XenCenter to activate and get a license."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In XenCenter, click Tools &gt; License manager."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select your XenServer and select Activate Free XenServer."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Request a license."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can install the license with XenCenter or using the xe command line tool."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Install &PRODUCT; XenServer Support Package (CSP)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To enable security groups, elastic load balancing, and elastic IP on XenServer, download and install the &PRODUCT; XenServer Support Package (CSP). After installing XenServer, perform the following additional steps on each XenServer host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Download the CSP software onto the XenServer host from one of the following links:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer 6.0.2:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<ulink url=\"http://download.cloud.com/releases/3.0.1/XS-6.0.2/xenserver-cloud-supp.tgz\">http://download.cloud.com/releases/3.0.1/XS-6.0.2/xenserver-cloud-supp.tgz</ulink>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer 5.6 SP2:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<ulink url=\"http://download.cloud.com/releases/2.2.0/xenserver-cloud-supp.tgz\">http://download.cloud.com/releases/2.2.0/xenserver-cloud-supp.tgz</ulink>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer 6.0:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<ulink url=\"http://download.cloud.com/releases/3.0/xenserver-cloud-supp.tgz\">http://download.cloud.com/releases/3.0/xenserver-cloud-supp.tgz</ulink>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Extract the file:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# tar xf xenserver-cloud-supp.tgz"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following script:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe-install-supplemental-pack xenserver-cloud-supp.iso"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If the XenServer host is part of a zone that uses basic networking, disable Open vSwitch (OVS):"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe-switch-network-backend  bridge"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the host machine when prompted."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The XenServer host is now ready to be added to &PRODUCT;."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Primary Storage Setup for XenServer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; natively supports NFS, iSCSI and local storage. If you are using one of these storage types, there is no need to create the XenServer Storage Repository (\"SR\")."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If, however, you would like to use storage connected via some other technology, such as FiberChannel, you must set up the SR yourself. To do so, perform the following steps. If you have your hosts in a XenServer pool, perform the steps on the master node. If you are working with a single XenServer which is not part of a cluster, perform the steps on that XenServer."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Connect FiberChannel cable to all hosts in the cluster and to the FiberChannel storage host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Rescan the SCSI bus. Either use the following command or use XenCenter to perform an HBA rescan."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# scsi-rescan"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat step 2 on every host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Check to be sure you see the new SCSI disk."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# ls /dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -l"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The output should look like this, although the specific file name will be different (scsi-&lt;scsiID&gt;):"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "lrwxrwxrwx 1 root root 9 Mar 16 13:47\n"
+"/dev/disk/by-id/scsi-360a98000503365344e6f6177615a516b -&gt; ../../sdc\n"
+"    "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat step 4 on every host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On the storage server, run this command to get a unique ID for the new SR."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# uuidgen"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The output should look like this, although the specific ID will be different:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "e6849e96-86c3-4f2c-8fcc-350cc711be3d"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create the FiberChannel SR. In name-label, use the unique ID you just generated."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"# xe sr-create type=lvmohba shared=true\n"
+"device-config:SCSIid=360a98000503365344e6f6177615a516b\n"
+"name-label=\"e6849e96-86c3-4f2c-8fcc-350cc711be3d\"\n"
+"    "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This command returns a unique ID for the SR, like the following example (your ID will be different):"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "7a143820-e893-6c6a-236e-472da6ee66bf"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To create a human-readable description for the SR, use the following command. In uuid, use the SR ID returned by the previous command. In name-description, set whatever friendly text you prefer."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe sr-param-set uuid=7a143820-e893-6c6a-236e-472da6ee66bf name-description=\"Fiber Channel storage repository\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make note of the values you will need when you add this storage to &PRODUCT; later (see <xref linkend=\"primary-storage-add\" />). In the Add Primary Storage dialog, in Protocol, you will choose PreSetup. In SR Name-Label, you will enter the name-label you set earlier (in this example, e6849e96-86c3-4f2c-8fcc-350cc711be3d)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) If you want to enable multipath I/O on a FiberChannel SAN, refer to the documentation provided by the SAN vendor."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "iSCSI Multipath Setup for XenServer (Optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When setting up the storage repository on a Citrix XenServer, you can enable multipath I/O, which uses redundant physical components to provide greater reliability in the connection between the server and the SAN. To enable multipathing, use a SAN solution that is supported for Citrix servers and follow the procedures in Citrix documentation. The following links provide a starting point:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<ulink url=\"http://support.citrix.com/article/CTX118791\">http://support.citrix.com/article/CTX118791</ulink>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<ulink url=\"http://support.citrix.com/article/CTX125403\">http://support.citrix.com/article/CTX125403</ulink>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can also ask your SAN vendor for advice about setting up your Citrix repository for multipathing."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make note of the values you will need when you add this storage to the &PRODUCT; later (see <xref linkend=\"primary-storage-add\" />). In the Add Primary Storage dialog, in Protocol, you will choose PreSetup. In SR Name-Label, you will enter the same name used to create the SR."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you encounter difficulty, address the support team for the SAN provided by your vendor. If they are not able to solve your issue, see Contacting Support."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Physical Networking Setup for XenServer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Once XenServer has been installed, you may need to do some additional network configuration. At this point in the installation, you should have a plan for what NICs the host will have and what traffic each NIC will carry. The NICs should be cabled as necessary to implement your plan."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you plan on using NIC bonding, the NICs on all hosts in the cluster must be cabled exactly the same. For example, if eth0 is in the private bond on one host in a cluster, then eth0 must be in the private bond on all hosts in the cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The IP address assigned for the management network interface must be static. It can be set on the host itself or obtained via static DHCP."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; configures network traffic of various types to use different NICs or bonds on the XenServer host. You can control this process and provide input to the Management Server through the use of XenServer network name labels. The name labels are placed on physical interfaces or bonds and configured in &PRODUCT;. In some simple cases the name labels are not required."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring Public Network with a Dedicated NIC for XenServer (Optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; supports the use of a second NIC (or bonded pair of NICs, described in <xref linkend=\"xenserver-nic-bonding\" />) for the public network. If bonding is not used, the public network can be on any NIC and can be on different NICs on the hosts in a cluster. For example, the public network can be on eth0 on node A and eth1 on node B. However, the XenServer name-label for the public network must be identical across all hosts. The following examples set the network label to \"cloud-public\". After the management server is installed and running you must configure it with the name of the chosen network label (e.g. \"cloud-public\"); this is discussed in <xref linkend=\"management-server-install-flow\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you are using two NICs bonded together to create a public network, see <xref linkend=\"xenserver-nic-bonding\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you are using a single dedicated NIC to provide public network access, follow this procedure on each new host that is added to &PRODUCT; before adding the host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run xe network-list and find the public network. This is usually attached to the NIC that is public. Once you find the network make note of its UUID. Call this &lt;UUID-Public&gt;."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following command."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe network-param-set name-label=cloud-public uuid=&lt;UUID-Public&gt;"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring Multiple Guest Networks for XenServer (Optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; supports the use of multiple guest networks with the XenServer hypervisor. Each network is assigned a name-label in XenServer. For example, you might have two networks with the labels \"cloud-guest\" and \"cloud-guest2\". After the management server is installed and running, you must add the networks and use these labels so that &PRODUCT; is aware of the networks."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Follow this procedure on each new host before adding the host to &PRODUCT;:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run xe network-list and find one of the guest networks. Once you find the network make note of its UUID. Call this &lt;UUID-Guest&gt;."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following command, substituting your own name-label and uuid values."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe network-param-set name-label=&lt;cloud-guestN&gt; uuid=&lt;UUID-Guest&gt;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat these steps for each additional guest network, using a different name-label and uuid each time."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Separate Storage Network for XenServer (Optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can optionally set up a separate storage network. This should be done first on the host, before implementing the bonding steps below. This can be done using one or two available NICs. With two NICs bonding may be done as above. It is the administrator's responsibility to set up a separate storage network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Give the storage network a different name-label than what will be given for other networks."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For the separate storage network to work correctly, it must be the only interface that can ping the primary storage device's IP address. For example, if eth0 is the management network NIC, ping -I eth0 &lt;primary storage device IP&gt; must fail. In all deployments, secondary storage devices must be pingable from the management network NIC or bond. If a secondary storage device has been placed on the storage network, it must also be pingable via the storage network NIC or bond on the hosts as well."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can set up two separate storage networks as well. For example, if you intend to implement iSCSI multipath, dedicate two non-bonded NICs to multipath. Each of the two networks needs a unique name-label."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If no bonding is done, the administrator must set up and name-label the separate storage network on all hosts (masters and slaves)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Here is an example to set up eth5 to access a storage network on 172.16.0.0/24."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"# xe pif-list host-name-label='hostname' device=eth5\n"
+"uuid(RO): ab0d3dd4-5744-8fae-9693-a022c7a3471d\n"
+"device ( RO): eth5\n"
+"#xe pif-reconfigure-ip DNS=172.16.3.3 gateway=172.16.0.1 IP=172.16.0.55 mode=static netmask=255.255.255.0 uuid=ab0d3dd4-5744-8fae-9693-a022c7a3471d"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "NIC Bonding for XenServer (Optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer supports Source Level Balancing (SLB) NIC bonding. Two NICs can be bonded together to carry public, private, and guest traffic, or some combination of these. Separate storage networks are also possible. Here are some example supported configurations:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "2 NICs on private, 2 NICs on public, 2 NICs on storage"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "2 NICs on private, 1 NIC on public, storage uses management network"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "2 NICs on private, 2 NICs on public, storage uses management network"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "1 NIC for private, public, and storage"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All NIC bonding is optional."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer expects all nodes in a cluster will have the same network cabling and same bonds implemented. In an installation the master will be the first host that was added to the cluster and the slave hosts will be all subsequent hosts added to the cluster. The bonds present on the master set the expectation for hosts added to the cluster later. The procedure to set up bonds on the master and slaves are different, and are described below. There are several important implications of this:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You must set bonds on the first host added to a cluster. Then you must use xe commands as below to establish the same bonds in the second and subsequent hosts added to a cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Slave hosts in a cluster must be cabled exactly the same as the master. For example, if eth0 is in the private bond on the master, it must be in the management network for added slave hosts."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Management Network Bonding"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The administrator must bond the management network NICs prior to adding the host to &PRODUCT;."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a Private Bond on the First Host in the Cluster"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Use the following steps to create a bond in XenServer. These steps should be run on only the first host in a cluster. This example creates the cloud-private network with two physical NICs (eth0 and eth1) bonded into it."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Find the physical NICs that you want to bond together."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe pif-list host-name-label='hostname' device=eth0\n"
+"# xe pif-list host-name-label='hostname' device=eth1"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "These command shows the eth0 and eth1 NICs and their UUIDs. Substitute the ethX devices of your choice. Call the UUID's returned by the above command slave1-UUID and slave2-UUID."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create a new network for the bond. For example, a new network with name \"cloud-private\"."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">This label is important. &PRODUCT; looks for a network by a name you configure. You must use the same name-label for all hosts in the cloud for the management network.</emphasis>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe network-create name-label=cloud-private\n"
+"# xe bond-create network-uuid=[uuid of cloud-private created above]\n"
+"pif-uuids=[slave1-uuid],[slave2-uuid]"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now you have a bonded pair that can be recognized by &PRODUCT; as the management network."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Public Network Bonding"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Bonding can be implemented on a separate, public network. The administrator is responsible for creating a bond for the public network if that network will be bonded and will be separate from the management network."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a Public Bond on the First Host in the Cluster"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "These steps should be run on only the first host in a cluster. This example creates the cloud-public network with two physical NICs (eth2 and eth3) bonded into it."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "#xe pif-list host-name-label='hostname' device=eth2\n"
+"# xe pif-list host-name-label='hostname' device=eth3"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "These command shows the eth2 and eth3 NICs and their UUIDs. Substitute the ethX devices of your choice. Call the UUID's returned by the above command slave1-UUID and slave2-UUID."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create a new network for the bond. For example, a new network with name \"cloud-public\"."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">This label is important. &PRODUCT; looks for a network by a name you configure. You must use the same name-label for all hosts in the cloud for the public network.</emphasis>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe network-create name-label=cloud-public\n"
+"# xe bond-create network-uuid=[uuid of cloud-public created above]\n"
+"pif-uuids=[slave1-uuid],[slave2-uuid]"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now you have a bonded pair that can be recognized by &PRODUCT; as the public network."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Adding More Hosts to the Cluster"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "With the bonds (if any) established on the master, you should add additional, slave hosts. Run the following command for all additional hosts to be added to the cluster. This will cause the host to join the master in a single XenServer pool."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe pool-join master-address=[master IP] master-username=root\n"
+"master-password=[your password]"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Complete the Bonding Setup Across the Cluster"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "With all hosts added to the pool, run the cloud-setup-bond script. This script will complete the configuration and set up of the bonds across all hosts in the cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Copy the script from the Management Server in /usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-setup-bonding.sh to the master host and ensure it is executable."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the script:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# ./cloud-setup-bonding.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now the bonds are set up and configured properly across the cluster."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Upgrading XenServer Versions"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This section tells how to upgrade XenServer software on &PRODUCT; hosts. The actual upgrade is described in XenServer documentation, but there are some additional steps you must perform before and after the upgrade."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Be sure the hardware is certified compatible with the new version of XenServer."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To upgrade XenServer:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Upgrade the database. On the Management Server node:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Back up the database:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# mysqldump --user=root --databases cloud &gt; cloud.backup.sql\n"
+"# mysqldump --user=root --databases cloud_usage &gt; cloud_usage.backup.sql"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You might need to change the OS type settings for VMs running on the upgraded hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you upgraded from XenServer 5.6 GA to XenServer 5.6 SP2, change any VMs that have the OS type CentOS 5.5 (32-bit), Oracle Enterprise Linux 5.5 (32-bit), or Red Hat Enterprise Linux 5.5 (32-bit) to Other Linux (32-bit). Change any VMs that have the 64-bit versions of these same OS types to Other Linux (64-bit)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you upgraded from XenServer 5.6 SP2 to XenServer 6.0.2, change any VMs that have the OS type CentOS 5.6 (32-bit), CentOS 5.7 (32-bit), Oracle Enterprise Linux 5.6 (32-bit), Oracle Enterprise Linux 5.7 (32-bit), Red Hat Enterprise Linux 5.6 (32-bit) , or Red Hat Enterprise Linux 5.7 (32-bit) to Other Linux (32-bit). Change any VMs that have the 64-bit versions of these same OS types to Other Linux (64-bit)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you upgraded from XenServer 5.6 to XenServer 6.0.2, do all of the above."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server and Usage Server. You only need to do this once for all clusters."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-management start\n"
+"# service cloud-usage start"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Disconnect the XenServer cluster from &PRODUCT;."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as root."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Navigate to the XenServer cluster, and click Actions – Unmanage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Watch the cluster status until it shows Unmanaged."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to one of the hosts in the cluster, and run this command to clean up the VLAN:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# . /opt/xensource/bin/cloud-clean-vlan.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Still logged in to the host, run the upgrade preparation script:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# /opt/xensource/bin/cloud-prepare-upgrade.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Troubleshooting: If you see the error \"can't eject CD,\" log in to the VM and umount the CD, then run the script again."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Upgrade the XenServer software on all hosts in the cluster. Upgrade the master first."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Live migrate all VMs on this host to other hosts. See the instructions for live migration in the Administrator's Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Troubleshooting: You might see the following error when you migrate a VM:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "[root@xenserver-qa-2-49-4 ~]# xe vm-migrate live=true host=xenserver-qa-2-49-5 vm=i-2-8-VM\n"
+"You attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected.\n"
+"vm: b6cf79c8-02ee-050b-922f-49583d9f1a14 (i-2-8-VM)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To solve this issue, run the following:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# /opt/xensource/bin/make_migratable.sh  b6cf79c8-02ee-050b-922f-49583d9f1a14"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Reboot the host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Upgrade to the newer version of XenServer. Use the steps in XenServer documentation."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After the upgrade is complete, copy the following files from the management server to this host, in the directory locations shown below:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Copy this Management Server file..."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "...to this location on the XenServer host"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/sm/NFSSR.py"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/bin/setupxenserver.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/bin/make_migratable.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/cloud-clean-vlan.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/bin/cloud-clean-vlan.sh"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# /opt/xensource/bin/setupxenserver.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Troubleshooting: If you see the following error message, you can safely ignore it."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mv: cannot stat `/etc/cron.daily/logrotate': No such file or directory"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Plug in the storage repositories (physical block devices) to the XenServer host:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk '{print $NF}'`; do xe pbd-plug uuid=$pbd ; done"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Note: If you add a host to this XenServer pool, you need to migrate all VMs on this host to other hosts, and eject this host from XenServer pool."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat these steps to upgrade every host in the cluster to the same version of XenServer."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following command on one host in the XenServer cluster to clean up the host tags:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# for host in $(xe host-list | grep ^uuid | awk '{print $NF}') ; do xe host-param-clear uuid=$host param-name=tags; done;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When copying and pasting a command, be sure the command has pasted as a single line before executing. Some document viewers may introduce unwanted line breaks in copied text."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Reconnect the XenServer cluster to &PRODUCT;."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Navigate to the XenServer cluster, and click Actions – Manage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Watch the status to see that all the hosts come up."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After all hosts are up, run the following on one host in the cluster:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# /opt/xensource/bin/cloud-clean-vlan.sh"
+msgstr ""
+

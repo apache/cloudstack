@@ -1,0 +1,85 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Sending Project Membership Invitations"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Use these steps to add a new member to a project if the invitations feature is enabled in the cloud as described in <xref linkend=\"set-up-invitations\" />. If the invitations feature is not turned on, use the procedure in Adding Project Members From the UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Projects."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Projects."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the project you want to work with."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Invitations tab."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Add by, select one of the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Account – The invitation will appear in the user’s Invitations tab in the Project View. See Using the Project View."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Email – The invitation will be sent to the user’s email address. Each emailed invitation includes a unique code called a token which the recipient will provide back to &PRODUCT; when accepting the invitation. Email invitations will work only if the global parameters related to the SMTP server have been set. See <xref linkend=\"set-up-invitations\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Type the user name or email address of the new member you want to add, and click Invite. Type the &PRODUCT; user name if you chose Account in the previous step. If you chose Email, type the email address. You can invite only people who have an account in this cloud within the same domain as the project. However, you can send the invitation to any email address."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To view and manage the invitations you have sent, return to this tab. When an invitation is accepted, the new member will appear in the project’s Accounts tab."
+msgstr ""
+

@@ -1,0 +1,60 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Administrator Alerts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The system provides alerts and events to help with the management of the cloud. Alerts are notices to an administrator, generally delivered by e-mail, notifying the administrator that an error has occurred in the cloud. Alert behavior is configurable."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Events track all of the user and administrator actions in the cloud. For example, every guest VM start creates an associated event. Events are stored in the Management Server’s database."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Emails will be sent to administrators under the following circumstances:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Management Server cluster runs low on CPU, memory, or storage resources"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Management Server loses heartbeat from a Host for more than 3 minutes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Host cluster runs low on CPU, memory, or storage resources"
+msgstr ""
+

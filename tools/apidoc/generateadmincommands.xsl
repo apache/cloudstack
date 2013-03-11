@@ -57,7 +57,7 @@ version="1.0">
 				<xsl:for-each select="command/command">
                            		<!-- Modify this line for the release version -->
                            		<span>
-									Apache CloudStack v4.0.0 Root Admin API Reference
+									Apache CloudStack v4.2.0 Root Admin API Reference
 								</span>
 								<p></p>
                                 <h1><xsl:value-of select="name"/></h1>
@@ -138,8 +138,16 @@ version="1.0">
                   
      
             </div>
+
         </div><!-- #BeginLibraryItem "/libraries/footer.lbi" -->
 <div id="footer">
+<div id="comments_thread">
+    <script type="text/javascript" src="https://comments.apache.org/show_comments.lua?site=test" async="true">
+    </script>
+    <noscript>
+    <iframe width="930" height="500" src="https://comments.apache.org/iframe.lua?site=test&amp;page=4.2.0/rootadmin"></iframe>
+    </noscript>
+  </div>
 
         	<div id="footer_mainmaster">
                 <p>Copyright © 2012 The Apache Software Foundation, Licensed under the

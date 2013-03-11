@@ -1,0 +1,166 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Example"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following shows an example of using an asynchronous command. Assume the API command:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "command=deployVirtualMachine&amp;zoneId=1&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=1\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack will immediately return a job ID and any other additional data."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"         &lt;deployvirtualmachineresponse&gt; \n"
+"              &lt;jobid&gt;1&lt;/jobid&gt;\n"
+"             &lt;id&gt;100&lt;/id&gt;\n"
+"         &lt;/deployvirtualmachineresponse&gt;\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Using the job ID, you can periodically poll for the results by using the queryAsyncJobResult command."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "command=queryAsyncJobResult&amp;jobId=1"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Three possible results could come from this query."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Job is still pending:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"         &lt;queryasyncjobresult&gt; \n"
+"              &lt;jobid&gt;1&lt;/jobid&gt;\n"
+"              &lt;jobstatus&gt;0&lt;/jobstatus&gt;\n"
+"              &lt;jobprocstatus&gt;1&lt;/jobprocstatus&gt;\n"
+"         &lt;/queryasyncjobresult&gt;\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Job has succeeded:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"            &lt;queryasyncjobresultresponse cloud-stack-version=\"3.0.1.6\"&gt;\n"
+"                  &lt;jobid&gt;1&lt;/jobid&gt;\n"
+"                  &lt;jobstatus&gt;1&lt;/jobstatus&gt;\n"
+"                  &lt;jobprocstatus&gt;0&lt;/jobprocstatus&gt;\n"
+"                 &lt;jobresultcode&gt;0&lt;/jobresultcode&gt;\n"
+"                  &lt;jobresulttype&gt;object&lt;/jobresulttype&gt;\n"
+"                  &lt;jobresult&gt;\n"
+"                    &lt;virtualmachine&gt;\n"
+"                    &lt;id&gt;450&lt;/id&gt;\n"
+"                    &lt;name&gt;i-2-450-VM&lt;/name&gt;\n"
+"                    &lt;displayname&gt;i-2-450-VM&lt;/displayname&gt;\n"
+"                    &lt;account&gt;admin&lt;/account&gt;\n"
+"                    &lt;domainid&gt;1&lt;/domainid&gt;\n"
+"                    &lt;domain&gt;ROOT&lt;/domain&gt;\n"
+"                    &lt;created&gt;2011-03-10T18:20:25-0800&lt;/created&gt;\n"
+"                    &lt;state&gt;Running&lt;/state&gt;\n"
+"                    &lt;haenable&gt;false&lt;/haenable&gt;\n"
+"                    &lt;zoneid&gt;1&lt;/zoneid&gt;\n"
+"                    &lt;zonename&gt;San Jose 1&lt;/zonename&gt;\n"
+"                    &lt;hostid&gt;2&lt;/hostid&gt;\n"
+"                    &lt;hostname&gt;905-13.sjc.lab.vmops.com&lt;/hostname&gt;\n"
+"                    &lt;templateid&gt;1&lt;/templateid&gt;\n"
+"                    &lt;templatename&gt;CentOS 5.3 64bit LAMP&lt;/templatename&gt;\n"
+"                    &lt;templatedisplaytext&gt;CentOS 5.3 64bit LAMP&lt;/templatedisplaytext&gt;\n"
+"                    &lt;passwordenabled&gt;false&lt;/passwordenabled&gt;\n"
+"                    &lt;serviceofferingid&gt;1&lt;/serviceofferingid&gt;\n"
+"                    &lt;serviceofferingname&gt;Small Instance&lt;/serviceofferingname&gt;\n"
+"                    &lt;cpunumber&gt;1&lt;/cpunumber&gt;\n"
+"                    &lt;cpuspeed&gt;500&lt;/cpuspeed&gt;\n"
+"                    &lt;memory&gt;512&lt;/memory&gt;\n"
+"                    &lt;guestosid&gt;12&lt;/guestosid&gt;\n"
+"                    &lt;rootdeviceid&gt;0&lt;/rootdeviceid&gt;\n"
+"                    &lt;rootdevicetype&gt;NetworkFilesystem&lt;/rootdevicetype&gt;\n"
+"                    &lt;nic&gt;\n"
+"                      &lt;id&gt;561&lt;/id&gt;\n"
+"                      &lt;networkid&gt;205&lt;/networkid&gt;\n"
+"                      &lt;netmask&gt;255.255.255.0&lt;/netmask&gt;\n"
+"                      &lt;gateway&gt;10.1.1.1&lt;/gateway&gt;\n"
+"                      &lt;ipaddress&gt;10.1.1.225&lt;/ipaddress&gt;\n"
+"                      &lt;isolationuri&gt;vlan://295&lt;/isolationuri&gt;\n"
+"                      &lt;broadcasturi&gt;vlan://295&lt;/broadcasturi&gt;\n"
+"                      &lt;traffictype&gt;Guest&lt;/traffictype&gt;\n"
+"                      &lt;type&gt;Virtual&lt;/type&gt;\n"
+"                      &lt;isdefault&gt;true&lt;/isdefault&gt;\n"
+"                    &lt;/nic&gt;\n"
+"                    &lt;hypervisor&gt;XenServer&lt;/hypervisor&gt;\n"
+"                   &lt;/virtualmachine&gt;\n"
+"                 &lt;/jobresult&gt;\n"
+"            &lt;/queryasyncjobresultresponse&gt;\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Job has failed:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"            &lt;queryasyncjobresult&gt;\n"
+"                  &lt;jobid&gt;1&lt;/jobid&gt; \n"
+"                  &lt;jobstatus&gt;2&lt;/jobstatus&gt; \n"
+"                  &lt;jobprocstatus&gt;0&lt;/jobprocstatus&gt;\n"
+"                  &lt;jobresultcode&gt;551&lt;/jobresultcode&gt;\n"
+"                  &lt;jobresulttype&gt;text&lt;/jobresulttype&gt;\n"
+"                  &lt;jobresult&gt;Unable to deploy virtual machine id = 100 due to not enough capacity&lt;/jobresult&gt; \n"
+"            &lt;/queryasyncjobresult&gt;\n"
+"        "
+msgstr ""
+

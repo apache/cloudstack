@@ -1,0 +1,85 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Disabling and Enabling Zones, Pods, and Clusters"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can enable or disable a zone, pod, or cluster without permanently removing it from the cloud. This is useful for maintenance or when there are problems that make a portion of the cloud infrastructure unreliable. No new allocations will be made to a disabled zone, pod, or cluster until its state is returned to Enabled. When a zone, pod, or cluster is first added to the cloud, it is Disabled by default."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To disable and enable a zone, pod, or cluster:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as administrator"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Infrastructure."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Zones, click View More."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you are disabling or enabling a zone, find the name of the zone in the list, and click the Enable/Disable button.<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/enable-disable.png\" /> </imageobject> <textobject><phrase>enable-disable.png: button to enable or disable zone, pod, or cluster.</phrase></textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you are disabling or enabling a pod or cluster, click the name of the zone that contains the pod or cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Compute tab."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Pods or Clusters node of the diagram, click View All."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the pod or cluster name in the list."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Enable/Disable button. <inlinemediaobject><imageobject> <imagedata fileref=\"./images/enable-disable.png\" /> </imageobject></inlinemediaobject>"
+msgstr ""
+

@@ -27,7 +27,10 @@
     <para>When &PRODUCT; creates a virtual router, it uses default settings which are defined in a default system service offering. See <xref linkend="system-service-offerings"/>. All the virtual routers in a single guest network use the same system service offering. You can upgrade the capabilities of the virtual router by creating and applying a custom system service offering.</para>
     <orderedlist>
         <listitem><para>Define your custom system service offering. See <xref linkend="creating-system-service-offerings"/>. In System VM Type, choose Domain Router.</para></listitem>
-        <listitem><para>Associate the system service offering with a network offering. See <xref linkend="creating-network-offerings"/></para></listitem>
+        <listitem><para>Associate the system service offering with a network offering. 
+          <phrase condition="install">See "Creating Network Offerings" in the Administrator's Guide.</phrase>
+          <phrase condition="admin">See <xref linkend="creating-network-offerings"/>.</phrase>
+        </para></listitem>
         <listitem><para>Apply the network offering to the network where you want the virtual routers to use the new system service offering. If this is a new network, follow the steps in Adding an Additional Guest Network on page 66. To change the service offering for existing virtual routers, follow the steps in <xref linkend="change-network-offering-on-guest-network"/>.</para></listitem>
         </orderedlist>
 </section>

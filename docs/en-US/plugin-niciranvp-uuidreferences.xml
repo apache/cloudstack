@@ -22,8 +22,8 @@
 -->
 <section id="UUID-references">
     <title>UUID References</title>
-    <para>The plugin maintains several references in the CloudStack database to items created on the NVP Controller.</para>
-    <para>Every guest network this is created will have its broadcast type set to Lswitch and if the network is in state "Implemented", the broadcast URI will have the UUID of the Logical Switch that was created for this network on the NVP Controller.</para>
+    <para>The plugin maintains several references in the &PRODUCT; database to items created on the NVP Controller.</para>
+    <para>Every guest network that is created will have its broadcast type set to Lswitch and if the network is in state "Implemented", the broadcast URI will have the UUID of the Logical Switch that was created for this network on the NVP Controller.</para>
     <para>The Nics that are connected to one of the Logical Switches will have their Logical Switch Port UUID listed in the nicira_nvp_nic_map table</para>
     <note><para>All devices created on the NVP Controller will have a tag set to domain-account of the owner of the network, this string can be used to search for items in the NVP Controller.</para></note>    
     

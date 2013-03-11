@@ -59,6 +59,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.LIMIT_CPU_USE, type=CommandType.BOOLEAN, description="restrict the CPU usage to committed service offering")
     private Boolean limitCpuUse;
 
+    @Parameter(name=ApiConstants.IS_VOLATILE, type=CommandType.BOOLEAN, description="true if the virtual machine needs to be volatile so that on every reboot of VM, original root disk is dettached then destroyed and a fresh root disk is created and attached to VM")
+    private Boolean isVolatile;
+
     @Parameter(name=ApiConstants.STORAGE_TYPE, type=CommandType.STRING, description="the storage type of the service offering. Values are local and shared.")
     private String storageType;
 
@@ -106,11 +109,15 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public Boolean getOfferHa() {
-        return offerHa;
+        return offerHa == null ? false : offerHa;
     }
 
     public Boolean GetLimitCpuUse() {
-        return limitCpuUse;
+        return limitCpuUse == null ? false : limitCpuUse;
+    }
+
+    public Boolean getVolatileVm() {
+        return isVolatile == null ? false : isVolatile;
     }
 
     public String getStorageType() {

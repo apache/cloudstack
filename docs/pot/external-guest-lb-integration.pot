@@ -1,0 +1,155 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "External Guest Load Balancer Integration (Optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; can optionally use a Citrix NetScaler or BigIP F5 load balancer to provide load balancing services to guests. If this is not enabled, &PRODUCT; will use the software load balancer in the virtual router."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To install and enable an external load balancer for &PRODUCT; management:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set up the appliance according to the vendor's directions."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Connect it to the networks carrying public traffic and management traffic (these could be the same network)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Record the IP address, username, password, public interface name, and private interface name. The interface names will be something like \"1.1\" or \"1.2\"."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure that the VLANs are trunked to the management network interface."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After the &PRODUCT; Management Server is installed, log in as administrator to the &PRODUCT; UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Infrastructure."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Zones, click View More."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the zone you want to work with."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Network tab."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Network Service Providers node of the diagram, click Configure. (You might have to scroll down to see this.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click NetScaler or F5."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Add button (+) and provide the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For NetScaler:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "IP Address: The IP address of the SRX."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Username/Password: The authentication credentials to access the device. &PRODUCT; uses these credentials to access the device."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Type: The type of device that is being added. It could be F5 Big Ip Load Balancer, NetScaler VPX, NetScaler MPX, or NetScaler SDX. For a comparison of the NetScaler types, see the &PRODUCT; Administration Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public interface: Interface of device that is configured to be part of the public network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Private interface: Interface of device that is configured to be part of the private network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Number of retries. Number of times to attempt a command on the device before considering the operation failed. Default is 2."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Capacity: The number of networks the device can handle."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Dedicated: When marked as dedicated, this device will be dedicated to a single account. When Dedicated is checked, the value in the Capacity field has no significance implicitly, its value is 1."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The installation and provisioning of the external load balancer is finished. You can proceed to add VMs and NAT or load balancing rules."
+msgstr ""
+

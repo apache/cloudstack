@@ -34,9 +34,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 /**
  * Test fixture to do integration rate limit test.
  * Currently we commented out this test suite since it requires a real MS and Db running.
- *
- * @author Min Chen
- *
  */
 public class RateLimitIntegrationTest extends APITest {
 

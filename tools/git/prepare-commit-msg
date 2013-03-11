@@ -54,7 +54,18 @@
 
 run_generic_commit () {
 local file=$1
+SOB=$(git var GIT_AUTHOR_IDENT)
 cat <<EOF > $file
+################################# 80 chars #####################################
+Summary: 
+
+Detail: 
+
+BUG-ID: 
+Bugfix-for: 
+Reviewed-by: 
+Reported-by: 
+Signed-off-by: ${SOB}
 ################################# 80 chars #####################################
 # The following is an example of how to fill out the above form. Please limit
 # your formatting to 80 cols.
@@ -71,18 +82,6 @@ cat <<EOF > $file
 #
 $ORIGINAL
 EOF
-
-SOB=$(git var GIT_AUTHOR_IDENT)
-
-sed -i "1s/^/################################# 80 chars #####################################\n\
-Summary: \n\n\
-Detail: \n\n\
-BUG-ID: \n\
-Bugfix-for: \n\
-Reviewed-by: \n\
-Reported-by: \n\
-Signed-off-by: ${SOB}\n\n/" $file
-
 }
 
 case "$2,$3" in

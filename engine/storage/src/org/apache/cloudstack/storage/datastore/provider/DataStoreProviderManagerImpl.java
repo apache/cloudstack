@@ -26,14 +26,19 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.DataStoreProviderDao;
 import org.apache.cloudstack.storage.datastore.db.DataStoreProviderVO;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.ManagerBase;
 
 @Component
 public class DataStoreProviderManagerImpl extends ManagerBase implements DataStoreProviderManager {
+    private static final Logger s_logger = Logger
+            .getLogger(DataStoreProviderManagerImpl.class);
     @Inject
     List<DataStoreProvider> providers;
     @Inject
@@ -59,8 +64,8 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     @Override
     public boolean configure(String name, Map<String, Object> params)
     		throws ConfigurationException {
-    	
-/*
+        Map<String, Object> copyParams = new HashMap<String, Object>(params);
+
     	//TODO: hold global lock
         List<DataStoreProviderVO> providerVos = providerDao.listAll();
         for (DataStoreProvider provider : providers) {
@@ -83,12 +88,20 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
             } else {
                 uuid = providerVO.getUuid();
             }
-            params.put("uuid", uuid);
-            params.put("id", providerVO.getId());
-            provider.configure(params);
+            copyParams.put("uuid", uuid);
+            copyParams.put("id", providerVO.getId());
             providerMap.put(uuid, provider);
+            try {
+                boolean registrationResult = provider.configure(copyParams);
+                if (!registrationResult) {
+                    providerMap.remove(uuid);
+                }
+            } catch(Exception e) {
+                s_logger.debug("configure provider failed", e);
+                providerMap.remove(uuid);
+            }
         }
- */    
+  
         return true;
     }
 
@@ -96,5 +109,10 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     public DataStoreProvider getDataStoreProviderById(long id) {
         DataStoreProviderVO provider = providerDao.findById(id);
         return providerMap.get(provider.getUuid());
+    }
+
+    @Override
+    public DataStoreProvider getDefaultPrimaryDataStoreProvider() {
+        return this.getDataStoreProvider("ancient primary data store provider");
     }
 }

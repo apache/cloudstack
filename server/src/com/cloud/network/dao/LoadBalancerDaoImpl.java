@@ -51,7 +51,7 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
     private final SearchBuilder<LoadBalancerVO> AccountAndNameSearch;
     protected final SearchBuilder<LoadBalancerVO> TransitionStateSearch;
 
-    @Inject protected FirewallRulesCidrsDaoImpl _portForwardingRulesCidrsDao;
+    @Inject protected FirewallRulesCidrsDao _portForwardingRulesCidrsDao;
 
     protected LoadBalancerDaoImpl() {
         ListByIp = createSearchBuilder();

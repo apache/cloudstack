@@ -70,6 +70,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
@@ -806,7 +807,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 }
             } else {
                 s_logger.debug("Revoking a rule for an inline load balancer that has not been programmed yet.");
-                return null;
+                nic.setNic(null);
+                return nic;
             }
         }
         
@@ -864,9 +866,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 MappingNic nic = getLoadBalancingIpNic(zone, network, rule.getSourceIpAddressId(), revoked, null);
                 mappingStates.add(nic.getState());
                 NicVO loadBalancingIpNic = nic.getNic();
-                        if (loadBalancingIpNic == null) {
-                        continue;
-                    }
+                if (loadBalancingIpNic == null) {
+                	continue;
+                }
 
                 // Change the source IP address for the load balancing rule to be the load balancing IP address
                 srcIp = loadBalancingIpNic.getIp4Address();
@@ -1090,7 +1092,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         }
 
         NetworkElement element = _networkModel.getElementImplementingProvider(providers.get(0).getName());
-        if (!(element instanceof IpDeployer)) {
+        if (!(ComponentContext.getTargetObject(element) instanceof IpDeployer)) {
             s_logger.error("The firewall provider for network " + network.getName() + " don't have ability to deploy IP address!");
             return null;
         }

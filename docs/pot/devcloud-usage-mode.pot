@@ -1,0 +1,75 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "DevCloud Usage Mode"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "DevCloud can be used in several different ways:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Full sandbox. Where &PRODUCT; is run within the DevCloud instance started in Virtual Box."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In this mode, the &PRODUCT; management server runs within the instance and nested virtualization allows instantiation of tiny VMs within DevCloud itself. &PRODUCT; code modifications are done within DevCloud."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following diagram shows the architecture of the SandBox mode."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A deployment environment. Where &PRODUCT; code is developed in the localhost of the developer and the resulting build is deployed within DevCloud"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This mode was used in the testing procedure of &PRODUCT; 4.0.0 incubating release. See the following screencast to see how: <ulink url=\"http://vimeo.com/54621457\">http://vimeo.com/54621457</ulink>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A host-only mode. Where DevCloud is used only as a host. &PRODUCT; management server is run in the localhost of the developer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This mode makes use of a host-only interface defined in the Virtual Box preferences. Check the following screencast to see how: <ulink url=\"http://vimeo.com/54610161\">http://vimeo.com/54610161</ulink>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following schematic shows the architecture of the Host-Only mode."
+msgstr ""
+

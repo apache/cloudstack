@@ -1,0 +1,155 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Hypervisor Support for Primary Storage"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following table shows storage options and parameters for different hypervisors."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VMware vSphere"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Citrix XenServer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "KVM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\"><emphasis role=\"bold\">Format for Disks, Templates, and Snapshots</emphasis></emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VMDK"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VHD"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "QCOW2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">iSCSI support</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VMFS"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Clustered LVM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Yes, via Shared Mountpoint"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Fiber Channel support</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Yes, via Existing SR"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">NFS support</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Y"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Local storage support</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Storage over-provisioning</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NFS and iSCSI"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NFS"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer uses a clustered LVM system to store VM images on iSCSI and Fiber Channel volumes and does not support over-provisioning in the hypervisor. The storage server itself, however, can support thin-provisioning. As a result the &PRODUCT; can still support storage over-provisioning by running on thin-provisioned storage volumes."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "KVM supports \"Shared Mountpoint\" storage. A shared mountpoint is a file system path local to each server in a given cluster. The path must be the same across all Hosts in the cluster, for example /mnt/primary1. This shared mountpoint is assumed to be a clustered filesystem such as OCFS2. In this case the &PRODUCT; does not attempt to mount or unmount the storage as is done with NFS. The &PRODUCT; requires that the administrator insure that the storage is available"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "With NFS storage, &PRODUCT; manages the overprovisioning. In this case the global configuration parameter storage.overprovisioning.factor controls the degree of overprovisioning. This is independent of hypervisor type."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Local storage is an option for primary storage for vSphere, XenServer, and KVM. When the local disk option is enabled, a local disk storage pool is automatically created on each host. To use local storage for the System Virtual Machines (such as the Virtual Router), set system.vm.use.local.storage to true in global configuration."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; supports multiple primary storage pools in a Cluster. For example, you could provision 2 NFS servers in primary storage. Or you could provision 1 iSCSI LUN initially and then add a second iSCSI LUN when the first approaches capacity."
+msgstr ""
+

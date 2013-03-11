@@ -40,4 +40,5 @@ public interface Event extends ControlledEntity, Identity, InternalIdentity {
     String getLevel();
     long getStartId();
     String getParameters();
+    boolean getArchived();
 }

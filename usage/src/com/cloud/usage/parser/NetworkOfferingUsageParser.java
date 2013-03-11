@@ -26,17 +26,18 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.usage.UsageNetworkOfferingVO;
 import com.cloud.usage.UsageServer;
-import com.cloud.usage.UsageTypes;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageNetworkOfferingDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
+import org.springframework.stereotype.Component;
 
-
+@Component
 public class NetworkOfferingUsageParser {
     public static final Logger s_logger = Logger.getLogger(NetworkOfferingUsageParser.class.getName());
     

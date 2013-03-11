@@ -45,7 +45,8 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
@@ -83,8 +84,6 @@ import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
-import com.cloud.api.query.dao.*;
-import com.cloud.api.query.vo.*;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -108,6 +107,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -156,10 +156,6 @@ import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
-import com.cloud.network.*;
-import com.cloud.network.as.*;
-import com.cloud.network.as.dao.*;
-import com.cloud.network.dao.*;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.security.SecurityGroup;
@@ -187,10 +183,13 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.*;
 import com.cloud.storage.Storage.ImageFormat;
+
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.*;
 import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.*;
+
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
@@ -203,6 +202,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -211,9 +211,13 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.NicSecondaryIpDao;
+import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
 public class ApiDBUtils {
@@ -221,9 +225,12 @@ public class ApiDBUtils {
     static AsyncJobManager _asyncMgr;
     static SecurityGroupManager _securityGroupMgr;
     static StorageManager _storageMgr;
+    static VolumeManager _volumeMgr;
     static UserVmManager _userVmMgr;
     static NetworkModel _networkModel;
     static NetworkManager _networkMgr;
+    static TemplateManager _templateMgr;
+    
     static StatsCollector _statsCollector;
 
     static AccountDao _accountDao;
@@ -248,7 +255,7 @@ public class ApiDBUtils {
     static HostPodDao _podDao;
     static ServiceOfferingDao _serviceOfferingDao;
     static SnapshotDao _snapshotDao;
-    static StoragePoolDao _storagePoolDao;
+    static PrimaryDataStoreDao _storagePoolDao;
     static VMTemplateDao _templateDao;
     static VMTemplateDetailsDao _templateDetailsDao;
     static VMTemplateHostDao _templateHostDao;
@@ -313,6 +320,10 @@ public class ApiDBUtils {
     static VpcOfferingDao _vpcOfferingDao;
     static SnapshotPolicyDao _snapshotPolicyDao;
     static AsyncJobDao _asyncJobDao;
+    static HostDetailsDao _hostDetailsDao;
+    static VMSnapshotDao _vmSnapshotDao;
+    static ClusterDetailsDao _clusterDetailsDao;
+    static NicSecondaryIpDao _nicSecondaryIpDao;
 
     @Inject private ManagementServer ms;
     @Inject public AsyncJobManager asyncMgr;
@@ -322,6 +333,8 @@ public class ApiDBUtils {
     @Inject private NetworkModel networkModel;
     @Inject private NetworkManager networkMgr;
     @Inject private StatsCollector statsCollector;
+    @Inject private TemplateManager templateMgr;
+    @Inject private VolumeManager volumeMgr;
 
     @Inject private AccountDao accountDao;
     @Inject private AccountVlanMapDao accountVlanMapDao;
@@ -345,7 +358,7 @@ public class ApiDBUtils {
     @Inject private HostPodDao podDao;
     @Inject private ServiceOfferingDao serviceOfferingDao;
     @Inject private SnapshotDao snapshotDao;
-    @Inject private StoragePoolDao storagePoolDao;
+    @Inject private PrimaryDataStoreDao storagePoolDao;
     @Inject private VMTemplateDao templateDao;
     @Inject private VMTemplateDetailsDao templateDetailsDao;
     @Inject private VMTemplateHostDao templateHostDao;
@@ -410,7 +423,10 @@ public class ApiDBUtils {
     @Inject private VpcOfferingDao vpcOfferingDao;
     @Inject private SnapshotPolicyDao snapshotPolicyDao;
     @Inject private AsyncJobDao asyncJobDao;
-
+    @Inject private HostDetailsDao hostDetailsDao;
+    @Inject private ClusterDetailsDao clusterDetailsDao;
+    @Inject private VMSnapshotDao vmSnapshotDao;
+    @Inject private NicSecondaryIpDao nicSecondaryIpDao;
     @PostConstruct
     void init() {
         _ms = ms;
@@ -421,6 +437,7 @@ public class ApiDBUtils {
         _networkModel = networkModel;
         _networkMgr = networkMgr;
         _configMgr = configMgr;
+        _templateMgr = templateMgr;
 
         _accountDao = accountDao;
         _accountVlanMapDao = accountVlanMapDao;
@@ -507,7 +524,10 @@ public class ApiDBUtils {
         _vpcOfferingDao = vpcOfferingDao;
         _snapshotPolicyDao = snapshotPolicyDao;
         _asyncJobDao = asyncJobDao;
-
+        _hostDetailsDao = hostDetailsDao;
+        _clusterDetailsDao = clusterDetailsDao;
+        _vmSnapshotDao = vmSnapshotDao;
+        _nicSecondaryIpDao = nicSecondaryIpDao;
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
     }
@@ -608,7 +628,7 @@ public class ApiDBUtils {
 
     public static String getSnapshotIntervalTypes(long snapshotId) {
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-        return snapshot.getType().name();
+        return snapshot.getRecurringType().name();
     }
 
     public static String getStoragePoolTags(long poolId) {
@@ -669,6 +689,10 @@ public class ApiDBUtils {
 
     public static ClusterVO findClusterById(long clusterId) {
         return _clusterDao.findById(clusterId);
+    }
+
+    public static ClusterDetailsVO findClusterDetails(long clusterId, String name){
+         return _clusterDetailsDao.findDetail(clusterId,name);
     }
 
     public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
@@ -783,7 +807,7 @@ public class ApiDBUtils {
             List<VMTemplateHostVO> res = _templateHostDao.listByTemplateId(templateId);
             return res.size() == 0 ? null : res.get(0);
         } else {
-            return _storageMgr.getTemplateHostRef(zoneId, templateId, readyOnly);
+            return _templateMgr.getTemplateHostRef(zoneId, templateId, readyOnly);
         }
     }
 
@@ -885,7 +909,7 @@ public class ApiDBUtils {
             throw new InvalidParameterValueException("Please specify a valid volume ID.");
         }
 
-        return _storageMgr.volumeOnSharedStoragePool(volume);
+        return _volumeMgr.volumeOnSharedStoragePool(volume);
     }
 
     public static List<NicProfile> getNics(VirtualMachine vm) {
@@ -1054,6 +1078,11 @@ public class ApiDBUtils {
 
     public static boolean canUseForDeploy(Network network) {
         return _networkModel.canUseForDeploy(network);
+    }
+
+    public static VMSnapshot getVMSnapshotById(Long vmSnapshotId) {
+        VMSnapshot vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
+        return vmSnapshot;
     }
 
     public static String getUuid(String resourceId, TaggedResourceType resourceType) {
@@ -1492,5 +1521,13 @@ public class ApiDBUtils {
 
    public static DataCenterJoinVO newDataCenterView(DataCenter dc){
        return _dcJoinDao.newDataCenterView(dc);
+   }
+   
+   public static Map<String, String> findHostDetailsById(long hostId){
+	   return _hostDetailsDao.findDetails(hostId);
+   }
+
+   public static List<NicSecondaryIpVO> findNicSecondaryIps(long nicId) {
+       return _nicSecondaryIpDao.listByNicId(nicId);
    }
 }

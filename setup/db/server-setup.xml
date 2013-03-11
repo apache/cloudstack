@@ -446,7 +446,7 @@ under the License.
     <!--
     <configuration>
       <name>mount.parent</name>
-      <value>/var/lib/cloud/mnt</value>
+      <value>/var/cloudstack/mnt</value>
     </configuration>
     -->
   </configurationEntries>

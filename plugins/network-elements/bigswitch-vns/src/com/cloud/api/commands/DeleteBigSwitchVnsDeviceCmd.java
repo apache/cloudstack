@@ -35,7 +35,7 @@ import com.cloud.network.element.BigSwitchVnsElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteBigSwitchVnsDevice", responseObject=SuccessResponse.class, description=" delete a bigswitch vns device")
+@APICommand(name = "deleteBigSwitchVnsDevice", responseObject=SuccessResponse.class, description=" delete a bigswitch vns device", since = "4.1.0")
 public class DeleteBigSwitchVnsDeviceCmd extends BaseAsyncCmd {
     private static final String s_name = "deletebigswitchvnsdeviceresponse";
     @Inject BigSwitchVnsElementService _bigswitchVnsElementService;

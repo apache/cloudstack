@@ -36,7 +36,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 public class PhysicalNetworkDaoImpl extends GenericDaoBase<PhysicalNetworkVO, Long> implements PhysicalNetworkDao {
     final SearchBuilder<PhysicalNetworkVO> ZoneSearch;
 
-    @Inject protected PhysicalNetworkTrafficTypeDaoImpl _trafficTypeDao;
+    @Inject protected PhysicalNetworkTrafficTypeDao _trafficTypeDao;
 
     protected PhysicalNetworkDaoImpl() {
         super();

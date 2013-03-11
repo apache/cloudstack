@@ -40,15 +40,24 @@
 
     $.each(args.sections, function(sectionID, args) {
       if (preFilter && $.inArray(sectionID, preFilter) == -1) {
-        return true;
+        if (!(args.preFilter && args.preFilter())) {
+          return true;
+        }
       }
 
+      
       var $li = $('<li>')
             .addClass('navigation-item')
             .addClass(sectionID)
             .append($('<span>').addClass('icon').html('&nbsp;'))
             .append($('<span>').html(_l(args.title)))
             .data('cloudStack-section-id', sectionID);
+
+      if (args.customIcon) {
+        $li.addClass('custom-icon').find('span.icon').html('').append(
+          $('<img>').attr({ src: args.customIcon })
+        );
+      }
 
       $li.appendTo($navList);
 
@@ -126,6 +135,8 @@
                 .html(_l('label.default.view'))
                 .prepend(
                   $('<span>').addClass('icon').html('&nbsp;')
+
+
                 )
             )
             .append(
@@ -346,6 +357,8 @@
 
     // Hide logo conditionally
     if (!args.hasLogo) $('#header, #header .controls').addClass('nologo');
+    
+    $(window).trigger('cloudStack.ready');
 
     return this;
   };

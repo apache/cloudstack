@@ -1,0 +1,110 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a Bare Metal Template"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Beta feature. Untested in &PRODUCT; 3.0.3. Provided without guarantee of performance</emphasis>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Before you can create a bare metal template, you must have performed several other installation and setup steps to create a bare metal cluster and environment. See Bare Metal Installation in the Installation Guide. It is assumed you already have a directory named \"win7_64bit\" on your CIFS server, containing the image for the bare metal instance. This directory and image are set up as part of the Bare Metal Installation procedure."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Templates."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Create Template."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the dialog box, enter the following values."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name</emphasis>. Short name for the template."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Display Text</emphasis>. Description of the template."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">URL</emphasis>. The directory name which contains image file on your CIFS server. For example, win7_64bit."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Zone</emphasis>. All Zones."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">OS Type</emphasis>. Select the OS type of the ISO image. Choose other if the OS Type of the ISO is not listed or if the ISO is not bootable."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Hypervisor</emphasis>. BareMetal."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Format</emphasis>. BareMetal."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Password Enabled</emphasis>. No."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Public</emphasis>. No."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Featured</emphasis>. Choose Yes if you would like this template to be more prominent for users to select. Only administrators may make templates featured."
+msgstr ""
+

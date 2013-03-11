@@ -75,7 +75,7 @@ class Services:
                         "template": {
                                     "displaytext": "Cent OS Template",
                                     "name": "Cent OS Template",
-                                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                                    "ostype": 'CentOS 5.3 (64-bit)',
                                     "templatefilter": 'self',
                         },
                         "network_offering": {
@@ -101,7 +101,7 @@ class Services:
                                      "name": "test network",
                                      "displaytext": "test network"
                         },
-                        "ostypeid": 'bc66ada0-99e7-483b-befc-8fb0c2129b70',
+                        "ostype": 'CentOS 5.3 (64-bit)',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -122,7 +122,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -885,7 +885,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
@@ -1341,7 +1341,7 @@ class TestMaxAccountNetworks(cloudstackTestCase):
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
-                            cls.services["ostypeid"]
+                            cls.services["ostype"]
                             )
 
         cls.service_offering = ServiceOffering.create(

@@ -1,0 +1,4478 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Submitting Feedback and Getting Help"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Apache CloudStack project has mailing lists for users and developers. These are the official channels of communication for the project and are the best way to get answers about using and contributing to CloudStack. It's a good idea to subscribe to the cloudstack-users mailing list if you've deployed or are deploying CloudStack into production, and even for test deployments."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The CloudStack developer's mailing list (cloudstack-dev) is for discussions about CloudStack development, and is the best list for discussing possible bugs in CloudStack. Anyone contributing to CloudStack should be on this mailing list."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can also report bugs in CloudStack using the <ulink url=\"https://issues.apache.org/jira/secure/CreateIssue!default.jspa\">Apache Defect Tracking System</ulink>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To posts to the lists, you'll need to be subscribed. See the <ulink url=\"http://incubator.apache.org/cloudstack/mailing-lists.html\">CloudStack Web site</ulink> for instructions."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Upgrade Instructions"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Upgrade from 3.0.2 to 4.0.0-incubating"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Perform the following to upgrade from version 3.0.2 to version 4.0.0-incubating. Note that some of the steps here are only required if you're using a specific hypervisor. The steps that are hypervisor-specific are called out with a note."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that you query your IP address usage records and process them or make a backup. During the upgrade you will lose the old IP address usage records."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Starting in 3.0.2, the usage record format for IP addresses is the same as the rest of the usage types. Instead of a single record with the assignment and release dates, separate records are generated per aggregation period with start and end dates. After upgrading, any existing IP address usage records in the old format will no longer be available."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following upgrade instructions apply only if you're using VMware hosts. If you're not using VMware hosts, skip this step and move on to step 3: stopping all usage servers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In each zone that includes VMware hosts, you need to add a new system VM template."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "While running the existing 3.0.2 system, log in to the UI as root administrator."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Templates."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Select view, click Templates."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Register template."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Register template dialog box is displayed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Register template dialog box, specify the following values (do not change these):"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Field"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Value"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "systemvm-vmware-3.0.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Description"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "URL"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Zone"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the zone where this hypervisor is used"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hypervisor"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VMware"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Format"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "OVA"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "OS Type"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Debian GNU/Linux 5.0 (32-bit)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Extractable"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "no"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Password Enabled"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Featured"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Watch the screen to be sure that the template downloads successfully and enters the READY state. Do not proceed until this is successful."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Stop all Usage Servers if running. Run this on all Usage Server hosts."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-usage stop"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Stop the Management Servers. Run this on all Management Server hosts."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-management stop"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On the MySQL master, take a backup of the MySQL databases. We recommend performing this step even in test upgrades. If there is an issue, this will assist with debugging."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the following commands, it is assumed that you have set the root password on the database, which is a CloudStack recommended best practice. Substitute your own MySQL root password."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud &gt; <filename>cloud-backup.dmp</filename>\n"
+"<prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud_usage &gt; <filename>cloud-usage-backup.dmp</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Either build RPM/DEB packages as detailed in the Installation Guide, or use one of the community provided yum/apt repositories to gain access to the &PRODUCT; binaries."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After you have configured an appropriate yum or apt repository, you may execute the one of the following commands as appropriate for your environment in order to upgrade &PRODUCT;:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>yum</command> update cloud-*"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>apt-get</command> update\n"
+"<prompt>#</prompt> <command>apt-get</command> upgrade cloud-*"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You will, of course, have to agree to the changes suggested by Yum or APT."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If the upgrade output includes a message similar to the following, then some custom content was found in your old components.xml, and you need to merge the two files:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "warning: /etc/cloud/management/components.xml created as /etc/cloud/management/components.xml.rpmnew "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Instructions follow in the next step."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you have made changes to your copy of <filename>/etc/cloud/management/components.xml</filename> the changes will be preserved in the upgrade. However, you need to do the following steps to place these changes in a new version of the file which is compatible with version 4.0.0-incubating."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make a backup copy of <filename>/etc/cloud/management/components.xml</filename>. For example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# mv /etc/cloud/management/components.xml /etc/cloud/management/components.xml-backup"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Copy <filename>/etc/cloud/management/components.xml.rpmnew</filename> to create a new <filename>/etc/cloud/management/components.xml</filename>:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# cp -ap /etc/cloud/management/components.xml.rpmnew /etc/cloud/management/components.xml"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Merge your changes from the backup file into the new <filename>components.xml</filename>."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# vi /etc/cloud/management/components.xml"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you have more than one management server node, repeat the upgrade steps on each node."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Start the first Management Server. Do not start any other Management Server nodes yet."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-management start"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Wait until the databases are upgraded. Ensure that the database upgrade is complete. After confirmation, start the other Management Servers one at a time by running the same command on each node."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Failing to restart the Management Server indicates a problem in the upgrade. Having the Management Server restarted without any issues indicates that the upgrade is successfully completed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Start all Usage Servers (if they were running on your previous version). Perform this on each Usage Server host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command># service cloud-usage start</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Additional steps are required for each KVM host. These steps will not affect running guests in the cloud. These steps are required only for clouds using KVM as hosts and only on the KVM hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure a yum or apt respository containing the &PRODUCT; packages as outlined in the Installation Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Stop the running agent."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command># service cloud-agent stop</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Update the agent software with one of the following command sets as appropriate for your environment."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command># yum update cloud-*</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command># apt-get update</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command># apt-get upgrade cloud-*</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Start the agent."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-agent start"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Edit <filename>/etc/cloud/agent/agent.properties</filename> to change the resource parameter from \"com.cloud.agent.resource.computing.LibvirtComputingResource\" to \"com.cloud.hypervisor.kvm.resource.LibvirtComputingResource\"."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Start the cloud agent and cloud management services."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When the Management Server is up and running, log in to the CloudStack UI and restart the virtual router for proper functioning of all the features."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the CloudStack UI as administrator, and check the status of the hosts. All hosts should come to Up state (except those that you know to be offline). You may need to wait 20 or 30 minutes, depending on the number of hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Troubleshooting: If login fails, clear your browser cache and reload the page."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Do not proceed to the next step until the hosts show in Up state."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you are upgrading from 3.0.2, perform the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that the admin port is set to 8096 by using the \"integration.api.port\" global parameter."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This port is used by the cloud-sysvmadm script at the end of the upgrade procedure. For information about how to set this parameter, see \"Setting Global Configuration Parameters\" in the Installation Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you don't want the admin port to remain open, you can set it to null after the upgrade is done and restart the management server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the <command>cloud-sysvmadm</command> script to stop, then start, all Secondary Storage VMs, Console Proxy VMs, and virtual routers. Run the script once on each management server. Substitute your own IP address of the MySQL instance, the MySQL user to connect as, and the password to use for that user. In addition to those parameters, provide the <command>-c</command> and <command>-r</command> arguments. For example:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command># nohup cloud-sysvmadm -d 192.168.1.5 -u cloud -p password -c -r &gt; sysvm.log 2&gt;&amp;1 &amp;</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command># tail -f sysvm.log</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This might take up to an hour or more to run, depending on the number of accounts in the system."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version supported by CloudStack 4.0.0-incubating. The supported versions are XenServer 5.6 SP2 and 6.0.2. Instructions for upgrade can be found in the CloudStack 4.0.0-incubating Installation Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now apply the XenServer hotfix XS602E003 (and any other needed hotfixes) to XenServer v6.0.2 hypervisor hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Disconnect the XenServer cluster from CloudStack."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar of the CloudStack UI, select Infrastructure. Under Clusters, click View All. Select the XenServer cluster and click Actions - Unmanage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This may fail if there are hosts not in one of the states Up, Down, Disconnected, or Alert. You may need to fix that before unmanaging this cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Wait until the status of the cluster has reached Unmanaged. Use the CloudStack UI to check on the status. When the cluster is in the unmanaged state, there is no connection to the hosts in the cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To clean up the VLAN, log in to one XenServer host and run:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command>/opt/xensource/bin/cloud-clean-vlan.sh</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now prepare the upgrade by running the following on one XenServer host:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command>/opt/xensource/bin/cloud-prepare-upgrade.sh</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you see a message like \"can't eject CD\", log in to the VM and unmount the CD, then run this script again."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Upload the hotfix to the XenServer hosts. Always start with the Xen pool master, then the slaves. Using your favorite file copy utility (e.g. WinSCP), copy the hotfixes to the host. Place them in a temporary folder such as /tmp."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On the Xen pool master, upload the hotfix with this command:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command>xe patch-upload file-name=XS602E003.xsupdate</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make a note of the output from this command, which is a UUID for the hotfix file. You'll need it in another step later."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) If you are applying other hotfixes as well, you can repeat the commands in this section with the appropriate hotfix number. For example, XS602E004.xsupdate."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Manually live migrate all VMs on this host to another host. First, get a list of the VMs on this host:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command># xe vm-list</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Then use this command to migrate each VM. Replace the example host name and VM name with your own:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command># xe vm-migrate live=true host=<replaceable>host-name</replaceable> vm=<replaceable>VM-name</replaceable></command>"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Troubleshooting"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you see a message like \"You attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected,\" run:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command>/opt/xensource/bin/make_migratable.sh b6cf79c8-02ee-050b-922f-49583d9f1a14</command>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Apply the hotfix. First, get the UUID of this host:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe host-list"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Then use the following command to apply the hotfix. Replace the example host UUID with the current host ID, and replace the hotfix UUID with the output from the patch-upload command you ran on this machine earlier. You can also get the hotfix UUID by running xe patch-list."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>xe</command> patch-apply host-uuid=<replaceable>host-uuid</replaceable> uuid=<replaceable>hotfix-uuid</replaceable>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Copy the following files from the CloudStack Management Server to the host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Copy from here..."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "...to here"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/sm/NFSSR.py"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/bin/setupxenserver.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "/opt/xensource/bin/make_migratable.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Only for hotfixes XS602E005 and XS602E007) You need to apply a new Cloud Support Pack."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Download the CSP software onto the XenServer host from one of the following links:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For hotfix XS602E005: <ulink url=\"http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E005/56710/xe-phase-2/xenserver-cloud-supp.tgz\">http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E005/56710/xe-phase-2/xenserver-cloud-supp.tgz</ulink>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For hotfix XS602E007: <ulink url=\"http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E007/57824/xe-phase-2/xenserver-cloud-supp.tgz\">http://coltrane.eng.hq.xensource.com/release/XenServer-6.x/XS-6.0.2/hotfixes/XS602E007/57824/xe-phase-2/xenserver-cloud-supp.tgz</ulink>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Extract the file:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# tar xf xenserver-cloud-supp.tgz"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following script:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe-install-supplemental-pack xenserver-cloud-supp.iso"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If the XenServer host is part of a zone that uses basic networking, disable Open vSwitch (OVS):"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe-switch-network-backend  bridge"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Reboot this XenServer host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If the message \"mv: cannot stat `/etc/cron.daily/logrotate': No such file or directory\" appears, you can safely ignore it."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk '{print $NF}'`; do xe pbd-plug uuid=$pbd ; "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On each slave host in the Xen pool, repeat these steps, starting from \"manually live migrate VMs.\""
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Troubleshooting Tip"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If passwords which you know to be valid appear not to work after upgrade, or other UI issues are seen, try clearing your browser cache and reloading the UI page."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Upgrade from 2.2.14 to 4.0.0-incubating"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that you query your IPaddress usage records and process them; for example, issue invoices for any usage that you have not yet billed users for."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Starting in 3.0.2, the usage record format for IP addresses is the same as the rest of the usage types. Instead of a single record with the assignment and release dates, separate records are generated per aggregation period with start and end dates. After upgrading to 4.0.0-incubating, any existing IP address usage records in the old format will no longer be available."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you are using version 2.2.0 - 2.2.13, first upgrade to 2.2.14 by using the instructions in the 2.2.14 Release Notes."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "KVM Hosts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If KVM hypervisor is used in your cloud, be sure you completed the step to insert a valid username and password into the host_details table on each KVM node as described in the 2.2.14 Release Notes. This step is critical, as the database will be encrypted after the upgrade to 4.0.0-incubating."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "While running the 2.2.14 system, log in to the UI as root administrator."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Using the UI, add a new System VM template for each hypervisor type that is used in your cloud. In each zone, add a system VM template for each hypervisor used in that zone"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Register template dialog box, specify the following values depending on the hypervisor type (do not change these):"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name: systemvm-xenserver-3.0.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Description: systemvm-xenserver-3.0.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "URL: http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Zone: Choose the zone where this hypervisor is used"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hypervisor: XenServer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Format: VHD"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "OS Type: Debian GNU/Linux 5.0 (32-bit)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Extractable: no"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Password Enabled: no"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public: no"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Featured: no"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "KVM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name: systemvm-kvm-3.0.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Description: systemvm-kvm-3.0.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "URL: http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hypervisor: KVM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Format: QCOW2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name: systemvm-vmware-3.0.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Description: systemvm-vmware-3.0.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "URL: http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hypervisor: VMware"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Format: OVA"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Watch the screen to be sure that the template downloads successfully and enters the READY state. Do not proceed until this is successful"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">WARNING</emphasis>: If you use more than one type of hypervisor in your cloud, be sure you have repeated these steps to download the system VM template for each hypervisor type. Otherwise, the upgrade will fail."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud &gt; <filename>cloud-backup.dmp</filename>\n"
+"<prompt>#</prompt> <command>mysqldump</command> -u root -p<replaceable>mysql_password</replaceable> cloud_usage &gt; <filename>cloud-usage-backup.dmp</filename>\n"
+""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you have made changes to your existing copy of the file components.xml in your previous-version CloudStack installation, the changes will be preserved in the upgrade. However, you need to do the following steps to place these changes in a new version of the file which is compatible with version 4.0.0-incubating."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "How will you know whether you need to do this? If the upgrade output in the previous step included a message like the following, then some custom content was found in your old components.xml, and you need to merge the two files:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make a backup copy of your <filename>/etc/cloud/management/components.xml</filename> file. For example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>mv</command> <filename>/etc/cloud/management/components.xml</filename> <filename>/etc/cloud/management/components.xml-backup</filename>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>cp</command> -ap <filename>/etc/cloud/management/components.xml.rpmnew</filename> <filename>/etc/cloud/management/components.xml</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Merge your changes from the backup file into the new components.xml file."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>vi</command> <filename>/etc/cloud/management/components.xml</filename>\n"
+"              "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you have made changes to your existing copy of the <filename>/etc/cloud/management/db.properties</filename> file in your previous-version CloudStack installation, the changes will be preserved in the upgrade. However, you need to do the following steps to place these changes in a new version of the file which is compatible with version 4.0.0-incubating."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make a backup copy of your file <filename>/etc/cloud/management/db.properties</filename>. For example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>mv</command> <filename>/etc/cloud/management/db.properties</filename> <filename>/etc/cloud/management/db.properties-backup</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Copy <filename>/etc/cloud/management/db.properties.rpmnew</filename> to create a new <filename>/etc/cloud/management/db.properties</filename>:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>cp</command> -ap <filename>/etc/cloud/management/db.properties.rpmnew</filename> <filename>etc/cloud/management/db.properties</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Merge your changes from the backup file into the new db.properties file."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>vi</command> <filename>/etc/cloud/management/db.properties</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On the management server node, run the following command. It is recommended that you use the command-line flags to provide your own encryption keys. See Password and Key Encryption in the Installation Guide."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>cloud-setup-encryption</command> -e <replaceable>encryption_type</replaceable> -m <replaceable>management_server_key</replaceable> -k <replaceable>database_key</replaceable>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When used without arguments, as in the following example, the default encryption type and keys will be used:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) For encryption_type, use file or web to indicate the technique used to pass in the database encryption password. Default: file."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) For management_server_key, substitute the default key that is used to encrypt confidential parameters in the properties file. Default: password. It is highly recommended that you replace this with a more secure value"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) For database_key, substitute the default key that is used to encrypt confidential parameters in the CloudStack database. Default: password. It is highly recommended that you replace this with a more secure value."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat steps 10 - 14 on every management server node. If you provided your own encryption key in step 14, use the same key on all other management servers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Wait until the databases are upgraded. Ensure that the database upgrade is complete. You should see a message like \"Complete! Done.\" After confirmation, start the other Management Servers one at a time by running the same command on each node."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-usage start"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(KVM only) Additional steps are required for each KVM host. These steps will not affect running guests in the cloud. These steps are required only for clouds using KVM as hosts and only on the KVM hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure your CloudStack package repositories as outlined in the Installation Guide"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-agent stop"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Update the agent software with one of the following command sets as appropriate."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"                 <prompt>#</prompt> <command>apt-get</command> update\n"
+"<prompt>#</prompt> <command>apt-get</command> upgrade cloud-*\n"
+"              "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Copy the contents of the <filename>agent.properties</filename> file to the new <filename>agent.properties</filename> file by using the following command"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>sed</command> -i 's/com.cloud.agent.resource.computing.LibvirtComputingResource/com.cloud.hypervisor.kvm.resource.LibvirtComputingResource/g' <filename>/etc/cloud/agent/agent.properties</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the CloudStack UI as admin, and check the status of the hosts. All hosts should come to Up state (except those that you know to be offline). You may need to wait 20 or 30 minutes, depending on the number of hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Do not proceed to the next step until the hosts show in the Up state. If the hosts do not come to the Up state, contact support."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following script to stop, then start, all Secondary Storage VMs, Console Proxy VMs, and virtual routers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the command once on one management server. Substitute your own IP address of the MySQL instance, the MySQL user to connect as, and the password to use for that user. In addition to those parameters, provide the \"-c\" and \"-r\" arguments. For example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>nohup cloud-sysvmadm</command> -d <replaceable>192.168.1.5</replaceable> -u cloud -p <replaceable>password</replaceable> -c -r &gt; sysvm.log 2&gt;&amp;1 &amp;\n"
+"<prompt>#</prompt> <command>tail</command> -f <filename>sysvm.log</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After the script terminates, check the log to verify correct execution:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>tail</command> -f <filename>sysvm.log</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The content should be like the following:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"Stopping and starting 1 secondary storage vm(s)...\n"
+"Done stopping and starting secondary storage vm(s)\n"
+"Stopping and starting 1 console proxy vm(s)...\n"
+"Done stopping and starting console proxy vm(s).\n"
+"Stopping and starting 4 running routing vm(s)...\n"
+"Done restarting router(s).\n"
+"						"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you would like additional confirmation that the new system VM templates were correctly applied when these system VMs were rebooted, SSH into the System VM and check the version."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Use one of the following techniques, depending on the hypervisor."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "XenServer or KVM:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "SSH in by using the link local IP address of the system VM. For example, in the command below, substitute your own path to the private key used to log in to the system VM and your own link local IP."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following commands on the XenServer or KVM host on which the system VM is present:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>ssh</command> -i <replaceable>private-key-path</replaceable> <replaceable>link-local-ip</replaceable> -p 3922\n"
+"# cat /etc/cloudstack-release"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The output should be like the following:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "Cloudstack Release 4.0.0-incubating Mon Oct 9 15:10:04 PST 2012"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "ESXi"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "SSH in using the private IP address of the system VM. For example, in the command below, substitute your own path to the private key used to log in to the system VM and your own private IP."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following commands on the Management Server:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>ssh</command> -i <replaceable>private-key-path</replaceable> <replaceable>private-ip</replaceable> -p 3922\n"
+"<prompt>#</prompt> <command>cat</command> <filename>/etc/cloudstack-release</filename>\n"
+""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Apply the XenServer hotfix XS602E003 (and any other needed hotfixes) to XenServer v6.0.2 hypervisor hosts."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "/opt/xensource/bin/cloud-clean-vlan.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Prepare the upgrade by running the following on one XenServer host:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "/opt/xensource/bin/cloud-prepare-upgrade.sh"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you see a message like \"can't eject CD\", log in to the VM and umount the CD, then run this script again."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Upload the hotfix to the XenServer hosts. Always start with the Xen pool master, then the slaves. Using your favorite file copy utility (e.g. WinSCP), copy the hotfixes to the host. Place them in a temporary folder such as /root or /tmp."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "xe patch-upload file-name=XS602E003.xsupdate"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# xe vm-list"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<prompt>#</prompt> <command>xe</command> vm-migrate live=true host=<replaceable>host-name</replaceable> vm=<replaceable>VM-name</replaceable>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command># xe host-list</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command>xe patch-apply host-uuid=<replaceable>host-uuid</replaceable> uuid=<replaceable>hotfix-uuid</replaceable></command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/xenserver60/NFSSR.py</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<filename>/opt/xensource/sm/NFSSR.py</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/setupxenserver.sh</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<filename>/opt/xensource/bin/setupxenserver.sh</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<filename>/usr/lib64/cloud/common/scripts/vm/hypervisor/xenserver/make_migratable.sh</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<filename>/opt/xensource/bin/make_migratable.sh</filename>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command># tar xf xenserver-cloud-supp.tgz</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command># xe-install-supplemental-pack xenserver-cloud-supp.iso</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command># xe-switch-network-backend bridge</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command>/opt/xensource/bin/setupxenserver.sh</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<command>for pbd in `xe pbd-list currently-attached=false| grep ^uuid | awk '{print $NF}'`; do xe pbd-plug uuid=$pbd ; </command>"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Version 4.0.0-incubating"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "What’s New in 4.0.0-incubating"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Apache CloudStack 4.0.0-incubating includes the following new features:"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Inter-VLAN Routing"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Inter-VLAN Routing is the capability to route network traffic between VLANs. This feature enables you to set up Virtual Private Clouds (VPC) that can hold multi-tier applications. These tiers are deployed on different VLANs that can communicate with each other. You can provision VLANs to the tiers your create, and VMs can be deployed on different tiers, such as Web, Application, or Database. The VLANs are connected to a virtual router, which facilitates communication between the VMs. In effect, you can segment VMs by means of VLANs into different networks that can host multi-tier applications. Such segmentation by means of VLANs logically separate application VMs for higher security and lower broadcasts, while remaining physically connected to the same device."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This feature is supported on XenServer and VMware hypervisors."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A Site-to-Site VPN connection helps you establish a secure connection from an enterprise datacenter to the cloud infrastructure. This allows users to access the guest VMs by establishing a VPN connection to the virtual router of the account from a device in the datacenter of the enterprise. Having this facility eliminates the need to establish VPN connections to individual VMs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The supported endpoints on the remote datacenters are:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Cisco ISR with IOS 12.4 or later"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Juniper J-Series routers with JunOS 9.5 or later"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Local Storage Support for Data Volumes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can now create data volumes on local storage. The data volume is placed on the same XenServer host as the VM instance that is attached to the data volume. These local data volumes can be attached to virtual machines, detached, re-attached, and deleted just as with the other types of data volume. In earlier releases of CloudStack, only the root disk could be placed in local storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Local storage is ideal for scenarios where persistence of data volumes and HA is not required. Some of the benefits include reduced disk I/O latency and cost reduction from using inexpensive local disks."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In order for local volumes to be used, the feature must be enabled for the zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can create a data disk offering for local storage. When a user creates a new VM, they can select this disk offering in order to cause the data disk volume to be placed in local storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can not migrate a VM that has a volume in local storage to a different host, nor migrate the volume itself away to a different host. If you want to put a host into maintenance mode, you must first stop any VMs with local data volumes on that host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Local storage support for volumes is available for XenServer, KVM, and VMware hypervisors."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Tags"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A tag is a key-value pair that stores metadata about a resource in the cloud. Tags are useful for categorizing resources. For example, you can tag a user VM with a value that indicates the user's city of residence. In this case, the key would be \"city\" and the value might be \"Toronto\" or \"Tokyo.\" You can then request CloudStack to find all resources that have a given tag; for example, VMs for users in a given city."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can tag a user virtual machine, volume, snapshot, guest network, template, ISO, firewall rule, port forwarding rule, public IP address, security group, load balancer rule, project, VPC, network ACL, or static route. You can not tag a remote access VPN."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can work with tags through the UI or through the new API commands createTags, deleteTags, and listTags. You can define multiple tags for each resource. There is no limit on the number of tags you can define. Each tag can be up to 255 characters long. Users can define tags on the resources they own, and administrators can define tags on any resources in the cloud."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A new optional input parameter, \"tags,\" has been added to many of the list* API commands. The following example shows how to use this new parameter to find all the volumes having tag region=canada OR tag city=Toronto:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "command=listVolumes\n"
+"&amp;listAll=true\n"
+"&amp;tags[0].key=region\n"
+"&amp;tags[0].value=canada\n"
+"&amp;tags[1].key=city\n"
+"&amp;tags[1].value=Toronto"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following API commands have the new \"tags\" input parameter:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVirtualMachines"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVolumes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listSnapshots"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listNetworks"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listTemplates"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listIsos"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listFirewallRules"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listPortForwardingRules"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listPublicIpAddresses"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listSecurityGroups"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listLoadBalancerRules"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listProjects"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVPCs"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listNetworkACLs"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listStaticRoutes"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "AWS API Changes for Tags"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Some changes have been made to the Amazon Web Services API compatibility support in order to accommodate the new tagging feature."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New APIs:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New API"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ec2-create-tags"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Add tags to one or more resources."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ec2-delete-tags"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Remove tags from one or more resources."
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-describe-tags"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Show currently defined tags."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Changed APIs:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Changed API"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-describe-images"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Output now shows tags defined for each image."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ec2-describe-instances"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following filters can now be passed in to limit the output result set: tag-key, tag-value and tag:key"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ec2-describe-snapshots"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "ec2-describe-volumes"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Secure Console Access on XenServer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "With the addition of Secure Console feature, users can now securely access the VM consoles on the XenServer hypervisor. You can either SSH or use the View Console option in the Management Server to securely connect to the VMs on the XenServer host. The Management Server uses the xapi API to stream the VM consoles. However, there is no change in the way you can access the console of a VM. This feature is supported on XenServer 5.6 and 6.0 versions."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Stopped VM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This release supports creating VMs without starting them on the backend. You can determine whether the VM needs to be started as part of the VM deployment. A VM can be deployed in two ways: create and start a VM (the default method); create a VM and leave it in the stopped state."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A new request parameter, startVM, is introduced in the deployVm API to support the stopped VM feature. The possible values are:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "true - The VM starts as a part of the VM deployment"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "false - The VM is left in stopped state at the end of the VM deployment"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Uploading an Existing Volume to a Virtual Machine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Existing data can now be made accessible to a virtual machine. This is called uploading a volume to the VM. For example, this is useful to upload data from a local file system and attach it to a VM. Root administrators, domain administrators, and end users can all upload existing volumes to VMs. The upload is performed by using HTTP. The uploaded volume is placed in the zone's secondary storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This functionality is supported for the following hypervisors:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hypervisor : Disk Image Format"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer : VHD"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VMware : OVA"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "KVM : QCOW2"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Dedicated High-Availability Hosts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "One or more hosts can now be designated for use only by high-availability (HA) enabled VMs that are restarted due to a host failure. Setting up a pool of such dedicated HA hosts as the recovery destination for all HA-enabled VMs make it easier to determine which VMs are restarted as part of the high-availability function. You can designate a host as a dedicated-HA restart node only if the Dedicated HA Hosts feature is enabled by setting the appropriate global configuration parameter."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Support for Amazon Web Services API"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This release supports Amazon Web Services APIs, including Elastic Compute Cloud (EC2) API. Fidelity with the EC2 API and the installation experience for this functionality are both enhanced. In prior releases, users were required to install a separate component called CloudBridge, in addition to installing the Management Server. For new installations of CloudStack 4.0.0-incubating, this software is installed automatically along with CloudStack and runs in a more closely integrated fashion. The feature is disabled by default, but can be easily enabled by setting the appropriate global configuration parameter and performing a few setup steps."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "The Nicira NVP Plugin"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Nicira NVP plug-in allows CloudStack to use the Nicira solution for virtualized network as a provider for CloudStack networks and services. In CloudStack 4.0.0-incubating this plug-in supports the Connectivity service. This service is responsible for creating Layer 2 networks supporting the networks created by guests. When a tenant creates a new network, instead of a traditional VLAN, a logical network will be created by sending the appropriate calls to the Nicira NVP Controller. The plug-in has been tested with Nicira NVP versions 2.1.0, 2.2.0 and 2.2.1."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Support for CAStor Cluster"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack 4.0.0-incubating supports using a CAStor cluster as the back-end storage system for a CloudStack S3 front-end. The CAStor back-end storage for CloudStack extends the existing storage classes and allows the storage configuration attribute to point to a CAStor cluster. This feature makes use of the CloudStack server's local disk to spool files before writing them to CAStor when handling the PUT operations. However, a file must be successfully written into the CAStor cluster prior to the return of a success code to the S3 client to ensure that the transaction outcome is correctly reported."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The S3 multipart file upload is not supported in this release. You are prompted with proper error message if a multipart upload is attempted."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Clustered Logical Volume Manager Support for KVM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This release adds Clustered Logical Volume Manager (CLVM) storage support for KVM hosts. With this support, you can use CLVM as primary storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The CLVM support for KVM allows root and data disks (primary storage) to reside on Linux logical volumes. The administrators are required to configure CLVM on the KVM hosts independent of CloudStack. When the volume groups are available, an administrator can simply add primary storage of type CLVM, providing the volume group name. Then CloudStack creates and manages logical volumes as needed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CLVM also supports Snapshots. CloudStack creates an LVM snapshot, copy the applicable logical volume to the secondary storage in the qcow2 format, and then delete the LVM snapshot."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Rados Block Device Support for KVM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can now use Rados Block Device (RBD) to run instances on Apache CloudStack 4.0.0-incubating. This can be done by adding a RBD pool as primary storage. Before using RBD, ensure that Qemu is compiled with RBD enabled, and the libvirt version is at least 0.10 with RBD enabled on the KVM host"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create a disk offering for RBD so that you can ensure that StoragePoolAllocator chooses the RBD pool to deploy instances."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Issues Fixed in 4.0.0-incubating"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Many bugs include a defect number that reflects the bug number that was held in the bug tracker run by Citrix (bugs.cloudstack.org). The Apache CloudStack project now uses <ulink url=\"https://issues.apache.org/jira/browse/CLOUDSTACK\">Jira</ulink> to manage its bugs, so some of the bugs that are referenced here may not be available to view. However, we are still including them for completeness."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Defect"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Many"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vSphere 5.0 now has GA support. Formerly only Beta support was provided."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-16135"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Creating volumes after upgrading from snapshot taken in 2.2.14 no longer deletes the snapshot physically from the secondary storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-16122"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a site-to-site VPN setup, alerts are generated when the VPC virtual router is rebooted with multiple vpn connections."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-16022"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If host connection fails due to a database error, host now disconnects and the Managerment Server id is removed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-16011"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name of network offering is no longer truncated due to too-narrow field width in Add Guest Network dialog box."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15978"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When the virtual router and its host go down, the high availability mechanism now works for the virtual router."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15921"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The 2.2.x security group script now accounts for the VMs created in the version 2.1 timeframe."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15919"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A level parameter is added to the listVolumes command; therefore queries return the response more quickly."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15904"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Upgrade from version 2.2.14 to CloudStack-3.0.5-0.2944-rhel5 works as expected. The upgrade script, /usr/share/cloud/setup/db/schema-2214to30-cleanup.sql, works as expected."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15879"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The database upgrade from version 3.0.4 to 3.0.5 works as expected."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15807"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network label for OVM now available in UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15779"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When the thumbnail is requested, the console session will not be terminated."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15778"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Fetching a VM thumbnail now gets a thumbnail of appropriate visual dimensions."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15734"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "KVM Snapshots no longer shows incorrect disk usage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15733"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The domainId parameter for the listNetworks command now lists the resources belonging to the domain specified."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15676"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Stopping the router no longer fails with the null pointer exception."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15648"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If creating a volume from a snapshot fails, the error is reported on the UI but the volume is stuck in the creating state."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15646"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createFirewallRule API no longer causes null pointer exception."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15628"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a KVM host, the high availability mechanism no longer takes a long time to migrate VMs to another KVM host if there are multiple storage pools."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15627"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Metadata instance-id and vm-id for existing VMs stays the same after upgrade."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15621"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Solved difficulty with allocating disk volumes when running multiple VM deployment in parallel."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15603"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack now stop the VMs when destroyVM command is called."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15586"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public Vlan for an account no longer fails if multiple physical networks are present."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15582"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The dns-name filter is now supported for ec2-describe-instances in the Amazon Web Services API compatibility commands. The filter maps to the name of a user VM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15503"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "An IP address which has static NAT rules can now be released. Subsequently, restarting this network after it was shutdown can succeed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15464"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Can now delete static route whose state is set to Revoke."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15443"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Creating a firewall rule no longer fails with an internal server error."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15398"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Corrected technique for programming DNS on the user VMs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15356"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Internal DNS 2 entry now correctly shown in UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15335"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The CloudBridge S3 Engine now connects to the database by using the deciphered password in the db.properties file."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15318"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "UI now correctly prevents the user from stopping a VM that is in the Starting state."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15307"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Fixed Japanese localization of instance statuses in the Instances menu."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15278"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The deployment planner no longer takes long time to locate a suitable host to deploy VMs when large number of clusters are present."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15274"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Creating a VLAN range using Zone ID without network ID now succeeds."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15243"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now check to be sure source NAT and VPN have same provider."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15232"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that networks using external load balancer/firewall in 2.2.14 or earlier can properly upgrade."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15200"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "No exception when trying to attach the same volume while attaching the first volume is in progress."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15173"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Additional cluster can no longer be added with same VSM IP address as another cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15167"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "AWS API calls now honor the admin account's ability to view or act on the resources owned by the regular users."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15163"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The minimum limit is not honored when there is not enough capacity to deploy all the VMs and the ec2-run-instances command with the -n &gt;n1 -n2&gt; option is used to deploy multiple VMs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15157"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Can now add/enable service providers for multiple physical networks through the UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15145"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "AWS API call ec2-register has better error handling for negative cases."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15122"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Filters now supported for AWS API call ec2-describe-availability-zones."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15120"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Actions column in UI of Volume page now shows action links."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15099"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Buttons no longer overlap text on Account Deletion confirmation page in UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15095"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensures you can not create a VM with a CPU frequency greater than the host CPU frequency."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15094"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CPU cap now set properly in VMware."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15077"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NullPointerException is no longer observed while executing the command to list the public IP in a basic zone created with the default shared NetScaler EIP and ELB network offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15044"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "UI now provides option to view the list of instances which are part of the guest network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15026"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "UI in Deploy VM dialog now lists only templates or ISOs depending on which is selected in previous dialog."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14989"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In KVM, the Create Instance wizard now shows only templates from the current (KVM) zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14986, CS-14985"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Listing filters works as expected in the ec2-describe-volumes and ec2-describe-snapshots commands."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14964"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Automatically starting the Console Proxy no longer fails due to its missing volume on the primary storage"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14907"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "User is now correctly prevented from trying to download an uploaded volume which has not yet been moved to primary storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14879"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When a user VM is stopped or terminated, the static NAT associated with this VM is now disabled. This public IP address is no longer owned by this account and can be associated to any other user VM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14854"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Only the admin user can change the template permission to Public, so this option is removed from the UI for domain Admins and regular Users."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14817"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "While checking if network has any external provider, CloudStack will consider all providers in the network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14796"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When deploying a VM with ec2-run-instances, userdata is now encoded."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14770"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The API returns the keypair information when a VM is deployed with sshkey. This affects the API commands related to virtual machines (deployVirtualMachine, listVirtualMachines, ... *VirtualMachine), as well as the corresponding AWS APIs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14724"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "UI no longer displays the dropdown list of isolation method choices if sdn.ovs.controller is false."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14345"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Logout API returns XML header."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Host IPs now associated with appropriate IPs according to traffic type."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14253"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Can now delete and re-create port forwarding rule on same firewall."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14452"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Data disk volumes are now automatically copied from one cluster to another."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13539"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Windows VM can get IP after reboot."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13537"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When user tries to delete a domain that contains sub-domains, an error message is now sent to convey the reason for the delete failure."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13153"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "System VMs support HTTP proxy."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-12642"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Added Close button to Select Project list view popup in UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-12510"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Deleting and reinserting host_details no longer causes deadlocks."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-12407"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "F5 and Netscaler - when dedicated is selected, capacity field is disabled."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-12111"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Email validation for edit user form."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-10928"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network read/write values now always positive numbers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15376, CS-15373"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The AWS APIs (EC2 and S3) now listen on the 7080 port and send request to CloudStack on the 8080 port just as any other clients of CloudStack."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13944"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The CloudStack 2.2.x to 3.0.x database upgrade for multiple physical networks is now supported."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15300"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The admin accounts of a domain now honour the limits imposed on that domain just like the regular accounts do. A domain admin now is not allowed to create an unlimited number of instances, volumes, snapshots, and so on."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15396"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The CloudStack database now contain the UUD information after the 2.2.14 to 3.0.4 upgrade."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15450"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Upgrade from 2.2.14 to 3.0.4 no longer fails on a VMware host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15449"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Running cloudstack-aws-api-register no longer fails with the \"User registration failed with error: [Errno 113] No route to host\" error."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15455"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The iptable rules are configured to open the awsapi port (7080) as part of the installation."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15429"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "While creating an instance with data volume, disk offering also is considered while checking the account limit on volume resources."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15414"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After the 2.2.14 to 3.0.4 upgrade, the value of the global parameter xen.guest.network.device is now decrypted before setting the traffic label."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15382"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "During 2.2.14 to 3.0.4 upgrade, the hosts no longer go to the Alert state if destroyed networks existed with non-existent tags prior to upgrade."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15323"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack supports the following Citrix XenServer hotfixes: XS602E003, XS602E004, and XS602E005."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15430"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create snapshot now fails if creating a snapshot exceeds the snapshot resource limit for a domain admin or a user account."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14256"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Virtual Router no longer remains in starting state for subdomain or user on a KVM 3.0.1 prerlease host on RHEL 6.2."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-7495"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Implemented a variety of Xen management host improvements."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-8105"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NFS v4 for primary storage now works as expected on KVM hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-9989"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The error messages returned during VM deployment failure will have much more details than before."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-12584"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can no longer add security groups not supported by the hypervisor in use."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-12705"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When creating a Network offering by using SRX as the service provider for SourceNAT servcies, an option is given in the CloudStack UI now to set the source_nat type to \"per Zone\"/\"per account\"."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-12782"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Assigning a VM from Basic to Advanced zone no longer ignores the network ID. A warning message is displayed for VM movements across zones."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-12591"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Broadcast Address on the Second Public IP NIC is now corrected."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13272"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When a user is deleted, all the associated properties, such as IPs and virtual routers, are now deleted."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13377"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Creating template from a root disk of a stopped instance now provides an option to make it a \"Featured template\"."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13500"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Reaching the first guest VM by using its public IP from the second guest VM no longer fails."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13853"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The default gateway can no longer be 0.0.0.0 in the Secondary Storage VM (SSVM)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13863"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The queryAsyncJobResult command in XML format now returns the correct UUIDs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13867"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Corrected CSP xenserver-cloud-supp.tgz for XenServer 5.6 and 6.0."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13904"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Labels and values for the service offerings CPU and memory are now consistent."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13998"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The SSVM kernel panic issue is fixed on XenServer."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14090"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The issue is fixed where running the VMware snapshots randomly fails with the ArrayIndexOutOfBoundsException error."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14021"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The java.lang.OutOfMemoryError is fixed on the Management Server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14025"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Python Eggs are provided to easily package the test client for each branch of CloudStack."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14068"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Resetting the VM password through the CloudStack UI no longer causes any error."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14156"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The pod which has the administrator's virtual router is no longer selected while creating the virtual routers for guests."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14182"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The users can now delete their ISOs as normal users."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14185"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The listOSTypes API now filters out the types of operating system by using the keywords."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14204"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The cloud-setup-bonding.sh command no longer generates the \"command not found\" error."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14214"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Specify VLAN option cannot be enabled now for an isolated Network offering with SourceNAT enabled."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14234"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Sending project invite email to an account now requires SMTP configured in CloudStack."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14237"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The garbage collector of the primary storage no longer fails when the first host in the cluster is not up."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14241"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Custom Volume Disk Offering is now matching the Global configuration value."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14270"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The listNetworks API no longer assumes that the broadcast type is always VLAN."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14319"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The internal name of the VM is no longer present in the error message that is displayed to a domain administrator."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14321"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The listVolumes API call now returns a valid value for the isExtractable parameter for the ISO-derived disk and data disk volumes."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14323"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Invalid API calls will now give valid response in json/xml format."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14339"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Custom Disk Size will now allow values larger than 100GB."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14357"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The ConsoleProxyLoadReportCommand is no longer fired continuously."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14421"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Fixed the issue of virtual router deployments. The DHCP entries can now be assigned to the router."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14555"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Unzipped downloaded template MD5SUM will no longer override the zipped template MD5SUM in the database."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14598"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The complete screen of the running VM is now displayed in the console proxy."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14600"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Windows or Linux based consoles are no longer lost upon rebooting VMs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14784"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Multiple subnets with the same VLAN now work as expected."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13303, 14874, 13897, 13944, 14088, 14190"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A variety of upgrade issues have been fixed in release 3.0.3."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15080"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Setting a private network on a VLAN for VMWare environment is now supported."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15168"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The console proxy now works as expected and no exception is shown in the log after upgrading from version 2.2.14 to 3.0.2."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15172"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Version 3.0.2 now accepts the valid public key."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Known Issues in 4.0.0-incubating"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Issue ID"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CLOUDSTACK-301"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Nexus 1000v DVS integration is not functional"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This source code release includes some partial functionality to support the Cisco Nexus 1000v Distributed Virtual Switch within a VMware hypervisor environment. The functionality is not complete at this time."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CLOUDSTACK-368"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "OVM - cannot create guest VM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This source code release has regressed from the CloudStack 2.2.x code and is unable to support Oracle VM (OVM)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CLOUDSTACK-279"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Deleting a project fails when executed by the regular user. This works as expected for root/domain admin. To workaround, perform either of the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Use the account cleanup thread which will eventually complete the project deletion."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Execute the call as the root/domain admin on behalf of the regular user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-16067"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The command=listTags&amp;key=city command does not work as expected. The command does not return tags for the resources of the account with the tag, city"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-16063"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The current values of volumes and snapshots are incorrect when using KVM as a host. To fix this, the database upgrade codes, volumes.size and snapshots.size, should be changed to show the virtual sizes."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-16058"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Null pointer Exception while deleting the host after moving the host to maintenance state."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-16045"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Only the root administrator can handle the API keys. The domain administrators are not allowed to create, delete, or retrieve API keys for the users in their domain."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-16019"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CIDR list in the Add VPN Customer Gateway dialog does not prompt the user that they can provide a comma separated CIDRs if multiple CIDRs have to be supplied."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-16015"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Deleting a network is not supported when its network providers are disabled."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-16012"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Unable to delete a zone in the UI because the necessary cleanup cannot be completed. When the hosts are removed, the expunge process fails to delete the volumes as no hosts are present to send the commands to. Therefore, the storage pool removal fails, and zone can't be cleaned and deleted."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name of network offering might be truncated due to too-narrow field width in Add Guest Network dialog box."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15789"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Invalid global setting prevents management server to restart. For example, if you configure the \"project.invite.timeout\" parameter to \"300\" and attempt to restart management server, it fails without throwing a warning or setting the value to the default."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15749"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restarting VPC is resulting in intermittent connection loss to the port forwarding and StaticNAT rules."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15690"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The IpAssoc command failed as a part of starting the virtual router, but the final start result is reported as succes."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15672, CS-15635"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The FQDN of the VM is not configured if it is deployed as a part of default shared network and isolated guest network (DefaultIsolatedNetworkOfferingWithSourceNatService)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15634"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The FQDN of a VM that is deployed as a part of both a shared network and default isolated guest network has the suffix of the shared network instead of the default isolated guest network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15576"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Stopping a VM on XenServer creates a backlog of API commands. For example, the Attach volume calls become delayed while waiting for the stopVirtualMachine command to be executed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15569"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Misleading error message in the exception when creating a StaticNAT rule fails in a VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15566"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "External device such as Netscaler is not supported in VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15557"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Intermittent traffic loss in the VPN connection if Juniper is the remote router and the life time is 300 seconds."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15361"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Egress rules are not working in NetScaler loadbalancer."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15105"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The cloud-sysvmadm script does not work if the integration.api.port parameter is set to any port other than 8096."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15092"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Connecting to the guest VMs through SSH is extremely slow, and it results in connection timeout."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15037"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hairpin NAT is not supported when NetScaler is used for EIP."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15009"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The port_profile table will not be populated with port profile information. In this release, CloudStack directly connects to the VSM for all the port profile operations; therefore, no port profile information is cached."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14939"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Adding a VMware cluster is not supported when the Management Network is migrated to the Distributed Virtual Switch environment."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14780"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You are allowed to ping the elastic IP address of the VM even though no ingress rule is set that allows the ICMP protocol."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14756"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Installing KVM on RHEL 6.2 will result in unreliable network performance. Workaround: blacklist vhost-net. Edit /etc/modprobe.d/blacklist-kvm.conf and include vhost-net."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14346"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The UpdateVirtualMachine API call does not check whether the VM is stopped. Therefore, stop the VM manually before issuing this call."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14303 (was 14537)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The IP addresses for a shared network are still being consumed even if no services are defined for that network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14296 (was 14530)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "OVM: Network traffic labels are not supported."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14291 (was 14523)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The EIP/ELB network offering for basic zones does not support multiple NetScalers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14275 (was 14506)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "F5: Unable to properly remove a F5 device."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14201 (was 14430)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VMWare: Template sizes are being reported different depending on whether the primary storage is using ISCSI or NFS."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13758 (was 13963)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vSphere: template download from templates created off of the root volume does not work properly."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13733 (was 13935)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vSphere: detaching an ISO from a restored VM instance fails."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13682 (was 13883)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Multiple NetScalers are not supported in Basic Networking."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13599 (was 13359)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Programming F5/NetScaler rules can be better optimized."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13337 (was 13518)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Security Groups are not supported in Advanced Networking"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-13173 (was 13336)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vSphere: cross cluster volume migration does not work properly."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-12714 (was 12840)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Capacity view is not available for pods or clusters."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-12624 (was 12741)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vSphere: maintenance mode will not live migrate system VM to another host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15476"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The 2.2.14 to 4.0.0-incubating upgrade fails if multiple untagged physical networks exist before the upgrade."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15407"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After the 2.2.14 to 4.0.0-incubating upgrade, VLAN allocation on multiple physical networks does not happen as expected."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To workaround this issue, follow the instructions given below:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Revert to your 2.2.14 setup."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Stop all the VMs with the isolated virtual networks in your cloud setup."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run following query to find if any networks still have the NICs allocated:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Check if any virtual guest networks have the NICs allocated:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "#SELECT DISTINCT op.id from `cloud`.`op_networks` op JOIN `cloud`.`networks` n on op.id=n.id WHERE nics_count != 0 AND guest_type = 'Virtual'; "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If this returns any network IDs, then ensure the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All the VMs are stopped."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "No new VM is started."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Shutdown the Management Server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Remove the NICs count for the virtual network IDs returned in step (a), and set the NIC count to 0:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "UPDATE `cloud`.`op_networks` SET nics_count = 0 WHERE id = <replaceable>enter id of virtual network</replaceable>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server, and wait for all the networks to shut down."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Networks shutdown is determined by the network.gc.interval and network.gc.wait parameters."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that all the networks are shut down and all the guest VNETs are free."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the upgrade script."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This allocates all your guest VNET ranges to the first physical network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "By using the updatePhysicalNetwork API, reconfigure the VNET ranges for each physical network as desired."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Start all the VMs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-14680"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack and LDAP user validation cannot happen simultaneously because the user password is hashed and stored in the database, and LDAP requires the passwords in plain text."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To work with the LDAP user, the MD5 hash should be disabled in the login process by commenting the following variable in sharedFunctions.js file available at /usr/share/cloud/management/webapps/client/scripts, and restart the cloud-management service."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "var md5HashedLogin = false;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "However, if md5HashedLogin is set to false, the end user can login with the LDAP credentials but not with the CloudStack user credentials."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CS-15130"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Data disk volumes are not automatically copied from one cluster to another."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "API Changes from 3.0.2 to 4.0.0-incubating"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "New API Commands in 4.0.0-incubating"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createCounter (Adds metric counter)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteCounter (Deletes a counter)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listCounters (List the counters)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createCondition (Creates a condition)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteCondition (Removes a condition)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listConditions (List Conditions for the specific user)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createTags. Add tags to one or more resources. Example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "command=createTags\n"
+"&amp;resourceIds=1,10,12\n"
+"&amp;resourceType=userVm\n"
+"&amp;tags[0].key=region\n"
+"&amp;tags[0].value=canada\n"
+"&amp;tags[1].key=city\n"
+"&amp;tags[1].value=Toronto"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteTags. Remove tags from one or more resources. Example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "command=deleteTags\n"
+"&amp;resourceIds=1,12\n"
+"&amp;resourceType=Snapshot\n"
+"&amp;tags[0].key=city"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listTags (Show currently defined resource tags)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createVPC (Creates a VPC)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVPCs (Lists VPCs)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVPC (Deletes a VPC)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateVPC (Updates a VPC)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "restartVPC (Restarts a VPC)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createVPCOffering (Creates VPC offering)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateVPCOffering (Updates VPC offering)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVPCOffering (Deletes VPC offering)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVPCOfferings (Lists VPC offerings)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createPrivateGateway (Creates a private gateway)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listPrivateGateways (List private gateways)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deletePrivateGateway (Deletes a Private gateway)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createNetworkACL (Creates a ACL rule the given network (the network has to belong to VPC))"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteNetworkACL (Deletes a Network ACL)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listNetworkACLs (Lists all network ACLs)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createStaticRoute (Creates a static route)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteStaticRoute (Deletes a static route)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listStaticRoutes (Lists all static routes)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createVpnCustomerGateway (Creates site to site vpn customer gateway)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createVpnGateway (Creates site to site vpn local gateway)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createVpnConnection (Create site to site vpn connection)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVpnCustomerGateway (Delete site to site vpn customer gateway)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVpnGateway (Delete site to site vpn gateway)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteVpnConnection (Delete site to site vpn connection)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateVpnCustomerGateway (Update site to site vpn customer gateway)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "resetVpnConnection (Reset site to site vpn connection)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVpnCustomerGateways (Lists site to site vpn customer gateways)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVpnGateways (Lists site 2 site vpn gateways)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVpnConnections (Lists site to site vpn connection gateways)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "markDefaultZoneForAccount (Marks a default zone for the current account)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "uploadVolume (Uploads a data disk)"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Changed API Commands in 4.0.0-incubating"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "API Commands"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "copyTemplate"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "prepareTemplate"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "registerTemplate"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateTemplate"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createProject"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "activateProject"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "suspendProject"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateProject"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listProjectAccounts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createVolume"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "migrateVolume"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "attachVolume"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "detachVolume"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "uploadVolume"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createSecurityGroup"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "registerIso"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "copyIso"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateIso"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createIpForwardingRule"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listIpForwardingRules"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createLoadBalancerRule"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateLoadBalancerRule"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createSnapshot"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The commands in this list have a single new response parameter, and no other changes."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameter: tags(*)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Many other commands also have the new tags(*) parameter in addition to other changes; those commands are listed separately."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "rebootVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "attachIso"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "detachIso"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listLoadBalancerRuleInstances"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "resetPasswordForVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "changeServiceForVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "recoverVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "startVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "migrateVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deployVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "assignVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "restoreVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "stopVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "destroyVirtualMachine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The commands in this list have two new response parameters, and no other changes."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: keypair, tags(*)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The commands in this list have the following new parameters, and no other changes."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameter: tags (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listF5LoadBalancerNetworks"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listNetscalerLoadBalancerNetworks"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listSrxFirewallNetworks"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateNetwork"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The commands in this list have three new response parameters, and no other changes."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: canusefordeploy, vpcid, tags(*)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createZone"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateZone"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameter: localstorageenabled (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameter: localstorageenabled"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listZones"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "rebootRouter"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "changeServiceForRouter"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "startRouter"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "destroyRouter"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "stopRouter"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: vpcid, nic(*)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateAccount"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "disableAccount"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listAccounts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "markDefaultZoneForAccount"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "enableAccount"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: vpcavailable, vpclimit, vpctotal"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listRouters"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameters: forvpc (optional), vpcid (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listNetworkOfferings"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameters: forvpc (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: forvpc"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameters: details (optional), tags (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: tags(*)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addTrafficMonitor"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameters: excludezones (optional), includezones (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createNetwork"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameters: vpcid (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameters: tags (optional), vpcid (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: vpcid, tags(*)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameters: canusefordeploy (optional), forvpc (optional), tags (optional), vpcid (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "restartNetwork"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "enableStaticNat"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameter: networkid (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createDiskOffering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameter: storagetype (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameter: storagetype"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listDiskOfferings"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateDiskOffering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createFirewallRule"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Changed request parameters: ipaddressid (old version - optional, new version - required)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New request parameters: isoid (optional), tags (optional), templateid (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateStorageNetworkIpRange"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "New response parameters: id, endip, gateway, netmask, networkid, podid, startip, vlan, zoneid"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "reconnectHost"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A new response parameter is added: hahost."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addCluster"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following request parameters are added:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vsmipaddress (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vsmpassword (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vsmusername (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following parameter is made mandatory: podid"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A new response parameter is added: status"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "prepareHostForMaintenance"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addSecondaryStorage"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A new response parameter is added: defaultzoneid"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "cancelHostMaintenance"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A new response parameter is added: hahost"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addSwift"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listSwifts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listExternalLoadBalancers"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listCapabilities"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A new response parameter is added: customdiskofferingmaxsize"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A new request parameter is added: startvm (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteStoragePool"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A new request parameter is added: forced (optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addHost"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateHost"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listHosts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A new request parameter is added: hahost (optional)"
+msgstr ""
+

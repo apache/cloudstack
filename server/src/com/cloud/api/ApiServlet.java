@@ -50,7 +50,7 @@ public class ApiServlet extends HttpServlet {
     public static final Logger s_logger = Logger.getLogger(ApiServlet.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
-    @Inject ApiServer _apiServer;
+    @Inject ApiServerService _apiServer;
     @Inject AccountService _accountMgr;
 
     public ApiServlet() {
@@ -299,7 +299,7 @@ public class ApiServlet extends HttpServlet {
                 auditTrailSb.insert(0, "(userId=" + UserContext.current().getCallerUserId() + " accountId="
                         + UserContext.current().getCaller().getId() + " sessionId=" + (session != null ? session.getId() : null) + ")");
 
-                    String response = _apiServer.handleRequest(params, false, responseType, auditTrailSb);
+                    String response = _apiServer.handleRequest(params, responseType, auditTrailSb);
                     writeResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType);
             } else {
                 if (session != null) {

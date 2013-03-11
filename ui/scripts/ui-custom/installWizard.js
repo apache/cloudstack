@@ -413,8 +413,8 @@
         nextStepID: 'addPodIntro',
         form: {
           name: { label: 'label.name', validation: { required: true } },
-          dns1: { label: 'label.dns.1', validation: { required: true } },
-          dns2: { label: 'label.dns.2' },
+          ip4dns1: { label: 'label.dns.1', validation: { required: true } },
+          ip4dns2: { label: 'label.dns.2' },
           internaldns1: { label: 'label.internal.dns.1', validation: { required: true } },
           internaldns2: { label: 'label.internal.dns.2' }
         }

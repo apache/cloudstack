@@ -58,7 +58,6 @@ import com.cloud.exception.PermissionDeniedException;
 
 /**
  * Service used for list api query.
- * @author minc
  *
  */
 public interface QueryService {

@@ -29,6 +29,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.RequestLimitException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -43,11 +45,18 @@ public class ApiRateLimitTest {
 
 	static ApiRateLimitServiceImpl _limitService = new ApiRateLimitServiceImpl();
 	static AccountService _accountService = mock(AccountService.class);
+	static ConfigurationDao _configDao = mock(ConfigurationDao.class);
 	private static long acctIdSeq = 5L;
 	private static Account testAccount;
 
 	@BeforeClass
 	public static void setUp() throws ConfigurationException {
+
+	    when(_configDao.getValue(Config.ApiLimitInterval.key())).thenReturn(null);
+	    when(_configDao.getValue(Config.ApiLimitMax.key())).thenReturn(null);
+	    when(_configDao.getValue(Config.ApiLimitCacheSize.key())).thenReturn(null);
+	    when(_configDao.getValue(Config.ApiLimitEnabled.key())).thenReturn("true"); // enable api rate limiting
+	    _limitService._configDao = _configDao;
 
 		_limitService.configure("ApiRateLimitTest", Collections.<String, Object> emptyMap());
 
@@ -97,6 +106,8 @@ public class ApiRateLimitTest {
         assertFalse("Second request should be blocked, since we assume that the two api "
                 + " accesses take less than a second to perform", isUnderLimit(key));
     }
+
+
 
     @Test
     public void canDoReasonableNumberOfApiAccessPerSecond() throws Exception {
@@ -223,5 +234,27 @@ public class ApiRateLimitTest {
         assertTrue("expiredAfter is incorrect", response.getExpireAfter() <= 1000);
 
     }
+
+    @Test
+    public void disableApiLimit() throws Exception {
+        try {
+            int allowedRequests = 200;
+            _limitService.setMaxAllowed(allowedRequests);
+            _limitService.setTimeToLive(1);
+            _limitService.setEnabled(false);
+
+            User key = createFakeUser();
+
+            for (int i = 0; i < allowedRequests + 1; i++) {
+                assertTrue("We should allow more than " + allowedRequests + " requests per second when api throttling is disabled.",
+                        isUnderLimit(key));
+            }
+        } finally {
+            _limitService.setEnabled(true); // enable api throttling to avoid
+                                            // impacting other testcases
+        }
+
+    }
+
 
 }

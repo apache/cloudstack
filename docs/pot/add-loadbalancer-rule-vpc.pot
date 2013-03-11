@@ -1,0 +1,180 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding Load Balancing Rules on a VPC"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A &PRODUCT; user or administrator may create load balancing rules that balance traffic received at a public IP to one or more VMs that belong to a network tier that provides load balancing service in a VPC. A user creates a rule, specifies an algorithm, and assigns the rule to a set of VMs within a VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All the VPCs that you have created for the account is listed in the page."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Configure button of the VPC to which you want to configure load balancing rules."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The VPC page is displayed where all the tiers you created are listed in a diagram."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Settings icon."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following options are displayed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "IP Addresses"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Gateways"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Site-to-Site VPN"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network ACLs"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select IP Addresses."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The IP Addresses page is displayed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the IP address for which you want to create the rule, then click the Configuration tab."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Load Balancing node of the diagram, click View All."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select the tier to which you want to apply the rule."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a VPC, the load balancing service is supported only on a single tier."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Specify the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name</emphasis>: A name for the load balancer rule."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Public Port</emphasis>: The port that receives the incoming traffic to be balanced."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Private Port</emphasis>: The port that the VMs will use to receive the traffic."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Algorithm</emphasis>. Choose the load balancing algorithm you want &PRODUCT; to use. &PRODUCT; supports the following well-known algorithms:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Round-robin"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Least connections"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Source"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Stickiness</emphasis>. (Optional) Click Configure and choose the algorithm for the stickiness policy. See Sticky Session Policies for Load Balancer Rules."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Add VMs</emphasis>: Click Add VMs, then select two or more VMs that will divide the load of incoming traffic, and click Apply."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The new load balancing rule appears in the list. You can repeat these steps to add more load balancing rules for this IP address."
+msgstr ""
+

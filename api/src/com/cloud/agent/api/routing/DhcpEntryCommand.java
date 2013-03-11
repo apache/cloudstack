@@ -31,6 +31,7 @@ public class DhcpEntryCommand extends NetworkElementCommand {
     String vmIp6Address;
     String ip6Gateway;
     String duid;
+    private boolean isDefault;
 
     protected DhcpEntryCommand() {
 
@@ -46,6 +47,7 @@ public class DhcpEntryCommand extends NetworkElementCommand {
         this.vmIpAddress = vmIpAddress;
         this.vmName = vmName;
         this.vmIp6Address = vmIp6Address;
+        this.setDefault(true);
     }
 
     public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName, String vmIp6Address, String dns, String gateway, String ip6Gateway) {
@@ -128,5 +130,13 @@ public class DhcpEntryCommand extends NetworkElementCommand {
 
 	public void setVmIp6Address(String ip6Address) {
 		this.vmIp6Address = ip6Address;
+	}
+
+	public boolean isDefault() {
+		return isDefault;
+	}
+
+	public void setDefault(boolean isDefault) {
+		this.isDefault = isDefault;
 	}
 }

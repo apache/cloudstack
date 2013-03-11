@@ -25,7 +25,6 @@ try:
     from pygments.token import *
 
     import sys
-    import types
 except ImportError, e:
     print e
 
@@ -70,10 +69,10 @@ class MonkeyLexer(RegexLexer):
             (r'(?:\b\d+\b(?:-\b\d+|%)?)', Number),
             (r'^[-=]*\n', Operator.Word),
             (r'Error', Error),
-            (makelistre(keywords), Keyword),
             (makelistre(attributes), Literal),
             (makelistre(params) + r'( = )(.*)', bygroups(Name, Operator,
                                                          String)),
+            (makelistre(keywords), Keyword),
             (makelistre(params), Name),
             (r'(^[a-zA-Z]* )(=)', bygroups(Name, Operator)),
             (r'\S+', Text),
@@ -113,21 +112,9 @@ class MonkeyFormatter(Formatter):
                 outfile.write(value)
 
 
-def monkeyprint(color=True, *args):
+def monkeyprint(text):
     fmter = MonkeyFormatter()
     lexer = MonkeyLexer()
     lexer.encoding = 'utf-8'
     fmter.encoding = 'utf-8'
-    output = ""
-    try:
-        for arg in args:
-            if isinstance(type(arg), types.NoneType):
-                continue
-            output += str(arg)
-    except Exception, e:
-        print e
-
-    if color:
-        highlight(output, lexer, fmter, sys.stdout)
-    else:
-        print output
+    highlight(text, lexer, fmter, sys.stdout)
