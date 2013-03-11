@@ -323,7 +323,10 @@ fi
 
 # change cloud user's home to 4.1+ version if needed. Would do this via 'usermod', but it
 # requires that cloud user not be in use, so RPM could not be installed while management is running
-getent passwd cloud | grep -q /var/lib/cloud && sed -i 's/\/var\/lib\/cloud\/management/\/var\/cloudstack\/management/g' /etc/passwd
+if getent passwd cloud | grep -q /var/lib/cloud; then 
+    sed -i 's/\/var\/lib\/cloud\/management/\/var\/cloudstack\/management/g' /etc/passwd
+fi
+
 
 %post awsapi
 if [ -d "%{_datadir}/%{name}-management" ] ; then

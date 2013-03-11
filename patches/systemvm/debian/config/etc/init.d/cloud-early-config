@@ -425,7 +425,6 @@ setup_dnsmasq() {
         sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
         #answer all local domain queries
         sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
-
   fi
   
   if [ -n  "$DNS_SEARCH_ORDER" ]
@@ -447,6 +446,9 @@ setup_dnsmasq() {
   if [ $DHCP_RANGE_IP6 ]
   then
     sed -i -e "s/^dhcp-range_ip6=.*$/dhcp-range=$DHCP_RANGE_IP6,static/" /etc/dnsmasq.conf
+    # For nondefault6 tagged host, don't send dns-server information
+    sed -i /nondefault6/d /etc/dnsmasq.conf
+    echo "dhcp-option=nondefault6,option6:dns-server" >> /etc/dnsmasq.conf
   else
     sed -i -e "s/^dhcp-range_ip6=.*$//" /etc/dnsmasq.conf
   fi

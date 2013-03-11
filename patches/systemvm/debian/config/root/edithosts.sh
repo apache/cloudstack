@@ -27,7 +27,7 @@
 # $6 : comma separated static routes
 
 usage() {
-  printf "Usage: %s: -m <MAC address> -4 <IPv4 address> -6 <IPv6 address> -h <hostname> -d <default router> -n <name server address> -s <Routes> -u <DUID>\n" $(basename $0) >&2
+  printf "Usage: %s: -m <MAC address> -4 <IPv4 address> -6 <IPv6 address> -h <hostname> -d <default router> -n <name server address> -s <Routes> -u <DUID> [-N]\n" $(basename $0) >&2
 }
 
 mac=
@@ -38,8 +38,9 @@ dflt=
 dns=
 routes=
 duid=
+nondefault=
 
-while getopts 'm:4:h:d:n:s:6:u:' OPTION
+while getopts 'm:4:h:d:n:s:6:u:N' OPTION
 do
   case $OPTION in
   m)    mac="$OPTARG"
@@ -57,6 +58,8 @@ do
   n)    dns="$OPTARG"
         ;;
   s)    routes="$OPTARG"
+        ;;
+  N)    nondefault=1
         ;;
   ?)    usage
         exit 2
@@ -120,7 +123,12 @@ then
 fi
 if [ $ipv6 ]
 then
-  echo "id:$duid,[$ipv6],$host,infinite" >>$DHCP_HOSTS
+  if [ $nondefault ]
+  then
+    echo "id:$duid,set:nondefault6,[$ipv6],$host,infinite" >>$DHCP_HOSTS
+  else
+    echo "id:$duid,[$ipv6],$host,infinite" >>$DHCP_HOSTS
+  fi
 fi
 
 #delete leases to supplied mac and ip addresses
@@ -176,8 +184,8 @@ then
   if [ "$dflt" == "0.0.0.0" ]
   then
     logger -t cloud "$0: unset default router for $ipv4"
+    logger -t cloud "$0: unset dns server for $ipv4"
     echo "$tag,3" >> $DHCP_OPTS
-    logger -t cloud "$0: setting dns server for $ipv4 to $dns"
     echo "$tag,6" >> $DHCP_OPTS
     echo "$tag,15" >> $DHCP_OPTS
   fi

@@ -3116,8 +3116,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 if (guestOS.getDisplayName().startsWith(name)) {
                     needGateway = true;
                     break;
+                }
             }
-        }
         }
         if (!needGateway) {
             gatewayIp = "0.0.0.0";
@@ -3126,6 +3126,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         dhcpCommand.setIp6Gateway(nic.getIp6Gateway());
         dhcpCommand.setDefaultDns(findDefaultDnsIp(vm.getId()));
         dhcpCommand.setDuid(NetUtils.getDuidLL(nic.getMacAddress()));
+        dhcpCommand.setDefault(nic.isDefaultNic());
 
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());

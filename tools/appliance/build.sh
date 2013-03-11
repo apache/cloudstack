@@ -18,7 +18,13 @@
 
 set -x
 
-appliance="systemvmtemplate"
+if [ "$1"!="" ]
+then
+  appliance="$1"
+else
+  appliance="systemvmtemplate"
+fi
+
 build_date=`date +%Y-%m-%d`
 branch="master"
 rootdir=$PWD
@@ -46,7 +52,7 @@ hdd_path=`vboxmanage list hdds | grep $appliance | grep vdi | cut -c 14-`
 shared_folders=`vboxmanage showvminfo $appliance | grep Name | grep Host`
 while [ "$shared_folders" != "" ]
 do
-  vboxmanage sharedfolder remove systemvmtemplate --name "`echo $shared_folders | head -1 | cut -c 8- | cut -d \' -f 1`"
+  vboxmanage sharedfolder remove $appliance --name "`echo $shared_folders | head -1 | cut -c 8- | cut -d \' -f 1`"
   shared_folders=`vboxmanage showvminfo $appliance | grep Name | grep Host`
 done
 

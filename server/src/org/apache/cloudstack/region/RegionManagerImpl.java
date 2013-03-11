@@ -29,11 +29,11 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.uuididentity.dao.IdentityDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
@@ -69,7 +69,7 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
     @Inject
     private DomainManager _domainMgr;
     @Inject
-    private IdentityDao _identityDao;
+    private UserAccountDao _userAccountDao;
 
     private String _name;
     private int _id; 
@@ -251,7 +251,6 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
 
         String command = "updateAccount";
         List<NameValuePair> params = new ArrayList<NameValuePair>();
-        params.add(new NameValuePair(ApiConstants.NEW_NAME, newAccountName));
         params.add(new NameValuePair(ApiConstants.ID, account.getUuid()));
         params.add(new NameValuePair(ApiConstants.ACCOUNT, accountName));
         params.add(new NameValuePair(ApiConstants.DOMAIN_ID, domain.getUuid()));
@@ -266,14 +265,9 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
         } else {
             //First update in the Region where account is created
             Region region = _regionDao.findById(regionId);
-            RegionAccount updatedAccount = RegionsApiUtil.makeAccountAPICall(region, command, params);
-            if (updatedAccount != null) {
-                Long id = _identityDao.getIdentityId("account", updatedAccount.getUuid());
-                updatedAccount.setId(id);
-                Long domainID = _identityDao.getIdentityId("domain", updatedAccount.getDomainUuid());
-                updatedAccount.setDomainId(domainID);
+            if (RegionsApiUtil.makeAPICall(region, command, params)) {
                 s_logger.debug("Successfully updated account :"+account.getUuid()+" in source Region: "+region.getId());
-                return updatedAccount;
+                return account;
             } else {
                 throw new CloudRuntimeException("Error while updating account :"+account.getUuid()+" in source Region: "+region.getId());
             }
@@ -319,10 +313,9 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
         } else {
             //First disable account in the Region where account is created
             Region region = _regionDao.findById(regionId);
-            Account retAccount = RegionsApiUtil.makeAccountAPICall(region, command, params);
-            if (retAccount != null) {
+            if (RegionsApiUtil.makeAPICall(region, command, params)) {
                 s_logger.debug("Successfully disabled account :"+accountUUID+" in source Region: "+region.getId());
-                return retAccount;
+                return account;
             } else {
                 throw new CloudRuntimeException("Error while disabling account :"+accountUUID+" in source Region: "+region.getId());
             }
@@ -363,10 +356,9 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
         } else {
             //First disable account in the Region where account is created
             Region region = _regionDao.findById(regionId);
-            Account retAccount = RegionsApiUtil.makeAccountAPICall(region, command, params);
-            if (retAccount != null) {
+            if (RegionsApiUtil.makeAPICall(region, command, params)) {
                 s_logger.debug("Successfully enabled account :"+accountUUID+" in source Region: "+region.getId());
-                return retAccount;
+                return account;
             } else {
                 throw new CloudRuntimeException("Error while enabling account :"+accountUUID+" in source Region: "+region.getId());
             }
@@ -433,12 +425,9 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
         } else {
             //First update in the Region where domain was created
             Region region = _regionDao.findById(regionId);
-            RegionDomain updatedDomain = RegionsApiUtil.makeDomainAPICall(region, command, params);
-            if (updatedDomain != null) {
-                Long parentId = _identityDao.getIdentityId("domain", updatedDomain.getParentUuid());
-                updatedDomain.setParent(parentId);
+            if (RegionsApiUtil.makeAPICall(region, command, params)) {
                 s_logger.debug("Successfully updated user :"+domainUUID+" in source Region: "+region.getId());
-                return (DomainVO)updatedDomain;
+                return domain;
             } else {
                 throw new CloudRuntimeException("Error while updating user :"+domainUUID+" in source Region: "+region.getId());
             }
@@ -510,10 +499,9 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
         } else {
             //First update in the Region where user was created
             Region region = _regionDao.findById(regionId);
-            UserAccount updateUser = RegionsApiUtil.makeUserAccountAPICall(region, command, params);
-            if (updateUser != null) {
+            if (RegionsApiUtil.makeAPICall(region, command, params)) {
                 s_logger.debug("Successfully updated user :"+userUUID+" in source Region: "+region.getId());
-                return updateUser;
+                return _userAccountDao.findById(id);
             } else {
                 throw new CloudRuntimeException("Error while updating user :"+userUUID+" in source Region: "+region.getId());
             }
@@ -541,10 +529,9 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
         } else {
             //First disable in the Region where user was created
             Region region = _regionDao.findById(regionId);
-            UserAccount disabledUser = RegionsApiUtil.makeUserAccountAPICall(region, command, params);
-            if (disabledUser != null) {
+            if (RegionsApiUtil.makeAPICall(region, command, params)) {
                 s_logger.debug("Successfully disabled user :"+user.getUuid()+" in source Region: "+region.getId());
-                return disabledUser;
+                return _userAccountDao.findById(userId);
             } else {
                 throw new CloudRuntimeException("Error while disabling user :"+user.getUuid()+" in source Region: "+region.getId());
             }
@@ -572,10 +559,9 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
         } else {
             //First enable in the Region where user was created
             Region region = _regionDao.findById(regionId);
-            UserAccount enabledUser = RegionsApiUtil.makeUserAccountAPICall(region, command, params);
-            if (enabledUser != null) {
+            if (RegionsApiUtil.makeAPICall(region, command, params)) {
                 s_logger.debug("Successfully enabled user :"+user.getUuid()+" in source Region: "+region.getId());
-                return enabledUser;
+                return _userAccountDao.findById(userId);
             } else {
                 throw new CloudRuntimeException("Error while enabling user :"+user.getUuid()+" in source Region: "+region.getId());
             }
