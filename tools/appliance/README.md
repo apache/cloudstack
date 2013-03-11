@@ -43,7 +43,7 @@ Note, gem may require gcc-4.2, make sure link exists:
 Just run build.sh, it will export archived appliances for KVM, Xen,
 VMWare and HyperV in `dist`:
 
-    sh build.sh
+    sh build.sh [systemvmtemplate|systemvmtemplate64]
 
 # Building SystemVM template appliance manually
 
@@ -51,7 +51,7 @@ List available appliances one can build:
 
     veewee vbox list
 
-Modify scripts in definitions/systemvmtemplate/ as per needs.
+Modify scripts in definitions/*appliance*/ as per needs.
 Build systemvm template appliance:
 
     veewee vbox build 'systemvmtemplate'

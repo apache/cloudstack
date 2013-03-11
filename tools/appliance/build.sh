@@ -18,7 +18,13 @@
 
 set -x
 
-appliance="systemvmtemplate"
+if [ "$1"!="" ]
+then
+  appliance="$1"
+else
+  appliance="systemvmtemplate"
+fi
+
 build_date=`date +%Y-%m-%d`
 branch="master"
 rootdir=$PWD
