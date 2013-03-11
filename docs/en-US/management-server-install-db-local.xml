@@ -143,6 +143,14 @@ binlog-format = 'ROW'</programlisting>
 -i &lt;management_server_ip&gt;</programlisting>
       <para>When this script is finished, you should see a message like “Successfully initialized
         the database.”</para>
+      <note>
+	<para>If the script is unable to connect to the MySQL database, check
+          the "localhost" loopback address in <filename>/etc/hosts</filename>. It should
+          be pointing to the IPv4 loopback address "127.0.0.1" and not the IPv6 loopback
+          address ::1. Alternatively, reconfigure MySQL to bind to the IPv6 loopback
+          interface.
+        </para>
+      </note>
     </listitem>
     <listitem>
       <para>If you are running the KVM hypervisor on the same machine with the Management Server,
