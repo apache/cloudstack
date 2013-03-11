@@ -30,6 +30,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.user.Account;
@@ -40,7 +41,7 @@ import com.cloud.vm.NicSecondaryIp;
 @APICommand(name = "removeIpFromNic", description="Assigns secondary IP to NIC.", responseObject=SuccessResponse.class)
 public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveIpFromVmNicCmd.class.getName());
-    private static final String s_name = "unassignsecondaryipaddrtonicresponse";
+    private static final String s_name = "removeipfromnicresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -129,7 +130,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws InvalidParameterValueException {
-        UserContext.current().setEventDetails("Ip Id: " + getIpAddressId());
+        UserContext.current().setEventDetails("Ip Id: " + id);
         NicSecondaryIp nicSecIp = getIpEntry();
 
         if (nicSecIp == null) {
@@ -145,12 +146,16 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
             }
         }
 
-        boolean result = _networkService.releaseSecondaryIpFromNic(getIpAddressId());
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove secondary  ip address for the nic");
+        try {
+            boolean result = _networkService.releaseSecondaryIpFromNic(id);
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
+                this.setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove secondary  ip address for the nic");
+            }
+        } catch (InvalidParameterValueException e) {
+            throw new InvalidParameterValueException("Removing guest ip from nic failed");
         }
     }
 

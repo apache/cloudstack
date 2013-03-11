@@ -171,7 +171,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
 
             s_logger.info("Associated ip address to NIC : " + secondaryIp);
             NicSecondaryIpResponse response = new NicSecondaryIpResponse();
-            response = _responseGenerator.createSecondaryIPToNicResponse(ip, getNicId(), getNetworkId());
+            response = _responseGenerator.createSecondaryIPToNicResponse(secondaryIp, getNicId(), getNetworkId());
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

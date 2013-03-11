@@ -597,7 +597,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         _accountMgr.checkAccess(caller, null, true, network);
 
         Long nicId = secIpVO.getNicId();
-        s_logger.debug("ip id and nic id " + ipAddressId + "..." + nicId);
+        s_logger.debug("ip id = " + ipAddressId + " nic id = " + nicId);
         //check is this the last secondary ip for NIC
         List<NicSecondaryIpVO> ipList = _nicSecondaryIpDao.listByNicId(nicId);
         boolean lastIp = false;
