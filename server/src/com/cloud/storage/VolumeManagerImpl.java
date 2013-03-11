@@ -813,6 +813,8 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         Long diskOfferingId = null;
         DiskOfferingVO diskOffering = null;
         Long size = null;
+        // Volume VO used for extracting the source template id
+        VolumeVO parentVolume = null;
 
         // validate input parameters before creating the volume
         if ((cmd.getSnapshotId() == null && cmd.getDiskOfferingId() == null)
@@ -891,6 +893,7 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
                         + snapshotId + " is not in " + Snapshot.State.BackedUp
                         + " state yet and can't be used for volume creation");
             }
+            parentVolume = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
 
             diskOfferingId = snapshotCheck.getDiskOfferingId();
             diskOffering = _diskOfferingDao.findById(diskOfferingId);
@@ -947,6 +950,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
         volume.setUpdated(new Date());
         volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller
                 .getDomainId());
+        if (parentVolume != null) {
+            volume.setTemplateId(parentVolume.getTemplateId());
+        }  else {
+            volume.setTemplateId(null);
+        }
 
         volume = _volsDao.persist(volume);
         if (cmd.getSnapshotId() == null) {
