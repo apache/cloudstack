@@ -18,7 +18,7 @@
 
 set -x
 
-if [ "$1"!="" ]
+if [ ! -z "$1" ]
 then
   appliance="$1"
 else
