@@ -338,8 +338,6 @@ fi
 #No default permission as the permission setup is complex
 %files management
 %defattr(-,root,root,-)
-%doc LICENSE
-%doc NOTICE
 %dir %attr(0770,root,cloud) %{_sysconfdir}/%{name}/management/Catalina
 %dir %attr(0770,root,cloud) %{_sysconfdir}/%{name}/management/Catalina/localhost
 %dir %attr(0770,root,cloud) %{_sysconfdir}/%{name}/management/Catalina/localhost/client
