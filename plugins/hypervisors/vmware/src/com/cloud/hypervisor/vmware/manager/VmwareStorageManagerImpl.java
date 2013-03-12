@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -915,7 +916,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             // wait if there are already VM snapshot task running
             ManagedObjectReference taskmgr = context.getServiceContent().getTaskManager();
-            ManagedObjectReference[] tasks =  (ManagedObjectReference[]) context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
+            List<ManagedObjectReference> tasks = (ArrayList<ManagedObjectReference>)context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
             for (ManagedObjectReference taskMor : tasks) {
                 TaskInfo info = (TaskInfo) (context.getVimClient().getDynamicProperty(taskMor, "info"));
                 if(info.getEntityName().equals(cmd.getVmName()) && info.getName().equalsIgnoreCase("CreateSnapshot_Task")){
@@ -1048,7 +1049,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             // wait if there are already VM revert task running
             ManagedObjectReference taskmgr = context.getServiceContent().getTaskManager();
-            ManagedObjectReference[] tasks =  (ManagedObjectReference[]) context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
+            List<ManagedObjectReference> tasks = (ArrayList<ManagedObjectReference>)context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
             for (ManagedObjectReference taskMor : tasks) {
                 TaskInfo info = (TaskInfo) (context.getVimClient().getDynamicProperty(taskMor, "info"));
                 if(info.getEntityName().equals(cmd.getVmName()) && info.getName().equalsIgnoreCase("RevertToSnapshot_Task")){
