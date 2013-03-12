@@ -45,53 +45,56 @@ under the License.
         <checker name="ManagementServerNode" class="com.cloud.cluster.ManagementServerNode"/>
         <checker name="PremiumDatabaseUpgradeChecker" class="com.cloud.upgrade.PremiumDatabaseUpgradeChecker"/>
     </system-integrity-checker>
-
+    
     <management-server class="com.cloud.server.ManagementServerExtImpl" library="com.cloud.configuration.PremiumComponentLibrary" extends="components.xml:management-server">
         <adapters key="com.cloud.ha.Investigator">
-    <adapter name="VmwareInvestigator" class="com.cloud.ha.VmwareInvestigator"/>
+        <adapter name="VmwareInvestigator" class="com.cloud.ha.VmwareInvestigator"/>
     </adapters>
     
     <adapters key="com.cloud.ha.FenceBuilder">
-    <adapter name="VmwareFenceBuilder" class="com.cloud.ha.VmwareFencer"/>
+        <adapter name="VmwareFenceBuilder" class="com.cloud.ha.VmwareFencer"/>
     </adapters>
     
     <adapters key="com.cloud.resource.Discoverer">
-    <adapter name="VShpereServer" class="com.cloud.hypervisor.vmware.VmwareServerDiscoverer"/>
+        <adapter name="VShpereServer" class="com.cloud.hypervisor.vmware.VmwareServerDiscoverer"/>
     </adapters>
     
+    <dao name="CiscoVnmcDao" class="com.cloud.network.dao.CiscoVnmcDaoImpl" singleton="false"/>
+    <dao name="CiscoAsa1000vDao" class="com.cloud.network.dao.CiscoAsa1000vDaoImpl" singleton="false"/>
+    <dao name="NetworkAsa1000vMapDao" class="com.cloud.network.dao.NetworkAsa1000vMapDaoImpl" singleton="false"/>
+    <pluggableservice name="CiscoVnmcElementService" key="com.cloud.network.element.CiscoVnmcElementService" class="com.cloud.network.element.CiscoVnmcElement"/>
+    <pluggableservice name="CiscoAsa1000vService" key="com.cloud.network.element.CiscoAsa1000vService" class="com.cloud.network.element.CiscoVnmcElement"/>
     <adapters key="com.cloud.network.element.NetworkElement">
-     <adapter name="JuniperSRX" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/>
-	 <adapter name="Netscaler" class="com.cloud.network.element.NetscalerElement"/>
-	 <adapter name="F5BigIP" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
-	 <adapter name="CiscoNexus1000vVSM" class="com.cloud.network.element.CiscoNexusVSMElement"/>
-	 </adapters>
-	 
-	 <adapters key="com.cloud.hypervisor.HypervisorGuru">
-	  <adapter name="VMwareGuru" class="com.cloud.hypervisor.guru.VMwareGuru"/>
-	  </adapters>
+        <adapter name="JuniperSRX" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/>
+        <adapter name="Netscaler" class="com.cloud.network.element.NetscalerElement"/>
+        <adapter name="F5BigIP" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
+        <adapter name="CiscoNexus1000vVSM" class="com.cloud.network.element.CiscoNexusVSMElement"/>
+        <adapter name="CiscoVnmc" class="com.cloud.network.element.CiscoVnmcElement"/>
+    </adapters>
+    
+    <adapters key="com.cloud.hypervisor.HypervisorGuru">
+        <adapter name="VMwareGuru" class="com.cloud.hypervisor.guru.VMwareGuru"/>
+    </adapters>
 	  
-	  <manager name="VmwareManager" key="com.cloud.hypervisor.vmware.manager.VmwareManager" class="com.cloud.hypervisor.vmware.manager.VmwareManagerImpl"/>
-	  <manager name="NetappManager" key="com.cloud.netapp.NetappManager" class="com.cloud.netapp.NetappManagerImpl"/>
-	  <pluggableservice name="NetscalerExternalLoadBalancerElementService" key="com.cloud.network.element.NetscalerLoadBalancerElementService" class="com.cloud.network.element.NetscalerElement"/>
-	  <pluggableservice name="F5ExternalLoadBalancerElementService" key="com.cloud.network.element.F5ExternalLoadBalancerElementService" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
-	   <pluggableservice name="JuniperSRXFirewallElementService" key="com.cloud.network.element.JuniperSRXFirewallElementService" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/>
-	<pluggableservice name="CiscoNexusVSMElementService" key="com.cloud.network.element.CiscoNexusVSMElementService" class="com.cloud.network.element.CiscoNexusVSMElement"/>
-	  
-	  <dao name="NetScalerPodDao" class="com.cloud.network.dao.NetScalerPodDaoImpl" singleton="false"/>
-	  <dao name="CiscoNexusVSMDeviceDao" class="com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl" singleton="false"/>
-	   <dao name="NetappPool" class="com.cloud.netapp.dao.PoolDaoImpl" singleton="false"/>
-		<dao name="NetappVolume" class="com.cloud.netapp.dao.VolumeDaoImpl" singleton="false"/>
-	  <dao name="NetappLun" class="com.cloud.netapp.dao.LunDaoImpl" singleton="false"/>
-	    <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl" singleton="false">
-             <param name="premium">true</param>
-        </dao>
+    <manager name="VmwareManager" key="com.cloud.hypervisor.vmware.manager.VmwareManager" class="com.cloud.hypervisor.vmware.manager.VmwareManagerImpl"/>
+    <manager name="NetappManager" key="com.cloud.netapp.NetappManager" class="com.cloud.netapp.NetappManagerImpl"/>
+    <pluggableservice name="NetscalerExternalLoadBalancerElementService" key="com.cloud.network.element.NetscalerLoadBalancerElementService" class="com.cloud.network.element.NetscalerElement"/>
+    <pluggableservice name="F5ExternalLoadBalancerElementService" key="com.cloud.network.element.F5ExternalLoadBalancerElementService" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
+    <pluggableservice name="JuniperSRXFirewallElementService" key="com.cloud.network.element.JuniperSRXFirewallElementService" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/>
+    <pluggableservice name="CiscoNexusVSMElementService" key="com.cloud.network.element.CiscoNexusVSMElementService" class="com.cloud.network.element.CiscoNexusVSMElement"/>
+    
+    <dao name="NetScalerPodDao" class="com.cloud.network.dao.NetScalerPodDaoImpl" singleton="false"/>
+    <dao name="CiscoNexusVSMDeviceDao" class="com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl" singleton="false"/>
+    <dao name="NetappPool" class="com.cloud.netapp.dao.PoolDaoImpl" singleton="false"/>
+    <dao name="NetappVolume" class="com.cloud.netapp.dao.VolumeDaoImpl" singleton="false"/>
+    <dao name="NetappLun" class="com.cloud.netapp.dao.LunDaoImpl" singleton="false"/>
+    <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl" singleton="false">
+        <param name="premium">true</param>
+    </dao>
     </management-server>
     <configuration-server class="com.cloud.server.ConfigurationServerImpl" extends="components.xml:configuration-server">
         <dao name="Configuration configuration server" class="com.cloud.configuration.dao.ConfigurationDaoImpl" singleton="false">
-             <param name="premium">true</param>
+            <param name="premium">true</param>
         </dao>
     </configuration-server>
-    
-
-    
 </components-nonoss.xml>

@@ -49,7 +49,6 @@
     <module>network-elements/ovs</module>
     <module>network-elements/nicira-nvp</module>
     <module>network-elements/bigswitch-vns</module>
-    <module>network-elements/cisco-vnmc</module>
     <module>storage-allocators/random</module>
     <module>user-authenticators/ldap</module>
     <module>user-authenticators/md5</module>
@@ -133,6 +132,7 @@
       </activation>
       <modules>
         <module>hypervisors/vmware</module>
+        <module>network-elements/cisco-vnmc</module>
       </modules>
     </profile>
     <profile>

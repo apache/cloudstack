@@ -546,3 +546,13 @@ revertToSnapshot=15
 
 #### Baremetal commands
 addBaremetalHost=1
+
+#### Cisco Vnmc command
+addCiscoVnmcResource=1
+deleteCiscoVnmcResource=1
+listCiscoVnmcResources=1
+
+#### Cisco Asa1000v command
+addCiscoAsa1000vResource=1
+deleteCiscoAsa1000vResource=1
+listCiscoAsa1000vResources=1
