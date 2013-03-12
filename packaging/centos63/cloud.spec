@@ -146,6 +146,8 @@ Apache CloudStack command line interface
 Summary: Apache CloudStack AWS API compatibility wrapper
 Requires: %{name}-management = %{_ver}
 %description awsapi
+Obsoletes: cloud-aws-api < 4.1.0
+Provides: cloud-aws-api
 Apache Cloudstack AWS API compatibility wrapper
 
 %package docs
