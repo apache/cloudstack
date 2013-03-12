@@ -33,7 +33,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 
-@APICommand(name = "deleteUser", description="Creates a user for an account", responseObject=UserResponse.class)
+@APICommand(name = "deleteUser", description="Deletes a user for an account", responseObject=SuccessResponse.class)
 public class DeleteUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteUserCmd.class.getName());
 
@@ -42,7 +42,7 @@ public class DeleteUserCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserResponse.class, required=true, description="Deletes a user")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserResponse.class, required=true, description="id of the user to be deleted")
     private Long id;
 
     @Inject RegionService _regionService;
