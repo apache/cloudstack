@@ -19,7 +19,6 @@ package com.cloud.utils;
 import java.io.File;
 
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.DOMConfigurator;
 
 public class LogUtils {
@@ -36,7 +35,7 @@ public class LogUtils {
 	        file = PropertiesUtil.findConfigFile(nameWithoutExtension + ".properties");
 	        if (file != null) {
 	            s_logger.info("log4j configuration found at " + file.getAbsolutePath());
-	            PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
+	            DOMConfigurator.configureAndWatch(file.getAbsolutePath());
 	        }
 	    }
    }
