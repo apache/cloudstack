@@ -150,10 +150,10 @@ Obsoletes: cloud-aws-api < 4.1.0
 Provides: cloud-aws-api
 Apache Cloudstack AWS API compatibility wrapper
 
-%package docs
-Summary: Apache CloudStack documentation
-%description docs
-Apache CloudStack documentations
+#%package docs
+#Summary: Apache CloudStack documentation
+#%description docs
+#Apache CloudStack documentations
 
 %prep
 echo Doing CloudStack build
@@ -432,9 +432,9 @@ fi
 %doc LICENSE
 %doc NOTICE
 
-%files docs
-%doc LICENSE
-%doc NOTICE
+#%files docs
+#%doc LICENSE
+#%doc NOTICE
 
 %files awsapi
 %defattr(0644,cloud,cloud,0755)
