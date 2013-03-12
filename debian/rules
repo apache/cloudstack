@@ -115,7 +115,7 @@ install:
 	install -D client/target/utilities/bin/cloud-set-guest-sshkey $(DESTDIR)/usr/bin
 	install -D client/target/utilities/bin/cloud-setup-databases $(DESTDIR)/usr/bin
 	install -D client/target/utilities/bin/cloud-setup-management $(DESTDIR)/usr/bin
-	install -D services/console-proxy/server/dist/systemvm.iso $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/systemvm.iso
+	install -D client/target/cloud-client-ui-$(VERSION)-SNAPSHOT/WEB-INF/classes/vms/systemvm.iso $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/systemvm.iso
 
 	# cloudstack-python
 	mkdir -p $(DESTDIR)/usr/lib/python2.7/dist-packages
