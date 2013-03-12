@@ -1,0 +1,75 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Accessing VMs"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Any user can access their own virtual machines. The administrator can access all VMs running in the cloud."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To access a VM through the &PRODUCT; UI:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Instances, then click the name of a running VM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the View Console button <inlinegraphic fileref=\"images/view-console-button.png\" format=\"PNG\"></inlinegraphic>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To access a VM directly over the network:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The VM must have some port open to incoming traffic. For example, in a basic zone, a new VM might be assigned to a security group which allows incoming traffic. This depends on what security group you picked when creating the VM. In other cases, you can open a port by setting up a port forwarding policy. See IP Forwarding and Firewalling."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If a port is open but you can not access the VM using ssh, it’s possible that ssh is not already enabled on the VM. This will depend on whether ssh is enabled in the template you picked when creating the VM. Access the VM through the &PRODUCT; UI and enable ssh on the machine using the commands for the VM’s operating system."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If the network has an external firewall device, you will need to create a firewall rule to allow access. See IP Forwarding and Firewalling."
+msgstr ""
+

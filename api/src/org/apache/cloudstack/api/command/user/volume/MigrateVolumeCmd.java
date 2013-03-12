@@ -16,14 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.Volume;
@@ -91,14 +92,14 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
     public void execute(){
         Volume result;
         try {
-            result = _storageService.migrateVolume(getVolumeId(), getStoragePoolId());
+            result = _volumeService.migrateVolume(this);
              if (result != null) {
                  VolumeResponse response = _responseGenerator.createVolumeResponse(result);
                  response.setResponseName(getCommandName());
                  this.setResponseObject(response);
              }
         } catch (ConcurrentOperationException e) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to migrate volume: ");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate volume: ");
         }
 
     }

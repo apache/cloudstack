@@ -22,9 +22,10 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.network.PortProfileVO.BindingType;
-import com.cloud.network.PortProfileVO.PortType;
 import com.cloud.network.dao.PortProfileDaoImpl;
+import com.cloud.network.dao.PortProfileVO;
+import com.cloud.network.dao.PortProfileVO.BindingType;
+import com.cloud.network.dao.PortProfileVO.PortType;
 
 public class PortProfileManagerImpl {
 	    

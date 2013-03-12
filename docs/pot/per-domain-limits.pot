@@ -1,0 +1,60 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Per-Domain Limits"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; allows the configuration of limits on a domain basis. With a domain limit in place, all users still have their account limits. They are additionally limited, as a group, to not exceed the resource limits set on their domain. Domain limits aggregate the usage of all accounts in the domain as well as all accounts in all subdomains of that domain. Limits set at the root domain level apply to the sum of resource usage by the accounts in all domains and sub-domains below that root domain."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To set a domain limit:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation tree, click Domains."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select the domain you want to modify. The current domain limits are displayed. A value of -1 shows that there is no limit in place."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Edit button<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> </imageobject> <textobject><phrase>editbutton.png: edits the settings.</phrase></textobject> </inlinemediaobject>"
+msgstr ""
+

@@ -1,0 +1,147 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "System Preparation for Windows Server 2008 R2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For Windows 2008 R2, you run Windows System Image Manager to create a custom sysprep response XML file. Windows System Image Manager is installed as part of the Windows Automated Installation Kit (AIK). Windows AIK can be downloaded from the Microsoft Download Center at the following location:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<ulink url=\"http://www.microsoft.com/en-us/download/details.aspx?id=9085\" />Microsoft Download Center."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Use the following steps to run sysprep for Windows 2008 R2:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The steps outlined here are derived from the excellent guide by Charity Shelbourne, originally published at <ulink url=\"http://blogs.technet.com/askcore/archive/2008/10/31/automating-the-oobe-process-during-windows-server-2008-sysprep-mini-setup.aspx\" />Windows Server 2008 Sysprep Mini-Setup"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Download and install the Windows AIK"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Windows AIK should not be installed on the Windows 2008 R2 VM you just created. Windows AIK should not be part of the template you create. It is only used to create the sysprep answer file."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Copy the install.wim file in the \\sources directory of the Windows 2008 R2 installation DVD to the hard disk. This is a very large file and may take a long time to copy. Windows AIK requires the WIM file to be writable."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Start the Windows System Image Manager, which is part of the Windows AIK."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Windows Image pane, right click “Select a Windows image or catalog file” to load the install.wim file you just copied."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select the Windows 2008 R2 Edition"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You may be prompted with a warning that the catalog file cannot be opened. Click Yes to create a new catalog file."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Answer File pane, right click to create a new answer file."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Generate the answer file from the Windows System Image Manager using the following steps:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The first page you need to automate is the Language and Country or Region Selection page. To automate this, expand Components in your Windows Image pane, right-click and add the Microsoft-Windows-International-Core setting to Pass 7 oobeSystem. In your Answer File pane, configure the InputLocale, SystemLocale, UILanguage, and UserLocale with the appropriate settings for your language and country or region. Should you have a question about any of these settings, you can right-click on the specific setting and select Help. This will open the appropriate CHM help file with more information, including examples on the setting you are attempting to configure."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You need to automate the Software License Terms Selection page, otherwise known as the End-User License Agreement (EULA). To do this, expand the Microsoft-Windows-Shell-Setup component. High-light the OOBE setting, and add the setting to the Pass 7 oobeSystem. In Settings, set HideEULAPage true."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure the license key is properly set. If you use MAK key, you can just enter the MAK key on the Windows 2008 R2 VM. You need not input the MAK into the Windows System Image Manager. If you use KMS host for activation you need not enter the Product Key. Details of Windows Volume Activation can be found at <ulink url=\"http://technet.microsoft.com/en-us/library/bb892849.aspx\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You need to automate is the Change Administrator Password page. Expand the Microsoft-Windows-Shell-Setup component (if it is not still expanded), expand UserAccounts, right-click on AdministratorPassword, and add the setting to the Pass 7 oobeSystem configuration pass of your answer file. Under Settings, specify a password next to Value."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You may read the AIK documentation and set many more options that suit your deployment. The steps above are the minimum needed to make Windows unattended setup work."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Save the answer file as unattend.xml. You can ignore the warning messages that appear in the validation window."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Copy the unattend.xml file into the c:\\windows\\system32\\sysprep directory of the Windows 2008 R2 Virtual Machine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Once you place the unattend.xml file in c:\\windows\\system32\\sysprep directory, you run the sysprep tool as follows:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "cd c:\\Windows\\System32\\sysprep\n"
+"sysprep.exe /oobe /generalize /shutdown\n"
+""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Windows 2008 R2 VM will automatically shut down after sysprep is complete."
+msgstr ""
+

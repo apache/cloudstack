@@ -1,0 +1,225 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a New Network Offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To create a network offering:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in with admin privileges to the &PRODUCT; UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Service Offerings."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Select Offering, choose Network Offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Network Offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the dialog, make the following choices:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name. Any desired name for the network offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Description. A short description of the offering that can be displayed to users"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network Rate. Allowed data transfer rate in MB per second"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Traffic Type. The type of network traffic that will be carried on the network"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Guest Type. Choose whether the guest network is isolated or shared. For a description of these terms, see <xref linkend=\"about-virtual-networks\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Specify VLAN. (Isolated guest networks only) Indicate whether a VLAN should be specified when this offering is used"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Supported Services. Select one or more of the possible network services. For some services, you must also choose the service provider; for example, if you select Load Balancer, you can choose the &PRODUCT; virtual router or any other load balancers that have been configured in the cloud. Depending on which services you choose, additional fields may appear in the rest of the dialog box."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Based on the guest network type selected, you can see the following supported services:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Supported Services"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Description"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Isolated"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Shared"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "DHCP"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Supported"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "DNS"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Load Balancer"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you select Load Balancer, you can choose the &PRODUCT; virtual router or any other load balancers that have been configured in the cloud."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Source NAT"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you select Source NAT, you can choose the &PRODUCT; virtual router or any other Source NAT providers that have been configured in the cloud."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Static NAT"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you select Static NAT, you can choose the &PRODUCT; virtual router or any other Static NAT providers that have been configured in the cloud."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Port Forwarding"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you select Port Forwarding, you can choose the &PRODUCT; virtual router or any other Port Forwarding providers that have been configured in the cloud."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Not Supported"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VPN"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "User Data"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Security Groups"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "See <xref linkend=\"add-security-group\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "System Offering. If the service provider for any of the services selected in Supported Services is a virtual router, the System Offering field appears. Choose the system service offering that you want virtual routers to use in this network. For example, if you selected Load Balancer in Supported Services and selected a virtual router to provide load balancing, the System Offering field appears so you can choose between the &PRODUCT; default system service offering and any custom system service offerings that have been defined by the &PRODUCT; root administrator. For more information, see System Service Offerings."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Redundant router capability. (v3.0.3 and greater) Available only when Virtual Router is selected as the Source NAT provider. Select this option if you want to use two virtual routers in the network for uninterrupted connection: one operating as the master virtual router and the other as the backup. The master virtual router receives requests from and sends responses to the user’s VM. The backup virtual router is activated only when the master is down. After the failover, the backup becomes the master virtual router. &PRODUCT; deploys the routers on different hosts to ensure reliability if one host is down."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Conserve mode. Indicate whether to use conserve mode. In this mode, network resources are allocated only when the first virtual machine starts in the network"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tags. Network tag to specify which physical network to use"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add."
+msgstr ""
+

@@ -19,7 +19,6 @@ package com.cloud.network.dao;
 import java.util.List;
 
 import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface RemoteAccessVpnDao extends GenericDao<RemoteAccessVpnVO, Long> {

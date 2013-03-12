@@ -18,7 +18,6 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.network.NetworkExternalFirewallVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface NetworkExternalFirewallDao extends GenericDao<NetworkExternalFirewallVO, Long> {

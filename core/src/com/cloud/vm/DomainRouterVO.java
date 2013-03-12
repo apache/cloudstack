@@ -36,45 +36,45 @@ import com.cloud.network.router.VirtualRouter;
 public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Column(name="element_id")
     private long elementId;
-    
+
     @Column(name="public_ip_address")
     private String publicIpAddress;
-    
+
     @Column(name="public_mac_address")
     private String publicMacAddress;
-    
+
     @Column(name="public_netmask")
     private String publicNetmask;
 
     @Column(name="is_redundant_router")
     boolean isRedundantRouter;
-    
+
     @Column(name="priority")
     int priority;
-    
+
     @Column(name="is_priority_bumpup")
     boolean isPriorityBumpUp;
-    
+
     @Column(name="redundant_state")
     @Enumerated(EnumType.STRING)
     private RedundantState redundantState;
-    
+
     @Column(name="stop_pending")
     boolean stopPending;
-    
+
     @Column(name="role")
     @Enumerated(EnumType.STRING)
     private Role role = Role.VIRTUAL_ROUTER;
-    
+
     @Column(name="template_version")
     private String templateVersion;
-    
+
     @Column(name="scripts_version")
     private String scriptsVersion;
-    
+
     @Column(name="vpc_id")
     private Long vpcId;
-    
+
     public DomainRouterVO(long id,
             long serviceOfferingId,
             long elementId,
@@ -99,7 +99,7 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         this.stopPending = stopPending;
         this.vpcId = vpcId;
     }
-    
+
     public DomainRouterVO(long id,
             long serviceOfferingId,
             long elementId,
@@ -143,97 +143,97 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     }
 
     @Override
-    public long getDataCenterIdToDeployIn() {
-        return dataCenterIdToDeployIn;
+    public long getDataCenterId() {
+        return dataCenterId;
     }
-    
+
     public String getPublicNetmask() {
         return publicNetmask;
     }
-    
+
     public String getPublicMacAddress() {
         return publicMacAddress;
     }
-    
+
     protected DomainRouterVO() {
         super();
     }
-    
+
     @Override
     public String getPublicIpAddress() {
         return publicIpAddress;
     }
-    
-	@Override
-	public Role getRole() {
-		return role;
-	}
-
-	public void setRole(Role role) {
-		this.role = role;
-	}
-    
-	@Override
-	public boolean getIsRedundantRouter() {
-	    return this.isRedundantRouter;
- 	}
-
-	public void setIsRedundantRouter(boolean isRedundantRouter) {
-	    this.isRedundantRouter = isRedundantRouter;
-	}
-
-	@Override
-	public long getServiceOfferingId() {
-	    return serviceOfferingId;
-	}
-
-	public int getPriority() {
-	    return this.priority;
-	}
-	
-	public void setPriority(int priority) {
-	    this.priority = priority;
-	}
-
-	@Override
-	public RedundantState getRedundantState() {
-	    return this.redundantState;
-	}
-	
-	public void setRedundantState(RedundantState redundantState) {
-	    this.redundantState = redundantState;
-	}
-    
-	public boolean getIsPriorityBumpUp() {
-	    return this.isPriorityBumpUp;
- 	}
-
-	public void setIsPriorityBumpUp(boolean isPriorityBumpUp) {
-	    this.isPriorityBumpUp = isPriorityBumpUp;
-	}
 
     @Override
-	public boolean isStopPending() {
-	    return this.stopPending;
- 	}
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 
     @Override
-	public void setStopPending(boolean stopPending) {
-	    this.stopPending = stopPending;
-	}
-    
+    public boolean getIsRedundantRouter() {
+        return this.isRedundantRouter;
+    }
+
+    public void setIsRedundantRouter(boolean isRedundantRouter) {
+        this.isRedundantRouter = isRedundantRouter;
+    }
+
+    @Override
+    public long getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+
+    public int getPriority() {
+        return this.priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
+    @Override
+    public RedundantState getRedundantState() {
+        return this.redundantState;
+    }
+
+    public void setRedundantState(RedundantState redundantState) {
+        this.redundantState = redundantState;
+    }
+
+    public boolean getIsPriorityBumpUp() {
+        return this.isPriorityBumpUp;
+    }
+
+    public void setIsPriorityBumpUp(boolean isPriorityBumpUp) {
+        this.isPriorityBumpUp = isPriorityBumpUp;
+    }
+
+    @Override
+    public boolean isStopPending() {
+        return this.stopPending;
+    }
+
+    @Override
+    public void setStopPending(boolean stopPending) {
+        this.stopPending = stopPending;
+    }
+
     public String getTemplateVersion() {
         return this.templateVersion;
     }
-    
+
     public void setTemplateVersion(String templateVersion) {
         this.templateVersion = templateVersion;
     }
-    
+
     public String getScriptsVersion() {
         return this.scriptsVersion;
     }
-    
+
     public void setScriptsVersion(String scriptsVersion) {
         this.scriptsVersion = scriptsVersion;
     }
@@ -242,9 +242,5 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     public Long getVpcId() {
         return vpcId;
     }
-    
-    @Override
-    public boolean canPlugNics() {
-        return true;
-    }
+
 }

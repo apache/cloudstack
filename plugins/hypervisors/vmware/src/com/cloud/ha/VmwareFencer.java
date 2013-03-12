@@ -22,11 +22,11 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.host.HostVO;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VMInstanceVO;
 
 @Local(value=FenceBuilder.class)
-public class VmwareFencer implements FenceBuilder {
-    String _name;
+public class VmwareFencer extends AdapterBase implements FenceBuilder {
 
     @Override
     public Boolean fenceOff(VMInstanceVO vm, HostVO host) {
@@ -35,26 +35,5 @@ public class VmwareFencer implements FenceBuilder {
 	
     public VmwareFencer() {
         super();
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
     }
 }

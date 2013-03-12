@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ http://www.apache.org/licenses/LICENSE-2.0
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+<section id="persistent-network">
+  <title>Persistent Networks</title>
+  <para>The network that you can provision without having to deploy any VMs on it is called a
+    persistent network. A persistent network can be part of a VPC or a non-VPC environment.</para>
+  <para>When you create other types of network, a network is only a database entry until the first
+    VM is created on that network. When the first VM is created, a VLAN ID is assigned and the
+    network is provisioned. Also, when the last VM is destroyed, the VLAN ID is released and the
+    network is no longer available. With the addition of persistent network, you will have the
+    ability to create a network in &PRODUCT; in which physical devices can be deployed without
+    having to run any VMs. Additionally, you can deploy physical devices on that network.</para>
+  <para>One of the advantages of having a persistent network is that you can create a VPC with a tier
+    consisting of only physical devices. For example, you might create a VPC for a three-tier
+    application, deploy VMs for Web and Application tier, and use physical machines for the
+    Database tier. Another use case is that if you are providing services by using physical
+    hardware, you can define the network as persistent and therefore even if all its VMs are
+    destroyed the services will not be discontinued.</para>
+  <section id="persistent-network-consideration">
+    <title>Persistent Network Considerations</title>
+    <itemizedlist>
+      <listitem>
+        <para>Persistent network is designed for isolated networks.</para>
+      </listitem>
+      <listitem>
+        <para>All default network offerings are non-persistent.</para>
+      </listitem>
+      <listitem>
+        <para>A network offering cannot be editable because changing it affects the behavior of the
+          existing networks that were created using this network offering.</para>
+      </listitem>
+      <listitem>
+        <para>When you create a guest network, the network offering that you select defines the
+          network persistence. This in turn depends on whether persistent network is enabled in the
+          selected network offering. </para>
+      </listitem>
+      <listitem>
+        <para>An existing network can be made persistent by changing its network offering to an
+          offering that has the Persistent option enabled. While setting this property, even if the
+          network has no running VMs, the network is provisioned. </para>
+      </listitem>
+      <listitem>
+        <para>An existing network can be made non-persistent by changing its network offering to an
+          offering that has the Persistent option disabled. If the network has no running VMs,
+          during the next network garbage collection run the network is shut down.</para>
+      </listitem>
+      <listitem>
+        <para>When the last VM on a network is destroyed, the network garbage collector checks if
+          the network offering associated with the network is persistent, and shuts down the network
+          only if it is non-persistent.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section id="set-up-persistent-network">
+    <title>Creating a Persistent Guest Network</title>
+    <para>To create a persistent network, perform the following:</para>
+    <orderedlist>
+      <listitem>
+        <para>Create a network offering with the Persistent option enabled.</para>
+        <para condition="admin">See <xref linkend="creating-network-offerings"/>.</para>
+        <para condition="install">See the Administration Guide.</para>
+      </listitem>
+      <listitem>
+        <para>Select Network from the left navigation pane.</para>
+      </listitem>
+      <listitem>
+        <para>Select the guest network that you want to offer this network service to.</para>
+      </listitem>
+      <listitem>
+        <para>Click the Edit button.</para>
+      </listitem>
+      <listitem>
+        <para>From the Network Offering drop-down, select the persistent network offering you have
+          just created.</para>
+      </listitem>
+      <listitem>
+        <para>Click OK.</para>
+      </listitem>
+    </orderedlist>
+  </section>
+</section>

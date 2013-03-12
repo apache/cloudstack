@@ -30,12 +30,11 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "volumes")
@@ -68,7 +67,7 @@ public class VolumeVO implements Volume {
     Long deviceId = null;
 
     @Column(name = "size")
-    long size;
+    Long size;
 
     @Column(name = "folder")
     String folder;
@@ -131,6 +130,10 @@ public class VolumeVO implements Volume {
 
     @Column(name = "uuid")
     String uuid;
+    
+    @Transient
+    // @Column(name="reservation")
+    String reservationId;
     
     // Real Constructor
     public VolumeVO(Type type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
@@ -252,11 +255,11 @@ public class VolumeVO implements Volume {
     }
 
     @Override
-    public long getSize() {
+    public Long getSize() {
         return size;
     }
 
-    public void setSize(long size) {
+    public void setSize(Long size) {
         this.size = size;
     }
 
@@ -428,6 +431,16 @@ public class VolumeVO implements Volume {
         } else {
             return false;
         }
+    }
+    
+    @Override
+    public String getReservationId() {
+    	return this.reservationId;
+    }
+    
+    @Override
+    public void setReservationId(String reserv) {
+    	this.reservationId = reserv;
     }
     
     @Override

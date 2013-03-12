@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -31,11 +32,10 @@ import com.cloud.agent.api.PingTestCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -49,7 +49,7 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
     private String _name = null;
     @Inject private final UserVmDao _userVmDao = null;
     @Inject private final AgentManager _agentMgr = null;
-    @Inject private final NetworkManager _networkMgr = null;
+    @Inject private final NetworkModel _networkMgr = null;
     @Inject private final VpcVirtualNetworkApplianceManager _vnaMgr = null;
 
     @Override

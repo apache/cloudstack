@@ -41,6 +41,8 @@ public class EC2GroupFilterSet {
 		filterTypes.put( "ip-permission.from-port", "string" );
 		filterTypes.put( "ip-permission.to-port",   "string" ); 
 		filterTypes.put( "ip-permission.protocol",  "string" ); 
+        filterTypes.put( "ip-permission.group-name","string" );
+        filterTypes.put( "ip-permission.user-id",   "string" );
 		filterTypes.put( "owner-id",                "string" );
 	}
 
@@ -126,7 +128,7 @@ public class EC2GroupFilterSet {
         EC2IpPermission[] permissionSet = sg.getIpPermissionSet();
 
         for (EC2IpPermission perm : permissionSet) {
-            boolean matched = true;
+            boolean matched = false;
             for (EC2Filter filter : ipPermissionFilterSet) {
                 String filterName = filter.getName();
                 String[] valueSet = filter.getValueSet();
@@ -144,6 +146,24 @@ public class EC2GroupFilterSet {
                         matched = containsString( perm.getToPort().toString(), valueSet );
                 } else if (filterName.equalsIgnoreCase( "ip-permission.protocol" ))
                     matched = containsString( perm.getProtocol(), valueSet );
+                else if (filterName.equalsIgnoreCase( "ip-permission.group-name" )) {
+                    EC2SecurityGroup[] userSet = perm.getUserSet();
+                    for (EC2SecurityGroup user : userSet) {
+                        if (containsString(user.getName(), valueSet)) {
+                            matched = true;
+                            break;
+                        }
+                    }
+                }
+                else if (filterName.equalsIgnoreCase( "ip-permission.user-id" )){
+                    EC2SecurityGroup[] userSet = perm.getUserSet();
+                    for (EC2SecurityGroup user : userSet) {
+                        if (containsString(user.getAccountName(), valueSet)) {
+                            matched = true;
+                            break;
+                        }
+                    }
+                }
                 if (!matched) break;
             }
             if (matched) return true;

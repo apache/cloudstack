@@ -16,47 +16,9 @@
 // under the License.
 package com.cloud.utils.component;
 
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
-
 /**
  * Adapter defines methods for pluggable code within the Cloud Stack. An
  * Adapters are a departure from regular structured programming.
  */
-public interface Adapter {
-
-    /**
-     * configure is called when an adapter is initialized.
-     * 
-     * @param name
-     *            The name of the adapter.
-     * @param params
-     *            A map of configuration parameters.
-     * @return Returning false means the configuration did not go well and the
-     *         adapter can not be used.
-     */
-    boolean configure(String name, Map<String, Object> params) throws ConfigurationException;
-
-    /**
-     * 
-     */
-    String getName();
-
-    /**
-     * startAdapter() signals the adapter that it can start.
-     * 
-     * @return true if the adapter can start, false otherwise.
-     */
-    boolean start();
-
-    /**
-     * stopAdapter() signals the adapter that it should be shutdown. Returns
-     * false means that the adapter is not ready to be stopped and should be
-     * called again.
-     * 
-     * @return true if the adapter can stop, false indicates the adapter is not
-     *         ready to stop.
-     */
-    boolean stop();
+public interface Adapter extends ComponentLifecycle {
 }

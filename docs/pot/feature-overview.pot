@@ -1,0 +1,100 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "What Can &PRODUCT; Do?"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Multiple Hypervisor Support</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; works with a variety of hypervisors, and a single cloud deployment can contain multiple hypervisor implementations. The current release of &PRODUCT; supports pre-packaged enterprise solutions like Citrix XenServer and VMware vSphere, as well as KVM or Xen running on Ubuntu or CentOS."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Massively Scalable Infrastructure Management</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; can manage tens of thousands of servers installed in multiple geographically distributed datacenters. The centralized management server scales linearly, eliminating the need for intermediate cluster-level management servers. No single component failure can cause cloud-wide outage. Periodic maintenance of the management server can be performed without affecting the functioning of virtual machines running in the cloud."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Automatic Configuration Management</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; automatically configures each guest virtual machine’s networking and storage settings."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; internally manages a pool of virtual appliances to support the cloud itself. These appliances offer services such as firewalling, routing, DHCP, VPN access, console proxy, storage access, and storage replication. The extensive use of virtual appliances simplifies the installation, configuration, and ongoing management of a cloud deployment."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Graphical User Interface</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; offers an administrator's Web interface, used for provisioning and managing the cloud, as well as an end-user's Web interface, used for running VMs and managing VM templates. The UI can be customized to reflect the desired service provider or enterprise look and feel."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">API and Extensibility</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; provides an API that gives programmatic access to all the management features available in the UI. The API is maintained and documented. This API enables the creation of command line tools and new user interfaces to suit particular needs. See the Developer’s Guide and API Reference, both available at <ulink url=\"http://incubator.apache.org/cloudstack/docs\">Apache CloudStack Guides</ulink> and <ulink url=\"http://incubator.apache.org/cloudstack/docs/api\">Apache CloudStack API Reference</ulink> respectively."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; pluggable allocation architecture allows the creation of new types of allocators for the selection of storage and Hosts. See the Allocator Implementation Guide (<ulink url=\"http://docs.cloudstack.org/CloudStack_Documentation/Allocator_Implementation_Guide\">http://docs.cloudstack.org/CloudStack_Documentation/Allocator_Implementation_Guide</ulink>)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">High Availability</emphasis>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; has a number of features to increase the availability of the system. The Management Server itself may be deployed in a multi-node installation where the servers are load balanced. MySQL may be configured to use replication to provide for a manual failover in the event of database loss. For the hosts, &PRODUCT; supports NIC bonding and the use of separate networks for storage as well as iSCSI Multipath."
+msgstr ""
+

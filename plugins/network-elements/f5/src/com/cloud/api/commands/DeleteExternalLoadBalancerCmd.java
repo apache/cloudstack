@@ -17,6 +17,8 @@
 
 package com.cloud.api.commands;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.log4j.Logger;
@@ -53,7 +55,7 @@ public class DeleteExternalLoadBalancerCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @PlugService
+    @Inject
     F5ExternalLoadBalancerElementService _f5DeviceManagerService;
 
     @Override
@@ -75,10 +77,10 @@ public class DeleteExternalLoadBalancerCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete external load balancer.");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete external load balancer.");
             }
         } catch (InvalidParameterValueException e) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Failed to delete external load balancer.");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Failed to delete external load balancer.");
         }
     }
 }

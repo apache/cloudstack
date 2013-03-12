@@ -1,0 +1,50 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Upgrading a Virtual Router with System Service Offerings"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When &PRODUCT; creates a virtual router, it uses default settings which are defined in a default system service offering. See <xref linkend=\"system-service-offerings\" />. All the virtual routers in a single guest network use the same system service offering. You can upgrade the capabilities of the virtual router by creating and applying a custom system service offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Define your custom system service offering. See <xref linkend=\"creating-system-service-offerings\" />. In System VM Type, choose Domain Router."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Associate the system service offering with a network offering. See <xref linkend=\"creating-network-offerings\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Apply the network offering to the network where you want the virtual routers to use the new system service offering. If this is a new network, follow the steps in Adding an Additional Guest Network on page 66. To change the service offering for existing virtual routers, follow the steps in <xref linkend=\"change-network-offering-on-guest-network\" />."
+msgstr ""
+

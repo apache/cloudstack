@@ -1,0 +1,100 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Initialize and Test"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After everything is configured, &PRODUCT; will perform its initialization. This can take 30 minutes or more, depending on the speed of your network. When the initialization has completed successfully, the administrator's Dashboard should be displayed in the &PRODUCT; UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Verify that the system is ready. In the left navigation bar, select Templates. Click on the CentOS 5.5 (64bit) no Gui (KVM) template. Check to be sure that the status is \"Download Complete.\" Do not proceed to the next step until this status is displayed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Go to the Instances tab, and filter by My Instances."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Instance and follow the steps in the wizard."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the zone you just added."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the template selection, choose the template to use in the VM. If this is a fresh installation, likely only the provided CentOS template is available."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select a service offering. Be sure that the hardware you have allows starting the selected service offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In data disk offering, if desired, add another data disk. This is a second volume that will be available to but not mounted in the guest. For example, in Linux on XenServer you will see /dev/xvdb in the guest after rebooting the VM. A reboot is not required if you have a PV-enabled OS kernel in use."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In default network, choose the primary network for the guest. In a trial installation, you would have only one option here."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Optionally give your VM a name and a group. Use any descriptive text you would like."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Launch VM. Your VM will be created and started. It might take some time to download the template and complete the VM startup. You can watch the VM’s progress in the Instances screen."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To use the VM, click the View Console button. <inlinemediaobject> <imageobject><imagedata fileref=\"./images/console-icon.png\" /></imageobject> <textobject><phrase>ConsoleButton.png: button to launch a console</phrase></textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Congratulations! You have successfully completed a &PRODUCT; Installation."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you decide to grow your deployment, you can add more hosts, primary storage, zones, pods, and clusters."
+msgstr ""
+

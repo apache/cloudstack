@@ -20,14 +20,21 @@ package org.apache.cloudstack.api.command.admin.cluster;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.ResourceInUseException;
@@ -77,6 +84,12 @@ public class AddClusterCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.VSM_IPADDRESS, type = CommandType.STRING, required = false, description = "the ipaddress of the VSM associated with this cluster")
     private String vsmipaddress;
+
+    @Parameter (name=ApiConstants.CPU_OVERCOMMIT_RATIO, type = CommandType.STRING, required = false , description = "value of the cpu overcommit ratio, defaults to 1")
+    private String  cpuovercommitRatio;
+
+    @Parameter(name = ApiConstants.MEMORY_OVERCOMMIT_RATIO, type = CommandType.STRING, required = false ,description = "value of the default ram overcommit ratio, defaults to 1")
+    private String  memoryovercommitratio;
 
     public String getVSMIpaddress() {
         return vsmipaddress;
@@ -144,9 +157,26 @@ public class AddClusterCmd extends BaseCmd {
         this.allocationState = allocationState;
     }
 
+    public Float getCpuOvercommitRatio (){
+        if(cpuovercommitRatio != null){
+           return Float.parseFloat(cpuovercommitRatio);
+        }
+        return 1.0f;
+    }
+
+    public Float getMemoryOvercommitRaito (){
+        if (memoryovercommitratio != null){
+            return Float.parseFloat(memoryovercommitratio);
+        }
+        return 1.0f;
+    }
+
     @Override
     public void execute(){
         try {
+            if ((getMemoryOvercommitRaito().compareTo(1f) < 0) | (getCpuOvercommitRatio().compareTo(1f) < 0)) {
+                throw new InvalidParameterValueException("Cpu and ram overcommit ratios  should not be less than 1");
+            }
             List<? extends Cluster> result = _resourceService.discoverCluster(this);
             ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();
             List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
@@ -156,7 +186,7 @@ public class AddClusterCmd extends BaseCmd {
                     clusterResponses.add(clusterResponse);
                 }
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add cluster");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add cluster");
             }
 
             response.setResponses(clusterResponses);
@@ -165,10 +195,10 @@ public class AddClusterCmd extends BaseCmd {
             this.setResponseObject(response);
         } catch (DiscoveryException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (ResourceInUseException ex) {
             s_logger.warn("Exception: ", ex);
-            ServerApiException e = new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            ServerApiException e = new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
             for (String proxyObj : ex.getIdProxyList()) {
                 e.addProxyObject(proxyObj);
             }

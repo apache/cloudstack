@@ -17,7 +17,6 @@
 package com.cloud.network.dao;
 
 import java.util.List;
-import com.cloud.network.PortProfileVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface PortProfileDao extends GenericDao<PortProfileVO, Long> {

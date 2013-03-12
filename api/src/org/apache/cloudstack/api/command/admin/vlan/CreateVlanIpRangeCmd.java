@@ -16,17 +16,21 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vlan;
 
-import org.apache.cloudstack.api.*;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.PodResponse;
-import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.VlanIpRangeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.dc.Vlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -71,7 +75,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
             description="optional parameter. Have to be specified for Direct Untagged vlan only.")
     private Long podId;
 
-    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, required=true, description="the beginning IP address in the VLAN IP range")
+    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, description="the beginning IP address in the VLAN IP range")
     private String startIp;
 
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the VLAN. If not specified," +
@@ -89,6 +93,19 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
             description="the physical network id")
     private Long physicalNetworkId;
+
+    @Parameter(name=ApiConstants.START_IPV6, type=CommandType.STRING, description="the beginning IPv6 address in the IPv6 network range")
+    private String startIpv6;
+
+    @Parameter(name=ApiConstants.END_IPV6, type=CommandType.STRING, description="the ending IPv6 address in the IPv6 network range")
+    private String endIpv6;
+
+    @Parameter(name=ApiConstants.IP6_GATEWAY, type=CommandType.STRING, description="the gateway of the IPv6 network. Required " +
+            "for Shared networks and Isolated networks when it belongs to VPC")
+    private String ip6Gateway;
+
+    @Parameter(name=ApiConstants.IP6_CIDR, type=CommandType.STRING, description="the CIDR of IPv6 network, must be at least /64")
+    private String ip6Cidr;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -137,6 +154,35 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     public Long getProjectId() {
         return projectId;
     }
+    
+    public String getStartIpv6() {
+    	if (startIpv6 == null) {
+    		return null;
+    	}
+        return startIpv6.toLowerCase();
+    }
+
+    public String getEndIpv6() {
+    	if (endIpv6 == null) {
+    		return null;
+    	}
+        return endIpv6.toLowerCase();
+    }
+
+    public String getIp6Gateway() {
+    	if (ip6Gateway == null) {
+    		return null;
+    	}
+        return ip6Gateway.toLowerCase();
+    }
+
+    public String getIp6Cidr() {
+    	if (ip6Cidr == null) {
+    		return null;
+    	}
+        return ip6Cidr.toLowerCase();
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -148,7 +194,6 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
-
 
     @Override
     public String getCommandName() {
@@ -169,14 +214,14 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             }else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create vlan ip range");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vlan ip range");
             }
         } catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);
-            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         }
     }
 }

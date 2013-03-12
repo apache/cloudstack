@@ -18,12 +18,13 @@ package com.cloud.storage;
 
 import java.util.Date;
 
-import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.fsm.StateObject;
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface Snapshot extends ControlledEntity, Identity, InternalIdentity {
+public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, StateObject<Snapshot.State> {
     public enum Type {
         MANUAL,
         RECURRING,
@@ -42,6 +43,7 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity {
             return max;
         }
 
+        @Override
         public String toString() {
             return this.name();
         }
@@ -51,7 +53,8 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity {
         }
     }
 
-    public enum Status {
+    public enum State {
+        Allocated,
         Creating,
         CreatedOnPrimary,
         BackingUp,
@@ -67,6 +70,15 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity {
         }
     }
 
+    enum Event {
+        CreateRequested,
+        OperationNotPerformed,
+        BackupToSecondary,
+        BackedupToSecondary,
+        OperationSucceeded,
+        OperationFailed
+    }
+
     public static final long MANUAL_POLICY_ID = 0L;
 
     long getAccountId();
@@ -79,9 +91,9 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity {
 
     Date getCreated();
 
-    Type getType();
+    Type getRecurringType();
 
-    Status getStatus();
+    State getState();
 
     HypervisorType getHypervisorType();
 

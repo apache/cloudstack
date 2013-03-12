@@ -51,18 +51,21 @@ Apache CloudStack uses some ports, make sure at least those used by the manageme
 server are available and not blocked by any local firewall. Following ports are
 used by Apache CloudStack and its entities:
 
-    8787: Apache CloudStack (Tomcat) debug socket
-    9090, 8250: Apache CloudStack Management Server, User/Client API
-    8096: User/Client to CloudStack Management Server (unauthenticated)
-    3306: MySQL Server
-    3922, 8250, 80/443, 111/2049, 53: Secondary Storage VM
-    3922, 8250, 53: Console Proxy VM
-    3922, 8250, 53: Virtual Router
+    8080: API Server (authenticated), browser or CLI client to management server
+    8096: API Server (unauthenticated), browser or CLI client to management server
+    8787: Remote java debug debugging port, from IDE to management server
+    9090: Management server to management server (cluster)
+    7080: AWS API Server to which an AWS client can connect
+    80/443: HTTP client to Secondary Storage VM (template download)
+    111/2049: Secondary Storage to NFS server
+    3922: Port used to ssh/scp into system vms (SSVM, CPVM, VR)
+    8250: Agent (SSVM, CPVM, VR) to management server
     22, 80, 443: XenServer, XAPI
     22: KVM
     443: vCenter
-    DNS: 53
-    NFS: 111/2049
+    53: DNS
+    111/2049: NFS
+    3306: MySQL Server to which the management server connects
 
 ### Configuring MySQL Server
 
@@ -92,8 +95,7 @@ For example, for master:
 
 Clean and build:
 
-    $ mvn clean
-    $ mvn install
+    $ mvn clean install -P systemvm,developer
 
 In case you want support for VMWare, SRX and other non-Apache (referred to as nonoss)
 compliant libs, you may download the following jar artifacts from respective vendors:
@@ -111,9 +113,9 @@ Install them to ~/.m2 so maven can get them as dependencies:
     $ cd deps
     $ ./install-non-oss.sh
 
-And build them with the nonoss flag:
+To build with nonoss components, use the build command with the nonoss flag:
 
-    $ mvn install -Dnonoss
+    $ mvn clean install -P systemvm,developer -Dnonoss
 
 Clear old database (if any) and deploy the database schema:
 
@@ -121,7 +123,7 @@ Clear old database (if any) and deploy the database schema:
 
 Export the following variable if you need to run and debug the management server:
 
-    $ export MAVEN_OPTS="-Xmx1024m -Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n"
+    $ export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n"
 
 Start the management server:
 

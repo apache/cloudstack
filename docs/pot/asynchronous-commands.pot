@@ -1,0 +1,55 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Asynchronous Commands"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Asynchronous commands were introduced in &PRODUCT; 2.x. Commands are designated as asynchronous when they can potentially take a long period of time to complete such as creating a snapshot or disk volume. They differ from synchronous commands by the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "They are identified in the API Reference by an (A)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "They will immediately return a job ID to refer to the job that will be responsible in processing the command."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If executed as a \"create\" resource command, it will return the resource ID as well as the job ID."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can periodically check the status of the job by making a simple API call to the command, queryAsyncJobResult and passing in the job ID."
+msgstr ""
+

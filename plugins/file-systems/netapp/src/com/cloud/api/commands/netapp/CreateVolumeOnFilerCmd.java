@@ -19,7 +19,10 @@ package com.cloud.api.commands.netapp;
 import java.net.UnknownHostException;
 import java.rmi.ServerException;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -32,7 +35,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.CreateVolumeOnFilerCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "createVolumeOnFiler", description="Create a volume", responseObject = CreateVolumeOnFilerCmdResponse.class)
 public class CreateVolumeOnFilerCmd extends BaseCmd {
@@ -101,6 +104,8 @@ public class CreateVolumeOnFilerCmd extends BaseCmd {
     public String getPassword() {
     	return password;
     }
+    
+    @Inject NetappManager netappMgr;
 
 	@Override
 	public void execute() throws ResourceUnavailableException,
@@ -110,9 +115,6 @@ public class CreateVolumeOnFilerCmd extends BaseCmd {
 		if(snapshotReservation != null && (snapshotReservation<0 || snapshotReservation>100))
 			throw new InvalidParameterValueException("Invalid snapshot reservation");
 		
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
-    	
 		StringBuilder s = new StringBuilder(getVolSize().toString());
 		s.append("g");
 	
@@ -122,11 +124,11 @@ public class CreateVolumeOnFilerCmd extends BaseCmd {
 			response.setResponseName(getCommandName());
 			this.setResponseObject(response);
 		} catch (ServerException e) {
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
+			throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
 		} catch (InvalidParameterValueException e) {
-			throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
+			throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
 		} catch (UnknownHostException e) {
-			throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
+			throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
 		}
 		
 	}

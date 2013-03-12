@@ -18,10 +18,11 @@ package com.cloud.dc;
 
 import java.util.Map;
 
-import com.cloud.org.Grouping;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.org.Grouping;
 
 /**
  *
@@ -35,6 +36,10 @@ public interface DataCenter extends InfrastructureEntity, Grouping, Identity, In
     String getDns1();
 
     String getDns2();
+
+    String getIp6Dns1();
+
+    String getIp6Dns2();
 
     String getGuestNetworkCidr();
 

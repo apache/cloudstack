@@ -25,13 +25,13 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import com.cloud.api.query.vo.ControlledViewEntity;
-
+import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
-import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.springframework.stereotype.Component;
 
+import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
@@ -40,12 +40,14 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 
+@Component
 @Local(value = { AccountManager.class, AccountService.class })
-public class MockAccountManagerImpl implements Manager, AccountManager, AccountService {
+public class MockAccountManagerImpl extends ManagerBase implements Manager, AccountManager {
 
 
     @Override
@@ -209,12 +211,6 @@ public class MockAccountManagerImpl implements Manager, AccountManager, AccountS
     }
 
     @Override
-    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId) {
         // TODO Auto-generated method stub
         return null;
@@ -282,28 +278,11 @@ public class MockAccountManagerImpl implements Manager, AccountManager, AccountS
         return true;
     }
 
-
-	@Override
-	public UserAccount createUserAccount(String userName, String password,
-			String firstName, String lastName, String email, String timezone,
-			String accountName, short accountType, Long domainId,
-			String networkDomain, Map<String, String> details) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Account createAccount(String accountName, short accountType,
-			Long domainId, String networkDomain, Map details) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean enableAccount(long accountId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean enableAccount(long accountId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
     @Override
     public void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
@@ -345,6 +324,31 @@ public class MockAccountManagerImpl implements Manager, AccountManager, AccountS
         return null;
     }
 
+    @Override
+	public UserAccount createUserAccount(String userName, String password,
+			String firstName, String lastName, String email, String timezone,
+			String accountName, short accountType, Long domainId,
+			String networkDomain, Map<String, String> details,
+			String accountUUID, String userUUID, Integer regionId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public User createUser(String userName, String password, String firstName,
+			String lastName, String email, String timeZone, String accountName,
+			Long domainId, String userUUID, Integer regionId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Account createAccount(String accountName, short accountType,
+			Long domainId, String networkDomain, Map details, String uuid,
+			int regionId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
     @Override
     public RoleType getRoleType(Account account) {
         return null;

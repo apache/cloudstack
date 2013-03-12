@@ -1,0 +1,55 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Ongoing Configuration of External Firewalls and Load Balancers"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Additional user actions (e.g. setting a port forward) will cause further programming of the firewall and load balancer. A user may request additional public IP addresses and forward traffic received at these IPs to specific VMs. This is accomplished by enabling static NAT for a public IP address, assigning the IP to a VM, and specifying a set of protocols and port ranges to open. When a static NAT rule is created, &PRODUCT; programs the zone's external firewall with the following objects:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A static NAT rule that maps the public IP address to the private IP address of a VM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A security policy that allows traffic within the set of protocols and port ranges that are specified."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A firewall filter counter that measures the number of bytes of incoming traffic to the public IP."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The number of incoming and outgoing bytes through source NAT, static NAT, and load balancing rules is measured and saved on each external element. This data is collected on a regular basis and stored in the &PRODUCT; database."
+msgstr ""
+

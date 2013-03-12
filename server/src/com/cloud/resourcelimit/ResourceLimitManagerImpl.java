@@ -26,11 +26,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource;
@@ -57,9 +59,12 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDaoImpl.SumCount;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -67,25 +72,31 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Inject;
-import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 
+@Component
 @Local(value = { ResourceLimitService.class })
-public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
+public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService {
     public static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImpl.class);
 
-    private String _name;
     @Inject
     private DomainDao _domainDao;
     @Inject
@@ -122,17 +133,14 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
     private NetworkDao _networkDao;
     @Inject
     private VpcDao _vpcDao;
+    @Inject
+    private ServiceOfferingDao _serviceOfferingDao;
 
     protected SearchBuilder<ResourceCountVO> ResourceCountSearch;
     ScheduledExecutorService _rcExecutor;
     long _resourceCountCheckInterval = 0;
     Map<ResourceType, Long> accountResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
     Map<ResourceType, Long> projectResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
-
-    @Override
-    public String getName() {
-        return _name;
-    }
 
     @Override
     public boolean start() {
@@ -149,7 +157,6 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
 
         ResourceCountSearch = _resourceCountDao.createSearchBuilder();
         ResourceCountSearch.and("id", ResourceCountSearch.entity().getId(), SearchCriteria.Op.IN);
@@ -169,6 +176,8 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
         projectResourceLimitMap.put(Resource.ResourceType.volume, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectVolumes.key())));
         projectResourceLimitMap.put(Resource.ResourceType.network, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectNetworks.key())));
         projectResourceLimitMap.put(Resource.ResourceType.vpc, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectVpcs.key())));
+        projectResourceLimitMap.put(Resource.ResourceType.cpu, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectCpus.key())));
+        projectResourceLimitMap.put(Resource.ResourceType.memory, Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectMemory.key())));
 
         accountResourceLimitMap.put(Resource.ResourceType.public_ip, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPublicIPs.key())));
         accountResourceLimitMap.put(Resource.ResourceType.snapshot, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountSnapshots.key())));
@@ -177,6 +186,8 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
         accountResourceLimitMap.put(Resource.ResourceType.volume, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountVolumes.key())));
         accountResourceLimitMap.put(Resource.ResourceType.network, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountNetworks.key())));
         accountResourceLimitMap.put(Resource.ResourceType.vpc, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountVpcs.key())));
+        accountResourceLimitMap.put(Resource.ResourceType.cpu, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountCpus.key())));
+        accountResourceLimitMap.put(Resource.ResourceType.memory, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountMemory.key())));
 
         return true;
     }
@@ -773,7 +784,11 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
         } else if (type == Resource.ResourceType.network) {
             newCount = _networkDao.countNetworksUserCanCreate(accountId);
         } else if (type == Resource.ResourceType.vpc) {
-            newCount =  _vpcDao.countByAccountId(accountId);
+            newCount = _vpcDao.countByAccountId(accountId);
+        } else if (type == Resource.ResourceType.cpu) {
+            newCount = countCpusForAccount(accountId);
+        } else if (type == Resource.ResourceType.memory) {
+            newCount = calculateMemoryForAccount(accountId);
         } else {
             throw new InvalidParameterValueException("Unsupported resource type " + type);
         }
@@ -786,6 +801,50 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
         txn.commit();
 
         return (newCount == null) ? 0 : newCount.longValue();
+    }
+
+    public long countCpusForAccount(long accountId) {
+        GenericSearchBuilder<ServiceOfferingVO, SumCount> cpuSearch = _serviceOfferingDao.createSearchBuilder(SumCount.class);
+        cpuSearch.select("sum", Func.SUM, cpuSearch.entity().getCpu());
+        SearchBuilder<UserVmVO> join1 = _userVmDao.createSearchBuilder();
+        join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
+        join1.and("type", join1.entity().getType(), Op.EQ);
+        join1.and("state", join1.entity().getState(), SearchCriteria.Op.NIN);
+        cpuSearch.join("offerings", join1, cpuSearch.entity().getId(), join1.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
+        cpuSearch.done();
+
+        SearchCriteria<SumCount> sc = cpuSearch.create();
+        sc.setJoinParameters("offerings", "accountId", accountId);
+        sc.setJoinParameters("offerings", "type", VirtualMachine.Type.User);
+        sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+        List<SumCount> cpus = _serviceOfferingDao.customSearch(sc, null);
+        if (cpus != null) {
+            return cpus.get(0).sum;
+        } else {
+            return 0;
+        }
+    }
+
+    public long calculateMemoryForAccount(long accountId) {
+        GenericSearchBuilder<ServiceOfferingVO, SumCount> memorySearch = _serviceOfferingDao.createSearchBuilder(SumCount.class);
+        memorySearch.select("sum", Func.SUM, memorySearch.entity().getRamSize());
+        SearchBuilder<UserVmVO> join1 = _userVmDao.createSearchBuilder();
+        join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
+        join1.and("type", join1.entity().getType(), Op.EQ);
+        join1.and("state", join1.entity().getState(), SearchCriteria.Op.NIN);
+        memorySearch.join("offerings", join1, memorySearch.entity().getId(), join1.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
+        memorySearch.done();
+
+        SearchCriteria<SumCount> sc = memorySearch.create();
+        sc.setJoinParameters("offerings", "accountId", accountId);
+        sc.setJoinParameters("offerings", "type", VirtualMachine.Type.User);
+        sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+        List<SumCount> memory = _serviceOfferingDao.customSearch(sc, null);
+        if (memory != null) {
+            return memory.get(0).sum;
+        } else {
+            return 0;
+        }
     }
 
     @Override

@@ -16,8 +16,8 @@
 // under the License.
 package com.cloud.agent.api.storage;
 
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StoragePool;
 
 /**

@@ -1,0 +1,120 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Inter-VLAN Routing"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Inter-VLAN Routing is the capability to route network traffic between VLANs. This feature enables you to build Virtual Private Clouds (VPC), an isolated segment of your cloud, that can hold multi-tier applications. These tiers are deployed on different VLANs that can communicate with each other. You provision VLANs to the tiers your create, and VMs can be deployed on different tiers. The VLANs are connected to a virtual router, which facilitates communication between the VMs. In effect, you can segment VMs by means of VLANs into different networks that can host multi-tier applications, such as Web, Application, or Database. Such segmentation by means of VLANs logically separate application VMs for higher security and lower broadcasts, while remaining physically connected to the same device."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This feature is supported on XenServer and VMware hypervisors."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The major advantages are:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The administrator can deploy a set of VLANs and allow users to deploy VMs on these VLANs. A guest VLAN is randomly alloted to an account from a pre-specified set of guest VLANs. All the VMs of a certain tier of an account reside on the guest VLAN allotted to that account."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A VLAN allocated for an account cannot be shared between multiple accounts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The administrator can allow users create their own VPC and deploy the application. In this scenario, the VMs that belong to the account are deployed on the VLANs allotted to that account."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Both administrators and users can create multiple VPCs. The guest network NIC is plugged to the VPC virtual router when the first VM is deployed in a tier."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The administrator can create the following gateways to send to or receive traffic from the VMs:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">VPN Gateway</emphasis>: For more information, see <xref linkend=\"create-vpn-gateway-for-vpc\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Public Gateway</emphasis>: The public gateway for a VPC is added to the virtual router when the virtual router is created for VPC. The public gateway is not exposed to the end users. You are not allowed to list it, nor allowed to create any static routes."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Private Gateway</emphasis>: For more information, see <xref linkend=\"add-gateway-vpc\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Both administrators and users can create various possible destinations-gateway combinations. However, only one gateway of each type can be used in a deployment."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For example:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">VLANs and Public Gateway</emphasis>: For example, an application is deployed in the cloud, and the Web application VMs communicate with the Internet."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">VLANs, VPN Gateway, and Public Gateway</emphasis>: For example, an application is deployed in the cloud; the Web application VMs communicate with the Internet; and the database VMs communicate with the on-premise devices."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The administrator can define Access Control List (ACL) on the virtual router to filter the traffic among the VLANs or between the Internet and a VLAN. You can define ACL based on CIDR, port range, protocol, type code (if ICMP protocol is selected) and Ingress/Egress type."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following figure shows the possible deployment scenarios of a Inter-VLAN setup:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To set up a multi-tier Inter-VLAN deployment, see <xref linkend=\"configure-vpc\" />."
+msgstr ""
+

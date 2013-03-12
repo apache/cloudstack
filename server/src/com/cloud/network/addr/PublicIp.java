@@ -19,8 +19,8 @@ package com.cloud.network.addr;
 import java.util.Date;
 
 import com.cloud.dc.VlanVO;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 
@@ -206,4 +206,19 @@ public class PublicIp implements PublicIpAddress {
     public void setVpcId(Long vpcId) {
         _addr.setVpcId(vpcId);
     }
+
+	@Override
+	public String getIp6Gateway() {
+		return _vlan.getIp6Gateway();
+	}
+
+	@Override
+	public String getIp6Cidr() {
+		return _vlan.getIp6Cidr();
+	}
+
+	@Override
+	public String getIp6Range() {
+		return _vlan.getIp6Range();
+	}
 }

@@ -48,7 +48,7 @@ Description: CloudStack server library
 Package: cloud-scripts
 Replaces: cloud-agent-scripts
 Architecture: any
-Depends: openjdk-6-jre, python, bash, bzip2, gzip, unzip, nfs-common, openssh-client
+Depends: openjdk-6-jre, python, bash, bzip2, gzip, unzip, nfs-common, openssh-client, lsb-release
 Description: CloudStack scripts
  This package contains a number of scripts needed for the CloudStack Agent and Management Server.
  Both the CloudStack Agent and Management server depend on this package

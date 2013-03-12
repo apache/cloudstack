@@ -60,6 +60,7 @@ rebootVirtualMachine=15
 startVirtualMachine=15
 stopVirtualMachine=15
 resetPasswordForVirtualMachine=15
+resetSSHKeyForVirtualMachine=15
 updateVirtualMachine=15
 listVirtualMachines=15
 getVMPassword=15
@@ -255,6 +256,7 @@ deleteVolume=15
 listVolumes=15
 extractVolume=15
 migrateVolume=15
+resizeVolume=15
 
 #### registration command:  FIXME -- this really should be something in management server that
 ####                                 generates a new key for the user and they just have to
@@ -319,6 +321,11 @@ listNetworks=15
 restartNetwork=15
 updateNetwork=15
 
+#### nic commands ####
+addNicToVirtualMachine=15
+removeNicFromVirtualMachine=15
+updateDefaultNicForVirtualMachine=15
+
 #### SSH key pair commands
 registerSSHKeyPair=15
 createSSHKeyPair=15
@@ -343,6 +350,11 @@ deleteProjectInvitation=15
 createFirewallRule=15
 deleteFirewallRule=15
 listFirewallRules=15
+
+#### 
+createEgressFirewallRule=15
+deleteEgressFirewallRule=15
+listEgressFirewallRules=15
 
 #### hypervisor capabilities commands
 updateHypervisorCapabilities=1
@@ -501,6 +513,12 @@ listNiciraNvpDeviceNetworks=1
 # Not implemented (yet)
 #configureNiciraNvpDevice=1
 
+#### bigswitch vns commands
+
+addBigSwitchVnsDevice=1
+deleteBigSwitchVnsDevice=1
+listBigSwitchVnsDevices=1
+
 #### host simulator commands
 
 configureSimulator=1
@@ -508,3 +526,23 @@ configureSimulator=1
 #### api discovery commands
 
 listApis=15
+
+#### API Rate Limit service command
+
+getApiLimit=15
+resetApiLimit=1
+
+#### Region commands
+addRegion=1
+updateRegion=1
+removeRegion=1
+listRegions=15
+
+### VM Snapshot commands
+listVMSnapshot=15
+createVMSnapshot=15
+deleteVMSnapshot=15
+revertToSnapshot=15
+
+#### Baremetal commands
+addBaremetalHost=1

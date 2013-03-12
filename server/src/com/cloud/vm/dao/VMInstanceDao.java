@@ -26,7 +26,6 @@ import com.cloud.utils.fsm.StateDao;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachine.Type;
 
 
 /*
@@ -46,8 +45,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 	 * @return list of VMInstanceVO in the specified zone
 	 */
 	List<VMInstanceVO> listByZoneId(long zoneId);
-
-    /**
+	
+	/**
      * List VMs by pod ID
      * @param podId
      * @return list of VMInstanceVO in the specified pod
@@ -75,6 +74,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     
     VMInstanceVO findByIdTypes(long id, VirtualMachine.Type... types);
     
+    VMInstanceVO findVMByInstanceName(String name);
+
     void updateProxyId(long id, Long proxyId, Date time);
 
     List<VMInstanceVO> listByHostIdTypes(long hostid, VirtualMachine.Type... types);
@@ -83,7 +84,7 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     List<VMInstanceVO> listByZoneIdAndType(long zoneId, VirtualMachine.Type type);
 	List<VMInstanceVO> listUpByHostId(Long hostId);
 	List<VMInstanceVO> listByLastHostId(Long hostId);
-
+	
     List<VMInstanceVO> listByTypeAndState(VirtualMachine.Type type, State state);
 
     List<VMInstanceVO> listByAccountId(long accountId);

@@ -1,0 +1,210 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:12:00\n"
+"PO-Revision-Date: 2013-02-02T20:12:00\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "System Requirements for vSphere Hosts"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Software requirements:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vSphere and vCenter, both version 4.1 or 5.0."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vSphere Standard is recommended. Note however that customers need to consider the CPU constraints in place with vSphere licensing. See <ulink url=\"http://www.vmware.com/files/pdf/vsphere_pricing.pdf\">http://www.vmware.com/files/pdf/vsphere_pricing.pdf</ulink> and discuss with your VMware sales representative."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter Server Standard is recommended."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Be sure all the hotfixes provided by the hypervisor vendor are applied. Track the release of hypervisor patches through your hypervisor vendor's support channel, and apply patches as soon as possible after they are released. &PRODUCT; will not track or notify you of required hypervisor patches. It is essential that your hosts are completely up to date with the provided hypervisor patches. The hypervisor vendor is likely to refuse to support any system that is not up to date with patches."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Apply All Necessary Hotfixes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The lack of up-do-date hotfixes can lead to data corruption and lost VMs."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Hardware requirements:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The host must be certified as compatible with vSphere. See the VMware Hardware Compatibility Guide at <ulink url=\"http://www.vmware.com/resources/compatibility/search.php\">http://www.vmware.com/resources/compatibility/search.php</ulink>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All hosts must be 64-bit and must support HVM (Intel-VT or AMD-V enabled)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All hosts within a cluster must be homogenous. That means the CPUs must be of the same type, count, and feature flags."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "64-bit x86 CPU (more cores results in better performance)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hardware virtualization support required"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4 GB of memory"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "36 GB of local disk"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "At least 1 NIC"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Statically allocated IP Address"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "vCenter Server requirements:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Processor - 2 CPUs 2.0GHz or higher Intel or AMD x86 processors. Processor requirements may be higher if the database runs on the same machine."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Memory - 3GB RAM. RAM requirements may be higher if your database runs on the same machine."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Disk storage - 2GB. Disk requirements may be higher if your database runs on the same machine."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Microsoft SQL Server 2005 Express disk requirements. The bundled database requires up to 2GB free disk space to decompress the installation archive."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Networking - 1Gbit or 10Gbit."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For more information, see \"vCenter Server and the vSphere Client Hardware Requirements\" at <ulink url=\"http://pubs.vmware.com/vsp40/wwhelp/wwhimpl/js/html/wwhelp.htm#href=install/c_vc_hw.html\">http://pubs.vmware.com/vsp40/wwhelp/wwhimpl/js/html/wwhelp.htm#href=install/c_vc_hw.html</ulink>."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Other requirements:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VMware vCenter Standard Edition 4.1 or 5.0 must be installed and available to manage the vSphere hosts."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "vCenter must be configured to use the standard port 443 so that it can communicate with the &PRODUCT; Management Server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You must re-install VMware ESXi if you are going to re-use a host from a previous install."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; requires VMware vSphere 4.1 or 5.0. VMware vSphere 4.0 is not supported."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All hosts must be 64-bit and must support HVM (Intel-VT or AMD-V enabled). All hosts within a cluster must be homogenous. That means the CPUs must be of the same type, count, and feature flags."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; management network must not be configured as a separate virtual network. The &PRODUCT; management network is the same as the vCenter management network, and will inherit its configuration. See <xref linkend=\"vmware-physical-host-networking-config-vcenter-mgt\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; requires ESXi. ESX is not supported."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All resources used for &PRODUCT; must be used for &PRODUCT; only. &PRODUCT; cannot share instance of ESXi or storage with other management consoles. Do not share the same storage volumes that will be used by &PRODUCT; with a different set of ESXi servers that are not managed by &PRODUCT;."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Put all target ESXi hypervisors in a cluster in a separate Datacenter in vCenter."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The cluster that will be managed by &PRODUCT; should not contain any VMs. Do not run the management server, vCenter or any other VMs on the cluster that is designated for &PRODUCT; use. Create a separate cluster for use of &PRODUCT; and make sure that they are no VMs in this cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All the required VLANS must be trunked into all network switches that are connected to the ESXi hypervisor hosts. These would include the VLANS for Management, Storage, vMotion, and guest VLANs. The guest VLAN (used in Advanced Networking; see Network Setup) is a contiguous range of VLANs that will be managed by &PRODUCT;."
+msgstr ""
+

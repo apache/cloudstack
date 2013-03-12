@@ -19,12 +19,12 @@
 
  
 
-# Did cloud-agent installed
+# Did cloudstack-agent installed
 #set -x
 install_cloud_agent() {
     local dev=$1
     local retry=10
-    which cloud-setup-agent
+    which cloudstack-setup-agent
     if [ $? -gt 0 ]
     then 
         # download  the repo
@@ -51,7 +51,7 @@ install_cloud_agent() {
         while [ "$retry" -gt "0" ]
         do
             yum clean all
-            yum install cloud-agent -y
+            yum install cloudstack-agent -y
             if [ $? -gt 0 ]
             then
                 let retry=retry-1
@@ -64,7 +64,7 @@ install_cloud_agent() {
         while [ "$retry" -gt "0" ]
         do
 	        yum clean all
-	        yum update cloud-agent -y
+	        yum update cloudstack-agent -y
             if [ $? -gt 0 ]
             then
                 let retry=retry-1
@@ -155,7 +155,7 @@ cloud_agent_setup() {
         sed -i  's/\(SELINUX\)\(.*\)/\1=permissive/' /etc/selinux/config
         setenforce 0
     fi
-    cloud-setup-agent --host=$host --zone=$zone --pod=$pod --cluster=$cluster --guid=$guid -a > /dev/null
+    cloudstack-setup-agent --host=$host --zone=$zone --pod=$pod --cluster=$cluster --guid=$guid -a > /dev/null
 }
 
 cloud_consoleP_setup() {
@@ -224,5 +224,5 @@ then
     setenforce 0
 fi
 
-cloud-setup-agent --host=$host --zone=$zone --pod=$pod --cluster=$cluster --guid=$guid $paramters -a > /dev/null
+cloudstack-setup-agent --host=$host --zone=$zone --pod=$pod --cluster=$cluster --guid=$guid $paramters -a > /dev/null
 #cloud_consoleP_setup $host $zone $pod

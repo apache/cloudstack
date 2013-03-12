@@ -1,0 +1,75 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Prerequisites"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Before enabling the Nicira NVP plugin the NVP Controller needs to be configured. Please review the NVP User Guide on how to do that."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack needs to have at least one physical network with the isolation method set to \"STT\". This network should be enabled for the Guest traffic type."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Guest traffic type should be configured with the traffic label that matches the name of the Integration Bridge on the hypervisor. See the Nicira NVP User Guide for more details on how to set this up in XenServer or KVM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure you have the following information ready:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The IP address of the NVP Controller"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The username to access the API"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The password to access the API"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The UUID of the Transport Zone that contains the hypervisors in this Zone"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The UUID of the Physical Network that will used for the Guest networks"
+msgstr ""
+

@@ -5,29 +5,28 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
 -->
-
 <section id="working-with-iso">
-    <title>Working with ISOs</title>
-    <para>&PRODUCT; supports ISOs and their attachment to guest VMs. An ISO is a read-only file that has an ISO/CD-ROM style file system. Users can upload their own ISOs and mount them on their guest VMs.</para>
-    <para>ISOs are uploaded based on a URL. HTTP is the supported protocol. Once the ISO is available via HTTP specify an upload URL such as http://my.web.server/filename.iso.</para>
-    <para>ISOs may be public or private, like templates.ISOs are not hypervisor-specific.  That is, a guest on vSphere can mount the exact same image that a guest on KVM can mount.</para>
-    <para>ISO images may be stored in the system and made available with a privacy level similar to templates. ISO images are classified as either bootable or not bootable. A bootable ISO image is one that contains an OS image. &PRODUCT; allows a user to boot a guest VM off of an ISO image. Users can also attach ISO images to guest VMs. For example, this enables installing PV drivers into Windows.  ISO images are not hypervisor-specific.</para>
+	<title>Working with ISOs</title>
+	<para>&PRODUCT; supports ISOs and their attachment to guest VMs. An ISO is a read-only file that has an ISO/CD-ROM style file system. Users can upload their own ISOs and mount them on their guest VMs.</para>
+	<para>ISOs are uploaded based on a URL. HTTP is the supported protocol. Once the ISO is available via HTTP specify an upload URL such as http://my.web.server/filename.iso.</para>
+	<para>ISOs may be public or private, like templates.ISOs are not hypervisor-specific.  That is, a guest on vSphere can mount the exact same image that a guest on KVM can mount.</para>
+	<para>ISO images may be stored in the system and made available with a privacy level similar to templates. ISO images are classified as either bootable or not bootable. A bootable ISO image is one that contains an OS image. &PRODUCT; allows a user to boot a guest VM off of an ISO image. Users can also attach ISO images to guest VMs. For example, this enables installing PV drivers into Windows.  ISO images are not hypervisor-specific.</para>
     <xi:include href="add-iso.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="attach-iso-to-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />    
+    <xi:include href="attach-iso-to-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

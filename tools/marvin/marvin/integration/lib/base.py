@@ -389,6 +389,27 @@ class VirtualMachine:
         cmd.id = volume.id
         return apiclient.detachVolume(cmd)
 
+    def add_nic(self, apiclient, networkId):
+        """Add a NIC to a VM"""
+        cmd = addNicToVirtualMachine.addNicToVirtualMachineCmd();
+        cmd.virtualmachineid = self.id
+        cmd.networkid = networkId
+        return apiclient.addNicToVirtualMachine(cmd)
+
+    def remove_nic(self, apiclient, nicId):
+        """Remove a NIC to a VM"""
+        cmd = removeNicFromVirtualMachine.removeNicFromVirtualMachineCmd()
+        cmd.nicid = nicId
+        cmd.virtualmachineid = self.id
+        return apiclient.removeNicFromVirtualMachine(cmd)
+
+    def update_default_nic(self, apiclient, nicId):
+        """Set a NIC to be the default network adapter for a VM"""
+        cmd = updateDefaultNicForVirtualMachine.updateDefaultNicForVirtualMachineCmd()
+        cmd.nicid = nicId
+        cmd.virtualmachineid = self.id
+        return apiclient.updateDefaultNicForVirtualMachine(cmd)
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """List all VMs matching criteria"""
@@ -509,6 +530,12 @@ class Volume:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVolumes(cmd))
 
+    def resize(cls, apiclient, **kwargs):
+        """Resize a volume"""
+        cmd = resizeVolume.resizeVolumeCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.resizeVolume(cmd))
 
 class Snapshot:
     """Manage Snapshot Lifecycle
@@ -1109,7 +1136,7 @@ class DiskOffering:
         if domainid:
             cmd.domainid = domainid
 
-        if services["storagetype"]:
+        if "storagetype" in services:
             cmd.storagetype = services["storagetype"]
 
         return DiskOffering(apiclient.createDiskOffering(cmd).__dict__)

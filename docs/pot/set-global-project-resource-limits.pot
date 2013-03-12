@@ -1,0 +1,110 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting the Global Project Resource Limits"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in as administrator to the &PRODUCT; UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Global Settings."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the search box, type max.projects and click the search button."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the search results, you will see the parameters you can use to set per-project maximum resource amounts that apply to all projects in the cloud. No project can have more resources, but an individual project can have lower limits. Click the edit button to set each parameter. <inlinemediaobject> <imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> </imageobject> <textobject> <phrase>editbutton.png: Edits parameters</phrase> </textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "max.project.public.ips"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Maximum number of public IP addresses that can be owned by any project in the cloud. See About Public IP Addresses."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "max.project.snapshots"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Maximum number of snapshots that can be owned by any project in the cloud. See Working with Snapshots."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "max.project.templates"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Maximum number of templates that can be owned by any project in the cloud. See Working with Templates."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "max.project.uservms"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Maximum number of guest virtual machines that can be owned by any project in the cloud. See Working With Virtual Machines."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "max.project.volumes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Maximum number of data volumes that can be owned by any project in the cloud. See Working with Volumes."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-management restart"
+msgstr ""
+

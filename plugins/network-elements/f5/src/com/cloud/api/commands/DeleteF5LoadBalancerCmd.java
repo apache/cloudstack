@@ -17,15 +17,17 @@
 
 package com.cloud.api.commands;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.BaseAsyncCmd;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.api.response.F5LoadBalancerResponse;
@@ -43,7 +45,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class DeleteF5LoadBalancerCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteF5LoadBalancerCmd.class.getName());
     private static final String s_name = "deletef5loadbalancerresponse";
-    @PlugService F5ExternalLoadBalancerElementService _f5DeviceManagerService;
+    @Inject F5ExternalLoadBalancerElementService _f5DeviceManagerService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -74,12 +76,12 @@ public class DeleteF5LoadBalancerCmd extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete F5 load balancer.");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete F5 load balancer.");
             }
         }  catch (InvalidParameterValueException invalidParamExcp) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
 

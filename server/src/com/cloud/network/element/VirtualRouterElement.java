@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import com.cloud.utils.PropertiesUtil;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
@@ -45,7 +46,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
@@ -74,7 +75,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
@@ -82,7 +82,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
@@ -90,7 +89,10 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
 
-@Local(value = NetworkElement.class)
+@Local(value = {NetworkElement.class, FirewallServiceProvider.class, 
+		        DhcpServiceProvider.class, UserDataServiceProvider.class, 
+		        StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
+		        PortForwardingServiceProvider.class, IpDeployer.class, RemoteAccessVPNServiceProvider.class} )
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, 
     UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
         LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer {
@@ -101,7 +103,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Inject
     NetworkDao _networksDao;
     @Inject
-    NetworkManager _networkMgr;
+    NetworkModel _networkMgr;
     @Inject
     LoadBalancingRulesManager _lbMgr;
     @Inject
@@ -112,8 +114,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     ConfigurationManager _configMgr;
     @Inject
     RulesManager _rulesMgr;
-    @Inject
-    UserVmManager _userVmMgr;
+   
     @Inject
     UserVmDao _userVmDao;
     @Inject
@@ -564,6 +565,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+        firewallCapabilities.put(Capability.SupportedEgressProtocols, "tcp,udp,icmp, all");
+        firewallCapabilities.put(Capability.SupportedTrafficDirection, "ingress, egress");
         firewallCapabilities.put(Capability.MultipleIps, "true");
         capabilities.put(Service.Firewall, firewallCapabilities);
 
@@ -661,6 +664,24 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
 
         return _routerMgr.savePasswordToRouter(network, nic, uservm, routers);
+    }
+
+    @Override
+    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String SSHPublicKey)
+            throws ResourceUnavailableException {
+        if (!canHandle(network, null)) {
+            return false;
+        }
+        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+        if (routers == null || routers.isEmpty()) {
+            s_logger.debug("Can't find virtual router element in network " + network.getId());
+            return true;
+        }
+
+        @SuppressWarnings("unchecked")
+        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
+
+        return _routerMgr.saveSSHPublicKeyToRouter(network, nic, uservm, routers, SSHPublicKey);
     }
 
     @Override
@@ -821,6 +842,11 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 return false;
             }
 
+            if (network.getIp6Gateway() != null) {
+            	s_logger.info("Skip password and userdata service setup for IPv6 VM");
+            	return true;
+            }
+
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
 
@@ -859,8 +885,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
         // for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when
         // network.dns.basiczone.updates is set to "all"
-        Long podId = dest.getPod().getId();
         if (isPodBased && _routerMgr.getDnsBasicZoneUpdate().equalsIgnoreCase("all")) {
+            Long podId = dest.getPod().getId();
             List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(network.getId(),
                     podId, State.Running, Role.VIRTUAL_ROUTER);
             routers.addAll(allRunningRoutersOutsideThePod);

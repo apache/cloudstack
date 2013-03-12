@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -212,7 +211,7 @@ for full help
                     ""),
             )
 
-        for f in ["create-database","create-schema", "create-database-premium","create-schema-premium", "create-schema-view"]:
+        for f in ["create-database","create-schema", "create-database-premium","create-schema-premium"]:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             if not os.path.exists(p): continue
             text = file(p).read()
@@ -244,7 +243,7 @@ for full help
             self.runMysql(text, p, True)
             self.info(None, True)
 
-        for f in ["templates","create-index-fk"]:
+        for f in ["templates"]:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             text = file(p).read()
             self.info("Applying %s"%p)
@@ -359,7 +358,7 @@ for example:
                 if not os.path.exists(dbf):
                     self.errorAndExit("Cannot find %s"%dbf)
 
-            coreSchemas = ['create-database.sql', 'create-schema.sql', 'create-schema-view.sql', 'templates.sql', 'create-index-fk.sql']
+            coreSchemas = ['create-database.sql', 'create-schema.sql', 'templates.sql']
             if not self.serversetup:
                 coreSchemas.append('server-setup.sql')
 
@@ -603,4 +602,3 @@ for example:
 if __name__ == "__main__":
    o = DBDeployer()
    o.run()
-

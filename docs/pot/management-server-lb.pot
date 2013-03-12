@@ -1,0 +1,105 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting Zone VLAN and Running VM Maximums"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; can use a load balancer to provide a virtual IP for multiple Management Servers. The administrator is responsible for creating the load balancer rules for the Management Servers. The application requires persistence or stickiness across multiple sessions. The following chart lists the ports that should be load balanced and whether or not persistence is required."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Even if persistence is not required, enabling it is permitted."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Source Port"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Destination Port"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Protocol"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Persistence Required?"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "80 or 443"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "8080 (or 20400 with AJP)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "HTTP (or AJP)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Yes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "8250"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "TCP"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "8096"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "HTTP"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "No"
+msgstr ""
+

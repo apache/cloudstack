@@ -1,0 +1,115 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Compatibility Matrix"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hypervisor"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack 2.1.x"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack 2.2.x"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack 3.0.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack 3.0.1"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack 3.0.2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CloudStack 3.0.3"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 5.6"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Yes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "No"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 5.6 FP1"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 5.6 SP2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 6.0.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 6.0.2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "XenServer 6.1"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "KVM (RHEL 6.0 or 6.1)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VMware (vSphere and vCenter, both version 4.1)"
+msgstr ""
+

@@ -75,6 +75,7 @@ under the License.
                 <option value="ru_RU"><fmt:message key="label.lang.russian"/></option>
                 <option value="fr_FR"><fmt:message key="label.lang.french"/></option>
                 <option value="pt_BR"><fmt:message key="label.lang.brportugese"/></option>
+                <option value="ko_KR"><fmt:message key="label.lang.korean"/></option>
               </select>
             </div>
           </div>
@@ -220,7 +221,7 @@ under the License.
             </div>
 
             <!-- Step 5: Network -->
-            <div class="step network" wizard-step-id="network">
+            <div class="step network always-load" wizard-step-id="network">
               <!-- 5a: Network description -->
               <div class="wizard-step-conditional nothing-to-select">     
 								<p id="from_instance_page_1"><fmt:message key="message.zone.no.network.selection"/></p>
@@ -959,7 +960,7 @@ under the License.
           <div class="button refresh" id="refresh_button">
             <span><fmt:message key="label.refresh"/></span>
           </div>
-          <div id="update_ssl_button" class="button action main-action reduced-hide lock">
+          <div id="update_ssl_button" class="button action main-action reduced-hide lock" title="Updates your Console Proxy SSL Certificate">
             <span class="icon">&nbsp;</span>            
             <span><fmt:message key="label.update.ssl.cert"/></span>
           </div>
@@ -1606,8 +1607,9 @@ under the License.
     <script src="lib/date.js" type="text/javascript"></script>
     <script src="lib/jquery.cookies.js" type="text/javascript"></script>
     <script src="lib/jquery.md5.js" type="text/javascript" ></script>
-		
-    <script src="lib/excanvas.js"></script>
+    <script src="lib/require.js" type="text/javascript"></script>
+
+    <script src="lib/excanvas.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.flot.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.colorhelpers.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.flot.crosshair.js" type="text/javascript"></script>
@@ -1673,6 +1675,12 @@ under the License.
     <script type="text/javascript" src="scripts/system.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/domains.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/docs.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/vm_snapshots.js?t=<%=now%>"></script>  
+
+    <!-- Plugins -->
+    <script type="text/javascript" src="scripts/ui-custom/plugins.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="plugins/plugins.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/plugins.js?t=<%=now%>"></script>
   </body>
 </html>
 <jsp:include page="dictionary.jsp" />

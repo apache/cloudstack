@@ -16,19 +16,21 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.discovery;
 
-import com.cloud.user.User;
-import com.cloud.user.UserContext;
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.discovery.ApiDiscoveryService;
-import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
-
 import org.apache.log4j.Logger;
+
+import com.cloud.user.User;
+import com.cloud.user.UserContext;
 
 @APICommand(name = "listApis", responseObject = ApiDiscoveryResponse.class, description = "lists all available apis on the server, provided by the Api Discovery plugin", since = "4.1.0")
 public class ListApisCmd extends BaseCmd {
@@ -36,7 +38,7 @@ public class ListApisCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListApisCmd.class.getName());
     private static final String s_name = "listapisresponse";
 
-    @PlugService
+    @Inject
     ApiDiscoveryService _apiDiscoveryService;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="API name")
@@ -48,7 +50,7 @@ public class ListApisCmd extends BaseCmd {
             User user = UserContext.current().getCallerUser();
             ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) _apiDiscoveryService.listApis(user, name);
             if (response == null) {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Api Discovery plugin was unable to find an api by that name or process any apis");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Api Discovery plugin was unable to find an api by that name or process any apis");
             }
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

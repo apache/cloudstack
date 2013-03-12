@@ -17,9 +17,10 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.BaseResponse;
 
 public class LDAPConfigResponse  extends BaseResponse {
 
@@ -29,7 +30,7 @@ public class LDAPConfigResponse  extends BaseResponse {
     @SerializedName(ApiConstants.PORT) @Param(description="Specify the LDAP port if required, default is 389")
     private String port;
 
-    @SerializedName(ApiConstants.PORT) @Param(description="Check Use SSL if the external LDAP server is configured for LDAP over SSL")
+    @SerializedName(ApiConstants.USE_SSL) @Param(description="Check Use SSL if the external LDAP server is configured for LDAP over SSL")
     private String useSSL;
 
     @SerializedName(ApiConstants.SEARCH_BASE) @Param(description="The search base defines the starting point for the search in the directory tree Example:  dc=cloud,dc=com")

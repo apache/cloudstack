@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.offering;
 
+import java.util.Date;
+
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
-
-import java.util.Date;
 
 /**
  * offered.
@@ -76,6 +76,11 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
      * @return Does this service plan offer VM to use CPU resources beyond the service offering limits?
      */
     boolean getLimitCpuUse();
+
+    /**
+     * @return Does this service plan support Volatile VM that is, discard VM's root disk and create a new one on reboot?
+     */
+    boolean getVolatileVm();
 
     /**
      * @return the rate in megabits per sec to which a VM's network interface is throttled to

@@ -19,22 +19,22 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 
 import java.util.Map;
 
-import org.apache.cloudstack.api.response.FirewallRuleResponse;
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.LBStickinessResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.rules.StickinessPolicy;
-import org.apache.cloudstack.api.response.LBStickinessResponse;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -129,7 +129,7 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
             }
         } finally {
             if (!success || (policy == null)) {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create stickiness policy ");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create stickiness policy ");
             }
         }
     }
@@ -142,7 +142,7 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
             this.setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException e) {
             s_logger.warn("Exception: ", e);
-            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
+            throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }
     }
 

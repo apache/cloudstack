@@ -18,15 +18,16 @@ package org.apache.cloudstack.api.command.user.resource;
 
 import java.util.ArrayList;
 
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.CloudIdentifierResponse;
 import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.user.Account;
 
 @APICommand(name = "getCloudIdentifier", description="Retrieves a cloud identifier.", responseObject=CloudIdentifierResponse.class)
@@ -74,7 +75,7 @@ public class GetCloudIdentifierCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to get cloud identifier");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to get cloud identifier");
         }
 
     }

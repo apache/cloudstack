@@ -29,44 +29,24 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.security.CertificateHelper;
 
+@Component
 @Local(value=KeystoreManager.class)
-public class KeystoreManagerImpl implements KeystoreManager {
+public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager {
     private static final Logger s_logger = Logger.getLogger(KeystoreManagerImpl.class);
 
-	private String _name;
 	@Inject private KeystoreDao _ksDao;
-	
-	@Override
-	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-		_name = name;
-		
-		return true;
-	}
-
-	@Override
-	public boolean start() {
-		return true;
-	}
-
-	@Override
-	public boolean stop() {
-		return true;
-	}
-
-	@Override
-	public String getName() {
-		return _name;
-	}
 	
 	@Override
 	public boolean validateCertificate(String certificate, String key, String domainSuffix) {

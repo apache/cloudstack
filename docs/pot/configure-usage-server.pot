@@ -1,0 +1,230 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring the Usage Server"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the usage server:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Be sure the Usage Server has been installed. This requires extra steps beyond just installing the &PRODUCT; software. See Installing the Usage Server (Optional) in the Advanced Installation Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as administrator."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Global Settings."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Search, type usage. Find the configuration parameter that controls the behavior you want to set. See the table below for a description of the available parameters."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Actions, click the Edit icon."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Type the desired value and click the Save icon."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server (as usual with any global configuration change) and also the Usage Server:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-management restart\n"
+"# service cloud-usage restart \n"
+""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following table shows the global configuration settings that control the behavior of the Usage Server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Parameter Name"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Description"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "enable.usage.server"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Whether the Usage Server is active."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usage.aggregation.timezone"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Time zone of usage records. Set this if the usage records and daily job execution are in different time zones. For example, with the following settings, the usage job will run at PST 00:15 and generate usage records for the 24 hours from 00:00:00 GMT to 23:59:59 GMT:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "usage.stats.job.exec.time = 00:15    \n"
+"usage.execution.timezone = PST\n"
+"usage.aggregation.timezone = GMT\n"
+"                        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Valid values for the time zone are specified in <xref linkend=\"time-zones\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Default: GMT"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usage.execution.timezone"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The time zone of usage.stats.job.exec.time. Valid values for the time zone are specified in <xref linkend=\"time-zones\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Default: The time zone of the management server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usage.sanity.check.interval"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The number of days between sanity checks. Set this in order to periodically search for records with erroneous data before issuing customer invoices. For example, this checks for VM usage records created after the VM was destroyed, and similar checks for templates, volumes, and so on. It also checks for usage times longer than the aggregation range. If any issue is found, the alert ALERT_TYPE_USAGE_SANITY_RESULT = 21 is sent."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usage.stats.job.aggregation.range"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The time period in minutes between Usage Server processing jobs. For example, if you set it to 1440, the Usage Server will run once per day. If you set it to 600, it will run every ten hours. In general, when a Usage Server job runs, it processes all events generated since usage was last run."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "There is special handling for the case of 1440 (once per day). In this case the Usage Server does not necessarily process all records since Usage was last run. &PRODUCT; assumes that you require processing once per day for the previous, complete day’s records. For example, if the current day is October 7, then it is assumed you would like to process records for October 6, from midnight to midnight. &PRODUCT; assumes this \"midnight to midnight\" is relative to the usage.execution.timezone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Default: 1440"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usage.stats.job.exec.time"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The time when the Usage Server processing will start. It is specified in 24-hour format (HH:MM) in the time zone of the server, which should be GMT. For example, to start the Usage job at 10:30 GMT, enter \"10:30\"."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If usage.stats.job.aggregation.range is also set, and its value is not 1440, then its value will be added to usage.stats.job.exec.time to get the time to run the Usage Server job again. This is repeated until 24 hours have elapsed, and the next day's processing begins again at usage.stats.job.exec.time."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Default: 00:15."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For example, suppose that your server is in GMT, your user population is predominantly in the East Coast of the United States, and you would like to process usage records every night at 2 AM local (EST) time. Choose these settings:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "enable.usage.server = true"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usage.execution.timezone = America/New_York"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usage.stats.job.exec.time = 07:00. This will run the Usage job at 2:00 AM EST. Note that this will shift by an hour as the East Coast of the U.S. enters and exits Daylight Savings Time."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "usage.stats.job.aggregation.range = 1440"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "With this configuration, the Usage job will run every night at 2 AM EST and will process records for the previous day’s midnight-midnight as defined by the EST (America/New_York) time zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Because the special value 1440 has been used for usage.stats.job.aggregation.range, the Usage Server will ignore the data between midnight and 2 AM. That data will be included in the next day's run"
+msgstr ""
+

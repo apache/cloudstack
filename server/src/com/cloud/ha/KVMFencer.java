@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -35,13 +36,12 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VMInstanceVO;
 
 @Local(value=FenceBuilder.class)
-public class KVMFencer implements FenceBuilder {
+public class KVMFencer extends AdapterBase implements FenceBuilder {
 	private static final Logger s_logger = Logger.getLogger(KVMFencer.class);
-	String _name;
 
 	@Inject HostDao _hostDao;
 	@Inject AgentManager _agentMgr;
@@ -50,13 +50,7 @@ public class KVMFencer implements FenceBuilder {
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
 		// TODO Auto-generated method stub
-		  _name = name;
 		 return true;
-	}
-
-	@Override
-	public String getName() {
-		 return _name;
 	}
 
 	@Override

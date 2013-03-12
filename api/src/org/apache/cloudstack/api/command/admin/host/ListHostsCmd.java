@@ -21,8 +21,6 @@ import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -33,6 +31,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
@@ -168,17 +168,16 @@ public class ListHostsCmd extends BaseListCmd {
         if (getVirtualMachineId() == null) {
             response = _queryService.searchForServers(this);
         } else {
-            List<? extends Host> result = new ArrayList<Host>();
+            Pair<List<? extends Host>,Integer> result;
             List<? extends Host> hostsWithCapacity = new ArrayList<Host>();
 
-            Pair<List<? extends Host>, List<? extends Host>> hostsForMigration = _mgr.listHostsForMigrationOfVM(getVirtualMachineId(),
-                    this.getStartIndex(), this.getPageSizeVal());
+            Pair<Pair<List<? extends Host>,Integer>, List<? extends Host>> hostsForMigration = _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal());
             result = hostsForMigration.first();
             hostsWithCapacity = hostsForMigration.second();
 
             response = new ListResponse<HostResponse>();
             List<HostResponse> hostResponses = new ArrayList<HostResponse>();
-            for (Host host : result) {
+            for (Host host : result.first()) {
                 HostResponse hostResponse = _responseGenerator.createHostResponse(host, getDetails());
                 Boolean suitableForMigration = false;
                 if (hostsWithCapacity.contains(host)) {
@@ -189,7 +188,7 @@ public class ListHostsCmd extends BaseListCmd {
                 hostResponses.add(hostResponse);
             }
 
-            response.setResponses(hostResponses);
+            response.setResponses(hostResponses, result.second());
         }
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

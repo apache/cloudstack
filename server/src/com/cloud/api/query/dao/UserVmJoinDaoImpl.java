@@ -24,28 +24,28 @@ import java.util.List;
 import java.util.Set;
 
 import javax.ejb.Local;
-
-import org.apache.log4j.Logger;
-
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.vo.ResourceTagJoinVO;
-import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.configuration.dao.ConfigurationDao;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.vo.ResourceTagJoinVO;
+import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VmStats;
 
 
+@Component
 @Local(value={UserVmJoinDao.class})
 public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implements UserVmJoinDao {
     public static final Logger s_logger = Logger.getLogger(UserVmJoinDaoImpl.class);
@@ -53,7 +53,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
     @Inject
     private ConfigurationDao  _configDao;
 
-    private SearchBuilder<UserVmJoinVO> VmDetailSearch;
+    private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
 
     protected UserVmJoinDaoImpl() {
 
@@ -66,6 +66,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
     }
 
+    @Override
     public UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
         UserVmResponse userVmResponse = new UserVmResponse();
 
@@ -185,6 +186,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
                 nicResponse.setNetmask(userVm.getNetmask());
                 nicResponse.setNetworkid(userVm.getNetworkUuid());
                 nicResponse.setMacAddress(userVm.getMacAddress());
+                nicResponse.setIp6Address(userVm.getIp6Address());
+                nicResponse.setIp6Gateway(userVm.getIp6Gateway());
+                nicResponse.setIp6Cidr(userVm.getIp6Cidr());
                 if (userVm.getBroadcastUri() != null) {
                     nicResponse.setBroadcastUri(userVm.getBroadcastUri().toString());
                 }
@@ -214,8 +218,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         userVmResponse.setObjectName(objectName);
 
         return userVmResponse;
-       }
+    }
 
+    @Override
     public UserVmResponse setUserVmResponse(UserVmResponse userVmData, UserVmJoinVO uvo) {
         Long securityGroupId = uvo.getSecurityGroupId();
         if (securityGroupId != null && securityGroupId.longValue() != 0) {
@@ -242,6 +247,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
             nicResponse.setNetmask(uvo.getNetmask());
             nicResponse.setNetworkid(uvo.getNetworkUuid());
             nicResponse.setMacAddress(uvo.getMacAddress());
+            nicResponse.setIp6Address(uvo.getIp6Address());
+            nicResponse.setIp6Gateway(uvo.getIp6Gateway());
+            nicResponse.setIp6Cidr(uvo.getIp6Cidr());
             if (uvo.getBroadcastUri() != null) {
                 nicResponse.setBroadcastUri(uvo.getBroadcastUri().toString());
             }
@@ -325,7 +333,15 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         }
 
         Set<Long> vmIdSet = userVmDataHash.keySet();
-        return searchByIds(vmIdSet.toArray(new Long[vmIdSet.size()]));
+        List<UserVmJoinVO> uvms = searchByIds(vmIdSet.toArray(new Long[vmIdSet.size()]));
+        // populate transit password field from UserVm
+        if ( uvms != null ){
+            for (UserVmJoinVO uvm : uvms){
+                UserVm v = userVmDataHash.get(uvm.getId());
+                uvm.setPassword(v.getPassword());
+            }
+        }
+        return uvms;
     }
 
 }

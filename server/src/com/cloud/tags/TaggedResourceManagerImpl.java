@@ -22,10 +22,12 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 
 import com.cloud.api.query.dao.ResourceTagJoinDao;
@@ -59,8 +61,8 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.DbUtil;
 import com.cloud.utils.db.Filter;
@@ -71,16 +73,17 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 
+@Component
 @Local(value = { TaggedResourceService.class})
-public class TaggedResourceManagerImpl implements TaggedResourceService, Manager{
+public class TaggedResourceManagerImpl extends ManagerBase implements TaggedResourceService {
     public static final Logger s_logger = Logger.getLogger(TaggedResourceManagerImpl.class);
-    private String _name;
-
-    private static Map<TaggedResourceType, GenericDao<?, Long>> _daoMap=
+    
+    private static Map<TaggedResourceType, GenericDao<?, Long>> _daoMap= 
             new HashMap<TaggedResourceType, GenericDao<?, Long>>();
-
+    
     @Inject
     AccountManager _accountMgr;
     @Inject
@@ -119,10 +122,11 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
     VpcDao _vpcDao;
     @Inject
     StaticRouteDao _staticRouteDao;
+    @Inject
+    VMSnapshotDao _vmSnapshotDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
         _daoMap.put(TaggedResourceType.UserVm, _userVmDao);
         _daoMap.put(TaggedResourceType.Volume, _volumeDao);
         _daoMap.put(TaggedResourceType.Template, _templateDao);
@@ -138,6 +142,7 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         _daoMap.put(TaggedResourceType.Vpc, _vpcDao);
         _daoMap.put(TaggedResourceType.NetworkACL, _firewallDao);
         _daoMap.put(TaggedResourceType.StaticRoute, _staticRouteDao);
+        _daoMap.put(TaggedResourceType.VMSnapshot, _vmSnapshotDao);
 
         return true;
     }
@@ -152,21 +157,15 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         return true;
     }
 
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-
-    private Long getResourceId(String resourceId, TaggedResourceType resourceType) {
+    private Long getResourceId(String resourceId, TaggedResourceType resourceType) {   
         GenericDao<?, Long> dao = _daoMap.get(resourceType);
         if (dao == null) {
             throw new CloudRuntimeException("Dao is not loaded for the resource type " + resourceType);
         }
         Class<?> claz = DbUtil.getEntityBeanType(dao);
-
+        
         Long identityId = null;
-
+        
         while (claz != null && claz != Object.class) {
             try {
                 String tableName = DbUtil.getTableName(claz);
@@ -182,7 +181,7 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
             }
             claz = claz.getSuperclass();
         }
-
+       
         if (identityId == null) {
             throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + " and type " + resourceType);
         }
@@ -194,9 +193,9 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         Class<?> claz = DbUtil.getEntityBeanType(dao);
         return DbUtil.getTableName(claz);
     }
-
+    
     private Pair<Long, Long> getAccountDomain(long resourceId, TaggedResourceType resourceType) {
-
+       
         Pair<Long, Long> pair = null;
         GenericDao<?, Long> dao = _daoMap.get(resourceType);
         Class<?> claz = DbUtil.getEntityBeanType(dao);
@@ -218,21 +217,21 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
 
         Long accountId = pair.first();
         Long domainId = pair.second();
-
+        
         if (accountId == null) {
             accountId = Account.ACCOUNT_ID_SYSTEM;
         }
-
+        
         if (domainId == null) {
             domainId = Domain.ROOT_DOMAIN;
         }
-
+        
         return new Pair<Long, Long>(accountId, domainId);
     }
 
     @Override
     public TaggedResourceType getResourceType(String resourceTypeStr) {
-
+        
         for (TaggedResourceType type : ResourceTag.TaggedResourceType.values()) {
             if (type.toString().equalsIgnoreCase(resourceTypeStr)) {
                 return type;
@@ -244,26 +243,26 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TAGS_CREATE, eventDescription = "creating resource tags")
-    public List<ResourceTag> createTags(List<String> resourceIds, TaggedResourceType resourceType,
+    public List<ResourceTag> createTags(List<String> resourceIds, TaggedResourceType resourceType, 
             Map<String, String> tags, String customer) {
         Account caller = UserContext.current().getCaller();
-
+        
         List<ResourceTag> resourceTags = new ArrayList<ResourceTag>(tags.size());
-
+        
         Transaction txn = Transaction.currentTxn();
         txn.start();
-
+        
         for (String key : tags.keySet()) {
             for (String resourceId : resourceIds) {
                 Long id = getResourceId(resourceId, resourceType);
                 String resourceUuid = getUuid(resourceId, resourceType);
-
+                
                 //check if object exists
                 if (_daoMap.get(resourceType).findById(id) == null) {
-                    throw new InvalidParameterValueException("Unable to find resource by id " + resourceId +
+                    throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + 
                             " and type " + resourceType);
                 }
-
+                
                 Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
                 Long domainId = accountDomainPair.second();
                 Long accountId = accountDomainPair.first();
@@ -274,55 +273,55 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
                     _accountMgr.checkAccess(caller, _domainMgr.getDomain(domainId));
                 } else {
                     throw new PermissionDeniedException("Account " + caller + " doesn't have permissions to create tags" +
-                            " for resource " + key);
+                    		" for resource " + key);
                 }
-
+                
                 String value = tags.get(key);
-
+                
                 if (value == null || value.isEmpty()) {
                     throw new InvalidParameterValueException("Value for the key " + key + " is either null or empty");
                 }
-
+               
                 ResourceTagVO resourceTag = new ResourceTagVO(key, value, accountDomainPair.first(),
-                        accountDomainPair.second(),
+                        accountDomainPair.second(), 
                         id, resourceType, customer, resourceUuid);
                 resourceTag = _resourceTagDao.persist(resourceTag);
                 resourceTags.add(resourceTag);
             }
         }
-
+        
         txn.commit();
-
+        
         return resourceTags;
     }
-
+    
     @Override
     public String getUuid(String resourceId, TaggedResourceType resourceType) {
         GenericDao<?, Long> dao = _daoMap.get(resourceType);
         Class<?> claz = DbUtil.getEntityBeanType(dao);
-
+        
        String identiyUUId = null;
-
+       
        while (claz != null && claz != Object.class) {
            try {
                String tableName = DbUtil.getTableName(claz);
                if (tableName == null) {
                    throw new InvalidParameterValueException("Unable to find resource of type " + resourceType + " in the database");
                }
-
+               
                claz = claz.getSuperclass();
                if (claz == Object.class) {
                    identiyUUId = _identityDao.getIdentityUuid(tableName, resourceId);
-               }
+               } 
            } catch (Exception ex) {
                //do nothing here, it might mean uuid field is missing and we have to search further
            }
        }
-
+       
        if (identiyUUId == null) {
            return resourceId;
        }
-
+       
        return identiyUUId;
     }
 
@@ -331,21 +330,21 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
     @ActionEvent(eventType = EventTypes.EVENT_TAGS_DELETE, eventDescription = "deleting resource tags")
     public boolean deleteTags(List<String> resourceIds, TaggedResourceType resourceType, Map<String, String> tags) {
         Account caller = UserContext.current().getCaller();
-
+        
         SearchBuilder<ResourceTagVO> sb = _resourceTagDao.createSearchBuilder();
         sb.and().op("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.IN);
         sb.or("resourceUuid", sb.entity().getResourceUuid(), SearchCriteria.Op.IN);
         sb.cp();
         sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
-
+        
         SearchCriteria<ResourceTagVO> sc = sb.create();
         sc.setParameters("resourceId", resourceIds.toArray());
         sc.setParameters("resourceUuid", resourceIds.toArray());
         sc.setParameters("resourceType", resourceType);
-
+        
         List<? extends ResourceTag> resourceTags = _resourceTagDao.search(sc, null);;
         List<ResourceTag> tagsToRemove = new ArrayList<ResourceTag>();
-
+        
         // Finalize which tags should be removed
         for (ResourceTag resourceTag : resourceTags) {
             //1) validate the permissions
@@ -369,16 +368,16 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
                             break;
                         }
                     }
-                }
+                } 
             } else {
                 tagsToRemove.add(resourceTag);
             }
         }
-
+        
         if (tagsToRemove.isEmpty()) {
             throw new InvalidParameterValueException("Unable to find tags by parameters specified");
         }
-
+        
         //Remove the tags
         Transaction txn = Transaction.currentTxn();
         txn.start();

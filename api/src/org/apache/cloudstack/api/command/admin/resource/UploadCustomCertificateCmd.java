@@ -16,11 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.resource;
 
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.CustomCertificateResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.response.CustomCertificateResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
@@ -99,7 +103,7 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
             response.setObjectName("customcertificate");
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to upload custom certificate");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upload custom certificate");
         }
     }
 

@@ -1,0 +1,50 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:12:00\n"
+"PO-Revision-Date: 2013-02-02T20:12:00\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "What Is &PRODUCT;?"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; is an open source software platform that pools computing resources to build public, private, and hybrid Infrastructure as a Service (IaaS) clouds. &PRODUCT; manages the network, storage, and compute nodes that make up a cloud infrastructure. Use &PRODUCT; to deploy, manage, and configure cloud computing environments."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Typical users are service providers and enterprises. With &PRODUCT;, you can:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set up an on-demand, elastic cloud computing service. Service providers can sell self service virtual machine instances, storage volumes, and networking configurations over the Internet."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set up an on-premise private cloud for use by employees. Rather than managing virtual machines in the same way as physical machines, with &PRODUCT; an enterprise can offer self-service virtual machines to users without involving IT departments."
+msgstr ""
+

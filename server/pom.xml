@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.1.0-SNAPSHOT</version>
+    <version>4.2.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
@@ -80,6 +80,26 @@
       <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.reflections</groupId>
+      <artifactId>reflections</artifactId>
+      <version>0.9.8</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-framework-events</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -105,6 +125,8 @@
             <exclude>com/cloud/vm/dao/*</exclude>
             <exclude>com/cloud/vpc/*</exclude>
             <exclude>com/cloud/api/ListPerfTest.java</exclude>
+            <exclude>com/cloud/network/vpn/RemoteAccessVpnTest.java</exclude>
+            <exclude>com/cloud/network/security/SecurityGroupManagerImpl2Test.java</exclude>
           </excludes>
         </configuration>
       </plugin>

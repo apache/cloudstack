@@ -37,7 +37,8 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         Project,
         Vpc,
         NetworkACL,
-        StaticRoute
+        StaticRoute,
+        VMSnapshot
     }
 
     /**

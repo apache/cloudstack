@@ -35,7 +35,7 @@ import cleanup
 import stat
 import random
 
-VHD_UTIL = '/usr/sbin/vhd-util'
+VHD_UTIL = '/opt/xensource/bin/vhd-util'
 VHD_PREFIX = 'VHD-'
 CLOUD_DIR = '/var/run/cloud_mount'
 
@@ -556,6 +556,33 @@ def deleteSnapshotBackup(session, args):
 
     return "1"
    
+@echo
+def revert_memory_snapshot(session, args):
+    util.SMlog("Calling revert_memory_snapshot with " + str(args))
+    vmName = args['vmName']
+    snapshotUUID = args['snapshotUUID']
+    oldVmUuid = args['oldVmUuid']
+    snapshotMemory = args['snapshotMemory']
+    hostUUID = args['hostUUID']
+    try:
+        cmd = '''xe vbd-list vm-uuid=%s | grep 'vdi-uuid' | grep -v 'not in database' | sed -e 's/vdi-uuid ( RO)://g' ''' % oldVmUuid
+        vdiUuids = os.popen(cmd).read().split()
+        cmd2 = '''xe vm-param-get param-name=power-state uuid=''' + oldVmUuid
+        if os.popen(cmd2).read().split()[0] != 'halted':
+            os.system("xe vm-shutdown force=true vm=" + vmName)
+        os.system("xe vm-destroy uuid=" + oldVmUuid)
+        os.system("xe snapshot-revert snapshot-uuid=" + snapshotUUID)
+        if snapshotMemory == 'true':
+            os.system("xe vm-resume vm=" + vmName + " on=" + hostUUID)
+        for vdiUuid in vdiUuids:
+            os.system("xe vdi-destroy uuid=" + vdiUuid)
+    except OSError, (errno, strerror):
+        errMsg = "OSError while reverting vm " + vmName + " to snapshot " + snapshotUUID + " with errno: " + str(errno) + " and strerr: " + strerror
+        util.SMlog(errMsg)
+        raise xs_errors.XenError(errMsg)
+    return "0"
+
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir})
+    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir, "revert_memory_snapshot":revert_memory_snapshot})
+    
 

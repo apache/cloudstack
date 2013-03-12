@@ -16,15 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.host;
 
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.user.Account;
 
 @APICommand(name = "deleteHost", description = "Deletes a host.", responseObject = SuccessResponse.class)
@@ -84,7 +85,7 @@ public class DeleteHostCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete host");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete host");
         }
     }
 }

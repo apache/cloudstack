@@ -1,0 +1,60 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Advanced Zone Network Traffic Types"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When advanced networking is used, there can be multiple physical networks in the zone. Each physical network can carry one or more traffic types, and you need to let &PRODUCT; know which type of network traffic you want each network to carry. The traffic types in an advanced zone are:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Guest. When end users run VMs, they generate guest traffic. The guest VMs communicate with each other over a network that can be referred to as the guest network. This network can be isolated or shared. In an isolated guest network, the administrator needs to reserve VLAN ranges to provide isolation for each &PRODUCT; account’s network (potentially a large number of VLANs). In a shared guest network, all guest VMs share a single network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Management. When &PRODUCT;’s internal resources communicate with each other, they generate management traffic. This includes communication between hosts, system VMs (VMs used by &PRODUCT; to perform various tasks in the cloud), and any other component that communicates directly with the &PRODUCT; Management Server. You must configure the IP range for the system VMs to use."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public. Public traffic is generated when VMs in the cloud access the Internet. Publicly accessible IPs must be allocated for this purpose. End users can use the &PRODUCT; UI to acquire these IPs to implement NAT between their guest network and the public network, as described in “Acquiring a New IP Address” in the Administration Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Storage. Traffic such as VM templates and snapshots, which is sent between the secondary storage VM and secondary storage servers. &PRODUCT; uses a separate Network Interface Controller (NIC) named storage NIC for storage network traffic. Use of a storage NIC that always operates on a high bandwidth network allows fast template and snapshot copying. You must configure the IP range to use for the storage network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "These traffic types can each be on a separate physical network, or they can be combined with certain restrictions. When you use the Add Zone wizard in the UI to create a new zone, you are guided into making only valid choices."
+msgstr ""
+

@@ -21,12 +21,13 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
-import com.cloud.network.Site2SiteCustomerGatewayVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 @Local(value={Site2SiteCustomerGatewayDao.class})
 public class Site2SiteCustomerGatewayDaoImpl extends GenericDaoBase<Site2SiteCustomerGatewayVO, Long> implements Site2SiteCustomerGatewayDao {
     private static final Logger s_logger = Logger.getLogger(Site2SiteCustomerGatewayDaoImpl.class);

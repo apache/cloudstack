@@ -19,10 +19,11 @@ package com.cloud.storage.snapshot;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
-import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
-import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
+
+import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
@@ -82,7 +83,7 @@ public interface SnapshotService {
      *            the command that specifies the volume criteria
      * @return list of snapshot policies
      */
-    List<? extends SnapshotPolicy> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd);
+    Pair<List<? extends SnapshotPolicy>, Integer> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd);
 
     boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd);
 

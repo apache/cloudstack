@@ -21,6 +21,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
@@ -33,9 +35,11 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.component.ManagerBase;
 
+@Component
 @Local(value = { AgentManager.class })
-public class MockAgentManagerImpl implements AgentManager {
+public class MockAgentManagerImpl extends ManagerBase implements AgentManager {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

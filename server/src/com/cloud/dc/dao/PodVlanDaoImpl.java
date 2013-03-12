@@ -21,6 +21,8 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.PodVlanVO;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
@@ -32,6 +34,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 /**
  * PodVlanDaoImpl maintains the one-to-many relationship between
  */
+@Component
 public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements GenericDao<PodVlanVO, Long> {
     private final SearchBuilder<PodVlanVO> FreeVlanSearch;
     private final SearchBuilder<PodVlanVO> VlanPodSearch;
@@ -114,7 +117,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements G
         update(vo.getId(), vo);
     }
     
-    protected PodVlanDaoImpl() {
+    public PodVlanDaoImpl() {
     	super();
     	PodSearchAllocated = createSearchBuilder();
     	PodSearchAllocated.and("podId", PodSearchAllocated.entity().getPodId(), SearchCriteria.Op.EQ);

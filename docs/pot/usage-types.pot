@@ -1,0 +1,245 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Usage Types"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following table shows all usage types."
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "Type ID"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "Type Name"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "Description"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "1"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "RUNNING_VM"
+msgstr ""
+
+#. Tag: entry
+#, no-c-format
+msgid "Tracks the total running time of a VM per usage record period. If the VM is upgraded during the usage period, you will get a separate Usage Record for the new upgraded VM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ALLOCATED_VM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tracks the total time the VM has been created to the time when it has been destroyed. This usage type is also useful in determining usage for specific templates such as Windows-based templates."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "3"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "IP_ADDRESS"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tracks the public IP address owned by the account."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NETWORK_BYTES_SENT"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tracks the total number of bytes sent by all the VMs for an account. Cloud.com does not currently track network traffic per VM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "5"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NETWORK_BYTES_RECEIVED"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tracks the total number of bytes received by all the VMs for an account. Cloud.com does not currently track network traffic per VM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "6"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VOLUME"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tracks the total time a disk volume has been created to the time when it has been destroyed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "7"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "TEMPLATE"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tracks the total time a template (either created from a snapshot or uploaded to the cloud) has been created to the time it has been destroyed. The size of the template is also returned."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "8"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ISO"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tracks the total time an ISO has been uploaded to the time it has been removed from the cloud. The size of the ISO is also returned."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "9"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "SNAPSHOT"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tracks the total time from when a snapshot has been created to the time it have been destroyed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "11"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "LOAD_BALANCER_POLICY"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tracks the total time a load balancer policy has been created to the time it has been removed. Cloud.com does not track whether a VM has been assigned to a policy."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "12"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "PORT_FORWARDING_RULE"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tracks the time from when a port forwarding rule was created until the time it was removed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "13"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NETWORK_OFFERING"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The time from when a network offering was assigned to a VM until it is removed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "14"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VPN_USERS"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The time from when a VPN user is created until it is removed."
+msgstr ""
+

@@ -1,0 +1,80 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a New Volume"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can add more data disk volumes to a guest VM at any time, up to the limits of your storage capacity. Both &PRODUCT; administrators and users can add volumes to VM instances. When you create a new volume, it is stored as an entity in &PRODUCT;, but the actual storage resources are not allocated on the physical storage device until you attach the volume. This optimization allows the &PRODUCT; to provision the volume nearest to the guest that will use it when the first attachment is made."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Volumes."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To create a new volume, click Add Volume, provide the following details, and click OK."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name. Give the volume a unique name so you can find it later."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Availability Zone. Where do you want the storage to reside? This should be close to the VM that will use the volume."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Disk Offering. Choose the characteristics of the storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The new volume appears in the list of volumes with the state “Allocated.” The volume data is stored in &PRODUCT;, but the volume is not yet ready for use"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To start using the volume, continue to Attaching a Volume"
+msgstr ""
+

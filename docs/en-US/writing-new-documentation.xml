@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="writing-new-documentation">
+    <title>Writing &PRODUCT; Documentation</title>
+    <para>&PRODUCT; documentation is written in DocBook xml format. Each guide defined with a publican configuration file refers to a DocBook <emphasis>book</emphasis>.</para> 
+    <para>These books are defined in xml files in docs/en-US, for instance if we look at the Developers guide, its configuration file contains:</para>
+    <programlisting>
+        xml_lang: en-US
+        type: Book
+        docname: Developers_Guide
+        brand: cloudstack
+        chunk_first: 1
+        chunk_section_depth: 1
+    </programlisting>
+    <para>The <emphasis>docname</emphasis> key gives you the basename of the DocBook file located in the en-US directory that contains the description of the book.</para>
+    <para>Looking closely at Developers_Guide.xml we see that it contains <emphasis>book</emphasis> tags and several references to other xml files. These are the chapters of the book, currently they are:</para>
+    <programlisting>
+    <![CDATA[
+        <xi:include href="concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="building-with-maven.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="developer-introduction.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="whats-new.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="api-calls.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="working-with-usage-data.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="working-with-documentation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="tools.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="event-types.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="alerts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="time-zones.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="Revision_History.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    ]]>
+    </programlisting>
+    <para>All these xml files are written in DocBook format.</para>
+    <note>
+        <para>DocBook format is well <ulink url="http://www.docbook.org/tdg5/en/html/docbook.html">documented</ulink>, refer to the documentation for any questions about DocBook tags</para>
+    </note>
+    <para>When writing documentation, you therefore need to located the book,chapter and section of the content you want to write/correct.
+    Or create a new book,chapter,section.</para>
+    <para>You will then learn much more about DocBook tagging. In order to write this chapter about documentation, I added the <emphasis>working-with-documentation.xml</emphasis>file describing a chapter in the Developer book and I created several sections within that chapter like so:</para>
+    <programlisting>
+    <![CDATA[
+        <chapter id="working-with-documentation">
+            <title>Preparing and Building &PRODUCT; Documentation</title>
+            <para>This chapter describes how to install publican, how to write new documentation and build a guide as well as how to build a translated version of the documentation using transifex</para>
+            <xi:include href="installing-publican.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+            <xi:include href="building-documentation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+            <xi:include href="writing-new-documentation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+            <xi:include href="building-translation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        </chapter>
+    ]]>
+    </programlisting>
+
+    <para>Note the id witin the chapter tag, it represents the basename of the xml file describing the chapter.</para>
+    <para>For translation purposes it is important that this basename be less than 50 characters long.</para>
+
+    <para>This chapter also refers to xml files which contains each section. While you could embed the sections directly in the chapter file and as a matter of fact also write the chapters within a single book file. Breaking things up in smaller files at the granularity of the section, allows us to re-use any section to build different books.</para>
+    <para>For completeness here is an example of a section:</para>
+    <programlisting>
+    <![CDATA[
+        <section id="building-documentation">
+            <title>Building &PRODUCT; Documentation</title>
+            <para>To build a specific guide, go to the source tree of the documentation in /docs and identify the guide you want to build.</para>
+            <para>Currenlty there are four guides plus the release notes, all defined in publican configuration files:</para>
+            <programlisting>
+               publican-adminguide.cfg
+               publican-devguide.cfg
+               publican-installation.cfg
+               publican-plugin-niciranvp.cfg
+               publican-release-notes.cfg
+            </programlisting>
+            <para>To build the Developer guide for example, do the following:</para>
+            <programlisting>publican build --config=publican-devguide.cfg --formats=pdf --langs=en-US</programlisting>
+            <para>A pdf file will be created in tmp/en-US/pdf, you may choose to build the guide in a different format like html. In that case just replace the format value.</para>
+        </section>
+    ]]>
+    </programlisting>
+    <para>Happy Publicaning and DocBooking.</para>
+</section>

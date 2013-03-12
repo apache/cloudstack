@@ -24,7 +24,12 @@
 
 <section id="about-security-groups">
     <title>About Security Groups</title>
-    <para>Security groups provide a way to isolate traffic to VMs. A security group is a group of VMs that filter their incoming and outgoing traffic according to a set of rules, called ingress and egress rules. These rules filter network traffic according to the IP address that is attempting to communicate with the VM. Security groups are particularly useful in zones that use basic networking, because there is a single guest network for all guest VMs. In &PRODUCT; 3.0.3 - 3.0.5, security groups are supported only in zones that use basic networking.</para>
+    <para>Security groups provide a way to isolate traffic to VMs. A security group is a group of
+        VMs that filter their incoming and outgoing traffic according to a set of rules, called
+        ingress and egress rules. These rules filter network traffic according to the IP address
+        that is attempting to communicate with the VM. Security groups are particularly useful in
+        zones that use basic networking, because there is a single guest network for all guest VMs.
+        In advanced zones, security groups are supported only on the KVM hypervisor.</para>
     <note><para>In a zone that uses advanced networking, you can instead define multiple guest networks to isolate traffic to VMs.</para>
         </note>
     <para></para>

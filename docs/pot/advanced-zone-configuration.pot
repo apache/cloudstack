@@ -1,0 +1,345 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Advanced Zone Configuration"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After you select Advanced in the Add Zone wizard and click Next, you will be asked to enter the following details. Then click Next."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name.</emphasis> A name for the zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">DNS 1 and 2.</emphasis> These are DNS servers for use by guest VMs in the zone. These DNS servers will be accessed via the public network you will add later. The public IP addresses for the zone must have a route to the DNS server named here."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Internal DNS 1 and Internal DNS 2.</emphasis> These are DNS servers for use by system VMs in the zone(these are VMs used by &PRODUCT; itself, such as virtual routers, console proxies,and Secondary Storage VMs.) These DNS servers will be accessed via the management traffic network interface of the System VMs. The private IP address you provide for the pods must have a route to the internal DNS server named here."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Network Domain.</emphasis> (Optional) If you want to assign a special domain name to the guest VM network, specify the DNS suffix."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Guest CIDR.</emphasis> This is the CIDR that describes the IP addresses in use in the guest virtual networks in this zone. For example, 10.1.1.0/24. As a matter of good practice you should set different CIDRs for different zones. This will make it easier to set up VPNs between networks in different zones."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Hypervisor.</emphasis> (Introduced in version 3.0.1) Choose the hypervisor for the first cluster in the zone. You can add clusters with different hypervisors later, after you finish adding the zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Public.</emphasis> A public zone is available to all users. A zone that is not public will be assigned to a particular domain. Only users in that domain will be allowed to create guest VMs in this zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Choose which traffic types will be carried by the physical network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The traffic types are management, public, guest, and storage traffic. For more information about the types, roll over the icons to display their tool tips, or see <xref linkend=\"advanced-zone-network-traffic-types\" />. This screen starts out with one network already configured. If you have multiple physical networks, you need to add more. Drag and drop traffic types onto a greyed-out network and it will become active. You can move the traffic icons from one network to another; for example, if the default traffic types shown for Network 1 do not match your actual setup, you can move them down. You can also change the network names if desired."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Introduced in version 3.0.1) Assign a network traffic label to each traffic type on each physical network. These labels must match the labels you have already defined on the hypervisor host. To assign each label, click the Edit button under the traffic type icon within each physical network. A popup dialog appears where you can type the label, then click OK."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "These traffic labels will be defined only for the hypervisor selected for the first cluster. For all other hypervisors, the labels can be configured after the zone is created."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Next."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure the IP range for public Internet traffic. Enter the following details, then click Add. If desired, you can repeat this step to add more public Internet IP ranges. When done, click Next."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Gateway.</emphasis> The gateway in use for these IP addresses."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Netmask.</emphasis> The netmask associated with this IP range."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">VLAN.</emphasis> The VLAN that will be used for public traffic."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Start IP/End IP.</emphasis> A range of IP addresses that are assumed to be accessible from the Internet and will be allocated for access to guest networks."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a new zone, &PRODUCT; adds the first pod for you. You can always add more pods later. For an overview of what a pod is, see <xref linkend=\"about-pods\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first pod, enter the following, then click Next:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Pod Name.</emphasis> A name for the pod."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Reserved system gateway.</emphasis> The gateway for the hosts in that pod."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Reserved system netmask.</emphasis> The network prefix that defines the pod's subnet. Use CIDR notation."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Start/End Reserved System IP.</emphasis> The IP range in the management network that &PRODUCT; uses to manage various system VMs, such as Secondary Storage VMs, Console Proxy VMs, and DHCP. For more information, see <xref linkend=\"system-reserved-ip-addresses\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Specify a range of VLAN IDs to carry guest traffic for each physical network (see VLAN Allocation Example ), then click Next."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a new pod, &PRODUCT; adds the first cluster for you. You can always add more clusters later. For an overview of what a cluster is, see <xref linkend=\"about-clusters\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first cluster, enter the following, then click Next:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Hypervisor.</emphasis> (Version 3.0.0 only; in 3.0.1, this field is read only) Choose the type of hypervisor software that all hosts in this cluster will run. If you choose VMware, additional fields appear so you can give information about a vSphere cluster. For vSphere servers, we recommend creating the cluster of hosts in vCenter and then adding the entire cluster to &PRODUCT;. See Add Cluster: vSphere ."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Cluster name.</emphasis> Enter a name for the cluster. This can be text of your choosing and is not used by &PRODUCT;."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a new cluster, &PRODUCT; adds the first host for you. You can always add more hosts later. For an overview of what a host is, see <xref linkend=\"about-hosts\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When you deploy &PRODUCT;, the hypervisor host must not have any VMs already running."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Before you can configure the host, you need to install the hypervisor software on the host. You will need to know which version of the hypervisor software version is supported by &PRODUCT; and what additional configuration is required to ensure the host will work with &PRODUCT;. To find these installation details, see:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Citrix XenServer Installation for &PRODUCT;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VMware vSphere Installation and Configuration"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "KVM Installation and Configuration"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first host, enter the following, then click Next:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Host Name.</emphasis> The DNS name or IP address of the host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Username.</emphasis> Usually root."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Password.</emphasis> This is the password for the user named above (from your XenServer or KVM install)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Host Tags.</emphasis> (Optional) Any labels that you use to categorize hosts for ease of maintenance. For example, you can set to the cloud's HA tag (set in the ha.tag global configuration parameter) if you want this host to be used only for VMs with the \"high availability\" feature enabled. For more information, see HA-Enabled Virtual Machines as well as HA for Hosts, both in the Administration Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a new cluster, &PRODUCT; adds the first primary storage server for you. You can always add more servers later. For an overview of what primary storage is, see <xref linkend=\"about-primary-storage\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the first primary storage server, enter the following, then click Next:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name.</emphasis> The name of the storage device."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Protocol.</emphasis> For XenServer, choose either NFS, iSCSI, or PreSetup. For KVM, choose NFS, SharedMountPoint, CLVM, and RBD. For vSphere choose either VMFS (iSCSI or FiberChannel) or NFS. The remaining fields in the screen vary depending on what you choose here."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NFS"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Server.</emphasis> The IP address or DNS name of the storage device."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Path.</emphasis> The exported path from the server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Tags (optional).</emphasis> The comma-separated list of tags for this storage device. It should be an equivalent set or superset of the tags on your disk offerings."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The tag sets on primary storage across clusters in a Zone must be identical. For example, if cluster A provides primary storage that has tags T1 and T2, all other clusters in the Zone must also provide primary storage that has tags T1 and T2."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "iSCSI"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Target IQN.</emphasis> The IQN of the target. For example, iqn.1986-03.com.sun:02:01ec9bb549-1271378984."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Lun.</emphasis> The LUN number. For example, 3."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "preSetup"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">SR Name-Label.</emphasis> Enter the name-label of the SR that has been set up outside &PRODUCT;."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "SharedMountPoint"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Path.</emphasis> The path on each host that is where this primary storage is mounted. For example, \"/mnt/primary\"."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VMFS"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Server.</emphasis> The IP address or DNS name of the vCenter server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Path.</emphasis> A combination of the datacenter name and the datastore name. The format is \"/\" datacenter name \"/\" datastore name. For example, \"/cloud.dc.VM/cluster1datastore\"."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a new zone, &PRODUCT; adds the first secondary storage server for you. For an overview of what secondary storage is, see <xref linkend=\"about-secondary-storage\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Before you can fill out this screen, you need to prepare the secondary storage by setting up NFS shares and installing the latest &PRODUCT; System VM template. See Adding Secondary Storage :"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">NFS Server.</emphasis> The IP address of the server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Launch."
+msgstr ""
+

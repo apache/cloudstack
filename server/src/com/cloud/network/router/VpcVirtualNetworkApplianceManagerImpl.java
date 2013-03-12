@@ -25,12 +25,13 @@ import java.util.Map;
 import java.util.TreeSet;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
@@ -63,13 +64,11 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkService;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
@@ -77,19 +76,23 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
-import com.cloud.network.Site2SiteCustomerGatewayVO;
 import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.PrivateIpAddress;
@@ -105,11 +108,10 @@ import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
-import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -125,6 +127,7 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.VMInstanceDao;
 
 
+@Component
 @Local(value = {VpcVirtualNetworkApplianceManager.class, VpcVirtualNetworkApplianceService.class})
 public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplianceManagerImpl implements VpcVirtualNetworkApplianceManager{
     private static final Logger s_logger = Logger.getLogger(VpcVirtualNetworkApplianceManagerImpl.class);
@@ -287,12 +290,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
         
         //Check if router is a part of the Guest network
-        if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
+        if (!_networkModel.isVmPartOfNetwork(router.getId(), network.getId())) {
             s_logger.debug("Router " + router + " is not a part of the Guest network " + network);
             return true;
         }
         
-        boolean result = setupVpcGuestNetwork(network, router, false, _networkMgr.getNicProfile(router, network.getId(), null));
+        boolean result = setupVpcGuestNetwork(network, router, false, _networkModel.getNicProfile(router, network.getId(), null));
         if (!result) {
             s_logger.warn("Failed to destroy guest network config " + network + " on router " + router);
             return false;
@@ -301,8 +304,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         result = result && _itMgr.removeVmFromNetwork(router, network, null);
         
         if (result) {
-            _routerDao.removeRouterFromGuestNetwork(router.getId(), network.getId());
-        }
+                _routerDao.removeRouterFromGuestNetwork(router.getId(), network.getId());
+            }
         return result;
     }
     
@@ -338,18 +341,18 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 _agentMgr.send(dest.getHost().getId(), cmds);
                 PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
                 if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
-                    s_logger.warn("Unable to plug nic for vm " + vm.getHostName());
+                    s_logger.warn("Unable to plug nic for vm " + vm.getName());
                     result = false;
                 } 
             } catch (OperationTimedoutException e) {
-                throw new AgentUnavailableException("Unable to plug nic for router " + vm.getHostName() + " in network " + network,
+                throw new AgentUnavailableException("Unable to plug nic for router " + vm.getName() + " in network " + network,
                         dest.getHost().getId(), e);
             }
         } else {
             s_logger.warn("Unable to apply PlugNic, vm " + router + " is not in the right state " + router.getState());
             
             throw new ResourceUnavailableException("Unable to apply PlugNic on the backend," +
-                    " vm " + vm + " is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+                    " vm " + vm + " is not in the right state", DataCenter.class, router.getDataCenterId());
         }
         
         return result;
@@ -385,7 +388,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             s_logger.warn("Unable to apply unplug nic, Vm " + router + " is not in the right state " + router.getState());
             
             throw new ResourceUnavailableException("Unable to apply unplug nic on the backend," +
-                    " vm " + router +" is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+                    " vm " + router +" is not in the right state", DataCenter.class, router.getDataCenterId());
         }
        
         return result;
@@ -416,18 +419,18 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         } else {
             s_logger.warn("Unable to setup guest network on virtual router " + router + " is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to setup guest network on the backend," +
-                    " virtual router " + router + " is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+                    " virtual router " + router + " is not in the right state", DataCenter.class, router.getDataCenterId());
         }
     }
 
     protected SetupGuestNetworkCommand createSetupGuestNetworkCommand(VirtualRouter router, boolean add, NicProfile guestNic) {
-        Network network = _networkMgr.getNetwork(guestNic.getNetworkId());
+        Network network = _networkModel.getNetwork(guestNic.getNetworkId());
         
         String defaultDns1 = null;
         String defaultDns2 = null;
         
-        boolean dnsProvided = _networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, Provider.VPCVirtualRouter);
-        boolean dhcpProvided = _networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, 
+        boolean dnsProvided = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, Provider.VPCVirtualRouter);
+        boolean dhcpProvided = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, 
                 Provider.VPCVirtualRouter);
         
         boolean setupDns = dnsProvided || dhcpProvided;
@@ -441,7 +444,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         String networkDomain = network.getNetworkDomain();
         String dhcpRange = getGuestDhcpRange(guestNic, network, _configMgr.getZone(network.getDataCenterId()));
         
-        NicProfile nicProfile = _networkMgr.getNicProfile(router, nic.getNetworkId(), null);
+        NicProfile nicProfile = _networkModel.getNicProfile(router, nic.getNetworkId(), null);
 
         SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, false, null, 
                 defaultDns1, defaultDns2, add, _itMgr.toNicTO(nicProfile, router.getHypervisorType()));
@@ -482,8 +485,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             List<PublicIpAddress> ipAddrList = vlanAndIp.getValue();
 
             // Get network rate - required for IpAssoc
-            Integer networkRate = _networkMgr.getNetworkRate(ipAddrList.get(0).getNetworkId(), router.getId());
-            Network network = _networkMgr.getNetwork(ipAddrList.get(0).getNetworkId());
+            Integer networkRate = _networkModel.getNetworkRate(ipAddrList.get(0).getNetworkId(), router.getId());
+            Network network = _networkModel.getNetwork(ipAddrList.get(0).getNetworkId());
 
             IpAddressTO[] ipsToSend = new IpAddressTO[ipAddrList.size()];
             int i = 0;
@@ -498,7 +501,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                         networkRate, ipAddr.isOneToOneNat());
 
                 ip.setTrafficType(network.getTrafficType());
-                ip.setNetworkName(_networkMgr.getNetworkTag(router.getHypervisorType(), network));
+                ip.setNetworkName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
                 ipsToSend[i++] = ip;
                 if (ipAddr.isSourceNat()) {
                     sourceNatIpAdd = new Pair<IpAddressTO, Long>(ip, ipAddr.getNetworkId());
@@ -509,7 +512,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(ipAddrList.get(0).getNetworkId(), router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
             cmds.addCommand("IPAssocVpcCommand", cmd);
@@ -521,14 +524,14 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             SetSourceNatCommand cmd = new SetSourceNatCommand(sourceNatIp, addSourceNat);
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
             cmds.addCommand("SetSourceNatCommand", cmd);
         }
     }
 
     protected NicTO getNicTO(final VirtualRouter router, Long networkId, String broadcastUri) {
-        NicProfile nicProfile = _networkMgr.getNicProfile(router, networkId, broadcastUri);
+        NicProfile nicProfile = _networkModel.getNicProfile(router, networkId, broadcastUri);
         
         return _itMgr.toNicTO(nicProfile, router.getHypervisorType());
     }
@@ -557,7 +560,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         for (String vlanTag : nicsToUnplug.keySet()) {
             Network publicNtwk = null;
             try {
-                publicNtwk = _networkMgr.getNetwork(nicsToUnplug.get(vlanTag).getNetworkId());
+                publicNtwk = _networkModel.getNetwork(nicsToUnplug.get(vlanTag).getNetworkId());
                 URI broadcastUri = BroadcastDomainType.Vlan.toUri(vlanTag);
                 _itMgr.removeVmFromNetwork(router, publicNtwk, broadcastUri);
             } catch (ConcurrentOperationException e) {
@@ -589,7 +592,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             NicProfile publicNic = null;
             Network publicNtwk = null;
             try {
-                publicNtwk = _networkMgr.getNetwork(ip.getNetworkId());
+                publicNtwk = _networkModel.getNetwork(ip.getNetworkId());
                 publicNic = _itMgr.addVmToNetwork(router, publicNtwk, defaultNic);
             } catch (ConcurrentOperationException e) {
                 s_logger.warn("Failed to add router " + router + " to vlan " + vlanTag + 
@@ -607,10 +610,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             //Create network usage commands. Send commands to router after IPAssoc
             NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), true, defaultNic.getIp4Address(), vpc.getCidr());
         	netUsagecmds.addCommand(netUsageCmd);
-        	UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
+        	UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), 
             		publicNtwk.getId(), publicNic.getIp4Address(), router.getId(), router.getType().toString());
             if (stats == null) {
-                stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), publicNic.getIp4Address(), router.getId(),
+                stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterId(), publicNic.getIp4Address(), router.getId(),
                         router.getType().toString(), publicNtwk.getId());
                 _userStatsDao.persist(stats);
             }
@@ -732,6 +735,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             rulesTO = new ArrayList<NetworkACLTO>();
             
             for (FirewallRule rule : rules) {
+                if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {
+                    _firewallDao.loadSourceCidrs((FirewallRuleVO)rule);
+                }
                 NetworkACLTO ruleTO = new NetworkACLTO(rule, guestVlan, rule.getTrafficType());
                 rulesTO.add(ruleTO);
             }
@@ -742,7 +748,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, guestVlan);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
     }
@@ -772,7 +778,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
         for (Nic routerNic : routerNics) {
-            Network network = _networkMgr.getNetwork(routerNic.getNetworkId());
+            Network network = _networkModel.getNetwork(routerNic.getNetworkId());
             if (network.getTrafficType() == TrafficType.Guest) {
                 Pair<Nic, Network> guestNic = new Pair<Nic, Network>(routerNic, network);
                 guestNics.add(guestNic);
@@ -814,10 +820,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 VpcVO vpc = _vpcDao.findById(router.getVpcId());
                 NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), true, publicNic.getIp4Address(), vpc.getCidr());
                 usageCmds.add(netUsageCmd);
-                UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
+                UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), 
                 		publicNtwk.getId(), publicNic.getIp4Address(), router.getId(), router.getType().toString());
                 if (stats == null) {
-                    stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), publicNic.getIp4Address(), router.getId(),
+                    stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterId(), publicNic.getIp4Address(), router.getId(),
                             router.getType().toString(), publicNtwk.getId());
                     _userStatsDao.persist(stats);
                 }
@@ -835,10 +841,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 PlugNicCommand plugNicCmd = new PlugNicCommand(getNicTO(router, guestNic.getNetworkId(), null), router.getInstanceName());
                 cmds.addCommand(plugNicCmd);
                 
-                if (!_networkMgr.isPrivateGateway(guestNic)) {
+                if (!_networkModel.isPrivateGateway(guestNic)) {
                     //set guest network
                     VirtualMachine vm = _vmDao.findById(router.getId());
-                    NicProfile nicProfile = _networkMgr.getNicProfile(vm, guestNic.getNetworkId(), null);
+                    NicProfile nicProfile = _networkModel.getNicProfile(vm, guestNic.getNetworkId(), null);
                     SetupGuestNetworkCommand setupCmd = createSetupGuestNetworkCommand(router, true, nicProfile);
                     cmds.addCommand(setupCmd);
                 } else {
@@ -918,7 +924,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         super.finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
         
         if (router.getVpcId() != null) {
-            if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
+            if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
                 List<? extends FirewallRule> networkACLs = _networkACLMgr.listNetworkACLs(guestNetworkId);
                 s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + router 
                         + " start for guest network id=" + guestNetworkId);
@@ -933,7 +939,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     public boolean setupPrivateGateway(PrivateGateway gateway, VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
         boolean result = true;
         try {
-            Network network = _networkMgr.getNetwork(gateway.getNetworkId());
+            Network network = _networkModel.getNetwork(gateway.getNetworkId());
             NicProfile requested = createPrivateNicProfileForGateway(gateway);
             
             NicProfile guestNic = _itMgr.addVmToNetwork(router, network, requested);
@@ -997,7 +1003,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             s_logger.warn("Unable to setup private gateway, virtual router " + router + " is not in the right state " + router.getState());
             
             throw new ResourceUnavailableException("Unable to setup Private gateway on the backend," +
-                    " virtual router " + router + " is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+                    " virtual router " + router + " is not in the right state", DataCenter.class, router.getDataCenterId());
         }
         return true;
     }
@@ -1006,15 +1012,15 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     public boolean destroyPrivateGateway(PrivateGateway gateway, VirtualRouter router) 
             throws ConcurrentOperationException, ResourceUnavailableException {
         
-        if (!_networkMgr.isVmPartOfNetwork(router.getId(), gateway.getNetworkId())) {
+        if (!_networkModel.isVmPartOfNetwork(router.getId(), gateway.getNetworkId())) {
             s_logger.debug("Router doesn't have nic for gateway " + gateway + " so no need to removed it");
             return true;
         }
         
-        Network privateNetwork = _networkMgr.getNetwork(gateway.getNetworkId());
+        Network privateNetwork = _networkModel.getNetwork(gateway.getNetworkId());
         
         s_logger.debug("Releasing private ip for gateway " + gateway + " from " + router);
-        boolean result = setupVpcPrivateNetwork(router, false, _networkMgr.getNicProfile(router, privateNetwork.getId(), null));
+        boolean result = setupVpcPrivateNetwork(router, false, _networkModel.getNicProfile(router, privateNetwork.getId(), null));
         if (!result) {
             s_logger.warn("Failed to release private ip for gateway " + gateway + " on router " + router);
             return false;
@@ -1063,7 +1069,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 s_logger.warn("Unable to apply StaticRoute, virtual router is not in the right state " + router.getState());
                 
                 throw new ResourceUnavailableException("Unable to apply StaticRoute on the backend," +
-                		" virtual router is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+                		" virtual router is not in the right state", DataCenter.class, router.getDataCenterId());
             }
         }
         return result;
@@ -1085,7 +1091,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         SetStaticRouteCommand cmd = new SetStaticRouteCommand(staticRoutes);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
     }
@@ -1095,7 +1101,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (router.getState() != State.Running) {
             s_logger.warn("Unable to apply site-to-site VPN configuration, virtual router is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to apply site 2 site VPN configuration," +
-                    " virtual router is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+                    " virtual router is not in the right state", DataCenter.class, router.getDataCenterId());
         }
 
         return applySite2SiteVpn(true, router, conn);
@@ -1106,7 +1112,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (router.getState() != State.Running) {
             s_logger.warn("Unable to apply site-to-site VPN configuration, virtual router is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to apply site 2 site VPN configuration," +
-                    " virtual router is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+                    " virtual router is not in the right state", DataCenter.class, router.getDataCenterId());
         }
 
         return applySite2SiteVpn(false, router, conn);
@@ -1140,7 +1146,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand("applyS2SVpn", cmd);
     }
@@ -1167,13 +1173,13 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             int i = 0;
 
             for (final PrivateIpAddress ipAddr : ipAddrList) {
-                Network network = _networkMgr.getNetwork(ipAddr.getNetworkId());
+                Network network = _networkModel.getNetwork(ipAddr.getNetworkId());
                 IpAddressTO ip = new IpAddressTO(Account.ACCOUNT_ID_SYSTEM, ipAddr.getIpAddress(), add, false, 
                         false, ipAddr.getVlanTag(), ipAddr.getGateway(), ipAddr.getNetmask(), ipAddr.getMacAddress(),
                         null, false);
 
                 ip.setTrafficType(network.getTrafficType());
-                ip.setNetworkName(_networkMgr.getNetworkTag(router.getHypervisorType(), network));
+                ip.setNetworkName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
                 ipsToSend[i++] = ip;
                 
             }
@@ -1181,7 +1187,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(ipAddrList.get(0).getNetworkId(), router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+            DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
             cmds.addCommand("IPAssocVpcCommand", cmd);
@@ -1205,7 +1211,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         VpcGateway privateGateway = _vpcMgr.getPrivateGatewayForVpc(vpcId);
         if (privateGateway != null) {
             NicProfile privateNic = createPrivateNicProfileForGateway(privateGateway);
-            Network privateNetwork = _networkMgr.getNetwork(privateGateway.getNetworkId());
+            Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
             networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) privateNetwork, privateNic));
         }
         
@@ -1235,7 +1241,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 publicNic.setBroadcastType(BroadcastDomainType.Vlan);
                 publicNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag()));
                 publicNic.setIsolationUri(IsolationType.Vlan.toUri(publicIp.getVlanTag()));
-                NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
+                NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
                 List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
                 networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), publicNic));
                 publicVlans.add(publicIp.getVlanTag());
@@ -1247,7 +1253,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
     @DB
     protected NicProfile createPrivateNicProfileForGateway(VpcGateway privateGateway) {
-        Network privateNetwork = _networkMgr.getNetwork(privateGateway.getNetworkId());
+        Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
         PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(privateNetwork.getDataCenterId(), privateNetwork.getId(), privateGateway.getIp4Address());
         Nic privateNic = _nicDao.findByIp4AddressAndNetworkId(ipVO.getIpAddress(), privateNetwork.getId());
         
@@ -1256,9 +1262,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (privateNic != null) {
             VirtualMachine vm = _vmDao.findById(privateNic.getId());
             privateNicProfile = new NicProfile(privateNic, privateNetwork, privateNic.getBroadcastUri(), privateNic.getIsolationUri(), 
-                    _networkMgr.getNetworkRate(privateNetwork.getId(), vm.getId()), 
-                    _networkMgr.isSecurityGroupSupportedInNetwork(privateNetwork), 
-                    _networkMgr.getNetworkTag(vm.getHypervisorType(), privateNetwork));
+                    _networkModel.getNetworkRate(privateNetwork.getId(), vm.getId()), 
+                    _networkModel.isSecurityGroupSupportedInNetwork(privateNetwork), 
+                    _networkModel.getNetworkTag(vm.getHypervisorType(), privateNetwork));
         } else {
             String vlanTag = privateNetwork.getBroadcastUri().getHost();
             String netmask = NetUtils.getCidrNetmask(privateNetwork.getCidr());

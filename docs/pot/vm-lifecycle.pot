@@ -1,0 +1,75 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:12:00\n"
+"PO-Revision-Date: 2013-02-02T20:12:00\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "VM Lifecycle"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Virtual machines can be in the following states:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Once a virtual machine is destroyed, it cannot be recovered. All the resources used by the virtual machine will be reclaimed by the system. This includes the virtual machine’s IP address."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A stop will attempt to gracefully shut down the operating system, which typically involves terminating all the running applications. If the operation system cannot be stopped, it will be forcefully terminated. This has the same effect as pulling the power cord to a physical machine."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A reboot is a stop followed by a start."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; preserves the state of the virtual machine hard disk until the machine is destroyed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A running virtual machine may fail because of hardware or network issues. A failed virtual machine is in the down state."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The system places the virtual machine into the down state if it does not receive the heartbeat from the hypervisor for three minutes."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The user can manually restart the virtual machine from the down state."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The system will start the virtual machine from the down state automatically if the virtual machine is marked as HA-enabled."
+msgstr ""
+

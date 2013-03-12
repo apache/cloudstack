@@ -1,0 +1,140 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating and Changing a Virtual Router Network Offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To create the network offering in association with a virtual router system service offering:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "First, create a system service offering, for example: VRsystemofferingHA."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For more information on creating a system service offering, see <xref linkend=\"creating-system-service-offerings\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "From the Select Offering drop-down, choose Network Offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Network Offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the dialog, make the following choices:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name</emphasis>. Any desired name for the network offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Description</emphasis>. A short description of the offering that can be displayed to users."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Network Rate</emphasis>. Allowed data transfer rate in MB per second."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Traffic Type</emphasis>. The type of network traffic that will be carried on the network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Guest Type</emphasis>. Choose whether the guest network is isolated or shared. For a description of these terms, see <xref linkend=\"about-virtual-networks\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Specify VLAN</emphasis>. (Isolated guest networks only) Indicate whether a VLAN should be specified when this offering is used."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Supported Services</emphasis>. Select one or more of the possible network services. For some services, you must also choose the service provider; for example, if you select Load Balancer, you can choose the &PRODUCT; virtual router or any other load balancers that have been configured in the cloud. Depending on which services you choose, additional fields may appear in the rest of the dialog box. For more information, see <xref linkend=\"creating-network-offerings\" />"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">System Offering</emphasis>. Choose the system service offering that you want virtual routers to use in this network. In this case, the default “System Offering For Software Router” and the custom “VRsystemofferingHA” are available and displayed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK and the network offering is created."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To change the network offering of a guest network to the virtual router service offering:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select Network from the left navigation pane."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select the guest network that you want to offer this network service to."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Edit button."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "From the Network Offering drop-down, select the virtual router network offering you have just created."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr ""
+

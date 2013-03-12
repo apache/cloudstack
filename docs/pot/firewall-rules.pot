@@ -1,0 +1,105 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Firewall Rules"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "By default, all incoming traffic to the public IP address is rejected by the firewall. To allow external traffic, you can open firewall ports by specifying firewall rules. You can optionally specify one or more CIDRs to filter the source IPs. This is useful when you want to allow only incoming requests from certain IP addresses."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You cannot use firewall rules to open ports for an elastic IP address. When elastic IP is used, outside access is instead controlled through the use of security groups. See <xref linkend=\"add-security-group\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Firewall rules can be created using the Firewall tab in the Management Server UI. This tab is not displayed by default when &PRODUCT; is installed. To display the Firewall tab, the &PRODUCT; administrator must set the global configuration parameter firewall.rule.ui.enabled to \"true.\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To create a firewall rule:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the network where you want to work with."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click View IP Addresses."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the IP address you want to work with."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Configuration tab and fill in the following values."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Source CIDR</emphasis>. (Optional) To accept only traffic from IP addresses within a particular address block, enter a CIDR or a comma-separated list of CIDRs. Example: 192.168.0.0/22. Leave empty to allow all CIDRs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Protocol</emphasis>. The communication protocol in use on the opened port(s)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Start Port and End Port</emphasis>. The port(s) you want to open on the firewall. If you are opening a single port, use the same number in both fields"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">ICMP Type and ICMP Code</emphasis>. Used only if Protocol is set to ICMP. Provide the type and code required by the ICMP protocol to fill out the ICMP header. Refer to ICMP documentation for more details if you are not sure what to enter"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add"
+msgstr ""
+

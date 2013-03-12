@@ -17,9 +17,10 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
 public class ResourceCountResponse extends BaseResponse implements ControlledEntityResponse{
@@ -39,7 +40,7 @@ public class ResourceCountResponse extends BaseResponse implements ControlledEnt
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name for which resource count's are updated")
     private String domainName;
 
-    @SerializedName(ApiConstants.RESOURCE_TYPE) @Param(description="resource type. Values include 0, 1, 2, 3, 4. See the resourceType parameter for more information on these values.")
+    @SerializedName(ApiConstants.RESOURCE_TYPE) @Param(description="resource type. Values include 0, 1, 2, 3, 4, 5, 6, 7, 8, 9. See the resourceType parameter for more information on these values.")
     private String resourceType;
 
     @SerializedName("resourcecount") @Param(description="resource count")

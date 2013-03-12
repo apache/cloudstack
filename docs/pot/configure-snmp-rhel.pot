@@ -1,0 +1,143 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring SNMP Community String on a RHEL Server"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The SNMP Community string is similar to a user id or password that provides access to a network device, such as router. This string is sent along with all SNMP requests. If the community string is correct, the device responds with the requested information. If the community string is incorrect, the device discards the request and does not respond."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The NetScaler device uses SNMP to communicate with the VMs. You must install SNMP and configure SNMP Community string for a secure communication between the NetScaler device and the RHEL machine."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that you installed SNMP on RedHat. If not, run the following command:"
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "yum install net-snmp-utils"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Edit the /etc/snmp/snmpd.conf file to allow the SNMP polling from the NetScaler device."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Map the community name into a security name (local and mynetwork, depending on where the request is coming from):"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Use a strong password instead of public when you edit the following table."
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "#         sec.name   source        community\n"
+"com2sec    local      localhost     public\n"
+"com2sec   mynetwork   0.0.0.0       public"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Setting to 0.0.0.0 allows all IPs to poll the NetScaler server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Map the security names into group names:"
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "#      group.name   sec.model  sec.name\n"
+"group   MyRWGroup     v1         local\n"
+"group   MyRWGroup     v2c        local\n"
+"group   MyROGroup     v1        mynetwork\n"
+"group   MyROGroup     v2c       mynetwork"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create a view to allow the groups to have the permission to:"
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "incl/excl subtree mask view all included .1 "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Grant access with different write permissions to the two groups to the view you created."
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "# context     sec.model     sec.level     prefix     read     write     notif\n"
+"  access      MyROGroup \"\"  any noauth     exact      all      none     none\n"
+"  access      MyRWGroup \"\"  any noauth     exact      all      all      all "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Unblock SNMP in iptables."
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "iptables -A INPUT -p udp --dport 161 -j ACCEPT"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Start the SNMP service:"
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "service snmpd start"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that the SNMP service is started automatically during the system startup:"
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "chkconfig snmpd on"
+msgstr ""
+

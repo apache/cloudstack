@@ -1,57 +1,56 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
 -->
-
 <section id="feature-overview">
-    <title>What Can &PRODUCT; Do?</title>
-    <para>
-        <emphasis role="bold">Multiple Hypervisor Support</emphasis>
-    </para>
-    <para>
+	<title>What Can &PRODUCT; Do?</title>
+	<para>
+		<emphasis role="bold">Multiple Hypervisor Support</emphasis>
+	</para>
+	<para>
         &PRODUCT; works with a variety of hypervisors, and a single cloud deployment can contain multiple hypervisor implementations. The current release of &PRODUCT; supports pre-packaged enterprise solutions like Citrix XenServer and VMware vSphere, as well as KVM or Xen running on Ubuntu or CentOS. 
     </para>
-    <para>
-        <emphasis role="bold">Massively Scalable Infrastructure Management</emphasis>
-    </para>
-    <para>
-        &PRODUCT; can manage tens of thousands of servers installed in multiple geographically distributed datacenters. The centralized management server scales linearly, eliminating the need for intermediate cluster-level management servers. No single component failure can cause cloud-wide outage. Periodic maintenance of the management server can be performed without affecting the functioning of virtual machines running in the cloud.
-    </para>
-    <para>
-        <emphasis role="bold">Automatic Configuration Management</emphasis>
-    </para>
-    <para>&PRODUCT; automatically configures each guest virtual machine’s networking and storage settings.
-    </para>
-    <para>&PRODUCT; internally manages a pool of virtual appliances to support the cloud itself. These appliances offer services such as firewalling, routing, DHCP, VPN access, console proxy, storage access, and storage replication. The extensive use of virtual appliances simplifies the installation, configuration, and ongoing management of a cloud deployment.
-    </para>
-    <para>
-        <emphasis role="bold">Graphical User Interface</emphasis>
-    </para>
-    <para>&PRODUCT; offers an administrator's Web interface, used for provisioning and managing the cloud, as well as an end-user's Web interface, used for running VMs and managing VM templates. The UI can be customized to reflect the desired service provider or enterprise look and feel.
-    </para>
-    <para>
-        <emphasis role="bold">API and Extensibility</emphasis>
-    </para>
-    <para>
+	<para>
+		<emphasis role="bold">Massively Scalable Infrastructure Management</emphasis>
+	</para>
+	<para>
+		&PRODUCT; can manage tens of thousands of servers installed in multiple geographically distributed datacenters. The centralized management server scales linearly, eliminating the need for intermediate cluster-level management servers. No single component failure can cause cloud-wide outage. Periodic maintenance of the management server can be performed without affecting the functioning of virtual machines running in the cloud.
+	</para>
+	<para>
+		<emphasis role="bold">Automatic Configuration Management</emphasis>
+	</para>
+	<para>&PRODUCT; automatically configures each guest virtual machine’s networking and storage settings.
+	</para>
+	<para>&PRODUCT; internally manages a pool of virtual appliances to support the cloud itself. These appliances offer services such as firewalling, routing, DHCP, VPN access, console proxy, storage access, and storage replication. The extensive use of virtual appliances simplifies the installation, configuration, and ongoing management of a cloud deployment.
+	</para>
+	<para>
+		<emphasis role="bold">Graphical User Interface</emphasis>
+	</para>
+	<para>&PRODUCT; offers an administrator's Web interface, used for provisioning and managing the cloud, as well as an end-user's Web interface, used for running VMs and managing VM templates. The UI can be customized to reflect the desired service provider or enterprise look and feel.
+	</para>
+	<para>
+		<emphasis role="bold">API and Extensibility</emphasis>
+	</para>
+	<para>
         &PRODUCT; provides an API that gives programmatic access to all the
         management features available in the UI. The API is maintained and
         documented. This API enables the creation of command line tools and
@@ -61,16 +60,16 @@
         and
         <ulink url="http://incubator.apache.org/cloudstack/docs/api">Apache CloudStack API Reference</ulink> 
         respectively. 
-    </para>
-    <para>
+	</para>
+	<para>
         The &PRODUCT; pluggable allocation architecture allows the creation
         of new types of allocators for the selection of storage and Hosts. 
         See the Allocator Implementation Guide 
         (<ulink url="http://docs.cloudstack.org/CloudStack_Documentation/Allocator_Implementation_Guide">http://docs.cloudstack.org/CloudStack_Documentation/Allocator_Implementation_Guide</ulink>).
-    </para>
-    <para>
-        <emphasis role="bold">High Availability</emphasis>
-    </para>
+	</para>
+	<para>
+		<emphasis role="bold">High Availability</emphasis>
+	</para>
     <para>
        &PRODUCT; has a number of features to increase the availability of the
        system. The Management Server itself may be deployed in a multi-node 
@@ -78,5 +77,5 @@
        to use replication to provide for a manual failover in the event of
        database loss. For the hosts, &PRODUCT; supports NIC bonding and the use
        of separate networks for storage as well as iSCSI Multipath.
-    </para>
+	</para>
 </section>

@@ -17,14 +17,20 @@
 package com.cloud.network.vpc.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
+
+import com.cloud.network.Network;
+import com.cloud.network.vpc.VpcServiceMapVO;
+import org.springframework.stereotype.Component;
 
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -34,14 +40,15 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
-
+@Component
 @Local(value = VpcDao.class)
 @DB(txn = false)
 public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     final GenericSearchBuilder<VpcVO, Integer> CountByOfferingId;
     final SearchBuilder<VpcVO> AllFieldsSearch;
     final GenericSearchBuilder<VpcVO, Long> CountByAccountId;
-    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
+    @Inject ResourceTagsDaoImpl _tagsDao;
+    @Inject VpcServiceMapDaoImpl _vpcSvcMap;
 
     protected VpcDaoImpl() {
         super();
@@ -116,6 +123,29 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
         sc.setParameters("accountId", accountId);
         List<Long> results = customSearch(sc, null);
         return results.get(0);
+    }
+
+    @Override
+    @DB
+    public VpcVO persist(VpcVO vpc, Map<String, String> serviceProviderMap) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        VpcVO newVpc = super.persist(vpc);
+        persistVpcServiceProviders(vpc.getId(), serviceProviderMap);
+        txn.commit();
+        return newVpc;
+    }
+
+    @Override
+    @DB
+    public void persistVpcServiceProviders(long vpcId, Map<String, String> serviceProviderMap) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        for (String service : serviceProviderMap.keySet()) {
+            VpcServiceMapVO serviceMap = new VpcServiceMapVO(vpcId, Network.Service.getService(service), Network.Provider.getProvider(serviceProviderMap.get(service)));
+            _vpcSvcMap.persist(serviceMap);
+        }
+        txn.commit();
     }
 }
 

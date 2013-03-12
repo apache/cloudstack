@@ -1,0 +1,75 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Setting Project Creator Permissions"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can configure &PRODUCT; to allow any user to create a new project, or you can restrict that ability to just &PRODUCT; administrators."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in as administrator to the &PRODUCT; UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Global Settings."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the search box, type allow.user.create.projects."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the edit button to set the parameter.<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> </imageobject> <textobject> <phrase>editbutton.png: Edits parameters</phrase> </textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "allow.user.create.projects"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set to true to allow end users to create projects. Set to false if you want only the &PRODUCT; root administrator and domain administrators to create projects."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Server."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# service cloud-management restart"
+msgstr ""
+

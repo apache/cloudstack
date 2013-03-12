@@ -5,23 +5,22 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
 -->
-
 <section id="network-offerings">
     <title>Network Offerings</title>
     <note><para>For the most up-to-date list of supported network services, see the &PRODUCT; UI or call listNetworkServices.</para></note>
@@ -43,5 +42,5 @@
     <note><para>If you create load balancing rules while using a network service offering that includes an external load balancer device such as NetScaler, and later change the network service offering to one that uses the &PRODUCT; virtual router, you must create a firewall rule on the virtual router for each of your existing load balancing rules so that they continue to function.</para></note>
     <para>When creating a new virtual network, the &PRODUCT; administrator chooses which network offering to enable for that network. Each virtual network is associated with one network offering. A virtual network can be upgraded or downgraded by changing its associated network offering.  If you do this, be sure to reprogram the physical network to match.</para>
     <para>&PRODUCT; also has internal network offerings for use by &PRODUCT; system VMs. These network offerings are not visible to users but can be modified by administrators.</para>
-    
+    <xi:include href="creating-network-offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

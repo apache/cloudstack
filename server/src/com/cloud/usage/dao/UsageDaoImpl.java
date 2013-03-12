@@ -27,6 +27,7 @@ import java.util.TimeZone;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.exception.UsageServerException;
 import com.cloud.usage.UsageVO;
@@ -38,6 +39,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={UsageDao.class})
 public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements UsageDao {
 	public static final Logger s_logger = Logger.getLogger(UsageDaoImpl.class.getName());

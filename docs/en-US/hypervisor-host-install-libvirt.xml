@@ -31,7 +31,7 @@
             <para>Set the following paramaters:</para>
             <programlisting>listen_tls = 0</programlisting>
             <programlisting>listen_tcp = 1</programlisting>
-            <programlisting>tcp_port = 16059</programlisting>
+            <programlisting>tcp_port = "16509"</programlisting>
             <programlisting>auth_tcp = "none"</programlisting>
             <programlisting>mdns_adv = 0</programlisting>
         </listitem>
@@ -40,11 +40,11 @@
             <para>On RHEL or CentOS modify <filename>/etc/sysconfig/libvirtd</filename>:</para>
             <para>Uncomment the following line:</para>
             <programlisting>#LIBVIRTD_ARGS="--listen"</programlisting>
-            <para>On Ubuntu: modify <filename>/etc/init/libvirt-bin.conf</filename></para>
-            <para>Change the following line (at the end of the file):</para>
-            <programlisting>exec /usr/sbin/libvirtd -d</programlisting>
-            <para>to (just add -l)</para>
-            <programlisting>exec /usr/sbin/libvirtd -d -l</programlisting>
+            <para>On Ubuntu: modify <filename>/etc/default/libvirt-bin</filename></para>
+            <para>Add "-l" to the following line::</para>
+            <programlisting>libvirtd_opts="-d"</programlisting>
+            <para>so it looks like:</para>
+            <programlisting>libvirtd_opts="-d -l"</programlisting>
         </listitem>
         <listitem>
             <para>Restart libvirt</para>

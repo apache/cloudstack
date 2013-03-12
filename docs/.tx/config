@@ -1,25 +1,106 @@
-#  Licensed to the Apache Software Foundation (ASF) under one
-#  or more contributor license agreements.  See the NOTICE file
-#  distributed with this work for additional information
-#  regarding copyright ownership.  The ASF licenses this file
-#  to you under the Apache License, Version 2.0 (the
-#  "License"); you may not use this file except in compliance
-#  with the License.  You may obtain a copy of the License at
-#  
-#    http://www.apache.org/licenses/LICENSE-2.0
-#  
-#  Unless required by applicable law or agreed to in writing,
-#  software distributed under the License is distributed on an
-#  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-#  KIND, either express or implied.  See the License for the
-#  specific language governing permissions and limitations
-#  under the License.
-
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
 [main]
-host = https://www.transifex.net
+host = https://www.transifex.com
+
+[ACS_DOCS.Admin_Guide]
+file_filter = <lang>/Admin_Guide.po
+source_file = pot/Admin_Guide.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.Author_Group]
+file_filter = <lang>/Author_Group.po
+source_file = pot/Author_Group.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.Book_Info]
+file_filter = <lang>/Book_Info.po
+source_file = pot/Book_Info.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.Book_Info_Release_Notes_4-0]
+file_filter = <lang>/Book_Info_Release_Notes_4-0.po
+source_file = pot/Book_Info_Release_Notes_4-0.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.CloudStack_Nicira_NVP_Guide]
+file_filter = <lang>/CloudStack_Nicira_NVP_Guide.po
+source_file = pot/CloudStack_Nicira_NVP_Guide.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.Developers_Guide]
+file_filter = <lang>/Developers_Guide.po
+source_file = pot/Developers_Guide.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.Installation_Guide]
+file_filter = <lang>/Installation_Guide.po
+source_file = pot/Installation_Guide.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.LDAPserver-for-user-authentication]
+file_filter = <lang>/LDAPserver-for-user-authentication.po
+source_file = pot/LDAPserver-for-user-authentication.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.Preface]
+file_filter = <lang>/Preface.po
+source_file = pot/Preface.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.Release_Notes]
+file_filter = <lang>/Release_Notes.po
+source_file = pot/Release_Notes.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.Revision_History]
+file_filter = <lang>/Revision_History.po
+source_file = pot/Revision_History.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.Revision_History_Install_Guide]
+file_filter = <lang>/Revision_History_Install_Guide.po
+source_file = pot/Revision_History_Install_Guide.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.SSL-keystore-path-and-password]
+file_filter = <lang>/SSL-keystore-path-and-password.po
+source_file = pot/SSL-keystore-path-and-password.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.VPN-user-usage-record-format]
+file_filter = <lang>/VPN-user-usage-record-format.po
+source_file = pot/VPN-user-usage-record-format.pot
+source_lang = en
+type = PO
 
 [ACS_DOCS.about-clusters]
-file_filter = <lang>/about-cluster.po
+file_filter = <lang>/about-clusters.po
 source_file = pot/about-clusters.pot
 source_lang = en
 type = PO
@@ -30,13 +111,17 @@ source_file = pot/about-hosts.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.about-password-encryption]
+file_filter = <lang>/about-password-encryption.po
+source_file = pot/about-password-encryption.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.about-physical-networks]
 file_filter = <lang>/about-physical-networks.po
 source_file = pot/about-physical-networks.pot
 source_lang = en
 type = PO
-
-
 
 [ACS_DOCS.about-pods]
 file_filter = <lang>/about-pods.po
@@ -53,6 +138,12 @@ type = PO
 [ACS_DOCS.about-secondary-storage]
 file_filter = <lang>/about-secondary-storage.po
 source_file = pot/about-secondary-storage.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.about-security-groups]
+file_filter = <lang>/about-security-groups.po
+source_file = pot/about-security-groups.pot
 source_lang = en
 type = PO
 
@@ -86,15 +177,15 @@ source_file = pot/accessing-vms.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.accounts]
-file_filter = <lang>/accounts.po
-source_file = pot/accounts.pot
-source_lang = en
-type = PO
-
 [ACS_DOCS.accounts-users-domains]
 file_filter = <lang>/accounts-users-domains.po
 source_file = pot/accounts-users-domains.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.accounts]
+file_filter = <lang>/accounts.po
+source_file = pot/accounts.pot
 source_lang = en
 type = PO
 
@@ -104,27 +195,39 @@ source_file = pot/acquire-new-ip-address.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.acquire-new-ip-for-vpc]
+file_filter = <lang>/acquire-new-ip-for-vpc.po
+source_file = pot/acquire-new-ip-for-vpc.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.add-additional-guest-network]
 file_filter = <lang>/add-additional-guest-network.po
 source_file = pot/add-additional-guest-network.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.added-API-commands]
-file_filter = <lang>/added-API-commands.po
-source_file = pot/added-API-commands.pot
+[ACS_DOCS.add-clusters-kvm-xenserver]
+file_filter = <lang>/add-clusters-kvm-xenserver.po
+source_file = pot/add-clusters-kvm-xenserver.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.added-cloudPlatform-error-codes]
-file_filter = <lang>/added-cloudPlatform-error-codes.po
-source_file = pot/added-cloudPlatform-error-codes.pot
+[ACS_DOCS.add-clusters-ovm]
+file_filter = <lang>/add-clusters-ovm.po
+source_file = pot/add-clusters-ovm.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.adding-IP-addresses-for-the-public-network]
-file_filter = <lang>/adding-IP-addresses-for-the-public-network.po
-source_file = pot/adding-IP-addresses-for-the-public-network.pot
+[ACS_DOCS.add-clusters-vsphere]
+file_filter = <lang>/add-clusters-vsphere.po
+source_file = pot/add-clusters-vsphere.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.add-gateway-vpc]
+file_filter = <lang>/add-gateway-vpc.po
+source_file = pot/add-gateway-vpc.pot
 source_lang = en
 type = PO
 
@@ -146,6 +249,12 @@ source_file = pot/add-load-balancer-rule.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.add-loadbalancer-rule-vpc]
+file_filter = <lang>/add-loadbalancer-rule-vpc.po
+source_file = pot/add-loadbalancer-rule-vpc.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.add-members-to-projects]
 file_filter = <lang>/add-members-to-projects.po
 source_file = pot/add-members-to-projects.pot
@@ -161,6 +270,12 @@ type = PO
 [ACS_DOCS.add-password-management-to-templates]
 file_filter = <lang>/add-password-management-to-templates.po
 source_file = pot/add-password-management-to-templates.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.add-portforward-rule-vpc]
+file_filter = <lang>/add-portforward-rule-vpc.po
+source_file = pot/add-portforward-rule-vpc.pot
 source_lang = en
 type = PO
 
@@ -188,6 +303,54 @@ source_file = pot/add-security-group.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.add-tier]
+file_filter = <lang>/add-tier.po
+source_file = pot/add-tier.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.add-vm-to-tier]
+file_filter = <lang>/add-vm-to-tier.po
+source_file = pot/add-vm-to-tier.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.add-vpc]
+file_filter = <lang>/add-vpc.po
+source_file = pot/add-vpc.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.added-API-commands-4-0]
+file_filter = <lang>/added-API-commands-4-0.po
+source_file = pot/added-API-commands-4-0.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.added-API-commands]
+file_filter = <lang>/added-API-commands.po
+source_file = pot/added-API-commands.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.added-error-codes]
+file_filter = <lang>/added-error-codes.po
+source_file = pot/added-error-codes.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.adding-IP-addresses-for-the-public-network]
+file_filter = <lang>/adding-IP-addresses-for-the-public-network.po
+source_file = pot/adding-IP-addresses-for-the-public-network.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.additional-installation-options]
+file_filter = <lang>/additional-installation-options.po
+source_file = pot/additional-installation-options.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.admin-alerts]
 file_filter = <lang>/admin-alerts.po
 source_file = pot/admin-alerts.pot
@@ -197,6 +360,12 @@ type = PO
 [ACS_DOCS.admin-guide]
 file_filter = <lang>/admin-guide.po
 source_file = pot/admin-guide.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.adv-zone-topology-req]
+file_filter = <lang>/adv-zone-topology-req.po
+source_file = pot/adv-zone-topology-req.pot
 source_lang = en
 type = PO
 
@@ -242,15 +411,21 @@ source_file = pot/allocators.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.api-reference]
-file_filter = <lang>/api-reference.po
-source_file = pot/api-reference.pot
+[ACS_DOCS.api-calls]
+file_filter = <lang>/api-calls.po
+source_file = pot/api-calls.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.appendix-a-time-zones]
-file_filter = <lang>/appendix-a-time-zones.po
-source_file = pot/appendix-a-time-zones.pot
+[ACS_DOCS.api-overview]
+file_filter = <lang>/api-overview.po
+source_file = pot/api-overview.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.api-reference]
+file_filter = <lang>/api-reference.po
+source_file = pot/api-reference.pot
 source_lang = en
 type = PO
 
@@ -266,27 +441,33 @@ source_file = pot/asynchronous-commands.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.attaching-volume]
-file_filter = <lang>/attaching-volume.po
-source_file = pot/attaching-volume.pot
-source_lang = en
-type = PO
-
 [ACS_DOCS.attach-iso-to-vm]
 file_filter = <lang>/attach-iso-to-vm.po
 source_file = pot/attach-iso-to-vm.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.Author_Group]
-file_filter = <lang>/Author_Group.po
-source_file = pot/Author_Group.pot
+[ACS_DOCS.attaching-volume]
+file_filter = <lang>/attaching-volume.po
+source_file = pot/attaching-volume.pot
 source_lang = en
 type = PO
 
 [ACS_DOCS.automatic-snapshot-creation-retention]
 file_filter = <lang>/automatic-snapshot-creation-retention.po
 source_file = pot/automatic-snapshot-creation-retention.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.autoscale]
+file_filter = <lang>/autoscale.po
+source_file = pot/autoscale.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.aws-api-examples]
+file_filter = <lang>/aws-api-examples.po
+source_file = pot/aws-api-examples.pot
 source_lang = en
 type = PO
 
@@ -314,15 +495,27 @@ source_file = pot/aws-ec2-supported-commands.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.aws-ec2-timeouts]
+file_filter = <lang>/aws-ec2-timeouts.po
+source_file = pot/aws-ec2-timeouts.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.aws-ec2-user-setup]
 file_filter = <lang>/aws-ec2-user-setup.po
 source_file = pot/aws-ec2-user-setup.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.aws-interface-guide]
-file_filter = <lang>/aws-interface-guide.po
-source_file = pot/aws-interface-guide.pot
+[ACS_DOCS.aws-interface-compatibility]
+file_filter = <lang>/aws-interface-compatibility.po
+source_file = pot/aws-interface-compatibility.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.basic-adv-networking]
+file_filter = <lang>/basic-adv-networking.po
+source_file = pot/basic-adv-networking.pot
 source_lang = en
 type = PO
 
@@ -380,21 +573,75 @@ source_file = pot/best-practices-virtual-router.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.Book_Info_Build_All]
-file_filter = <lang>/Book_Info_Build_All.po
-source_file = pot/Book_Info_Build_All.pot
+[ACS_DOCS.build-deb]
+file_filter = <lang>/build-deb.po
+source_file = pot/build-deb.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.Book_Info]
-file_filter = <lang>/Book_Info.po
-source_file = pot/Book_Info.pot
+[ACS_DOCS.build-rpm]
+file_filter = <lang>/build-rpm.po
+source_file = pot/build-rpm.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.building-devcloud]
+file_filter = <lang>/building-devcloud.po
+source_file = pot/building-devcloud.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.building-marvin]
+file_filter = <lang>/building-marvin.po
+source_file = pot/building-marvin.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.building-prerequisites]
+file_filter = <lang>/building-prerequisites.po
+source_file = pot/building-prerequisites.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.building-with-maven-deploy]
+file_filter = <lang>/building-with-maven-deploy.po
+source_file = pot/building-with-maven-deploy.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.building-with-maven-steps]
+file_filter = <lang>/building-with-maven-steps.po
+source_file = pot/building-with-maven-steps.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.building-with-maven]
+file_filter = <lang>/building-with-maven.po
+source_file = pot/building-with-maven.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.castor-with-cs]
+file_filter = <lang>/castor-with-cs.po
+source_file = pot/castor-with-cs.pot
 source_lang = en
 type = PO
 
 [ACS_DOCS.change-console-proxy-ssl-certificate-domain]
 file_filter = <lang>/change-console-proxy-ssl-certificate-domain.po
 source_file = pot/change-console-proxy-ssl-certificate-domain.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.change-database-config]
+file_filter = <lang>/change-database-config.po
+source_file = pot/change-database-config.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.change-database-password]
+file_filter = <lang>/change-database-password.po
+source_file = pot/change-database-password.pot
 source_lang = en
 type = PO
 
@@ -416,6 +663,12 @@ source_file = pot/change-to-behavior-of-list-commands.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.changed-apicommands-4-0]
+file_filter = <lang>/changed-apicommands-4-0.po
+source_file = pot/changed-apicommands-4-0.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.changing-root-password]
 file_filter = <lang>/changing-root-password.po
 source_file = pot/changing-root-password.pot
@@ -434,12 +687,6 @@ source_file = pot/changing-secondary-storage-servers.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.changing-secondary-storage-serversp]
-file_filter = <lang>/changing-secondary-storage-serversp.po
-source_file = pot/changing-secondary-storage-serversp.pot
-source_lang = en
-type = PO
-
 [ACS_DOCS.changing-service-offering-for-vm]
 file_filter = <lang>/changing-service-offering-for-vm.po
 source_file = pot/changing-service-offering-for-vm.pot
@@ -452,9 +699,21 @@ source_file = pot/changing-vm-name-os-group.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.choosing_a_deployment_architecture]
-file_filter = <lang>/choosing_a_deployment_architecture.po
-source_file = pot/choosing_a_deployment_architecture.pot
+[ACS_DOCS.choosing-a-deployment-architecture]
+file_filter = <lang>/choosing-a-deployment-architecture.po
+source_file = pot/choosing-a-deployment-architecture.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.cisco3750-hardware]
+file_filter = <lang>/cisco3750-hardware.po
+source_file = pot/cisco3750-hardware.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.cisco3750-layer2]
+file_filter = <lang>/cisco3750-layer2.po
+source_file = pot/cisco3750-layer2.pot
 source_lang = en
 type = PO
 
@@ -476,51 +735,15 @@ source_file = pot/cloud-infrastructure-overview.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.cloudplatform-api]
-file_filter = <lang>/cloudplatform-api.po
-source_file = pot/cloudplatform-api.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.cloudstack_admin]
-file_filter = <lang>/cloudstack_admin.po
-source_file = pot/cloudstack_admin.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.cloudstack_developers]
-file_filter = <lang>/cloudstack_developers.po
-source_file = pot/cloudstack_developers.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.cloudstack_features]
-file_filter = <lang>/cloudstack_features.po
-source_file = pot/cloudstack_features.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.cloudstack_installation]
-file_filter = <lang>/cloudstack_installation.po
-source_file = pot/cloudstack_installation.pot
+[ACS_DOCS.cloudstack-api]
+file_filter = <lang>/cloudstack-api.po
+source_file = pot/cloudstack-api.pot
 source_lang = en
 type = PO
 
 [ACS_DOCS.cloudstack]
 file_filter = <lang>/cloudstack.po
 source_file = pot/cloudstack.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.cloudstack_system_requirements]
-file_filter = <lang>/cloudstack_system_requirements.po
-source_file = pot/cloudstack_system_requirements.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.cloudstack_whatis]
-file_filter = <lang>/cloudstack_whatis.po
-source_file = pot/cloudstack_whatis.pot
 source_lang = en
 type = PO
 
@@ -548,15 +771,33 @@ source_file = pot/concepts.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.configure-acl]
+file_filter = <lang>/configure-acl.po
+source_file = pot/configure-acl.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.configure-guest-traffic-in-advanced-zone]
 file_filter = <lang>/configure-guest-traffic-in-advanced-zone.po
 source_file = pot/configure-guest-traffic-in-advanced-zone.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.configure-package-repository]
+file_filter = <lang>/configure-package-repository.po
+source_file = pot/configure-package-repository.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.configure-public-traffic-in-an-advanced-zone]
 file_filter = <lang>/configure-public-traffic-in-an-advanced-zone.po
 source_file = pot/configure-public-traffic-in-an-advanced-zone.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.configure-snmp-rhel]
+file_filter = <lang>/configure-snmp-rhel.po
+source_file = pot/configure-snmp-rhel.pot
 source_lang = en
 type = PO
 
@@ -572,6 +813,12 @@ source_file = pot/configure-virtual-router.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.configure-vpc]
+file_filter = <lang>/configure-vpc.po
+source_file = pot/configure-vpc.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.configure-vpn]
 file_filter = <lang>/configure-vpn.po
 source_file = pot/configure-vpn.pot
@@ -581,12 +828,6 @@ type = PO
 [ACS_DOCS.configure-xenserver-dom0-memory]
 file_filter = <lang>/configure-xenserver-dom0-memory.po
 source_file = pot/configure-xenserver-dom0-memory.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.configure-xenserver-dom-memory]
-file_filter = <lang>/configure-xenserver-dom-memory.po
-source_file = pot/configure-xenserver-dom-memory.pot
 source_lang = en
 type = PO
 
@@ -656,6 +897,12 @@ source_file = pot/create-vpn-gateway-for-vpc.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.create-vr-network-offering]
+file_filter = <lang>/create-vr-network-offering.po
+source_file = pot/create-vr-network-offering.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.create-windows-template]
 file_filter = <lang>/create-windows-template.po
 source_file = pot/create-windows-template.pot
@@ -704,6 +951,12 @@ source_file = pot/customizing-dns.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.database-replication]
+file_filter = <lang>/database-replication.po
+source_file = pot/database-replication.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.dates-in-usage-record]
 file_filter = <lang>/dates-in-usage-record.po
 source_file = pot/dates-in-usage-record.pot
@@ -728,6 +981,12 @@ source_file = pot/default-template.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.delete-reset-vpn]
+file_filter = <lang>/delete-reset-vpn.po
+source_file = pot/delete-reset-vpn.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.delete-templates]
 file_filter = <lang>/delete-templates.po
 source_file = pot/delete-templates.pot
@@ -737,6 +996,18 @@ type = PO
 [ACS_DOCS.deleting-vms]
 file_filter = <lang>/deleting-vms.po
 source_file = pot/deleting-vms.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.dell62xx-hardware]
+file_filter = <lang>/dell62xx-hardware.po
+source_file = pot/dell62xx-hardware.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.dell62xx-layer2]
+file_filter = <lang>/dell62xx-layer2.po
+source_file = pot/dell62xx-layer2.pot
 source_lang = en
 type = PO
 
@@ -752,21 +1023,21 @@ source_file = pot/detach-move-volumes.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.devcloud-usage-mode]
+file_filter = <lang>/devcloud-usage-mode.po
+source_file = pot/devcloud-usage-mode.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.devcloud]
+file_filter = <lang>/devcloud.po
+source_file = pot/devcloud.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.developer-getting-started]
 file_filter = <lang>/developer-getting-started.po
 source_file = pot/developer-getting-started.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.developer_guide]
-file_filter = <lang>/developer_guide.po
-source_file = pot/developer_guide.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.developer-guide]
-file_filter = <lang>/developer-guide.po
-source_file = pot/developer-guide.pot
 source_lang = en
 type = PO
 
@@ -797,6 +1068,12 @@ type = PO
 [ACS_DOCS.domains]
 file_filter = <lang>/domains.po
 source_file = pot/domains.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.enable-disable-static-nat-vpc]
+file_filter = <lang>/enable-disable-static-nat-vpc.po
+source_file = pot/enable-disable-static-nat-vpc.pot
 source_lang = en
 type = PO
 
@@ -842,6 +1119,12 @@ source_file = pot/event-log-queries.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.event-types]
+file_filter = <lang>/event-types.po
+source_file = pot/event-types.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.events-log]
 file_filter = <lang>/events-log.po
 source_file = pot/events-log.pot
@@ -851,12 +1134,6 @@ type = PO
 [ACS_DOCS.events]
 file_filter = <lang>/events.po
 source_file = pot/events.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.event-types]
-file_filter = <lang>/event-types.po
-source_file = pot/event-types.pot
 source_lang = en
 type = PO
 
@@ -884,6 +1161,30 @@ source_file = pot/external-firewalls-and-load-balancers.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.external-fw-topology-req]
+file_filter = <lang>/external-fw-topology-req.po
+source_file = pot/external-fw-topology-req.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.external-guest-firewall-integration]
+file_filter = <lang>/external-guest-firewall-integration.po
+source_file = pot/external-guest-firewall-integration.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.external-guest-lb-integration]
+file_filter = <lang>/external-guest-lb-integration.po
+source_file = pot/external-guest-lb-integration.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.extracting-source]
+file_filter = <lang>/extracting-source.po
+source_file = pot/extracting-source.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.feature-overview]
 file_filter = <lang>/feature-overview.po
 source_file = pot/feature-overview.pot
@@ -902,9 +1203,21 @@ source_file = pot/first_ms_node_install.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.globally-configured-limit]
-file_filter = <lang>/globally-configured-limit.po
-source_file = pot/globally-configured-limit.pot
+[ACS_DOCS.generic-firewall-provisions]
+file_filter = <lang>/generic-firewall-provisions.po
+source_file = pot/generic-firewall-provisions.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.getting-release]
+file_filter = <lang>/getting-release.po
+source_file = pot/getting-release.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.global-config]
+file_filter = <lang>/global-config.po
+source_file = pot/global-config.pot
 source_lang = en
 type = PO
 
@@ -923,6 +1236,12 @@ type = PO
 [ACS_DOCS.guest-network]
 file_filter = <lang>/guest-network.po
 source_file = pot/guest-network.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.guest-nw-usage-with-traffic-sentinel]
+file_filter = <lang>/guest-nw-usage-with-traffic-sentinel.po
+source_file = pot/guest-nw-usage-with-traffic-sentinel.pot
 source_lang = en
 type = PO
 
@@ -950,6 +1269,30 @@ source_file = pot/ha-management-server.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.hardware-config-eg]
+file_filter = <lang>/hardware-config-eg.po
+source_file = pot/hardware-config-eg.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.hardware-firewall]
+file_filter = <lang>/hardware-firewall.po
+source_file = pot/hardware-firewall.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.host-add-vsphere]
+file_filter = <lang>/host-add-vsphere.po
+source_file = pot/host-add-vsphere.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.host-add-xenserver-kvm-ovm]
+file_filter = <lang>/host-add-xenserver-kvm-ovm.po
+source_file = pot/host-add-xenserver-kvm-ovm.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.host-add]
 file_filter = <lang>/host-add.po
 source_file = pot/host-add.pot
@@ -968,21 +1311,27 @@ source_file = pot/hypervisor-host-install-agent.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.hypervisor-host-install-finish]
+file_filter = <lang>/hypervisor-host-install-finish.po
+source_file = pot/hypervisor-host-install-finish.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.hypervisor-host-install-firewall]
 file_filter = <lang>/hypervisor-host-install-firewall.po
 source_file = pot/hypervisor-host-install-firewall.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.hypervisor-host-install-flow]
-file_filter = <lang>/hypervisor-host-install-flow.po
-source_file = pot/hypervisor-host-install-flow.pot
-source_lang = en
-type = PO
-
 [ACS_DOCS.hypervisor-host-install-libvirt]
 file_filter = <lang>/hypervisor-host-install-libvirt.po
 source_file = pot/hypervisor-host-install-libvirt.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.hypervisor-host-install-network-openvswitch]
+file_filter = <lang>/hypervisor-host-install-network-openvswitch.po
+source_file = pot/hypervisor-host-install-network-openvswitch.pot
 source_lang = en
 type = PO
 
@@ -1010,6 +1359,24 @@ source_file = pot/hypervisor-host-install-security-policies.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.hypervisor-installation]
+file_filter = <lang>/hypervisor-installation.po
+source_file = pot/hypervisor-installation.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.hypervisor-kvm-install-flow]
+file_filter = <lang>/hypervisor-kvm-install-flow.po
+source_file = pot/hypervisor-kvm-install-flow.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.hypervisor-kvm-requirements]
+file_filter = <lang>/hypervisor-kvm-requirements.po
+source_file = pot/hypervisor-kvm-requirements.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.hypervisor-support-for-primarystorage]
 file_filter = <lang>/hypervisor-support-for-primarystorage.po
 source_file = pot/hypervisor-support-for-primarystorage.pot
@@ -1034,15 +1401,21 @@ source_file = pot/incremental-snapshots-backup.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.initial-setup-of-external-firewalls-loadbalancers]
+file_filter = <lang>/initial-setup-of-external-firewalls-loadbalancers.po
+source_file = pot/initial-setup-of-external-firewalls-loadbalancers.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.initialize-and-test]
 file_filter = <lang>/initialize-and-test.po
 source_file = pot/initialize-and-test.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.initial-setup-of-external-firewalls-loadbalancers]
-file_filter = <lang>/initial-setup-of-external-firewalls-loadbalancers.po
-source_file = pot/initial-setup-of-external-firewalls-loadbalancers.pot
+[ACS_DOCS.install-usage-server]
+file_filter = <lang>/install-usage-server.po
+source_file = pot/install-usage-server.pot
 source_lang = en
 type = PO
 
@@ -1052,9 +1425,9 @@ source_file = pot/installation-complete.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.installation_overview]
-file_filter = <lang>/installation_overview.po
-source_file = pot/installation_overview.pot
+[ACS_DOCS.installation-steps-overview]
+file_filter = <lang>/installation-steps-overview.po
+source_file = pot/installation-steps-overview.pot
 source_lang = en
 type = PO
 
@@ -1070,21 +1443,15 @@ source_file = pot/installation_steps_overview.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.installation-steps-overview]
-file_filter = <lang>/installation-steps-overview.po
-source_file = pot/installation-steps-overview.pot
+[ACS_DOCS.inter-vlan-routing]
+file_filter = <lang>/inter-vlan-routing.po
+source_file = pot/inter-vlan-routing.pot
 source_lang = en
 type = PO
 
 [ACS_DOCS.introduction]
 file_filter = <lang>/introduction.po
 source_file = pot/introduction.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.ipaddress-usage-record-format]
-file_filter = <lang>/ipaddress-usage-record-format.po
-source_file = pot/ipaddress-usage-record-format.pot
 source_lang = en
 type = PO
 
@@ -1100,6 +1467,12 @@ source_file = pot/ip-load-balancing.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.ipaddress-usage-record-format]
+file_filter = <lang>/ipaddress-usage-record-format.po
+source_file = pot/ipaddress-usage-record-format.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.isolated-networks]
 file_filter = <lang>/isolated-networks.po
 source_file = pot/isolated-networks.pot
@@ -1112,15 +1485,27 @@ source_file = pot/job-status.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.kvm-topology-req]
+file_filter = <lang>/kvm-topology-req.po
+source_file = pot/kvm-topology-req.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.large_scale_redundant_setup]
 file_filter = <lang>/large_scale_redundant_setup.po
 source_file = pot/large_scale_redundant_setup.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.LDAPserver-for-user-authentication]
-file_filter = <lang>/LDAPserver-for-user-authentication.po
-source_file = pot/LDAPserver-for-user-authentication.pot
+[ACS_DOCS.layer2-switch]
+file_filter = <lang>/layer2-switch.po
+source_file = pot/layer2-switch.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.lb-policy-pfwd-rule-usage-record-format]
+file_filter = <lang>/lb-policy-pfwd-rule-usage-record-format.po
+source_file = pot/lb-policy-pfwd-rule-usage-record-format.pot
 source_lang = en
 type = PO
 
@@ -1130,27 +1515,21 @@ source_file = pot/linux-installation.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.loadbal-policy-port-fwd-rule-usage-record-fmt]
-file_filter = <lang>/loadbalancer-policy-port-forwarding-rule-usage-record-format.po
-source_file = pot/loadbalancer-policy-port-forwarding-rule-usage-record-format.pot
-source_lang = en
-type = PO
-
 [ACS_DOCS.load-balancer-rules]
 file_filter = <lang>/load-balancer-rules.po
 source_file = pot/load-balancer-rules.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.log-in]
-file_filter = <lang>/log-in.po
-source_file = pot/log-in.pot
-source_lang = en
-type = PO
-
 [ACS_DOCS.log-in-root-admin]
 file_filter = <lang>/log-in-root-admin.po
 source_file = pot/log-in-root-admin.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.log-in]
+file_filter = <lang>/log-in.po
+source_file = pot/log-in.pot
 source_lang = en
 type = PO
 
@@ -1196,12 +1575,6 @@ source_file = pot/management-server-install-complete.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.management-server-install-db]
-file_filter = <lang>/management-server-install-db.po
-source_file = pot/management-server-install-db.pot
-source_lang = en
-type = PO
-
 [ACS_DOCS.management-server-install-db-external]
 file_filter = <lang>/management-server-install-db-external.po
 source_file = pot/management-server-install-db-external.pot
@@ -1211,6 +1584,12 @@ type = PO
 [ACS_DOCS.management-server-install-db-local]
 file_filter = <lang>/management-server-install-db-local.po
 source_file = pot/management-server-install-db-local.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.management-server-install-db]
+file_filter = <lang>/management-server-install-db.po
+source_file = pot/management-server-install-db.pot
 source_lang = en
 type = PO
 
@@ -1250,6 +1629,12 @@ source_file = pot/management-server-install-systemvm.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.management-server-lb]
+file_filter = <lang>/management-server-lb.po
+source_file = pot/management-server-lb.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.management-server-overview]
 file_filter = <lang>/management-server-overview.po
 source_file = pot/management-server-overview.pot
@@ -1259,6 +1644,12 @@ type = PO
 [ACS_DOCS.manual-live-migration]
 file_filter = <lang>/manual-live-migration.po
 source_file = pot/manual-live-migration.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.marvin]
+file_filter = <lang>/marvin.po
+source_file = pot/marvin.pot
 source_lang = en
 type = PO
 
@@ -1304,15 +1695,51 @@ source_file = pot/multi_node_overview.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.multi_site_deployment]
+file_filter = <lang>/multi_site_deployment.po
+source_file = pot/multi_site_deployment.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.multiple-system-vm-vmware]
 file_filter = <lang>/multiple-system-vm-vmware.po
 source_file = pot/multiple-system-vm-vmware.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.multi_site_deployment]
-file_filter = <lang>/multi_site_deployment.po
-source_file = pot/multi_site_deployment.pot
+[ACS_DOCS.network-offering-usage-record-format]
+file_filter = <lang>/network-offering-usage-record-format.po
+source_file = pot/network-offering-usage-record-format.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.network-offerings]
+file_filter = <lang>/network-offerings.po
+source_file = pot/network-offerings.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.network-rate]
+file_filter = <lang>/network-rate.po
+source_file = pot/network-rate.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.network-service-providers]
+file_filter = <lang>/network-service-providers.po
+source_file = pot/network-service-providers.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.network-setup]
+file_filter = <lang>/network-setup.po
+source_file = pot/network-setup.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.network-usage-record-format]
+file_filter = <lang>/network-usage-record-format.po
+source_file = pot/network-usage-record-format.pot
 source_lang = en
 type = PO
 
@@ -1328,39 +1755,27 @@ source_file = pot/networking-in-a-zone.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.networking_overview]
-file_filter = <lang>/networking_overview.po
-source_file = pot/networking-overview.pot
-source_lang = en
-type = PO
-
 [ACS_DOCS.networking-overview]
 file_filter = <lang>/networking-overview.po
 source_file = pot/networking-overview.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.network-offerings]
-file_filter = <lang>/network-offerings.po
-source_file = pot/network-offerings.pot
+[ACS_DOCS.networking_overview]
+file_filter = <lang>/networking_overview.po
+source_file = pot/networking_overview.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.network-offering-usage-record-format]
-file_filter = <lang>/network-offering-usage-record-format.po
-source_file = pot/network-offering-usage-record-format.pot
+[ACS_DOCS.networks-for-users-overview]
+file_filter = <lang>/networks-for-users-overview.po
+source_file = pot/networks-for-users-overview.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.network-service-providers]
-file_filter = <lang>/network-service-providers.po
-source_file = pot/network-service-providers.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.network-usage-record-format]
-file_filter = <lang>/network-usage-record-format.po
-source_file = pot/network-usage-record-format.pot
+[ACS_DOCS.networks]
+file_filter = <lang>/networks.po
+source_file = pot/networks.pot
 source_lang = en
 type = PO
 
@@ -1376,15 +1791,33 @@ source_file = pot/nfs-shares-on-separate-server.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.ongoing-config-of-external-firewall-loadbalancer]
-file_filter = <lang>/ongoing-configuration-of-external-firewalls-loadbalancer.po
-source_file = pot/ongoing-configuration-of-external-firewalls-loadbalancer.pot
+[ACS_DOCS.offerings]
+file_filter = <lang>/offerings.po
+source_file = pot/offerings.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.ongoing-config-of-external-firewalls-lb]
+file_filter = <lang>/ongoing-config-of-external-firewalls-lb.po
+source_file = pot/ongoing-config-of-external-firewalls-lb.pot
 source_lang = en
 type = PO
 
 [ACS_DOCS.over-provisioning-service-offering-limits]
 file_filter = <lang>/over-provisioning-service-offering-limits.po
 source_file = pot/over-provisioning-service-offering-limits.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.ovm-install]
+file_filter = <lang>/ovm-install.po
+source_file = pot/ovm-install.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.ovm-requirements]
+file_filter = <lang>/ovm-requirements.po
+source_file = pot/ovm-requirements.pot
 source_lang = en
 type = PO
 
@@ -1406,6 +1839,84 @@ source_file = pot/physical-network-configuration-settings.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.plugin-niciranvp-about]
+file_filter = <lang>/plugin-niciranvp-about.po
+source_file = pot/plugin-niciranvp-about.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.plugin-niciranvp-devicemanagement]
+file_filter = <lang>/plugin-niciranvp-devicemanagement.po
+source_file = pot/plugin-niciranvp-devicemanagement.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.plugin-niciranvp-features]
+file_filter = <lang>/plugin-niciranvp-features.po
+source_file = pot/plugin-niciranvp-features.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.plugin-niciranvp-guide]
+file_filter = <lang>/plugin-niciranvp-guide.po
+source_file = pot/plugin-niciranvp-guide.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.plugin-niciranvp-introduction]
+file_filter = <lang>/plugin-niciranvp-introduction.po
+source_file = pot/plugin-niciranvp-introduction.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.plugin-niciranvp-preparations]
+file_filter = <lang>/plugin-niciranvp-preparations.po
+source_file = pot/plugin-niciranvp-preparations.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.plugin-niciranvp-provider]
+file_filter = <lang>/plugin-niciranvp-provider.po
+source_file = pot/plugin-niciranvp-provider.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.plugin-niciranvp-revisions]
+file_filter = <lang>/plugin-niciranvp-revisions.po
+source_file = pot/plugin-niciranvp-revisions.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.plugin-niciranvp-tables]
+file_filter = <lang>/plugin-niciranvp-tables.po
+source_file = pot/plugin-niciranvp-tables.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.plugin-niciranvp-troubleshooting]
+file_filter = <lang>/plugin-niciranvp-troubleshooting.po
+source_file = pot/plugin-niciranvp-troubleshooting.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.plugin-niciranvp-ui]
+file_filter = <lang>/plugin-niciranvp-ui.po
+source_file = pot/plugin-niciranvp-ui.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.plugin-niciranvp-usage]
+file_filter = <lang>/plugin-niciranvp-usage.po
+source_file = pot/plugin-niciranvp-usage.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.plugin-niciranvp-uuidreferences]
+file_filter = <lang>/plugin-niciranvp-uuidreferences.po
+source_file = pot/plugin-niciranvp-uuidreferences.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.pod-add]
 file_filter = <lang>/pod-add.po
 source_file = pot/pod-add.pot
@@ -1415,18 +1926,6 @@ type = PO
 [ACS_DOCS.port-forwarding]
 file_filter = <lang>/port-forwarding.po
 source_file = pot/port-forwarding.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.Preface]
-file_filter = <lang>/Preface.po
-source_file = pot/Preface.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.prepare_os]
-file_filter = <lang>/prepare_os.po
-source_file = pot/prepare_os.pot
 source_lang = en
 type = PO
 
@@ -1460,6 +1959,12 @@ source_file = pot/private-public-template.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.projects-overview]
+file_filter = <lang>/projects-overview.po
+source_file = pot/projects-overview.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.projects]
 file_filter = <lang>/projects.po
 source_file = pot/projects.pot
@@ -1469,12 +1974,6 @@ type = PO
 [ACS_DOCS.provisioning-auth-api]
 file_filter = <lang>/provisioning-auth-api.po
 source_file = pot/provisioning-auth-api.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.provisioning]
-file_filter = <lang>/provisioning.po
-source_file = pot/provisioning.pot
 source_lang = en
 type = PO
 
@@ -1496,9 +1995,39 @@ source_file = pot/query-filter.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.re-install-hosts]
+file_filter = <lang>/re-install-hosts.po
+source_file = pot/re-install-hosts.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.release-ip-address]
 file_filter = <lang>/release-ip-address.po
 source_file = pot/release-ip-address.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.release-ip-for-vpc]
+file_filter = <lang>/release-ip-for-vpc.po
+source_file = pot/release-ip-for-vpc.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.remove-member-from-project]
+file_filter = <lang>/remove-member-from-project.po
+source_file = pot/remove-member-from-project.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.remove-tier]
+file_filter = <lang>/remove-tier.po
+source_file = pot/remove-tier.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.remove-vpc]
+file_filter = <lang>/remove-vpc.po
+source_file = pot/remove-vpc.pot
 source_lang = en
 type = PO
 
@@ -1508,9 +2037,9 @@ source_file = pot/removed-API-commands.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.remove-member-from-project]
-file_filter = <lang>/remove-member-from-project.po
-source_file = pot/remove-member-from-project.pot
+[ACS_DOCS.removing-hosts]
+file_filter = <lang>/removing-hosts.po
+source_file = pot/removing-hosts.pot
 source_lang = en
 type = PO
 
@@ -1550,12 +2079,6 @@ source_file = pot/responses.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.Revision_History]
-file_filter = <lang>/Revision_History.po
-source_file = pot/Revision_History.pot
-source_lang = en
-type = PO
-
 [ACS_DOCS.roles]
 file_filter = <lang>/roles.po
 source_file = pot/roles.pot
@@ -1577,6 +2100,12 @@ type = PO
 [ACS_DOCS.runtime-behavior-of-primary-storage]
 file_filter = <lang>/runtime-behavior-of-primary-storage.po
 source_file = pot/runtime-behavior-of-primary-storage.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.runtime-internal-comm-req]
+file_filter = <lang>/runtime-internal-comm-req.po
+source_file = pot/runtime-internal-comm-req.pot
 source_lang = en
 type = PO
 
@@ -1610,21 +2139,27 @@ source_file = pot/secondary-storage-outage-and-data-loss.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.secondary-storage]
-file_filter = <lang>/secondary-storage.po
-source_file = pot/secondary-storage.pot
-source_lang = en
-type = PO
-
 [ACS_DOCS.secondary-storage-vm]
 file_filter = <lang>/secondary-storage-vm.po
 source_file = pot/secondary-storage-vm.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.secondary-storage]
+file_filter = <lang>/secondary-storage.po
+source_file = pot/secondary-storage.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.security-groups]
 file_filter = <lang>/security-groups.po
 source_file = pot/security-groups.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.security-req]
+file_filter = <lang>/security-req.po
+source_file = pot/security-req.pot
 source_lang = en
 type = PO
 
@@ -1652,9 +2187,21 @@ source_file = pot/set-database-buffer-pool-size.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.set-global-project-resource-limits]
+file_filter = <lang>/set-global-project-resource-limits.po
+source_file = pot/set-global-project-resource-limits.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.set-monitor-total-vm-limits-per-host]
 file_filter = <lang>/set-monitor-total-vm-limits-per-host.po
 source_file = pot/set-monitor-total-vm-limits-per-host.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.set-per-project-resource-limits]
+file_filter = <lang>/set-per-project-resource-limits.po
+source_file = pot/set-per-project-resource-limits.pot
 source_lang = en
 type = PO
 
@@ -1688,6 +2235,12 @@ source_file = pot/set-usage-limit.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.set-zone-vlan-run-vm-max]
+file_filter = <lang>/set-zone-vlan-run-vm-max.po
+source_file = pot/set-zone-vlan-run-vm-max.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.shared-networks]
 file_filter = <lang>/shared-networks.po
 source_file = pot/shared-networks.pot
@@ -1718,9 +2271,27 @@ source_file = pot/snapshot-restore.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.SSL-keystore-path-and-password]
-file_filter = <lang>/SSL-keystore-path-and-password.po
-source_file = pot/SSL-keystore-path-and-password.pot
+[ACS_DOCS.source-build]
+file_filter = <lang>/source-build.po
+source_file = pot/source-build.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.source-prereqs]
+file_filter = <lang>/source-prereqs.po
+source_file = pot/source-prereqs.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.source]
+file_filter = <lang>/source.po
+source_file = pot/source.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.ssl]
+file_filter = <lang>/ssl.po
+source_file = pot/ssl.pot
 source_lang = en
 type = PO
 
@@ -1742,6 +2313,12 @@ source_file = pot/sticky-session-policies-for-lb-rules.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.stop-restart-management-server]
+file_filter = <lang>/stop-restart-management-server.po
+source_file = pot/stop-restart-management-server.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.stopped-vm]
 file_filter = <lang>/stopped-vm.po
 source_file = pot/stopped-vm.pot
@@ -1754,15 +2331,15 @@ source_file = pot/stopping-and-starting-vms.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.stop-restart-management-server]
-file_filter = <lang>/stop-restart-management-server.po
-source_file = pot/stop-restart-management-server.pot
+[ACS_DOCS.storage-nw-topology-req]
+file_filter = <lang>/storage-nw-topology-req.po
+source_file = pot/storage-nw-topology-req.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.storage]
-file_filter = <lang>/storage.po
-source_file = pot/storage.pot
+[ACS_DOCS.storage-overview]
+file_filter = <lang>/storage-overview.po
+source_file = pot/storage-overview.pot
 source_lang = en
 type = PO
 
@@ -1772,9 +2349,27 @@ source_file = pot/storage-tags.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.storage]
+file_filter = <lang>/storage.po
+source_file = pot/storage.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.suspend-project]
 file_filter = <lang>/suspend-project.po
 source_file = pot/suspend-project.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.sys-offering-sysvm]
+file_filter = <lang>/sys-offering-sysvm.po
+source_file = pot/sys-offering-sysvm.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.sys-reliability-and-ha]
+file_filter = <lang>/sys-reliability-and-ha.po
+source_file = pot/sys-reliability-and-ha.pot
 source_lang = en
 type = PO
 
@@ -1787,12 +2382,6 @@ type = PO
 [ACS_DOCS.sysprep-windows-server-2008R2]
 file_filter = <lang>/sysprep-windows-server-2008R2.po
 source_file = pot/sysprep-windows-server-2008R2.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.sys-reliability-and-ha]
-file_filter = <lang>/sys-reliability-and-ha.po
-source_file = pot/sys-reliability-and-ha.pot
 source_lang = en
 type = PO
 
@@ -1814,6 +2403,12 @@ source_file = pot/system-vm-template.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.tagging-resources]
+file_filter = <lang>/tagging-resources.po
+source_file = pot/tagging-resources.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.template-iso-snapshot-usage-record-format]
 file_filter = <lang>/template-iso-snapshot-usage-record-format.po
 source_file = pot/template-iso-snapshot-usage-record-format.pot
@@ -1832,33 +2427,27 @@ source_file = pot/time-zones.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.tools]
+file_filter = <lang>/tools.po
+source_file = pot/tools.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.topology-req]
+file_filter = <lang>/topology-req.po
+source_file = pot/topology-req.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.troubleshooting-alerts]
 file_filter = <lang>/troubleshooting-alerts.po
 source_file = pot/troubleshooting-alerts.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.troubleshoot-dataloss-on-exported-primary-storage]
-file_filter = <lang>/troubleshooting-dataloss-on-exported-primary-storage.po
-source_file = pot/troubleshooting-dataloss-on-exported-primary-storage.pot
-source_lang = en
-type = PO
-
 [ACS_DOCS.troubleshooting-lb-rules-fails]
 file_filter = <lang>/troubleshooting-lb-rules-fails.po
 source_file = pot/troubleshooting-lb-rules-fails.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.troubleshoot-maint-mode-not-working-on-vCenter]
-file_filter = <lang>/troubleshooting-maintenance-mode-not-working-on-vCenter.po
-source_file = pot/troubleshooting-maintenance-mode-not-working-on-vCenter.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.troubleshooting]
-file_filter = <lang>/troubleshooting.po
-source_file = pot/troubleshooting.pot
 source_lang = en
 type = PO
 
@@ -1883,6 +2472,24 @@ type = PO
 [ACS_DOCS.troubleshooting-working-with-server-logs]
 file_filter = <lang>/troubleshooting-working-with-server-logs.po
 source_file = pot/troubleshooting-working-with-server-logs.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.troubleshooting]
+file_filter = <lang>/troubleshooting.po
+source_file = pot/troubleshooting.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.troublesht-dataloss-on-exp-primary-storage]
+file_filter = <lang>/troublesht-dataloss-on-exp-primary-storage.po
+source_file = pot/troublesht-dataloss-on-exp-primary-storage.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.troublesht-mtn-mode-not-working-on-vCenter]
+file_filter = <lang>/troublesht-mtn-mode-not-working-on-vCenter.po
+source_file = pot/troublesht-mtn-mode-not-working-on-vCenter.pot
 source_lang = en
 type = PO
 
@@ -1988,15 +2595,33 @@ source_file = pot/vcenter-maintenance-mode.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.verifying-source]
+file_filter = <lang>/verifying-source.po
+source_file = pot/verifying-source.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.virtual-machine-usage-record-format]
 file_filter = <lang>/virtual-machine-usage-record-format.po
 source_file = pot/virtual-machine-usage-record-format.pot
 source_lang = en
 type = PO
 
+[ACS_DOCS.virtual-machines]
+file_filter = <lang>/virtual-machines.po
+source_file = pot/virtual-machines.pot
+source_lang = en
+type = PO
+
 [ACS_DOCS.virtual-router]
 file_filter = <lang>/virtual-router.po
 source_file = pot/virtual-router.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.vlan-allocation-eg]
+file_filter = <lang>/vlan-allocation-eg.po
+source_file = pot/vlan-allocation-eg.pot
 source_lang = en
 type = PO
 
@@ -2015,6 +2640,24 @@ type = PO
 [ACS_DOCS.vm-storage-migration]
 file_filter = <lang>/vm-storage-migration.po
 source_file = pot/vm-storage-migration.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.vmware-install]
+file_filter = <lang>/vmware-install.po
+source_file = pot/vmware-install.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.vmware-requirements]
+file_filter = <lang>/vmware-requirements.po
+source_file = pot/vmware-requirements.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.vmware-topology-req]
+file_filter = <lang>/vmware-topology-req.po
+source_file = pot/vmware-topology-req.pot
 source_lang = en
 type = PO
 
@@ -2039,12 +2682,6 @@ type = PO
 [ACS_DOCS.vpn]
 file_filter = <lang>/vpn.po
 source_file = pot/vpn.pot
-source_lang = en
-type = PO
-
-[ACS_DOCS.VPN-user-usage-record-format]
-file_filter = <lang>/VPN-user-usage-record-format.po
-source_file = pot/VPN-user-usage-record-format.pot
 source_lang = en
 type = PO
 
@@ -2075,6 +2712,12 @@ type = PO
 [ACS_DOCS.windows-installation]
 file_filter = <lang>/windows-installation.po
 source_file = pot/windows-installation.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.work-with-usage]
+file_filter = <lang>/work-with-usage.po
+source_file = pot/work-with-usage.pot
 source_lang = en
 type = PO
 
@@ -2120,15 +2763,15 @@ source_file = pot/working-with-volumes.pot
 source_lang = en
 type = PO
 
-[ACS_DOCS.work-with-usage]
-file_filter = <lang>/work-with-usage.po
-source_file = pot/work-with-usage.pot
-source_lang = en
-type = PO
-
 [ACS_DOCS.xenserver-maintenance-mode]
 file_filter = <lang>/xenserver-maintenance-mode.po
 source_file = pot/xenserver-maintenance-mode.pot
+source_lang = en
+type = PO
+
+[ACS_DOCS.xenserver-topology-req]
+file_filter = <lang>/xenserver-topology-req.po
+source_file = pot/xenserver-topology-req.pot
 source_lang = en
 type = PO
 
@@ -2137,3 +2780,4 @@ file_filter = <lang>/zone-add.po
 source_file = pot/zone-add.pot
 source_lang = en
 type = PO
+

@@ -16,13 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vpc;
 
-import java.util.List;
-
-import org.apache.cloudstack.api.*;
-import org.apache.log4j.Logger;
+import java.util.*;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.vpc.VpcOffering;
@@ -48,6 +52,10 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
             description="services supported by the vpc offering")
     private List<String> supportedServices;
 
+    @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. " +
+            "If not specified, the provider for the service will be mapped to the default provider on the physical network")
+    private Map<String, String> serviceProviderList;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -64,15 +72,38 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
         return supportedServices;
     }
 
+    public Map<String, List<String>> getServiceProviders() {
+        Map<String, List<String>> serviceProviderMap = null;
+        if (serviceProviderList != null && !serviceProviderList.isEmpty()) {
+            serviceProviderMap = new HashMap<String, List<String>>();
+            Collection servicesCollection = serviceProviderList.values();
+            Iterator iter = servicesCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> services = (HashMap<String, String>) iter.next();
+                String service = services.get("service");
+                String provider = services.get("provider");
+                List<String> providerList = null;
+                if (serviceProviderMap.containsKey(service)) {
+                    providerList = serviceProviderMap.get(service);
+                } else {
+                    providerList = new ArrayList<String>();
+                }
+                providerList.add(provider);
+                serviceProviderMap.put(service, providerList);
+            }
+        }
+
+        return serviceProviderMap;
+    }
 
     @Override
     public void create() throws ResourceAllocationException {
-        VpcOffering vpcOff = _vpcService.createVpcOffering(getVpcOfferingName(), getDisplayText(), getSupportedServices());
+        VpcOffering vpcOff = _vpcService.createVpcOffering(getVpcOfferingName(), getDisplayText(), getSupportedServices(), getServiceProviders());
         if (vpcOff != null) {
             this.setEntityId(vpcOff.getId());
             this.setEntityUuid(vpcOff.getUuid());
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a VPC offering");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a VPC offering");
         }
     }
 
@@ -84,7 +115,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create VPC offering");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create VPC offering");
         }
     }
 

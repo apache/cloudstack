@@ -16,18 +16,18 @@
 // under the License.
 package com.cloud.configuration;
 
-import java.util.List;
-
-import com.cloud.event.ActionEventCallback;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.utils.component.AnnotationInterceptor;
 import com.cloud.utils.component.InterceptorLibrary;
 import com.cloud.utils.db.DatabaseCallback;
+
+import java.util.List;
 
 public class DefaultInterceptorLibrary implements InterceptorLibrary {
 
     @Override
     public void addInterceptors(List<AnnotationInterceptor<?>> interceptors) {
         interceptors.add(new DatabaseCallback());
-        interceptors.add(new ActionEventCallback());
+        interceptors.add(new ActionEventUtils.ActionEventCallback());
     }
 }

@@ -5,49 +5,63 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
 -->
-
 <section id="upload-template">
-    <title>Uploading Templates</title>
+	<title>Uploading Templates</title>
     <warning><title>vSphere Templates and ISOs</title><para>If you are uploading a template that was created using vSphere Client, be sure the OVA file does not contain an ISO. If it does, the deployment of VMs from the template will fail.</para></warning>
-    <para>Templates are uploaded based on a URL. HTTP is the supported access protocol. Templates are frequently large files. You can optionally gzip them to decrease upload times.</para>
-    <para>To upload a template:</para>
-    <orderedlist>
-        <listitem><para>In the left navigation bar, click Templates.</para></listitem>
-        <listitem><para>Click Create Template.</para></listitem>
-        <listitem><para>Provide the following:</para>
-        <itemizedlist>
-            <listitem><para><emphasis role="bold">Name and Display Text</emphasis>. These will be shown in the UI, so choose something descriptive.</para></listitem>
-            <listitem><para>URL. The Management Server will download the file from the specified URL, such as http://my.web.server/filename.vhd.gz.</para></listitem>
-            <listitem><para>Zone. Choose the zone where you want the template to be available, or All Zones to make it available throughout &PRODUCT;.</para></listitem>
-            <listitem><para>OS Type: This helps &PRODUCT; and the hypervisor perform certain operations and make assumptions that improve the performance of the guest. Select one of the following:</para>
-        <itemizedlist>
-            <listitem><para>If the operating system of the stopped VM is listed, choose it.</para></listitem>
-            <listitem><para>If the OS type of the stopped VM is not listed, choose Other.</para>
+	<para>Templates are uploaded based on a URL. HTTP is the supported access protocol. Templates are frequently large files. You can optionally gzip them to decrease upload times.</para>
+	<para>To upload a template:</para>
+	<orderedlist>
+		<listitem><para>In the left navigation bar, click Templates.</para></listitem>
+		<listitem><para>Click Register Template.</para></listitem>
+		<listitem><para>Provide the following:</para>
+		<itemizedlist>
+			<listitem><para><emphasis role="bold">Name and Description</emphasis>. These will be shown in the UI, so
+						choose something descriptive.</para></listitem>
+			<listitem><para><emphasis role="bold">URL</emphasis>. The Management Server will download the file from the
+						specified URL, such as http://my.web.server/filename.vhd.gz.</para></listitem>
+			<listitem><para><emphasis role="bold">Zone</emphasis>. Choose the zone where you want the template to be
+						available, or All Zones to make it available throughout
+						&PRODUCT;.</para></listitem>
+			<listitem><para><emphasis role="bold">OS Type</emphasis>: This helps &PRODUCT; and the hypervisor perform
+						certain operations and make assumptions that improve the performance of the
+						guest. Select one of the following:</para>
+				<itemizedlist>
+					<listitem><para>If the operating system of the stopped VM is listed, choose it.</para></listitem>
+					<listitem><para>If the OS type of the stopped VM is not listed, choose Other.</para>
             <note><para>You should not choose an older version of the OS than the version in the image. For example, choosing CentOS 5.4 to support a CentOS 6.2 image will in general not work. In those cases you should choose Other.</para></note></listitem>
-        </itemizedlist>
-        </listitem>
-        <listitem><para><emphasis role="bold">Hypervisor</emphasis></para></listitem>
-        <listitem><para><emphasis role="bold">Format</emphasis>. The format of the template upload file, such as VHD or OVA.</para></listitem>
-        <listitem><para><emphasis role="bold">Password Enabled</emphasis>. Choose Yes if your template has the &PRODUCT; password change script installed. See Adding Password Management to Your Templates</para></listitem>
-        <listitem><para><emphasis role="bold">Extractable</emphasis>. Choose Yes if the template is available for extraction. If this option is selected, end users can download a full image of a template.</para></listitem>
-        <listitem><para><emphasis role="bold">Public</emphasis>. Choose Yes to make this template accessible to all users of this &PRODUCT; installation. The template will appear in the Community Templates list. See <xref linkend="private-public-template"/></para></listitem>
-        <listitem><para><emphasis role="bold">Featured</emphasis>. Choose Yes if you would like this template to be more prominent for users to select. The template will appear in the Featured Templates list. Only an administrator can make a template Featured.</para></listitem>
-        </itemizedlist></listitem>
-    </orderedlist>
+				</itemizedlist>			
+			</listitem>	
+			<listitem><para><emphasis role="bold">Hypervisor</emphasis>: The supported hypervisors are listed. Select the desired one.</para></listitem>
+			<listitem><para><emphasis role="bold">Format</emphasis>. The format of the template upload file, such as VHD
+						or OVA.</para></listitem>
+			<listitem><para><emphasis role="bold">Password Enabled</emphasis>. Choose Yes if your template has the
+						&PRODUCT; password change script installed. See Adding Password
+						Management to Your Templates</para></listitem>
+			<listitem><para><emphasis role="bold">Extractable</emphasis>. Choose Yes if the template is available for extraction. If this option is selected, end users can 
+				 download a full image of a template.</para></listitem>
+			<listitem><para><emphasis role="bold">Public</emphasis>. Choose Yes to make this template accessible to all
+						users of this &PRODUCT; installation. The template will appear in the
+						Community Templates list. See <xref linkend="private-public-template"/>.</para></listitem>
+			<listitem><para><emphasis role="bold">Featured</emphasis>. Choose Yes if you would like this template to be
+						more prominent for users to select. The template will appear in the Featured
+						Templates list. Only an administrator can make a template Featured.</para></listitem>
+			</itemizedlist></listitem>
+		
+	</orderedlist>
 </section>

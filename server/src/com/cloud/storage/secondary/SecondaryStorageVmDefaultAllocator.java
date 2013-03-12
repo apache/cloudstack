@@ -23,10 +23,14 @@ import java.util.Random;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.SecondaryStorageVmVO;
 
+@Component
 @Local(value={SecondaryStorageVmAllocator.class})
-public class SecondaryStorageVmDefaultAllocator implements SecondaryStorageVmAllocator {
+public class SecondaryStorageVmDefaultAllocator extends AdapterBase implements SecondaryStorageVmAllocator {
 	
     private String _name;
     private Random _rand = new Random(System.currentTimeMillis());
@@ -36,33 +40,5 @@ public class SecondaryStorageVmDefaultAllocator implements SecondaryStorageVmAll
     	if(candidates.size() > 0)
 			return candidates.get(_rand.nextInt(candidates.size()));
     	return null;
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-      /*  _name = name;
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
-               */
-        
-        return true;
-    }
-	
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
     }
 }

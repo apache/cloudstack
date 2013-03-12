@@ -16,12 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.user.UserContext;
@@ -155,7 +159,7 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update customer VPN gateway");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update customer VPN gateway");
         }
     }
 }

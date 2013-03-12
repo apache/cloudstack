@@ -36,6 +36,7 @@ public class EC2AvailabilityZonesFilterSet {
     public EC2AvailabilityZonesFilterSet() {
         // -> use these values to check that the proper filter is passed to this type of filter set
         filterTypes.put( "zone-name", "String" );
+        filterTypes.put( "message", "String");
     }
 
     public void addFilter( EC2Filter param ) {	
@@ -55,13 +56,14 @@ public class EC2AvailabilityZonesFilterSet {
         return filterSet.toArray(new EC2Filter[0]);
     }
 
-    public List<String> evaluate( EC2DescribeAvailabilityZonesResponse availabilityZones) throws ParseException	{
-        List<String> resultList = new ArrayList<String>();
+    public EC2DescribeAvailabilityZonesResponse evaluate( EC2DescribeAvailabilityZonesResponse availabilityZones)
+            throws ParseException    {
+        EC2DescribeAvailabilityZonesResponse resultList = new EC2DescribeAvailabilityZonesResponse();
 
         boolean matched;
 
         EC2Filter[] filterSet = getFilterSet();
-        for ( String availableZone : availabilityZones.getZoneSet() ) {
+        for ( EC2AvailabilityZone availableZone : availabilityZones.getAvailabilityZoneSet() ) {
             matched = true;
             if (filterSet != null) {
                 for (EC2Filter filter : filterSet) {
@@ -71,19 +73,22 @@ public class EC2AvailabilityZonesFilterSet {
                     }
                 }
             }
-            if (matched == true)
-                resultList.add(availableZone);
+            if (matched)
+                resultList.addAvailabilityZone(availableZone);
         }
         return resultList;
     }
 
-    private boolean filterMatched( String availableZone, EC2Filter filter ) throws ParseException {
+    private boolean filterMatched( EC2AvailabilityZone availableZone, EC2Filter filter ) throws ParseException {
         String filterName = filter.getName();
         String[] valueSet = filter.getValueSet();
 
         if ( filterName.equalsIgnoreCase("zone-name")) {
-            return containsString(availableZone, valueSet);
-        } 
+            return containsString(availableZone.getName(), valueSet);
+        }
+        else if (filterName.equalsIgnoreCase("message")) {
+            return containsString(availableZone.getMessage(), valueSet);
+        }
         return false;
     }
 

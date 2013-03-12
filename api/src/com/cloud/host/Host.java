@@ -18,11 +18,12 @@ package com.cloud.host;
 
 import java.util.Date;
 
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.fsm.StateObject;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
 
 
 /**
@@ -39,6 +40,8 @@ public interface Host extends StateObject<Status>, Identity, InternalIdentity {
         ExternalLoadBalancer(false),
         ExternalVirtualSwitchSupervisor(false),
         PxeServer(false),
+        BaremetalPxe(false),
+        BaremetalDhcp(false),
         TrafficMonitor(false),
 
         ExternalDhcp(false),

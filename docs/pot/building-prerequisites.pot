@@ -1,0 +1,116 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Build Procedure Prerequisites"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In this section we will assume that you are using the Ubuntu Linux distribution with the Advanced Packaging Tool (APT). If you are using a different distribution or OS and a different packaging tool, adapt the following instructions to your environment. To build &PRODUCT; you will need:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "git, <ulink url=\"http://git-scm.com\">http://git-scm.com</ulink>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "sudo apt-get install git-core"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "maven, <ulink url=\"http://maven.apache.org\">http://maven.apache.org</ulink>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "sudo apt-get install maven"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure that you installed maven 3"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "$ mvn --version\n"
+"Apache Maven 3.0.4\n"
+"Maven home: /usr/share/maven\n"
+"Java version: 1.6.0_24, vendor: Sun Microsystems Inc.\n"
+"Java home: /usr/lib/jvm/java-6-openjdk-amd64/jre\n"
+"Default locale: en_US, platform encoding: UTF-8\n"
+"OS name: \"linux\", version: \"3.2.0-33-generic\", arch: \"amd64\", family: \"unix\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "java"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "set the JAVA_HOME environment variable"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "$ export JAVA_HOME=/usr/lib/jvm/java-6-openjdk"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In addition, to deploy and run &PRODUCT; in a development environment you will need:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Mysql"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "sudo apt-get install mysql-server-5.5"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Start the mysqld service and create a cloud user with cloud as a password"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tomcat 6"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "sudo apt-get install tomcat6"
+msgstr ""
+

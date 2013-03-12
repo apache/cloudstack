@@ -16,16 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -64,6 +64,9 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
             description="network offering ID")
     private Long networkOfferingId;
 
+    @Parameter(name=ApiConstants.GUEST_VM_CIDR, type=CommandType.STRING, description="CIDR for Guest VMs,Cloudstack allocates IPs to Guest VMs only from this CIDR")
+    private String guestVmCidr;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -93,6 +96,10 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
             return changeCidr;
         }
         return false;
+    }
+
+    private String getGuestVmCidr() {
+        return guestVmCidr;
     }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -125,10 +132,10 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
         Network result = null;
         if (network.getVpcId() != null) {
             result = _vpcService.updateVpcGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount,
-                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr());
+                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr(), getGuestVmCidr());
         } else {
             result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount,
-                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr());
+                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr(), getGuestVmCidr());
         }
 
         if (result != null) {
@@ -136,7 +143,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update network");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update network");
         }
     }
 

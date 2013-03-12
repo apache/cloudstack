@@ -20,12 +20,17 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.user.UserVO;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 @Local(value={UserDao.class})
+@DB
 public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao {
     protected SearchBuilder<UserVO> UsernamePasswordSearch;
     protected SearchBuilder<UserVO> UsernameSearch;
@@ -122,4 +127,5 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
         sc.setParameters("username", username);
         return listBy(sc);
 	}
+	
 }

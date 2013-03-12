@@ -107,4 +107,8 @@ public class MockConfigurationDaoImpl  extends GenericDaoBase<ConfigurationVO, S
         return false;
     }
 
+    @Override
+    public void invalidateCache() {
+    }
+
 }

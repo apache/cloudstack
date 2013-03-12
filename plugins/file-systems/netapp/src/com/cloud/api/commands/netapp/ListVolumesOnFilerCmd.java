@@ -19,6 +19,8 @@ package com.cloud.api.commands.netapp;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
@@ -33,7 +35,7 @@ import com.cloud.netapp.NetappManager;
 import com.cloud.netapp.NetappVolumeVO;
 import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ListVolumesOnFilerCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "listVolumesOnFiler", description="List Volumes", responseObject = ListVolumesOnFilerCmdResponse.class)
 public class ListVolumesOnFilerCmd extends BaseCmd {
@@ -42,14 +44,13 @@ public class ListVolumesOnFilerCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.POOL_NAME, type=CommandType.STRING, required = true, description="pool name.")
 	private String poolName;
+    
+    @Inject NetappManager netappMgr;
 
 	@Override
 	public void execute() throws ResourceUnavailableException,
 			InsufficientCapacityException, ServerApiException,
 			ConcurrentOperationException, ResourceAllocationException {
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
-    	
     	try {
     		List<NetappVolumeVO> volumes = netappMgr.listVolumesOnFiler(poolName);
     		ListResponse<ListVolumesOnFilerCmdResponse> listResponse = new ListResponse<ListVolumesOnFilerCmdResponse>();
@@ -71,7 +72,7 @@ public class ListVolumesOnFilerCmd extends BaseCmd {
     		listResponse.setResponseName(getCommandName());
     		this.setResponseObject(listResponse);
     	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
     	}
 		
 	}

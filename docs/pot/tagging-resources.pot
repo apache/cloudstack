@@ -1,0 +1,140 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Using Tags to Organize Resources in the Cloud"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A tag is a key-value pair that stores metadata about a resource in the cloud. Tags are useful for categorizing resources. For example, you can tag a user VM with a value that indicates the user's city of residence. In this case, the key would be \"city\" and the value might be \"Toronto\" or \"Tokyo.\" You can then request &PRODUCT; to find all resources that have a given tag; for example, VMs for users in a given city."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can tag a user virtual machine, volume, snapshot, guest network, template, ISO, firewall rule, port forwarding rule, public IP address, security group, load balancer rule, project, VPC, network ACL, or static route. You can not tag a remote access VPN."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can work with tags through the UI or through the API commands createTags, deleteTags, and listTags. You can define multiple tags for each resource. There is no limit on the number of tags you can define. Each tag can be up to 255 characters long. Users can define tags on the resources they own, and administrators can define tags on any resources in the cloud."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "An optional input parameter, \"tags,\" exists on many of the list* API commands. The following example shows how to use this new parameter to find all the volumes having tag region=canada OR tag city=Toronto:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "command=listVolumes\n"
+"				&amp;listAll=true\n"
+"				&amp;tags[0].key=region\n"
+"				&amp;tags[0].value=canada\n"
+"				&amp;tags[1].key=city\n"
+"				&amp;tags[1].value=Toronto"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following API commands have the \"tags\" input parameter:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVirtualMachines"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVolumes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listSnapshots"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listNetworks"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listTemplates"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listIsos"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listFirewallRules"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listPortForwardingRules"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listPublicIpAddresses"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listSecurityGroups"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listLoadBalancerRules"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listProjects"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVPCs"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listNetworkACLs"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listStaticRoutes"
+msgstr ""
+

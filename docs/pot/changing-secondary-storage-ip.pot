@@ -1,0 +1,62 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Making API Requests"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can change the secondary storage IP address after it has been provisioned. After changing the IP address on the host, log in to your management server and execute the following commands. Replace HOSTID below with your own value, and change the URL to use the appropriate IP address and path for your server:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"        # mysql -p\n"
+"        mysql&gt; use cloud;\n"
+"        mysql&gt; select id from host where type = 'SecondaryStorage';\n"
+"        mysql&gt; update host_details set value = 'nfs://192.168.160.20/export/mike-ss1'\n"
+"          where host_id = HOSTID and name = 'orig.url';\n"
+"        mysql&gt; update host set name = 'nfs://192.168.160.20/export/mike-ss1' where type\n"
+"          = 'SecondaryStorage' and id = #;\n"
+"        mysql&gt; update host set url = 'nfs://192.168.160.20/export/mike-ss1' where type\n"
+"          = 'SecondaryStorage' and id = #;\n"
+"        mysql&gt; update host set guid = 'nfs://192.168.160.20/export/mike-ss1' where type\n"
+"          = 'SecondaryStorage' and id = #;\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When copying and pasting a command, be sure the command has pasted as a single line before executing. Some document viewers may introduce unwanted line breaks in copied text."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Then log in to the cloud console UI and stop and start (not reboot) the Secondary Storage VM for that Zone."
+msgstr ""
+

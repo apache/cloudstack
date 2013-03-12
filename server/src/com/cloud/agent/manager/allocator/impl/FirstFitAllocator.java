@@ -23,9 +23,15 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.org.Cluster;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
@@ -38,8 +44,6 @@ import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -50,8 +54,7 @@ import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
@@ -63,10 +66,10 @@ import com.cloud.vm.dao.VMInstanceDao;
 /**
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
  */
+@Component
 @Local(value={HostAllocator.class})
-public class FirstFitAllocator implements HostAllocator {
+public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     private static final Logger s_logger = Logger.getLogger(FirstFitAllocator.class);
-    private String _name;
     @Inject HostDao _hostDao = null;
     @Inject HostDetailsDao _hostDetailsDao = null;
     @Inject UserVmDao _vmDao = null;
@@ -79,6 +82,8 @@ public class FirstFitAllocator implements HostAllocator {
     @Inject GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject VMInstanceDao _vmInstanceDao = null;
     @Inject ResourceManager _resourceMgr;
+    @Inject ClusterDao _clusterDao;
+    @Inject ClusterDetailsDao _clusterDetailsDao;
     float _factor = 1;
     boolean _checkHvm = true;
     protected String _allocationAlgorithm = "random";
@@ -215,8 +220,14 @@ public class FirstFitAllocator implements HostAllocator {
             boolean numCpusGood = host.getCpus().intValue() >= offering.getCpu();
             boolean cpuFreqGood = host.getSpeed().intValue() >= offering.getSpeed();
     		int cpu_requested = offering.getCpu() * offering.getSpeed();
-    		long ram_requested = offering.getRamSize() * 1024L * 1024L;	
-    		boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, _factor, considerReservedCapacity);
+    		long ram_requested = offering.getRamSize() * 1024L * 1024L;
+            Cluster cluster = _clusterDao.findById(host.getClusterId());
+            ClusterDetailsVO clusterDetailsCpuOvercommit = _clusterDetailsDao.findDetail(cluster.getId(),"cpuOvercommitRatio");
+            ClusterDetailsVO clusterDetailsRamOvercommmt = _clusterDetailsDao.findDetail(cluster.getId(),"memoryOvercommitRatio");
+            Float cpuOvercommitRatio = Float.parseFloat(clusterDetailsCpuOvercommit.getValue());
+            Float memoryOvercommitRatio = Float.parseFloat(clusterDetailsRamOvercommmt.getValue());
+
+            boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false,cpuOvercommitRatio,memoryOvercommitRatio, considerReservedCapacity);
 
             if (numCpusGood && cpuFreqGood && hostHasCapacity) {
                 if (s_logger.isDebugEnabled()) {
@@ -393,8 +404,6 @@ public class FirstFitAllocator implements HostAllocator {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
     	if (_configDao != null) {
     		Map<String, String> configs = _configDao.getConfiguration(params);
             String opFactor = configs.get("cpu.overprovisioning.factor");
@@ -408,11 +417,6 @@ public class FirstFitAllocator implements HostAllocator {
             _checkHvm = value == null ? true : Boolean.parseBoolean(value);
         }
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

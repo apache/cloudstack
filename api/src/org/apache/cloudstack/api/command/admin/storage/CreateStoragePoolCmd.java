@@ -19,18 +19,23 @@ package org.apache.cloudstack.api.command.admin.storage;
 import java.net.UnknownHostException;
 import java.util.Map;
 
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
+
 
 @SuppressWarnings("rawtypes")
 @APICommand(name = "createStoragePool", description="Creates a storage pool.", responseObject=StoragePoolResponse.class)
@@ -66,6 +71,14 @@ public class CreateStoragePoolCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
             required=true, description="the Zone ID for the storage pool")
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING,
+            required=false, description="the storage provider uuid")
+    private String storageProviderUuid;
+    
+    @Parameter(name=ApiConstants.SCOPE, type=CommandType.STRING,
+            required=false, description="the scope of the storage: cluster or zone")
+    private String scope;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -98,6 +111,14 @@ public class CreateStoragePoolCmd extends BaseCmd {
     public Long getZoneId() {
         return zoneId;
     }
+    
+    public String getStorageProviderUuid() {
+        return this.storageProviderUuid;
+    }
+    
+    public String getScope() {
+       return this.scope;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -122,17 +143,17 @@ public class CreateStoragePoolCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add storage pool");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add storage pool");
             }
         } catch (ResourceUnavailableException ex1) {
             s_logger.warn("Exception: ", ex1);
-            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex1.getMessage());
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex1.getMessage());
         }catch (ResourceInUseException ex2) {
             s_logger.warn("Exception: ", ex2);
-            throw new ServerApiException(BaseCmd.RESOURCE_IN_USE_ERROR, ex2.getMessage());
+            throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, ex2.getMessage());
         } catch (UnknownHostException ex3) {
             s_logger.warn("Exception: ", ex3);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex3.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex3.getMessage());
         }
     }
 }

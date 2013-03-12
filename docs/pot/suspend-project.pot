@@ -1,0 +1,80 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Suspending or Deleting a Project"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When a project is suspended, it retains the resources it owns, but they can no longer be used. No new resources or members can be added to a suspended project."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When a project is deleted, its resources are destroyed, and member accounts are removed from the project. The project’s status is shown as Disabled pending final deletion."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A project can be suspended or deleted by the project administrator, the domain administrator of the domain the project belongs to or of its parent domain, or the &PRODUCT; root administrator."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Projects."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Select View, choose Projects."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the project."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click one of the buttons:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To delete, use <inlinemediaobject> <imageobject> <imagedata fileref=\"./images/delete-button.png\" /> </imageobject> <textobject> <phrase>deletebutton.png: Removes a project</phrase> </textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To suspend, use<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/suspend-icon.png\" /> </imageobject> <textobject> <phrase>deletebutton.png: suspends a project</phrase> </textobject> </inlinemediaobject>"
+msgstr ""
+

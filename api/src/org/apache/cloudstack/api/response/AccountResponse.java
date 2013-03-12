@@ -20,12 +20,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.cloud.user.Account;
 import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
 @EntityReference(value = Account.class)
@@ -123,14 +123,32 @@ public class AccountResponse extends BaseResponse {
     @SerializedName("networkavailable") @Param(description="the total number of networks available to be created for this account", since="3.0.1")
     private String networkAvailable;
 
-    @SerializedName("vpclimit") @Param(description="the total number of vpcs the account can own", since="3.0.5")
+    @SerializedName("vpclimit") @Param(description="the total number of vpcs the account can own", since="4.0.0")
     private String vpcLimit;
 
-    @SerializedName("vpctotal") @Param(description="the total number of vpcs owned by account", since="3.0.5")
+    @SerializedName("vpctotal") @Param(description="the total number of vpcs owned by account", since="4.0.0")
     private Long vpcTotal;
 
-    @SerializedName("vpcavailable") @Param(description="the total number of vpcs available to be created for this account", since="3.0.5")
+    @SerializedName("vpcavailable") @Param(description="the total number of vpcs available to be created for this account", since="4.0.0")
     private String vpcAvailable;
+
+    @SerializedName("cpulimit") @Param(description="the total number of cpu cores the account can own", since="4.1.0")
+    private String cpuLimit;
+
+    @SerializedName("cputotal") @Param(description="the total number of cpu cores owned by account", since="4.1.0")
+    private Long cpuTotal;
+
+    @SerializedName("cpuavailable") @Param(description="the total number of cpu cores available to be created for this account", since="4.1.0")
+    private String cpuAvailable;
+
+    @SerializedName("memorylimit") @Param(description="the total memory (in MB) the account can own", since="4.1.0")
+    private String memoryLimit;
+
+    @SerializedName("memorytotal") @Param(description="the total memory (in MB) owned by account", since="4.1.0")
+    private Long memoryTotal;
+
+    @SerializedName("memoryavailable") @Param(description="the total memory (in MB) available to be created for this account", since="4.1.0")
+    private String memoryAvailable;
 
 
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the account")
@@ -292,6 +310,30 @@ public class AccountResponse extends BaseResponse {
 
     public void setNetworkAvailable(String networkAvailable) {
         this.networkAvailable = networkAvailable;
+    }
+
+    public void setCpuLimit(String cpuLimit) {
+        this.cpuLimit = cpuLimit;
+    }
+
+    public void setCpuTotal(Long cpuTotal) {
+        this.cpuTotal = cpuTotal;
+    }
+
+    public void setCpuAvailable(String cpuAvailable) {
+        this.cpuAvailable = cpuAvailable;
+    }
+
+    public void setMemoryLimit(String memoryLimit) {
+        this.memoryLimit = memoryLimit;
+    }
+
+    public void setMemoryTotal(Long memoryTotal) {
+        this.memoryTotal = memoryTotal;
+    }
+
+    public void setMemoryAvailable(String memoryAvailable) {
+        this.memoryAvailable = memoryAvailable;
     }
 
     public void setDefaultZone(String defaultZoneId) {

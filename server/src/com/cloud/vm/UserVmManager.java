@@ -49,16 +49,7 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>, UserVmServi
      * @return VirtualMachine
      */
     UserVmVO getVirtualMachine(long vmId);
-    
-    /**
-     * Attaches an ISO to the virtual CDROM device of the specified VM. Will eject any existing virtual CDROM if isoPath is null.
-     * @param vmId
-     * @param isoId
-     * @param attach whether to attach or detach the given iso
-     * @return
-     */
-    boolean attachISOToVM(long vmId, long isoId, boolean attach);
-    
+
     /**
      * Stops the virtual machine
      * @param userId the id of the user performing the action
@@ -101,8 +92,6 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>, UserVmServi
      */
     Pair<List<UserVmJoinVO>, Integer> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags);
 
-    String getChecksum(Long hostId, String templatePath);
-    
     Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
 }

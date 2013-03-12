@@ -16,12 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.response.VolumeResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Volume;
@@ -126,13 +130,13 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Volume Id: "+getId()+" VmId: "+getVirtualMachineId());
-        Volume result = _userVmService.detachVolumeFromVM(this);
+        Volume result = _volumeService.detachVolumeFromVM(this);
         if (result != null){
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);
             response.setResponseName("volume");
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to detach volume");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to detach volume");
         }
     }
 }

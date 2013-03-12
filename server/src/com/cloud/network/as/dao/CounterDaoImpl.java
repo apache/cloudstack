@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.as.CounterVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -28,6 +30,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+@Component
 @Local(value = CounterDao.class)
 public class CounterDaoImpl extends GenericDaoBase<CounterVO, Long> implements CounterDao {
     final SearchBuilder<CounterVO> AllFieldsSearch;

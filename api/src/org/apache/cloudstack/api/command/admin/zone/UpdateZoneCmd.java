@@ -19,11 +19,15 @@ package org.apache.cloudstack.api.command.admin.zone;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.dc.DataCenter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -43,6 +47,12 @@ public class UpdateZoneCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.DNS2, type=CommandType.STRING, description="the second DNS for the Zone")
     private String dns2;
+
+    @Parameter(name=ApiConstants.IP6_DNS1, type=CommandType.STRING, description="the first DNS for IPv6 network in the Zone")
+    private String ip6Dns1;
+
+    @Parameter(name=ApiConstants.IP6_DNS2, type=CommandType.STRING, description="the second DNS for IPv6 network in the Zone")
+    private String ip6Dns2;
 
     @Parameter(name=ApiConstants.GUEST_CIDR_ADDRESS, type=CommandType.STRING, description="the guest CIDR address for the Zone")
     private String guestCidrAddress;
@@ -99,6 +109,14 @@ public class UpdateZoneCmd extends BaseCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
+
+    public String getIp6Dns2() {
+        return ip6Dns2;
     }
 
     public String getInternalDns1() {
@@ -164,7 +182,7 @@ public class UpdateZoneCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update zone; internal error.");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update zone; internal error.");
         }
     }
 }

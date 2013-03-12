@@ -19,6 +19,8 @@ package com.cloud.dc.dao;
 import java.util.List;
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -26,6 +28,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value=ClusterVSMMapDao.class)
 @DB(txn = false)
 public class ClusterVSMMapDaoImpl extends GenericDaoBase<ClusterVSMMapVO, Long> implements ClusterVSMMapDao {

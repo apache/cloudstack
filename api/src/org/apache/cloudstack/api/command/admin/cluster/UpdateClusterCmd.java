@@ -16,14 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.cluster;
 
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.org.Cluster;
 import com.cloud.user.Account;
@@ -52,6 +53,13 @@ public class UpdateClusterCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.MANAGED_STATE, type=CommandType.STRING, description="whether this cluster is managed by cloudstack")
     private String managedState;
+
+    @Parameter(name=ApiConstants.CPU_OVERCOMMIT_RATIO, type = CommandType.STRING, description = "Value of cpu overcommit ratio")
+    private String cpuovercommitratio;
+
+    @Parameter(name=ApiConstants.MEMORY_OVERCOMMIT_RATIO, type = CommandType.STRING, description = "Value of ram overcommit ratio")
+    private String memoryovercommitratio;
+
 
     public String getClusterName() {
         return clusterName;
@@ -99,6 +107,20 @@ public class UpdateClusterCmd extends BaseCmd {
         this.managedState = managedstate;
     }
 
+    public Float getCpuOvercommitRatio (){
+        if(cpuovercommitratio != null){
+            return Float.parseFloat(cpuovercommitratio);
+        }
+        return 1.0f;
+    }
+
+    public Float getMemoryOvercommitRaito (){
+        if (memoryovercommitratio != null){
+            return Float.parseFloat(memoryovercommitratio);
+        }
+        return 1.0f;
+    }
+
     @Override
     public void execute(){
         Cluster cluster = _resourceService.getCluster(getId());
@@ -106,13 +128,17 @@ public class UpdateClusterCmd extends BaseCmd {
             throw new InvalidParameterValueException("Unable to find the cluster by id=" + getId());
         }
 
-        Cluster result = _resourceService.updateCluster(cluster, getClusterType(), getHypervisor(), getAllocationState(), getManagedstate());
+        if ((getMemoryOvercommitRaito().compareTo(1f) < 0) | (getCpuOvercommitRatio().compareTo(1f) < 0)) {
+            throw new InvalidParameterValueException("Cpu and ram overcommit ratios  should be greater than one");
+        }
+
+        Cluster result = _resourceService.updateCluster(cluster, getClusterType(), getHypervisor(), getAllocationState(), getManagedstate(), getMemoryOvercommitRaito(), getCpuOvercommitRatio());
         if (result != null) {
                 ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, false);
                 clusterResponse.setResponseName(getCommandName());
                 this.setResponseObject(clusterResponse);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update cluster");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update cluster");
         }
     }
 }

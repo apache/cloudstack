@@ -1,0 +1,160 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring the firewall"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The hypervisor needs to be able to communicate with other hypervisors and the management server needs to be able to reach the hypervisor."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In order to do so we have to open the following TCP ports (if you are using a firewall):"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "22 (SSH)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "1798"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "16509 (libvirt)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "5900 - 6100 (VNC consoles)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "49152 - 49216 (libvirt live migration)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "It depends on the firewall you are using how to open these ports. Below you'll find examples how to open these ports in RHEL/CentOS and Ubuntu."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Open ports in RHEL/CentOS"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "RHEL and CentOS use iptables for firewalling the system, you can open extra ports by executing the following iptable commands:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ iptables -I INPUT -p tcp -m tcp --dport 22 -j ACCEPT</command>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ iptables -I INPUT -p tcp -m tcp --dport 1798 -j ACCEPT</command>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ iptables -I INPUT -p tcp -m tcp --dport 16509 -j ACCEPT</command>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ iptables -I INPUT -p tcp -m tcp --dport 5900:6100 -j ACCEPT</command>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ iptables -I INPUT -p tcp -m tcp --dport 49152:49216 -j ACCEPT</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "These iptable settings are not persistent accross reboots, we have to save them first."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ iptables-save &gt; /etc/sysconfig/iptables</command>"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Open ports in Ubuntu"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The default firewall under Ubuntu is UFW (Uncomplicated FireWall), which is a Python wrapper around iptables."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To open the required ports, execute the following commands:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ ufw allow proto tcp from any to any port 22</command>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ ufw allow proto tcp from any to any port 1798</command>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ ufw allow proto tcp from any to any port 16509</command>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ ufw allow proto tcp from any to any port 5900:6100</command>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ ufw allow proto tcp from any to any port 49152:49216</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "By default UFW is not enabled on Ubuntu. Executing these commands with the firewall disabled does not enable the firewall."
+msgstr ""
+

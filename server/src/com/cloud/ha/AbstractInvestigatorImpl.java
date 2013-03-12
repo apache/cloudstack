@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -36,15 +37,14 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteriaService;
 
-public abstract class AbstractInvestigatorImpl implements Investigator {
+public abstract class AbstractInvestigatorImpl extends AdapterBase implements Investigator {
     private static final Logger s_logger = Logger.getLogger(AbstractInvestigatorImpl.class);
 
-    private String _name = null;
     @Inject private HostDao _hostDao = null;
     @Inject private AgentManager _agentMgr = null;
     @Inject private ResourceManager _resourceMgr = null;
@@ -52,14 +52,8 @@ public abstract class AbstractInvestigatorImpl implements Investigator {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
 
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override

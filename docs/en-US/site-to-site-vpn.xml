@@ -55,6 +55,9 @@
       <para>Create VPN connection from the VPC VPN gateway to the customer VPN gateway.</para>
     </listitem>
   </orderedlist>
+  <note><para>Appropriate events are generated on the &PRODUCT; UI when status of a Site-to-Site VPN
+      connection changes from connected to disconnected, or vice versa. Currently no events are generated
+      when establishing a VPN connection fails or pending.</para></note>
   <xi:include href="create-vpn-customer-gateway.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="create-vpn-gateway-for-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="create-vpn-connection-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>

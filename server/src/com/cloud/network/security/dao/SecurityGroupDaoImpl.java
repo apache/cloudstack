@@ -19,23 +19,27 @@ package com.cloud.network.security.dao;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
 
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={SecurityGroupDao.class})
 public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> implements SecurityGroupDao {
     private SearchBuilder<SecurityGroupVO> AccountIdSearch;
     private SearchBuilder<SecurityGroupVO> AccountIdNameSearch;
     private SearchBuilder<SecurityGroupVO> AccountIdNamesSearch;
-    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
+    @Inject ResourceTagsDaoImpl _tagsDao;
 
 
     protected SecurityGroupDaoImpl() {

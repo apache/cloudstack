@@ -1,0 +1,125 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Adding Tiers"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Tiers are distinct locations within a VPC that act as isolated networks, which do not have access to other tiers by default. Tiers are set up on different VLANs that can communicate with each other by using a virtual router. Tiers provide inexpensive, low latency network connectivity to other tiers within the VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All the VPC that you have created for the account is listed in the page."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The end users can see their own VPCs, while root and domain admin can see any VPC they are authorized to see."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Configure button of the VPC for which you want to set up tiers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Add new tier dialog is displayed, as follows:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you have already created tiers, the VPC diagram is displayed. Click Create Tier to add a new tier."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Specify the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All the fields are mandatory."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name</emphasis>: A unique name for the tier you create."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Network Offering</emphasis>: The following default network offerings are listed: DefaultIsolatedNetworkOfferingForVpcNetworksNoLB, DefaultIsolatedNetworkOfferingForVpcNetworks"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a VPC, only one tier can be created by using LB-enabled network offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Gateway</emphasis>: The gateway for the tier you create. Ensure that the gateway is within the Super CIDR range that you specified while creating the VPC, and is not overlapped with the CIDR of any existing tier within the VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Netmask</emphasis>: The netmask for the tier you create."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For example, if the VPC CIDR is 10.0.0.0/16 and the network tier CIDR is 10.0.1.0/24, the gateway of the tier is 10.0.1.1, and the netmask of the tier is 255.255.255.0."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Continue with configuring access control list for the tier."
+msgstr ""
+

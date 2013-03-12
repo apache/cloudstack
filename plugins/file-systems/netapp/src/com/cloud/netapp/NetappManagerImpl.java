@@ -17,6 +17,7 @@
 package com.cloud.netapp;
 
 import java.io.IOException;
+import java.lang.Override;
 import java.net.UnknownHostException;
 import java.rmi.ServerException;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import netapp.manage.NaAPIFailedException;
@@ -37,25 +39,26 @@ import netapp.manage.NaProtocolException;
 import netapp.manage.NaServer;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
+import com.cloud.api.commands.netapp.*;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.netapp.dao.LunDao;
 import com.cloud.netapp.dao.PoolDao;
 import com.cloud.netapp.dao.VolumeDao;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component
 @Local(value = { NetappManager.class })
-public class NetappManagerImpl implements NetappManager
+public class NetappManagerImpl extends ManagerBase implements NetappManager
 {   
 	public enum Algorithm { roundrobin,leastfull }
 
-    protected String _name;
-    
     public static final Logger s_logger = Logger.getLogger(NetappManagerImpl.class.getName());
     @Inject public VolumeDao _volumeDao;
     @Inject public PoolDao _poolDao;
@@ -122,7 +125,25 @@ public class NetappManagerImpl implements NetappManager
     	
 		return s;
     }
-    
+
+    @Override
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(CreateLunCmd.class);
+        cmdList.add(ListLunsCmd.class);
+        cmdList.add(DissociateLunCmd.class);
+        cmdList.add(CreateVolumeOnFilerCmd.class);
+        cmdList.add(ModifyVolumePoolCmd.class);
+        cmdList.add(ListVolumesOnFilerCmd.class);
+        cmdList.add(ListVolumePoolsCmd.class);
+        cmdList.add(DestroyLunCmd.class);
+        cmdList.add(CreateVolumePoolCmd.class);
+        cmdList.add(DeleteVolumePoolCmd.class);
+        cmdList.add(AssociateLunCmd.class);
+        cmdList.add(DestroyVolumeOnFilerCmd.class);
+        return cmdList;
+    }
+
     @Override
     public void modifyPool(String poolName, String algorithm) throws InvalidParameterValueException
     {	
@@ -1015,26 +1036,9 @@ public class NetappManagerImpl implements NetappManager
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
 
-       _name = name;
        
        _netappAllocator = new NetappDefaultAllocatorImpl( this );
 
 		return true;
 	}
-
-	@Override
-	public String getName() {
-		return _name;
-	}
-
-	@Override
-	public boolean start() {
-		return true;
-	}
-
-	@Override
-	public boolean stop() {
-		return true;
-	}
-	
 }

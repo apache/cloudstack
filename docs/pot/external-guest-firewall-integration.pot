@@ -1,0 +1,251 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "External Guest Firewall Integration for Juniper SRX (Optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Available only for guests using advanced networking."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; provides for direct management of the Juniper SRX series of firewalls. This enables &PRODUCT; to establish static NAT mappings from public IPs to guest VMs, and to use the Juniper device in place of the virtual router for firewall services. You can have one or more Juniper SRX per zone. This feature is optional. If Juniper integration is not provisioned, &PRODUCT; will use the virtual router for these services."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The Juniper SRX can optionally be used in conjunction with an external load balancer. External Network elements can be deployed in a side-by-side or inline configuration."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; requires the Juniper to be configured as follows:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Supported SRX software version is 10.3 or higher."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Install your SRX appliance according to the vendor's instructions."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Connect one interface to the management network and one interface to the public network. Alternatively, you can connect the same interface to both networks and a use a VLAN for the public network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure \"vlan-tagging\" is enabled on the private interface."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Record the public and private interface names. If you used a VLAN for the public interface, add a \".[VLAN TAG]\" after the interface name. For example, if you are using ge-0/0/3 for your public interface and VLAN tag 301, your public interface name would be \"ge-0/0/3.301\". Your private interface name should always be untagged because the &PRODUCT; software automatically creates tagged logical interfaces."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create a public security zone and a private security zone. By default, these will already exist and will be called \"untrust\" and \"trust\". Add the public interface to the public zone and the private interface to the private zone. Note down the security zone names."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure there is a security policy from the private zone to the public zone that allows all traffic."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Note the username and password of the account you want the &PRODUCT; software to log in to when it is programming rules."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure the \"ssh\" and \"xnm-clear-text\" system services are enabled."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If traffic metering is desired:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "a. Create an incoming firewall filter and an outgoing firewall filter. These filters should be the same names as your public security zone name and private security zone name respectively. The filters should be set to be \"interface-specific\". For example, here is the configuration where the public zone is \"untrust\" and the private zone is \"trust\":"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "root@cloud-srx# show firewall\n"
+"filter trust {\n"
+"    interface-specific;\n"
+"}\n"
+"filter untrust {\n"
+"    interface-specific;\n"
+"}"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Add the firewall filters to your public interface. For example, a sample configuration output (for public interface ge-0/0/3.0, public security zone untrust, and private security zone trust) is:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "ge-0/0/3 {\n"
+"    unit 0 {\n"
+"        family inet {\n"
+"            filter {\n"
+"                input untrust;\n"
+"                output trust;\n"
+"            }\n"
+"            address 172.25.0.252/16;\n"
+"        }\n"
+"    }\n"
+"}"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure all VLANs are brought to the private interface of the SRX."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After the &PRODUCT; Management Server is installed, log in to the &PRODUCT; UI as administrator."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Infrastructure."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Zones, click View More."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the zone you want to work with."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Network tab."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Network Service Providers node of the diagram, click Configure. (You might have to scroll down to see this.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click SRX."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Add New SRX button (+) and provide the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "IP Address: The IP address of the SRX."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Username: The user name of the account on the SRX that &PRODUCT; should use."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Password: The password of the account."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public Interface. The name of the public interface on the SRX. For example, ge-0/0/2. A \".x\" at the end of the interface indicates the VLAN that is in use."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Private Interface: The name of the private interface on the SRX. For example, ge-0/0/1."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Usage Interface: (Optional) Typically, the public interface is used to meter traffic. If you want to use a different interface, specify its name here"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Number of Retries: The number of times to attempt a command on the SRX before failing. The default value is 2."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Timeout (seconds): The time to wait for a command on the SRX before considering it failed. Default is 300 seconds."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public Network: The name of the public network on the SRX. For example, trust."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Private Network: The name of the private network on the SRX. For example, untrust."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Capacity: The number of networks the device can handle"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Dedicated: When marked as dedicated, this device will be dedicated to a single account. When Dedicated is checked, the value in the Capacity field has no significance implicitly, its value is 1"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Global Settings. Set the parameter external.network.stats.interval to indicate how often you want &PRODUCT; to fetch network usage statistics from the Juniper SRX. If you are not using the SRX to gather network usage statistics, set to 0."
+msgstr ""
+

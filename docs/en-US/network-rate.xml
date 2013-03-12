@@ -1,0 +1,144 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<section id="network-rate">
+  <title>Network Throttling</title>
+  <para>Network throttling is the process of controlling the network access and bandwidth usage
+    based on certain rules. &PRODUCT; controls this behaviour of the guest networks in the cloud by
+    using the network rate parameter. This parameter is defined as the default data transfer rate in
+    Mbps (Megabits Per Second) allowed in a guest network. It defines the upper limits for network
+    utilization. If the current utilization is below the allowed upper limits, access is granted,
+    else revoked.</para>
+  <para>You can throttle the network bandwidth either to control the usage above a certain limit for
+    some accounts, or to control network congestion in a large cloud environment. The network rate
+    for your cloud can be configured on the following:</para>
+  <itemizedlist>
+    <listitem>
+      <para>Network Offering</para>
+    </listitem>
+    <listitem>
+      <para>Service Offering</para>
+    </listitem>
+    <listitem>
+      <para>Global parameter</para>
+    </listitem>
+  </itemizedlist>
+  <para>If network rate is set to NULL in service offering, the value provided in the
+    vm.network.throttling.rate global parameter is applied. If the value is set to NULL for network
+    offering, the value provided in the network.throttling.rate global parameter is
+    considered.</para>
+  <para>For the default public, storage, and management networks, network rate is set to 0. This
+    implies that the public, storage, and management networks will have unlimited bandwidth by
+    default. For default guest networks, network rate is set to NULL. In this case, network rate is
+    defaulted to the global parameter value.</para>
+  <para>The following table gives you an overview of how network rate is applied on different types
+    of networks in &PRODUCT;.</para>
+  <informaltable>
+    <tgroup cols="2" align="left" colsep="1" rowsep="1">
+      <colspec colwidth="1.0*" colname="1" colnum="1"/>
+      <colspec colwidth="3.18*" colname="2" colnum="2"/>
+      <thead>
+        <row>
+          <entry><para>Networks</para></entry>
+          <entry><para>Network Rate Is Taken from</para></entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry><para>Guest network of Virtual Router</para></entry>
+          <entry><para>Guest Network Offering</para></entry>
+        </row>
+        <row>
+          <entry><para>Public network of Virtual Router</para></entry>
+          <entry><para>Guest Network Offering</para></entry>
+        </row>
+        <row>
+          <entry><para>Storage network of Secondary Storage VM</para></entry>
+          <entry><para>System Network Offering</para></entry>
+        </row>
+        <row>
+          <entry><para>Management network of Secondary Storage VM</para></entry>
+          <entry><para>System Network Offering</para></entry>
+        </row>
+        <row>
+          <entry><para>Storage network of Console Proxy VM</para></entry>
+          <entry><para>System Network Offering</para></entry>
+        </row>
+        <row>
+          <entry><para>Management network of Console Proxy VM</para></entry>
+          <entry><para>System Network Offering</para></entry>
+        </row>
+        <row>
+          <entry><para>Storage network of Virtual Router</para></entry>
+          <entry><para>System Network Offering</para></entry>
+        </row>
+        <row>
+          <entry><para>Management network of Virtual Router</para></entry>
+          <entry><para>System Network Offering</para></entry>
+        </row>
+        <row>
+          <entry><para>Public network of Secondary Storage VM</para></entry>
+          <entry><para>System Network Offering</para></entry>
+        </row>
+        <row>
+          <entry><para>Public network of Console Proxy VM</para></entry>
+          <entry><para>System Network Offering</para></entry>
+        </row>
+        <row>
+          <entry><para>Default network of a guest VM</para></entry>
+          <entry><para>Compute Offering</para></entry>
+        </row>
+        <row>
+          <entry><para>Additional networks of a guest VM</para></entry>
+          <entry><para>Corresponding Network Offerings</para></entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </informaltable>
+  <para>A guest VM must have a default network, and can also have many additional networks.
+    Depending on various parameters, such as the host and virtual switch used, you can observe a
+    difference in the network rate in your cloud. For example, on a VMware host the actual network
+    rate varies based on where they are configured (compute offering, network offering, or both);
+    the network type (shared or isolated); and traffic direction (ingress or egress). </para>
+  <para>The network rate set for a network offering used by a particular network in &PRODUCT; is
+    used for the traffic shaping policy of a port group, for example: port group A, for that
+    network: a particular subnet or VLAN on the actual network. The virtual routers for that network
+    connects to the port group A, and by default instances in that network connects to this port
+    group. However, if an instance is deployed with a compute offering with the network rate set,
+    and if this rate is used for the traffic shaping policy of another port group for the network,
+    for example port group B, then instances using this compute offering are connected to the port
+    group B, instead of connecting to port group A.</para>
+  <para>The traffic shaping policy on standard port groups in VMware only applies to the egress
+    traffic, and the net effect depends on the type of network used in &PRODUCT;. In shared
+    networks, ingress traffic is unlimited for &PRODUCT;, and egress traffic is limited to the rate
+    that applies to the port group used by the instance if any. If the compute offering has a
+    network rate configured, this rate applies to the egress traffic, otherwise the network rate set
+    for the network offering applies. For isolated networks, the network rate set for the network
+    offering, if any, effectively applies to the ingress traffic. This is mainly because the network
+    rate set for the network offering applies to the egress traffic from the virtual router to the
+    instance. The egress traffic is limited by the rate that applies to the port group used by the
+    instance if any, similar to shared networks. </para>
+  <para>For example:</para>
+  <para>Network rate of network offering = 10 Mbps</para>
+  <para>Network rate of compute offering = 200 Mbps</para>
+  <para>In shared networks, ingress traffic will not be limited for &PRODUCT;, while egress traffic
+    will be limited to 200 Mbps. In an isolated network, ingress traffic will be limited to 10 Mbps
+    and egress to 200 Mbps.</para>
+</section>

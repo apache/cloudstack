@@ -1,0 +1,160 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Sysprep for Windows Server 2003 R2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Earlier versions of Windows have a different sysprep tool. Follow these steps for Windows Server 2003 R2."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Extract the content of \\support\\tools\\deploy.cab on the Windows installation CD into a directory called c:\\sysprep on the Windows 2003 R2 VM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run c:\\sysprep\\setupmgr.exe to create the sysprep.inf file."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select Create New to create a new Answer File."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Enter “Sysprep setup” for the Type of Setup."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select the appropriate OS version and edition."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On the License Agreement screen, select “Yes fully automate the installation”."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Provide your name and organization."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Leave display settings at default."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set the appropriate time zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Provide your product key."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select an appropriate license mode for your deployment"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select “Automatically generate computer name”."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Type a default administrator password. If you enable the password reset feature, the users will not actually use this password. This password will be reset by the instance manager after the guest boots up."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Leave Network Components at “Typical Settings”."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select the “WORKGROUP” option."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Leave Telephony options at default."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select appropriate Regional Settings."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select appropriate language settings."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Do not install printers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Do not specify “Run Once commands”."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You need not specify an identification string."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Save the Answer File as c:\\sysprep\\sysprep.inf."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following command to sysprep the image:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "c:\\sysprep\\sysprep.exe -reseal -mini -activated"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After this step the machine will automatically shut down"
+msgstr ""
+

@@ -16,59 +16,25 @@
 // under the License.
 package com.cloud.servlet;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
 import org.apache.log4j.Logger;
+import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
-import com.cloud.api.ApiServer;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.server.ConfigurationServer;
-import com.cloud.server.ManagementServer;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.SerialVersionUID;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.ComponentContext;
 
-public class CloudStartupServlet extends HttpServlet implements ServletContextListener {
-	public static final Logger s_logger = Logger.getLogger(CloudStartupServlet.class.getName());
-	
+public class CloudStartupServlet extends HttpServlet {
+    public static final Logger s_logger = Logger.getLogger(CloudStartupServlet.class.getName());
     static final long serialVersionUID = SerialVersionUID.CloudStartupServlet;
-   
-    protected static ComponentLocator s_locator;
     
-	@Override
-    public void init() throws ServletException {
-	    // Save Configuration Values
-        //ComponentLocator loc = ComponentLocator.getLocator(ConfigurationServer.Name);
-	    ConfigurationServer c = (ConfigurationServer)ComponentLocator.getComponent(ConfigurationServer.Name);
-	    //ConfigurationServer c = new ConfigurationServerImpl();
-	    try {
-	    	c.persistDefaultValues();
-	    	s_locator = ComponentLocator.getLocator(ManagementServer.Name);
-		    ManagementServer ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
-		    ms.enableAdminUser("password");
-		    ApiServer.initApiServer();
-	    } catch (InvalidParameterValueException ipve) {
-	    	s_logger.error("Exception starting management server ", ipve);
-	    	throw new ServletException (ipve.getMessage());
-	    } catch (Exception e) {
-	    	s_logger.error("Exception starting management server ", e);
-	    	throw new ServletException (e.getMessage());
-	    }
-	}
-	
-	@Override
-	public void contextInitialized(ServletContextEvent sce) {
-	    try {
-	        init();
-	    } catch (ServletException e) {
-	        s_logger.error("Exception starting management server ", e);
-	        throw new RuntimeException(e);
-	    }
-	}
-	
-	@Override
-	public void contextDestroyed(ServletContextEvent sce) {
-	}
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+    	LogUtils.initLog4j("log4j-cloud.xml");
+    	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
+    	ComponentContext.initComponentsLifeCycle();
+    }
 }

@@ -1,0 +1,254 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Database Replication (Optional)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; supports database replication from one MySQL node to another. This is achieved using standard MySQL replication. You may want to do this as insurance against MySQL server or storage loss. MySQL replication is implemented using a master/slave model. The master is the node that the Management Servers are configured to use. The slave is a standby node that receives all write operations from the master and applies them to a local, redundant copy of the database. The following steps are a guide to implementing MySQL replication."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Creating a replica is not a backup solution. You should develop a backup procedure for the MySQL data that is distinct from replication."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that this is a fresh install with no data in the master."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Edit my.cnf on the master and add the following in the [mysqld] section below datadir."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"log_bin=mysql-bin\n"
+"server_id=1\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The server_id must be unique with respect to other servers. The recommended way to achieve this is to give the master an ID of 1 and each slave a sequential number greater than 1, so that the servers are numbered 1, 2, 3, etc."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the MySQL service:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"# service mysqld restart\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create a replication account on the master and give it privileges. We will use the \"cloud-repl\" user with the password \"password\". This assumes that master and slave run on the 172.16.1.0/24 network."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"# mysql -u root\n"
+"mysql&gt; create user 'cloud-repl'@'172.16.1.%' identified by 'password';\n"
+"mysql&gt; grant replication slave on *.* TO 'cloud-repl'@'172.16.1.%';\n"
+"mysql&gt; flush privileges;\n"
+"mysql&gt; flush tables with read lock;\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Leave the current MySQL session running."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In a new shell start a second MySQL session."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Retrieve the current position of the database."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"# mysql -u root\n"
+"mysql&gt; show master status;\n"
+"+------------------+----------+--------------+------------------+\n"
+"| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB |\n"
+"+------------------+----------+--------------+------------------+\n"
+"| mysql-bin.000001 |      412 |              |                  |\n"
+"+------------------+----------+--------------+------------------+\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Note the file and the position that are returned by your instance."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Exit from this session."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Complete the master setup. Returning to your first session on the master, release the locks and exit MySQL."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"mysql&gt; unlock tables;\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Install and configure the slave. On the slave server, run the following commands."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"# yum install mysql-server\n"
+"# chkconfig mysqld on\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Edit my.cnf and add the following lines in the [mysqld] section below datadir."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"server_id=2\n"
+"innodb_rollback_on_timeout=1\n"
+"innodb_lock_wait_timeout=600\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart MySQL."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Instruct the slave to connect to and replicate from the master. Replace the IP address, password, log file, and position with the values you have used in the previous steps."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"mysql&gt; change master to\n"
+"    -&gt; master_host='172.16.1.217',\n"
+"    -&gt; master_user='cloud-repl',\n"
+"    -&gt; master_password='password',\n"
+"    -&gt; master_log_file='mysql-bin.000001',\n"
+"    -&gt; master_log_pos=412;\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Then start replication on the slave."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"mysql&gt; start slave;\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Optionally, open port 3306 on the slave as was done on the master earlier."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This is not required for replication to work. But if you choose not to do this, you will need to do it when failover to the replica occurs."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Failover"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This will provide for a replicated database that can be used to implement manual failover for the Management Servers. &PRODUCT; failover from one MySQL instance to another is performed by the administrator. In the event of a database failure you should:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Stop the Management Servers (via service cloud-management stop)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Change the replica's configuration to be a master and restart it."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that the replica's port 3306 is open to the Management Servers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make a change so that the Management Server uses the new database. The simplest process here is to put the IP address of the new database server into each Management Server's /etc/cloud/management/db.properties."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart the Management Servers:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"# service cloud-management start\n"
+"        "
+msgstr ""
+

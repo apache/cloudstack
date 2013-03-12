@@ -20,12 +20,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import com.cloud.agent.api.SnapshotCommand;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -112,6 +112,18 @@ public class SnapshotCommandTest {
 
         public Long getPodId() {
             return 0L;
+        }
+
+		@Override
+		public Long getStorageProviderId() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+        @Override
+        public boolean isInMaintenance() {
+            // TODO Auto-generated method stub
+            return false;
         };
     };
 

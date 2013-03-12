@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -31,6 +33,7 @@ import com.cloud.vm.Nic.State;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 
+@Component
 @Local(value=NicDao.class)
 public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     private final SearchBuilder<NicVO> AllFieldsSearch;
@@ -39,7 +42,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     final GenericSearchBuilder<NicVO, Integer> CountBy;
 
     
-    protected NicDaoImpl() {
+    public NicDaoImpl() {
         super();
         
         AllFieldsSearch = createSearchBuilder();

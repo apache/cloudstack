@@ -22,11 +22,15 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
+import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.region.RegionManager;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -48,8 +52,8 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -58,11 +62,11 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
+@Component
 @Local(value = { DomainManager.class, DomainService.class })
-public class DomainManagerImpl implements DomainManager, DomainService, Manager {
+public class DomainManagerImpl extends ManagerBase implements DomainManager, DomainService {
     public static final Logger s_logger = Logger.getLogger(DomainManagerImpl.class);
 
-    private String _name;
     @Inject
     private DomainDao _domainDao;
     @Inject
@@ -79,6 +83,8 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
     private ProjectDao _projectDao;
     @Inject
     private ProjectManager _projectMgr;
+    @Inject
+    private RegionManager _regionMgr;
 
     @Override
     public Domain getDomain(long domainId) {
@@ -88,28 +94,6 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
     @Override
     public Domain getDomain(String domainUuid) {
         return _domainDao.findByUuid(domainUuid);
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
-        return true;
     }
 
     @Override
@@ -134,7 +118,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_CREATE, eventDescription = "creating Domain")
-    public Domain createDomain(String name, Long parentId, String networkDomain) {
+    public Domain createDomain(String name, Long parentId, String networkDomain, String domainUUID, Integer regionId) {
         Account caller = UserContext.current().getCaller();
 
         if (parentId == null) {
@@ -152,13 +136,13 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
 
         _accountMgr.checkAccess(caller, parentDomain);
 
-        return createDomain(name, parentId, caller.getId(), networkDomain);
+        return createDomain(name, parentId, caller.getId(), networkDomain, domainUUID, regionId);
 
     }
 
     @Override
     @DB
-    public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain) {
+    public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain, String domainUUID, Integer regionId) {
         // Verify network domain
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
@@ -177,15 +161,28 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
             throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
         }
 
+        if(regionId == null){
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain));
+        	DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, _regionMgr.getId()));
         _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
-
         txn.commit();
+        	//Propagate domain creation to peer Regions
+        	_regionMgr.propagateAddDomain(name, parentId, networkDomain, domain.getUuid());        	
+        	return domain;
+        } else {
+        	Transaction txn = Transaction.currentTxn();
+        	txn.start();
 
+        	DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, domainUUID, regionId));
+        	_resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
+
+        	txn.commit();
         return domain;
+        	
+        }
+        
     }
 
     @Override
@@ -368,7 +365,9 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
             }
             _accountMgr.checkAccess(caller, domain);
         } else {
+            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             domainId = caller.getDomainId();
+            }
             if (listAll) {
                 isRecursive = true;
             }
@@ -475,4 +474,97 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
         return _domainDao.searchAndCount(sc, searchFilter);
     }
 
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_UPDATE, eventDescription = "updating Domain")
+    @DB
+    public DomainVO updateDomain(UpdateDomainCmd cmd) {
+        Long domainId = cmd.getId();
+        String domainName = cmd.getDomainName();
+        String networkDomain = cmd.getNetworkDomain();
+
+        // check if domain exists in the system
+        DomainVO domain = _domainDao.findById(domainId);
+        if (domain == null) {
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find domain with specified domain id");
+        	ex.addProxyObject(domain, domainId, "domainId");            
+            throw ex;
+        } else if (domain.getParent() == null && domainName != null) {
+            // check if domain is ROOT domain - and deny to edit it with the new name
+            throw new InvalidParameterValueException("ROOT domain can not be edited with a new name");
+        }
+
+        // check permissions
+        Account caller = UserContext.current().getCaller();
+        _accountMgr.checkAccess(caller, domain);
+
+        // domain name is unique in the cloud
+        if (domainName != null) {
+            SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
+            sc.addAnd("name", SearchCriteria.Op.EQ, domainName);
+            List<DomainVO> domains = _domainDao.search(sc, null);
+
+            boolean sameDomain = (domains.size() == 1 && domains.get(0).getId() == domainId);
+
+            if (!domains.isEmpty() && !sameDomain) {
+                InvalidParameterValueException ex = new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName + "' since it already exists in the system");
+                ex.addProxyObject(domain, domainId, "domainId");                
+            	throw ex;
+            }
+        }
+
+        // validate network domain
+        if (networkDomain != null && !networkDomain.isEmpty()) {
+            if (!NetUtils.verifyDomainName(networkDomain)) {
+                throw new InvalidParameterValueException(
+                        "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                                + "and the hyphen ('-'); can't start or end with \"-\"");
+            }
+        }
+
+        Transaction txn = Transaction.currentTxn();
+
+        txn.start();
+
+        if (domainName != null) {
+            String updatedDomainPath = getUpdatedDomainPath(domain.getPath(), domainName);
+            updateDomainChildren(domain, updatedDomainPath);
+            domain.setName(domainName);
+            domain.setPath(updatedDomainPath);
+        }
+
+        if (networkDomain != null) {
+            if (networkDomain.isEmpty()) {
+                domain.setNetworkDomain(null);
+            } else {
+                domain.setNetworkDomain(networkDomain);
+            }
+        }
+        _domainDao.update(domainId, domain);
+
+        txn.commit();
+
+        return _domainDao.findById(domainId);
+
+    }
+
+    private String getUpdatedDomainPath(String oldPath, String newName) {
+        String[] tokenizedPath = oldPath.split("/");
+        tokenizedPath[tokenizedPath.length - 1] = newName;
+        StringBuilder finalPath = new StringBuilder();
+        for (String token : tokenizedPath) {
+            finalPath.append(token);
+            finalPath.append("/");
+        }
+        return finalPath.toString();
+    }
+
+    private void updateDomainChildren(DomainVO domain, String updatedDomainPrefix) {
+        List<DomainVO> domainChildren = _domainDao.findAllChildren(domain.getPath(), domain.getId());
+        // for each child, update the path
+        for (DomainVO dom : domainChildren) {
+            dom.setPath(dom.getPath().replaceFirst(domain.getPath(), updatedDomainPrefix));
+            _domainDao.update(dom.getId(), dom);
+        }
+    }
+    
 }

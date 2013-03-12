@@ -25,20 +25,19 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
+import org.springframework.stereotype.Component;
+import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 
-@Local(value = { DomainManager.class })
-public class MockDomainManagerImpl implements  Manager, DomainManager {
-
-    @Override
-    public Domain createDomain(String name, Long parentId, String networkDomain) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+@Component
+@Local(value = { DomainManager.class, DomainService.class })
+public class MockDomainManagerImpl extends ManagerBase implements DomainManager, DomainService {
 
     @Override
     public Domain getDomain(long id) {
@@ -80,13 +79,6 @@ public class MockDomainManagerImpl implements  Manager, DomainManager {
 
     @Override
     public Set<Long> getDomainChildrenIds(String parentDomainPath) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Domain createDomain(String name, Long parentId, Long ownerId,
-            String networkDomain) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -144,5 +136,25 @@ public class MockDomainManagerImpl implements  Manager, DomainManager {
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public Domain createDomain(String name, Long parentId,
+			String networkDomain, String domainUUID, Integer regionId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Domain updateDomain(UpdateDomainCmd cmd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Domain createDomain(String name, Long parentId, Long ownerId,
+			String networkDomain, String domainUUID, Integer regionId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

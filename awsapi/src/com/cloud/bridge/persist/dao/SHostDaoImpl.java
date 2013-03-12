@@ -18,12 +18,15 @@ package com.cloud.bridge.persist.dao;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.bridge.model.SHostVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={SHostDao.class})
 public class SHostDaoImpl extends GenericDaoBase<SHostVO, Long> implements SHostDao {
 	public SHostDaoImpl() {}

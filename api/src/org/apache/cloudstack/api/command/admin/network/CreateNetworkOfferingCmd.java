@@ -23,12 +23,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
@@ -69,7 +74,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.CONSERVE_MODE, type=CommandType.BOOLEAN, description="true if the network offering is IP conserve mode enabled")
     private Boolean conserveMode;
 
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=DiskOfferingResponse.class,
+    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
             description="the service offering ID used by virtual router provider")
     private Long serviceOfferingId;
 
@@ -87,6 +92,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.SPECIFY_IP_RANGES, type=CommandType.BOOLEAN, description="true if network offering supports specifying ip ranges; defaulted to false if not specified")
     private Boolean specifyIpRanges;
+
+    @Parameter(name=ApiConstants.IS_PERSISTENT, type=CommandType.BOOLEAN, description="true if network offering supports persistent networks; defaulted to false if not specified")
+    private Boolean isPersistent;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -145,6 +153,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             return true;
         }
         return conserveMode;
+    }
+
+    public Boolean getIsPersistent() {
+        return isPersistent == null ? false : isPersistent;
     }
 
     public Map<String, List<String>> getServiceProviders() {
@@ -225,7 +237,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create network offering");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create network offering");
         }
     }
 }

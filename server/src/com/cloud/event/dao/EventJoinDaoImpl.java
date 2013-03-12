@@ -27,6 +27,8 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.EventJoinVO;
 
 import org.apache.cloudstack.api.response.EventResponse;
+import org.springframework.stereotype.Component;
+
 import com.cloud.event.Event;
 import com.cloud.event.Event.State;
 import com.cloud.utils.db.Filter;
@@ -34,7 +36,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
+@Component
 @Local(value={EventJoinDao.class})
 public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implements EventJoinDao {
     public static final Logger s_logger = Logger.getLogger(EventJoinDaoImpl.class);

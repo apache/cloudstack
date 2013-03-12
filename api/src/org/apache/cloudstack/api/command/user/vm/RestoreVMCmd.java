@@ -16,15 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -34,7 +35,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "restoreVirtualMachine", description="Restore a VM to original template or specific snapshot", responseObject=UserVmResponse.class, since="3.0.0")
+@APICommand(name = "restoreVirtualMachine", description="Restore a VM to original template or new template", responseObject=UserVmResponse.class, since="3.0.0")
 public class RestoreVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestoreVMCmd.class);
     private static final String s_name = "restorevmresponse";
@@ -42,6 +43,9 @@ public class RestoreVMCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
             required=true, description="Virtual Machine ID")
     private Long vmId;
+
+    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.UUID, entityType = TemplateResponse.class, description="an optional template Id to restore vm from the new template")
+    private Long templateId;
 
     @Override
     public String getEventType() {
@@ -64,7 +68,7 @@ public class RestoreVMCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to restore vm " + getVmId());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to restore vm " + getVmId());
         }
     }
 
@@ -84,5 +88,9 @@ public class RestoreVMCmd extends BaseAsyncCmd {
 
     public long getVmId() {
         return vmId;
+    }
+
+    public Long getTemplateId() {
+        return templateId;
     }
 }

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-//
+// 
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -28,6 +28,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.mail.Authenticator;
 import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
@@ -37,9 +38,10 @@ import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
 import com.cloud.api.query.dao.ProjectInvitationJoinDao;
 import com.cloud.api.query.dao.ProjectJoinDao;
@@ -71,8 +73,8 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -81,10 +83,10 @@ import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
 
+@Component
 @Local(value = { ProjectService.class, ProjectManager.class })
-public class ProjectManagerImpl implements ProjectManager, Manager{
+public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     public static final Logger s_logger = Logger.getLogger(ProjectManagerImpl.class);
-    private String _name;
     private EmailInvite _emailInvite;
 
     @Inject
@@ -98,7 +100,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     @Inject
     DomainManager _domainMgr;
     @Inject
-    ConfigurationManager _configMgr;
+    ConfigurationManager _configMgr;  
     @Inject
     ResourceLimitService _resourceLimitMgr;
     @Inject
@@ -125,11 +127,12 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
+ 
         Map<String, String> configs = _configDao.getConfiguration(params);
         _invitationRequired = Boolean.valueOf(configs.get(Config.ProjectInviteRequired.key()));
-        _invitationTimeOut = Long.valueOf(configs.get(Config.ProjectInvitationExpirationTime.key()))*1000;
+        
+        String value = configs.get(Config.ProjectInvitationExpirationTime.key());
+        _invitationTimeOut = Long.valueOf(value != null ? value : "86400")*1000;
         _allowUserToCreateProject = Boolean.valueOf(configs.get(Config.AllowUserToCreateProject.key()));
 
 
@@ -156,18 +159,13 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
 
     @Override
     public boolean start() {
-	_executor.scheduleWithFixedDelay(new ExpiredInvitationsCleanup(), _projectCleanupExpInvInterval, _projectCleanupExpInvInterval, TimeUnit.SECONDS);
+        _executor.scheduleWithFixedDelay(new ExpiredInvitationsCleanup(), _projectCleanupExpInvInterval, _projectCleanupExpInvInterval, TimeUnit.SECONDS);
         return true;
     }
 
     @Override
     public boolean stop() {
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override
@@ -179,7 +177,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
 
         //check if the user authorized to create the project
         if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && !_allowUserToCreateProject) {
-		throw new PermissionDeniedException("Regular user is not permitted to create a project");
+            throw new PermissionDeniedException("Regular user is not permitted to create a project");
         }
 
         //Verify request parameters
@@ -206,7 +204,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         StringBuilder acctNm = new StringBuilder("PrjAcct-");
         acctNm.append(name).append("-").append(owner.getDomainId());
 
-        Account projectAccount = _accountMgr.createAccount(acctNm.toString(), Account.ACCOUNT_TYPE_PROJECT, domainId, null, null);
+        Account projectAccount = _accountMgr.createAccount(acctNm.toString(), Account.ACCOUNT_TYPE_PROJECT, domainId, null, null, "", 0);
 
         Project project = _projectDao.persist(new ProjectVO(name, displayText, owner.getDomainId(), projectAccount.getId()));
 
@@ -249,7 +247,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
 
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_DELETE, eventDescription = "deleting project", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_DELETE, eventDescription = "deleting project", async = true) 
     public boolean deleteProject(long projectId) {
         UserContext ctx = UserContext.current();
 
@@ -261,7 +259,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
 
         _accountMgr.checkAccess(ctx.getCaller(),AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
-        return deleteProject(ctx.getCaller(), ctx.getCallerUserId(), project);
+        return deleteProject(ctx.getCaller(), ctx.getCallerUserId(), project);  
     }
 
     @DB
@@ -277,7 +275,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         Account projectOwner = getProjectOwner(project.getId());
         if (projectOwner != null) {
             _resourceLimitMgr.decrementResourceCount(projectOwner.getId(), ResourceType.project);
-        }
+        } 
 
         txn.commit();
 
@@ -297,7 +295,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
 
     @DB
     private boolean cleanupProject(Project project, AccountVO caller, Long callerUserId) {
-        boolean result=true;
+        boolean result=true; 
         //Delete project's account
         AccountVO account = _accountDao.findById(project.getProjectAccountId());
         s_logger.debug("Deleting projects " + project + " internal account id=" + account.getId() + " as a part of project cleanup...");
@@ -317,7 +315,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             }
 
             s_logger.debug("Removing all invitations for the project " + project + " as a part of project cleanup...");
-             _projectInvitationDao.cleanupInvitations(project.getId());
+            _projectInvitationDao.cleanupInvitations(project.getId());
 
             txn.commit();
             if (result) {
@@ -425,6 +423,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         return _projectAccountDao.canAccessProjectAccount(caller.getId(), accountId);
     }
 
+    @Override
     public boolean canModifyProjectAccount(Account caller, long accountId) {
         //ROOT admin always can access the project
         if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
@@ -507,15 +506,15 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         Project project = getProject(projectId);
 
         if (project == null) {
-		InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
-		ex.addProxyObject(project, projectId, "projectId");
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
+            ex.addProxyObject(project, projectId, "projectId");            
             throw ex;
         }
 
         //User can be added to Active project only
         if (project.getState() != Project.State.Active) {
-		InvalidParameterValueException ex = new InvalidParameterValueException("Can't add account to the specified project id in state=" + project.getState() + " as it's no longer active");
-		ex.addProxyObject(project, projectId, "projectId");
+            InvalidParameterValueException ex = new InvalidParameterValueException("Can't add account to the specified project id in state=" + project.getState() + " as it's no longer active");
+            ex.addProxyObject(project, projectId, "projectId");
             throw ex;
         }
 
@@ -524,8 +523,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         if (accountName != null) {
             account = _accountMgr.getActiveAccountByName(accountName, project.getDomainId());
             if (account == null) {
-		InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find account name=" + accountName + " in specified domain id");
-                // We don't have a DomainVO object with us, so just pass the tablename "domain" manually.
+                InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find account name=" + accountName + " in specified domain id");
+                // We don't have a DomainVO object with us, so just pass the tablename "domain" manually.                
                 ex.addProxyObject("domain", project.getDomainId(), "domainId");
                 throw ex;
             }
@@ -563,7 +562,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             } else {
                 s_logger.warn("Failed to generate invitation for account " + account.getAccountName() + " to project id=" + project);
                 return false;
-            }
+            } 
         }
 
         if (email != null) {
@@ -572,9 +571,9 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             if (generateTokenBasedInvitation(project, email, token) != null) {
                 return true;
             } else {
-              s_logger.warn("Failed to generate invitation for email " + email + " to project id=" + project);
-              return false;
-            }
+                s_logger.warn("Failed to generate invitation for email " + email + " to project id=" + project);
+                return false;
+            } 
         }
 
         return false;
@@ -589,17 +588,17 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         Project project = getProject(projectId);
 
         if (project == null) {
-		InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
-		ex.addProxyObject(project, projectId, "projectId");
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
+            ex.addProxyObject(project, projectId, "projectId");            
             throw ex;
         }
 
         //check that account-to-remove exists
         Account account = _accountMgr.getActiveAccountByName(accountName, project.getDomainId());
         if (account == null) {
-		InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find account name=" + accountName + " in domain id=" + project.getDomainId());
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find account name=" + accountName + " in domain id=" + project.getDomainId());
             // Since we don't have a domainVO object, pass the table name manually.
-            ex.addProxyObject("domain", project.getDomainId(), "domainId");
+            ex.addProxyObject("domain", project.getDomainId(), "domainId");           
         }
 
         //verify permissions
@@ -608,16 +607,16 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         //Check if the account exists in the project
         ProjectAccount projectAccount =  _projectAccountDao.findByProjectIdAccountId(projectId, account.getId());
         if (projectAccount == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("Account " + accountName + " is not assigned to the project with specified id");
-        	// Use the projectVO object and not the projectAccount object to inject the projectId.
-		ex.addProxyObject(project, projectId, "projectId");
+            InvalidParameterValueException ex = new InvalidParameterValueException("Account " + accountName + " is not assigned to the project with specified id");
+            // Use the projectVO object and not the projectAccount object to inject the projectId.
+            ex.addProxyObject(project, projectId, "projectId");
             throw ex;
         }
 
         //can't remove the owner of the project
         if (projectAccount.getAccountRole() == Role.Admin) {
-		InvalidParameterValueException ex = new InvalidParameterValueException("Unable to delete account " + accountName + " from the project with specified id as the account is the owner of the project");
-		ex.addProxyObject(project, projectId, "projectId");
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to delete account " + accountName + " from the project with specified id as the account is the owner of the project");
+            ex.addProxyObject(project, projectId, "projectId");
             throw ex;
         }
 
@@ -627,7 +626,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
 
 
 
-    public ProjectInvitation createAccountInvitation(Project project, Long accountId) {
+    public ProjectInvitation createAccountInvitation(Project project, Long accountId) { 
         if (activeInviteExists(project, accountId, null)) {
             throw new InvalidParameterValueException("There is already a pending invitation for account id=" + accountId + " to the project id=" + project);
         }
@@ -638,21 +637,21 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
     }
 
     @DB
-	public boolean activeInviteExists(Project project, Long accountId, String email) {
-		Transaction txn = Transaction.currentTxn();
-    	txn.start();
-    	//verify if the invitation was already generated
-    	ProjectInvitationVO invite = null;
-    	if (accountId != null) {
-    		invite = _projectInvitationDao.findByAccountIdProjectId(accountId, project.getId());
-	} else if (email != null) {
-		 invite = _projectInvitationDao.findByEmailAndProjectId(email, project.getId());
-	}
+    public boolean activeInviteExists(Project project, Long accountId, String email) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        //verify if the invitation was already generated
+        ProjectInvitationVO invite = null;
+        if (accountId != null) {
+            invite = _projectInvitationDao.findByAccountIdProjectId(accountId, project.getId());
+        } else if (email != null) {
+            invite = _projectInvitationDao.findByEmailAndProjectId(email, project.getId());
+        }
 
         if (invite != null) {
-            if (invite.getState() == ProjectInvitation.State.Completed ||
+            if (invite.getState() == ProjectInvitation.State.Completed || 
                     (invite.getState() == ProjectInvitation.State.Pending && _projectInvitationDao.isActive(invite.getId(), _invitationTimeOut))) {
-		return true;
+                return true;
             } else {
                 if (invite.getState() == ProjectInvitation.State.Pending) {
                     expireInvitation(invite);
@@ -661,7 +660,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
                 if (accountId != null) {
                     s_logger.debug("Removing invitation in state " + invite.getState() + " for account id=" + accountId + " to project " + project);
                 } else if (email != null) {
-                	s_logger.debug("Removing invitation in state " + invite.getState() + " for email " + email + " to project " + project);
+                    s_logger.debug("Removing invitation in state " + invite.getState() + " for email " + email + " to project " + project);
                 }
 
                 _projectInvitationDao.expunge(invite.getId());
@@ -669,13 +668,13 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         }
         txn.commit();
         return false;
-	}
+    }
 
     public ProjectInvitation generateTokenBasedInvitation(Project project, String email, String token) {
         //verify if the invitation was already generated
-	 if (activeInviteExists(project, null, email)) {
-             throw new InvalidParameterValueException("There is already a pending invitation for email " + email + " to the project id=" + project);
-         }
+        if (activeInviteExists(project, null, email)) {
+            throw new InvalidParameterValueException("There is already a pending invitation for email " + email + " to the project id=" + project);
+        }
 
         ProjectInvitation projectInvitation = _projectInvitationDao.persist(new ProjectInvitationVO(project.getId(), null, project.getDomainId(), email, token));
         try {
@@ -749,24 +748,24 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
 
                 ProjectInvitation.State newState = accept ? ProjectInvitation.State.Completed : ProjectInvitation.State.Declined;
 
-               //update invitation
-               s_logger.debug("Marking invitation " + invite + " with state " + newState);
-               invite.setState(newState);
-               result = _projectInvitationDao.update(invite.getId(), invite);
+                //update invitation
+                s_logger.debug("Marking invitation " + invite + " with state " + newState);
+                invite.setState(newState);
+                result = _projectInvitationDao.update(invite.getId(), invite);
 
-               if (result && accept) {
-                   //check if account already exists for the project (was added before invitation got accepted)
-                   ProjectAccount projectAccount =  _projectAccountDao.findByProjectIdAccountId(projectId, accountId);
-                   if (projectAccount != null) {
-                       s_logger.debug("Account " + accountName + " already added to the project id=" + projectId);
-                   } else {
-                       assignAccountToProject(project, accountId, ProjectAccount.Role.Regular);
-                   }
-               } else {
-                   s_logger.warn("Failed to update project invitation " + invite + " with state " + newState);
-               }
+                if (result && accept) {
+                    //check if account already exists for the project (was added before invitation got accepted)
+                    ProjectAccount projectAccount =  _projectAccountDao.findByProjectIdAccountId(projectId, accountId);
+                    if (projectAccount != null) {
+                        s_logger.debug("Account " + accountName + " already added to the project id=" + projectId);
+                    } else {
+                        assignAccountToProject(project, accountId, ProjectAccount.Role.Regular); 
+                    }
+                } else {
+                    s_logger.warn("Failed to update project invitation " + invite + " with state " + newState);
+                }
 
-               txn.commit();
+                txn.commit();
             }
         } else {
             throw new InvalidParameterValueException("Unable to find invitation for account name=" + accountName + " to the project id=" + projectId);
@@ -790,8 +789,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         ProjectVO project = getProject(projectId);
 
         if (project == null) {
-		InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
-		ex.addProxyObject(project, projectId, "projectId");
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
+            ex.addProxyObject(project, projectId, "projectId");
             throw ex;
         }
 
@@ -804,7 +803,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         if (currentState == State.Active) {
             s_logger.debug("The project id=" + projectId + " is already active, no need to activate it again");
             return project;
-        }
+        } 
 
         if (currentState != State.Suspended) {
             throw new InvalidParameterValueException("Can't activate the project in " + currentState + " state");
@@ -832,8 +831,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         ProjectVO project= getProject(projectId);
         //verify input parameters
         if (project == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
-		ex.addProxyObject(project, projectId, "projectId");
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
+            ex.addProxyObject(project, projectId, "projectId");
             throw ex;
         }
 
@@ -843,8 +842,8 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             s_logger.debug("Successfully suspended project id=" + projectId);
             return _projectDao.findById(projectId);
         } else {
-        	CloudRuntimeException ex = new CloudRuntimeException("Failed to suspend project with specified id");
-		ex.addProxyObject(project, projectId, "projectId");
+            CloudRuntimeException ex = new CloudRuntimeException("Failed to suspend project with specified id");
+            ex.addProxyObject(project, projectId, "projectId");
             throw ex;
         }
 
@@ -928,7 +927,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             }
         }
 
-        public void sendInvite(String token, String email, long projectId) throws MessagingException, UnsupportedEncodingException {
+        public void sendInvite(String token, String email, long projectId) throws MessagingException, UnsupportedEncodingException {  
             if (_smtpSession != null) {
                 InternetAddress address = null;
                 if (email != null) {
@@ -987,38 +986,38 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
             return true;
         } else {
             s_logger.debug("Failed to remove project invitation id=" + id);
-            return false;
+            return false; 
         }
     }
 
     public class ExpiredInvitationsCleanup implements Runnable {
-	@Override
-	public void run() {
-    		try {
-    			TimeZone.getDefault();
-    			List<ProjectInvitationVO> invitationsToExpire = _projectInvitationDao.listInvitationsToExpire(_invitationTimeOut);
-    			if (!invitationsToExpire.isEmpty()) {
-    				s_logger.debug("Found " + invitationsToExpire.size() + " projects to expire");
-    				for (ProjectInvitationVO invitationToExpire : invitationsToExpire) {
-        				invitationToExpire.setState(ProjectInvitation.State.Expired);
-        				_projectInvitationDao.update(invitationToExpire.getId(), invitationToExpire);
-        				s_logger.trace("Expired project invitation id=" + invitationToExpire.getId());
-        			}
-    			}
-    		} catch (Exception ex) {
-    			s_logger.warn("Exception while running expired invitations cleanup", ex);
-    		}
-    	}
+        @Override
+        public void run() {
+            try {
+                TimeZone.getDefault();
+                List<ProjectInvitationVO> invitationsToExpire = _projectInvitationDao.listInvitationsToExpire(_invitationTimeOut);
+                if (!invitationsToExpire.isEmpty()) {
+                    s_logger.debug("Found " + invitationsToExpire.size() + " projects to expire");
+                    for (ProjectInvitationVO invitationToExpire : invitationsToExpire) {
+                        invitationToExpire.setState(ProjectInvitation.State.Expired);
+                        _projectInvitationDao.update(invitationToExpire.getId(), invitationToExpire);
+                        s_logger.trace("Expired project invitation id=" + invitationToExpire.getId());
+                    }
+                }
+            } catch (Exception ex) {
+                s_logger.warn("Exception while running expired invitations cleanup", ex);
+            }
+        }
     }
 
     @Override
-	public boolean projectInviteRequired() {
-		return _invitationRequired;
-	}
+    public boolean projectInviteRequired() {
+        return _invitationRequired;
+    }
 
     @Override
     public boolean allowUserToCreateProject() {
-	return _allowUserToCreateProject;
+        return _allowUserToCreateProject;
     }
 
 }

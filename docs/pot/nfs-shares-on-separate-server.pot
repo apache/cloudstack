@@ -1,0 +1,108 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Using a Separate NFS Server"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This section tells how to set up NFS shares for secondary and (optionally) primary storage on an NFS server running on a separate node from the Management Server."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The exact commands for the following steps may vary depending on your operating system version."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(KVM only) Ensure that no volume is already mounted at your NFS mount point."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On the storage server, create an NFS share for secondary storage and, if you are using NFS for primary storage as well, create a second NFS share. For example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"# mkdir -p /export/primary\n"
+"# mkdir -p /export/secondary\n"
+"        "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To configure the new directories as NFS exports, edit /etc/exports. Export the NFS share(s) with rw,async,no_root_squash. For example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# vi /etc/exports"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Insert the following line."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "/export  *(rw,async,no_root_squash)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Export the /export directory."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# exportfs -a"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On the management server, create a mount point for secondary storage. For example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# mkdir -p /mnt/secondary"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Mount the secondary storage on your Management Server. Replace the example NFS server name and NFS share paths below with your own."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# mount -t nfs nfsservername:/nfs/share/secondary /mnt/secondary"
+msgstr ""
+

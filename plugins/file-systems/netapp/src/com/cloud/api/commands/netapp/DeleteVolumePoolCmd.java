@@ -17,9 +17,12 @@
 package com.cloud.api.commands.netapp;
 
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
@@ -31,9 +34,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
-import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DeleteVolumePoolCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "deletePool", description="Delete a pool", responseObject = DeleteVolumePoolCmdResponse.class)
 public class DeleteVolumePoolCmd extends BaseCmd {
@@ -42,22 +44,22 @@ public class DeleteVolumePoolCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.POOL_NAME, type=CommandType.STRING, required = true, description="pool name.")
 	private String poolName;
+    
+    @Inject NetappManager netappMgr;
 
 	@Override
 	public void execute() throws ResourceUnavailableException,
 			InsufficientCapacityException, ServerApiException,
 			ConcurrentOperationException, ResourceAllocationException {
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
     	try {
 			netappMgr.deletePool(poolName);
 			DeleteVolumePoolCmdResponse response = new DeleteVolumePoolCmdResponse();
 			response.setResponseName(getCommandName());
 			this.setResponseObject(response);
 		} catch (InvalidParameterValueException e) {
-			throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
+			throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
 		} catch (ResourceInUseException e) {
-			throw new ServerApiException(BaseCmd.RESOURCE_IN_USE_ERROR, e.toString());
+			throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, e.toString());
 		}
 	}
 

@@ -1,0 +1,65 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Attaching a Volume"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This procedure is different from moving disk volumes from one storage pool to another. See VM Storage Migration"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A volume can be detached from a guest VM and attached to another guest. Both &PRODUCT; administrators and users can detach volumes from VMs and move them to other VMs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If the two VMs are in different clusters, and the volume is large, it may take several minutes for the volume to be moved to the new VM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Storage, and choose Volumes in Select View. Alternatively, if you know which VM the volume is attached to, you can click Instances, click the VM name, and click View Volumes."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the name of the volume you want to detach, then click the Detach Disk button <inlinemediaobject> <imageobject> <imagedata fileref=\"./images/detach-disk-icon.png\" /> </imageobject> <textobject><phrase>DetachDiskButton.png: button to detach a volume</phrase></textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To move the volume to another VM, follow the steps in Attaching a Volume <xref linkend=\"attaching-volume\" />."
+msgstr ""
+

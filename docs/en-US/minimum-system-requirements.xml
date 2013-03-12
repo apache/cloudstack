@@ -1,62 +1,65 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
 -->
-
 <section id="minimum-system-requirements">
-    <title>Minimum System Requirements</title>
-    <section id="management-server-system-requirements">
-        <title>Management Server, Database, and Storage System Requirements</title>
-        <para>The machines that will run the Management Server and MySQL database must meet the following requirements. The same machines can also be used to provide primary and secondary storage, such as via localdisk or NFS. The Management Server may be placed on a virtual machine.</para>
-        <itemizedlist>
-            <listitem><para>Operating system:</para>
-                <itemizedlist>
+		<title>Minimum System Requirements</title>
+		<section id="management-server-system-requirements">
+			<title>Management Server, Database, and Storage System Requirements</title>
+		<para>
+			The machines that will run the Management Server and MySQL database must meet the following requirements. 
+			The same machines can also be used to provide primary and secondary storage, such as via localdisk or NFS. 
+			The Management Server may be placed on a virtual machine.
+		</para>
+		<itemizedlist>
+			<listitem><para>Operating system:</para>
+				<itemizedlist>
                     <listitem><para>Preferred: CentOS/RHEL 6.3+ or Ubuntu 12.04(.1)</para></listitem>
-                </itemizedlist>
-            </listitem>
-            <listitem><para>64-bit x86 CPU (more cores results in better performance)</para></listitem>
-            <listitem><para>4 GB of memory</para></listitem>
-            <listitem><para>50 GB of local disk (When running secondary storage on the management server 500GB is recommended)</para></listitem>
-            <listitem><para>At least 1 NIC</para></listitem>
-            <listitem><para>Statically allocated IP address</para></listitem>
-            <listitem><para>Fully qualified domain name as returned by the hostname command</para></listitem>
-        </itemizedlist>
-    </section>
-    <section id="hypervisor-system-requirements">
-        <title>Host/Hypervisor System Requirements</title>
-        <para>The host is where the cloud services run in the form of guest virtual machines. Each host is one machine that meets the following requirements:</para>
-        <itemizedlist>
+				</itemizedlist>
+			</listitem>
+			<listitem><para>64-bit x86 CPU (more cores results in better performance)</para></listitem>
+			<listitem><para>4 GB of memory</para></listitem>
+			<listitem><para>250 GB of local disk (more results in better capability; 500 GB recommended)</para></listitem>
+			<listitem><para>At least 1 NIC</para></listitem>
+			<listitem><para>Statically allocated IP address</para></listitem>
+			<listitem><para>Fully qualified domain name as returned by the hostname command</para></listitem>
+		</itemizedlist>
+		</section>
+		<section id="hypervisor-system-requirements">
+		<title>Host/Hypervisor System Requirements</title>
+		<para>The host is where the cloud services run in the form of guest virtual machines. Each host is one machine that meets the following requirements:</para>
+		<itemizedlist>
             <listitem><para>Must support HVM (Intel-VT or AMD-V enabled).</para></listitem> 
-            <listitem><para>64-bit x86 CPU (more cores results in better performance)</para></listitem>
-            <listitem><para>Hardware virtualization support required</para></listitem>
-            <listitem><para>4 GB of memory</para></listitem>
-            <listitem><para>36 GB of local disk</para></listitem>
-            <listitem><para>At least 1 NIC</para></listitem>
+			<listitem><para>64-bit x86 CPU (more cores results in better performance)</para></listitem>
+			<listitem><para>Hardware virtualization support required</para></listitem>
+			<listitem><para>4 GB of memory</para></listitem>
+			<listitem><para>36 GB of local disk</para></listitem>
+			<listitem><para>At least 1 NIC</para></listitem>
             <listitem><note><para>If DHCP is used for hosts, ensure that no conflict occurs between DHCP server used for these hosts and the DHCP router created by &PRODUCT;.</para></note></listitem>
-            <listitem><para>Latest hotfixes applied to hypervisor software</para></listitem>
-            <listitem><para>When you deploy &PRODUCT;, the hypervisor host must not have any VMs already running</para></listitem>
+			<listitem><para>Latest hotfixes applied to hypervisor software</para></listitem>
+			<listitem><para>When you deploy &PRODUCT;, the hypervisor host must not have any VMs already running</para></listitem>
             <listitem><para>All hosts within a cluster must be homogenous. The CPUs must be of the same type, count, and feature flags.</para></listitem>
-        </itemizedlist>
-        <para>Hosts have additional requirements depending on the hypervisor. See the requirements listed at the top of the Installation section for your chosen hypervisor:</para>
+		</itemizedlist>
+		<para>Hosts have additional requirements depending on the hypervisor. See the requirements listed at the top of the Installation section for your chosen hypervisor:</para>
         <warning>
             <para>Be sure you fulfill the additional hypervisor requirements and installation steps provided in this Guide. Hypervisor hosts must be properly prepared to work with CloudStack. For example, the requirements for XenServer are listed under Citrix XenServer Installation.</para>
         </warning>

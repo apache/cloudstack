@@ -169,5 +169,10 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
         return null;
     }
 
+    @Override
+    public boolean getVolatileVm() {
+        return false;
+    }
+
 
 }

@@ -72,6 +72,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param localStorageRequired
      * @param offerHA
      * @param domainId
+     * @param volatileVm
      * @param hostTag
      * @param networkRate
      *            TODO
@@ -80,7 +81,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @return ID
      */
     ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
-            boolean offerHA, boolean limitResourceUse, String tags, Long domainId, String hostTag, Integer networkRate);
+            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate);
 
     /**
      * Creates a new disk offering
@@ -128,12 +129,14 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      *            TODO
      * @param isSecurityGroupEnabled
      *            TODO
+     * @param ip6Dns1 TODO
+     * @param ip6Dns2 TODO
      * @return
      * @throws
      * @throws
      */
     DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId, NetworkType zoneType, String allocationState,
-            String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled);
+            String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1, String ip6Dns2);
 
     /**
      * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated
@@ -173,6 +176,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param trafficType
      * @param tags
      * @param specifyVlan
+     * @param isPersistent
      *            ;
      * @param networkRate
      *            TODO
@@ -196,9 +200,9 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 
     NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap,
             boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap,
-            boolean specifyIpRanges);
+            boolean specifyIpRanges, boolean isPersistent);
 
-    Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, String vlanId, Account vlanOwner) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
+    Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, String vlanId, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
 
     void createDefaultSystemNetworks(long zoneId) throws ConcurrentOperationException;
 

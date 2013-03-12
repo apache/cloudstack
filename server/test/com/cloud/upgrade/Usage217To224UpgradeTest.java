@@ -22,6 +22,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import javax.inject.Inject;
+
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
@@ -29,13 +31,16 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.cloud.upgrade.dao.VersionDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
+
 import com.cloud.utils.db.DbTestUtils;
 import com.cloud.utils.db.Transaction;
 
 public class Usage217To224UpgradeTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(Usage217To224UpgradeTest.class);
 
+    @Inject VersionDaoImpl dao;
+    @Inject PremiumDatabaseUpgradeChecker checker;
+    
     @Override
     @Before
     public void setUp() throws Exception {
@@ -56,8 +61,6 @@ public class Usage217To224UpgradeTest extends TestCase {
         Connection conn;
         PreparedStatement pstmt;
         
-        VersionDaoImpl dao = ComponentLocator.inject(VersionDaoImpl.class);
-        PremiumDatabaseUpgradeChecker checker = ComponentLocator.inject(PremiumDatabaseUpgradeChecker.class);
         
         String version = dao.getCurrentVersion();
         assert version.equals("2.1.7") : "Version returned is not 2.1.7 but " + version;

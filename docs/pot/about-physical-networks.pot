@@ -1,0 +1,70 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Physical Networks"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Part of adding a zone is setting up the physical network. One or (in an advanced zone) more physical networks can be associated with each zone. The network corresponds to a NIC on the hypervisor host. Each physical network can carry one or more types of network traffic. The choices of traffic type for each network vary depending on whether you are creating a zone with basic networking or advanced networking."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A physical network is the actual network hardware and wiring in a zone. A zone can have multiple physical networks. An administrator can:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Add/Remove/Update physical networks in a zone"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure VLANs on the physical network"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure a name so the network can be recognized by hypervisors"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure the service providers (firewalls, load balancers, etc.) available on a physical network"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure the IP addresses trunked to a physical network"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Specify what type of traffic is carried on the physical network, as well as other properties like network speed"
+msgstr ""
+

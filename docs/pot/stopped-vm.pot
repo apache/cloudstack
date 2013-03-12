@@ -1,0 +1,60 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Stopped VM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; now supports creating a VM without starting it. You can determine whether the VM needs to be started as part of the VM deployment. A VM can now be deployed in two ways: create and start a VM (the default method); or create a VM and leave it in the stopped state."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A new request parameter, startVM, is introduced in the deployVm API to support the stopped VM feature."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The possible values are:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "true - The VM starts as a part of the VM deployment."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "false - The VM is left in the stopped state at the end of the VM deployment."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The default value is true."
+msgstr ""
+

@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.element;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,19 +44,19 @@ public interface NetworkElement extends Adapter {
     Map<Service, Map<Capability, String>> getCapabilities();
 
     /**
-     * NOTE:
+     * NOTE:  
      * NetworkElement -> Network.Provider is a one-to-one mapping. While adding a new NetworkElement, one must add a new Provider name to Network.Provider.
      */
     Provider getProvider();
 
     /**
-     * Implement the network configuration as specified.
+     * Implement the network configuration as specified. 
      * @param config fully specified network configuration.
      * @param offering network offering that originated the network configuration.
      * @return true if network configuration is now usable; false if not; null if not handled by this element.
      * @throws InsufficientNetworkCapacityException TODO
      */
-    boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
+    boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) 
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     /**
@@ -72,8 +71,8 @@ public interface NetworkElement extends Adapter {
      * @throws ResourceUnavailableException
      * @throws InsufficientNetworkCapacityException
      */
-    boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm,
-            DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+    boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
+            DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, 
             ResourceUnavailableException, InsufficientCapacityException;
 
     /**
@@ -86,7 +85,7 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm,
+    boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
             ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
@@ -98,7 +97,7 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean shutdown(Network network, ReservationContext context, boolean cleanup)
+    boolean shutdown(Network network, ReservationContext context, boolean cleanup) 
             throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
@@ -125,11 +124,11 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context)
+    boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) 
             throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
-     * This should return true if out of multiple services provided by this element, only some can be enabled. If all the services MUST be provided, this should return false.
+     * This should return true if out of multiple services provided by this element, only some can be enabled. If all the services MUST be provided, this should return false. 
      * @return true/false
      */
     boolean canEnableIndividualServices();

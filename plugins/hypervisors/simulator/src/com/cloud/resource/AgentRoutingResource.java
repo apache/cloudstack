@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.naming.ConfigurationException;
 
@@ -33,8 +31,6 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
-import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.ShutdownCommand;
@@ -188,7 +184,7 @@ public class AgentRoutingResource extends AgentStorageResource {
 			throws IllegalArgumentException {
 		VirtualMachineTO vmSpec = cmd.getVirtualMachine();
 		String vmName = vmSpec.getName();
-		if (this.totalCpu < (vmSpec.getCpus() * vmSpec.getSpeed() + this.usedCpu) ||
+		if (this.totalCpu < (vmSpec.getCpus() * vmSpec.getMaxSpeed() + this.usedCpu) ||
 			this.totalMem < (vmSpec.getMaxRam() + this.usedMem)) {
 			return new StartAnswer(cmd, "Not enough resource to start the vm");
 		}
@@ -203,9 +199,9 @@ public class AgentRoutingResource extends AgentStorageResource {
 		        return new StartAnswer(cmd, result.getDetails());
 		    }
 
-		    this.usedCpu += vmSpec.getCpus() * vmSpec.getSpeed();
+		    this.usedCpu += vmSpec.getCpus() * vmSpec.getMaxSpeed();
 		    this.usedMem += vmSpec.getMaxRam();
-		    _runningVms.put(vmName, new Pair<Long, Long>(Long.valueOf(vmSpec.getCpus() * vmSpec.getSpeed()), vmSpec.getMaxRam()));
+		    _runningVms.put(vmName, new Pair<Long, Long>(Long.valueOf(vmSpec.getCpus() * vmSpec.getMaxSpeed()), vmSpec.getMaxRam()));
 		    state = State.Running;
 
 		} finally {

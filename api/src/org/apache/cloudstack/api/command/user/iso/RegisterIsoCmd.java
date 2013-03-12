@@ -18,16 +18,20 @@ package org.apache.cloudstack.api.command.user.iso;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.*;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.UserContext;
@@ -84,6 +88,10 @@ public class RegisterIsoCmd extends BaseCmd {
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
             description="Register iso for the project")
     private Long projectId;
+    
+    @Parameter(name=ApiConstants.IMAGE_STORE_UUID, type=CommandType.STRING,
+            description="Image store uuid")
+    private String imageStoreUuid;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -136,6 +144,10 @@ public class RegisterIsoCmd extends BaseCmd {
     public String getChecksum() {
         return checksum;
     }
+    
+    public String getImageStoreUuid() {
+        return this.imageStoreUuid;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -166,7 +178,7 @@ public class RegisterIsoCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register iso");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to register iso");
         }
 
     }

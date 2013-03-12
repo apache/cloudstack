@@ -1,0 +1,123 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Using the CAStor Back-end Storage with &PRODUCT;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This section describes how to use a CAStor cluster as the back-end storage system for a &PRODUCT; S3 front-end. The CAStor back-end storage for &PRODUCT; extends the existing storage classes and allows the storage configuration attribute to point to a CAStor cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This feature makes use of the &PRODUCT; server's local disk to spool files before writing them to CAStor when handling the PUT operations. However, a file must be successfully written into the CAStor cluster prior to the return of a success code to the S3 client to ensure that the transaction outcome is correctly reported."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The S3 multipart file upload is not supported in this release. You are prompted with proper error message if a multipart upload is attempted."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To configure CAStor:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Install &PRODUCT; 4.0.0-incubating by following the instructions given in the INSTALL.txt file."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can use the S3 storage system in &PRODUCT; without setting up and installing the compute components."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Enable the S3 API by setting \"enable.s3.api = true\" in the Global parameter section in the UI and register a user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For more information, see <ulink url=\"https://cwiki.apache.org/CLOUDSTACK/s3-api-in-cloudstack.html\">S3 API in &PRODUCT;</ulink>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Edit the cloud-bridge.properties file and modify the \"storage.root\" parameter."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set \"storage.root\" to the key word \"castor\"."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Specify a CAStor tenant domain to which content is written. If the domain is not specified, the CAStor default domain, specified by the \"cluster\" parameter in CAStor's node.cfg file, will be used."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Specify a list of node IP addresses, or set \"zeroconf\" and the cluster name. When using a static IP list with a large cluster, it is not necessary to include every node, only a few is required to initialize the client software."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "storage.root=castor domain=cloudstack 10.1.1.51 10.1.1.52 10.1.1.53"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In this example, the configuration file directs &PRODUCT; to write the S3 files to CAStor instead of to a file system, where the CAStor domain name is cloudstack, and the CAStor node IP addresses are those listed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) The last value is a port number on which to communicate with the CAStor cluster. If not specified, the default is 80."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "#Static IP list with optional port\n"
+"storage.root=castor domain=cloudstack 10.1.1.51 10.1.1.52 10.1.1.53 80\n"
+"#Zeroconf locator for cluster named \"castor.example.com\"\n"
+"storage.root=castor domain=cloudstack zeroconf=castor.example.com"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create the tenant domain within the CAStor storage cluster. If you omit this step before attempting to store content, you will get HTTP 412 errors in the awsapi.log."
+msgstr ""
+

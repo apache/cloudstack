@@ -41,12 +41,14 @@ import com.cloud.bridge.service.core.ec2.EC2DescribeAvailabilityZones;
 import com.cloud.bridge.service.core.ec2.EC2DescribeAvailabilityZonesResponse;
 import com.cloud.bridge.service.core.ec2.EC2DescribeImageAttribute;
 
+import com.cloud.bridge.service.core.ec2.EC2AvailabilityZone;
 import com.cloud.bridge.service.core.ec2.EC2DescribeImages;
 import com.cloud.bridge.service.core.ec2.EC2DescribeImagesResponse;
 import com.cloud.bridge.service.core.ec2.EC2DescribeInstances;
 import com.cloud.bridge.service.core.ec2.EC2DescribeInstancesResponse;
 import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairs;
 import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairsResponse;
+import com.cloud.bridge.service.core.ec2.EC2ImageLaunchPermission;
 import com.cloud.bridge.service.core.ec2.EC2ResourceTag;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSecurityGroups;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSecurityGroupsResponse;
@@ -595,31 +597,32 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             request.setImageId(miat.getImageId());
             request.setAttribute(ImageAttribute.launchPermission);
             if(launchPermOp.getAdd() != null){
-                request.setLaunchPermOperation(EC2ModifyImageAttribute.Operation.add);
-                setAccountOrGroupList(launchPermOp.getAdd().getItem(), request);
+                setAccountOrGroupList(launchPermOp.getAdd().getItem(), request, "add");
             }else if(launchPermOp.getRemove() != null){
-                request.setLaunchPermOperation(EC2ModifyImageAttribute.Operation.remove);
-                setAccountOrGroupList(launchPermOp.getRemove().getItem(), request);
+                setAccountOrGroupList(launchPermOp.getRemove().getItem(), request, "remove");
             }
             return toModifyImageAttributeResponse( engine.modifyImageAttribute( request ));
 		}
 		throw new EC2ServiceException( ClientError.Unsupported, "Unsupported - can only modify image description or launchPermission");
 	}	
 
-	private void setAccountOrGroupList(LaunchPermissionItemType[] items, EC2ModifyImageAttribute request){
-        
-        List<String>  launchPermissionAccountsOrGroupList = new ArrayList<String>();
-        
+    private void setAccountOrGroupList(LaunchPermissionItemType[] items, EC2ModifyImageAttribute request, String operation){
+        EC2ImageLaunchPermission launchPermission = new EC2ImageLaunchPermission();
+
+        if (operation.equalsIgnoreCase("add"))
+            launchPermission.setLaunchPermOp(EC2ImageLaunchPermission.Operation.add);
+        else
+            launchPermission.setLaunchPermOp(EC2ImageLaunchPermission.Operation.remove);
+
         for (LaunchPermissionItemType lpItem : items) {
             if(lpItem.getGroup() != null){
-                launchPermissionAccountsOrGroupList.add(lpItem.getGroup());
+                launchPermission.addLaunchPermission(lpItem.getGroup());
             }else if(lpItem.getUserId() != null){
-                launchPermissionAccountsOrGroupList.add(lpItem.getUserId());
+                launchPermission.addLaunchPermission(lpItem.getUserId());
             }
         }
-        
-        request.setLaunchPermissionAccountsOrGroupList(launchPermissionAccountsOrGroupList);
 
+        request.addLaunchPermission(launchPermission);
 	}
 	/**
 	 * Did not find a matching service offering so for now we just return disabled
@@ -702,7 +705,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		if(elementType != null){
 		    request.setImageId( riat.getImageId());
 		    request.setAttribute(ImageAttribute.launchPermission);
-    		request.setLaunchPermOperation(EC2ModifyImageAttribute.Operation.reset);
+            EC2ImageLaunchPermission launchPermission = new EC2ImageLaunchPermission();
+            launchPermission.setLaunchPermOp(EC2ImageLaunchPermission.Operation.reset);
+            request.addLaunchPermission(launchPermission);
     		return toResetImageAttributeResponse( engine.modifyImageAttribute( request ));
 		}
 		throw new EC2ServiceException( ClientError.Unsupported, "Unsupported - can only reset image launchPermission" );
@@ -726,8 +731,17 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		EC2RunInstances request = new EC2RunInstances();
 		
 		request.setTemplateId(rit.getImageId());
-		request.setMinCount(rit.getMinCount());
-		request.setMaxCount(rit.getMaxCount());
+
+        if (rit.getMinCount() < 1) {
+            throw new EC2ServiceException(ClientError.InvalidParameterValue,
+                    "Value of parameter MinCount should be greater than 0");
+        } else request.setMinCount( rit.getMinCount() );
+
+        if (rit.getMaxCount() < 1) {
+            throw new EC2ServiceException(ClientError.InvalidParameterValue,
+                    "Value of parameter MaxCount should be greater than 0");
+        } else request.setMaxCount(rit.getMaxCount());
+
 		if (null != type) request.setInstanceType(type);
 		if (null != prt) request.setZoneName(prt.getAvailabilityZone());
 		if (null != userData) request.setUserData(userData.getData());
@@ -759,6 +773,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	public StopInstancesResponse stopInstances(StopInstances stopInstances) {
 		EC2StopInstances request = new EC2StopInstances();
 		StopInstancesType sit = stopInstances.getStopInstances();
+        Boolean force = sit.getForce();
 		
 		// -> toEC2StopInstances
 		InstanceIdSetType iist  = sit.getInstancesSet();
@@ -766,6 +781,8 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		if (null != items) {  // -> should not be empty
 			for( int i=0; i < items.length; i++ ) request.addInstanceId( items[i].getInstanceId());
 		}
+
+        if (force) request.setForce(sit.getForce());
 		return toStopInstancesResponse( engine.stopInstances( request ));
 	}
 	
@@ -1285,7 +1302,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        	param5.setInstanceId(vol.getInstanceId().toString());
 	        	String devicePath = engine.cloudDeviceIdToDevicePath( vol.getHypervisor(), vol.getDeviceId());
 	        	param5.setDevice( devicePath );
-	        	param5.setStatus( toVolumeAttachmentState( vol.getInstanceId(), vol.getVMState()));
+                param5.setStatus(vol.getAttachmentState());
                 if (vol.getAttached() == null) {
                     param5.setAttachTime( cal );
                 } else {
@@ -1350,15 +1367,15 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 			GroupSetType  param4 = new GroupSetType();
 			
 	        
-            String[] groups = inst.getGroupSet();
+            EC2SecurityGroup[] groups = inst.getGroupSet();
             if (null == groups || 0 == groups.length) {
                 GroupItemType param5 = new GroupItemType();
                 param5.setGroupId("");
                 param4.addItem( param5 );
             } else {
-                for (String group : groups) {
+                for (EC2SecurityGroup group : groups) {
                     GroupItemType param5 = new GroupItemType();
-                    param5.setGroupId(group);
+                    param5.setGroupId(group.getId());
                     param4.addItem( param5 );
                 }
             }
@@ -1379,7 +1396,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        param7.setDnsName( "" );
 	        param7.setReason( "" );
             param7.setKeyName( inst.getKeyPairName());
-	        param7.setAmiLaunchIndex( "" );
+            param7.setAmiLaunchIndex( null );
 	        param7.setInstanceType( inst.getServiceOffering());
 	        
 	        ProductCodesSetType param9 = new ProductCodesSetType();
@@ -1541,25 +1558,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		else if (cloudState.equalsIgnoreCase( "Expunging" )) return new String( "terminated");
 		else return new String( "running" );
 	}
-	
-	/**
-	 * We assume a state for the volume based on what its associated VM is doing.
-	 * 
-	 * @param vmId
-	 * @param vmState
-	 * @return
-	 */
-	public static String toVolumeAttachmentState(String instanceId, String vmState ) {
-		if (null == instanceId || null == vmState) return "detached";
-		
-		     if (vmState.equalsIgnoreCase( "Destroyed" )) return "detached";
-		else if (vmState.equalsIgnoreCase( "Stopped"   )) return "attached";
-		else if (vmState.equalsIgnoreCase( "Running"   )) return "attached";
-		else if (vmState.equalsIgnoreCase( "Starting"  )) return "attaching";
-		else if (vmState.equalsIgnoreCase( "Stopping"  )) return "attached";
-		else if (vmState.equalsIgnoreCase( "Error"     )) return "detached";
-		else return "detached";
-	}
+
 	
 	public static StopInstancesResponse toStopInstancesResponse(EC2StopInstancesResponse engineResponse) {
 	    StopInstancesResponse response = new StopInstancesResponse();
@@ -1677,16 +1676,16 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		
 	        param1.setOwnerId(ownerId);
 			
-            String[] groups = inst.getGroupSet();
+	        EC2SecurityGroup[] groups = inst.getGroupSet();
             GroupSetType  param2 = new GroupSetType();
             if (null == groups || 0 == groups.length) {
                 GroupItemType param3 = new GroupItemType();
                 param3.setGroupId("");
                 param2.addItem( param3 );
             } else {
-                for (String group : groups) {
+                for (EC2SecurityGroup group : groups) {
                     GroupItemType param3 = new GroupItemType();
-                    param3.setGroupId(group);
+                    param3.setGroupId(group.getId());
                     param2.addItem( param3 );   
                 }
             }
@@ -1701,7 +1700,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        param7.setDnsName( "" );
 	        param7.setReason( "" );
             param7.setKeyName( inst.getKeyPairName());
-	        param7.setAmiLaunchIndex( "" );
+            param7.setAmiLaunchIndex( null );
 	        
 	        ProductCodesSetType param9 = new ProductCodesSetType();
 	        ProductCodesSetItemType param10 = new ProductCodesSetItemType();
@@ -1771,14 +1770,18 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		DescribeAvailabilityZonesResponse response = new DescribeAvailabilityZonesResponse();
 		DescribeAvailabilityZonesResponseType param1 = new DescribeAvailabilityZonesResponseType();
         AvailabilityZoneSetType param2 = new AvailabilityZoneSetType();
-        
-		String[] zones = engineResponse.getZoneSet();
-		for (String zone : zones) {
+
+        EC2AvailabilityZone[] zones = engineResponse.getAvailabilityZoneSet();
+        for (EC2AvailabilityZone zone : zones) {
             AvailabilityZoneItemType param3 = new AvailabilityZoneItemType(); 
-            AvailabilityZoneMessageSetType param4 = new AvailabilityZoneMessageSetType();
-            param3.setZoneName( zone );
+            param3.setZoneName( zone.getName() );
             param3.setZoneState( "available" );
             param3.setRegionName( "" );
+
+            AvailabilityZoneMessageSetType param4 = new AvailabilityZoneMessageSetType();
+            AvailabilityZoneMessageType param5 = new AvailabilityZoneMessageType();
+            param5.setMessage(zone.getMessage());
+            param4.addItem(param5);
             param3.setMessageSet( param4 );
             param2.addItem( param3 );
 		}
@@ -1799,10 +1802,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		param1.setVolumeId( engineResponse.getId().toString());
 		param1.setInstanceId( engineResponse.getInstanceId().toString());
 		param1.setDevice( engineResponse.getDevice());
-		if ( null != engineResponse.getState())
-		     param1.setStatus( engineResponse.getState());
-		else param1.setStatus( "" );  // ToDo - throw an Soap Fault 
-		
+        param1.setStatus(engineResponse.getAttachmentState());
 		param1.setAttachTime( cal );
 			
 		param1.setRequestId( UUID.randomUUID().toString());
@@ -1819,10 +1819,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		param1.setVolumeId( engineResponse.getId().toString());
 		param1.setInstanceId( (null == engineResponse.getInstanceId() ? "" : engineResponse.getInstanceId().toString()));
 		param1.setDevice( (null == engineResponse.getDevice() ? "" : engineResponse.getDevice()));
-		if ( null != engineResponse.getState())
-		     param1.setStatus( engineResponse.getState());
-		else param1.setStatus( "" );  // ToDo - throw an Soap Fault 
-		
+        param1.setStatus(engineResponse.getAttachmentState());
 		param1.setAttachTime( cal );
 			
 		param1.setRequestId( UUID.randomUUID().toString());
@@ -1908,7 +1905,10 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	         param3.setStartTime( cal );
 	         
 	         param3.setOwnerId(ownerId);
-	         param3.setVolumeSize( snap.getVolumeSize().toString());
+             if ( snap.getVolumeSize() == null )
+                 param3.setVolumeSize("0");
+             else
+                 param3.setVolumeSize( snap.getVolumeSize().toString() );
 	         param3.setDescription( snap.getName());
 	         param3.setOwnerAlias( snap.getAccountName() );
 	         

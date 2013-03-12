@@ -24,6 +24,7 @@
 /usr/share/java/cloud-plugin-elb.jar
 /usr/share/java/cloud-plugin-ovs.jar
 /usr/share/java/cloud-plugin-nicira-nvp.jar
+/usr/share/java/cloud-plugin-bigswitch-vns.jar
 /usr/share/java/cloud-storage-allocator-random.jar
 /usr/share/java/cloud-user-authenticator-ldap.jar
 /usr/share/java/cloud-user-authenticator-md5.jar

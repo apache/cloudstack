@@ -23,25 +23,31 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
-import org.apache.cloudstack.api.command.user.autoscale.*;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.ApiDispatcher;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
+import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScalePoliciesCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmGroupsCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmProfilesCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListConditionsCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiDispatcher;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -52,7 +58,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterParam;
 import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
@@ -65,6 +70,7 @@ import com.cloud.network.as.dao.CounterDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.offering.ServiceOffering;
@@ -79,8 +85,8 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
@@ -93,11 +99,11 @@ import com.cloud.utils.net.NetUtils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+@Component
 @Local(value = { AutoScaleService.class, AutoScaleManager.class })
-public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleService, Manager {
+public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScaleManager, AutoScaleService {
     private static final Logger s_logger = Logger.getLogger(AutoScaleManagerImpl.class);
 
-    String _name;
     @Inject
     AccountDao _accountDao;
     @Inject
@@ -136,27 +142,6 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
     ConfigurationDao _configDao;
     @Inject
     IPAddressDao _ipAddressDao;
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        return true;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
 
     public List<AutoScaleCounter> getSupportedAutoScaleCounters(long networkid)
     {

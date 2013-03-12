@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -42,6 +43,12 @@ public class ZoneResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DNS2) @Param(description="the second DNS for the Zone")
     private String dns2;
+
+    @SerializedName(ApiConstants.IP6_DNS1) @Param(description="the first IPv6 DNS for the Zone")
+    private String ip6Dns1;
+
+    @SerializedName(ApiConstants.IP6_DNS2) @Param(description="the second IPv6 DNS for the Zone")
+    private String ip6Dns2;
 
     @SerializedName(ApiConstants.INTERNAL_DNS1) @Param(description="the first internal DNS for the Zone")
     private String internalDns1;
@@ -65,8 +72,8 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.DOMAIN) @Param(description="Network domain name for the networks in the zone")
     private String domain;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the containing domain, null for public zones")
-    private Long domainId;
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the UUID of the containing domain, null for public zones")
+    private String domainId;
 
     @SerializedName("domainname") @Param(description="the name of the containing domain, null for public zones")
     private String domainName;
@@ -140,7 +147,7 @@ public class ZoneResponse extends BaseResponse {
         this.domain = domain;
     }
 
-    public void setDomainId(Long domainId) {
+    public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
 
@@ -175,4 +182,20 @@ public class ZoneResponse extends BaseResponse {
     public void setLocalStorageEnabled(boolean localStorageEnabled) {
         this.localStorageEnabled = localStorageEnabled;
     }
+
+	public String getIp6Dns1() {
+		return ip6Dns1;
+	}
+
+	public void setIp6Dns1(String ip6Dns1) {
+		this.ip6Dns1 = ip6Dns1;
+	}
+
+	public String getIp6Dns2() {
+		return ip6Dns2;
+	}
+
+	public void setIp6Dns2(String ip6Dns2) {
+		this.ip6Dns2 = ip6Dns2;
+	}
 }

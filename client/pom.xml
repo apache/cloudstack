@@ -17,7 +17,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.1.0-SNAPSHOT</version>
+    <version>4.2.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
@@ -30,6 +30,11 @@
       <artifactId>cloud-plugin-acl-static-role-based</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-api-limit-account-based</artifactId>
+      <version>${project.version}</version>
+    </dependency>    
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-api-discovery</artifactId>
@@ -72,6 +77,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-network-vns</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-xen</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -79,6 +89,16 @@
        <groupId>org.apache.cloudstack</groupId>
        <artifactId>cloud-plugin-hypervisor-ovm</artifactId>
        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-hypervisor-baremetal</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-hypervisor-ucs</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -112,10 +132,87 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-mom-rabbitmq</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
       <version>${cs.mysql.version}</version>
       <scope>runtime</scope>
+    </dependency>
+    <dependency>
+    	<groupId>org.apache.cloudstack</groupId>
+    	<artifactId>cloud-framework-ipc</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-framework-rest</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-api</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+    	<artifactId>cloud-engine-components-api</artifactId>
+    	<version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-compute</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-network</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-orchestration</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-schema</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-storage</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-storage-backup</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-storage-image</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-storage-imagemotion</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-storage-snapshot</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine-storage-volume</artifactId>
+        <version>${project.version}</version>
     </dependency>
   </dependencies>
   <build>
@@ -126,7 +223,7 @@
         <artifactId>maven-war-plugin</artifactId>
         <version>2.3</version>
         <configuration>
-          <webXml>./WEB-INF/web.xml</webXml>
+          <webXml>./target/generated-webapp/WEB-INF/web.xml</webXml>
           <warSourceDirectory>./target/generated-webapp</warSourceDirectory>
         </configuration>
       </plugin>
@@ -141,9 +238,13 @@
               <maxIdleTime>60000</maxIdleTime>
             </connector>
           </connectors>
-          <contextPath>/client</contextPath>
-          <webXml>${basedir}/WEB-INF/web.xml</webXml>
+          <jvmArgs>-XX:MaxPermSize=512m -Xmx2g</jvmArgs>
+          <webXml>${project.build.directory}/${project.build.finalName}/WEB-INF/web.xml</webXml>
           <webAppSourceDirectory>${project.build.directory}/${project.build.finalName}</webAppSourceDirectory>
+          <webAppConfig>
+            <contextPath>/client</contextPath>
+            <extraClasspath>${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
+          </webAppConfig>
         </configuration>
       </plugin>
       <plugin>
@@ -167,19 +268,28 @@
             </goals>
             <configuration>
               <target>
+
+                <copy
+                  todir="${basedir}/target/generated-webapp/WEB-INF/">
+                  <fileset dir="${basedir}/WEB-INF/">
+                    <include name="web.xml" />
+                  </fileset>
+                </copy>
                 <copy
                   todir="${basedir}/target/generated-webapp/WEB-INF/classes">
                   <fileset dir="${basedir}/WEB-INF/classes">
                     <include name="resources/**/*" />
                   </fileset>
                 </copy>
-                <copy
-                  todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts">
-                  <fileset dir="${basedir}/../scripts" />
-                </copy>
-                <copy
-                  todir="${basedir}/target/generated-webapp/WEB-INF/classes/vms">
-                  <fileset dir="${basedir}/../console-proxy/dist">
+
+                <exec executable="cp">
+                    <arg value="-r" />
+                    <arg value="${basedir}/../scripts" />
+                    <arg value="${basedir}/target/generated-webapp/WEB-INF/classes/" />
+                </exec>
+
+                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/vms">
+                  <fileset dir="${basedir}/../services/console-proxy/server/dist">
                     <include name="systemvm.zip" />
                     <include name="systemvm.iso" />
                   </fileset>
@@ -263,6 +373,22 @@
                   </target>
                 </configuration>
               </execution>
+          <execution>
+            <id>process-nonoss-spring-context</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target if="${nonoss}">
+                <echo>test</echo>
+                <replaceregexp
+                  file="${basedir}/target/generated-webapp/WEB-INF/web.xml"
+                  match="classpath:componentContext.xml"
+                  replace="classpath:nonossComponentContext.xml" byline="true" />
+              </target>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <!-- there are the jasypt libs requires by some of the python scripts -->
@@ -282,14 +408,14 @@
                 <artifactItem>
                   <groupId>org.jasypt</groupId>
                   <artifactId>jasypt</artifactId>
-                  <version>1.9.0</version>`
+                  <version>1.9.0</version>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.jasypt</groupId>
                   <artifactId>jasypt</artifactId>
-                  <version>1.8</version>`
+                  <version>1.8</version>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
                 </artifactItem>

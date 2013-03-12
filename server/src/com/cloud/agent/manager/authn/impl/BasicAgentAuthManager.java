@@ -19,9 +19,11 @@ package com.cloud.agent.manager.authn.impl;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.StartupCommandProcessor;
@@ -31,10 +33,11 @@ import com.cloud.agent.manager.authn.AgentAuthorizer;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.dao.HostDao;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
 
+@Component
 @Local(value={AgentAuthorizer.class, StartupCommandProcessor.class})
-public class BasicAgentAuthManager implements AgentAuthorizer, StartupCommandProcessor {
+public class BasicAgentAuthManager extends AdapterBase implements AgentAuthorizer, StartupCommandProcessor {
     private static final Logger s_logger = Logger.getLogger(BasicAgentAuthManager.class);
     @Inject HostDao _hostDao = null;
     @Inject ConfigurationDao _configDao = null;
@@ -63,20 +66,4 @@ public class BasicAgentAuthManager implements AgentAuthorizer, StartupCommandPro
         _agentManager.registerForInitialConnects(this, true);
         return true;
     }
-
-    @Override
-    public String getName() {
-        return getClass().getName();
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
 }

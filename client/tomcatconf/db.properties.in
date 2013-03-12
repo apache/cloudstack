@@ -19,6 +19,7 @@
 # in which the management server(Tomcat) is running
 cluster.node.IP=127.0.0.1
 cluster.servlet.port=9090
+region.id=1
 
 # CloudStack database settings
 db.cloud.username=@DBUSER@
@@ -65,6 +66,10 @@ db.usage.maxWait=10000
 db.usage.autoReconnect=true
 
 # awsapi database settings
+db.awsapi.username=@DBUSER@
+db.awsapi.password=@DBPW@
+db.awsapi.host=@DBHOST@
+db.awsapi.port=3306
 db.awsapi.name=cloudbridge
 
 # Simulator database settings

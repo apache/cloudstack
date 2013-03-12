@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.deploy.DeploymentPlan;
@@ -29,36 +32,36 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
+@Component
 @Local(value={HostAllocator.class})
-public class TestingAllocator implements HostAllocator {
-    HostDao _hostDao;
+public class TestingAllocator extends AdapterBase implements HostAllocator {
+    @Inject HostDao _hostDao;
     Long _computingHost;
     Long _storageHost;
     Long _routingHost;
-    String _name;
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
             ExcludeList avoid, int returnUpTo) {
         return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
     }
-    
+
     @Override
     public List<Host> allocateTo(VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, Type type,
-			ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
-    	List<Host> availableHosts = new ArrayList<Host>();
-    	Host host = null;    	
+            ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
+        List<Host> availableHosts = new ArrayList<Host>();
+        Host host = null;    	
         if (type == Host.Type.Routing && _routingHost != null) {
-        	host = _hostDao.findById(_routingHost);
+            host = _hostDao.findById(_routingHost);
         } else if (type == Host.Type.Storage && _storageHost != null) {
-        	host = _hostDao.findById(_storageHost);
+            host = _hostDao.findById(_storageHost);
         }
         if(host != null){
-        	availableHosts.add(host);
+            availableHosts.add(host);
         }
         return availableHosts;
     }
@@ -77,28 +80,7 @@ public class TestingAllocator implements HostAllocator {
 
         value = (String)params.get(Host.Type.Storage.toString());
         _storageHost = (value != null) ? Long.parseLong(value) : null;
-        
-        ComponentLocator _locator = ComponentLocator.getCurrentLocator();
-        _hostDao = _locator.getDao(HostDao.class);
-        
-        _name = name;
-        
+
         return true;
     }
-
-    @Override
-    public String getName() {
-        return _name;
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
 }

@@ -20,11 +20,13 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.network.NetworkRuleConfigVO;
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 @Local(value={NetworkRuleConfigDao.class})
 public class NetworkRuleConfigDaoImpl extends GenericDaoBase<NetworkRuleConfigVO, Long> implements NetworkRuleConfigDao {
     protected SearchBuilder<NetworkRuleConfigVO> SecurityGroupIdSearch;

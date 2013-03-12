@@ -17,6 +17,7 @@
 package com.cloud.exception;
 
 import java.util.ArrayList;
+
 import com.cloud.utils.exception.CSExceptionErrorCode;
 
 /**
@@ -53,7 +54,6 @@ public class CloudException extends Exception {
 		idList.add(uuid);
 		return;
 	}
-
 
 	public ArrayList<String> getIdProxyList() {
 		return idList;

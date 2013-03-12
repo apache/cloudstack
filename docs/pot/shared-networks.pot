@@ -1,0 +1,60 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Shared Networks"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A shared network can be accessed by virtual machines that belong to many different accounts. Network Isolation on shared networks is accomplished using techniques such as security groups (supported only in basic zones in &PRODUCT; 3.0.3)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Shared Networks are created by the administrator"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Shared Networks can be designated to a certain domain"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Shared Network resources such as VLAN and physical network that it maps to are designated by the administrator"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Shared Networks are isolated by security groups"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public Network is a shared network that is not shown to the end users"
+msgstr ""
+

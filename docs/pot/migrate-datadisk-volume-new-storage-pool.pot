@@ -1,0 +1,55 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Migrating a Data Disk Volume to a New Storage Pool"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Detach the data disk from the VM. See Detaching and Moving Volumes <xref linkend=\"detach-move-volumes\" /> (but skip the “reattach” step at the end. You will do that after migrating to new storage)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Call the &PRODUCT; API command migrateVolume and pass in the volume ID and the ID of any storage pool in the zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Watch for the volume status to change to Migrating, then back to Ready."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Attach the volume to any desired VM running in the same cluster as the new storage server. See Attaching a Volume <xref linkend=\"attaching-volume\" />"
+msgstr ""
+

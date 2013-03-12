@@ -20,13 +20,15 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.network.NetworkExternalLoadBalancerVO;
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
+@Component
 @Local(value=NetworkExternalLoadBalancerDao.class) @DB(txn=false)
 public class NetworkExternalLoadBalancerDaoImpl extends GenericDaoBase<NetworkExternalLoadBalancerVO, Long> implements NetworkExternalLoadBalancerDao {
 

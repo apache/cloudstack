@@ -19,16 +19,16 @@
 import configGenerator
 import cloudstackException
 import cloudstackTestClient
-import sys
-import os
 import logging
 from cloudstackAPI import *
+from os import path
 from optparse import OptionParser
 
 class deployDataCenters():
 
     def __init__(self, cfgFile):
-        if not os.path.exists(cfgFile):
+        if not path.exists(cfgFile) \
+           and not path.exists(path.abspath(cfgFile)):
             raise IOError("config file %s not found. please specify a valid config file"%cfgFile)
         self.configFile = cfgFile
 
@@ -444,7 +444,7 @@ if __name__ == "__main__":
 
     parser = OptionParser()
 
-    parser.add_option("-i", "--intput", action="store", \
+    parser.add_option("-i", "--input", action="store", \
                       default="./datacenterCfg", dest="input", help="the path \
                       where the json config file generated, by default is \
                       ./datacenterCfg")

@@ -1,0 +1,60 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Overview of Setting Up Networking for Users"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "People using cloud infrastructure have a variety of needs and preferences when it comes to the networking services provided by the cloud. As a &PRODUCT; administrator, you can do the following things to set up networking for your users:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set up physical networks in zones"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set up several different providers for the same service on a single physical network (for example, both Cisco and Juniper firewalls)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Bundle different types of network services into network offerings, so users can choose the desired network services for any given virtual machine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Add new network offerings as time goes on so end users can upgrade to a better class of service on their network"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Provide more ways for a network to be accessed by a user, such as through a project of which the user is a member"
+msgstr ""
+

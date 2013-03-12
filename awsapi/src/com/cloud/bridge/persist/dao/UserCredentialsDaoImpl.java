@@ -21,6 +21,7 @@ import java.sql.*;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.bridge.model.UserCredentialsVO;
 import com.cloud.utils.db.DB;
@@ -29,6 +30,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={UserCredentialsDao.class})
 public class UserCredentialsDaoImpl extends GenericDaoBase<UserCredentialsVO, Long> implements UserCredentialsDao {
 	public static final Logger logger = Logger.getLogger(UserCredentialsDaoImpl.class);

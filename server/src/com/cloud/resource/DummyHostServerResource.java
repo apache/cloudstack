@@ -91,7 +91,7 @@ public class DummyHostServerResource extends ServerResourceBase {
         cmd.setPublicIpAddress(getHostStoragePrivateIp());
         cmd.setPublicMacAddress(getHostStorageMacAddress().toString());
         cmd.setPublicNetmask("255.255.0.0");
-        cmd.setVersion("1.0");
+        cmd.setVersion(DummyHostServerResource.class.getPackage().getImplementationVersion());
 
         return new StartupCommand[] {cmd};
 	}
@@ -163,5 +163,35 @@ public class DummyHostServerResource extends ServerResourceBase {
 		return "172.16." +
 			String.valueOf((id >> 8) & 0xff) + "." +
 			String.valueOf((id) & 0xff);
+	}
+
+	@Override
+	public void setName(String name) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setConfigParams(Map<String, Object> params) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Map<String, Object> getConfigParams() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int getRunLevel() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void setRunLevel(int level) {
+		// TODO Auto-generated method stub
+		
 	}
 }

@@ -26,9 +26,11 @@ import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -42,9 +44,6 @@ import com.cloud.agent.api.RecurringNetworkUsageCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupTrafficMonitorCommand;
 import com.cloud.agent.manager.Commands;
-import com.cloud.api.commands.AddTrafficMonitorCmd;
-import com.cloud.api.commands.DeleteTrafficMonitorCmd;
-import com.cloud.api.commands.ListTrafficMonitorsCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -61,12 +60,18 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.resource.TrafficSentinelResource;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+
+import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
+import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.user.AccountManager;
@@ -76,7 +81,7 @@ import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
@@ -87,14 +92,14 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 
+@Component
 @Local(value = {NetworkUsageManager.class})
-public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceStateAdapter {
+public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsageService, NetworkUsageManager, ResourceStateAdapter {
     public enum NetworkUsageResourceName {
         TrafficSentinel;
     }
 
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(NetworkUsageManagerImpl.class);
-    protected String _name;
     @Inject HostDao _hostDao;
     @Inject AgentManager _agentMgr;
     @Inject IPAddressDao _ipAddressDao;
@@ -171,7 +176,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
         	hostDetails.put("exclZones", cmd.getExclZones());
         }
         
-        
+
         Host trafficMonitor = _resourceMgr.addHost(zoneId, resource, Host.Type.TrafficMonitor, hostDetails);
         return trafficMonitor;
     }
@@ -208,20 +213,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
     }
 
     @Override
-    public TrafficMonitorResponse getApiResponse(Host trafficMonitor) {
-        Map<String, String> tmDetails = _detailsDao.findDetails(trafficMonitor.getId());
-        TrafficMonitorResponse response = new TrafficMonitorResponse();
-        response.setId(trafficMonitor.getUuid());
-        response.setIpAddress(trafficMonitor.getPrivateIpAddress());
-        response.setNumRetries(tmDetails.get("numRetries"));
-        response.setTimeout(tmDetails.get("timeout"));
-        return response;
-    }
-
-    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-
         AllocatedIpSearch = _ipAddressDao.createSearchBuilder();
         AllocatedIpSearch.and("allocated", AllocatedIpSearch.entity().getAllocatedTime(), Op.NNULL);
         AllocatedIpSearch.and("dc", AllocatedIpSearch.entity().getDataCenterId(), Op.EQ);
@@ -229,7 +221,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
         networkJoin.and("guestType", networkJoin.entity().getGuestType(), Op.EQ);
         AllocatedIpSearch.join("network", networkJoin, AllocatedIpSearch.entity().getSourceNetworkId(), networkJoin.entity().getId(), JoinBuilder.JoinType.INNER);
         AllocatedIpSearch.done();
-
+        
         _networkStatsInterval = NumbersUtil.parseInt(_configDao.getValue(Config.DirectNetworkStatsInterval.key()), 86400);
         _TSinclZones = _configDao.getValue(Config.TrafficSentinelIncludeZones.key());
         _TSexclZones = _configDao.getValue(Config.TrafficSentinelExcludeZones.key());
@@ -247,11 +239,6 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
     public boolean stop() {
     	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override
@@ -327,8 +314,8 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
             // This coule be made configurable
 
             rightNow.add(Calendar.HOUR_OF_DAY, -2);
-            Date now = rightNow.getTime();
-
+            Date now = rightNow.getTime();  
+            
             if(lastCollection.after(now)){
                 s_logger.debug("Current time is less than 2 hours after last collection time : " + lastCollection.toString() + ". Skipping direct network usage collection");
                 return false;
@@ -380,7 +367,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
             }
 
             List<UserStatisticsVO> collectedStats = new ArrayList<UserStatisticsVO>();
-
+            
             //Get usage for Ips which were assigned for the entire duration
             if(fullDurationIpUsage.size() > 0){
                 DirectNetworkUsageCommand cmd = new DirectNetworkUsageCommand(IpList, lastCollection, now, _TSinclZones, _TSexclZones);
@@ -520,7 +507,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
 
         protected DirectNetworkStatsListener() {
         }
-
+        
 
     }
 
@@ -536,7 +523,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
         if (!(startup[0] instanceof StartupTrafficMonitorCommand)) {
             return null;
         }
-
+        
         host.setType(Host.Type.TrafficMonitor);
         return host;
     }
@@ -544,9 +531,9 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
 	@Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
 		if(host.getType() != Host.Type.TrafficMonitor){
-			return null;
-		}
-		
+	    return null;
+    }
+
 		return new DeleteHostAnswer(true);
     }
 

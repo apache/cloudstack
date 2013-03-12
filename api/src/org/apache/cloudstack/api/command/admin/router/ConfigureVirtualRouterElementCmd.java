@@ -16,23 +16,26 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.router;
 
-import org.apache.log4j.Logger;
+import java.util.List;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
-import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.element.VirtualRouterElementService;
+import org.apache.log4j.Logger;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.VirtualRouterProvider;
+import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -41,8 +44,8 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureVirtualRouterElementCmd.class.getName());
     private static final String s_name = "configurevirtualrouterelementresponse";
 
-    @PlugService
-    private VirtualRouterElementService _service;
+    @Inject
+    private List<VirtualRouterElementService> _service;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -114,13 +117,13 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         UserContext.current().setEventDetails("Virtual router element: " + id);
-        VirtualRouterProvider result = _service.configure(this);
+        VirtualRouterProvider result = _service.get(0).configure(this);
         if (result != null){
             VirtualRouterProviderResponse routerResponse = _responseGenerator.createVirtualRouterProviderResponse(result);
             routerResponse.setResponseName(getCommandName());
             this.setResponseObject(routerResponse);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to configure the virtual router provider");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure the virtual router provider");
         }
     }
 }

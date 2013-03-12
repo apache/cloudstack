@@ -110,7 +110,7 @@ class Distribution:
             self.distro = "Fedora"
         elif os.path.exists("/etc/redhat-release"):
             version = file("/etc/redhat-release").readline()
-            if version.find("Red Hat Enterprise Linux Server release 6") != -1 or version.find("Scientific Linux release 6") != -1 or version.find("CentOS Linux release 6") != -1 or version.find("CentOS release 6.2") or version.find("CentOS release 6.3") != -1:
+            if version.find("Red Hat Enterprise Linux Server release 6") != -1 or version.find("Scientific Linux release 6") != -1 or version.find("CentOS Linux release 6") != -1 or version.find("CentOS release 6.2") != -1 or version.find("CentOS release 6.3") != -1:
                 self.distro = "RHEL6"
             elif version.find("CentOS release") != -1:
                 self.distro = "CentOS"
@@ -122,7 +122,14 @@ class Distribution:
             if kernel.find("2.6.32") != -1:
                 self.release = "10.04"
             self.arch = bash("uname -m").getStdout()
-            
+        elif os.path.exists("/usr/bin/lsb_release"):
+            o = bash("/usr/bin/lsb_release -i")
+            distributor = o.getStdout().split(":\t")[1]
+            if "Debian" in distributor:
+                # This obviously needs a rewrite at some point
+                self.distro = "Ubuntu"
+            else:
+                raise UnknownSystemException(distributor)
         else: 
             raise UnknownSystemException
 

@@ -1,0 +1,141 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "AWS API User Setup"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In general, users need not be aware that they are using a translation service provided by &PRODUCT;. They only need to send AWS API calls to &PRODUCT;'s endpoint, and it will translate the calls to the native &PRODUCT; API. Users of the Amazon EC2 compatible interface will be able to keep their existing EC2 tools and scripts and use them with their &PRODUCT; deployment, by specifying the endpoint of the management server and using the proper user credentials. In order to do this, each user must perform the following configuration steps:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Generate user credentials."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Register with the service."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For convenience, set up environment variables for the EC2 SOAP command-line tools."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "AWS API User Registration"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Each user must perform a one-time registration. The user follows these steps:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Obtain the following by looking in the &PRODUCT; UI, using the API, or asking the cloud administrator:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; server's publicly available DNS name or IP address"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The user account's Access key and Secret key"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Generate a private key and a self-signed X.509 certificate. The user substitutes their own desired storage location for /path/to/… below."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /path/to/private_key.pem -out /path/to/cert.pem"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Register the user X.509 certificate and Access/Secret keys with the AWS compatible service. If you have the source code of &PRODUCT; go to the awsapi-setup/setup directory and use the Python script cloudstack-aws-api-register. If you do not have the source then download the script using the following command."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "wget -O cloudstack-aws-api-register <ulink url=\"https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=awsapi-setup/setup/cloudstack-aws-api-register;hb=HEAD\">\"https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=awsapi-setup/setup/cloudstack-aws-api-register;hb=HEAD\"</ulink>\n"
+"              "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Then execute it, using the parameter values that were obtained in step 1. An example is shown below."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "$ cloudstack-aws-api-register --apikey=<replaceable>User’s &PRODUCT; API key</replaceable> --secretkey=<replaceable>User’s &PRODUCT; Secret key</replaceable> --cert=<replaceable>/path/to/cert.pem</replaceable> --url=http://<replaceable>&PRODUCT;.server</replaceable>:7080/awsapi"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A user with an existing AWS certificate could choose to use the same certificate with &PRODUCT;, but note that the certificate would be uploaded to the &PRODUCT; management server database."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "AWS API Command-Line Tools Setup"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To use the EC2 command-line tools, the user must perform these steps:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Be sure you have the right version of EC2 Tools. The supported version is available at <ulink url=\"http://s3.amazonaws.com/ec2-downloads/ec2-api-tools-1.3-62308.zip\">http://s3.amazonaws.com/ec2-downloads/ec2-api-tools-1.3-62308.zip</ulink>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set up the EC2 environment variables. This can be done every time you use the service or you can set them up in the proper shell profile. Replace the endpoint (i.e EC2_URL) with the proper address of your &PRODUCT; management server and port. In a bash shell do the following."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"                  $ export EC2_CERT=/path/to/cert.pem\n"
+"                  $ export EC2_PRIVATE_KEY=/path/to/private_key.pem\n"
+"                  $ export EC2_URL=http://localhost:7080/awsapi\n"
+"                  $ export EC2_HOME=/path/to/EC2_tools_directory\n"
+"              "
+msgstr ""
+

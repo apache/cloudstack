@@ -21,15 +21,17 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -74,14 +76,16 @@ import com.cloud.info.RunningHostCountInfo;
 import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.keystore.KeystoreManager;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkVO;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -94,8 +98,8 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -110,9 +114,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
@@ -157,7 +159,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { SecondaryStorageVmManager.class })
-public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, VirtualMachineGuru<SecondaryStorageVmVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+public class SecondaryStorageManagerImpl extends ManagerBase implements SecondaryStorageVmManager, VirtualMachineGuru<SecondaryStorageVmVO>, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30
@@ -170,9 +172,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     private String _mgmt_host;
     private int _mgmt_port = 8250;
 
-    private String _name;
-    @Inject(adapter = SecondaryStorageVmAllocator.class)
-    private Adapters<SecondaryStorageVmAllocator> _ssVmAllocators;
+    @Inject
+    private List<SecondaryStorageVmAllocator> _ssVmAllocators;
 
     @Inject
     protected SecondaryStorageVmDao _secStorageVmDao;
@@ -193,7 +194,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Inject
     protected SwiftManager _swiftMgr;
     @Inject
-    private NetworkManager _networkMgr;
+    protected NetworkManager _networkMgr;
+    @Inject
+    protected NetworkModel _networkModel;
     @Inject
     protected SnapshotDao _snapshotDao;
     
@@ -220,7 +223,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     UserVmDetailsDao _vmDetailsDao;
     @Inject 
     protected ResourceManager _resourceMgr;
-    @Inject
+    //@Inject			// TODO this is a very strange usage, a singleton class need to inject itself?
     protected SecondaryStorageVmManager _ssvmMgr;
     @Inject
     NetworkDao _networkDao;
@@ -248,6 +251,10 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
     private final GlobalLock _allocLock = GlobalLock.getInternLock(getAllocLockName());
 
+    public SecondaryStorageManagerImpl() {
+    	_ssvmMgr = this;
+    }
+    
     @Override
     public SecondaryStorageVmVO startSecStorageVm(long secStorageVmId) {
         try {
@@ -380,7 +387,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                     allowedCidrs.add(cidr);
                 }
             }
-            List<? extends Nic> nics = _networkMgr.getNicsForTraffic(secStorageVm.getId(), TrafficType.Management);
+            List<? extends Nic> nics = _networkModel.getNicsForTraffic(secStorageVm.getId(), TrafficType.Management);
             setupCmd.setAllowedInternalSites(allowedCidrs.toArray(new String[allowedCidrs.size()]));
         }
         String copyPasswd = _configDao.getValue("secstorage.copy.password");
@@ -547,14 +554,14 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         
         NetworkVO defaultNetwork = defaultNetworks.get(0);
 
-        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork, NetworkOfferingVO.SystemStorageNetwork);
+        List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork, NetworkOfferingVO.SystemStorageNetwork);
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(offerings.size() + 1);
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
         try {
         	networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), plan, null, null, false).get(0), defaultNic));
-            for (NetworkOfferingVO offering : offerings) {
+            for (NetworkOffering offering : offerings) {
                 networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null));
             }
         } catch (ConcurrentOperationException e) {
@@ -587,11 +594,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     private SecondaryStorageVmAllocator getCurrentAllocator() {
 
         // for now, only one adapter is supported
-        Enumeration<SecondaryStorageVmAllocator> it = _ssVmAllocators.enumeration();
-        if (it.hasMoreElements()) {
-            return it.nextElement();
-        }
-
+    	if(_ssVmAllocators.size() > 0)
+    		return _ssVmAllocators.get(0);
+    	
         return null;
     }
 
@@ -763,10 +768,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         return aggregator.getZoneHostInfoMap();
     }
 
-    @Override
-    public String getName() {
-        return _name;
-    }
 
     @Override
     public boolean start() {
@@ -791,29 +792,21 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             s_logger.info("Start configuring secondary storage vm manager : " + name);
         }
 
-        _name = name;
-
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            throw new ConfigurationException("Unable to get the configuration dao.");
-        }
-
-        Map<String, String> configs = configDao.getConfiguration("management-server", params);
+        Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         
         _secStorageVmMtuSize = NumbersUtil.parseInt(configs.get("secstorage.vm.mtu.size"), DEFAULT_SS_VM_MTUSIZE);
-        String useServiceVM = configDao.getValue("secondary.storage.vm");
+        String useServiceVM = _configDao.getValue("secondary.storage.vm");
         boolean _useServiceVM = false;
         if ("true".equalsIgnoreCase(useServiceVM)) {
             _useServiceVM = true;
         }
 
-        String sslcopy = configDao.getValue("secstorage.encrypt.copy");
+        String sslcopy = _configDao.getValue("secstorage.encrypt.copy");
         if ("true".equalsIgnoreCase(sslcopy)) {
             _useSSlCopy = true;
         }
 
-        _allowedInternalSites = configDao.getValue("secstorage.allowed.internal.sites");
+        _allowedInternalSites = _configDao.getValue("secstorage.allowed.internal.sites");
 
         String value = configs.get("secstorage.capacityscan.interval");
         _capacityScanInterval = NumbersUtil.parseLong(value, DEFAULT_CAPACITY_SCAN_INTERVAL);
@@ -823,7 +816,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             _instance = "DEFAULT";
         }
 
-        Map<String, String> agentMgrConfigs = configDao.getConfiguration("AgentManager", params);
+        Map<String, String> agentMgrConfigs = _configDao.getConfiguration("AgentManager", params);
         _mgmt_host = agentMgrConfigs.get("host");
         if (_mgmt_host == null) {
             s_logger.warn("Critical warning! Please configure your management server host address right after you have started your management server and then restart it, otherwise you won't have access to secondary storage");
@@ -899,9 +892,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         return true;
     }
 
-    protected SecondaryStorageManagerImpl() {
-    }
-
     @Override
     public Long convertToId(String vmName) {
         if (!VirtualMachineName.isValidSystemVmName(vmName, _instance, "s")) {
@@ -972,7 +962,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 }
 
                 SubscriptionMgr.getInstance().notifySubscribers(ALERT_SUBJECT, this,
-                        new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_REBOOTED, secStorageVm.getDataCenterIdToDeployIn(), secStorageVm.getId(), secStorageVm, null));
+                        new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_REBOOTED, secStorageVm.getDataCenterId(), secStorageVm.getId(), secStorageVm, null));
 
                 return true;
             } else {
@@ -994,7 +984,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         try {
             boolean result = _itMgr.expunge(ssvm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
             if (result) {
-                HostVO host = _hostDao.findByTypeNameAndZoneId(ssvm.getDataCenterIdToDeployIn(), ssvm.getHostName(), 
+                HostVO host = _hostDao.findByTypeNameAndZoneId(ssvm.getDataCenterId(), ssvm.getHostName(), 
                         Host.Type.SecondaryStorageVM);
                 if (host != null) {
                     s_logger.debug("Removing host entry for ssvm id=" + vmId);
@@ -1125,7 +1115,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             buf.append(" bootproto=dhcp");
         }
 
-        DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterIdToDeployIn());
+        DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterId());
         buf.append(" internaldns1=").append(dc.getInternalDns1());
         if (dc.getInternalDns2() != null) {
             buf.append(" internaldns2=").append(dc.getInternalDns2());

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -35,11 +36,11 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
-import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VMInstanceVO;
 
 @Local(value=FenceBuilder.class)
-public class XenServerFencer implements FenceBuilder {
+public class XenServerFencer extends AdapterBase implements FenceBuilder {
     private static final Logger s_logger = Logger.getLogger(XenServerFencer.class);
     String _name;
 

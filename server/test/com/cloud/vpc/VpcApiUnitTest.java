@@ -19,10 +19,16 @@ package com.cloud.vpc;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.configuration.dao.ResourceCountDaoImpl;
@@ -45,8 +51,8 @@ import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountVO;
 import com.cloud.user.MockAccountManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.MockComponentLocator;
+import com.cloud.utils.component.ComponentContext;
+
 import com.cloud.vm.dao.DomainRouterDaoImpl;
 import com.cloud.vpc.dao.MockNetworkDaoImpl;
 import com.cloud.vpc.dao.MockNetworkOfferingDaoImpl;
@@ -56,49 +62,19 @@ import com.cloud.vpc.dao.MockVpcDaoImpl;
 import com.cloud.vpc.dao.MockVpcOfferingDaoImpl;
 import com.cloud.vpc.dao.MockVpcOfferingServiceMapDaoImpl;
 
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = "classpath:/VpcTestContext.xml")
 public class VpcApiUnitTest extends TestCase{
     private static final Logger s_logger = Logger.getLogger(VpcApiUnitTest.class);
-    MockComponentLocator _locator;
-    VpcManager _vpcService;
+    @Inject VpcManagerImpl _vpcService = null;
 
     @Override
     @Before
     public void setUp() throws Exception {
-        _locator = new MockComponentLocator(ManagementService.Name);
-        _locator.addDao("VpcDao", MockVpcDaoImpl.class);
-        _locator.addDao("VpcOfferingDao", VpcOfferingDaoImpl.class);
-        _locator.addDao("ConfigurationDao", ConfigurationDaoImpl.class);
-        _locator.addDao("NetworkDao", MockNetworkDaoImpl.class);
-        _locator.addDao("IPAddressDao", IPAddressDaoImpl.class);
-        _locator.addDao("DomainRouterDao", DomainRouterDaoImpl.class);
-        _locator.addDao("VpcGatewayDao", VpcGatewayDaoImpl.class);
-        _locator.addDao("PrivateIpDao", PrivateIpDaoImpl.class);
-        _locator.addDao("StaticRouteDao", StaticRouteDaoImpl.class);
-        _locator.addDao("NetworkOfferingServiceMapDao", MockNetworkOfferingServiceMapDaoImpl.class);
-        _locator.addDao("VpcOfferingServiceMapDao", MockVpcOfferingServiceMapDaoImpl.class);
-        _locator.addDao("PhysicalNetworkDao", PhysicalNetworkDaoImpl.class);
-        _locator.addDao("ResourceTagDao", ResourceTagsDaoImpl.class);
-        _locator.addDao("FirewallRulesDao", FirewallRulesDaoImpl.class);
-        _locator.addDao("VlanDao", VlanDaoImpl.class);
-        _locator.addDao("AccountDao", AccountDaoImpl.class);
-        _locator.addDao("ResourceCountDao", ResourceCountDaoImpl.class);
-        _locator.addDao("NetworkOfferingDao", MockNetworkOfferingDaoImpl.class);
-        _locator.addDao("NetworkServiceMapDao", MockNetworkServiceMapDaoImpl.class);
-        _locator.addDao("VpcOfferingDao", MockVpcOfferingDaoImpl.class);
-        _locator.addDao("Site2SiteVpnDao", Site2SiteVpnGatewayDaoImpl.class);
-        
-        _locator.addManager("ConfigService", MockConfigurationManagerImpl.class);
-        _locator.addManager("vpc manager", VpcManagerImpl.class);
-        _locator.addManager("account manager", MockAccountManagerImpl.class);
-        _locator.addManager("network manager", MockNetworkManagerImpl.class);
-        _locator.addManager("Site2SiteVpnManager", MockSite2SiteVpnManagerImpl.class);
-        _locator.addManager("ResourceLimitService", MockResourceLimitManagerImpl.class);
-        
-        _locator.makeActive(null);
-        
-        _vpcService = ComponentLocator.inject(VpcManagerImpl.class);
+        ComponentContext.initComponentsLifeCycle();
     }
     
+    @Test
     public void test() {
         s_logger.debug("Starting test for VpcService interface");
         //Vpc service methods
@@ -283,7 +259,7 @@ public class VpcApiUnitTest extends TestCase{
             msg = ex.getMessage();
         } finally {
             if (!result) {
-                s_logger.debug("Test passed: " + msg);
+                s_logger.debug("Test passed : " + msg);
             } else {
                 s_logger.error("Validate network offering: TEST FAILED, can't use network offering with guest type = Shared");
             }

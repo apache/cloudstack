@@ -1,0 +1,76 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Working with Server Logs"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; Management Server logs all web site, middle tier, and database activities for diagnostics purposes in /var/log/cloud/management/. The &PRODUCT; logs a variety of error messages. We recommend this command to find the problematic output in the Management Server log:."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When copying and pasting a command, be sure the command has pasted as a single line before executing. Some document viewers may introduce unwanted line breaks in copied text."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"        grep -i -E 'exception|unable|fail|invalid|leak|warn|error' /var/log/cloud/management/management-server.log\n"
+"    "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; processes requests with a Job ID. If you find an error in the logs and you are interested in debugging the issue you can grep for this job ID in the management server log. For example, suppose that you find the following ERROR message:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"        2010-10-04 13:49:32,595 ERROR [cloud.vm.UserVmManagerImpl] (Job-Executor-11:job-1076) Unable to find any host for [User|i-8-42-VM-untagged]\n"
+"    "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Note that the job ID is 1076. You can track back the events relating to job 1076 with the following grep:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"        grep \"job-1076)\" management-server.log\n"
+"    "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; Agent Server logs its activities in /var/log/cloud/agent/."
+msgstr ""
+

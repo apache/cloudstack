@@ -16,14 +16,16 @@
 // under the License.
 package com.cloud.api.commands;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
@@ -79,7 +81,7 @@ public class AddExternalFirewallCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @PlugService JuniperSRXFirewallElementService _srxElementService;
+    @Inject JuniperSRXFirewallElementService _srxElementService;
 
     @Override
     public String getCommandName() {
@@ -101,9 +103,9 @@ public class AddExternalFirewallCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } catch (InvalidParameterValueException ipve) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, ipve.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ipve.getMessage());
         } catch (CloudRuntimeException cre) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, cre.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, cre.getMessage());
         }
     }
 }

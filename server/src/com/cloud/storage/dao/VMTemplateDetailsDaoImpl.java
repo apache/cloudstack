@@ -22,19 +22,22 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value=VMTemplateDetailsDao.class)
 public class VMTemplateDetailsDaoImpl extends GenericDaoBase<VMTemplateDetailVO, Long> implements VMTemplateDetailsDao {
 
     protected final SearchBuilder<VMTemplateDetailVO> TemplateSearch;
     protected final SearchBuilder<VMTemplateDetailVO> DetailSearch;
     
-	protected VMTemplateDetailsDaoImpl() {
+	public VMTemplateDetailsDaoImpl() {
 		TemplateSearch = createSearchBuilder();
 		TemplateSearch.and("templateId", TemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
 		TemplateSearch.done();

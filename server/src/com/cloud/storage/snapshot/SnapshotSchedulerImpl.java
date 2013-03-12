@@ -24,10 +24,13 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.api.ApiDispatcher;
@@ -39,7 +42,6 @@ import com.cloud.async.AsyncJobVO;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
@@ -53,26 +55,27 @@ import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.component.Inject;
+
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 
 
+@Component
 @Local(value={SnapshotScheduler.class})
-public class SnapshotSchedulerImpl implements SnapshotScheduler {
+public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotScheduler {
     private static final Logger s_logger = Logger.getLogger(SnapshotSchedulerImpl.class);
 
-    private String _name = null;
     @Inject protected AsyncJobDao             _asyncJobDao;
     @Inject protected SnapshotDao             _snapshotDao;
     @Inject protected SnapshotScheduleDao     _snapshotScheduleDao;
     @Inject protected SnapshotPolicyDao       _snapshotPolicyDao;
     @Inject protected AsyncJobManager         _asyncMgr;
     @Inject protected VolumeDao               _volsDao;
-
+    @Inject protected ConfigurationDao 		  _configDao;
+    
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
     private int        _snapshotPollInterval;
     private Timer      _testClockTimer;
@@ -232,8 +235,8 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
 
 
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
-                Long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
-                        EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:"+volumeId,0);
+                Long eventId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                        EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" + volumeId, 0);
 
                 Map<String, String> params = new HashMap<String, String>();
                 params.put(ApiConstants.VOLUME_ID, "" + volumeId);
@@ -250,7 +253,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
                 AsyncJobVO job = new AsyncJobVO(User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(),
                         ApiGsonHelper.getBuilder().create().toJson(params), cmd.getEntityId(),
                         cmd.getInstanceType());
-                
+
                 long jobId = _asyncMgr.submitAsyncJob(job);
 
                 tmpSnapshotScheduleVO.setAsyncJobId(jobId);
@@ -332,25 +335,17 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     @Override
     public boolean configure(String name, Map<String, Object> params)
     throws ConfigurationException {
-        _name = name;
 
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        if (configDao == null) {
-            s_logger.error("Unable to get the configuration dao. " + ConfigurationDao.class.getName());
-            return false;
-        }
-        _snapshotPollInterval = NumbersUtil.parseInt(configDao.getValue("snapshot.poll.interval"), 300);
-        boolean snapshotsRecurringTest = Boolean.parseBoolean(configDao.getValue("snapshot.recurring.test"));
+     _snapshotPollInterval = NumbersUtil.parseInt(_configDao.getValue("snapshot.poll.interval"), 300);
+        boolean snapshotsRecurringTest = Boolean.parseBoolean(_configDao.getValue("snapshot.recurring.test"));
         if (snapshotsRecurringTest) {
             // look for some test values in the configuration table so that snapshots can be taken more frequently (QA test code)
-            int minutesPerHour = NumbersUtil.parseInt(configDao.getValue("snapshot.test.minutes.per.hour"), 60);
-            int hoursPerDay = NumbersUtil.parseInt(configDao.getValue("snapshot.test.hours.per.day"), 24);
-            int daysPerWeek = NumbersUtil.parseInt(configDao.getValue("snapshot.test.days.per.week"), 7);
-            int daysPerMonth = NumbersUtil.parseInt(configDao.getValue("snapshot.test.days.per.month"), 30);
-            int weeksPerMonth = NumbersUtil.parseInt(configDao.getValue("snapshot.test.weeks.per.month"), 4);
-            int monthsPerYear = NumbersUtil.parseInt(configDao.getValue("snapshot.test.months.per.year"), 12);
+            int minutesPerHour = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.minutes.per.hour"), 60);
+            int hoursPerDay = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.hours.per.day"), 24);
+            int daysPerWeek = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.days.per.week"), 7);
+            int daysPerMonth = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.days.per.month"), 30);
+            int weeksPerMonth = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.weeks.per.month"), 4);
+            int monthsPerYear = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.months.per.year"), 12);
 
             _testTimerTask = new TestClock(this, minutesPerHour, hoursPerDay, daysPerWeek, daysPerMonth, weeksPerMonth, monthsPerYear);
         }
@@ -359,11 +354,6 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         s_logger.info("Snapshot Scheduler is configured.");
 
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override @DB

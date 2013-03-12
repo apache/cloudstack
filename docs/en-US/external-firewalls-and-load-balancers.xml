@@ -27,7 +27,7 @@
   <xi:include href="configure-snmp-rhel.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="initial-setup-of-external-firewalls-loadbalancers.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="ongoing-configuration-of-external-firewalls-loadbalancer.xml"
+  <xi:include href="ongoing-config-of-external-firewalls-lb.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude"/>
   <xi:include href="autoscale.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </section>

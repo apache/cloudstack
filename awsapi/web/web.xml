@@ -22,6 +22,15 @@
 <!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN" "http://java.sun.com/dtd/web-app_2_3.dtd">
 
 <web-app>
+
+	<listener>
+  	  <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+    <context-param>    
+        <param-name>contextConfigLocation</param-name>    
+        <param-value>classpath:applicationContext.xml</param-value>    
+    </context-param>
+    
     <display-name>CloudBridge</display-name>
     <servlet>
         <servlet-name>EC2MainServlet</servlet-name>
@@ -61,9 +70,10 @@
         </init-param>
     </servlet>
     <servlet>
-        <servlet-name>CloudBridgeEC2Servlet</servlet-name>
+        <servlet-name>EC2RestServlet</servlet-name>
         <display-name>Cloud.com Bridge EC2 Service REST Servlet</display-name>
         <servlet-class>com.cloud.bridge.service.EC2RestServlet</servlet-class>
+		<load-on-startup>3</load-on-startup>
     </servlet>
 
     <servlet-mapping>
@@ -83,13 +93,13 @@
    
     <!-- EC2 examples are using that last '/' --> 
     <servlet-mapping>
-        <servlet-name>CloudBridgeEC2Servlet</servlet-name>
+        <servlet-name>EC2RestServlet</servlet-name>
         <url-pattern>/rest/AmazonEC2/*</url-pattern>
     </servlet-mapping>
     
     <!-- handle the common error of leaving off the last '/' -->
     <servlet-mapping>
-        <servlet-name>CloudBridgeEC2Servlet</servlet-name>
+        <servlet-name>EC2RestServlet</servlet-name>
         <url-pattern>/rest/AmazonEC2</url-pattern>
     </servlet-mapping>
     

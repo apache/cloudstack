@@ -18,7 +18,6 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface NetworkRuleConfigDao extends GenericDao<NetworkRuleConfigVO, Long> {

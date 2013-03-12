@@ -1,0 +1,85 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Logging In as the Root Administrator"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After the Management Server software is installed and running, you can run the &PRODUCT; user interface. This UI is there to help you provision, view, and manage your cloud infrastructure."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Open your favorite Web browser and go to this URL. Substitute the IP address of your own Management Server:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "http://&lt;management-server-ip-address&gt;:8080/client"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After logging into a fresh Management Server installation, a guided tour splash screen appears. On later visits, you’ll be taken directly into the Dashboard."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you see the first-time splash screen, choose one of the following."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Continue with basic setup.</emphasis> Choose this if you're just trying &PRODUCT;, and you want a guided walkthrough of the simplest possible configuration so that you can get started right away. We'll help you set up a cloud with the following features: a single machine that runs &PRODUCT; software and uses NFS to provide storage; a single machine running VMs under the XenServer or KVM hypervisor; and a shared public network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The prompts in this guided tour should give you all the information you need, but if you want just a bit more detail, you can follow along in the Trial Installation Guide."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">I have used &PRODUCT; before.</emphasis> Choose this if you have already gone through a design phase and planned a more sophisticated deployment, or you are ready to start scaling up a trial cloud that you set up earlier with the basic setup screens. In the Administrator UI, you can start using the more powerful features of &PRODUCT;, such as advanced VLAN networking, high availability, additional network elements such as load balancers and firewalls, and support for multiple hypervisors including Citrix XenServer, KVM, and VMware vSphere."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The root administrator Dashboard appears."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You should set a new root administrator password. If you chose basic setup, you’ll be prompted to create a new password right away. If you chose experienced user, use the steps in <xref linkend=\"changing-root-password\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You are logging in as the root administrator. This account manages the &PRODUCT; deployment, including physical infrastructure. The root administrator can modify configuration settings to change basic functionality, create or delete user accounts, and take many actions that should be performed only by an authorized person. Please change the default password to a new, unique password."
+msgstr ""
+

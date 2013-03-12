@@ -17,9 +17,10 @@
 package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.BaseResponse;
 
 @SuppressWarnings("unused")
 public class CapabilitiesResponse extends BaseResponse {
@@ -44,6 +45,12 @@ public class CapabilitiesResponse extends BaseResponse {
     @SerializedName(ApiConstants.CUSTOM_DISK_OFF_MAX_SIZE) @Param(description="maximum size that can be specified when " +
             "create disk from disk offering with custom size")
     private Long diskOffMaxSize;
+
+    @SerializedName("apilimitinterval") @Param(description="time interval (in seconds) to reset api count")
+    private Integer apiLimitInterval;
+
+    @SerializedName("apilimitmax") @Param(description="Max allowed number of api requests within the specified interval")
+    private Integer apiLimitMax;
 
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
@@ -73,5 +80,14 @@ public class CapabilitiesResponse extends BaseResponse {
     public void setDiskOffMaxSize(Long diskOffMaxSize) {
         this.diskOffMaxSize = diskOffMaxSize;
     }
+
+    public void setApiLimitInterval(Integer apiLimitInterval) {
+        this.apiLimitInterval = apiLimitInterval;
+    }
+
+    public void setApiLimitMax(Integer apiLimitMax) {
+        this.apiLimitMax = apiLimitMax;
+    }
+
 
 }

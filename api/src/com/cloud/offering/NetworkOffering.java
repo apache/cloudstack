@@ -16,11 +16,12 @@
 // under the License.
 package com.cloud.offering;
 
-import com.cloud.network.Network.GuestType;
-import com.cloud.network.Networks.TrafficType;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.network.Network.GuestType;
+import com.cloud.network.Networks.TrafficType;
 
 /**
  * Describes network offering
@@ -110,4 +111,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     boolean getSpecifyIpRanges();
 
     boolean isInline();
+
+    boolean getIsPersistent();
+
 }

@@ -21,14 +21,15 @@ import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
-import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * VirtualMachine describes the properties held by a virtual machine
- *
+ * 
  */
 public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, InternalIdentity, StateObject<VirtualMachine.State> {
 
@@ -111,7 +112,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             s_fsm.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging);
         }
-
+        
         public static boolean isVmStarted(State oldState, Event e, State newState) {
             if (oldState == State.Starting && newState == State.Running) {
                 return true;
@@ -173,7 +174,9 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         OperationFailedToError,
         OperationRetry,
         AgentReportShutdowned,
-        AgentReportMigrated
+        AgentReportMigrated,
+        RevertRequested,
+        SnapshotRequested
     };
 
     public enum Type {
@@ -239,9 +242,11 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
      */
     public long getTemplateId();
 
+
+
     /**
      * returns the guest OS ID
-     *
+     * 
      * @return guestOSId
      */
     public long getGuestOSId();
@@ -254,7 +259,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
     /**
      * @return data center id.
      */
-    public long getDataCenterIdToDeployIn();
+    public long getDataCenterId();
 
     /**
      * @return id of the host it was assigned last time.
@@ -280,6 +285,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
     public Date getCreated();
 
     public long getServiceOfferingId();
+    
+    public Long getDiskOfferingId();
 
     Type getType();
 
@@ -287,5 +294,4 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
 
     public Map<String, String> getDetails();
 
-    boolean canPlugNics();
 }

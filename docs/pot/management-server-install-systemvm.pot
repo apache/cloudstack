@@ -1,0 +1,111 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Prepare the System VM Template"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Secondary storage must be seeded with a template that is used for &PRODUCT; system VMs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When copying and pasting a command, be sure the command has pasted as a single line before executing. Some document viewers may introduce unwanted line breaks in copied text."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On the Management Server, run one or more of the following cloud-install-sys-tmplt commands to retrieve and decompress the system VM template. Run the command for each hypervisor type that you expect end users to run in this Zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If your secondary storage mount point is not named /mnt/secondary, substitute your own mount point name."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you set the &PRODUCT; database encryption type to \"web\" when you set up the database, you must now add the parameter -s &lt;management-server-secret-key&gt;. See <xref linkend=\"about-password-encryption\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This process will require approximately 5 GB of free space on the local file system and up to 30 minutes each time it runs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For XenServer:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2 -h xenserver -s &lt;optional-management-server-secret-key&gt; -F"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For vSphere:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova -h vmware -s &lt;optional-management-server-secret-key&gt;  -F"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For KVM:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# /usr/lib64/cloud/common/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -s &lt;optional-management-server-secret-key&gt; -F"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you are using a separate NFS server, perform this step. If you are using the Management Server as the NFS server, you MUST NOT perform this step."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When the script has finished, unmount secondary storage and remove the created directory."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# umount /mnt/secondary\n"
+"# rmdir /mnt/secondary"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat these steps for each secondary storage server."
+msgstr ""
+

@@ -23,59 +23,52 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
-import com.cloud.cluster.StackMaid;
 import com.cloud.exception.CloudAuthenticationException;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.exception.CloudRuntimeException;
 
+@Component("apiServlet")
 @SuppressWarnings("serial")
 public class ApiServlet extends HttpServlet {
     public static final Logger s_logger = Logger.getLogger(ApiServlet.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
-    private ApiServer _apiServer = null;
-    private AccountService _accountMgr = null;
+    @Inject ApiServer _apiServer;
+    @Inject AccountService _accountMgr;
 
     public ApiServlet() {
-        super();
-        _apiServer = ApiServer.getInstance();
-        if (_apiServer == null) {
-            throw new CloudRuntimeException("ApiServer not initialized");
-        }
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
-        _accountMgr = locator.getManager(AccountService.class);
     }
 
     @Override
+    public void init(ServletConfig config) throws ServletException {
+    	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
+    }
+    
+    @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        try {
-            processRequest(req, resp);
-        } finally {
-            StackMaid.current().exitCleanup();
-        }
+        processRequest(req, resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
-        try {
-            processRequest(req, resp);
-        } finally {
-            StackMaid.current().exitCleanup();
-        }
+        processRequest(req, resp);
     }
 
     private void utf8Fixup(HttpServletRequest req, Map<String, Object[]> params) {
@@ -128,7 +121,7 @@ public class ApiServlet extends HttpServlet {
             reqStr = auditTrailSb.toString() + " " + req.getQueryString();
             s_logger.debug("===START=== " + StringUtils.cleanString(reqStr));
         }
-        
+
         try {
             HttpSession session = req.getSession(false);
             Object[] responseTypeParam = params.get("response");
@@ -192,7 +185,7 @@ public class ApiServlet extends HttpServlet {
                             s_logger.warn("Invalid domain id entered by user");
                             auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "Invalid domain id entered, please enter a valid one");
                             String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid domain id entered, please enter a valid one", params,
-                                    responseType, null);
+                                    responseType);
                             writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
                         }
                     }
@@ -227,10 +220,10 @@ public class ApiServlet extends HttpServlet {
                             } catch (IllegalStateException ise) {
                             }
 
-                            auditTrailSb.append(" " + BaseCmd.ACCOUNT_ERROR + " " + ex.getMessage() != null ? ex.getMessage() : "failed to authenticate user, check if username/password are correct");
-                            String serializedResponse = _apiServer.getSerializedApiError(BaseCmd.ACCOUNT_ERROR, ex.getMessage() != null ? ex.getMessage()
-                                    : "failed to authenticate user, check if username/password are correct", params, responseType, null);
-                            writeResponse(resp, serializedResponse, BaseCmd.ACCOUNT_ERROR, responseType);
+                            auditTrailSb.append(" " + ApiErrorCode.ACCOUNT_ERROR + " " + ex.getMessage() != null ? ex.getMessage() : "failed to authenticate user, check if username/password are correct");
+                            String serializedResponse = _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(), ex.getMessage() != null ? ex.getMessage()
+                                    : "failed to authenticate user, check if username/password are correct", params, responseType);
+                            writeResponse(resp, serializedResponse, ApiErrorCode.ACCOUNT_ERROR.getHttpCode(), responseType);
                             return;
                         }
                     }
@@ -257,7 +250,7 @@ public class ApiServlet extends HttpServlet {
                     } catch (IllegalStateException ise) {
                     }
                     auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
-                    String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType, null);
+                    String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
                     writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
                     return;
                 }
@@ -269,7 +262,7 @@ public class ApiServlet extends HttpServlet {
                     if (command == null) {
                         s_logger.info("missing command, ignoring request...");
                         auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + "no command specified");
-                        String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_BAD_REQUEST, "no command specified", params, responseType, null);
+                        String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_BAD_REQUEST, "no command specified", params, responseType);
                         writeResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType);
                         return;
                     }
@@ -283,7 +276,7 @@ public class ApiServlet extends HttpServlet {
                     }
 
                     auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
-                    String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType, null);
+                    String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
                     writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
                     return;
                 }
@@ -303,19 +296,11 @@ public class ApiServlet extends HttpServlet {
                  * key mechanism updateUserContext(params, session != null ? session.getId() : null);
                  */
 
-                auditTrailSb.insert(0,
-                        "(userId=" + UserContext.current().getCallerUserId() + " accountId=" + UserContext.current().getCaller().getId() + " sessionId=" + (session != null ? session.getId() : null)
-                                + ")");
+                auditTrailSb.insert(0, "(userId=" + UserContext.current().getCallerUserId() + " accountId="
+                        + UserContext.current().getCaller().getId() + " sessionId=" + (session != null ? session.getId() : null) + ")");
 
-                try {
-                    String response = _apiServer.handleRequest(params, false, responseType, auditTrailSb);
+                    String response = _apiServer.handleRequest(params, responseType, auditTrailSb);
                     writeResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType);
-                } catch (ServerApiException se) {
-                    String serializedResponseText = _apiServer.getSerializedApiError(se.getErrorCode(), se.getDescription(), params, responseType, null);
-                    resp.setHeader("X-Description", se.getDescription());
-                    writeResponse(resp, serializedResponseText, se.getErrorCode(), responseType);
-                    auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
-                }
             } else {
                 if (session != null) {
                     try {
@@ -325,21 +310,18 @@ public class ApiServlet extends HttpServlet {
                 }
 
                 auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials and/or request signature");
-                String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature", params, responseType, null);
+                String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature", params, responseType);
                 writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
 
             }
-        } catch (Exception ex) {
-            if (ex instanceof ServerApiException && ((ServerApiException) ex).getErrorCode() == BaseCmd.UNSUPPORTED_ACTION_ERROR) {
-                ServerApiException se = (ServerApiException) ex;
-                String serializedResponseText = _apiServer.getSerializedApiError(se.getErrorCode(), se.getDescription(), params, responseType, null);
+        } catch (ServerApiException se) {
+            String serializedResponseText = _apiServer.getSerializedApiError(se, params, responseType);
                 resp.setHeader("X-Description", se.getDescription());
-                writeResponse(resp, serializedResponseText, se.getErrorCode(), responseType);
+            writeResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType);
                 auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
-            } else {
+        } catch (Exception ex) {
                 s_logger.error("unknown exception writing api response", ex);
                 auditTrailSb.append(" unknown exception writing api response");
-            }
         } finally {
             s_accessLogger.info(auditTrailSb.toString());
             if (s_logger.isDebugEnabled()) {
@@ -386,7 +368,7 @@ public class ApiServlet extends HttpServlet {
     private String getLoginSuccessResponse(HttpSession session, String responseType) {
         StringBuffer sb = new StringBuffer();
         int inactiveInterval = session.getMaxInactiveInterval();
-        
+
         String user_UUID = (String)session.getAttribute("user_UUID");
         session.removeAttribute("user_UUID");
 
@@ -412,13 +394,10 @@ public class ApiServlet extends HttpServlet {
                     }
                 }
             }
-            sb.append(" }");
-            sb.append(", \"cloudstack-version\": \"");
-            sb.append(ApiDBUtils.getVersion());
-            sb.append("\" }");
+            sb.append(" } }");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<loginresponse cloudstack-version=\"" + ApiDBUtils.getVersion() + "\">");
+            sb.append("<loginresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
             sb.append("<timeout>" + inactiveInterval + "</timeout>");
             Enumeration attrNames = session.getAttributeNames();
             if (attrNames != null) {
@@ -445,13 +424,10 @@ public class ApiServlet extends HttpServlet {
     private String getLogoutSuccessResponse(String responseType) {
         StringBuffer sb = new StringBuffer();
         if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            sb.append("{ \"logoutresponse\" : { \"description\" : \"success\" }");
-            sb.append(", \"cloudstack-version\": \"");
-            sb.append(ApiDBUtils.getVersion());
-            sb.append("\" }");
+            sb.append("{ \"logoutresponse\" : { \"description\" : \"success\" } }");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<logoutresponse cloudstack-version=\"" + ApiDBUtils.getVersion() + "\">");
+            sb.append("<logoutresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
             sb.append("<description>success</description>");
             sb.append("</logoutresponse>");
         }

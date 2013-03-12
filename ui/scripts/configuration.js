@@ -136,6 +136,14 @@
                     isChecked: true,
                     docID: 'helpComputeOfferingPublic'
                   },
+
+                   isVolatile:{
+                     label:'isVolatile',
+                     isBoolean:true,
+                     isChecked:false
+
+                   },
+
                   domainId: {
                     label: 'label.domain',
                     docID: 'helpComputeOfferingDomain',
@@ -196,6 +204,10 @@
 								$.extend(data, {
 								  limitcpuuse: (args.data.cpuCap == "on")
 								});
+      
+                 $.extend(data, {
+                  isvolatile: (args.data.isVolatile == "on")
+                });
                 
                 if(args.$form.find('.form-item[rel=domainId]').css("display") != "none") {
 								  $.extend(data, {
@@ -349,6 +361,7 @@
                       label: 'label.CPU.cap',
                       converter: cloudStack.converters.toBooleanText
                     },
+                    isvolatile:{ label:'Volatile' , converter: cloudStack.converters.toBooleanText },
                     tags: { label: 'label.storage.tags' },
                     hosttags: { label: 'label.host.tags' },
                     domain: { label: 'label.domain' },
@@ -1293,11 +1306,11 @@
 											}											
 										}
 										//hide/show service fields ***** (end) *****			
-																						
-
-                    //show LB InlineMode dropdown only when (1)LB Service is checked (2)Service Provider is F5 							
-										if((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
-										   &&(args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp') && ( args.$form.find('.form-item[rel=\"service.Firewall.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Firewall.provider\"]').find('select').val() == 'JuniperSRX')) {			
+												
+                    //show LB InlineMode dropdown only when (1)LB service is checked and LB service provider is F5BigIp (2)Firewall service is checked and Firewall service provider is JuniperSRX 						
+										if((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp') && 
+										   (args.$form.find('.form-item[rel=\"service.Firewall.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Firewall.provider\"]').find('select').val() == 'JuniperSRX'))
+										{		
 											args.$form.find('.form-item[rel=\"service.Lb.inlineModeDropdown\"]').css('display', 'inline-block');	
 										}
 										else {										  
@@ -1325,10 +1338,10 @@
 											args.$form.find('.form-item[rel=\"service.Lb.elasticLbCheckbox\"]').find('input[type=checkbox]').attr('checked', false);	
 										}
 																				
-							      //show Elastic IP checkbox only when (1)StaticNat Service is checked (2)Service Provider is Netscaler (3)Guest IP Type is Shared 										
+							      //show Elastic IP checkbox only when (1)StaticNat service is checked (2)StaticNat service provider is Netscaler 								
 										if((args.$form.find('.form-item[rel=\"service.StaticNat.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
 										   &&(args.$form.find('.form-item[rel=\"service.StaticNat.provider\"]').find('select').val() == 'Netscaler')
-											 &&(args.$form.find('.form-item[rel=\"guestIpType\"]').find('select').val() == 'Shared')) {
+										) {
 										  args.$form.find('.form-item[rel=\"service.StaticNat.elasticIpCheckbox\"]').css('display', 'inline-block');		                      										
 										}
 										else {		
@@ -1385,15 +1398,28 @@
 											args.$select.change(function() {											  
 												var $form = $(this).closest("form");
                         
-												if ($(this).val() == "Shared") {                          
-													$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').attr("disabled", "disabled"); //make it read-only
-													$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').attr('checked', true);	//make it checked
-												} else {  //$(this).val() == "Isolated" 
-													$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').removeAttr("disabled"); //make it editable													
+										if ($(this).val() == "Shared") {                          
+											 $form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').attr("disabled", "disabled"); //make it read-only
+											 $form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').attr('checked', true);	//make it checked
+											 $form.find('.form-item[rel=isPersistent]').find('input[type=checkbox]').attr("disabled","disabled");
+
+
+                                                                                } else {  //$(this).val() == "Isolated" 
+											$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').removeAttr("disabled"); //make it editable													
+                                                                                         $form.find('.form-item[rel=isPersistent]').find('input[type=checkbox]').removeAttr("disabled");
+
 												}												
 											});
                     }
                   },
+
+                 isPersistent:{
+                   label:'Persistent ',
+                   isBoolean:true,
+                   isChecked:false
+
+                 },
+
 
                   specifyVlan: { label: 'label.specify.vlan', isBoolean: true, docID: 'helpNetworkOfferingSpecifyVLAN' },
 
@@ -1757,18 +1783,31 @@
 
 								
 								if(inputData['guestIpType'] == "Shared"){ //specifyVlan checkbox is disabled, so inputData won't include specifyVlan
-								  inputData['specifyVlan'] = true;  //hardcode inputData['specifyVlan'] 
+								  inputData['specifyVlan'] = true;  //hardcode inputData['specifyVlan']
 									inputData['specifyIpRanges'] = true;
+                                                                        inputData['isPersistent'] = false;
 								}
 								else if (inputData['guestIpType'] == "Isolated") { //specifyVlan checkbox is shown
 									if (inputData['specifyVlan'] == 'on') { //specifyVlan checkbox is checked
 										inputData['specifyVlan'] = true;	
-                    inputData['specifyIpRanges'] = true;										
+                                                                                inputData['specifyIpRanges'] = true;							
+
+                    
+
+			
 									}
 									else { //specifyVlan checkbox is unchecked
 										inputData['specifyVlan'] = false;
 										inputData['specifyIpRanges'] = false;
-									}					
+									}	
+                                                                        
+                                                                        if(inputData['isPersistent'] == 'on') {  //It is a persistent network
+                                                                               inputData['isPersistent'] = true;
+                                                                        }
+                                                                        else {    //Isolated Network with Non-persistent network
+                                                                               inputData['isPersistent'] = false;
+                                                                                              }
+				
 								}			
 								
 																
@@ -1788,7 +1827,7 @@
                 });      
 												
 								if(args.$form.find('.form-item[rel=availability]').css("display") == "none")
-                  inputData['availability'] = 'Optional';		
+                  inputData['availability'] = 'Optional';
 								
                 if(args.$form.find('.form-item[rel=serviceOfferingId]').css("display") == "none")									
 									delete inputData.serviceOfferingId;
@@ -1992,6 +2031,12 @@
                     guestiptype: {
                       label: 'label.guest.type'
                     },
+
+                    ispersistent:{
+                      label:'Persistent ',
+                      converter:cloudStack.converters.toBooleanText
+                     },
+
                     availability: {
                       label: 'label.availability',
                       isEditable: true,

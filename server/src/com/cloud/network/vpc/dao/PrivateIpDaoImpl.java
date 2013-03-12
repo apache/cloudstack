@@ -22,6 +22,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.utils.db.DB;
@@ -33,7 +34,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
-
+@Component
 @Local(value = PrivateIpDao.class)
 @DB(txn = false)
 public class PrivateIpDaoImpl extends GenericDaoBase<PrivateIpVO, Long> implements PrivateIpDao {

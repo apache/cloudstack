@@ -18,6 +18,8 @@ package com.cloud.network.vpc.dao;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.utils.db.DB;
@@ -25,7 +27,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
+@Component
 @Local(value = VpcGatewayDao.class)
 @DB(txn = false)
 public class VpcGatewayDaoImpl extends GenericDaoBase<VpcGatewayVO, Long> implements VpcGatewayDao{

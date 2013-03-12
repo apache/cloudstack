@@ -20,25 +20,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
-
-import org.apache.cloudstack.api.response.SecurityGroupResponse;
-import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.user.Account;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 @Local(value={SecurityGroupJoinDao.class})
 public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO, Long> implements SecurityGroupJoinDao {
     public static final Logger s_logger = Logger.getLogger(SecurityGroupJoinDaoImpl.class);
@@ -46,9 +47,9 @@ public class SecurityGroupJoinDaoImpl extends GenericDaoBase<SecurityGroupJoinVO
     @Inject
     private ConfigurationDao  _configDao;
 
-    private SearchBuilder<SecurityGroupJoinVO> sgSearch;
+    private final SearchBuilder<SecurityGroupJoinVO> sgSearch;
 
-    private SearchBuilder<SecurityGroupJoinVO> sgIdSearch;
+    private final SearchBuilder<SecurityGroupJoinVO> sgIdSearch;
 
     protected SecurityGroupJoinDaoImpl() {
 

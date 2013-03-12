@@ -379,9 +379,7 @@
           });
         };
        
-        //dataFns.zoneCount({});  
-				dataFns.podCount({});     //uncomment the line above and remove this line after "count" in listZones API is fixed.
-				
+        dataFns.zoneCount({});  	
       }
     },
 
@@ -1146,8 +1144,8 @@
                             docID: 'helpGuestNetworkZoneScope',
                             select: function(args) {
                               var array1 = [];															
-															if(args.context.zones[0].networktype == "Advanced" && args.context.zones[0].securitygroupsenabled	== true) {
-															  array1.push({id: 'account-specific', description: 'Account'});
+															if(args.context.zones[0].networktype == "Advanced" && args.context.zones[0].securitygroupsenabled	== true) {															  
+																array1.push({id: 'zone-wide', description: 'All'});
 															}
 															else {															
 																array1.push({id: 'zone-wide', description: 'All'});
@@ -1313,31 +1311,31 @@
 															}
 
 															var networkOfferingArray = [];
+															
                               $.ajax({
                                 url: createURL(apiCmd + array1.join("")),
                                 dataType: "json",
                                 async: false,
-                                success: function(json) {
+                                success: function(json) {																  
                                   networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
                                   if (networkOfferingObjs != null && networkOfferingObjs.length > 0) {
-                                    for (var i = 0; i < networkOfferingObjs.length; i++) {
-																			
-																			//comment out the following 12 lines because of CS-16718
-																			/*
-																			if(args.scope == "account-specific" || args.scope == "project-specific") { //if args.scope == "account-specific" or "project-specific", exclude Isolated network offerings with SourceNat service (bug 12869)
-																			  var includingSourceNat = false;
-                                        var serviceObjArray = networkOfferingObjs[i].service;
-                                        for(var k = 0; k < serviceObjArray.length; k++) {
-                                          if(serviceObjArray[k].name == "SourceNat") {
-                                            includingSourceNat = true;
-                                            break;
-                                          }
-                                        }
-                                        if(includingSourceNat == true)
-                                          continue; //skip to next network offering
+                                    for (var i = 0; i < networkOfferingObjs.length; i++) {    
+																			//for zone-wide network in Advanced SG-enabled zone, list only SG network offerings 
+																			if(args.context.zones[0].networktype == 'Advanced' && args.context.zones[0].securitygroupsenabled == true) {																		
+																				if(args.scope == "zone-wide") { 
+																					var includingSecurityGroup = false;
+																					var serviceObjArray = networkOfferingObjs[i].service;
+																					for(var k = 0; k < serviceObjArray.length; k++) {																					  
+																						if(serviceObjArray[k].name == "SecurityGroup") {
+																							includingSecurityGroup = true;
+																							break;
+																						}
+																					}
+																					if(includingSecurityGroup == false)
+																						continue; //skip to next network offering
+																				}
 																			}
-																			*/																			
-
+																			
                                       networkOfferingArray.push({id: networkOfferingObjs[i].id, description: networkOfferingObjs[i].displaytext});
                                     }
                                   }
@@ -3167,7 +3165,7 @@
                               alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
                             }
                           });
-                        }, 3000); 		
+                        }, g_queryAsyncJobResultInterval); 		
                       }
                     });
                   }
@@ -3408,7 +3406,7 @@
                               alert("addNetworkServiceProvider&name=F5BigIpfailed. Error: " + errorMsg);
                             }
                           });
-                        }, 3000); 		
+                        }, g_queryAsyncJobResultInterval); 		
                       }
                     });
                   }
@@ -3671,7 +3669,7 @@
                               alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + errorMsg);
                             }
                           });
-                        }, 3000); 		
+                        }, g_queryAsyncJobResultInterval); 		
                       }
                     });
                   }
@@ -3990,7 +3988,7 @@
                               alert("addNetworkServiceProvider&name=NiciraNvp failed. Error: " + errorMsg);
                             }
                           });
-                        }, 3000);       
+                        }, g_queryAsyncJobResultInterval);       
                       }
                     });
                   }
@@ -6242,7 +6240,7 @@
                             alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
                           }
                         });
-                      }, 3000); 		
+                      }, g_queryAsyncJobResultInterval); 		
                     }
                   });
                 }
@@ -6437,7 +6435,7 @@
                             alert("addNetworkServiceProvider&name=F5BigIpfailed. Error: " + errorMsg);
                           }
                         });
-                      }, 3000); 		
+                      }, g_queryAsyncJobResultInterval); 		
                     }
                   });
                 }
@@ -6648,7 +6646,7 @@
                             alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + errorMsg);
                           }
                         });
-                      }, 3000); 		
+                      }, g_queryAsyncJobResultInterval); 		
                     }
                   });
                 }
@@ -6814,7 +6812,7 @@
                               alert("addNetworkServiceProvider&name=NiciraNvp failed. Error: " + errorMsg);
                             }
                           });
-                        }, 3000);       
+                        }, g_queryAsyncJobResultInterval);       
                       }
                     });
                   }
@@ -7442,6 +7440,18 @@
                     validation: { required: true }
                   },
 
+                  cpuovercommit:{
+                     label: 'CPU overcommit ratio',
+                     defaultValue:'1'
+
+                  },
+
+                  memoryovercommit:{
+                     label: 'RAM overcommit ratio',
+                     defaultValue:'1'
+
+                   },
+
                   //hypervisor==VMWare begins here
                   vCenterHost: {
                     label: 'label.vcenter.host',
@@ -7499,6 +7509,13 @@
                 array1.push("&podId=" + args.data.podId);
 
                 var clusterName = args.data.name;
+
+                if(args.data.cpuovercommit != "")
+                    array1.push("&cpuovercommitratio=" + todb(args.data.cpuovercommit));
+
+                 if(args.data.memoryovercommit != "")
+                    array1.push("&memoryovercommitratio=" + todb(args.data.memoryovercommit));
+
                 if(args.data.hypervisor == "VMware") {
                   array1.push("&username=" + todb(args.data.vCenterUsername));
                   array1.push("&password=" + todb(args.data.vCenterPassword));
@@ -7574,6 +7591,38 @@
             },
 
             actions: {
+
+               edit: {
+                label: 'label.edit',
+                action: function(args) {
+                  var array1 = [];
+
+                  if (args.data.cpuovercommitratio != "" && args.data.cpuovercommitratio > 0)
+                    array1.push("&cpuovercommitratio=" + args.data.cpuovercommitratio);
+
+                  if (args.data.memoryovercommitratio != "" && args.data.memoryovercommitratio > 0)
+                    array1.push("&memoryovercommitratio=" + args.data.memoryovercommitratio);
+
+                  $.ajax({
+
+                    url: createURL("updateCluster&id=" + args.context.clusters[0].id + array1.join("")),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var item = json.updateclusterresponse.cluster;
+                      args.context.clusters[0].cpuovercommitratio = item.cpuovercommitratio;
+                      args.context.clusters[0].memoryovercommitratio = item.memoryovercommitratio;
+                      addExtraPropertiesToClusterObject(item);
+                      args.response.success({
+                        actionFilter: clusterActionfilter,
+                        data:item
+                       });
+
+                    }
+                  });
+                }
+              },
+              
               enable: {
                 label: 'label.action.enable.cluster',
                 messages: {
@@ -7743,6 +7792,8 @@
                     podname: { label: 'label.pod' },
                     hypervisortype: { label: 'label.hypervisor' },
                     clustertype: { label: 'label.cluster.type' },
+                    cpuovercommitratio:{ label: 'CPU overcommit Ratio', isEditable:true},
+                    memoryovercommitratio:{ label: 'Memory overcommit Ratio', isEditable:true},
                     //allocationstate: { label: 'label.allocation.state' },
                     //managedstate: { label: 'Managed State' },
 										state: { label: 'label.state' }
@@ -7967,11 +8018,17 @@
 								}
 							}
 						}
-            array1.push("&zoneid=" + args.context.zones[0].id);
-            if("pods" in args.context)
-              array1.push("&podid=" + args.context.pods[0].id);
-            if("clusters" in args.context)
-              array1.push("&clusterid=" + args.context.clusters[0].id);
+
+            if (!args.context.instances) {
+              array1.push("&zoneid=" + args.context.zones[0].id);
+              if("pods" in args.context)
+                array1.push("&podid=" + args.context.pods[0].id);
+              if("clusters" in args.context)
+                array1.push("&clusterid=" + args.context.clusters[0].id);
+            } else {
+              array1.push("&hostid=" + args.context.instances[0].hostid);
+            }
+
             $.ajax({
               url: createURL("listHosts&type=Routing" + array1.join("") + "&page=" + args.page + "&pagesize=" + pageSize),
               dataType: "json",
@@ -9728,7 +9785,7 @@
                     args.response.success({data:{}});
                   },
                   error: function(json) {
-                    args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                    args.response.error(parseXMLHttpResponse(json));
                   }
                 });
               },
@@ -10224,7 +10281,7 @@
 																														alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
 																													}
 																												});
-																											}, 3000); 		
+																											}, g_queryAsyncJobResultInterval); 		
 																										}
 																									});
 																								}
@@ -10305,7 +10362,7 @@
 																					alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
 																				}
 																			});
-																		}, 3000); 		
+																		}, g_queryAsyncJobResultInterval); 		
 																	}
 																});
 															}
@@ -10319,7 +10376,7 @@
 														alert("configureVirtualRouterElement failed. Error: " + errorMsg);
 													}
 												});
-											}, 3000); 		
+											}, g_queryAsyncJobResultInterval); 		
 										}
 									});
 								}
@@ -10333,7 +10390,7 @@
 							alert("updatePhysicalNetwork failed. Error: " + errorMsg);
 						}
 					});
-				}, 3000); 		
+				}, g_queryAsyncJobResultInterval); 		
 			}
 		});
 	};
@@ -10409,10 +10466,14 @@
     if(jsonObj.state == "Enabled") {//managed, allocation enabled
 		  allowedActions.push("unmanage");
       allowedActions.push("disable");
+      allowedActions.push("edit");
+
 		}
 		else if(jsonObj.state == "Disabled") { //managed, allocation disabled
 		  allowedActions.push("unmanage");
       allowedActions.push("enable");
+      allowedActions.push("edit");
+
 		}
 		else { //Unmanaged, PrepareUnmanaged , PrepareUnmanagedError
 			allowedActions.push("manage");

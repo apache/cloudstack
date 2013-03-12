@@ -31,7 +31,6 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.SearchCriteria;
 
 
@@ -43,12 +42,11 @@ public class ComputeCapacityListener implements Listener {
 
 
     public ComputeCapacityListener(CapacityDao _capacityDao,
-    		CapacityManager _capacityMgr,
-            float _overProvisioningFactor) {
+    		CapacityManager _capacityMgr
+           ) {
         super();
         this._capacityDao = _capacityDao;
         this._capacityMgr = _capacityMgr;
-        this._cpuOverProvisioningFactor = _overProvisioningFactor;
     }
 
 

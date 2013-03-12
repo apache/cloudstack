@@ -16,14 +16,16 @@
 // under the License.
 package com.cloud.api.commands;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.exception.InvalidParameterValueException;
@@ -55,7 +57,7 @@ public class DeleteExternalFirewallCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @PlugService JuniperSRXFirewallElementService _srxElementService;
+    @Inject JuniperSRXFirewallElementService _srxElementService;
 
     @Override
     public String getCommandName() {
@@ -77,10 +79,10 @@ public class DeleteExternalFirewallCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete external firewall.");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete external firewall.");
             }
         } catch (InvalidParameterValueException e) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Failed to delete external firewall.");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Failed to delete external firewall.");
         }
     }
 }

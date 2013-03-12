@@ -31,17 +31,18 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
+import com.cloud.utils.fsm.StateObject;
 
 @Entity
 @Table(name="vm_template")
-public class VMTemplateVO implements VirtualMachineTemplate {
+public class VMTemplateVO implements VirtualMachineTemplate, StateObject<TemplateState> {
     @Id
     @TableGenerator(name="vm_template_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="vm_template_seq", allocationSize=1)
     @Column(name="id", nullable = false)
@@ -127,6 +128,22 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     @Column(name="enable_sshkey")
     private boolean enableSshKey;
+    
+    @Column(name = "image_data_store_id")
+    private long imageDataStoreId;
+    
+    @Column(name = "size")
+    private Long size;
+    
+    @Column(name = "state")
+    private TemplateState state;
+    
+    @Column(name="update_count", updatable = true)
+    protected long updatedCount;
+    
+    @Column(name = "updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    Date updated;
 
     @Transient
     Map details;
@@ -140,8 +157,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.uniqueName = uniqueName;
     }
 
-    protected VMTemplateVO() {
+    public VMTemplateVO() {
     	this.uuid = UUID.randomUUID().toString();
+    	this.state = TemplateState.Allocated;
     }
 
     /**
@@ -150,12 +168,14 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType, Map details) {
         this(id, generateUniqueName(id, accountId, name), name, format, isPublic, featured, isExtractable, type, url, null, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType, details);
     	this.uuid = UUID.randomUUID().toString();
+    	this.state = TemplateState.Allocated;
     }
 
     public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType, String templateTag, Map details, boolean sshKeyEnabled) {
         this(id, name, format, isPublic, featured, isExtractable, type, url, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType, details);
         this.templateTag = templateTag;
     	this.uuid = UUID.randomUUID().toString();
+    	this.state = TemplateState.Allocated;
     	this.enableSshKey = sshKeyEnabled;
     }
 
@@ -179,6 +199,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.bootable = bootable;
         this.hypervisorType = hyperType;
     	this.uuid = UUID.randomUUID().toString();
+    	this.state = TemplateState.Allocated;
     }
 
     // Has an extra attribute - isExtractable
@@ -468,5 +489,46 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	public void setEnableSshKey(boolean enable) {
 		enableSshKey = enable;
 	}
+	
+	 public Long getImageDataStoreId() {
+	        return this.imageDataStoreId;
+	    }
+
+	    public void setImageDataStoreId(long dataStoreId) {
+	        this.imageDataStoreId = dataStoreId;
+	    }
+	    
+	    public void setSize(Long size) {
+	        this.size = size;
+	    }
+	    
+	    public Long getSize() {
+	        return this.size;
+	    }
+	    
+	    public TemplateState getState() {
+	        return this.state;
+	    }
+	    
+	    public long getUpdatedCount() {
+	        return this.updatedCount;
+	    }
+	    
+	    public void incrUpdatedCount() {
+	        this.updatedCount++;
+	    }
+
+	    public void decrUpdatedCount() {
+	        this.updatedCount--;
+	    }
+	    
+	    public Date getUpdated() {
+	        return updated;
+	    }
+	    
+	    public void setUpdated(Date updated) {
+	        this.updated = updated;
+	    }
+
 
 }

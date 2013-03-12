@@ -1,0 +1,60 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Primary Storage"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Primary storage is associated with a cluster, and it stores the disk volumes for all the VMs running on hosts in that cluster. You can add multiple primary storage servers to a cluster. At least one is required. It is typically located close to the hosts for increased performance."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; is designed to work with all standards-compliant iSCSI and NFS servers that are supported by the underlying hypervisor, including, for example:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Dell EqualLogic™ for iSCSI"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network Appliances filers for NFS and iSCSI"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Scale Computing for NFS"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you intend to use only local disk for your installation, you can skip to Add Secondary Storage."
+msgstr ""
+

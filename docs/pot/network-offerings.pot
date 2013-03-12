@@ -1,0 +1,115 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Network Offerings"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For the most up-to-date list of supported network services, see the &PRODUCT; UI or call listNetworkServices."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A network offering is a named set of network services, such as:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "DHCP"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "DNS"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Source NAT"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Static NAT"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Port Forwarding"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Load Balancing"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Firewall"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "VPN"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Optional) Name one of several available providers to use for a given service, such as Juniper for the firewall"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional) Network tag to specify which physical network to use"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When creating a new VM, the user chooses one of the available network offerings, and that determines which network services the VM can use."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; administrator can create any number of custom network offerings, in addition to the default network offerings provided by &PRODUCT;. By creating multiple custom network offerings, you can set up your cloud to offer different classes of service on a single multi-tenant physical network. For example, while the underlying physical wiring may be the same for two tenants, tenant A may only need simple firewall protection for their website, while tenant B may be running a web server farm and require a scalable firewall solution, load balancing solution, and alternate networks for accessing the database backend."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If you create load balancing rules while using a network service offering that includes an external load balancer device such as NetScaler, and later change the network service offering to one that uses the &PRODUCT; virtual router, you must create a firewall rule on the virtual router for each of your existing load balancing rules so that they continue to function."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When creating a new virtual network, the &PRODUCT; administrator chooses which network offering to enable for that network. Each virtual network is associated with one network offering. A virtual network can be upgraded or downgraded by changing its associated network offering. If you do this, be sure to reprogram the physical network to match."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; also has internal network offerings for use by &PRODUCT; system VMs. These network offerings are not visible to users but can be modified by administrators."
+msgstr ""
+

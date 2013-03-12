@@ -21,13 +21,17 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.utils.DateUtil.IntervalType;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 @Local (value={SnapshotPolicyDao.class})
 public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long> implements SnapshotPolicyDao {
 	private final SearchBuilder<SnapshotPolicyVO> VolumeIdSearch;
@@ -63,6 +67,19 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
         return listBy(sc, filter);
     }
 	
+    @Override
+    public Pair<List<SnapshotPolicyVO>, Integer> listAndCountByVolumeId(long volumeId) {
+        return listAndCountByVolumeId(volumeId, null);
+    }
+
+    @Override
+    public Pair<List<SnapshotPolicyVO>, Integer> listAndCountByVolumeId(long volumeId, Filter filter) {
+        SearchCriteria<SnapshotPolicyVO> sc = VolumeIdSearch.create();
+        sc.setParameters("volumeId", volumeId);
+        sc.setParameters("active", true);
+        return searchAndCount(sc, filter);
+    }
+
     protected SnapshotPolicyDaoImpl() {
         VolumeIdSearch = createSearchBuilder();
         VolumeIdSearch.and("volumeId", VolumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);

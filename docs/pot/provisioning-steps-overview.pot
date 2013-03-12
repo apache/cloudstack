@@ -1,0 +1,85 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Overview of Provisioning Steps"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After the Management Server is installed and running, you can add the compute resources for it to manage. For an overview of how a &PRODUCT; cloud infrastructure is organized, see <xref linkend=\"cloud-infrastructure-overview\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To provision the cloud infrastructure, or to scale it up at any time, follow these procedures:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Change the root password. See <xref linkend=\"changing-root-password\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Add a zone. See <xref linkend=\"zone-add\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Add more pods (optional). See <xref linkend=\"pod-add\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Add more clusters (optional). See <xref linkend=\"cluster-add\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Add more hosts (optional). See <xref linkend=\"host-add\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Add primary storage. See <xref linkend=\"primary-storage-add\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Add secondary storage. See <xref linkend=\"secondary-storage-add\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Initialize and test the new cloud. See <xref linkend=\"initialize-and-test\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When you have finished these steps, you will have a deployment with the following basic structure:"
+msgstr ""
+

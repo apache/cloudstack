@@ -22,6 +22,7 @@ import java.util.Set;
 
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -40,7 +41,7 @@ public interface VpcService {
 
     public VpcOffering getVpcOffering(long vpcOfferingId);
 
-    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices);
+    public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices, Map<String, List<String>> serviceProviders);
 
     public Vpc getVpc(long vpcId);
 
@@ -245,5 +246,5 @@ public interface VpcService {
         InsufficientAddressCapacityException, ConcurrentOperationException;
 
     public Network updateVpcGuestNetwork(long networkId, String name, String displayText, Account callerAccount,
-            User callerUser, String domainSuffix, Long ntwkOffId, Boolean changeCidr);
+            User callerUser, String domainSuffix, Long ntwkOffId, Boolean changeCidr, String guestVmCidr);
 }

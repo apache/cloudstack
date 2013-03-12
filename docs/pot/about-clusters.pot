@@ -1,0 +1,60 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Clusters"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A cluster provides a way to group hosts. To be precise, a cluster is a XenServer server pool, a set of KVM servers, , or a VMware cluster preconfigured in vCenter. The hosts in a cluster all have identical hardware, run the same hypervisor, are on the same subnet, and access the same shared primary storage. Virtual machine instances (VMs) can be live-migrated from one host to another within the same cluster, without interrupting service to the user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A cluster is the third-largest organizational unit within a &PRODUCT; deployment. Clusters are contained within pods, and pods are contained within zones. Size of the cluster is limited by the underlying hypervisor, although the &PRODUCT; recommends less in most cases; see Best Practices."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A cluster consists of one or more hosts and one or more primary storage servers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; allows multiple clusters in a cloud deployment."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Even when local storage is used exclusively, clusters are still required organizationally, even if there is just one host per cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When VMware is used, every VMware cluster is managed by a vCenter server. Administrator must register the vCenter server with &PRODUCT;. There may be multiple vCenter servers per zone. Each vCenter server may manage multiple VMware clusters."
+msgstr ""
+

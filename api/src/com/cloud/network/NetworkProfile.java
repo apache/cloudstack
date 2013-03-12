@@ -21,7 +21,6 @@ import java.net.URI;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import org.apache.cloudstack.api.InternalIdentity;
 
 public class NetworkProfile implements Network {
     private long id;
@@ -39,6 +38,9 @@ public class NetworkProfile implements Network {
     private TrafficType trafficType;
     private String gateway;
     private String cidr;
+    private String networkCidr;
+    private String ip6Gateway;
+    private String ip6Cidr;
     private long networkOfferingId;
     private long related;
     private String displayText;
@@ -64,6 +66,9 @@ public class NetworkProfile implements Network {
         this.trafficType = network.getTrafficType();
         this.gateway = network.getGateway();
         this.cidr = network.getCidr();
+        this.networkCidr = network.getNetworkCidr();
+        this.ip6Gateway = network.getIp6Gateway();
+        this.ip6Cidr = network.getIp6Cidr();
         this.networkOfferingId = network.getNetworkOfferingId();
         this.related = network.getRelated();
         this.displayText = network.getDisplayText();
@@ -160,6 +165,11 @@ public class NetworkProfile implements Network {
     }
 
     @Override
+    public String getNetworkCidr() {
+        return networkCidr;
+    }
+
+    @Override
     public long getNetworkOfferingId() {
         return networkOfferingId;
     }
@@ -226,4 +236,18 @@ public class NetworkProfile implements Network {
         return vpcId;
     }
 
+    @Override
+    public void setTrafficType(TrafficType type) {
+        this.trafficType = type;
+    }
+
+	@Override
+	public String getIp6Gateway() {
+		return ip6Gateway;
+	}
+
+	@Override
+	public String getIp6Cidr() {
+		return ip6Cidr;
+	}
 }

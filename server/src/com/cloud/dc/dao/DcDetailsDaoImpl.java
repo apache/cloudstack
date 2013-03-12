@@ -22,18 +22,21 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.DcDetailVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value=DcDetailsDao.class)
 public class DcDetailsDaoImpl extends GenericDaoBase<DcDetailVO, Long> implements DcDetailsDao {
     protected final SearchBuilder<DcDetailVO> DcSearch;
     protected final SearchBuilder<DcDetailVO> DetailSearch;
     
-    protected DcDetailsDaoImpl() {
+    public DcDetailsDaoImpl() {
         DcSearch = createSearchBuilder();
         DcSearch.and("dcId", DcSearch.entity().getDcId(), SearchCriteria.Op.EQ);
         DcSearch.done();

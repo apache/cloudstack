@@ -1,0 +1,175 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Building DEB packages"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In addition to the bootstrap dependencies, you'll also need to install several other dependencies. Note that we recommend using Maven 3, which is not currently available in 12.04.1 LTS. So, you'll also need to add a PPA repository that includes Maven 3. After running the command <command>add-apt-repository</command>, you will be prompted to continue and a GPG key will be added."
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "\n"
+"<command>$ sudo apt-get update</command>\n"
+"<command>$ sudo apt-get install python-software-properties</command>\n"
+"<command>$ sudo add-apt-repository ppa:natecarlson/maven3</command>\n"
+"<command>$ sudo apt-get update</command>\n"
+"<command>$ sudo apt-get install ant debhelper openjdk-6-jdk tomcat6 libws-commons-util-java genisoimage python-mysqldb libcommons-codec-java libcommons-httpclient-java liblog4j1.2-java maven3</command>\n"
+""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "While we have defined, and you have presumably already installed the bootstrap prerequisites, there are a number of build time prerequisites that need to be resolved. &PRODUCT; uses maven for dependency resolution. You can resolve the buildtime depdencies for CloudStack by running:"
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "<command>$ mvn3 -P deps</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now that we have resolved the dependencies we can move on to building &PRODUCT; and packaging them into DEBs by issuing the following command."
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "\n"
+"<command>$ dpkg-buildpackge -uc -us</command>\n"
+""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This command will build 16 Debian packages. You should have all of the following:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"cloud-agent_4.0.0-incubating_amd64.deb\n"
+"cloud-agent-deps_4.0.0-incubating_amd64.deb\n"
+"cloud-agent-libs_4.0.0-incubating_amd64.deb\n"
+"cloud-awsapi_4.0.0-incubating_amd64.deb\n"
+"cloud-cli_4.0.0-incubating_amd64.deb\n"
+"cloud-client_4.0.0-incubating_amd64.deb\n"
+"cloud-client-ui_4.0.0-incubating_amd64.deb\n"
+"cloud-core_4.0.0-incubating_amd64.deb\n"
+"cloud-deps_4.0.0-incubating_amd64.deb\n"
+"cloud-python_4.0.0-incubating_amd64.deb\n"
+"cloud-scripts_4.0.0-incubating_amd64.deb\n"
+"cloud-server_4.0.0-incubating_amd64.deb\n"
+"cloud-setup_4.0.0-incubating_amd64.deb\n"
+"cloud-system-iso_4.0.0-incubating_amd64.deb\n"
+"cloud-usage_4.0.0-incubating_amd64.deb\n"
+"cloud-utils_4.0.0-incubating_amd64.deb\n"
+""
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Setting up an APT repo"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After you've created the packages, you'll want to copy them to a system where you can serve the packages over HTTP. You'll create a directory for the packages and then use <code>dpkg-scanpackages</code> to create <filename>Packages.gz</filename>, which holds information about the archive structure. Finally, you'll add the repository to your system(s) so you can install the packages using APT."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The first step is to make sure that you have the <application>dpkg-dev</application> package installed. This should have been installed when you pulled in the <application>debhelper</application> application previously, but if you're generating <filename>Packages.gz</filename> on a different system, be sure that it's installed there as well."
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "<command>$ sudo apt-get install dpkg-dev</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The next step is to copy the DEBs to the directory where they can be served over HTTP. We'll use <filename>/var/www/cloudstack/repo</filename> in the examples, but change the directory to whatever works for you."
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "\n"
+"<command>sudo mkdir -p /var/www/cloudstack/repo/binary</command>\n"
+"<command>sudo cp *.deb /var/www/cloudstack/repo/binary</command>\n"
+"<command>sudo cd /var/www/cloudstack/repo/binary</command>\n"
+"<command>sudo dpkg-scanpackages . /dev/null | tee Packages | gzip -9 &gt; Packages.gz</command>\n"
+""
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Note: Override Files"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can safely ignore the warning about a missing override file."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now you should have all of the DEB packages and <filename>Packages.gz</filename> in the <filename>binary</filename> directory and available over HTTP. (You may want to use <command>wget</command> or <command>curl</command> to test this before moving on to the next step.)"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring your machines to use the APT repository"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now that we have created the repository, you need to configure your machine to make use of the APT repository. You can do this by adding a repository file under <filename>/etc/apt/sources.list.d</filename>. Use your preferred editor to create <filename>/etc/apt/sources.list.d/cloudstack.list</filename> with this line:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "deb http://<replaceable>server.url</replaceable>/cloudstack/repo binary ./"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Now that you have the repository info in place, you'll want to run another update so that APT knows where to find the &PRODUCT; packages."
+msgstr ""
+
+#. Tag: screen
+#, no-c-format
+msgid "<command>$ sudo apt-get update</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can now move on to the instructions under Install on Ubuntu."
+msgstr ""
+

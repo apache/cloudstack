@@ -1,0 +1,375 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Added API commands in 3.0"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Added in 3.0.2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "changeServiceForSystemVm"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Changes the service offering for a system VM (console proxy or secondary storage). The system VM must be in a \"Stopped\" state for this command to take effect."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Added in 3.0.1"
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Added in 3.0.0"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "assignVirtualMachine (Move a user VM to another user under same domain.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "restoreVirtualMachine (Restore a VM to original template or specific snapshot)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createLBStickinessPolicy (Creates a Load Balancer stickiness policy )"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteLBStickinessPolicy (Deletes a LB stickiness policy.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listLBStickinessPolicies (Lists LBStickiness policies.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "ldapConfig (Configure the LDAP context for this site.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addSwift (Adds Swift.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listSwifts (List Swift.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "migrateVolume (Migrate volume)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateStoragePool (Updates a storage pool.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "authorizeSecurityGroupEgress (Authorizes a particular egress rule for this security group)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "revokeSecurityGroupEgress (Deletes a particular egress rule from this security group)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createNetworkOffering (Creates a network offering.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteNetworkOffering (Deletes a network offering.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createProject (Creates a project)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteProject (Deletes a project)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateProject (Updates a project)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "activateProject (Activates a project)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "suspendProject (Suspends a project)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listProjects (Lists projects and provides detailed information for listed projects)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addAccountToProject (Adds acoount to a project)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteAccountFromProject (Deletes account from the project)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listProjectAccounts (Lists project's accounts)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listProjectInvitations (Lists an account's invitations to join projects)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateProjectInvitation (Accepts or declines project invitation)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteProjectInvitation (Deletes a project invitation)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateHypervisorCapabilities (Updates a hypervisor capabilities.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listHypervisorCapabilities (Lists all hypervisor capabilities.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createPhysicalNetwork (Creates a physical network)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deletePhysicalNetwork (Deletes a Physical Network.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listPhysicalNetworks (Lists physical networks)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updatePhysicalNetwork (Updates a physical network)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listSupportedNetworkServices (Lists all network services provided by &PRODUCT; or for the given Provider.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addNetworkServiceProvider (Adds a network serviceProvider to a physical network)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteNetworkServiceProvider (Deletes a Network Service Provider.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listNetworkServiceProviders (Lists network serviceproviders for a given physical network.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateNetworkServiceProvider (Updates a network serviceProvider of a physical network)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addTrafficType (Adds traffic type to a physical network)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteTrafficType (Deletes traffic type of a physical network)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listTrafficTypes (Lists traffic types of a given physical network.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateTrafficType (Updates traffic type of a physical network)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listTrafficTypeImplementors (Lists implementors of implementor of a network traffic type or implementors of all network traffic types)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createStorageNetworkIpRange (Creates a Storage network IP range.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteStorageNetworkIpRange (Deletes a storage network IP Range.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listStorageNetworkIpRange (List a storage network IP range.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "updateStorageNetworkIpRange (Update a Storage network IP range, only allowed when no IPs in this range have been allocated.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listUsageTypes (List Usage Types)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addF5LoadBalancer (Adds a F5 BigIP load balancer device)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "configureF5LoadBalancer (configures a F5 load balancer device)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteF5LoadBalancer ( delete a F5 load balancer device)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listF5LoadBalancers (lists F5 load balancer devices)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listF5LoadBalancerNetworks (lists network that are using a F5 load balancer device)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addSrxFirewall (Adds a SRX firewall device)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteSrxFirewall ( delete a SRX firewall device)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listSrxFirewalls (lists SRX firewall devices in a physical network)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listSrxFirewallNetworks (lists network that are using SRX firewall device)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "addNetscalerLoadBalancer (Adds a netscaler load balancer device)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "deleteNetscalerLoadBalancer ( delete a netscaler load balancer device)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "configureNetscalerLoadBalancer (configures a netscaler load balancer device)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listNetscalerLoadBalancers (lists netscaler load balancer devices)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listNetscalerLoadBalancerNetworks (lists network that are using a netscaler load balancer device)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "createVirtualRouterElement (Create a virtual router element.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "configureVirtualRouterElement (Configures a virtual router element.)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "listVirtualRouterElements (Lists all available virtual router elements.)"
+msgstr ""
+

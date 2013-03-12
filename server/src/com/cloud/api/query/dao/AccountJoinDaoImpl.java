@@ -29,12 +29,14 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.configuration.Resource.ResourceType;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.UserResponse;
+import org.springframework.stereotype.Component;
+
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
+@Component
 @Local(value={AccountJoinDao.class})
 public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> implements AccountJoinDao {
     public static final Logger s_logger = Logger.getLogger(AccountJoinDaoImpl.class);
@@ -154,6 +156,24 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setNetworkLimit(vpcLimitDisplay);
         accountResponse.setNetworkTotal(vpcTotal);
         accountResponse.setNetworkAvailable(vpcAvail);
+
+        //get resource limits for cpu cores
+        long cpuLimit = ApiDBUtils.findCorrectResourceLimit(account.getCpuLimit(), account.getType(), ResourceType.cpu);
+        String cpuLimitDisplay = (accountIsAdmin || cpuLimit == -1) ? "Unlimited" : String.valueOf(cpuLimit);
+        long cpuTotal = (account.getCpuTotal() == null) ? 0 : account.getCpuTotal();
+        String cpuAvail = (accountIsAdmin || cpuLimit == -1) ? "Unlimited" : String.valueOf(cpuLimit - cpuTotal);
+        accountResponse.setCpuLimit(cpuLimitDisplay);
+        accountResponse.setCpuTotal(cpuTotal);
+        accountResponse.setCpuAvailable(cpuAvail);
+
+        //get resource limits for memory
+        long memoryLimit = ApiDBUtils.findCorrectResourceLimit(account.getMemoryLimit(), account.getType(), ResourceType.memory);
+        String memoryLimitDisplay = (accountIsAdmin || memoryLimit == -1) ? "Unlimited" : String.valueOf(memoryLimit);
+        long memoryTotal = (account.getMemoryTotal() == null) ? 0 : account.getMemoryTotal();
+        String memoryAvail = (accountIsAdmin || memoryLimit == -1) ? "Unlimited" : String.valueOf(memoryLimit - memoryTotal);
+        accountResponse.setMemoryLimit(memoryLimitDisplay);
+        accountResponse.setMemoryTotal(memoryTotal);
+        accountResponse.setMemoryAvailable(memoryAvail);
 
         // adding all the users for an account as part of the response obj
         List<UserAccountJoinVO> usersForAccount = ApiDBUtils.findUserViewByAccountId(account.getId());

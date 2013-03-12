@@ -1,0 +1,95 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Moving VMs Between Hosts (Manual Live Migration)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The &PRODUCT; administrator can move a running VM from one host to another without interrupting service to users or going into maintenance mode. This is called manual live migration, and can be done under the following conditions:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The root administrator is logged in. Domain admins and users can not perform manual live migration of VMs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The VM is running. Stopped VMs can not be live migrated."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The destination host must be in the same cluster as the original host."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The VM must not be using local disk storage."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The destination host must have enough available capacity. If not, the VM will remain in the \"migrating\" state until memory becomes available."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To manually live migrate a virtual machine"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as a user or admin."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, click Instances."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Choose the VM that you want to migrate."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click the Migrate Instance button <inlinemediaobject> <imageobject> <imagedata fileref=\"./images/migrate-instance.png\" /> </imageobject> <textobject><phrase>Migrateinstance.png: button to migrate an instance</phrase></textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "From the list of hosts, choose the one to which you want to move the VM."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr ""
+

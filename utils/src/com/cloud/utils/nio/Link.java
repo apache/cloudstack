@@ -16,18 +16,15 @@
 // under the License.
 package com.cloud.utils.nio;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.WritableByteChannel;
 import java.security.KeyStore;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -35,10 +32,10 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 
 import org.apache.log4j.Logger;
 
@@ -48,7 +45,7 @@ import com.cloud.utils.PropertiesUtil;
  */
 public class Link {
     private static final Logger s_logger = Logger.getLogger(Link.class);
-   
+
     private final InetSocketAddress _addr;
     private final NioConnection _connection;
     private SelectionKey _key;
@@ -58,7 +55,7 @@ public class Link {
     private Object _attach;
     private boolean _readHeader;
     private boolean _gotFollowingPacket;
-    
+
     private SSLEngine _sslEngine;
 
     public Link(InetSocketAddress addr, NioConnection connection) {
@@ -71,23 +68,23 @@ public class Link {
         _readHeader = true;
         _gotFollowingPacket = false;
     }
-    
+
     public Link (Link link) {
         this(link._addr, link._connection);
     }
-    
+
     public Object attachment() {
         return _attach;
     }
-    
+
     public void attach(Object attach) {
         _attach = attach;
     }
-    
+
     public void setKey(SelectionKey key) {
         _key = key;
     }
-    
+
     public void setSSLEngine(SSLEngine sslEngine) {
         _sslEngine = sslEngine;
     }
@@ -105,19 +102,19 @@ public class Link {
     	synchronized(buff) {
 	    	buff.clear();
 	    	buff.limit(4);
-	    	
+
 	    	while (buff.hasRemaining()) {
 		    	if (ch.read(buff) == -1) {
 		    		throw new IOException("Connection closed with -1 on reading size.");
 		    	}
 	    	}
-	    	
+
 	    	buff.flip();
-	    	
+
 	    	int length = buff.getInt();
 	    	ByteArrayOutputStream output = new ByteArrayOutputStream(length);
 	    	WritableByteChannel outCh = Channels.newChannel(output);
-	    	
+
 	    	int count = 0;
 	    	while (count < length) {
 	        	buff.clear();
@@ -129,19 +126,19 @@ public class Link {
 	    		buff.flip();
 	    		outCh.write(buff);
 	    	}
-	    	
+
 	        return output.toByteArray();
     	}
     }
-    */
-    
+     */
+
     private static void doWrite(SocketChannel ch, ByteBuffer[] buffers, SSLEngine sslEngine) throws IOException {
         SSLSession sslSession = sslEngine.getSession();
         ByteBuffer pkgBuf = ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
         SSLEngineResult engResult;
 
         ByteBuffer headBuf = ByteBuffer.allocate(4);
-        
+
         int totalLen = 0;
         for (ByteBuffer buffer : buffers) {
             totalLen += buffer.limit();
@@ -157,7 +154,7 @@ public class Link {
                     engResult.getStatus() != SSLEngineResult.Status.OK) {
                 throw new IOException("SSL: SSLEngine return bad result! " + engResult);
             }
-            
+
             processedLen = 0;
             for (ByteBuffer buffer : buffers) {
                 processedLen += buffer.position();
@@ -189,7 +186,7 @@ public class Link {
             }
         }
     }
-    
+
     /**
      * write method to write to a socket.  This method writes to completion so
      * it doesn't follow the nio standard.  We use this to make sure we write
@@ -204,21 +201,21 @@ public class Link {
             doWrite(ch, buffers, sslEngine);
         } 
     }
-    
+
     /* SSL has limitation of 16k, we may need to split packets. 18000 is 16k + some extra SSL informations */
     protected static final int      MAX_SIZE_PER_PACKET = 18000;
     protected static final int      HEADER_FLAG_FOLLOWING = 0x10000;
-    
+
     public byte[] read(SocketChannel ch) throws IOException {
         if (_readHeader) {   // Start of a packet
             if (_readBuffer.position() == 0) {
                 _readBuffer.limit(4);
             }
-            
+
             if (ch.read(_readBuffer) == -1) {
                 throw new IOException("Connection closed with -1 on reading size.");
             }
-            
+
             if (_readBuffer.hasRemaining()) {
                 s_logger.trace("Need to read the rest of the packet length");
                 return null;
@@ -229,24 +226,24 @@ public class Link {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Packet length is " + readSize);
             }
-            
+
             if (readSize > MAX_SIZE_PER_PACKET) {
-            	throw new IOException("Wrong packet size: " + readSize);
+                throw new IOException("Wrong packet size: " + readSize);
             }
-            
+
             if (!_gotFollowingPacket) {
                 _plaintextBuffer = ByteBuffer.allocate(2000);
             }
-            
+
             if ((header & HEADER_FLAG_FOLLOWING) != 0) {
                 _gotFollowingPacket = true;
             } else {
                 _gotFollowingPacket = false;
             }
-            
+
             _readBuffer.clear();
             _readHeader = false;
-            
+
             if (_readBuffer.capacity() < readSize) {
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace("Resizing the byte buffer from " + _readBuffer.capacity());
@@ -255,18 +252,18 @@ public class Link {
             }
             _readBuffer.limit(readSize);
         }
-        
+
         if (ch.read(_readBuffer) == -1) {
             throw new IOException("Connection closed with -1 on read.");
         }
-        
+
         if (_readBuffer.hasRemaining()) {   // We're not done yet.
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Still has " + _readBuffer.remaining());
             }
             return null;
         }
-        
+
         _readBuffer.flip();
 
         ByteBuffer appBuf;
@@ -287,7 +284,7 @@ public class Link {
             if (remaining == _readBuffer.remaining()) {
                 throw new IOException("SSL: Unable to unwrap received data! still remaining " + remaining + "bytes!");
             }
-            
+
             appBuf.flip();
             if (_plaintextBuffer.remaining() < appBuf.limit()) {
                 // We need to expand _plaintextBuffer for more data
@@ -301,10 +298,10 @@ public class Link {
                 s_logger.trace("Done with packet: " + appBuf.limit());
             }
         }
-        
+
         _readBuffer.clear();
         _readHeader = true;
-        
+
         if (!_gotFollowingPacket) {
             _plaintextBuffer.flip();
             byte[] result = new byte[_plaintextBuffer.limit()];
@@ -317,15 +314,15 @@ public class Link {
             return null;
         }
     }
-    
+
     public void send(byte[] data) throws ClosedChannelException {
         send(data, false);
     }
-    
+
     public void send(byte[] data, boolean close) throws ClosedChannelException {
         send(new ByteBuffer[] { ByteBuffer.wrap(data) }, close);
     }
-    
+
     public void send(ByteBuffer[] data, boolean close) throws ClosedChannelException {
         ByteBuffer[] item = new ByteBuffer[data.length + 1];
         int remaining = 0;
@@ -333,15 +330,15 @@ public class Link {
             remaining += data[i].remaining();
             item[i + 1] = data[i];
         }
-        
+
         item[0] = ByteBuffer.allocate(4);
         item[0].putInt(remaining);
         item[0].flip();
-        
+
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Sending packet of length " + remaining);
         }
-        
+
         _writeQueue.add(item);
         if  (close) {
             _writeQueue.add(new ByteBuffer[0]);
@@ -353,17 +350,17 @@ public class Link {
             _connection.change(SelectionKey.OP_WRITE, _key, null);
         }
     }
-    
+
     public void send(ByteBuffer[] data) throws ClosedChannelException {
         send(data, false);
     }
-    
+
     public synchronized void close() {
         if (_key != null) {
             _connection.close(_key);
         }
     }
-    
+
     public boolean write(SocketChannel ch) throws IOException {
         ByteBuffer[] data = null;
         while ((data = _writeQueue.poll()) != null) {
@@ -381,26 +378,26 @@ public class Link {
         }
         return false;
     }
-    
+
     public InetSocketAddress getSocketAddress() {
         return _addr;
     }
-    
+
     public String getIpAddress() {
         return _addr.getAddress().toString();
     }
-    
+
     public synchronized void terminated() {
         _key = null;
     }
-    
+
     public synchronized void schedule(Task task) throws ClosedChannelException {
         if (_key == null) {
             throw new ClosedChannelException();
         }
         _connection.scheduleTask(task);
     }
-    
+
     public static SSLContext initSSLContext(boolean isClient) throws Exception {
         InputStream stream;
         SSLContext sslContext = null;
@@ -408,42 +405,42 @@ public class Link {
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
         KeyStore ks = KeyStore.getInstance("JKS");
         TrustManager[] tms;
-        
+
         if (!isClient) {
-        	char[] passphrase = "vmops.com".toCharArray();
-        	File confFile= PropertiesUtil.findConfigFile("db.properties");
-        	/* This line may throw a NPE, but that's due to fail to find db.properities, meant some bugs in the other places */
-        	String confPath = confFile.getParent();
-        	String keystorePath = confPath + "/cloud.keystore";
-        	if (new File(keystorePath).exists()) {
-        	    stream = new FileInputStream(keystorePath);
-        	} else {
-        		s_logger.warn("SSL: Fail to find the generated keystore. Loading fail-safe one to continue.");
-        		stream = NioConnection.class.getResourceAsStream("/cloud.keystore");
-        	}
-        	ks.load(stream, passphrase);
-        	stream.close();
-        	kmf.init(ks, passphrase);
-        	tmf.init(ks);
-        	tms = tmf.getTrustManagers();
+            char[] passphrase = "vmops.com".toCharArray();
+            File confFile= PropertiesUtil.findConfigFile("db.properties");
+            /* This line may throw a NPE, but that's due to fail to find db.properities, meant some bugs in the other places */
+            String confPath = confFile.getParent();
+            String keystorePath = confPath + "/cloud.keystore";
+            if (new File(keystorePath).exists()) {
+                stream = new FileInputStream(keystorePath);
+            } else {
+                s_logger.warn("SSL: Fail to find the generated keystore. Loading fail-safe one to continue.");
+                stream = NioConnection.class.getResourceAsStream("/cloud.keystore");
+            }
+            ks.load(stream, passphrase);
+            stream.close();
+            kmf.init(ks, passphrase);
+            tmf.init(ks);
+            tms = tmf.getTrustManagers();
         } else {
-        	ks.load(null, null);
-        	kmf.init(ks, null);
-        	tms = new TrustManager[1];
-        	tms[0] = new TrustAllManager();
+            ks.load(null, null);
+            kmf.init(ks, null);
+            tms = new TrustManager[1];
+            tms[0] = new TrustAllManager();
         }
-        
+
         sslContext = SSLContext.getInstance("TLS");
         sslContext.init(kmf.getKeyManagers(), tms, null);
         if (s_logger.isTraceEnabled()) {
-        	s_logger.trace("SSL: SSLcontext has been initialized");
+            s_logger.trace("SSL: SSLcontext has been initialized");
         }
 
         return sslContext;
     }
 
     public static void doHandshake(SocketChannel ch, SSLEngine sslEngine,
-                               boolean isClient) throws IOException {
+            boolean isClient) throws IOException {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("SSL: begin Handshake, isClient: " + isClient);
         }
@@ -452,13 +449,13 @@ public class Link {
         SSLSession sslSession = sslEngine.getSession();
         HandshakeStatus hsStatus;
         ByteBuffer in_pkgBuf =
-            ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
+                ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
         ByteBuffer in_appBuf =
-            ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
+                ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
         ByteBuffer out_pkgBuf =
-            ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
+                ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
         ByteBuffer out_appBuf =
-            ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
+                ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
         int count;
 
         if (isClient) {
@@ -498,7 +495,7 @@ public class Link {
                 }
                 engResult = sslEngine.unwrap(in_pkgBuf, in_appBuf);
                 ByteBuffer tmp_pkgBuf =
-                    ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
+                        ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
                 int loop_count = 0;
                 while (engResult.getStatus() == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
                     // The client is too slow? Cut it and let it reconnect
@@ -515,13 +512,13 @@ public class Link {
                         throw new IOException("Connection closed with -1 on reading size.");
                     }
                     tmp_pkgBuf.flip();
-                    
+
                     in_pkgBuf.mark();
                     in_pkgBuf.position(in_pkgBuf.limit());
                     in_pkgBuf.limit(in_pkgBuf.limit() + tmp_pkgBuf.limit());
                     in_pkgBuf.put(tmp_pkgBuf);
                     in_pkgBuf.reset();
-                    
+
                     in_appBuf.clear();
                     engResult = sslEngine.unwrap(in_pkgBuf, in_appBuf);
                     loop_count ++;

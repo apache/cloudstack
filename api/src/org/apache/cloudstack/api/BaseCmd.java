@@ -25,7 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.region.RegionService;
+import org.apache.cloudstack.usage.UsageService;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
@@ -40,6 +44,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkService;
+import com.cloud.network.NetworkUsageService;
 import com.cloud.network.StorageNetworkService;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.as.AutoScaleService;
@@ -57,6 +62,7 @@ import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.StorageService;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.snapshot.SnapshotService;
 import com.cloud.template.TemplateService;
 import com.cloud.user.Account;
@@ -64,9 +70,8 @@ import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.vm.BareMetalVmService;
 import com.cloud.vm.UserVmService;
+import com.cloud.vm.snapshot.VMSnapshotService;
 
 public abstract class BaseCmd {
     private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
@@ -81,23 +86,6 @@ public abstract class BaseCmd {
         BOOLEAN, DATE, FLOAT, INTEGER, SHORT, LIST, LONG, OBJECT, MAP, STRING, TZDATE, UUID
     }
 
-    // FIXME: Extract these out into a separate file
-    // Client error codes
-    public static final int MALFORMED_PARAMETER_ERROR = 430;
-    public static final int PARAM_ERROR = 431;
-    public static final int UNSUPPORTED_ACTION_ERROR = 432;
-    public static final int PAGE_LIMIT_EXCEED = 433;
-
-    // Server error codes
-    public static final int INTERNAL_ERROR = 530;
-    public static final int ACCOUNT_ERROR = 531;
-    public static final int ACCOUNT_RESOURCE_LIMIT_ERROR = 532;
-    public static final int INSUFFICIENT_CAPACITY_ERROR = 533;
-    public static final int RESOURCE_UNAVAILABLE_ERROR = 534;
-    public static final int RESOURCE_ALLOCATION_ERROR = 534;
-    public static final int RESOURCE_IN_USE_ERROR = 536;
-    public static final int NETWORK_RULE_CONFLICT_ERROR = 537;
-
     public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     public static final DateFormat NEW_INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public static Pattern newInputDateFormat = Pattern.compile("[\\d]+-[\\d]+-[\\d]+ [\\d]+:[\\d]+:[\\d]+");
@@ -109,74 +97,45 @@ public abstract class BaseCmd {
     @Parameter(name = "response", type = CommandType.STRING)
     private String responseType;
 
-    public static ComponentLocator s_locator;
-    public static ConfigurationService _configService;
-    public static AccountService _accountService;
-    public static UserVmService _userVmService;
-    public static ManagementService _mgr;
-    public static StorageService _storageService;
-    public static ResourceService _resourceService;
-    public static NetworkService _networkService;
-    public static TemplateService _templateService;
-    public static SecurityGroupService _securityGroupService;
-    public static SnapshotService _snapshotService;
-    public static ConsoleProxyService _consoleProxyService;
-    public static VpcVirtualNetworkApplianceService _routerService;
-    public static ResponseGenerator _responseGenerator;
-    public static EntityManager _entityMgr;
-    public static RulesService _rulesService;
-    public static AutoScaleService _autoScaleService;
-    public static LoadBalancingRulesService _lbService;
-    public static RemoteAccessVpnService _ravService;
-    public static BareMetalVmService _bareMetalVmService;
-    public static ProjectService _projectService;
-    public static FirewallService _firewallService;
-    public static DomainService _domainService;
-    public static ResourceLimitService _resourceLimitService;
-    public static IdentityService _identityService;
-    public static StorageNetworkService _storageNetworkService;
-    public static TaggedResourceService _taggedResourceService;
-    public static VpcService _vpcService;
-    public static NetworkACLService _networkACLService;
-    public static Site2SiteVpnService _s2sVpnService;
+    @Inject public ConfigurationService _configService;
+    @Inject public AccountService _accountService;
+    @Inject public UserVmService _userVmService;
+    @Inject public ManagementService _mgr;
+    @Inject public StorageService _storageService;
+    @Inject public VolumeApiService _volumeService;
+    @Inject public ResourceService _resourceService;
+    @Inject public NetworkService _networkService;
+    @Inject public TemplateService _templateService;
+    @Inject public SecurityGroupService _securityGroupService;
+    @Inject public SnapshotService _snapshotService;
+    @Inject public ConsoleProxyService _consoleProxyService;
+    @Inject public VpcVirtualNetworkApplianceService _routerService;
+    @Inject public ResponseGenerator _responseGenerator;
+    @Inject public EntityManager _entityMgr;
+    @Inject public RulesService _rulesService;
+    @Inject public AutoScaleService _autoScaleService;
+    @Inject public LoadBalancingRulesService _lbService;
+    @Inject public RemoteAccessVpnService _ravService;
+    @Inject public ProjectService _projectService;
+    @Inject public FirewallService _firewallService;
+    @Inject public DomainService _domainService;
+    @Inject public ResourceLimitService _resourceLimitService;
+    @Inject public IdentityService _identityService;
+    @Inject public StorageNetworkService _storageNetworkService;
+    @Inject public TaggedResourceService _taggedResourceService;
+    @Inject public VpcService _vpcService;
+    @Inject public NetworkACLService _networkACLService;
+    @Inject public Site2SiteVpnService _s2sVpnService;
 
-    public static QueryService _queryService;
-
-    public static void setComponents(ResponseGenerator generator) {
-        ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-        _mgr = (ManagementService) ComponentLocator.getComponent(ManagementService.Name);
-        _accountService = locator.getManager(AccountService.class);
-        _configService = locator.getManager(ConfigurationService.class);
-        _userVmService = locator.getManager(UserVmService.class);
-        _storageService = locator.getManager(StorageService.class);
-        _resourceService = locator.getManager(ResourceService.class);
-        _networkService = locator.getManager(NetworkService.class);
-        _templateService = locator.getManager(TemplateService.class);
-        _securityGroupService = locator.getManager(SecurityGroupService.class);
-        _snapshotService = locator.getManager(SnapshotService.class);
-        _consoleProxyService = locator.getManager(ConsoleProxyService.class);
-        _routerService = locator.getManager(VpcVirtualNetworkApplianceService.class);
-        _entityMgr = locator.getManager(EntityManager.class);
-        _rulesService = locator.getManager(RulesService.class);
-        _lbService = locator.getManager(LoadBalancingRulesService.class);
-        _autoScaleService = locator.getManager(AutoScaleService.class);
-        _ravService = locator.getManager(RemoteAccessVpnService.class);
-        _responseGenerator = generator;
-        _bareMetalVmService = locator.getManager(BareMetalVmService.class);
-        _projectService = locator.getManager(ProjectService.class);
-        _firewallService = locator.getManager(FirewallService.class);
-        _domainService = locator.getManager(DomainService.class);
-        _resourceLimitService = locator.getManager(ResourceLimitService.class);
-        _identityService = locator.getManager(IdentityService.class);
-        _storageNetworkService = locator.getManager(StorageNetworkService.class);
-        _taggedResourceService = locator.getManager(TaggedResourceService.class);
-        _vpcService = locator.getManager(VpcService.class);
-        _networkACLService = locator.getManager(NetworkACLService.class);
-        _s2sVpnService = locator.getManager(Site2SiteVpnService.class);
-        _queryService = locator.getManager(QueryService.class);
-    }
+    @Inject public QueryService _queryService;
+    @Inject public UsageService _usageService;
+    @Inject public NetworkUsageService _networkUsageService;
+    @Inject public VMSnapshotService _vmSnapshotService;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
+
+    public void configure() {
+    }
 
     public String getResponseType() {
         if (responseType == null) {
@@ -194,7 +153,7 @@ public abstract class BaseCmd {
     /**
      * For commands the API framework needs to know the owner of the object being acted upon. This method is
      * used to determine that information.
-     *
+     * 
      * @return the id of the account that owns the object being acted upon
      */
     public abstract long getEntityOwnerId();
@@ -230,7 +189,7 @@ public abstract class BaseCmd {
             int arrayStartIndex = key.indexOf('[');
             int arrayStartLastIndex = key.lastIndexOf('[');
             if (arrayStartIndex != arrayStartLastIndex) {
-                throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
+                throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
                         + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
             }
 
@@ -239,7 +198,7 @@ public abstract class BaseCmd {
                 int arrayEndLastIndex = key.lastIndexOf(']');
                 if ((arrayEndIndex < arrayStartIndex) || (arrayEndIndex != arrayEndLastIndex)) {
                     // malformed parameter
-                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
+                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
                             + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 }
 
@@ -247,7 +206,7 @@ public abstract class BaseCmd {
                 int fieldIndex = key.indexOf('.');
                 String fieldName = null;
                 if (fieldIndex < arrayEndIndex) {
-                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
+                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
                             + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 } else {
                     fieldName = key.substring(fieldIndex + 1);
@@ -272,7 +231,7 @@ public abstract class BaseCmd {
                 }
 
                 if (!parsedIndex) {
-                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
+                    throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key
                             + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 }
 
@@ -306,14 +265,14 @@ public abstract class BaseCmd {
         StringBuffer sb = new StringBuffer();
         if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             // JSON response
-            sb.append("{ \"" + getCommandName() + "\" : { " + "\"@attributes\":{\"cloudstack-version\":\"" + _mgr.getVersion() + "\"},");
+            sb.append("{ \"" + getCommandName() + "\" : { " + "\"@attributes\":{\"cloud-stack-version\":\"" + _mgr.getVersion() + "\"},");
             sb.append("\"errorcode\" : \"" + apiException.getErrorCode() + "\", \"description\" : \"" + apiException.getDescription() + "\" } }");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
             sb.append("<" + getCommandName() + ">");
             sb.append("<errorcode>" + apiException.getErrorCode() + "</errorcode>");
             sb.append("<description>" + escapeXml(apiException.getDescription()) + "</description>");
-            sb.append("</" + getCommandName() + " cloudstack-version=\"" + _mgr.getVersion() + "\">");
+            sb.append("</" + getCommandName() + " cloud-stack-version=\"" + _mgr.getVersion() + "\">");
         }
         return sb.toString();
     }
@@ -324,10 +283,10 @@ public abstract class BaseCmd {
 
         // set up the return value with the name of the response
         if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            prefixSb.append("{ \"" + getCommandName() + "\" : { \"@attributes\":{\"cloudstack-version\":\"" + _mgr.getVersion() + "\"},");
+            prefixSb.append("{ \"" + getCommandName() + "\" : { \"@attributes\":{\"cloud-stack-version\":\"" + _mgr.getVersion() + "\"},");
         } else {
             prefixSb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            prefixSb.append("<" + getCommandName() + " cloudstack-version=\"" + _mgr.getVersion() + "\">");
+            prefixSb.append("<" + getCommandName() + " cloud-stack-version=\"" + _mgr.getVersion() + "\">");
         }
 
         int i = 0;
@@ -507,7 +466,7 @@ public abstract class BaseCmd {
                 if (!enabledOnly || account.getState() == Account.State.enabled) {
                     return account.getId();
                 } else {
-                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
+                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");                    
                 }
             } else {
                 // idList is not used anywhere, so removed it now
@@ -524,7 +483,7 @@ public abstract class BaseCmd {
                     return project.getProjectAccountId();
                 } else {
                     PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() + " as it's no longer active");
-                    ex.addProxyObject(project, projectId, "projectId");
+                    ex.addProxyObject(project, projectId, "projectId");                    
                     throw ex;
                 }
             } else {

@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
@@ -41,26 +42,24 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
-import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NiciraNvpDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -70,10 +69,9 @@ import com.cloud.vm.VirtualMachineProfile;
 public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpGuestNetworkGuru.class);
     
+   
     @Inject 
-    NetworkManager _externalNetworkManager;
-    @Inject
-    NetworkManager _networkMgr;
+    NetworkModel _networkModel;
     @Inject
     NetworkDao _networkDao;
     @Inject
@@ -153,7 +151,12 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         long dcId = dest.getDataCenter().getId();
 
         //get physical network id
-        long physicalNetworkId = _networkMgr.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
+        Long physicalNetworkId = network.getPhysicalNetworkId();
+        
+        // physical network id can be null in Guest Network in Basic zone, so locate the physical network
+        if (physicalNetworkId == null) {        
+            physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
+        }
 
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
                 network.getDataCenterId(), physicalNetworkId);

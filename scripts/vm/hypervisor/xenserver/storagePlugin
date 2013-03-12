@@ -1,0 +1,71 @@
+#!/usr/bin/python
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# Version @VERSION@
+#
+# A plugin for executing script needed by vmops cloud 
+
+import os, sys, time
+import XenAPIPlugin
+sys.path.extend(["/opt/xensource/sm/", "/usr/lib/xcp/sm/", "/usr/local/sbin/", "/sbin/"])
+import util
+import base64
+import socket
+import stat
+import tempfile
+import subprocess
+import zlib
+import urllib2
+import traceback
+
+def echo(fn):
+    def wrapped(*v, **k):
+        name = fn.__name__
+        util.SMlog("#### xen plugin enter  %s ####" % name )
+        res = fn(*v, **k)
+        util.SMlog("#### xen plugin exit  %s ####" % name )
+        return res
+    return wrapped
+
+@echo
+def downloadTemplateFromUrl(session, args):
+    destPath = args["destPath"]
+    srcUrl = args["srcUrl"]
+    try:
+        template = urllib2.urlopen(srcUrl)
+        destFile = open(destPath, "wb")
+        destFile.write(template.read())
+        destFile.close()
+        return "success"
+    except:
+        util.SMlog("exception: " + str(sys.exc_info()))
+        return ""
+    
+@echo
+def getTemplateSize(session, args):
+   srcUrl = args["srcUrl"]
+   try:
+       template = urllib2.urlopen(srcUrl)
+       headers = template.info()
+       return str(headers["Content-Length"])
+   except:
+       return ""
+if __name__ == "__main__":
+    XenAPIPlugin.dispatch({"downloadTemplateFromUrl": downloadTemplateFromUrl
+                           ,"getTemplateSize": getTemplateSize
+                          })

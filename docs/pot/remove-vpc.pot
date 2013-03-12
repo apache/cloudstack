@@ -1,0 +1,75 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Editing, Restarting, and Removing a Virtual Private Cloud"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that all the tiers are removed before you remove a VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPC."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All the VPCs that you have created for the account is listed in the page."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select the VPC you want to work with."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To remove, click the Remove VPC button<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/remove-vpc.png\" /> </imageobject> <textobject> <phrase>remove-vpc.png: button to remove a VPC</phrase> </textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can edit the name and description of a VPC. To do that, select the VPC, then click the Edit button. <inlinemediaobject> <imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> </imageobject> <textobject> <phrase>edit-icon.png: button to edit a VPC</phrase> </textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To restart a VPC, select the VPC, then click the Restart button.<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/restart-vpc.png\" /> </imageobject> <textobject> <phrase>restart-vpc.png: button to restart a VPC</phrase> </textobject> </inlinemediaobject>"
+msgstr ""
+

@@ -21,19 +21,20 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
@@ -109,7 +110,11 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
             description="Register template for the project")
     private Long projectId;
-
+    
+    @Parameter(name=ApiConstants.IMAGE_STORE_UUID, type=CommandType.STRING,
+            description="Image store uuid")
+    private String imageStoreUuid;
+    
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="Template details in key/value pairs.")
     protected Map details;
 
@@ -188,6 +193,10 @@ public class RegisterTemplateCmd extends BaseCmd {
     public String getTemplateTag() {
         return templateTag;
     }
+    
+    public String getImageStoreUuid() {
+        return this.imageStoreUuid;
+    }
 
     public Map getDetails() {
         if (details == null || details.isEmpty()) {
@@ -233,11 +242,11 @@ public class RegisterTemplateCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register template");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to register template");
             }
         } catch (URISyntaxException ex1) {
             s_logger.info(ex1);
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, ex1.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex1.getMessage());
         }
     }
 }

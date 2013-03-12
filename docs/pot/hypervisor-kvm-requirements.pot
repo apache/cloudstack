@@ -1,0 +1,115 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "System Requirements for KVM Hypervisor Hosts"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "KVM is included with a variety of Linux-based operating systems. Although you are not required to run these distributions, the following are recommended:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "CentOS / RHEL: 6.3"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ubuntu: 12.04(.1)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The main requirement for KVM hypervisors is the libvirt and Qemu version. No matter what Linux distribution you are using, make sure the following requirements are met:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "libvirt: 0.9.4 or higher"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Qemu/KVM: 1.0 or higher"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The default bridge in &PRODUCT; is the Linux native bridge implementation (bridge module). &PRODUCT; includes an option to work with OpenVswitch, the requirements are listed below"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "libvirt: 0.9.11 or higher"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "openvswitch: 1.7.1 or higher"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In addition, the following hardware requirements apply:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Within a single cluster, the hosts must be of the same distribution version."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All hosts within a cluster must be homogenous. The CPUs must be of the same type, count, and feature flags."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Must support HVM (Intel-VT or AMD-V enabled)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "64-bit x86 CPU (more cores results in better performance)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4 GB of memory"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "At least 1 NIC"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When you deploy &PRODUCT;, the hypervisor host must not have any VMs already running"
+msgstr ""
+

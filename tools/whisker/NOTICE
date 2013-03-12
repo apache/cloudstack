@@ -1,0 +1,697 @@
+
+  
+  This product includes software developed at
+  The Apache Software Foundation (http://www.apache.org/).
+      
+
+
+  
+  This distribution contains third party resources requiring the following notices:
+
+    
+  For 
+    cloud-ejb-api-3.0.jar
+    cloud-email.jar
+    cloud-jstl-1.2.jar
+    jaxb-api-2.1.jar
+    jaxb-impl-2.1.7.jar
+    jaxb-xjc-2.1.7.jar
+    jta-1.1.jar
+    mail-1.4.jar
+  
+
+        NOTICE PURSUANT TO SECTION 9 OF THE COMMON DEVELOPMENT AND DISTRIBUTION LICENSE
+        (CDDL)
+        
+        The code released under the CDDL shall be governed by the laws of the State of
+        California (excluding conflict-of-law provisions). Any litigation relating to
+        this License shall be subject to the jurisdiction of the Federal Courts of the
+        Northern District of California and the state courts of the State of California,
+        with venue lying in Santa Clara County, California.
+
+    
+  For 
+    cloud-javax.persistence-2.0.0.jar
+  
+
+        EclipseLink 2.0.0
+        
+        Dec 10th, 2009
+        
+        About
+        
+        The EclipseLink project's goal is to provide a complete persistence framework
+        that is both comprehensive and universal. It will run in any Java environment
+        and read and write objects to virtually any type of data source, including
+        relational databases, and XML. EclipseLink will focus on providing leading edge
+        support, including advanced feature extensions, for the dominant persistence
+        standards for each target data source; Java Persistence API (JPA) for relational
+        databases, Java API for XML Binding (JAXB) for XML, Service Data Objects (SDO),
+        and Database Web services (DBWS).
+        
+        For tips on getting started with EclipseLink, please see the following
+        resources:
+        
+        EclipseLink 2.0.0 Release Notes Documentation Examples and How To License
+        
+        The Eclipse Foundation makes available all content in this plug-in ("Content").
+        Unless otherwise indicated below, the Content is provided to you under the terms
+        and conditions of the Eclipse Public License Version 1.0 ("EPL") and Eclipse
+        Distribution License Version 1.0 ("EDL"). A copy of the EPL is available at
+        http://www.eclipse.org/legal/epl-v10.html and a copy of the EDL is available at
+        http://www.eclipse.org/org/documents/edl-v10.php. For purposes of the EPL,
+        "Program" will mean the Content.
+        
+        If you did not receive this Content directly from the Eclipse Foundation, the
+        Content is being redistributed by another party ("Redistributor") and different
+        terms and conditions may apply to your use of any object code in the Content.
+        Check the Redistributor's license that was provided with the Content. If no such
+        license exists, contact the Redistributor. Unless otherwise indicated below, the
+        terms and conditions of the EPL and EDL still apply to any source code in the
+        Content and such source code may be obtained at http://www.eclipse.org.
+        
+        Third Party Content
+        
+        The Content includes items that have been sourced from third parties as set out
+        below. If you did not receive this Content directly from the Eclipse Foundation,
+        the following is provided for informational purposes only, and you should look
+        to the Redistributor's license for terms and conditions of use.
+        
+        Foundation Dependencies ASM EclipseLink JPA ANTLR Java Persistence API (JPA) 1.0
+        - EJB 3.0 Java Persistence API (JPA) 2.0 EARLY ACCESS EclipseLink MOXy Java
+        Architecture for XML Binding (JAXB) Java Mail Java Activation Framework
+        Streaming API for XML (StAX) EclipseLink SDO Service Data Objects (SDO)
+        Utilities Java Connector Xerces WSDL4J 1.6.2 ASM v1.5.3
+        
+        The EclipseLink Project includes ASM for the purpose of byte code weaving. The
+        AMS library is re-packaged within the source of the project
+        (org.persistence.eclipse.internal.libraries.asm.*) to avoid version collisions
+        with other usage of ASM. A custom patch has been added to the ASM 1.5.3 source
+        to handle an issue with other usages. This fix has also been contributed back to
+        the ASM project for inclusion in later projects.
+        
+        The source code is available within the project's subversion repository. The
+        binaries are distributed within the eclipselink.jar and in the
+        org.eclipse.persistence.asm_2.0.0.v*.jar bundle.
+        
+        http://asm.objectweb.org/license.html
+        
+        Copyright (c) 2000-2005 INRIA, France Telecom, All rights reserved.
+        
+        Redistribution and use in source and binary forms, with or without modification,
+        are permitted provided that the following conditions are met:
+        
+        Redistributions of source code must retain the above copyright notice, this list
+        of conditions and the following disclaimer. Redistributions in binary form must
+        reproduce the above copyright notice, this list of conditions and the following
+        disclaimer in the documentation and/or other materials provided with the
+        distribution. Neither the name of the copyright holders nor the names of its
+        contributors may be used to endorse or promote products derived from this
+        software without specific prior written permission. THIS SOFTWARE IS PROVIDED BY
+        THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"AND ANY EXPRESS OR IMPLIED
+        WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THEIMPLIED WARRANTIES OF
+        MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSEARE DISCLAIMED. IN NO EVENT
+        SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BELIABLE FOR ANY DIRECT, INDIRECT,
+        INCIDENTAL, SPECIAL, EXEMPLARY, ORCONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+        LIMITED TO, PROCUREMENT OFSUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+        PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+        LIABILITY, WHETHER INCONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+        OR OTHERWISE)ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+        OFTHE POSSIBILITY OF SUCH DAMAGE.
+        
+        ANTLR v3.0
+        
+        The ANTLR library (license) is included within EclipseLink Project to enable
+        parsing of the Java Persistence Query language (JP QL). The ANTLR library is re-
+        packaged within the project in the
+        org.eclipse.persistence.internal.libraries.antlr.* packages.
+        
+        The source is available with the project's subversion repository. The binaries
+        are distributed within the eclipselink.jar and in the
+        org.eclipse.persistence.antlr_2.0.0.v*.jar bundle.
+        
+        Java Architecture for XML Binding (JAXB) v2.0.5
+        
+        The JAXB libraries distributed under CDDL v1.0 are included within the
+        EclipseLink Project to enable the MOXY component's implementation of JAXB.
+        
+        JAXB Libraries:
+        
+        /jlib/moxy/javax.xml.bind_2.1.12.v20090708-1500.jar /jlib/moxy/jaxb-impl.jar
+        /jlib/moxy/jaxb.xjc.jar Java Persistence (JPA) 1.0 - EJB 3.0
+        
+        The Java Persistence API, included with EJB 3.0, is available for download from
+        the ejb-api directory in the glassfish CVS repository.It is distributed under
+        CDDLv1.0 . The jar is being shipped as an OSGi bundle and is required for
+        compilation of some container based fuctionality.
+        
+        Java Persistence (JPA) 2.0.
+        
+        EclipseLink is the Java Persistence (JPA) 2.0 Reference Implementation (JSR
+        317). The JPA 2.0 specification API is included in EclipseLink under the EPL and
+        EDL licenses.
+        
+        Java Mail v1.4
+        
+        The Java Mail library (mail.jar) is distributed with the JAXB v2.0.5 under CDDL
+        v1.0 and is included within the EclipseLink Project distribution to support Web
+        Services attachment handling in the MOXy component. It is only required when
+        using Java SE 5 (Java Mail is included in Java SE 6).
+        
+        Java Activation Framework v1.1
+        
+        The Java Activation Framework (activation.jar) is distributed with the JAXB
+        v2.0.5 under CDDL v1.0 and is included within the EclipseLink Project
+        distribution to support Web Services attachment handling in the MOXy component.
+        It is only required when using Java SE 5 (The Java Activation Framework is
+        included in Java SE 6).
+        
+        Streaming API for XML (StAX) v1.0
+        
+        The Streaming API for XML (StAX) library (jsr173_1.0_api.jar) is distributed
+        with the JAXB v2.0.5 under CDDL v1.0 and is included within the EclipseLink
+        Project distribution as an optional XML processing approach in the MOXy
+        component.
+        
+        Service Data Objects (SDO) v2.1.1
+        
+        The Service Data Objects (SDO) API is distributed under a CDDLv1.0 and custom
+        license. It provides the standard API implemented by the EclipseLink Project's
+        SDO component.
+        
+        Java Connector v1.5
+        
+        The JCA 1.5 API is available for download from the connector-api directory in
+        the glassfish CVS repository. It is distributed under CDDLv1.0 .
+        
+        This jar is being shipped and required by the Workbench only. When using
+        EclipseLink in a container where JCA integration is required that container will
+        provide the necessary API libraries.
+        
+        Xerces v2.9.0
+        
+        Xerces 2.9.0 is available from the Xerces home page. It is distributed under
+        Apache 2.0.
+        
+        This jar is shipped for the Workbench's use only in the reading and writing of
+        XML configuration files.
+        
+        WSDL4j v1.6.2
+        
+        WSDL4J 1.6.2 is available for download from the wsdl4j project. It distributed
+        under CPLv1.0 .
+        
+        This jar is being shipped as a OSGi bundle and is only required for the DBWS
+        Builder utility.
+
+    
+  For 
+    cloud-commons-logging-1.1.1.jar
+    commons-logging-1.1.1.jar
+  
+
+        // ------------------------------------------------------------------
+        // NOTICE file corresponding to the section 4d of The Apache License,
+        // Version 2.0, in this case for Commons Logging
+        // ------------------------------------------------------------------
+        
+        Commons Logging
+        Copyright 2001-2007 The Apache Software Foundation
+        
+        This product includes/uses software(s) developed by 'an unknown organization'
+          - Unnamed - avalon-framework:avalon-framework:jar:4.1.3
+          - Unnamed - log4j:log4j:jar:1.2.12
+          - Unnamed - logkit:logkit:jar:1.0.1
+
+    
+  For 
+    neethi-2.0.4.jar
+  
+
+        =========================================================================
+        ==  NOTICE file corresponding to the section 4 d of                    ==
+        ==  the Apache License, Version 2.0,                                   ==
+        ==  in this case for the Apache AXIOM distribution.                    ==
+        =========================================================================
+        
+        This product includes software developed by
+        The Apache Software Foundation (http://www.apache.org/).
+        Portions Copyright 2006 International Business Machines Corp.
+        
+        Please read the different LICENSE files present in the licenses directory of
+        this distribution.
+
+    
+  For 
+    java-ipv6.jar
+  
+
+        Java IPv6
+           Copyright 2013 Jan Van Besien
+
+    
+  For 
+    cloud-jasypt-1.9.jar
+  
+
+        Copyright (c) 2007-2010, The JASYPT team (http://www.jasypt.org)
+         
+           Licensed under the Apache License, Version 2.0 (the "License");
+           you may not use this file except in compliance with the License.
+           You may obtain a copy of the License at
+         
+               http://www.apache.org/licenses/LICENSE-2.0
+         
+           Unless required by applicable law or agreed to in writing, software
+           distributed under the License is distributed on an "AS IS" BASIS,
+           WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+           See the License for the specific language governing permissions and
+           limitations under the License.
+        
+        
+        ---------------------------------
+        
+        
+        
+        This distribution includes cryptographic software.  The country in 
+        which you currently reside may have restrictions on the import, 
+        possession, use, and/or re-export to another country, of 
+        encryption software.  BEFORE using any encryption software, please 
+        check your country's laws, regulations and policies concerning the
+        import, possession, or use, and re-export of encryption software, to 
+        see if this is permitted.  See http://www.wassenaar.org/ for more
+        information.
+        
+        The U.S. Government Department of Commerce, Bureau of Industry and
+        Security (BIS), has classified this software as Export Commodity 
+        Control Number (ECCN) 5D002.C.1, which includes information security
+        software using or performing cryptographic functions with asymmetric
+        algorithms.  The form and manner of this distribution makes it 
+        eligible for export under the License Exception ENC Technology 
+        Software Unrestricted (TSU) exception (see the BIS Export 
+        Administration Regulations, Section 740.13) for both object code and 
+        source code.
+        
+        The following provides more details on the cryptographic software 
+        used (note that this software is not included in the distribution):
+        
+          * The PBE Encryption facilities require the Java Cryptography 
+            extensions: http://java.sun.com/javase/technologies/security/.
+        
+        ---------------------------------
+        
+        Distributions of this software may include software developed by
+        The Apache Software Foundation (http://www.apache.org/).
+        
+        ---------------------------------
+        
+        
+        ICU License - ICU 1.8.1 and later
+        
+        COPYRIGHT AND PERMISSION NOTICE
+        
+        Copyright (c) 1995-2006 International Business Machines 
+        Corporation and others
+        
+        All rights reserved.
+        
+        Permission is hereby granted, free of charge, to any 
+        person obtaining a copy of this software and associated 
+        documentation files (the "Software"), to deal in the 
+        Software without restriction, including without limitation 
+        the rights to use, copy, modify, merge, publish, 
+        distribute, and/or sell copies of the Software, and to 
+        permit persons to whom the Software is furnished to do so, 
+        provided that the above copyright notice(s) and this 
+        permission notice appear in all copies of the Software and 
+        that both the above copyright notice(s) and this 
+        permission notice appear in supporting documentation.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY 
+        KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE 
+        WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+        PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO 
+        EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN 
+        THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL 
+        INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES 
+        WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, 
+        WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER 
+        TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE 
+        USE OR PERFORMANCE OF THIS SOFTWARE.
+        
+        Except as contained in this notice, the name of a copyright 
+        holder shall not be used in advertising or otherwise to 
+        promote the sale, use or other dealings in this Software 
+        without prior written authorization of the copyright holder.
+
+    
+  For 
+    jquery.md5.js
+  
+
+        jQuery MD5 Plugin 1.2.1
+        https://github.com/blueimp/jQuery-MD5
+        
+        Copyright 2010, Sebastian Tschan
+        https://blueimp.net
+        
+        Licensed under the MIT license:
+        http://creativecommons.org/licenses/MIT/
+        
+        Based on
+        A JavaScript implementation of the RSA Data Security, Inc. MD5 Message
+        Digest Algorithm, as defined in RFC 1321.
+        Version 2.2 Copyright (C) Paul Johnston 1999 - 2009
+        Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
+        Distributed under the BSD License
+        See http://pajhome.org.uk/crypt/md5 for more info.
+
+    
+  For 
+    XmlSchema-1.4.3.jar
+  
+
+        Portions Copyright 2006 International Business Machines Corp.
+
+    
+  For 
+    cloud-trilead-ssh2-build213.jar
+  
+
+        Trilead SSH-2 for Java includes code that was written by Dr. Christian Plattner
+        during his PhD at ETH Zurich. The license states the following:
+        
+        Copyright (c) 2005 - 2006 Swiss Federal Institute of Technology (ETH Zurich),
+          Department of Computer Science (http://www.inf.ethz.ch),
+          Christian Plattner. All rights reserved.
+        
+        Redistribution and use in source and binary forms, with or without
+        modification, are permitted provided that the following conditions
+        are met:
+        
+        a.) Redistributions of source code must retain the above copyright
+            notice, this list of conditions and the following disclaimer.
+        b.) Redistributions in binary form must reproduce the above copyright
+            notice, this list of conditions and the following disclaimer in the
+            documentation and/or other materials provided with the distribution.
+        c.) Neither the name of ETH Zurich nor the names of its contributors may
+            be used to endorse or promote products derived from this software
+            without specific prior written permission.
+        
+        THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+        AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+        IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+        ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+        LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+        CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+        SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+        INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+        CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+        ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+        POSSIBILITY OF SUCH DAMAGE.
+        
+        The Java implementations of the AES, Blowfish and 3DES ciphers have been
+        taken (and slightly modified) from the cryptography package released by
+        "The Legion Of The Bouncy Castle".
+        
+        Their license states the following:
+        
+        Copyright (c) 2000 - 2004 The Legion Of The Bouncy Castle
+        (http://www.bouncycastle.org)
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in
+        all copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+        THE SOFTWARE.
+
+    
+  For 
+    jquery.js
+  
+
+        jQuery JavaScript Library v1.3.2
+        http://jquery.com/
+        
+        Copyright (c) 2009 John Resig
+        Dual licensed under the MIT and GPL licenses.
+        http://docs.jquery.com/License
+        
+        Date: 2009-02-19 17:34:21 -0500 (Thu, 19 Feb 2009)
+        Revision: 6246
+
+    
+  For 
+    axis2-1.5.1.jar
+    axis2-adb-1.5.1.jar
+    axis2-ant-plugin-1.5.1.jar
+    axis2-codegen-1.4.1.jar
+    axis2-jaxbri-1.5.1.jar
+    axis2-jaxws-1.5.1.jar
+    axis2-jibx-1.5.1.jar
+    axis2-json-1.5.1.jar
+    axis2-kernel-1.5.1.jar
+    axis2-transport-http-1.5.1.jar
+    axis2-transport-local-1.5.1.jar
+    axis2-webapp-1.5.1.war
+    cloud-axis.jar
+  
+
+        =========================================================================
+        ==  NOTICE file corresponding to the section 4 d of                    ==
+        ==  the Apache License, Version 2.0,                                   ==
+        ==  in this case for the Apache Axis2 distribution.                    ==
+        =========================================================================
+        
+        This product includes software developed by
+        The Apache Software Foundation (http://www.apache.org/).
+        Portions Copyright 2006 International Business Machines Corp.
+        Portions Copyright 2005-2007 WSO2, Inc.
+        
+        This product also includes schemas and specification developed by:
+        - the W3C consortium (http://www.w3c.org)
+        
+        This product also includes WS-* schemas developed by International
+        Business Machines Corporation, Microsoft Corporation, BEA Systems, 
+        TIBCO Software, SAP AG, Sonic Software, and VeriSign
+        
+        This product also includes a WSDL developed by salesforce.com
+        - Copyright 1999-2006 salesforce.com, inc.
+        
+        Portions of the included xmlbeans library were originally based on the following:
+        - software copyright (c) 2000-2003, BEA Systems, <http://www.bea.com/>.
+        
+        Please read the different LICENSE files present in the lib directory of
+        this distribution.
+
+    
+  For 
+    xml-apis.jar
+  
+
+        =========================================================================
+        ==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
+        ==  Version 2.0, in this case for the Apache xml-commons xml-apis      ==
+        ==  distribution.                                                      ==
+        =========================================================================
+        
+        Apache XML Commons XML APIs
+        Copyright 2006 The Apache Software Foundation.
+        
+        This product includes software developed at
+        The Apache Software Foundation (http://www.apache.org/).
+        
+        Portions of this software were originally based on the following:
+          - software copyright (c) 1999, IBM Corporation., http://www.ibm.com.
+          - software copyright (c) 1999, Sun Microsystems., http://www.sun.com.
+          - software copyright (c) 2000 World Wide Web Consortium, http://www.w3.org
+
+    
+  For 
+    cloud-commons-codec-1.5.jar
+    commons-codec-1.4.jar
+  
+
+        Apache Commons Codec
+        Copyright 2002-2011 The Apache Software Foundation
+        
+        This product includes software developed by
+        The Apache Software Foundation (http://www.apache.org/).
+        
+        --------------------------------------------------------------------------------
+        src/test/org/apache/commons/codec/language/DoubleMetaphoneTest.java contains 
+        test data from http://aspell.sourceforge.net/test/batch0.tab.
+        
+        Copyright (C) 2002 Kevin Atkinson (kevina@gnu.org). Verbatim copying
+        and distribution of this entire article is permitted in any medium,
+        provided this notice is preserved.
+        --------------------------------------------------------------------------------
+
+    
+  For 
+    jquery.js
+  
+
+        jQuery JavaScript Library v1.6.1
+        http://jquery.com/
+        
+        Copyright 2011, John Resig
+        Dual licensed under the MIT or GPL Version 2 licenses.
+        http://jquery.org/license
+        
+        Includes Sizzle.js
+        http://sizzlejs.com/
+        Copyright 2011, The Dojo Foundation
+        Released under the MIT, BSD, and GPL Licenses.
+        
+        Date: Thu May 12 15:04:36 2011 -0400
+
+    
+  For 
+    rampart-lib
+  
+
+        Apache Rampart
+        Copyright 2010 The Apache Software Foundation
+        
+        This product includes software developed by
+        The Apache Software Foundation (http://www.apache.org/).
+        
+        Please read the different LICENSE files present in the lib directory of
+        this distribution.
+
+    
+  For 
+    xercesImpl.jar
+  
+
+        =========================================================================
+        ==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
+        ==  Version 2.0, in this case for the Apache Xerces Java distribution. ==
+        =========================================================================
+        
+        Apache Xerces Java
+        Copyright 1999-2012 The Apache Software Foundation
+        
+        This product includes software developed at
+        The Apache Software Foundation (http://www.apache.org/).
+        
+        Portions of this software were originally based on the following:
+          - software copyright (c) 1999, IBM Corporation., http://www.ibm.com.
+          - software copyright (c) 1999, Sun Microsystems., http://www.sun.com.
+          - voluntary contributions made by Paul Eng on behalf of the 
+            Apache Software Foundation that were originally developed at iClick, Inc.,
+            software copyright (c) 1999.
+
+    
+  For 
+    jquery.colorhelpers.js
+  
+
+        Plugin for jQuery for working with colors.
+        
+        Version 1.1.
+        
+        Inspiration from jQuery color animation plugin by John Resig.
+        
+        Released under the MIT license by Ole Laursen, October 2009.
+
+    
+  For 
+    woden-api-1.0M8.jar
+    woden-impl-dom-1.0M8.jar
+  
+
+        =========================================================================
+        ==  NOTICE file corresponding to the section 4 d of                    ==
+        ==  the Apache License, Version 2.0,                                   ==
+        ==  in this case for the Apache Woden distribution.                    ==
+        =========================================================================
+        
+        This product includes software developed by
+        The Apache Software Foundation (http://www.apache.org/).
+        
+        This product also includes software developed by :
+           
+          - IBM Corporation (http://www.ibm.com),
+              WSDL4J was the initial code contribution for the Apache Woden
+              project and some of the WSDL4J design and code has been reused.
+          - The W3C Consortium (http://www.w3c.org),
+              Common W3C XML Schema and DTD files are packaged with Apache Woden.
+        
+        Please read the different LICENSE files present in the root directory of
+        this distribution.
+
+    
+  For 
+    axiom-api-1.2.8.jar
+    axiom-impl-1.2.8.jar
+  
+
+        Axiom includes software from other projects, as follows:
+        
+        This software includes the Woodstox High-performance XML processor
+         http://woodstox.codehaus.org/
+         licensed under the Apache License, Version 2.0
+        
+        This software includes the Jaxen XPath library
+         http://jaxen.codehaus.org/
+         licensed under the following BSD 3 Clause license:
+        
+        ================================================================================
+         Copyright 2003-2006 The Werken Company. All Rights Reserved.
+         
+         Redistribution and use in source and binary forms, with or without
+         modification, are permitted provided that the following conditions are
+         met:
+        
+          * Redistributions of source code must retain the above copyright
+            notice, this list of conditions and the following disclaimer.
+        
+          * Redistributions in binary form must reproduce the above copyright
+            notice, this list of conditions and the following disclaimer in the
+            documentation and/or other materials provided with the distribution.
+        
+          * Neither the name of the Jaxen Project nor the names of its
+            contributors may be used to endorse or promote products derived 
+            from this software without specific prior written permission.
+        
+        THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+        IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+        TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+        PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+        OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+        EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+        PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+        PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+        LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+        NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+        SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+        
+        ================================================================================
+
+    
+  For 
+    wss4j-1.5.8.jar
+  
+
+        Apache WebServices - WSS4J
+        Copyright 2004-2011 The Apache Software Foundation
+        
+        This product includes software developed at
+        The Apache Software Foundation (http://www.apache.org/).
+        
+        This product includes software Copyright University of Southampton IT
+        Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).

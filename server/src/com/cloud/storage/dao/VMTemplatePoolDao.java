@@ -18,10 +18,14 @@ package com.cloud.storage.dao;
 
 import java.util.List;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.fsm.StateDao;
 
-public interface VMTemplatePoolDao extends GenericDao<VMTemplateStoragePoolVO, Long> {
+public interface VMTemplatePoolDao extends GenericDao<VMTemplateStoragePoolVO, Long>, StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
 	public List<VMTemplateStoragePoolVO> listByPoolId(long id);
 	
 	public List<VMTemplateStoragePoolVO> listByTemplateId(long templateId);
@@ -42,5 +46,4 @@ public interface VMTemplatePoolDao extends GenericDao<VMTemplateStoragePoolVO, L
 	boolean templateAvailable(long templateId, long poolId);
 
 	public VMTemplateStoragePoolVO findByHostTemplate(Long hostId, Long templateId);
-
 }

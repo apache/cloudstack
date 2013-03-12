@@ -50,6 +50,7 @@ public class EC2InstanceFilterSet {
         filterTypes.put( "group-id",             "string"  );
         filterTypes.put( "tag-key",              "string"  );
         filterTypes.put( "tag-value",            "string"  );
+        filterTypes.put( "dns-name",             "string"  );
 	}
 	
 	
@@ -159,9 +160,10 @@ public class EC2InstanceFilterSet {
 	    }
         else if (filterName.equalsIgnoreCase( "group-id"))
         {
-            String[] groupSet = vm.getGroupSet();
-            for (String group : groupSet)
-                if (containsString(group, valueSet)) return true;
+            EC2SecurityGroup[] groupSet = vm.getGroupSet();
+            for (EC2SecurityGroup group: groupSet) {
+                if( containsString(group.getId(), valueSet)) return true;
+            }
             return false;
         }
         else if (filterName.equalsIgnoreCase("tag-key"))
@@ -183,6 +185,8 @@ public class EC2InstanceFilterSet {
                 }
             }
             return false;
+        }else if (filterName.equalsIgnoreCase( "dns-name" )){
+            return containsString( vm.getName(), valueSet );
         }
 	    else return false;
 	}

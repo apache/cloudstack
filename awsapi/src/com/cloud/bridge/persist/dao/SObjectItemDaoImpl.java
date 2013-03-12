@@ -20,12 +20,15 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.bridge.model.SObjectItemVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={SObjectItemDao.class})
 public class SObjectItemDaoImpl extends GenericDaoBase<SObjectItemVO, Long> implements SObjectItemDao {
     

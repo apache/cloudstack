@@ -18,16 +18,28 @@ package com.cloud.cluster;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.SystemIntegrityChecker;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 
+@Component
 @Local(value = {SystemIntegrityChecker.class})
-public class ManagementServerNode implements SystemIntegrityChecker {
-    private static final long s_nodeId = MacAddress.getMacAddress().toLong();
+public class ManagementServerNode extends AdapterBase implements SystemIntegrityChecker {
+	private final Logger s_logger = Logger.getLogger(ManagementServerNode.class);
+    
+	private static final long s_nodeId = MacAddress.getMacAddress().toLong();
     
     public static enum State { Up, Down };
 
+    public ManagementServerNode() {
+    	setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
+    }
+    
     @Override
     public void check() {
         if (s_nodeId <= 0) {
@@ -37,5 +49,16 @@ public class ManagementServerNode implements SystemIntegrityChecker {
     
     public static long getManagementServerId() {
         return s_nodeId;
+    }
+    
+    @Override
+    public boolean start() {
+    	try {
+    		check();
+    	} catch (Exception e) {
+			s_logger.error("System integrity check exception", e);
+			System.exit(1);
+    	}
+    	return true;
     }
 }

@@ -1,0 +1,180 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating and Updating a VPN Customer Gateway"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A VPN customer gateway can be connected to only one VPN gateway at a time."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To add a VPN Customer Gateway:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to the &PRODUCT; UI as an administrator or end user."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation, choose Network."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the Select view, select VPN Customer Gateway."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add site-to-site VPN."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Provide the following information:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Name</emphasis>: A unique name for the VPN customer gateway you create."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Gateway</emphasis>: The IP address for the remote gateway."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">CIDR list</emphasis>: The guest CIDR list of the remote subnets. Enter a CIDR or a comma-separated list of CIDRs. Ensure that a guest CIDR list is not overlapped with the VPC’s CIDR, or another guest CIDR. The CIDR must be RFC1918-compliant."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">IPsec Preshared Key</emphasis>: Preshared keying is a method where the endpoints of the VPN share a secret key. This key value is used to authenticate the customer gateway and the VPC VPN gateway to each other."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The IKE peers (VPN end points) authenticate each other by computing and sending a keyed hash of data that includes the Preshared key. If the receiving peer is able to create the same hash independently by using its Preshared key, it knows that both peers must share the same secret, thus authenticating the customer gateway."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">IKE Encryption</emphasis>: The Internet Key Exchange (IKE) policy for phase-1. The supported encryption algorithms are AES128, AES192, AES256, and 3DES. Authentication is accomplished through the Preshared Keys."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The phase-1 is the first phase in the IKE process. In this initial negotiation phase, the two VPN endpoints agree on the methods to be used to provide security for the underlying IP traffic. The phase-1 authenticates the two VPN gateways to each other, by confirming that the remote gateway has a matching Preshared Key."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">IKE Hash</emphasis>: The IKE hash for phase-1. The supported hash algorithms are SHA1 and MD5."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">IKE DH</emphasis>: A public-key cryptography protocol which allows two parties to establish a shared secret over an insecure communications channel. The 1536-bit Diffie-Hellman group is used within IKE to establish session keys. The supported options are None, Group-5 (1536-bit) and Group-2 (1024-bit)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">ESP Encryption</emphasis>: Encapsulating Security Payload (ESP) algorithm within phase-2. The supported encryption algorithms are AES128, AES192, AES256, and 3DES."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The phase-2 is the second phase in the IKE process. The purpose of IKE phase-2 is to negotiate IPSec security associations (SA) to set up the IPSec tunnel. In phase-2, new keying material is extracted from the Diffie-Hellman key exchange in phase-1, to provide session keys to use in protecting the VPN data flow."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">ESP Hash</emphasis>: Encapsulating Security Payload (ESP) hash for phase-2. Supported hash algorithms are SHA1 and MD5."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Perfect Forward Secrecy</emphasis>: Perfect Forward Secrecy (or PFS) is the property that ensures that a session key derived from a set of long-term public and private keys will not be compromised. This property enforces a new Diffie-Hellman key exchange. It provides the keying material that has greater key material life and thereby greater resistance to cryptographic attacks. The available options are None, Group-5 (1536-bit) and Group-2 (1024-bit). The security of the key exchanges increase as the DH groups grow larger, as does the time of the exchanges."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When PFS is turned on, for every negotiation of a new phase-2 SA the two gateways must generate a new set of phase-1 keys. This adds an extra layer of protection that PFS adds, which ensures if the phase-2 SA’s have expired, the keys used for new phase-2 SA’s have not been generated from the current phase-1 keying material."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">IKE Lifetime (seconds)</emphasis>: The phase-1 lifetime of the security association in seconds. Default is 86400 seconds (1 day). Whenever the time expires, a new phase-1 exchange is performed."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">ESP Lifetime (seconds)</emphasis>: The phase-2 lifetime of the security association in seconds. Default is 3600 seconds (1 hour). Whenever the value is exceeded, a re-key is initiated to provide a new IPsec encryption and authentication session keys."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "<emphasis role=\"bold\">Dead Peer Detection</emphasis>: A method to detect an unavailable Internet Key Exchange (IKE) peer. Select this option if you want the virtual router to query the liveliness of its IKE peer at regular intervals. It’s recommended to have the same configuration of DPD on both side of VPN connection."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click OK."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Updating and Removing a VPN Customer Gateway"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can update a customer gateway either with no VPN connection, or related VPN connection is in error state."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Select the VPN customer gateway you want to work with."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To modify the required parameters, click the Edit VPN Customer Gateway button<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/edit-icon.png\" /> </imageobject> <textobject> <phrase>edit.png: button to edit a VPN customer gateway</phrase> </textobject> </inlinemediaobject>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To remove the VPN customer gateway, click the Delete VPN Customer Gateway button<inlinemediaobject> <imageobject> <imagedata fileref=\"./images/delete-button.png\" /> </imageobject> <textobject> <phrase>delete.png: button to remove a VPN customer gateway</phrase> </textobject> </inlinemediaobject>"
+msgstr ""
+

@@ -24,11 +24,13 @@ import java.util.Map;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageNetworkVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Transaction;
 
+@Component
 @Local(value={UsageNetworkDao.class})
 public class UsageNetworkDaoImpl extends GenericDaoBase<UsageNetworkVO, Long> implements UsageNetworkDao {
 	private static final Logger s_logger = Logger.getLogger(UsageVMInstanceDaoImpl.class.getName());

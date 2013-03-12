@@ -1,0 +1,145 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Configure the Security Policies"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; does various things which can be blocked by security mechanisms like AppArmor and SELinux. These have to be disabled to ensure the Agent has all the required permissions."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure SELinux (RHEL and CentOS)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Check to see whether SELinux is installed on your machine. If not, you can skip this section."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In RHEL or CentOS, SELinux is installed and enabled by default. You can verify this with:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ rpm -qa | grep selinux</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Set the SELINUX variable in <filename>/etc/selinux/config</filename> to \"permissive\". This ensures that the permissive setting will be maintained after a system reboot."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In RHEL or CentOS:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "vi /etc/selinux/config"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Change the following line"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "SELINUX=enforcing"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "to this"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "SELINUX=permissive"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Then set SELinux to permissive starting immediately, without requiring a system reboot."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ setenforce permissive</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Configure Apparmor (Ubuntu)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Check to see whether AppArmor is installed on your machine. If not, you can skip this section."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Ubuntu AppArmor is installed and enabled by default. You can verify this with:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ dpkg --list 'apparmor'</command>"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Disable the AppArmor profiles for libvirt"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ ln -s /etc/apparmor.d/usr.sbin.libvirtd /etc/apparmor.d/disable/</command>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ ln -s /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper /etc/apparmor.d/disable/</command>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ apparmor_parser -R /etc/apparmor.d/usr.sbin.libvirtd</command>"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "<command>$ apparmor_parser -R /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper</command>"
+msgstr ""
+

@@ -16,13 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.resource;
 
-import org.apache.cloudstack.api.*;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.user.UserContext;
 
@@ -50,11 +54,15 @@ public class UpdateResourceLimitCmd extends BaseCmd {
     @Parameter(name=ApiConstants.MAX, type=CommandType.LONG, description="  Maximum resource limit.")
     private Long max;
 
-    @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.INTEGER, required=true, description="Type of resource to update. Values are 0, 1, 2, 3, and 4. 0 - Instance. Number of instances a user can create. " +
+    @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.INTEGER, required=true, description="Type of resource to update. Values are 0, 1, 2, 3, 4, 6, 7, 8 and 9. 0 - Instance. Number of instances a user can create. " +
                                                                                         "1 - IP. Number of public IP addresses a user can own. " +
                                                                                         "2 - Volume. Number of disk volumes a user can create." +
                                                                                         "3 - Snapshot. Number of snapshots a user can create." +
-                                                                                        "4 - Template. Number of templates that a user can register/create.")
+                                                                                        "4 - Template. Number of templates that a user can register/create." +
+                                                                                        "6 - Network. Number of guest network a user can create." +
+                                                                                        "7 - VPC. Number of VPC a user can create." +
+                                                                                        "8 - CPU. Total number of CPU cores a user can use." +
+                                                                                        "9 - Memory. Total Memory (in MB) a user can use." )
     private Integer resourceType;
 
     /////////////////////////////////////////////////////
@@ -100,7 +108,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update resource limit");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update resource limit");
         }
     }
 }

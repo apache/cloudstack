@@ -16,13 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.response.VolumeResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -63,6 +67,10 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.CHECKSUM, type=CommandType.STRING, description="the MD5 checksum value of this volume")
     private String checksum;
+    
+    @Parameter(name=ApiConstants.IMAGE_STORE_UUID, type=CommandType.STRING,
+            description="Image store uuid")
+    private String imageStoreUuid;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -95,6 +103,10 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
     public String getChecksum() {
         return checksum;
     }
+    
+    public String getImageStoreUuid() {
+        return this.imageStoreUuid;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -106,13 +118,13 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
             ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
 
-            Volume volume = _storageService.uploadVolume(this);
+            Volume volume = _volumeService.uploadVolume(this);
             if (volume != null){
                 VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to upload volume");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upload volume");
             }
     }
 

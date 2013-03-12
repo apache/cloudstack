@@ -18,6 +18,8 @@ package com.cloud.api.commands.netapp;
 
 import java.rmi.ServerException;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
@@ -29,9 +31,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
-import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DeleteVolumeOnFilerCmdResponse;
-import com.cloud.utils.component.ComponentLocator;
+
 
 @APICommand(name = "destroyVolumeOnFiler", description="Destroy a Volume", responseObject = DeleteVolumeOnFilerCmdResponse.class)
 public class DestroyVolumeOnFilerCmd extends BaseCmd {
@@ -47,24 +48,24 @@ public class DestroyVolumeOnFilerCmd extends BaseCmd {
     @Parameter(name=ApiConstants.VOLUME_NAME, type=CommandType.STRING, required = true, description="volume name.")
 	private String volumeName;
     
+    @Inject NetappManager netappMgr;
+    
     
 	@Override
 	public void execute() throws ResourceUnavailableException,
 			InsufficientCapacityException, ServerApiException,
 			ConcurrentOperationException, ResourceAllocationException {
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
     	try {
     		netappMgr.destroyVolumeOnFiler(ipAddr, aggrName, volumeName);
     		DeleteVolumeOnFilerCmdResponse response = new DeleteVolumeOnFilerCmdResponse();
     		response.setResponseName(getCommandName());
     		this.setResponseObject(response);
     	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
     	} catch (ResourceInUseException e) {
-    		throw new ServerApiException(BaseCmd.RESOURCE_IN_USE_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, e.toString());
     	} catch (ServerException e) {
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
+    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
 		}
 		
 	}

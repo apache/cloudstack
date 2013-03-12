@@ -17,16 +17,16 @@
 
 package org.apache.cloudstack.api.command.admin.autoscale;
 
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceInUseException;
@@ -56,7 +56,7 @@ public class DeleteCounterCmd extends BaseAsyncCmd {
             result = _autoScaleService.deleteCounter(getId());
         } catch (ResourceInUseException ex) {
             s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_IN_USE_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, ex.getMessage());
         }
 
         if (result) {
@@ -64,7 +64,7 @@ public class DeleteCounterCmd extends BaseAsyncCmd {
             this.setResponseObject(response);
         } else {
             s_logger.warn("Failed to delete counter with Id: " + getId());
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete counter.");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete counter.");
         }
     }
 

@@ -1,0 +1,100 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:56\n"
+"PO-Revision-Date: 2013-02-02T20:11:56\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "About Zones"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A zone is the largest organizational unit within a &PRODUCT; deployment. A zone typically corresponds to a single datacenter, although it is permissible to have multiple zones in a datacenter. The benefit of organizing infrastructure into zones is to provide physical isolation and redundancy. For example, each zone can have its own power supply and network uplink, and the zones can be widely separated geographically (though this is not required)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A zone consists of:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "One or more pods. Each pod contains one or more clusters of hosts and one or more primary storage servers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Secondary storage, which is shared by all the pods in the zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Zones are visible to the end user. When a user starts a guest VM, the user must select a zone for their guest. Users might also be required to copy their private templates to additional zones to enable creation of guest VMs using their templates in those zones."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Zones can be public or private. Public zones are visible to all users. This means that any user may create a guest in that zone. Private zones are reserved for a specific domain. Only users in that domain or its subdomains may create guests in that zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Hosts in the same zone are directly accessible to each other without having to go through a firewall. Hosts in different zones can access each other through statically configured VPN tunnels."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For each zone, the administrator must decide the following."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "How many pods to place in a zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "How many clusters to place in each pod."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "How many hosts to place in each cluster."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "How many primary storage servers to place in each cluster and total capacity for the storage servers."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "How much secondary storage to deploy in a zone."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "When you add a new zone, you will be prompted to configure the zone’s physical network and add the first pod, cluster, host, primary storage, and secondary storage."
+msgstr ""
+

@@ -1,0 +1,166 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Examples"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "There are many tools available to interface with a AWS compatible API. In this section we provide a few examples that users of &PRODUCT; can build upon."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Boto Examples"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Boto is one of them. It is a Python package available at https://github.com/boto/boto. In this section we provide two examples of Python scripts that use Boto and have been tested with the &PRODUCT; AWS API Interface."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "First is an EC2 example. Replace the Access and Secret Keys with your own and update the endpoint."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "An EC2 Boto example"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "#!/usr/bin/env python\n"
+"\n"
+"import sys\n"
+"import os\n"
+"import boto\n"
+"import boto.ec2\n"
+"\n"
+"region = boto.ec2.regioninfo.RegionInfo(name=\"ROOT\",endpoint=\"localhost\")\n"
+"apikey='GwNnpUPrO6KgIdZu01z_ZhhZnKjtSdRwuYd4DvpzvFpyxGMvrzno2q05MB0ViBoFYtdqKd'\n"
+"secretkey='t4eXLEYWw7chBhDlaKf38adCMSHx_wlds6JfSx3z9fSpSOm0AbP9Moj0oGIzy2LSC8iw'\n"
+"\n"
+"def main():\n"
+"	'''Establish connection to EC2 cloud'''\n"
+"        conn =boto.connect_ec2(aws_access_key_id=apikey,\n"
+"                       aws_secret_access_key=secretkey,\n"
+"                       is_secure=False,\n"
+"                       region=region,\n"
+"                       port=7080,\n"
+"                       path=\"/awsapi\",\n"
+"                       api_version=\"2010-11-15\")\n"
+"\n"
+"        '''Get list of images that I own'''\n"
+"	images = conn.get_all_images()\n"
+"	print images\n"
+"	myimage = images[0]\n"
+"	'''Pick an instance type'''\n"
+"	vm_type='m1.small'\n"
+"	reservation = myimage.run(instance_type=vm_type,security_groups=['default'])\n"
+"\n"
+"if __name__ == '__main__':\n"
+"	main()\n"
+"                "
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Second is an S3 example. Replace the Access and Secret keys with your own, as well as the endpoint of the service. Be sure to also update the file paths to something that exists on your machine."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "An S3 Boto Example"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "#!/usr/bin/env python\n"
+"\n"
+"import sys\n"
+"import os\n"
+"from boto.s3.key import Key\n"
+"from boto.s3.connection import S3Connection\n"
+"from boto.s3.connection import OrdinaryCallingFormat\n"
+"\n"
+"apikey='ChOw-pwdcCFy6fpeyv6kUaR0NnhzmG3tE7HLN2z3OB_s-ogF5HjZtN4rnzKnq2UjtnHeg_yLA5gOw'\n"
+"secretkey='IMY8R7CJQiSGFk4cHwfXXN3DUFXz07cCiU80eM3MCmfLs7kusgyOfm0g9qzXRXhoAPCH-IRxXc3w'\n"
+"\n"
+"cf=OrdinaryCallingFormat()\n"
+"\n"
+"def main():	\n"
+"	'''Establish connection to S3 service'''\n"
+"        conn =S3Connection(aws_access_key_id=apikey,aws_secret_access_key=secretkey, \\\n"
+"                          is_secure=False, \\\n"
+"                          host='localhost', \\\n"
+"                          port=7080, \\\n"
+"                          calling_format=cf, \\\n"
+"                          path=\"/awsapi/rest/AmazonS3\")\n"
+"\n"
+"        try:\n"
+"            bucket=conn.create_bucket('cloudstack')\n"
+"            k = Key(bucket)\n"
+"            k.key = 'test'\n"
+"            try:\n"
+"               k.set_contents_from_filename('/Users/runseb/Desktop/s3cs.py')\n"
+"            except:\n"
+"               print 'could not write file'\n"
+"               pass\n"
+"        except:\n"
+"            bucket = conn.get_bucket('cloudstack')\n"
+"            k = Key(bucket)\n"
+"            k.key = 'test'\n"
+"            try:\n"
+"               k.get_contents_to_filename('/Users/runseb/Desktop/foobar')\n"
+"            except:\n"
+"               print 'Could not get file'\n"
+"               pass\n"
+"\n"
+"        try:\n"
+"           bucket1=conn.create_bucket('teststring')\n"
+"           k=Key(bucket1)\n"
+"           k.key('foobar')\n"
+"           k.set_contents_from_string('This is my silly test')\n"
+"        except:\n"
+"           bucket1=conn.get_bucket('teststring')\n"
+"           k = Key(bucket1)\n"
+"           k.key='foobar'\n"
+"           k.get_contents_as_string()\n"
+"	\n"
+"if __name__ == '__main__':\n"
+"	main()\n"
+"\n"
+"                "
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "JClouds Examples"
+msgstr ""
+

@@ -108,7 +108,7 @@ public class TrafficSentinelResource implements ServerResource {
         cmd.setPod("");
         cmd.setPrivateIpAddress(_ip);
         cmd.setStorageIpAddress("");
-        cmd.setVersion("");
+        cmd.setVersion(TrafficSentinelResource.class.getPackage().getImplementationVersion());
         cmd.setGuid(_guid);		
     	return new StartupCommand[]{cmd};
     }
@@ -312,5 +312,35 @@ public class TrafficSentinelResource implements ServerResource {
 	private String getDateString(Date date){
 	       DateFormat dfDate = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
 	       return dfDate.format(date);
+	}
+
+	@Override
+	public void setName(String name) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setConfigParams(Map<String, Object> params) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Map<String, Object> getConfigParams() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int getRunLevel() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void setRunLevel(int level) {
+		// TODO Auto-generated method stub
+		
 	}
 }

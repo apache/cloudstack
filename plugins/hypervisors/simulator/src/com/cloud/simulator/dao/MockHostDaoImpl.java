@@ -16,14 +16,16 @@
 // under the License.
 package com.cloud.simulator.dao;
 
-import javax.ejb.Local;
-
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockHostVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.springframework.stereotype.Component;
 
+import javax.ejb.Local;
+
+@Component
 @Local(value={MockHostDao.class})
 public class MockHostDaoImpl extends GenericDaoBase<MockHostVO, Long> implements MockHostDao {
     protected final SearchBuilder<MockHostVO> GuidSearch;

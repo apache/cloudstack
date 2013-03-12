@@ -1,0 +1,100 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "User Data and Meta Data"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "&PRODUCT; provides API access to attach user data to a deployed VM. Deployed VMs also have access to instance metadata via the virtual router."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "User data can be accessed once the IP address of the virtual router is known. Once the IP address is known, use the following steps to access the user data:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following command to find the virtual router."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# cat /var/lib/dhclient/dhclient-eth0.leases | grep dhcp-server-identifier | tail -1"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Access user data by running the following command using the result of the above command"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# curl http://10.1.1.1/latest/user-data"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Meta Data can be accessed similarly, using a URL of the form http://10.1.1.1/latest/meta-data/{metadata type}. (For backwards compatibility, the previous URL http://10.1.1.1/latest/{metadata type} is also supported.) For metadata type, use one of the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "service-offering. A description of the VMs service offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "availability-zone. The Zone name"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "local-ipv4. The guest IP of the VM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "local-hostname. The hostname of the VM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "public-ipv4. The first public IP for the router. (E.g. the first IP of eth2)"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "public-hostname. This is the same as public-ipv4"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "instance-id. The instance name of the VM"
+msgstr ""
+

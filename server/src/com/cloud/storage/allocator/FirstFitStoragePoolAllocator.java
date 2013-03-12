@@ -24,8 +24,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.deploy.DeploymentPlan;
@@ -33,16 +35,14 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.utils.component.Inject;
 
 @Local(value=StoragePoolAllocator.class)
 public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
@@ -117,7 +117,8 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
             }
 
         	if (checkPool(avoid, pool, dskCh, template, null, sc, plan)) {
-        		suitablePools.add(pool);
+        	    StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+        		suitablePools.add(pol);
         	}
         }
         

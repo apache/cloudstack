@@ -23,8 +23,8 @@ import com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancerNetworksCmd;
 import com.cloud.api.commands.ListNetscalerLoadBalancersCmd;
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
-import com.cloud.network.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.Network;
+import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.utils.component.PluggableService;
 
 public interface NetscalerLoadBalancerElementService extends PluggableService {

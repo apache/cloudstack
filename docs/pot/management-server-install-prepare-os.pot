@@ -1,0 +1,105 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Prepare the Operating System"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The OS must be prepared to host the Management Server using the following steps. These steps must be performed on each Management Server node."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in to your OS as root."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Check for a fully qualified hostname."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "hostname --fqdn"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "This should return a fully qualified hostname such as \"managament1.lab.example.org\". If it does not, edit /etc/hosts so that it does."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Make sure that the machine can reach the Internet."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "ping www.cloudstack.org"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Turn on NTP for time synchronization."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "NTP is required to synchronize the clocks of the servers in your cloud."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Install NTP."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On RHEL or CentOS:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "yum install ntp"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "On Ubuntu:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "apt-get install openntpd"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Repeat all of these steps on every host where the Management Server will be installed."
+msgstr ""
+

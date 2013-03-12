@@ -24,6 +24,9 @@ import com.cloud.utils.db.GenericDaoBase;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
+@Component
 @Local(S3Dao.class)
 public class S3DaoImpl extends GenericDaoBase<S3VO, Long> implements S3Dao {
 

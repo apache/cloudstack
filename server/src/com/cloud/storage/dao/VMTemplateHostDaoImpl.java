@@ -26,9 +26,14 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -36,13 +41,15 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.UpdateBuilder;
 
+@Component
 @Local(value={VMTemplateHostDao.class})
 public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long> implements VMTemplateHostDao {
 	public static final Logger s_logger = Logger.getLogger(VMTemplateHostDaoImpl.class.getName());
@@ -55,6 +62,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	protected final SearchBuilder<VMTemplateHostVO> HostDestroyedSearch;
 	protected final SearchBuilder<VMTemplateHostVO> TemplateStatusSearch;
 	protected final SearchBuilder<VMTemplateHostVO> TemplateStatesSearch;
+	protected final SearchBuilder<VMTemplateHostVO> updateStateSearch;
 	protected SearchBuilder<VMTemplateHostVO> ZONE_TEMPLATE_SEARCH;
 	protected SearchBuilder<VMTemplateHostVO> LOCAL_SECONDARY_STORAGE_SEARCH;
 
@@ -118,6 +126,12 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
         HostTemplateStateSearch.and("states", HostTemplateStateSearch.entity().getDownloadState(), SearchCriteria.Op.IN);
         HostTemplateStateSearch.and("destroyed", HostTemplateStateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         HostTemplateStateSearch.done();
+        
+        updateStateSearch = this.createSearchBuilder();
+        updateStateSearch.and("id", updateStateSearch.entity().getId(), Op.EQ);
+        updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
+        updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
+        updateStateSearch.done();
 
     }
 	
@@ -199,6 +213,14 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
         sc.setParameters("destroyed", false);
         return findOneIncludingRemovedBy(sc);
 	}
+
+	@Override
+	public VMTemplateHostVO findByTemplateId(long templateId) {
+	    SearchCriteria<VMTemplateHostVO> sc = HostTemplateSearch.create();
+	    sc.setParameters("template_id", templateId);
+	    sc.setParameters("destroyed", false);
+	    return findOneIncludingRemovedBy(sc);
+	}
 	
 	@Override
 	public List<VMTemplateHostVO> listByTemplateStatus(long templateId, VMTemplateHostVO.Status downloadState) {
@@ -236,7 +258,6 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
         sc.setParameters("template_id", templateId);
         sc.setParameters("host_id", hostId);
         sc.setParameters("states", (Object[])states);
-        sc.setParameters("destroyed", false);
         return search(sc, null);
     }
 	   
@@ -364,6 +385,43 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
         for (VMTemplateHostVO tmpltHost : tmpltHosts ) {
             remove(tmpltHost.getId());
         }
+    }
+    
+    @Override
+    public boolean updateState(State currentState, Event event,
+            State nextState, DataObjectInStore vo, Object data) {
+        VMTemplateHostVO templateHost = (VMTemplateHostVO)vo;
+        Long oldUpdated = templateHost.getUpdatedCount();
+        Date oldUpdatedTime = templateHost.getUpdated();
+    
+        
+        SearchCriteria<VMTemplateHostVO> sc = updateStateSearch.create();
+        sc.setParameters("id", templateHost.getId());
+        sc.setParameters("state", currentState);
+        sc.setParameters("updatedCount", templateHost.getUpdatedCount());
+
+        templateHost.incrUpdatedCount();
+
+        UpdateBuilder builder = getUpdateBuilder(vo);
+        builder.set(vo, "state", nextState);
+        builder.set(vo, "updated", new Date());
+
+        int rows = update((VMTemplateHostVO) vo, sc);
+        if (rows == 0 && s_logger.isDebugEnabled()) {
+            VMTemplateHostVO dbVol = findByIdIncludingRemoved(templateHost.getId());
+            if (dbVol != null) {
+                StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
+                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState()).append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
+                        .append(dbVol.getUpdated());
+                str.append(": New Data={id=").append(templateHost.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatecount=").append(templateHost.getUpdatedCount())
+                        .append("; updatedTime=").append(templateHost.getUpdated());
+                str.append(": stale Data={id=").append(templateHost.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatecount=").append(oldUpdated)
+                        .append("; updatedTime=").append(oldUpdatedTime);
+            } else {
+                s_logger.debug("Unable to update objectIndatastore: id=" + templateHost.getId() + ", as there is no such object exists in the database anymore");
+            }
+        }
+        return rows > 0;
     }
 
 }

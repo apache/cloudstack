@@ -26,16 +26,12 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.db.QueryBuilderTest.TestDao;
-import com.cloud.utils.db.QueryBuilderTest.TestVO;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
- * A test fixture to test APIs or bugs found for Transaction class. This test fixture will do one time setup before 
+ * A test fixture to test APIs or bugs found for Transaction class. This test fixture will do one time setup before
  * all its testcases to set up a test db table, and then tear down these test db artifacts after all testcases are run.
- * 
- * @author Min Chen
  *
  */
 public class TransactionTest {
@@ -77,8 +73,8 @@ public class TransactionTest {
      * When a transaction is set to use user-managed db connection, for each following db statement, we should see
      * that the same db connection is reused rather than acquiring a new one each time in typical transaction model.
      */
-    public void testUserManagedConnection() {        
-        DbTestDao testDao = ComponentLocator.inject(DbTestDao.class);
+    public void testUserManagedConnection() {
+        DbTestDao testDao = ComponentContext.inject(DbTestDao.class);
         Transaction txn = Transaction.open("SingleConnectionThread");
         Connection conn = null;
         try {
@@ -99,7 +95,7 @@ public class TransactionTest {
         } catch (SQLException e) {
             Assert.fail(e.getMessage());
         } finally {
-            txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);            
+            txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
             txn.close();
 
             if (conn != null) {
@@ -117,7 +113,7 @@ public class TransactionTest {
      * This test is simulating ClusterHeartBeat process, where the same transaction and db connection is reused.
      */
     public void testTransactionReuse() {
-        DbTestDao testDao = ComponentLocator.inject(DbTestDao.class);
+        DbTestDao testDao = ComponentContext.inject(DbTestDao.class);
         // acquire a db connection and keep it
         Connection conn = null;
         try {
@@ -156,7 +152,7 @@ public class TransactionTest {
             }
         }
     }
-    
+
     @After
     /**
      * Delete all records after each test, but table is still kept
@@ -187,7 +183,7 @@ public class TransactionTest {
             }
         }
     }
-    
+
     @AfterClass
     public static void oneTimeTearDown() {
         Connection conn = null;

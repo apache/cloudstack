@@ -48,7 +48,7 @@ public class Networks {
     public enum AddressFormat {
         Ip4,
         Ip6,
-        Mixed
+        DualStack
     }
 
     /**

@@ -18,6 +18,8 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
@@ -27,11 +29,10 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.UpdateBuilder;
 
-
+@Component
 public class NetworkOpDaoImpl extends GenericDaoBase<NetworkOpVO, Long> implements GenericDao<NetworkOpVO, Long> {
     protected final SearchBuilder<NetworkOpVO> AllFieldsSearch;
     protected final GenericSearchBuilder<NetworkOpVO, Integer> ActiveNicsSearch;
-    protected final GenericSearchBuilder<NetworkOpVO, Long> GarbageCollectSearch;
     protected final Attribute _activeNicsAttribute;
     
     protected NetworkOpDaoImpl() {
@@ -45,27 +46,11 @@ public class NetworkOpDaoImpl extends GenericDaoBase<NetworkOpVO, Long> implemen
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("network", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.done();
-        
-        GarbageCollectSearch = createSearchBuilder(Long.class);
-        GarbageCollectSearch.selectField(GarbageCollectSearch.entity().getId());
-        GarbageCollectSearch.and("activenics", GarbageCollectSearch.entity().getActiveNicsCount(), Op.EQ);
-        GarbageCollectSearch.and("gc", GarbageCollectSearch.entity().isGarbageCollected(), Op.EQ);
-        GarbageCollectSearch.and("check", GarbageCollectSearch.entity().isCheckForGc(), Op.EQ);
-        GarbageCollectSearch.done();
-        
+
         _activeNicsAttribute = _allAttributes.get("activeNicsCount");
         assert _activeNicsAttribute != null : "Cannot find activeNicsCount";
     }
-    
-    public List<Long> getNetworksToGarbageCollect() {
-        SearchCriteria<Long> sc = GarbageCollectSearch.create();
-        sc.setParameters("activenics", 0);
-        sc.setParameters("gc", true);
-        sc.setParameters("check", true);
-        
-        return customSearch(sc, null);
-    }
-    
+
     public int getActiveNics(long networkId) {
         SearchCriteria<Integer> sc = ActiveNicsSearch.create();
         sc.setParameters("network", networkId);

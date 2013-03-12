@@ -48,15 +48,13 @@ import com.cloud.agent.dao.StorageComponent;
 import com.cloud.agent.dao.impl.PropertiesStorage;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.ProcessUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
-import com.cloud.utils.component.Adapters;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.script.Script;
 
 public class AgentShell implements IAgentShell {
@@ -146,6 +144,7 @@ public class AgentShell implements IAgentShell {
         return _guid;
     }
 
+    @Override
     public Map<String, Object> getCmdLineProperties() {
         return _cmdLineProperties;
     }
@@ -378,8 +377,6 @@ public class AgentShell implements IAgentShell {
 
     public void init(String[] args) throws ConfigurationException {
 
-        final ComponentLocator locator = ComponentLocator.getLocator("agent");
-
         final Class<?> c = this.getClass();
         _version = c.getPackage().getImplementationVersion();
         if (_version == null) {
@@ -396,12 +393,9 @@ public class AgentShell implements IAgentShell {
             s_logger.debug("Found property: " + property);
         }
 
-        _storage = locator.getManager(StorageComponent.class);
-        if (_storage == null) {
-            s_logger.info("Defaulting to using properties file for storage");
-            _storage = new PropertiesStorage();
-            _storage.configure("Storage", new HashMap<String, Object>());
-        }
+        s_logger.info("Defaulting to using properties file for storage");
+        _storage = new PropertiesStorage();
+        _storage.configure("Storage", new HashMap<String, Object>());
 
         // merge with properties from command line to let resource access
         // command line parameters
@@ -410,22 +404,9 @@ public class AgentShell implements IAgentShell {
             _properties.put(cmdLineProp.getKey(), cmdLineProp.getValue());
         }
 
-        final Adapters adapters = locator.getAdapters(BackoffAlgorithm.class);
-        final Enumeration en = adapters.enumeration();
-        while (en.hasMoreElements()) {
-            _backoff = (BackoffAlgorithm) en.nextElement();
-            break;
-        }
-        if (en.hasMoreElements()) {
-            s_logger.info("More than one backoff algorithm specified.  Using the first one ");
-        }
-
-        if (_backoff == null) {
-            s_logger.info("Defaulting to the constant time backoff algorithm");
-            _backoff = new ConstantTimeBackoff();
-            _backoff.configure("ConstantTimeBackoff",
-                    new HashMap<String, Object>());
-        }
+        s_logger.info("Defaulting to the constant time backoff algorithm");
+        _backoff = new ConstantTimeBackoff();
+        _backoff.configure("ConstantTimeBackoff", new HashMap<String, Object>());
     }
 
     private void launchAgent() throws ConfigurationException {
@@ -469,6 +450,7 @@ public class AgentShell implements IAgentShell {
         openPortWithIptables(port);
 
         _consoleProxyMain = new Thread(new Runnable() {
+            @Override
             public void run() {
                 try {
                     Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
@@ -522,7 +504,7 @@ public class AgentShell implements IAgentShell {
             } catch (final SecurityException e) {
                 throw new ConfigurationException(
                         "Security excetion when loading resource: " + name
-                                + " due to: " + e.toString());
+                        + " due to: " + e.toString());
             } catch (final NoSuchMethodException e) {
                 throw new ConfigurationException(
                         "Method not found excetion when loading resource: "
@@ -534,7 +516,7 @@ public class AgentShell implements IAgentShell {
             } catch (final InstantiationException e) {
                 throw new ConfigurationException(
                         "Instantiation excetion when loading resource: " + name
-                                + " due to: " + e.toString());
+                        + " due to: " + e.toString());
             } catch (final IllegalAccessException e) {
                 throw new ConfigurationException(
                         "Illegal access exception when loading resource: "
@@ -630,6 +612,8 @@ public class AgentShell implements IAgentShell {
 
     public static void main(String[] args) {
         try {
+        	LogUtils.initLog4j("log4j-cloud.xml");
+        	
             AgentShell shell = new AgentShell();
             shell.init(args);
             shell.start();

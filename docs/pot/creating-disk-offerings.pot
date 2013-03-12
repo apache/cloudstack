@@ -1,0 +1,95 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Creating a New Disk Offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To create a system service offering:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Log in with admin privileges to the &PRODUCT; UI."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the left navigation bar, click Service Offerings."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In Select Offering, choose Disk Offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add Disk Offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the dialog, make the following choices:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Name. Any desired name for the system offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Description. A short description of the offering that can be displayed to users"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Custom Disk Size. If checked, the user can set their own disk size. If not checked, the root administrator must define a value in Disk Size."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Disk Size. Appears only if Custom Disk Size is not selected. Define the volume size in GB."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "(Optional)Storage Tags. The tags that should be associated with the primary storage for this disk. Tags are a comma separated list of attributes of the storage. For example \"ssd,blue\". Tags are also added on Primary Storage. &PRODUCT; matches tags on a disk offering to tags on the storage. If a tag is present on a disk offering that tag (or tags) must also be present on Primary Storage for the volume to be provisioned. If no such primary storage exists, allocation from the disk offering will fail.."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public. Indicate whether the service offering should be available all domains or only some domains. Choose Yes to make it available to all domains. Choose No to limit the scope to a subdomain; &PRODUCT; will then prompt for the subdomain's name."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Click Add."
+msgstr ""
+

@@ -20,30 +20,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.configuration.dao.ConfigurationDao;
-
-import org.apache.cloudstack.api.response.VolumeResponse;
-
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 
+@Component
 @Local(value={VolumeJoinDao.class})
 public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implements VolumeJoinDao {
     public static final Logger s_logger = Logger.getLogger(VolumeJoinDaoImpl.class);
@@ -51,9 +51,9 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
     @Inject
     private ConfigurationDao  _configDao;
 
-    private SearchBuilder<VolumeJoinVO> volSearch;
+    private final SearchBuilder<VolumeJoinVO> volSearch;
 
-    private SearchBuilder<VolumeJoinVO> volIdSearch;
+    private final SearchBuilder<VolumeJoinVO> volIdSearch;
 
     protected VolumeJoinDaoImpl() {
 
@@ -174,12 +174,12 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
         volResponse.setDestroyed(volume.getState() == Volume.State.Destroy);
         boolean isExtractable = true;
         if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont
-                                                              // have any
-                                                              // template
-                                                              // dependence.
+            // have any
+            // template
+            // dependence.
             if (volume.getTemplateId() > 0) { // For ISO based volumes template
-                                              // = null and we allow extraction
-                                              // of all ISO based volumes
+                // = null and we allow extraction
+                // of all ISO based volumes
                 isExtractable = volume.isExtractable() && volume.getTemplateType() != Storage.TemplateType.SYSTEM;
             }
         }

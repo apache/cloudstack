@@ -1,0 +1,64 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:58\n"
+"PO-Revision-Date: 2013-02-02T20:11:58\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Example response from listUsageRecords"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "All &PRODUCT; API requests are submitted in the form of a HTTP GET/POST with an associated command and any parameters. A request is composed of the following whether in HTTP or HTTPS:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "\n"
+"            &lt;listusagerecordsresponse&gt;\n"
+"                  &lt;count&gt;1816&lt;/count&gt;\n"
+"                 &lt;usagerecord&gt;\n"
+"                    &lt;account&gt;user5&lt;/account&gt;\n"
+"                    &lt;accountid&gt;10004&lt;/accountid&gt;\n"
+"                    &lt;domainid&gt;1&lt;/domainid&gt;\n"
+"                    &lt;zoneid&gt;1&lt;/zoneid&gt;\n"
+"                        &lt;description&gt;i-3-4-WC running time (ServiceOffering: 1) (Template: 3)&lt;/description&gt;\n"
+"                    &lt;usage&gt;2.95288 Hrs&lt;/usage&gt;\n"
+"                       &lt;usagetype&gt;1&lt;/usagetype&gt;\n"
+"                    &lt;rawusage&gt;2.95288&lt;/rawusage&gt;\n"
+"                       &lt;virtualmachineid&gt;4&lt;/virtualmachineid&gt;\n"
+"                    &lt;name&gt;i-3-4-WC&lt;/name&gt;\n"
+"                       &lt;offeringid&gt;1&lt;/offeringid&gt;\n"
+"                    &lt;templateid&gt;3&lt;/templateid&gt;\n"
+"                    &lt;usageid&gt;245554&lt;/usageid&gt;\n"
+"                    &lt;type&gt;XenServer&lt;/type&gt;\n"
+"                    &lt;startdate&gt;2009-09-15T00:00:00-0700&lt;/startdate&gt;\n"
+"                    &lt;enddate&gt;2009-09-18T16:14:26-0700&lt;/enddate&gt;\n"
+"                  &lt;/usagerecord&gt;\n"
+"\n"
+"               … (1,815 more usage records)\n"
+"            &lt;/listusagerecordsresponse&gt;\n"
+"        "
+msgstr ""
+

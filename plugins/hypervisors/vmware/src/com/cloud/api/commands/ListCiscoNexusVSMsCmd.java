@@ -21,10 +21,10 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import com.cloud.api.response.CiscoNexusVSMResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -39,6 +39,8 @@ import com.cloud.user.Account;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 @APICommand(name = "listCiscoNexusVSMs", responseObject=CiscoNexusVSMResponse.class, description="Retrieves a Cisco Nexus 1000v Virtual Switch Manager device associated with a Cluster")
 public class ListCiscoNexusVSMsCmd extends BaseListCmd {
 
@@ -51,7 +53,7 @@ public class ListCiscoNexusVSMsCmd extends BaseListCmd {
 	 */
     public static final Logger s_logger = Logger.getLogger(ListCiscoNexusVSMsCmd.class.getName());
     private static final String s_name = "listcisconexusvsmscmdresponse";
-    @PlugService CiscoNexusVSMElementService _ciscoNexusVSMService;
+    @Inject CiscoNexusVSMElementService _ciscoNexusVSMService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -101,7 +103,7 @@ public class ListCiscoNexusVSMsCmd extends BaseListCmd {
     		response.setResponseName(getCommandName());
     		this.setResponseObject(response);
     	} else {
-        	throw new ServerApiException(BaseListCmd.INTERNAL_ERROR, "No VSM found.");
+        	throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "No VSM found.");
         }
     }
  

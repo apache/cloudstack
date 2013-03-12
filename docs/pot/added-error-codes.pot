@@ -1,0 +1,330 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:57\n"
+"PO-Revision-Date: 2013-02-02T20:11:57\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Added &PRODUCT; Error Codes"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can now find the &PRODUCT;-specific error code in the exception response for each type of exception. The following list of error codes is added to the new class named CSExceptionErrorCode. These codes are applicable in &PRODUCT; 3.0.3 and later versions."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4250 : \"com.cloud.utils.exception.CloudRuntimeException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4255 : \"com.cloud.utils.exception.ExceptionUtil\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4260 : \"com.cloud.utils.exception.ExecutionException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4265 : \"com.cloud.utils.exception.HypervisorVersionChangedException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4270 : \"com.cloud.utils.exception.RuntimeCloudException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4275 : \"com.cloud.exception.CloudException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4280 : \"com.cloud.exception.AccountLimitException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4285 : \"com.cloud.exception.AgentUnavailableException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4290 : \"com.cloud.exception.CloudAuthenticationException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4295 : \"com.cloud.exception.CloudExecutionException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4300 : \"com.cloud.exception.ConcurrentOperationException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4305 : \"com.cloud.exception.ConflictingNetworkSettingsException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4310 : \"com.cloud.exception.DiscoveredWithErrorException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4315 : \"com.cloud.exception.HAStateException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4320 : \"com.cloud.exception.InsufficientAddressCapacityException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4325 : \"com.cloud.exception.InsufficientCapacityException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4330 : \"com.cloud.exception.InsufficientNetworkCapacityException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4335 : \"com.cloud.exception.InsufficientServerCapacityException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4340 : \"com.cloud.exception.InsufficientStorageCapacityException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4345 : \"com.cloud.exception.InternalErrorException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4350 : \"com.cloud.exception.InvalidParameterValueException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4355 : \"com.cloud.exception.ManagementServerException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4360 : \"com.cloud.exception.NetworkRuleConflictException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4365 : \"com.cloud.exception.PermissionDeniedException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4370 : \"com.cloud.exception.ResourceAllocationException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4375 : \"com.cloud.exception.ResourceInUseException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4380 : \"com.cloud.exception.ResourceUnavailableException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4385 : \"com.cloud.exception.StorageUnavailableException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4390 : \"com.cloud.exception.UnsupportedServiceException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4395 : \"com.cloud.exception.VirtualMachineMigrationException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4400 : \"com.cloud.exception.AccountLimitException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4405 : \"com.cloud.exception.AgentUnavailableException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4410 : \"com.cloud.exception.CloudAuthenticationException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4415 : \"com.cloud.exception.CloudException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4420 : \"com.cloud.exception.CloudExecutionException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4425 : \"com.cloud.exception.ConcurrentOperationException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4430 : \"com.cloud.exception.ConflictingNetworkSettingsException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4435 : \"com.cloud.exception.ConnectionException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4440 : \"com.cloud.exception.DiscoveredWithErrorException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4445 : \"com.cloud.exception.DiscoveryException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4450 : \"com.cloud.exception.HAStateException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4455 : \"com.cloud.exception.InsufficientAddressCapacityException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4460 : \"com.cloud.exception.InsufficientCapacityException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4465 : \"com.cloud.exception.InsufficientNetworkCapacityException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4470 : \"com.cloud.exception.InsufficientServerCapacityException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4475 : \"com.cloud.exception.InsufficientStorageCapacityException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4480 : \"com.cloud.exception.InsufficientVirtualNetworkCapcityException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4485 : \"com.cloud.exception.InternalErrorException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4490 : \"com.cloud.exception.InvalidParameterValueException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4495 : \"com.cloud.exception.ManagementServerException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4500 : \"com.cloud.exception.NetworkRuleConflictException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4505 : \"com.cloud.exception.PermissionDeniedException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4510 : \"com.cloud.exception.ResourceAllocationException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4515 : \"com.cloud.exception.ResourceInUseException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4520 : \"com.cloud.exception.ResourceUnavailableException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4525 : \"com.cloud.exception.StorageUnavailableException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4530 : \"com.cloud.exception.UnsupportedServiceException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "4535 : \"com.cloud.exception.VirtualMachineMigrationException\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "9999 : \"org.apache.cloudstack.api.ServerApiException\""
+msgstr ""
+

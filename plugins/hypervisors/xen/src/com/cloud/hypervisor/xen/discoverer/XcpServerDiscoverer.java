@@ -27,6 +27,7 @@ import java.util.Queue;
 import java.util.Set;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
@@ -78,14 +79,13 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
@@ -315,6 +315,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 params.put("wait", Integer.toString(_wait));
                 details.put("wait", Integer.toString(_wait));
                 params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
+                params.put(Config.XenMaxNics.toString().toLowerCase(), _configDao.getValue(Config.XenMaxNics.toString()));
                 params.put(Config.InstanceName.toString().toLowerCase(), _instance);
                 details.put(Config.InstanceName.toString().toLowerCase(), _instance);
                 try {
@@ -437,7 +438,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 
     	if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.2"))
     		return new XenServer602Resource();
-
+    	
         if (prodBrand.equals("XenServer") && prodVersion.equals("6.1.0"))
             return new XenServer610Resource();
 
@@ -449,18 +450,18 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     			return new XenServer56FP1Resource();
     		}
     	}
-
+    	
     	if (prodBrand.equals("XCP_Kronos")) {
     		return new XcpOssResource();
     	}
-
+    	
         String msg = "Only support XCP 1.0.0, 1.1.0, 1.5 beta; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0 but this one is " + prodBrand + " " + prodVersion;
-        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
-        s_logger.debug(msg);
-        throw new RuntimeException(msg);
+    			_alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
+    	s_logger.debug(msg);
+    	throw new RuntimeException(msg);
 
     }
-
+    
     protected void serverConfig() {      
         String value = _params.get(Config.XenSetupMultipath.key());
         _setupMultipath = Boolean.parseBoolean(value);

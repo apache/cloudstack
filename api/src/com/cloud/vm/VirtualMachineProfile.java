@@ -136,4 +136,10 @@ public interface VirtualMachineProfile<T extends VirtualMachine> {
     BootloaderType getBootLoaderType();
 
     Map<Param, Object> getParameters();
+
+    Float getCpuOvercommitRatio();
+
+    Float getMemoryOvercommitRatio();
+
+
 }

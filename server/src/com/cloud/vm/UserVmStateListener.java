@@ -16,23 +16,37 @@
 // under the License.
 package com.cloud.vm;
 
-import java.util.List;
-
+import com.cloud.event.EventCategory;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.Network;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.NicDao;
 
+import org.apache.log4j.Logger;
+
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
 public class UserVmStateListener implements StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
-    protected UsageEventDao _usageEventDao;
-    protected NetworkDao _networkDao;
-    protected NicDao _nicDao;
+    @Inject protected UsageEventDao _usageEventDao;
+    @Inject protected NetworkDao _networkDao;
+    @Inject protected NicDao _nicDao;
+    private static final Logger s_logger = Logger.getLogger(UserVmStateListener.class);
+
+    // get the event bus provider if configured
+    @Inject protected org.apache.cloudstack.framework.events.EventBus _eventBus = null;
     
     public UserVmStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, NicDao nicDao) {
         this._usageEventDao = usageEventDao;
@@ -42,6 +56,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
     
     @Override
     public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
+        pubishOnEventBus(event.name(), "preStateTransitionEvent", vo, oldState, newState);
         return true;
     }
 
@@ -55,28 +70,61 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
             return true;
         }
         
+        pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
+
         if (VirtualMachine.State.isVmCreated(oldState, event, newState)) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(), 
+            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_CREATE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(),
                     vo.getTemplateId(), vo.getHypervisorType().toString());
-            _usageEventDao.persist(usageEvent);
         } else if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(), 
+            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_START, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(),
                     vo.getTemplateId(), vo.getHypervisorType().toString());
-            _usageEventDao.persist(usageEvent);
         } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), vo.getHostName());
-            _usageEventDao.persist(usageEvent);
+            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_STOP, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName());
             List<NicVO> nics = _nicDao.listByVmId(vo.getId());
             for (NicVO nic : nics) {
                 NetworkVO network = _networkDao.findById(nic.getNetworkId());
-                usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), null, network.getNetworkOfferingId(), null, 0L);
-                _usageEventDao.persist(usageEvent);
+                UsageEventUtils.saveUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), null, network.getNetworkOfferingId(), null, 0L);
             }
         } else if (VirtualMachine.State.isVmDestroyed(oldState, event, newState)) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vo.getAccountId(), vo.getDataCenterIdToDeployIn(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(), 
+            UsageEventUtils.saveUsageEvent(EventTypes.EVENT_VM_DESTROY, vo.getAccountId(), vo.getDataCenterId(), vo.getId(), vo.getHostName(), vo.getServiceOfferingId(),
                     vo.getTemplateId(), vo.getHypervisorType().toString());
-            _usageEventDao.persist(usageEvent);
         } 
         return true;
+    }
+
+    private void pubishOnEventBus(String event, String status, VirtualMachine vo, VirtualMachine.State oldState, VirtualMachine.State newState) {
+
+        if (_eventBus == null) {
+            return; // no provider is configured to provide events bus, so just return
+        }
+
+        String resourceName = getEntityFromClassName(Network.class.getName());
+        org.apache.cloudstack.framework.events.Event eventMsg =  new org.apache.cloudstack.framework.events.Event(
+                ManagementServer.Name,
+                EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(),
+                event,
+                resourceName,
+                vo.getUuid());
+        Map<String, String> eventDescription = new HashMap<String, String>();
+        eventDescription.put("resource", resourceName);
+        eventDescription.put("id", vo.getUuid());
+        eventDescription.put("old-state", oldState.name());
+        eventDescription.put("new-state", newState.name());
+        eventMsg.setDescription(eventDescription);
+        try {
+            _eventBus.publish(eventMsg);
+        } catch (org.apache.cloudstack.framework.events.EventBusException e) {
+            s_logger.warn("Failed to publish state change event on the the event bus.");
+        }
+
+    }
+
+    private String getEntityFromClassName(String entityClassName) {
+        int index = entityClassName.lastIndexOf(".");
+        String entityName = entityClassName;
+        if (index != -1) {
+            entityName = entityClassName.substring(index+1);
+        }
+        return entityName;
     }
 }

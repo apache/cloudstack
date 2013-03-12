@@ -1,0 +1,195 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Network Throttling"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network throttling is the process of controlling the network access and bandwidth usage based on certain rules. &PRODUCT; controls this behaviour of the guest networks in the cloud by using the network rate parameter. This parameter is defined as the default data transfer rate in Mbps (Megabits Per Second) allowed in a guest network. It defines the upper limits for network utilization. If the current utilization is below the allowed upper limits, access is granted, else revoked."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can throttle the network bandwidth either to control the usage above a certain limit for some accounts, or to control network congestion in a large cloud environment. The network rate for your cloud can be configured on the following:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network Offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Service Offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Global parameter"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "If network rate is set to NULL in service offering, the value provided in the vm.network.throttling.rate global parameter is applied. If the value is set to NULL for network offering, the value provided in the network.throttling.rate global parameter is considered."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For the default public, storage, and management networks, network rate is set to 0. This implies that the public, storage, and management networks will have unlimited bandwidth by default. For default guest networks, network rate is set to NULL. In this case, network rate is defaulted to the global parameter value."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The following table gives you an overview of how network rate is applied on different types of networks in &PRODUCT;."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Networks"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network Rate Is Taken from"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Guest network of Virtual Router"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Guest Network Offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public network of Virtual Router"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Storage network of Secondary Storage VM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "System Network Offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Management network of Secondary Storage VM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Storage network of Console Proxy VM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Management network of Console Proxy VM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Storage network of Virtual Router"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Management network of Virtual Router"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public network of Secondary Storage VM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Public network of Console Proxy VM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Default network of a guest VM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Compute Offering"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Additional networks of a guest VM"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Corresponding Network Offerings"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A guest VM must have a default network, and can also have many additional networks. Depending on various parameters, such as the host and virtual switch used, you can observe a difference in the network rate in your cloud. For example, on a VMware host the actual network rate varies based on where they are configured (compute offering, network offering, or both); the network type (shared or isolated); and traffic direction (ingress or egress)."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The network rate set for a network offering used by a particular network in &PRODUCT; is used for the traffic shaping policy of a port group, for example: port group A, for that network: a particular subnet or VLAN on the actual network. The virtual routers for that network connects to the port group A, and by default instances in that network connects to this port group. However, if an instance is deployed with a compute offering with the network rate set, and if this rate is used for the traffic shaping policy of another port group for the network, for example port group B, then instances using this compute offering are connected to the port group B, instead of connecting to port group A."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The traffic shaping policy on standard port groups in VMware only applies to the egress traffic, and the net effect depends on the type of network used in &PRODUCT;. In shared networks, ingress traffic is unlimited for &PRODUCT;, and egress traffic is limited to the rate that applies to the port group used by the instance if any. If the compute offering has a network rate configured, this rate applies to the egress traffic, otherwise the network rate set for the network offering applies. For isolated networks, the network rate set for the network offering, if any, effectively applies to the ingress traffic. This is mainly because the network rate set for the network offering applies to the egress traffic from the virtual router to the instance. The egress traffic is limited by the rate that applies to the port group used by the instance if any, similar to shared networks."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For example:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network rate of network offering = 10 Mbps"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Network rate of compute offering = 200 Mbps"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In shared networks, ingress traffic will not be limited for &PRODUCT;, while egress traffic will be limited to 200 Mbps. In an isolated network, ingress traffic will be limited to 10 Mbps and egress to 200 Mbps."
+msgstr ""
+

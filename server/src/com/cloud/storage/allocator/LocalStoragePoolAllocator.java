@@ -22,8 +22,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.capacity.CapacityVO;
@@ -35,13 +37,11 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -110,7 +110,8 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
                 StoragePoolVO pool = _storagePoolDao.findById(hostPool.getPoolId());
                 if (pool != null && pool.isLocal()) {
                     s_logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
-                    suitablePools.add(pool);
+                    StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
+                    suitablePools.add(pol);
                 }
 
                 if (suitablePools.size() == returnUpTo) {

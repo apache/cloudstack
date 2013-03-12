@@ -18,9 +18,10 @@ package com.cloud.storage;
 
 import java.util.Date;
 
-import com.cloud.storage.Storage.StoragePoolType;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.storage.Storage.StoragePoolType;
 
 public interface StoragePool extends Identity, InternalIdentity {
 
@@ -94,4 +95,11 @@ public interface StoragePool extends Identity, InternalIdentity {
     int getPort();
 
     Long getPodId();
+
+	/**
+	 * @return
+	 */
+	Long getStorageProviderId();
+	
+	boolean isInMaintenance();
 }

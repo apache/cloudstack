@@ -16,15 +16,24 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import javax.inject.Inject;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
 import junit.framework.TestCase;
 
 import com.cloud.storage.StoragePoolStatus;
-import com.cloud.utils.component.ComponentLocator;
 
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = "classpath:/StoragePoolDaoTestContext.xml")
 public class StoragePoolDaoTest extends TestCase {
-    
+    @Inject StoragePoolDaoImpl dao;
+
+    @Test
     public void testCountByStatus() {
-        StoragePoolDaoImpl dao = ComponentLocator.inject(StoragePoolDaoImpl.class);
         long count = dao.countPoolsByStatus(StoragePoolStatus.Up);
         System.out.println("Found " + count + " storage pools");
     }

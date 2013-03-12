@@ -1,0 +1,238 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:12:00\n"
+"PO-Revision-Date: 2013-02-02T20:12:00\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Using SSH Keys for Authentication"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In addition to the username and password authentication, &PRODUCT; supports using SSH keys to log in to the cloud infrastructure for additional security. You can use the createSSHKeyPair API to generate the SSH keys."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Because each cloud user has their own SSH key, one cloud user cannot log in to another cloud user's instances unless they share their SSH key files. Using a single SSH key pair, you can manage multiple instances."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Creating an Instance Template that Supports SSH Keys"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create a instance template that supports SSH Keys."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create a new instance by using the template provided by cloudstack."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For more information on creating a new instance, see"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Download the cloudstack script from <ulink url=\"http://sourceforge.net/projects/cloudstack/files/SSH%20Key%20Gen%20Script/\">The SSH Key Gen Script</ulink>to the instance you have created."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "wget http://downloads.sourceforge.net/project/cloudstack/SSH%20Key%20Gen%20Script/cloud-set-guest-sshkey.in?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcloudstack%2Ffiles%2FSSH%2520Key%2520Gen%2520Script%2F&amp;ts=1331225219&amp;use_mirror=iweb"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Copy the file to /etc/init.d."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "cp cloud-set-guest-sshkey.in /etc/init.d/"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Give the necessary permissions on the script:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "chmod +x /etc/init.d/cloud-set-guest-sshkey.in"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the script while starting up the operating system:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "chkconfig --add cloud-set-guest-sshkey.in"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Stop the instance."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Creating the SSH Keypair"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You must make a call to the createSSHKeyPair api method. You can either use the &PRODUCT; Python API library or the curl commands to make the call to the cloudstack api."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For example, make a call from the cloudstack server to create a SSH keypair called \"keypair-doc\" for the admin account in the root domain:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that you adjust these values to meet your needs. If you are making the API call from a different server, your URL/PORT will be different, and you will need to use the API keys."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following curl command:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "curl --globoff \"http://localhost:8096/?command=createSSHKeyPair&amp;name=keypair-doc&amp;account=admin&amp;domainid=5163440e-c44b-42b5-9109-ad75cae8e8a2\""
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The output is something similar to what is given below:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "&lt;?xml version=\"1.0\" encoding=\"ISO-8859-1\"?&gt;&lt;createsshkeypairresponse cloud-stack-version=\"3.0.0.20120228045507\"&gt;&lt;keypair&gt;&lt;name&gt;keypair-doc&lt;/name&gt;&lt;fingerprint&gt;f6:77:39:d5:5e:77:02:22:6a:d8:7f:ce:ab:cd:b3:56&lt;/fingerprint&gt;&lt;privatekey&gt;-----BEGIN RSA PRIVATE KEY-----\n"
+"MIICXQIBAAKBgQCSydmnQ67jP6lNoXdX3noZjQdrMAWNQZ7y5SrEu4wDxplvhYci\n"
+"dXYBeZVwakDVsU2MLGl/K+wefwefwefwefwefJyKJaogMKn7BperPD6n1wIDAQAB\n"
+"AoGAdXaJ7uyZKeRDoy6wA0UmF0kSPbMZCR+UTIHNkS/E0/4U+6lhMokmFSHtu\n"
+"mfDZ1kGGDYhMsdytjDBztljawfawfeawefawfawfawQQDCjEsoRdgkduTy\n"
+"QpbSGDIa11Jsc+XNDx2fgRinDsxXI/zJYXTKRhSl/LIPHBw/brW8vzxhOlSOrwm7\n"
+"VvemkkgpAkEAwSeEw394LYZiEVv395ar9MLRVTVLwpo54jC4tsOxQCBlloocK\n"
+"lYaocpk0yBqqOUSBawfIiDCuLXSdvBo1Xz5ICTM19vgvEp/+kMuECQBzm\n"
+"nVo8b2Gvyagqt/KEQo8wzH2THghZ1qQ1QRhIeJG2aissEacF6bGB2oZ7Igim5L14\n"
+"4KR7OeEToyCLC2k+02UCQQCrniSnWKtDVoVqeK/zbB32JhW3Wullv5p5zUEcd\n"
+"KfEEuzcCUIxtJYTahJ1pvlFkQ8anpuxjSEDp8x/18bq3\n"
+"-----END RSA PRIVATE KEY-----\n"
+"&lt;/privatekey&gt;&lt;/keypair&gt;&lt;/createsshkeypairresponse&gt;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Copy the key data into a file. The file looks like this:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "-----BEGIN RSA PRIVATE KEY-----\n"
+"MIICXQIBAAKBgQCSydmnQ67jP6lNoXdX3noZjQdrMAWNQZ7y5SrEu4wDxplvhYci\n"
+"dXYBeZVwakDVsU2MLGl/K+wefwefwefwefwefJyKJaogMKn7BperPD6n1wIDAQAB\n"
+"AoGAdXaJ7uyZKeRDoy6wA0UmF0kSPbMZCR+UTIHNkS/E0/4U+6lhMokmFSHtu\n"
+"mfDZ1kGGDYhMsdytjDBztljawfawfeawefawfawfawQQDCjEsoRdgkduTy\n"
+"QpbSGDIa11Jsc+XNDx2fgRinDsxXI/zJYXTKRhSl/LIPHBw/brW8vzxhOlSOrwm7\n"
+"VvemkkgpAkEAwSeEw394LYZiEVv395ar9MLRVTVLwpo54jC4tsOxQCBlloocK\n"
+"lYaocpk0yBqqOUSBawfIiDCuLXSdvBo1Xz5ICTM19vgvEp/+kMuECQBzm\n"
+"nVo8b2Gvyagqt/KEQo8wzH2THghZ1qQ1QRhIeJG2aissEacF6bGB2oZ7Igim5L14\n"
+"4KR7OeEToyCLC2k+02UCQQCrniSnWKtDVoVqeK/zbB32JhW3Wullv5p5zUEcd\n"
+"KfEEuzcCUIxtJYTahJ1pvlFkQ8anpuxjSEDp8x/18bq3\n"
+"-----END RSA PRIVATE KEY-----"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Save the file."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Creating an Instance"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "After you save the SSH keypair file, you must create an instance by using the template that you created at <xref linkend=\"create-ssh-template\" />. Ensure that you use the same SSH key name that you created at <xref linkend=\"create-ssh-keypair\" />."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You cannot create the instance by using the GUI at this time and associate the instance with the newly created SSH keypair."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "A sample curl command to create a new instance is:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "curl --globoff http://localhost:&lt;port numbet&gt;/?command=deployVirtualMachine\\&amp;zoneId=1\\&amp;serviceOfferingId=18727021-7556-4110-9322-d625b52e0813\\&amp;templateId=e899c18a-ce13-4bbf-98a9-625c5026e0b5\\&amp;securitygroupids=ff03f02f-9e3b-48f8-834d-91b822da40c5\\&amp;account=admin\\&amp;domainid=1\\&amp;keypair=keypair-doc"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Substitute the template, service offering and security group IDs (if you are using the security group feature) that are in your cloud environment."
+msgstr ""
+
+#. Tag: title
+#, no-c-format
+msgid "Logging In Using the SSH Keypair"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "To test your SSH key generation is successful, check whether you can log in to the cloud setup."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For exaple, from a Linux OS, run:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "ssh -i ~/.ssh/keypair-doc &lt;ip address&gt;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "The -i parameter tells the ssh client to use a ssh key found at ~/.ssh/keypair-doc."
+msgstr ""
+

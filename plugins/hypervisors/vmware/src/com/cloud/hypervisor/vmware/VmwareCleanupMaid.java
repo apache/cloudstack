@@ -23,8 +23,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.cluster.CheckPointManager;
-import com.cloud.cluster.CleanupMaid;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
@@ -32,7 +30,7 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
-public class VmwareCleanupMaid implements CleanupMaid {
+public class VmwareCleanupMaid {
     private static final Logger s_logger = Logger.getLogger(VmwareCleanupMaid.class);
     
     private static Map<String, List<VmwareCleanupMaid>> s_leftoverDummyVMs = new HashMap<String, List<VmwareCleanupMaid>>();
@@ -67,16 +65,15 @@ public class VmwareCleanupMaid implements CleanupMaid {
 		_vmName = vmName;
 	}
 	
-	@Override
-	public int cleanup(CheckPointManager checkPointMgr) {
-		
-		// save a check-point in case we crash at current run so that we won't lose it
-		_checkPoint = checkPointMgr.pushCheckPoint(new VmwareCleanupMaid(_vCenterAddress, _dcMorValue, _vmName));
-		addLeftOverVM(this);
-		return 0;
-	}
+//	@Override
+//	public int cleanup(CheckPointManager checkPointMgr) {
+//		
+//		// save a check-point in case we crash at current run so that we won't lose it
+//		_checkPoint = checkPointMgr.pushCheckPoint(new VmwareCleanupMaid(_vCenterAddress, _dcMorValue, _vmName));
+//		addLeftOverVM(this);
+//		return 0;
+//	}
 
-	@Override
 	public String getCleanupProcedure() {
 		return null;
 	}
@@ -137,7 +134,7 @@ public class VmwareCleanupMaid implements CleanupMaid {
                 } catch(Throwable e) {
                     s_logger.warn("Unable to destroy left over dummy VM " + cleanupMaid.getVmName());
                 } finally {
-                	mgr.popCleanupCheckpoint(cleanupMaid.getCheckPoint());
+// FIXME                	mgr.popCleanupCheckpoint(cleanupMaid.getCheckPoint());
                 }
             }
             

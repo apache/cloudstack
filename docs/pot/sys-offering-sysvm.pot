@@ -1,0 +1,130 @@
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+#http://www.apache.org/licenses/LICENSE-2.0
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: 0\n"
+"POT-Creation-Date: 2013-02-02T20:11:59\n"
+"PO-Revision-Date: 2013-02-02T20:11:59\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: application/x-publican; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Changing the Default System Offering for System VMs"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "You can manually change the system offering for a particular System VM. Additionally, as a &PRODUCT; administrator, you can also change the default system offering used for System VMs."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Create a new system offering."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For more information, see <phrase condition=\"install\"><xref linkend=\"creating-system-service-offerings\" /></phrase> <phrase condition=\"admin\">Creating a New System Service Offering</phrase>."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Back up the database:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mysqldump -u root -p cloud | bzip2 &gt; cloud_backup.sql.bz2"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Open an MySQL prompt:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "mysql -u cloud -p cloud"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Run the following queries on the cloud database."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "In the disk_offering table, identify the original default offering and the new offering you want to use by default."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Take a note of the ID of the new offering."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "select id,name,unique_name,type from disk_offering;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For the original default offering, set the value of unique_name to NULL."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "# update disk_offering set unique_name = NULL where id = 10;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Ensure that you use the correct value for the ID."
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For the new offering that you want to use by default, set the value of unique_name as follows:"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "For the default Console Proxy VM (CPVM) offering,set unique_name to 'Cloud.com-ConsoleProxy'. For the default Secondary Storage VM (SSVM) offering, set unique_name to 'Cloud.com-SecondaryStorage'. For example:"
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "update disk_offering set unique_name = 'Cloud.com-ConsoleProxy' where id = 16;"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Restart &PRODUCT; Management Server. Restarting is required because the default offerings are loaded into the memory at startup."
+msgstr ""
+
+#. Tag: programlisting
+#, no-c-format
+msgid "service cloud-management restart"
+msgstr ""
+
+#. Tag: para
+#, no-c-format
+msgid "Destroy the existing CPVM or SSVM offerings and wait for them to be recreated. The new CPVM or SSVM are configured with the new offering."
+msgstr ""
+

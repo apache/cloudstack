@@ -18,20 +18,23 @@ package com.cloud.vm.dao;
 
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.network.Network;
-import com.cloud.network.RouterNetworkVO;
 import com.cloud.network.dao.RouterNetworkDaoImpl;
+import com.cloud.network.dao.RouterNetworkVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDaoImpl;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -44,23 +47,29 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
+@Component
 @Local(value = { DomainRouterDao.class })
+@DB
 public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> implements DomainRouterDao {
 
-    protected final SearchBuilder<DomainRouterVO> AllFieldsSearch;
-    protected final SearchBuilder<DomainRouterVO> IdNetworkIdStatesSearch;
-    protected final SearchBuilder<DomainRouterVO> HostUpSearch;
-    protected final SearchBuilder<DomainRouterVO> StateNetworkTypeSearch;
-    protected final SearchBuilder<DomainRouterVO> OutsidePodSearch;
-    HostDaoImpl _hostsDao = ComponentLocator.inject(HostDaoImpl.class);
-    RouterNetworkDaoImpl _routerNetworkDao = ComponentLocator.inject(RouterNetworkDaoImpl.class);
-    UserStatisticsDaoImpl _userStatsDao = ComponentLocator.inject(UserStatisticsDaoImpl.class);
-    NetworkOfferingDaoImpl _offDao = ComponentLocator.inject(NetworkOfferingDaoImpl.class);
-    protected final SearchBuilder<DomainRouterVO> VpcSearch;
+    protected SearchBuilder<DomainRouterVO> AllFieldsSearch;
+    protected SearchBuilder<DomainRouterVO> IdNetworkIdStatesSearch;
+    protected SearchBuilder<DomainRouterVO> HostUpSearch;
+    protected SearchBuilder<DomainRouterVO> StateNetworkTypeSearch;
+    protected SearchBuilder<DomainRouterVO> OutsidePodSearch;
+    @Inject HostDaoImpl _hostsDao;
+    @Inject RouterNetworkDaoImpl _routerNetworkDao;
+    @Inject UserStatisticsDaoImpl _userStatsDao;
+    @Inject NetworkOfferingDaoImpl _offDao;
+    protected SearchBuilder<DomainRouterVO> VpcSearch;
     
-    protected DomainRouterDaoImpl() {
+    public DomainRouterDaoImpl() {
+    }
+
+    @PostConstruct
+    protected void init() {
         AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and("dc", AllFieldsSearch.entity().getDataCenterIdToDeployIn(), Op.EQ);
+        AllFieldsSearch.and("dc", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.and("role", AllFieldsSearch.entity().getRole(), Op.EQ);
         AllFieldsSearch.and("domainId", AllFieldsSearch.entity().getDomainId(), Op.EQ);
@@ -309,10 +318,10 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
                 RouterNetworkVO routerNtwkMap = new RouterNetworkVO(router.getId(), guestNetwork.getId(), guestNetwork.getGuestType());
                 _routerNetworkDao.persist(routerNtwkMap);
                 //2) create user stats entry for the network
-                UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
+                UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), 
                         guestNetwork.getId(), null, router.getId(), router.getType().toString());
                 if (stats == null) {
-                    stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), null, router.getId(),
+                    stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterId(), null, router.getId(),
                             router.getType().toString(), guestNetwork.getId());
                     _userStatsDao.persist(stats);
                 }

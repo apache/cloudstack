@@ -16,12 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.swift;
 
-import org.apache.cloudstack.api.*;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SwiftResponse;
+import org.apache.log4j.Logger;
+
 import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.Swift;
 import com.cloud.user.Account;
@@ -92,12 +96,12 @@ public class AddSwiftCmd extends BaseCmd {
                 swiftResponse.setObjectName("swift");
                 this.setResponseObject(swiftResponse);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add Swift");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Swift");
             }
         } catch (DiscoveryException ex) {
             String errMsg = "Failed to add Swift due to " + ex.toString();
             s_logger.warn(errMsg, ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, errMsg);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errMsg);
         }
     }
 }
