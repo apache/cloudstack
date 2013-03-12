@@ -797,7 +797,7 @@ def addFWFramework(brname):
         return False
             
 if __name__ == '__main__':
-    logging.basicConfig(filename="/var/log/cloud/security_group.log", format="%(asctime)s - %(message)s", level=logging.DEBUG)
+    logging.basicConfig(filename="/var/log/cloudstack/agent/security_group.log", format="%(asctime)s - %(message)s", level=logging.DEBUG)
     parser = OptionParser()
     parser.add_option("--vmname", dest="vmName")
     parser.add_option("--vmip", dest="vmIP")
