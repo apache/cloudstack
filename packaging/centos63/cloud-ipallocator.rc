@@ -30,7 +30,7 @@ whatami=cloud-external-ipallocator
 SHORTNAME="$whatami"
 PIDFILE=/var/run/"$whatami".pid
 LOCKFILE=/var/lock/subsys/"$SHORTNAME"
-LOGFILE=/var/log/cloud/ipallocator/ipallocator.log
+LOGFILE=/var/log/cloudstack/ipallocator/ipallocator.log
 PROGNAME="External IPAllocator"
 
 unset OPTIONS
