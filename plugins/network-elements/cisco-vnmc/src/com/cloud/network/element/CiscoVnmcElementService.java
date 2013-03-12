@@ -30,7 +30,7 @@ public interface CiscoVnmcElementService extends PluggableService {
 
     //public static final Provider CiscoVnmc = new Provider("CiscoVnmc", true);
 
-	public CiscoVnmcController addCiscoVnmcResource(AddCiscoVnmcResourceCmd cmd);
+    public CiscoVnmcController addCiscoVnmcResource(AddCiscoVnmcResourceCmd cmd);
 
     public CiscoVnmcResourceResponse createCiscoVnmcResourceResponse(
             CiscoVnmcController CiscoVnmcResourceVO);

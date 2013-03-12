@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
@@ -38,7 +39,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.PhysicalNetworkVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.CiscoVnmcDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -48,13 +49,12 @@ import com.cloud.network.element.CiscoVnmcElementService;
 import com.cloud.network.resource.CiscoVnmcResource;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
-	ResourceManager _resourceMgr;    
+    ResourceManager _resourceMgr;    
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
@@ -74,8 +74,8 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
     CiscoVnmcConnection _vnmcConnection;
     
    
-	@Override
-	public CiscoVnmcController addCiscoVnmcResource(AddCiscoVnmcResourceCmd cmd) {
+    @Override
+    public CiscoVnmcController addCiscoVnmcResource(AddCiscoVnmcResourceCmd cmd) {
         String deviceName = Provider.CiscoVnmc.getName();
         NetworkDevice networkDevice = NetworkDevice.getNetworkDevice(deviceName);
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
@@ -113,7 +113,7 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
         Map<String, Object> hostdetails = new HashMap<String,Object>();
         hostdetails.putAll(params);
         
-		ServerResource resource = new CiscoVnmcResource();
+        ServerResource resource = new CiscoVnmcResource();
 
         Transaction txn = Transaction.currentTxn();
         try {
@@ -138,81 +138,108 @@ public class CiscoVnmcManager implements Manager, CiscoVnmcElementService {
             txn.rollback();
             throw new CloudRuntimeException(e.getMessage());
         }
-	}
+    }
 
-	@Override
-	public CiscoVnmcResourceResponse createCiscoVnmcResourceResponse(
-			CiscoVnmcController CiscoVnmcResourceVO) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public CiscoVnmcResourceResponse createCiscoVnmcResourceResponse(
+            CiscoVnmcController CiscoVnmcResourceVO) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public boolean deleteCiscoVnmcResource(DeleteCiscoVnmcResourceCmd cmd) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean deleteCiscoVnmcResource(DeleteCiscoVnmcResourceCmd cmd) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	
+    
 
-	@Override
-	public List<CiscoVnmcControllerVO> listCiscoVnmcResources(
-			ListCiscoVnmcResourcesCmd cmd) {
-		Long physicalNetworkId = cmd.getPhysicalNetworkId();
-		Long CiscoVnmcResourceId = cmd.getCiscoVnmcResourceId();
-		List<CiscoVnmcControllerVO> responseList = new ArrayList<CiscoVnmcControllerVO>();
+    @Override
+    public List<CiscoVnmcControllerVO> listCiscoVnmcResources(
+            ListCiscoVnmcResourcesCmd cmd) {
+        Long physicalNetworkId = cmd.getPhysicalNetworkId();
+        Long CiscoVnmcResourceId = cmd.getCiscoVnmcResourceId();
+        List<CiscoVnmcControllerVO> responseList = new ArrayList<CiscoVnmcControllerVO>();
 
-		if (physicalNetworkId == null && CiscoVnmcResourceId == null) {
-			throw new InvalidParameterValueException("Either physical network Id or vnmc device Id must be specified");
-		}
+        if (physicalNetworkId == null && CiscoVnmcResourceId == null) {
+            throw new InvalidParameterValueException("Either physical network Id or vnmc device Id must be specified");
+        }
 
-		if (CiscoVnmcResourceId != null) {
-			CiscoVnmcControllerVO CiscoVnmcResource = _ciscoVnmcDao.findById(CiscoVnmcResourceId);
-			if (CiscoVnmcResource == null) {
-				throw new InvalidParameterValueException("Could not find Cisco Vnmc device with id: " + CiscoVnmcResource);
-			}
-			responseList.add(CiscoVnmcResource);
-		}
-		else {
-			PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
-			if (physicalNetwork == null) {
-				throw new InvalidParameterValueException("Could not find a physical network with id: " + physicalNetworkId);
-			}
-			responseList = _ciscoVnmcDao.listByPhysicalNetwork(physicalNetworkId);
-		}
+        if (CiscoVnmcResourceId != null) {
+            CiscoVnmcControllerVO CiscoVnmcResource = _ciscoVnmcDao.findById(CiscoVnmcResourceId);
+            if (CiscoVnmcResource == null) {
+                throw new InvalidParameterValueException("Could not find Cisco Vnmc device with id: " + CiscoVnmcResource);
+            }
+            responseList.add(CiscoVnmcResource);
+        }
+        else {
+            PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+            if (physicalNetwork == null) {
+                throw new InvalidParameterValueException("Could not find a physical network with id: " + physicalNetworkId);
+            }
+            responseList = _ciscoVnmcDao.listByPhysicalNetwork(physicalNetworkId);
+        }
 
-		return responseList;
-	}
+        return responseList;
+    }
 
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean configure(String name, Map<String, Object> params)
+            throws ConfigurationException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean start() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean start() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean stop() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean stop() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String getName() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public List<Class<?>> getCommands() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public List<Class<?>> getCommands() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void setName(String name) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void setConfigParams(Map<String, Object> params) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public Map<String, Object> getConfigParams() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public int getRunLevel() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public void setRunLevel(int level) {
+        // TODO Auto-generated method stub
+    }
 
 }

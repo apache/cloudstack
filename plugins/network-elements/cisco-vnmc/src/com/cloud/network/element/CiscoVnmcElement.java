@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
@@ -78,8 +79,9 @@ import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.PhysicalNetworkVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -111,7 +113,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -135,6 +136,8 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     ConfigurationManager _configMgr;
     @Inject
     NetworkManager _networkMgr;
+    @Inject
+    NetworkModel _networkModel;
 
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
@@ -285,7 +288,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             return true;
         }
 
-        if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.CiscoVnmc)) {
+        if (!_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.CiscoVnmc)) {
             s_logger.error("SourceNat service is not provided by Cisco Vnmc device on network " + network.getName());
             return false;
         }
@@ -610,7 +613,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             List<? extends FirewallRule> rules)
             throws ResourceUnavailableException {
 
-        if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, Provider.CiscoVnmc)) {
+        if (!_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, Provider.CiscoVnmc)) {
             s_logger.error("Firewall service is not provided by Cisco Vnmc device on network " + network.getName());
             return false;
         }
@@ -639,7 +642,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
         List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
         for (FirewallRule rule : rules) {
-            IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+            IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
             FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, sourceIp.getAddress().addr());
             rulesTO.add(ruleTO);
         }
@@ -664,7 +667,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     public boolean applyPFRules(Network network, List<PortForwardingRule> rules)
             throws ResourceUnavailableException {
 
-        if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.PortForwarding, Provider.CiscoVnmc)) {
+        if (!_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.PortForwarding, Provider.CiscoVnmc)) {
             s_logger.error("Port forwarding service is not provided by Cisco Vnmc device on network " + network.getName());
             return false;
         }
@@ -693,7 +696,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
         List<PortForwardingRuleTO> rulesTO = new ArrayList<PortForwardingRuleTO>();
         for (PortForwardingRule rule : rules) {
-            IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+            IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
             Vlan vlan = _vlanDao.findById(sourceIp.getVlanId());
             PortForwardingRuleTO ruleTO = new PortForwardingRuleTO(rule, vlan.getVlanTag(), sourceIp.getAddress().addr());
             rulesTO.add(ruleTO);
@@ -719,7 +722,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
     public boolean applyStaticNats(Network network,
             List<? extends StaticNat> rules)
             throws ResourceUnavailableException {
-        if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.StaticNat, Provider.CiscoVnmc)) {
+        if (!_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.StaticNat, Provider.CiscoVnmc)) {
             s_logger.error("Static NAT service is not provided by Cisco Vnmc device on network " + network.getName());
             return false;
         }
@@ -748,7 +751,7 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
 
         List<StaticNatRuleTO> rulesTO = new ArrayList<StaticNatRuleTO>();
         for (StaticNat rule : rules) {
-            IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+            IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
             StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, 
                     null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
             rulesTO.add(ruleTO);

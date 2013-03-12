@@ -30,7 +30,7 @@ public class ConfigureNexusVsmForAsaCommand extends Command {
     private String _asaInPortProfile;
 
     public ConfigureNexusVsmForAsaCommand(long vlanId, String ipAddress,
-    		String vsmUsername, String vsmPassword, String vsmIp, String asaInPortProfile) {
+            String vsmUsername, String vsmPassword, String vsmIp, String asaInPortProfile) {
         super();
         this._vlanId = vlanId;
         this._ipAddress = ipAddress;
@@ -61,35 +61,35 @@ public class ConfigureNexusVsmForAsaCommand extends Command {
         this._ipAddress = _ipAddress;
     }
 
-	public String getVsmUsername() {
-		return _vsmUsername;
-	}
+    public String getVsmUsername() {
+        return _vsmUsername;
+    }
 
-	public void setVsmUsername(String _vsmUsername) {
-		this._vsmUsername = _vsmUsername;
-	}
+    public void setVsmUsername(String _vsmUsername) {
+        this._vsmUsername = _vsmUsername;
+    }
 
-	public String getVsmPassword() {
-		return _vsmPassword;
-	}
+    public String getVsmPassword() {
+        return _vsmPassword;
+    }
 
-	public void setVsmPassword(String _vsmPassword) {
-		this._vsmPassword = _vsmPassword;
-	}
+    public void setVsmPassword(String _vsmPassword) {
+        this._vsmPassword = _vsmPassword;
+    }
 
-	public String getVsmIp() {
-		return _vsmIp;
-	}
+    public String getVsmIp() {
+        return _vsmIp;
+    }
 
-	public void setVsmIp(String _vsmIp) {
-		this._vsmIp = _vsmIp;
-	}
+    public void setVsmIp(String _vsmIp) {
+        this._vsmIp = _vsmIp;
+    }
 
-	public String getAsaInPortProfile() {
-		return _asaInPortProfile;
-	}
+    public String getAsaInPortProfile() {
+        return _asaInPortProfile;
+    }
 
-	public void setAsaInPortProfile(String _asaInPortProfile) {
-		this._asaInPortProfile = _asaInPortProfile;
-	}
+    public void setAsaInPortProfile(String _asaInPortProfile) {
+        this._asaInPortProfile = _asaInPortProfile;
+    }
 }

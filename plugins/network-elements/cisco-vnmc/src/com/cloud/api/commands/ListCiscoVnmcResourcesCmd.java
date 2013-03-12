@@ -19,12 +19,13 @@ package com.cloud.api.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.PlugService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
@@ -45,7 +46,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ListCiscoVnmcResourcesCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListCiscoVnmcResourcesCmd.class.getName());
     private static final String s_name = "listCiscoVnmcResources";
-    @PlugService CiscoVnmcElementService _ciscoVnmcElementService;
+    @Inject CiscoVnmcElementService _ciscoVnmcElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -91,9 +92,9 @@ public class ListCiscoVnmcResourcesCmd extends BaseListCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }  catch (InvalidParameterValueException invalidParamExcp) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
 

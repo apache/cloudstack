@@ -31,7 +31,7 @@ public class CiscoVnmcDaoImpl extends GenericDaoBase<CiscoVnmcControllerVO, Long
         implements CiscoVnmcDao {
     
     protected final SearchBuilder<CiscoVnmcControllerVO> physicalNetworkIdSearch;
-    
+
     public CiscoVnmcDaoImpl() {
         physicalNetworkIdSearch = createSearchBuilder();
         physicalNetworkIdSearch.and("physicalNetworkId", physicalNetworkIdSearch.entity().getPhysicalNetworkId(), Op.EQ);

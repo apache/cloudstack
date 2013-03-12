@@ -31,26 +31,26 @@ public class CiscoVnmcResourceResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.RESOURCE_ID) @Parameter(description="resource id of the Cisco  VNMC controller")
     private String id;
-    
+
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) 
     @Parameter(description="the physical network to which this VNMC belongs to", entityType = PhysicalNetworkResponse.class)
     private Long physicalNetworkId ;
-    
+
     public Long getPhysicalNetworkId() {
-		return physicalNetworkId;
-	}
+        return physicalNetworkId;
+    }
 
-	public String getProviderName() {
-		return providerName;
-	}
+    public String getProviderName() {
+        return providerName;
+    }
 
-	public String getResourceName() {
-		return resourceName;
-	}
+    public String getResourceName() {
+        return resourceName;
+    }
 
-	@SerializedName(ApiConstants.PROVIDER) @Parameter(description="name of the provider")
+    @SerializedName(ApiConstants.PROVIDER) @Parameter(description="name of the provider")
     private String providerName;
-    
+
     @SerializedName(RESOURCE_NAME) 
     @Parameter(description="Cisco VNMC resource name")
     private String resourceName;
@@ -70,5 +70,5 @@ public class CiscoVnmcResourceResponse extends BaseResponse {
     public void setResourceName(String resourceName) {
         this.resourceName = resourceName;
     }     
-    
+
 }

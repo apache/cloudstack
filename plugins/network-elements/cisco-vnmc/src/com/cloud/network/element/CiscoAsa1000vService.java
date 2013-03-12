@@ -29,7 +29,7 @@ import com.cloud.utils.component.PluggableService;
 
 public interface CiscoAsa1000vService extends PluggableService {
 
-	public CiscoAsa1000vDevice addCiscoAsa1000vResource(AddCiscoAsa1000vResourceCmd cmd);
+    public CiscoAsa1000vDevice addCiscoAsa1000vResource(AddCiscoAsa1000vResourceCmd cmd);
 
     public CiscoAsa1000vResourceResponse createCiscoAsa1000vResourceResponse(
             CiscoAsa1000vDevice ciscoAsa1000vDeviceVO);

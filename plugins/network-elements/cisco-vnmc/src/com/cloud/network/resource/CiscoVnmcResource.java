@@ -61,7 +61,7 @@ import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.SwitchPortMode;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 
-public class CiscoVnmcResource implements ServerResource{
+public class CiscoVnmcResource implements ServerResource {
 
     private String _name;
     private String _zoneId;
@@ -686,6 +686,33 @@ public class CiscoVnmcResource implements ServerResource{
         }
 
         return new Answer(cmd, true, "Success");
+    }
+
+    @Override
+    public void setName(String name) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void setConfigParams(Map<String, Object> params) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public Map<String, Object> getConfigParams() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public int getRunLevel() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public void setRunLevel(int level) {
+        // TODO Auto-generated method stub
     }
 
 }
