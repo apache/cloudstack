@@ -78,7 +78,8 @@ Requires: mkisofs
 Requires: MySQL-python
 Requires: python-paramiko
 Requires: ipmitool
-Requires: %{name}-common = %{_ver} 
+Requires: %{name}-common = %{_ver}
+Requires: %{name}-awsapi = %{_ver} 
 Obsoletes: cloud-client < 4.1.0
 Obsoletes: cloud-client-ui < 4.1.0
 Obsoletes: cloud-daemonize < 4.1.0
@@ -318,6 +319,10 @@ if [ "$1" == "1" ] ; then
     /sbin/chkconfig --level 345 cloud-management on > /dev/null 2>&1 || true
 fi
 
+if [ -d "%{_datadir}/%{name}-management" ] ; then
+   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
+fi
+
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
@@ -330,10 +335,10 @@ if getent passwd cloud | grep -q /var/lib/cloud; then
 fi
 
 
-%post awsapi
-if [ -d "%{_datadir}/%{name}-management" ] ; then
-   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
-fi
+#%post awsapi
+#if [ -d "%{_datadir}/%{name}-management" ] ; then
+#   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
+#fi
 
 #No default permission as the permission setup is complex
 %files management
