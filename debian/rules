@@ -124,7 +124,10 @@ install:
 	# cloudstack-usage
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/usage
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-usage
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-usage/plugins
 	install -D usage/target/cloud-usage-4.2.0-SNAPSHOT.jar $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/$(PACKAGE)-usage.jar
+	install -D usage/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/
 	cp usage/target/transformed/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/
 	ln -s ../management/db.properties $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/db.properties
 	install -D packaging/debian/init/cloud-usage $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-usage
