@@ -196,8 +196,6 @@ DROP TABLE IF EXISTS `cloud`.`vm_network_map`;
 DROP TABLE IF EXISTS `cloud`.`netapp_volume`;
 DROP TABLE IF EXISTS `cloud`.`netapp_pool`;
 DROP TABLE IF EXISTS `cloud`.`netapp_lun`;
-DROP TABLE IF EXISTS `cloud`.`global_load_balancing_rules`;
-DROP TABLE IF EXISTS `cloud`.`global_load_balancer_lb_rule_map`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -2085,9 +2083,6 @@ CREATE TABLE `cloud`.`external_load_balancer_devices` (
   `is_dedicated` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if device/appliance is provisioned for dedicated use only',
   `is_inline` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer will be used in in-line configuration with firewall',
   `is_managed` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is provisioned and its life cycle is managed by by cloudstack',
-  `is_gslb_provider` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is acting as gslb service provider in the zone',
-  `gslb_site_publicip` varchar(255)  DEFAULT NULL COMMENT 'GSLB service Provider site public ip',
-  `gslb_site_privateip` varchar(255) DEFAULT NULL COMMENT 'GSLB service Provider site private ip',
   `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external load balancer device',
   `parent_host_id` bigint unsigned COMMENT 'if the load balancer appliance is cloudstack managed, then host id on which this appliance is provisioned',
   PRIMARY KEY (`id`),
@@ -2264,16 +2259,6 @@ CREATE TABLE  `cloud`.`netscaler_pod_ref` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE  `cloud`.`region` (
-  `id` int unsigned NOT NULL UNIQUE,
-  `name` varchar(255) NOT NULL UNIQUE,
-  `end_point` varchar(255) NOT NULL,
-  `api_key` varchar(255),
-  `secret_key` varchar(255),
-  `gslb_service_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1 COMMENT 'Is GSLB service provided in the zone',
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE `cloud`.`vpc` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) NOT NULL,
@@ -2433,34 +2418,6 @@ CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
   `logicalswitchport` varchar(255) UNIQUE COMMENT 'nicira uuid of this logical switch port',
   `nic` varchar(255) UNIQUE COMMENT 'cloudstack uuid of the nic connected to this logical switch port',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`global_load_balancing_rules` (
-  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-  `uuid` varchar(40),
-  `account_id` bigint unsigned NOT NULL COMMENT 'account id',
-  `region_id`  int unsigned NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `description` varchar(4096) NULL COMMENT 'description',
-  `state` char(32) NOT NULL COMMENT 'current state of this rule',
-  `algorithm` varchar(255) NOT NULL COMMENT 'load balancing algorithm used to distribbute traffic across zones',
-  `persistence` varchar(255) NOT NULL COMMENT 'session persistence used across the zone',
-  `gslb_domain_name` varchar(255) NOT NULL COMMENT 'DNS name for the GSLB service that is used to provide a FQDN for the GSLB service',
-  `service_type` varchar(255) NOT NULL COMMENT 'type of the GSLB service',
-  PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_global_load_balancing_rules_account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_global_load_balancing_rules_region_id` FOREIGN KEY(`region_id`) REFERENCES `region`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`global_load_balancer_lb_rule_map` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `gslb_rule_id` bigint unsigned NOT NULL,
-  `lb_rule_id` bigint unsigned NOT NULL,
-  `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 is when rule is set for Revoke',
-  PRIMARY KEY  (`id`),
-  UNIQUE KEY (`gslb_rule_id`, `lb_rule_id`),
-  CONSTRAINT `fk_gslb_rule_id` FOREIGN KEY(`gslb_rule_id`) REFERENCES `global_load_balancing_rules`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_lb_rule_id` FOREIGN KEY(`lb_rule_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;
