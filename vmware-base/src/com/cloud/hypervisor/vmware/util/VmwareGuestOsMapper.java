@@ -116,29 +116,29 @@ public class VmwareGuestOsMapper {
 		s_mapper.put("Other CentOS (64-bit)", VirtualMachineGuestOsIdentifier.centos64Guest);
 		
 		s_mapper.put("Red Hat Enterprise Linux 2", VirtualMachineGuestOsIdentifier.rhel2Guest);
-		s_mapper.put("Red Hat Enterprise Linux 3(32-bit)", VirtualMachineGuestOsIdentifier.rhel3Guest);
-		s_mapper.put("Red Hat Enterprise Linux 3(64-bit)", VirtualMachineGuestOsIdentifier.rhel3_64Guest);
-		s_mapper.put("Red Hat Enterprise Linux 4(32-bit)", VirtualMachineGuestOsIdentifier.rhel4Guest);
-		s_mapper.put("Red Hat Enterprise Linux 4(64-bit)", VirtualMachineGuestOsIdentifier.rhel4_64Guest);
-		s_mapper.put("Red Hat Enterprise Linux 5(32-bit)", VirtualMachineGuestOsIdentifier.rhel5Guest);
-		s_mapper.put("Red Hat Enterprise Linux 5(64-bit)", VirtualMachineGuestOsIdentifier.rhel5_64Guest);
-		s_mapper.put("Red Hat Enterprise Linux 6(32-bit)", VirtualMachineGuestOsIdentifier.rhel6Guest);
-		s_mapper.put("Red Hat Enterprise Linux 6(64-bit)", VirtualMachineGuestOsIdentifier.rhel6_64Guest);
+		s_mapper.put("Red Hat Enterprise Linux 3 (32-bit)", VirtualMachineGuestOsIdentifier.rhel3Guest);
+		s_mapper.put("Red Hat Enterprise Linux 3 (64-bit)", VirtualMachineGuestOsIdentifier.rhel3_64Guest);
+		s_mapper.put("Red Hat Enterprise Linux 4 (32-bit)", VirtualMachineGuestOsIdentifier.rhel4Guest);
+		s_mapper.put("Red Hat Enterprise Linux 4 (64-bit)", VirtualMachineGuestOsIdentifier.rhel4_64Guest);
+		s_mapper.put("Red Hat Enterprise Linux 5 (32-bit)", VirtualMachineGuestOsIdentifier.rhel5Guest);
+		s_mapper.put("Red Hat Enterprise Linux 5 (64-bit)", VirtualMachineGuestOsIdentifier.rhel5_64Guest);
+		s_mapper.put("Red Hat Enterprise Linux 6 (32-bit)", VirtualMachineGuestOsIdentifier.rhel6Guest);
+		s_mapper.put("Red Hat Enterprise Linux 6 (64-bit)", VirtualMachineGuestOsIdentifier.rhel6_64Guest);
 		
 		s_mapper.put("Red Hat Enterprise Linux 4.5 (32-bit)", VirtualMachineGuestOsIdentifier.rhel4Guest);
 		s_mapper.put("Red Hat Enterprise Linux 4.6 (32-bit)", VirtualMachineGuestOsIdentifier.rhel4Guest);
 		s_mapper.put("Red Hat Enterprise Linux 4.7 (32-bit)", VirtualMachineGuestOsIdentifier.rhel4Guest);
 		s_mapper.put("Red Hat Enterprise Linux 4.8 (32-bit)", VirtualMachineGuestOsIdentifier.rhel4Guest);
-		s_mapper.put("Red Hat Enterprise Linux 5.0(32-bit)", VirtualMachineGuestOsIdentifier.rhel5Guest);
-		s_mapper.put("Red Hat Enterprise Linux 5.0(64-bit)", VirtualMachineGuestOsIdentifier.rhel5_64Guest);
-		s_mapper.put("Red Hat Enterprise Linux 5.1(32-bit)", VirtualMachineGuestOsIdentifier.rhel5Guest);
-		s_mapper.put("Red Hat Enterprise Linux 5.1(64-bit)", VirtualMachineGuestOsIdentifier.rhel5_64Guest);
-		s_mapper.put("Red Hat Enterprise Linux 5.2(32-bit)", VirtualMachineGuestOsIdentifier.rhel5Guest);
-		s_mapper.put("Red Hat Enterprise Linux 5.2(64-bit)", VirtualMachineGuestOsIdentifier.rhel5_64Guest);
-		s_mapper.put("Red Hat Enterprise Linux 5.3(32-bit)", VirtualMachineGuestOsIdentifier.rhel5Guest);
-		s_mapper.put("Red Hat Enterprise Linux 5.3(64-bit)", VirtualMachineGuestOsIdentifier.rhel5_64Guest);
-		s_mapper.put("Red Hat Enterprise Linux 5.4(32-bit)", VirtualMachineGuestOsIdentifier.rhel5Guest);
-		s_mapper.put("Red Hat Enterprise Linux 5.4(64-bit)", VirtualMachineGuestOsIdentifier.rhel5_64Guest);
+		s_mapper.put("Red Hat Enterprise Linux 5.0 (32-bit)", VirtualMachineGuestOsIdentifier.rhel5Guest);
+		s_mapper.put("Red Hat Enterprise Linux 5.0 (64-bit)", VirtualMachineGuestOsIdentifier.rhel5_64Guest);
+		s_mapper.put("Red Hat Enterprise Linux 5.1 (32-bit)", VirtualMachineGuestOsIdentifier.rhel5Guest);
+		s_mapper.put("Red Hat Enterprise Linux 5.1 (64-bit)", VirtualMachineGuestOsIdentifier.rhel5_64Guest);
+		s_mapper.put("Red Hat Enterprise Linux 5.2 (32-bit)", VirtualMachineGuestOsIdentifier.rhel5Guest);
+		s_mapper.put("Red Hat Enterprise Linux 5.2 (64-bit)", VirtualMachineGuestOsIdentifier.rhel5_64Guest);
+		s_mapper.put("Red Hat Enterprise Linux 5.3 (32-bit)", VirtualMachineGuestOsIdentifier.rhel5Guest);
+		s_mapper.put("Red Hat Enterprise Linux 5.3 (64-bit)", VirtualMachineGuestOsIdentifier.rhel5_64Guest);
+		s_mapper.put("Red Hat Enterprise Linux 5.4 (32-bit)", VirtualMachineGuestOsIdentifier.rhel5Guest);
+		s_mapper.put("Red Hat Enterprise Linux 5.4 (64-bit)", VirtualMachineGuestOsIdentifier.rhel5_64Guest);
 		
 		s_mapper.put("Ubuntu 8.04 (32-bit)", VirtualMachineGuestOsIdentifier.ubuntuGuest);
 		s_mapper.put("Ubuntu 8.04 (64-bit)", VirtualMachineGuestOsIdentifier.ubuntu64Guest);
