@@ -78,6 +78,3 @@ The following provides more details on the included cryptographic software:
   CloudStack has a dependency on Apache WSS4J as part of the AWSAPI implementation. 
 
   CloudStack has a dependency on and makes use of JSch - a java SSH2 implementation. 
-
-# ASFBot test
-This is for an ASFBot test. Will be removed soon
