@@ -62,5 +62,4 @@ public interface Domain extends OwnedBy, Identity, InternalIdentity {
     
     public String getUuid();
     
-    int getRegionId();
 }

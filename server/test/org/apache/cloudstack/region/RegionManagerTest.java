@@ -48,27 +48,14 @@ public class RegionManagerTest extends TestCase {
     public void testUniqueName() {
     	RegionManagerImpl regionMgr = new RegionManagerImpl();
     	RegionDao regionDao = Mockito.mock(RegionDao.class);
-    	RegionVO region = new RegionVO(2, "APAC", "", null, null);    	
+    	RegionVO region = new RegionVO(2, "APAC", "");
     	Mockito.when(regionDao.findByName(Mockito.anyString())).thenReturn(region);    	
     	regionMgr._regionDao = regionDao;
     	try {
-    		regionMgr.addRegion(2, "APAC", "", null, null);
+    		regionMgr.addRegion(2, "APAC", "");
     	} catch (InvalidParameterValueException e){
     		Assert.assertEquals("Region with name: APAC already exists", e.getMessage());
     	}
-    }
-    
-    @Test
-    public void testUserDelete() {
-    	RegionManagerImpl regionMgr = new RegionManagerImpl();
-    	AccountDao accountDao = Mockito.mock(AccountDao.class);
-    	Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(null);
-    	regionMgr._accountDao = accountDao;
-    	try {
-    		regionMgr.deleteUserAccount(5);
-    	} catch (InvalidParameterValueException e){
-    		Assert.assertEquals("The specified account does not exist in the system", e.getMessage());
-    	}    	
     }
 
 }
