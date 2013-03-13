@@ -184,6 +184,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
@@ -3447,9 +3448,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     public NicSecondaryIpResponse createSecondaryIPToNicResponse(String ipAddr, Long nicId, Long networkId) {
         NicSecondaryIpResponse response = new NicSecondaryIpResponse();
+        NicVO nic = _entityMgr.findById(NicVO.class, nicId);
+        NetworkVO network = _entityMgr.findById(NetworkVO.class, networkId);
         response.setIpAddr(ipAddr);
-        response.setNicId(nicId);
-        response.setNwId(networkId);
+        response.setNicId(nic.getUuid());
+        response.setNwId(network.getUuid());
         response.setObjectName("nicsecondaryip");
         return response;
     }
@@ -3465,7 +3468,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();
                 for (NicSecondaryIpVO ip: secondaryIps) {
                     NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
-                    ipRes.setId(ip.getId());
+                    ipRes.setId(ip.getUuid());
                     ipRes.setIpAddr(ip.getIp4Address());
                     ipList.add(ipRes);
                 }

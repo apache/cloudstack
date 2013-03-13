@@ -742,7 +742,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public Nic getNicInNetwork(long vmId, long networkId) {
-        return _nicDao.findByInstanceIdAndNetworkId(networkId, vmId);
+        return _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(networkId, vmId);
     }
 
     @Override

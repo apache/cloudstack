@@ -78,7 +78,8 @@ Requires: mkisofs
 Requires: MySQL-python
 Requires: python-paramiko
 Requires: ipmitool
-Requires: %{name}-common = %{_ver} 
+Requires: %{name}-common = %{_ver}
+Requires: %{name}-awsapi = %{_ver} 
 Obsoletes: cloud-client < 4.1.0
 Obsoletes: cloud-client-ui < 4.1.0
 Obsoletes: cloud-daemonize < 4.1.0
@@ -145,13 +146,15 @@ Apache CloudStack command line interface
 %package awsapi
 Summary: Apache CloudStack AWS API compatibility wrapper
 Requires: %{name}-management = %{_ver}
+Obsoletes: cloud-aws-api < 4.1.0
+Provides: cloud-aws-api
 %description awsapi
 Apache Cloudstack AWS API compatibility wrapper
 
-%package docs
-Summary: Apache CloudStack documentation
-%description docs
-Apache CloudStack documentations
+#%package docs
+#Summary: Apache CloudStack documentation
+#%description docs
+#Apache CloudStack documentations
 
 %prep
 echo Doing CloudStack build
@@ -316,6 +319,10 @@ if [ "$1" == "1" ] ; then
     /sbin/chkconfig --level 345 cloud-management on > /dev/null 2>&1 || true
 fi
 
+if [ -d "%{_datadir}/%{name}-management" ] ; then
+   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
+fi
+
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
@@ -328,16 +335,14 @@ if getent passwd cloud | grep -q /var/lib/cloud; then
 fi
 
 
-%post awsapi
-if [ -d "%{_datadir}/%{name}-management" ] ; then
-   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
-fi
+#%post awsapi
+#if [ -d "%{_datadir}/%{name}-management" ] ; then
+#   ln -s %{_datadir}/%{name}-bridge/webapps %{_datadir}/%{name}-management/webapps7080
+#fi
 
 #No default permission as the permission setup is complex
 %files management
 %defattr(-,root,root,-)
-%doc LICENSE
-%doc NOTICE
 %dir %attr(0770,root,cloud) %{_sysconfdir}/%{name}/management/Catalina
 %dir %attr(0770,root,cloud) %{_sysconfdir}/%{name}/management/Catalina/localhost
 %dir %attr(0770,root,cloud) %{_sysconfdir}/%{name}/management/Catalina/localhost/client
@@ -432,9 +437,9 @@ fi
 %doc LICENSE
 %doc NOTICE
 
-%files docs
-%doc LICENSE
-%doc NOTICE
+#%files docs
+#%doc LICENSE
+#%doc NOTICE
 
 %files awsapi
 %defattr(0644,cloud,cloud,0755)

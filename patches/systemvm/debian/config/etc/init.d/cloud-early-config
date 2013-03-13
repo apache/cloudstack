@@ -593,9 +593,20 @@ setup_redundant_router() {
     fi
 }
 
+setup_aesni() {
+  if [ `grep aes /proc/cpuinfo | wc -l` -gt 0 ]
+  then
+    modprobe aesni_intel
+    if [ `lsmod | grep aesni_intel | wc -l` -gt 0 ]
+    then
+      echo aesni_intel >> /etc/modules
+    fi
+  fi
+}
+
 setup_router() {
   log_it "Setting up virtual router system vm"
-  
+
   oldmd5=
   [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldmd5=$(md5sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
   
@@ -643,10 +654,8 @@ setup_router() {
     fi
   fi
   
-  
-  
+  setup_aesni
   setup_dnsmasq
-  
   setup_apache2 $ETH0_IP
 
   sed -i  /gateway/d /etc/hosts

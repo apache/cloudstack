@@ -5034,7 +5034,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 boolean bRefresh = false;
                 if(firewallMo != null) {
                     HostFirewallInfo firewallInfo = firewallMo.getFirewallInfo();
-                    if(firewallInfo != null) {
+                    if(firewallInfo != null && firewallInfo.getRuleset() != null) {
                         for(HostFirewallRuleset rule : firewallInfo.getRuleset()) {
                             if("vncServer".equalsIgnoreCase(rule.getKey())) {
                                 bRefresh = true;

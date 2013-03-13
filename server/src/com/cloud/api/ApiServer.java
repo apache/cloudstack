@@ -327,10 +327,12 @@ public class ApiServer implements HttpRequestHandler, ApiServerService {
                     }
                     String[] value = (String[]) params.get(key);
                     // fail if parameter value contains ASCII control (non-printable) characters
-                    String newValue = StringUtils.stripControlCharacters(value[0]);
-                    if ( !newValue.equals(value[0]) ) {
-                        throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Received value " + value[0] + " for parameter "
-                                + key + " is invalid, contains illegal ASCII non-printable characters");
+                    if (value[0] != null) {
+                        String newValue = StringUtils.stripControlCharacters(value[0]);
+                        if ( !newValue.equals(value[0]) ) {
+                            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Received value " + value[0] + " for parameter "
+                                    + key + " is invalid, contains illegal ASCII non-printable characters");
+                        }
                     }
                     paramMap.put(key, value[0]);
                 }

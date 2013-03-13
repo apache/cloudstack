@@ -1765,12 +1765,8 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         _nicDao.remove(nic.getId());
         s_logger.debug("Removed nic id=" + nic.getId());
         //remove the secondary ip addresses corresponding to to this nic
-        List<NicSecondaryIpVO> secondaryIps = _nicSecondaryIpDao.listByNicId(nic.getId());
-        if (secondaryIps != null) {
-            for (NicSecondaryIpVO ip : secondaryIps) {
-                _nicSecondaryIpDao.remove(ip.getId());
-            }
-            s_logger.debug("Removed nic " + nic.getId() + " secondary ip addreses");
+        if (!removeVmSecondaryIpsOfNic(nic.getId())) {
+            s_logger.debug("Removing nic " + nic.getId() + " secondary ip addreses failed");
         }
     }
 
@@ -2835,7 +2831,6 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
 
         _accountMgr.checkAccess(caller, null, false, network);
 
-        //return acquireGuestIpAddress(network, requestedIp);
         ipaddr = acquireGuestIpAddress(network, requestedIp);
         return ipaddr;
     }
@@ -3654,11 +3649,11 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
         return nic.getSecondaryIp();
     }
 
-        @Override
-        public boolean removeVmSecondaryIps(long vmId) {
+         @Override
+        public boolean removeVmSecondaryIpsOfNic(long nicId) {
            Transaction txn = Transaction.currentTxn();
            txn.start();
-           List <NicSecondaryIpVO> ipList = _nicSecondaryIpDao.listByVmId(vmId);
+           List <NicSecondaryIpVO> ipList = _nicSecondaryIpDao.listByNicId(nicId);
            if (ipList != null) {
                for (NicSecondaryIpVO ip: ipList) {
                    _nicSecondaryIpDao.remove(ip.getId());
@@ -3669,4 +3664,16 @@ public class NetworkManagerImpl extends ManagerBase implements NetworkManager, L
            return true;
         }
 
-}
+        @Override
+        public String allocatePublicIpForGuestNic(Long networkId, DataCenter dc, Pod pod,Account owner,
+                String requestedIp) throws InsufficientAddressCapacityException {
+            PublicIp ip = assignPublicIpAddress(dc.getId(), null, owner, VlanType.DirectAttached, networkId, requestedIp, false);
+            if (ip == null) {
+                s_logger.debug("There is no free public ip address");
+                return null;
+            }
+            Ip ipAddr = ip.getAddress();
+            return ipAddr.addr();
+        }
+
+ }

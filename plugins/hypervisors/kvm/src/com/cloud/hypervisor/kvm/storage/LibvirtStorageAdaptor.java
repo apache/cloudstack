@@ -293,58 +293,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return parser.parseStorageVolumeXML(volDefXML);
     }
 
-    public StoragePool createFileBasedStoragePool(Connect conn,
-            String localStoragePath, String uuid) {
-        if (!(_storageLayer.exists(localStoragePath) && _storageLayer
-                .isDirectory(localStoragePath))) {
-            return null;
-        }
-
-        File path = new File(localStoragePath);
-        if (!(path.canWrite() && path.canRead() && path.canExecute())) {
-            return null;
-        }
-
-        StoragePool pool = null;
-
-        try {
-            pool = conn.storagePoolLookupByUUIDString(uuid);
-        } catch (LibvirtException e) {
-
-        }
-
-        if (pool == null) {
-            LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.DIR,
-                    uuid, uuid, null, null, localStoragePath);
-            try {
-                pool = conn.storagePoolDefineXML(spd.toString(), 0);
-                pool.create(0);
-            } catch (LibvirtException e) {
-                if (pool != null) {
-                    try {
-                        pool.destroy();
-                        pool.undefine();
-                    } catch (LibvirtException e1) {
-                    }
-                    pool = null;
-                }
-                throw new CloudRuntimeException(e.toString());
-            }
-        }
-
-        try {
-            StoragePoolInfo spi = pool.getInfo();
-            if (spi.state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
-                pool.create(0);
-            }
-
-        } catch (LibvirtException e) {
-            throw new CloudRuntimeException(e.toString());
-        }
-
-        return pool;
-    }
-
     @Override
     public KVMStoragePool getStoragePool(String uuid) {
         StoragePool storage = null;

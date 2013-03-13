@@ -660,15 +660,27 @@
 									  name: args.data.name,
 										displaytext: args.data.displaytext
 									};
-								
+								  
                   //args.data.networkdomain is null when networkdomain field is hidden
                   if(args.data.networkdomain != null && args.data.networkdomain != args.context.networks[0].networkdomain) {
 									  $.extend(data, {
 										  networkdomain: args.data.networkdomain
 										});
-									}
+									} 
+                  
+                  var oldcidr;
+                  $.ajax({
+                    url: createURL("listNetworks&id=" + args.context.networks[0].id ),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+                      oldcidr = json.listnetworksresponse.network[0].cidr;
+                      
+                    }
+                  });
 
-                  if(args.data.cidr !="" ){
+
+                  if(args.data.cidr !="" && args.data.cidr != oldcidr ){
                     $.extend(data, {
                       guestvmcidr: args.data.cidr
                     });

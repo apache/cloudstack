@@ -64,8 +64,8 @@ install:
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/agent
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent/plugins
-	install -D agent/target/cloud-agent-4.2.0-SNAPSHOT.jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/$(PACKAGE)-agent.jar
-	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-4.2.0-SNAPSHOT.jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
+	install -D agent/target/cloud-agent-$(VERSION)-SNAPSHOT.jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/$(PACKAGE)-agent.jar
+	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-$(VERSION)-SNAPSHOT.jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D plugins/hypervisors/kvm/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D packaging/debian/init/cloud-agent $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-agent
 	install -D agent/bindir/cloud-setup-agent.in $(DESTDIR)/usr/bin/cloud-setup-agent
@@ -86,14 +86,14 @@ install:
 	mkdir $(DESTDIR)/var/lib/$(PACKAGE)/management
 	mkdir $(DESTDIR)/var/lib/$(PACKAGE)/mnt
 	cp -r client/target/utilities/scripts/db/* $(DESTDIR)/usr/share/$(PACKAGE)-management/setup/
-	cp -r client/target/cloud-client-ui-4.2.0-SNAPSHOT/* $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps/client/
+	cp -r client/target/cloud-client-ui-$(VERSION)-SNAPSHOT/* $(DESTDIR)/usr/share/$(PACKAGE)-management/webapps/client/
 	cp server/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/
 	cp client/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/
 	ln -s tomcat6-nonssl.conf $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/tomcat6.conf
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/Catalina/localhost/client
 	install -D packaging/debian/init/cloud-management $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-management
 	install -D client/bindir/cloud-update-xenserver-licenses.in $(DESTDIR)/usr/bin/cloud-update-xenserver-licenses
-	install -D server/target/cloud-server-4.2.0-SNAPSHOT.jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/$(PACKAGE)-server.jar
+	install -D server/target/cloud-server-$(VERSION)-SNAPSHOT.jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/$(PACKAGE)-server.jar
 	ln -s /usr/share/tomcat6/bin $(DESTDIR)/usr/share/$(PACKAGE)-management/bin
 	ln -s ../../..$(SYSCONFDIR)/$(PACKAGE)/management $(DESTDIR)/usr/share/$(PACKAGE)-management/conf
 	ln -s /usr/share/tomcat6/lib $(DESTDIR)/usr/share/$(PACKAGE)-management/lib
@@ -115,7 +115,7 @@ install:
 	install -D client/target/utilities/bin/cloud-set-guest-sshkey $(DESTDIR)/usr/bin
 	install -D client/target/utilities/bin/cloud-setup-databases $(DESTDIR)/usr/bin
 	install -D client/target/utilities/bin/cloud-setup-management $(DESTDIR)/usr/bin
-	install -D services/console-proxy/server/dist/systemvm.iso $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/systemvm.iso
+	install -D client/target/cloud-client-ui-$(VERSION)-SNAPSHOT/WEB-INF/classes/vms/systemvm.iso $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/systemvm.iso
 
 	# cloudstack-python
 	mkdir -p $(DESTDIR)/usr/lib/python2.7/dist-packages
@@ -124,7 +124,10 @@ install:
 	# cloudstack-usage
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/usage
-	install -D usage/target/cloud-usage-4.2.0-SNAPSHOT.jar $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/$(PACKAGE)-usage.jar
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-usage
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-usage/plugins
+	install -D usage/target/cloud-usage-$(VERSION)-SNAPSHOT.jar $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/$(PACKAGE)-usage.jar
+	install -D usage/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/
 	cp usage/target/transformed/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/
 	ln -s ../management/db.properties $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/db.properties
 	install -D packaging/debian/init/cloud-usage $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-usage

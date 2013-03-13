@@ -50,9 +50,10 @@ public class ConsoleProxyHttpHandlerHelper {
             ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(
                 ConsoleProxy.getEncryptorPassword());
     
+            ConsoleProxyClientParam param = encryptor.decryptObject(ConsoleProxyClientParam.class, map.get("token"));
+
             // make sure we get information from token only
             map.clear();
-            ConsoleProxyClientParam param = encryptor.decryptObject(ConsoleProxyClientParam.class, map.get("token"));
             if(param != null) {
                 if(param.getClientHostAddress() != null)
                     map.put("host", param.getClientHostAddress());

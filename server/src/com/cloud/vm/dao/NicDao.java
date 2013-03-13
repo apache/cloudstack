@@ -60,4 +60,6 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     NicVO findByIp4AddressAndNetworkIdAndInstanceId(long networkId, long instanceId, String ip4Address);
 
     List<NicVO> listByVmIdAndNicId(Long vmId, Long nicId);
+
+    NicVO findByIp4AddressAndVmId(String ip4Address, long instance);
 }

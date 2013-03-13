@@ -567,7 +567,6 @@ public class VolumeServiceImpl implements VolumeService {
         
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
         VolumeObject vo = (VolumeObject) volume;
-        vo.stateTransit(Volume.Event.UploadRequested);
 
         CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(null, vo, future);
         AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);

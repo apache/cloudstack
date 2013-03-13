@@ -212,4 +212,13 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setParameters("nicid", nicId);
         return listBy(sc);
     }
+
+    @Override
+    public NicVO findByIp4AddressAndVmId(String ip4Address, long instance) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("address", ip4Address);
+        sc.setParameters("instance", instance);
+        return findOneBy(sc);
+    }
+
 }
