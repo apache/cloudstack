@@ -1,0 +1,12 @@
+# usage database settings
+db.usage.username=@DBUSER@
+db.usage.password=@DBPW@
+db.usage.host=@DBHOST@
+db.usage.port=3306
+db.usage.name=cloud_usage
+
+# usage database tuning parameters
+db.usage.maxActive=100
+db.usage.maxIdle=30
+db.usage.maxWait=10000
+db.usage.autoReconnect=true

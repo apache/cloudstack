@@ -129,7 +129,6 @@ install:
 	install -D usage/target/cloud-usage-$(VERSION)-SNAPSHOT.jar $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/$(PACKAGE)-usage.jar
 	install -D usage/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/
 	cp usage/target/transformed/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/
-	ln -s ../management/db.properties $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/db.properties
 	install -D packaging/debian/init/cloud-usage $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-usage
 
 	# cloudstack-awsapi
