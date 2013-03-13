@@ -25,6 +25,8 @@ import os
 import xml.dom.minidom
 from optparse import OptionParser, OptionGroup, OptParseError, BadOptionError, OptionError, OptionConflictError, OptionValueError
 import re
+import traceback
+
 iptables = Command("iptables")
 bash = Command("/bin/bash")
 virsh = Command("virsh")
@@ -692,7 +694,8 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
     
     return 'true'
   except:
-    logging.debug("Failed to network rule !: " + sys.exc_type)
+    exceptionText = traceback.format_exc()
+    logging.debug("Failed to network rule !: " + exceptionText)
 
 def getVifs(vmName):
     vifs = []
