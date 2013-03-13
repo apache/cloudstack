@@ -257,7 +257,7 @@ for full help
             self.runMysql(text, p, True)
             self.info(None, True)
 
-        awsApiDbDir = '/usr/share/cloud/setup/bridge/db'
+        awsApiDbDir = '/usr/share/cloudstack-bridge/setup'
         for f in ["cloudbridge_db.sql"]:
             p = os.path.join(awsApiDbDir,f)
             if not os.path.exists(p): continue
