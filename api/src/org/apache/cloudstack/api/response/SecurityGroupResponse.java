@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -65,9 +66,9 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledVie
     private Set<ResourceTagResponse> tags;
 
     public SecurityGroupResponse(){
-        this.ingressRules = new HashSet<SecurityGroupRuleResponse>();
-        this.egressRules = new HashSet<SecurityGroupRuleResponse>();
-        this.tags = new HashSet<ResourceTagResponse>();
+        this.ingressRules = new LinkedHashSet<SecurityGroupRuleResponse>();
+        this.egressRules = new LinkedHashSet<SecurityGroupRuleResponse>();
+        this.tags = new LinkedHashSet<ResourceTagResponse>();
     }
 
 

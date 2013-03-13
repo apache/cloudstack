@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -157,7 +158,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     private Set<NicResponse> nics;
 
     public DomainRouterResponse(){
-        nics = new HashSet<NicResponse>();
+        nics = new LinkedHashSet<NicResponse>();
     }
 
 
@@ -344,7 +345,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     public void addNic(NicResponse nic) {
         this.nics.add(nic);
     }
-    
+
 	public String getIp6Dns1() {
 		return ip6Dns1;
 	}
