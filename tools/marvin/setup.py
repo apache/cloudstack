@@ -37,7 +37,6 @@ setup(name="Marvin",
       install_requires=[
           "mysql-connector-python",
           "paramiko",
-          "nose",
-          "unittest-xml-reporting>1.2"
-      ],         
+          "nose"
+      ],
      )

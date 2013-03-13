@@ -16,7 +16,6 @@
 # under the License.
 
 import unittest
-import xmlrunner
 import os
 import sys
 import logging
@@ -27,7 +26,7 @@ def testCaseLogger(message, logger=None):
         logger.debug(message)
 
 class TestCaseExecuteEngine(object):
-    def __init__(self, testclient, config, testcaseLogFile=None, testResultLogFile=None, format="text", xmlDir="xml-reports"):
+    def __init__(self, testclient, config, testcaseLogFile=None, testResultLogFile=None):
         """
         Initialize the testcase execution engine, just the basics here
         @var testcaseLogFile: client log file
@@ -38,7 +37,6 @@ class TestCaseExecuteEngine(object):
         self.logformat = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
         self.loader = unittest.loader.TestLoader()
         self.suite = None
-        self.format = format
 
         if testcaseLogFile is not None:
             self.logfile = testcaseLogFile
@@ -56,9 +54,7 @@ class TestCaseExecuteEngine(object):
             self.testResultLogFile = fp
         else:
             self.testResultLogFile = sys.stdout
-        if self.format == "xml"  and (xmlDir is not None):
-            self.xmlDir = xmlDir
-            
+
     def loadTestsFromDir(self, testDirectory):
         """ Load the test suites from a package with multiple test files """
         self.suite = self.loader.discover(testDirectory)
@@ -92,7 +88,4 @@ class TestCaseExecuteEngine(object):
 
     def run(self):
         if self.suite:
-            if self.format == "text":
-                unittest.TextTestRunner(stream=self.testResultLogFile, verbosity=2).run(self.suite)
-            elif self.format == "xml":
-                xmlrunner.XMLTestRunner(output=self.xmlDir).run(self.suite)
+            unittest.TextTestRunner(stream=self.testResultLogFile, verbosity=2).run(self.suite)

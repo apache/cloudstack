@@ -75,7 +75,7 @@ class TestSetupSuccess(cloudstackTestCase):
                 retry = retry - 1
                 delay(60) #wait a minute for retry
             self.assertNotEqual(retry, 0, "builtIn templates not ready in zone %s"%z.name)
-            
+
     @classmethod
     def tearDownClass(cls):
         pass

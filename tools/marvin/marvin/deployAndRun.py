@@ -17,22 +17,22 @@
 
 import deployDataCenter
 import TestCaseExecuteEngine
-from optparse import OptionParser
-import os
-
+from argparse import ArgumentParser
 if __name__ == "__main__":
 
-    parser = OptionParser() #TODO: deprecate and use the argparse module
-  
-    parser.add_option("-c", "--config", action="store", default="./datacenterCfg", dest="config", help="the path where the json config file generated, by default is ./datacenterCfg")
-    parser.add_option("-d", "--directory", dest="testCaseFolder", help="the test case directory")
-    parser.add_option("-r", "--result", dest="result", help="test result log file")
-    parser.add_option("-t", "--client", dest="testcaselog", help="test case log file")
-    parser.add_option("-l", "--load", dest="load", action="store_true", help="only load config, do not deploy, it will only run testcase")
-    parser.add_option("-f", "--file", dest="module", help="run tests in the given file")
-    parser.add_option("-x", "--xml", dest="xmlrunner", help="use the xml runner to generate xml reports and path to store xml files")
-    (options, args) = parser.parse_args()
-    
+    parser = ArgumentParser()
+
+    parser.add_argument("-d", "--directory", dest="testCaseFolder", help="the test case directory")
+    parser.add_argument("-f", "--file", dest="module", help="run tests in the given file")
+    parser.add_argument("-r", "--result", dest="result", help="test result log file", default='/tmp/t.log')
+    parser.add_argument("-t", "--client", dest="testcaselog", help="test case log file", default='/tmp/r.log')
+    parser.add_argument("-c", "--config", action="store", default="./datacenterCfg", dest="config",
+        help="the path where the json config file generated, by default is ./datacenterCfg")
+    parser.add_argument("-l", "--load", dest="load", action="store_true",
+        help="only load config, do not deploy, it will only run testcase")
+
+    options = parser.parse_args()
+
     testResultLogFile = None
     if options.result is not None:
         testResultLogFile = options.result
@@ -46,12 +46,6 @@ if __name__ == "__main__":
     else:
         deploy.deploy()
         
-    fmt = "text"
-    xmlDir = None
-    if options.xmlrunner is not None:
-        xmlDir = options.xmlrunner
-        fmt = "xml"
-    
     if options.testCaseFolder is None:
         if options.module is None:
             parser.print_usage()
@@ -61,15 +55,13 @@ if __name__ == "__main__":
             TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient,
                                                         deploy.getCfg(),
                                                         testCaseLogFile,
-                                                        testResultLogFile, fmt,
-                                                        xmlDir)
+                                                        testResultLogFile)
             engine.loadTestsFromFile(options.module)
             engine.run()
     else:
        engine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient,
                                                             deploy.getCfg(),
                                                             testCaseLogFile,
-                                                            testResultLogFile,
-                                                            fmt, xmlDir)
+                                                            testResultLogFile)
        engine.loadTestsFromDir(options.testCaseFolder)
        engine.run()

@@ -65,8 +65,8 @@
             </configuration>
           </execution>
           <execution>
-            <id>package</id>
-            <phase>package</phase>
+            <id>install</id>
+            <phase>install</phase>
             <goals>
               <goal>exec</goal>
             </goals>
@@ -117,7 +117,42 @@
                 <goals>
                   <goal>exec</goal>
                 </goals>
+                <configuration>
+                  <workingDirectory>${basedir}/marvin</workingDirectory>
+                  <executable>/usr/local/bin/nosetests</executable>
+                  <arguments>
+                    <argument>--with-marvin</argument>
+                    <argument>--marvin-config</argument>
+                    <argument>${user.dir}/${marvin.config}</argument>
+                    <argument>--load</argument>
+                    <argument>-a</argument>
+                    <argument>tags=simulator</argument>
+                    <argument>${basedir}/../../test/integration/smoke/test_vm_life_cycle.py</argument>
+                  </arguments>
+                </configuration>
               </execution>
+              <!--execution>
+                <id>pre-integration-test</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${basedir}/marvin</workingDirectory>
+                  <executable>python</executable>
+                  <arguments>
+                    <argument>deployAndRun.py</argument>
+                    <argument>-c</argument>
+                    <argument>${user.dir}/${marvin.config}</argument>
+                    <argument>-t</argument>
+                    <argument>/tmp/t.log</argument>
+                    <argument>-r</argument>
+                    <argument>/tmp/r.log</argument>
+                    <argument>-f</argument>
+                    <argument>${basedir}/marvin/testSetupSuccess.py</argument>
+                  </arguments>
+                </configuration>
+              </execution-->
             </executions>
           </plugin>
         </plugins>
