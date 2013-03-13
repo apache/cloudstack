@@ -1119,6 +1119,7 @@
           id: 'secondaryNicIps',
           label: 'label.ips',
           fields: {
+            virtualmachinedisplayname: { label: 'label.vm.name' },
             ipaddress: {
               label: 'label.ips',
               converter: function(text, item) {
@@ -1128,15 +1129,6 @@
 
                 return text;
               }
-            },
-            zonename: { label: 'label.zone' },
-            virtualmachinedisplayname: { label: 'label.vm.name' },
-            state: {
-              converter: function(str) {
-                // For localization
-                return str;
-              },
-              label: 'label.state', indicator: { 'Allocated': 'on', 'Released': 'off' }
             }
           },
           actions: {
@@ -1163,7 +1155,13 @@
                     args.response.success({
                       _custom: {
                         getUpdatedItem: function(data) {
-
+                          return $.extend(
+                            data.queryasyncjobresultresponse.jobresult.nicsecondaryip,
+                            {
+                              zoneid: args.context.instances[0].zoneid,
+                              virtualmachinedisplayname: args.context.instances[0].displayname
+                            }
+                          );
                         },
                         jobId: json.addiptovmnicresponse.jobid
                       }
@@ -1194,7 +1192,6 @@
                   data: $(ips).map(function(index, ip) {
                     return $.extend(ip, {
                       zoneid: args.context.instances[0].zoneid,
-                      zonename: args.context.instances[0].zonename,
                       virtualmachinedisplayname: args.context.instances[0].displayname
                     });
                   })
@@ -1213,7 +1210,7 @@
                   $.ajax({
                     url: createURL('removeIpFromNic'),
                     data: {
-                      id: args.context.secondaryNicIps[0].ipaddress
+                      id: args.context.secondaryNicIps[0].id
                     },
                     success: function(json) {
                       args.response.success({
