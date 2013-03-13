@@ -3939,23 +3939,32 @@ ServerResource {
                     .getBytes()));
             int persist = dm.isPersistent();
             if (force) {
-                if (dm.getInfo().state != DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF) {
+                if (dm.isActive() == 1) {
                     dm.destroy();
                     if (persist == 1) {
                         dm.undefine();
                     }
                 }
             } else {
-                if (dm.getInfo().state == DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF) {
+                if (dm.isActive() == 0) {
                     return null;
                 }
                 dm.shutdown();
                 int retry = _stopTimeout / 2000;
-                /* Wait for the domain gets into shutoff state */
-                while ((dm.getInfo().state != DomainInfo.DomainState.VIR_DOMAIN_SHUTOFF)
-                        && (retry >= 0)) {
-                    Thread.sleep(2000);
-                    retry--;
+                /* Wait for the domain gets into shutoff state. When it does
+                   the dm object will no longer work, so we need to catch it. */
+                try {
+                    while ( dm.isActive() == 1 && (retry >= 0)) {
+                        Thread.sleep(2000);
+                        retry--;
+                    }
+                } catch (LibvirtException e) {
+                    String error = e.toString();
+                    if (error.contains("Domain not found")) {
+                        s_logger.debug("successfully shut down vm " + vmName);
+                    } else {
+                        s_logger.debug("Error in waiting for vm shutdown:" + error);
+                    }
                 }
                 if (retry < 0) {
                     s_logger.warn("Timed out waiting for domain " + vmName
