@@ -1682,7 +1682,10 @@
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         filters: false,
-                        subselect: instanceSecondaryIPSubselect,
+                        subselect: {
+                          label: 'label.use.vm.ip',
+                          dataProvider: instanceSecondaryIPSubselect
+                        },
                         dataProvider: function(args) {
                           var data = {
                             page: args.page,
@@ -3025,7 +3028,10 @@
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         filters: false,
-                        subselect: instanceSecondaryIPSubselect,
+                        subselect: {
+                          label: 'label.use.vm.ip',
+                          dataProvider: instanceSecondaryIPSubselect
+                        },
                         dataProvider: function(args) {
                           var networkid;
 													if('vpc' in args.context) 

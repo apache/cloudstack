@@ -1048,7 +1048,7 @@
       if (subselect) {
         var $td = $tr.find('td.first');
         var $select = $('<div></div>').addClass('subselect').append(
-          $('<span>').html('Use IP:'),
+          $('<span>').html(_l(subselect.label)),
           $('<select>')
         ).hide();
         var $selectionArea = $tr.find('td:last').find('input');
@@ -1059,7 +1059,7 @@
         $selectionArea.change(function() {
           if ($(this).is(':checked')) {
             // Populate data
-            subselect({
+            subselect.dataProvider({
               context: $.extend(true, {}, options.context, {
                 instances: [$tr.data('json-obj')]
               }),

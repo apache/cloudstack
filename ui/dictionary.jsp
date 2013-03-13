@@ -25,6 +25,7 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'label.use.vm.ip': '<fmt:message key="label.use.vm.ip"/>',
 'label.add.region': '<fmt:message key="label.add.region"/>',
 'label.remove.region': '<fmt:message key="label.remove.region"/>',
 'message.remove.region': '<fmt:message key="message.remove.region"/>',
