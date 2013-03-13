@@ -356,8 +356,9 @@ public interface UserVmService {
      * @param cmd
      *            - the command specifying vmId and new serviceOfferingId
      * @return the vm
+     * @throws ResourceAllocationException 
      */
-    UserVm upgradeVirtualMachine(UpgradeVMCmd cmd);
+    UserVm upgradeVirtualMachine(UpgradeVMCmd cmd) throws ResourceAllocationException;
 
     UserVm stopVirtualMachine(long vmId, boolean forced) throws ConcurrentOperationException;
 
