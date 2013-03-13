@@ -1,6 +1,5 @@
 package org.apache.cloudstack.affinity;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -13,36 +12,34 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.log4j.Logger;
 
 
-import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.security.SecurityGroupManager;
-import com.cloud.network.security.SecurityGroupRuleVO;
-import com.cloud.network.security.SecurityGroupVMMapVO;
-import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Event;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value = { AffinityGroupService.class })
-public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGroupService, Manager {
+public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGroupService, Manager,
+        StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     public static final Logger s_logger = Logger.getLogger(AffinityGroupServiceImpl.class);
     private String _name;
@@ -219,6 +216,58 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     @Override
     public AffinityGroup getAffinityGroup(Long groupId) {
         return _affinityGroupDao.findById(groupId);
+    }
+
+    @Override
+    public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo,
+            boolean status, Object opaque) {
+        return true;
+    }
+
+    @Override
+    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo,
+            boolean status, Object opaque) {
+        if (!status) {
+            return false;
+        }
+        if ((newState == State.Expunging)) {
+            // cleanup all affinity groups associated to the Expunged VM
+            SearchCriteria<AffinityGroupVMMapVO> sc = _affinityGroupVMMapDao.createSearchCriteria();
+            sc.addAnd("instanceId", SearchCriteria.Op.EQ, vo.getId());
+            _affinityGroupVMMapDao.expunge(sc);
+        }
+        return true;
+    }
+
+    @Override
+    public UserVm updateVMAffinityGroups(Long vmId, List<Long> affinityGroupIds) {
+        // Verify input parameters
+        UserVmVO vmInstance = _userVmDao.findById(vmId);
+        if (vmInstance == null) {
+            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+        }
+
+        // Check that the VM is stopped
+        if (!vmInstance.getState().equals(State.Stopped)) {
+            s_logger.warn("Unable to update affinity groups of the virtual machine " + vmInstance.toString()
+                    + " in state " + vmInstance.getState());
+            throw new InvalidParameterValueException("Unable update affinity groups of the virtual machine "
+                    + vmInstance.toString() + " " + "in state " + vmInstance.getState()
+                    + "; make sure the virtual machine is stopped and not in an error state before updating.");
+        }
+
+        // check that the affinity groups exist
+        for (Long affinityGroupId : affinityGroupIds) {
+            AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
+            if (ag == null) {
+                throw new InvalidParameterValueException("Unable to find affinity group by id " + affinityGroupId);
+            }
+        }
+        _affinityGroupVMMapDao.updateMap(vmId, affinityGroupIds);
+
+        // APIResponseHelper will pull out the updated affinitygroups.
+        return vmInstance;
+
     }
 
 }

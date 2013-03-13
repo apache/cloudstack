@@ -40,4 +40,8 @@ public interface AffinityGroupVMMapDao extends GenericDao<AffinityGroupVMMapVO, 
     long countAffinityGroupsForVm(long instanceId);
 
     int deleteVM(long instanceId);
+
+    AffinityGroupVMMapVO findByVmIdType(long instanceId, String type);
+
+    void updateMap(Long vmId, List<Long> affinityGroupIds);
 }

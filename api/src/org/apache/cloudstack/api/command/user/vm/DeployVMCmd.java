@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -171,6 +172,18 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name=ApiConstants.START_VM, type=CommandType.BOOLEAN, description="true if network offering supports specifying ip ranges; defaulted to true if not specified")
     private Boolean startVm;
+
+    @ACL
+    @Parameter(name = ApiConstants.AFFINITY_GROUP_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "comma separated list of affinity groups id that are going to be applied to the virtual machine. "
+            + "Should be passed only when vm is created from a zone with Basic Network support."
+            + " Mutually exclusive with securitygroupnames parameter")
+    private List<Long> affinityGroupIdList;
+
+    @ACL
+    @Parameter(name = ApiConstants.AFFINITY_GROUP_NAMES, type = CommandType.LIST, collectionType = CommandType.STRING, entityType = AffinityGroupResponse.class, description = "comma separated list of affinity groups names that are going to be applied to the virtual machine."
+            + " Should be passed only when vm is created from a zone with Basic Network support. "
+            + "Mutually exclusive with securitygroupids parameter")
+    private List<String> affinityGroupNameList;
 
 
     /////////////////////////////////////////////////////
@@ -321,6 +334,30 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 		return ip6Address.toLowerCase();
 	}
 
+    public List<Long> getAffinityGroupIdList() {
+        if (affinityGroupNameList != null && affinityGroupIdList != null) {
+            throw new InvalidParameterValueException(
+                    "affinitygroupids parameter is mutually exclusive with affinitygroupnames parameter");
+        }
+
+        // transform group names to ids here
+        if (affinityGroupNameList != null) {
+            List<Long> affinityGroupIds = new ArrayList<Long>();
+            for (String groupName : affinityGroupNameList) {
+                Long groupId = _responseGenerator.getAffinityGroupId(groupName, getEntityOwnerId());
+                if (groupId == null) {
+                    throw new InvalidParameterValueException("Unable to find group by name " + groupName
+                            + " for account " + getEntityOwnerId());
+                } else {
+                    affinityGroupIds.add(groupId);
+                }
+            }
+            return affinityGroupIds;
+        } else {
+            return affinityGroupIdList;
+        }
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -447,18 +484,18 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                     throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
                 } else {
                     vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
-                                displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard);
+                                displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard, getAffinityGroupIdList());
                 }
             } else {
                 if (zone.isSecurityGroupEnabled())  {
                     vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
-                                owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard);
+                                owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard, getAffinityGroupIdList());
                 } else {
                     if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
                         throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
                     }
                     vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
-                                diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard);
+                                diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, keyboard, getAffinityGroupIdList());
                 }
             }
 

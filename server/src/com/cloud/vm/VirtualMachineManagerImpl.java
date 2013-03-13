@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -68,7 +68,9 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
@@ -226,8 +228,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
 	@Inject
     protected ResourceManager _resourceMgr;
-    
-    @Inject 
+
+    @Inject
     protected VMSnapshotManager _vmSnapshotMgr = null;
     @Inject
     protected ClusterDetailsDao  _clusterDetailsDao;
@@ -238,6 +240,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected ConfigurationDao _configDao;
     @Inject
     VolumeManager volumeMgr;
+
+    @Inject
+    DeploymentPlanningManager _dpMgr;
 
     Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
@@ -586,7 +591,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     ConcurrentOperationException, ResourceUnavailableException {
         return advanceStart(vm, params, caller, account, null);
     }
-    
+
     @Override
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account, DeploymentPlan planToDeploy)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
@@ -695,17 +700,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, account, params);
                 DeployDestination dest = null;
-                for (DeploymentPlanner planner : _planners) {
-                    if (planner.canHandle(vmProfile, plan, avoids)) {
-                        dest = planner.plan(vmProfile, plan, avoids);
-                    } else {
-                        continue;
-                    }
-                    if (dest != null) {
-                        avoids.addHost(dest.getHost().getId());
-                        journal.record("Deployment found ", vmProfile, dest);
-                        break;
-                    }
+                try {
+                    dest = _dpMgr.planDeployment(vmProfile, plan, avoids);
+                } catch (AffinityConflictException e2) {
+                    // TODO Auto-generated catch block
+                    e2.printStackTrace();
                 }
 
                 if (dest == null) {
@@ -739,7 +738,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("VM is being created in podId: " + vm.getPodIdToDeployIn());
                     }
-                    _networkMgr.prepare(vmProfile, dest, ctx); 
+                    _networkMgr.prepare(vmProfile, dest, ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
                         this.volumeMgr.prepare(vmProfile, dest);
                     }
@@ -797,7 +796,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             StopCommand cmd = new StopCommand(vm);
                             StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
                             if (answer == null || !answer.getResult()) {
-                                s_logger.warn("Unable to stop " + vm + " due to " + (answer != null ? answer.getDetails() : "no answers")); 
+                                s_logger.warn("Unable to stop " + vm + " due to " + (answer != null ? answer.getDetails() : "no answers"));
                                 _haMgr.scheduleStop(vm, destHostId, WorkType.ForceStop);
                                 throw new ExecutionException("Unable to stop " + vm + " so we are unable to retry the start operation");
                             }
@@ -1144,7 +1143,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.error("State transit with event: " + e + " failed due to: " + vm.getInstanceName() + " has active VM snapshots tasks");
             return false;
         }
-        
+
         State oldState = vm.getState();
         if (oldState == State.Starting) {
             if (e == Event.OperationSucceeded) {
@@ -1179,12 +1178,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Unable to stop " + vm);
             return false;
         }
-        
+
         if (!_vmSnapshotMgr.deleteAllVMSnapshots(vm.getId(),null)){
             s_logger.debug("Unable to delete all snapshots for " + vm);
             return false;
         }
-        
+
         try {
             if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
                 s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
@@ -1559,7 +1558,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public boolean isVirtualMachineUpgradable(VirtualMachine vm, ServiceOffering offering) {
-        boolean isMachineUpgradable = true;    	
+        boolean isMachineUpgradable = true;
         for(HostAllocator allocator : _hostAllocators) {
             isMachineUpgradable = allocator.isVirtualMachineUpgradable(vm, offering);
             if(isMachineUpgradable)
@@ -1628,7 +1627,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new StopCommand(vmName);
     }
 
-    public Commands fullHostSync(final long hostId, StartupRoutingCommand startup) {  
+    public Commands fullHostSync(final long hostId, StartupRoutingCommand startup) {
         Commands commands = new Commands(OnError.Continue);
 
         Map<Long, AgentVmInfo> infos = convertToInfos(startup);
@@ -1637,7 +1636,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         s_logger.debug("Found " + vms.size() + " VMs for host " + hostId);
         for (VMInstanceVO vm : vms) {
             AgentVmInfo info = infos.remove(vm.getId());
-            
+
             // sync VM Snapshots related transient states
             List<VMSnapshotVO> vmSnapshotsInTrasientStates = _vmSnapshotDao.listByInstanceId(vm.getId(), VMSnapshot.State.Expunging,VMSnapshot.State.Reverting, VMSnapshot.State.Creating);
             if(vmSnapshotsInTrasientStates.size() > 1){
@@ -1649,11 +1648,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     s_logger.info("Successfully sync VM with transient snapshot: " + vm.getInstanceName());
                 }
             }
-            
+
             VMInstanceVO castedVm = null;
             if (info == null) {
                 info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
-            } 
+            }
             castedVm = info.guru.findById(vm.getId());
 
             HypervisorGuru hvGuru = _hvGuruMgr.getGuru(castedVm.getHypervisorType());
@@ -1767,7 +1766,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         for (VMInstanceVO vm : set_vms) {
             AgentVmInfo info =  infos.remove(vm.getId());
             VMInstanceVO castedVm = null;
-            
+
             // sync VM Snapshots related transient states
             List<VMSnapshotVO> vmSnapshotsInExpungingStates = _vmSnapshotDao.listByInstanceId(vm.getId(), VMSnapshot.State.Expunging, VMSnapshot.State.Creating,VMSnapshot.State.Reverting);
             if(vmSnapshotsInExpungingStates.size() > 0){
@@ -1785,9 +1784,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     s_logger.info("Successfully sync VM with transient snapshot: " + vm.getInstanceName());
                 }
             }
-            
-            if ((info == null && (vm.getState() == State.Running || vm.getState() == State.Starting ))  
-            		||  (info != null && (info.state == State.Running && vm.getState() == State.Starting))) 
+
+            if ((info == null && (vm.getState() == State.Running || vm.getState() == State.Starting ))
+            		||  (info != null && (info.state == State.Running && vm.getState() == State.Starting)))
             {
                 s_logger.info("Found vm " + vm.getInstanceName() + " in inconsistent state. " + vm.getState() + " on CS while " +  (info == null ? "Stopped" : "Running") + " on agent");
                 info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
@@ -1925,7 +1924,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return map;
     }
 
-    protected Map<Long, AgentVmInfo> convertToInfos(StartupRoutingCommand cmd) { 
+    protected Map<Long, AgentVmInfo> convertToInfos(StartupRoutingCommand cmd) {
         final Map<String, VmState> states = cmd.getVmStates();
         final HashMap<Long, AgentVmInfo> map = new HashMap<Long, AgentVmInfo>();
         if (states == null) {
@@ -1989,7 +1988,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * compareState does as its name suggests and compares the states between
      * management server and agent. It returns whether something should be
      * cleaned up
-     * 
+     *
      */
     protected Command compareState(long hostId, VMInstanceVO vm, final AgentVmInfo info, final boolean fullSync, boolean trackExternalChange) {
         State agentState = info.state;
@@ -2192,7 +2191,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         List<NicVO> nics = _nicsDao.listByVmId(profile.getId());
         for (NicVO nic : nics) {
             Network network = _networkModel.getNetwork(nic.getNetworkId());
-            NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, 
+            NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null,
                     _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(profile.getHypervisorType(), network));
             profile.addNic(nicProfile);
         }
@@ -2319,7 +2318,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 s_logger.fatal("The Cluster VM sync process failed for cluster id " + clusterId + " with ", e);
             }
         }
-        else { // for others KVM and VMWare 
+        else { // for others KVM and VMWare
             StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
             Commands commands = fullHostSync(agentId, startup);
 
@@ -2492,7 +2491,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException, 
+    public NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException,
     ResourceUnavailableException, InsufficientCapacityException {
 
         s_logger.debug("Adding vm " + vm + " to network " + network + "; requested nic profile " + requested);
@@ -2502,14 +2501,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         } else {
             vmVO = _vmDao.findById(vm.getId());
         }
-        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM),
                 _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
 
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null, 
+        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null,
                 null, null, null);
 
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
-        Host host = _hostDao.findById(vm.getHostId()); 
+        Host host = _hostDao.findById(vm.getHostId());
         DeployDestination dest = new DeployDestination(dc, null, null, host);
 
         //check vm state
@@ -2557,14 +2556,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public boolean removeNicFromVm(VirtualMachine vm, NicVO nic) throws ConcurrentOperationException, ResourceUnavailableException {
         VMInstanceVO vmVO = _vmDao.findById(vm.getId());
         NetworkVO network = _networkDao.findById(nic.getNetworkId());
-        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM),
                 _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
 
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null, 
+        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null,
                 null, null, null);
 
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
-        Host host = _hostDao.findById(vm.getHostId()); 
+        Host host = _hostDao.findById(vm.getHostId());
         DeployDestination dest = new DeployDestination(dc, null, null, host);
         VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
@@ -2576,9 +2575,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
         }
 
-        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
-                _networkModel.getNetworkRate(network.getId(), vm.getId()), 
-                _networkModel.isSecurityGroupSupportedInNetwork(network), 
+        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(),
+                _networkModel.getNetworkRate(network.getId(), vm.getId()),
+                _networkModel.isSecurityGroupSupportedInNetwork(network),
                 _networkModel.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
 
         //1) Unplug the nic
@@ -2611,14 +2610,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public boolean removeVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException {
         VMInstanceVO vmVO = _vmDao.findById(vm.getId());
-        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM),
                 _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
 
-        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null, 
+        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null,
                 null, null, null);
 
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
-        Host host = _hostDao.findById(vm.getHostId()); 
+        Host host = _hostDao.findById(vm.getHostId());
         DeployDestination dest = new DeployDestination(dc, null, null, host);
         VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
@@ -2643,9 +2642,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
         }
 
-        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
-                _networkModel.getNetworkRate(network.getId(), vm.getId()), 
-                _networkModel.isSecurityGroupSupportedInNetwork(network), 
+        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(),
+                _networkModel.getNetworkRate(network.getId(), vm.getId()),
+                _networkModel.isSecurityGroupSupportedInNetwork(network),
                 _networkModel.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
 
         //1) Unplug the nic
