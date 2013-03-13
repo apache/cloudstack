@@ -15,8 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/usr/share/cloudstack-common/lib/cloudstack-core.jar
-/usr/share/cloudstack-common/lib/cloudstack-api.jar
 /usr/share/cloudstack-common/vms/systemvm.iso
 /usr/share/cloudstack-common/scripts/installer/*
 /usr/share/cloudstack-common/scripts/network/*

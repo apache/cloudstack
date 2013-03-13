@@ -18,9 +18,9 @@
 
 if [ "$1" = configure ]; then
     if ! getent passwd cloud >/dev/null; then
-        adduser --quiet --system --group --no-create-home --home /usr/share/cloudstack-manager cloud
+        adduser --quiet --system --group --no-create-home --home /var/lib/cloudstack/management cloud
+    else
+        usermod -m -d /var/lib/cloudstack/management cloud
     fi
     chown cloud /var/log/cloudstack/management
 fi
-
-#DEBHELPER#
